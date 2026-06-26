@@ -1,0 +1,85 @@
+<svg viewBox="0 0 680 520" xmlns="http://www.w3.org/2000/svg">
+<title>Конструктор: витрувианская химера слева, созвездие Волка справа, звёзды перетаскиваются в слоты</title>
+<desc>Слева фигура-химера со слотами, справа созвездие Lupus со звёздами-аугументами, пунктирная стрелка тянет звезду коготь в слот руки</desc>
+<defs>
+<marker id="ah" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0 0 L6 3 L0 6" fill="none" stroke="#854F0B" stroke-width="1.3"/></marker>
+</defs>
+<style>
+text{font-family:'Segoe UI',Arial,sans-serif}
+.ts{fill:#5F5E5A;font-size:12px}
+.c-amber rect{fill:#FAEEDA;stroke:#E0A23A;stroke-width:0.6}
+.c-amber .th{fill:#633806;font-size:14px;font-weight:600}
+.c-amber .ts{fill:#7A5212;font-size:12px}
+</style>
+<rect width="680" height="520" fill="#ffffff"/>
+
+<line x1="340" y1="40" x2="340" y2="430" stroke="#854F0B" stroke-width="1" opacity="0.15"/>
+<circle cx="180" cy="230" r="120" fill="none" stroke="#854F0B" stroke-width="1" opacity="0.18"/>
+<rect x="78" y="118" width="204" height="226" fill="none" stroke="#854F0B" stroke-width="1" opacity="0.18"/>
+
+<g stroke="#854F0B" stroke-width="1.6" fill="none" stroke-linecap="round">
+<circle cx="180" cy="138" r="14"/>
+<path d="M170 128 L166 117 L175 130"/>
+<path d="M190 128 L194 117 L185 130"/>
+<path d="M180 152 L180 262"/>
+<path d="M160 174 L200 174"/>
+<path d="M180 176 L150 230"/>
+<path d="M180 176 L210 228"/>
+<path d="M208 228 L204 239 M214 228 L213 240 M220 228 L221 239"/>
+<path d="M164 262 L196 262"/>
+<path d="M180 262 L158 338"/>
+<path d="M180 262 L202 338"/>
+<path d="M158 338 L149 343 M202 338 L211 343"/>
+</g>
+
+<circle cx="180" cy="138" r="6" fill="none" stroke="#BA7517" stroke-width="1.5"/>
+<circle cx="180" cy="158" r="6" fill="none" stroke="#BA7517" stroke-width="1.5"/>
+<circle cx="214" cy="232" r="7" fill="#FAEEDA" stroke="#854F0B" stroke-width="1.8"/>
+
+<text class="ts" x="380" y="58">Родство · Волк (Lupus) · 5 / 8</text>
+<g stroke="#854F0B" stroke-width="1" opacity="0.45">
+<line x1="510" y1="130" x2="560" y2="118"/>
+<line x1="560" y1="118" x2="600" y2="108"/>
+<line x1="600" y1="108" x2="628" y2="120"/>
+<line x1="560" y1="118" x2="575" y2="150"/>
+<line x1="575" y1="150" x2="540" y2="172"/>
+<line x1="575" y1="150" x2="600" y2="170"/>
+</g>
+<g fill="#BA7517">
+<circle cx="600" cy="108" r="4"/>
+<circle cx="560" cy="118" r="4"/>
+<circle cx="575" cy="150" r="4"/>
+<circle cx="600" cy="170" r="4.5"/>
+<circle cx="628" cy="120" r="4"/>
+</g>
+<g fill="none" stroke="#B4B2A9" stroke-width="1.4">
+<circle cx="510" cy="130" r="3.5"/>
+<circle cx="540" cy="172" r="3.5"/>
+<circle cx="520" cy="98" r="3.5"/>
+</g>
+<text class="ts" x="636" y="123">глаз</text>
+<text class="ts" x="588" y="98">пасть</text>
+<text class="ts" x="608" y="184">коготь</text>
+<text class="ts" x="583" y="150" dx="6">сердце</text>
+
+<path d="M600 170 Q420 250 224 234" fill="none" stroke="#854F0B" stroke-width="1.5" stroke-dasharray="4 4" marker-end="url(#ah)" opacity="0.75"/>
+
+<g class="c-amber">
+<rect x="360" y="250" width="300" height="84" rx="6"/>
+<text class="th" x="376" y="276">Руки / Когти</text>
+<text class="ts" x="376" y="298">сейчас: человек — оружие, инструменты</text>
+<text class="ts" x="376" y="318">волк — коготь · раздирающий удар · −3</text>
+</g>
+
+<text class="ts" x="40" y="392">Пул мутагена · 7 / 10</text>
+<g>
+<circle cx="178" cy="387" r="5.5" fill="#BA7517"/><circle cx="196" cy="387" r="5.5" fill="#BA7517"/><circle cx="214" cy="387" r="5.5" fill="#BA7517"/><circle cx="232" cy="387" r="5.5" fill="#BA7517"/><circle cx="250" cy="387" r="5.5" fill="#BA7517"/><circle cx="268" cy="387" r="5.5" fill="#BA7517"/><circle cx="286" cy="387" r="5.5" fill="#BA7517"/>
+<circle cx="304" cy="387" r="5.5" fill="none" stroke="#B4B2A9" stroke-width="1.4"/><circle cx="322" cy="387" r="5.5" fill="none" stroke="#B4B2A9" stroke-width="1.4"/><circle cx="340" cy="387" r="5.5" fill="none" stroke="#B4B2A9" stroke-width="1.4"/>
+</g>
+
+<text class="ts" x="40" y="436">Шкала мозга · 3 / 6 звериных</text>
+<line x1="210" y1="431" x2="560" y2="431" stroke="#B4B2A9" stroke-width="3" stroke-linecap="round"/>
+<circle cx="390" cy="431" r="7" fill="#854F0B"/>
+<text class="ts" x="210" y="454">Человек</text>
+<text class="ts" x="528" y="454">Зверь</text>
+</svg>

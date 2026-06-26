@@ -1,0 +1,91 @@
+<svg viewBox="0 0 680 540" xmlns="http://www.w3.org/2000/svg">
+<title>Макет экрана конструктора в стиле анатомического этюда да Винчи</title>
+<desc>Витрувианская фигура в центре с шестью слотами-выносками, внизу пул мутагена и шкала мозга</desc>
+<style>
+text{font-family:'Segoe UI',Arial,sans-serif}
+.ts{fill:#5F5E5A;font-size:12px}
+.c-amber rect{fill:#FAEEDA;stroke:#E0A23A;stroke-width:0.6}
+.c-amber .th{fill:#633806;font-size:14px;font-weight:600}
+.c-amber .ts{fill:#7A5212;font-size:12px}
+</style>
+<rect width="680" height="540" fill="#ffffff"/>
+
+<rect x="210" y="120" width="260" height="300" fill="none" stroke="#854F0B" stroke-width="1" opacity="0.22"/>
+<circle cx="340" cy="270" r="150" fill="none" stroke="#854F0B" stroke-width="1" opacity="0.22"/>
+
+<g stroke="#854F0B" stroke-width="1.6" fill="none" stroke-linecap="round">
+<circle cx="340" cy="150" r="16"/>
+<path d="M329 139 L325 127 L335 141"/>
+<path d="M351 139 L355 127 L345 141"/>
+<path d="M340 166 L340 300"/>
+<path d="M312 188 L368 188"/>
+<path d="M340 190 L298 250"/>
+<path d="M340 190 L386 250"/>
+<circle cx="298" cy="252" r="4"/>
+<path d="M384 252 L380 263 M390 252 L389 264 M396 252 L397 263"/>
+<path d="M320 300 L360 300"/>
+<path d="M340 300 L314 392"/>
+<path d="M340 300 L366 392"/>
+<path d="M314 392 L304 397 M366 392 L376 397"/>
+</g>
+
+<g stroke="#854F0B" stroke-width="1" opacity="0.5">
+<line x1="198" y1="151" x2="322" y2="150"/>
+<line x1="198" y1="261" x2="332" y2="250"/>
+<line x1="198" y1="331" x2="346" y2="300"/>
+<line x1="482" y1="151" x2="356" y2="161"/>
+<line x1="482" y1="261" x2="392" y2="253"/>
+<line x1="482" y1="331" x2="352" y2="360"/>
+</g>
+
+<g class="c-amber">
+<rect x="22" y="128" width="176" height="46" rx="4"/>
+<text class="th" x="34" y="150">Глаза / чутьё</text>
+<text class="ts" x="34" y="167">волк · нюх+зрение · −2</text>
+</g>
+<g class="c-amber">
+<rect x="22" y="238" width="176" height="46" rx="4"/>
+<text class="th" x="34" y="260">Сердце</text>
+<text class="ts" x="34" y="277">человек</text>
+</g>
+<g class="c-amber">
+<rect x="22" y="308" width="176" height="46" rx="4"/>
+<text class="th" x="34" y="330">Кожа</text>
+<text class="ts" x="34" y="347">человек</text>
+</g>
+<g class="c-amber">
+<rect x="482" y="128" width="176" height="46" rx="4"/>
+<text class="th" x="494" y="150">Пасть</text>
+<text class="ts" x="494" y="167">волк · укус · −2</text>
+</g>
+<g class="c-amber">
+<rect x="482" y="238" width="176" height="46" rx="4"/>
+<text class="th" x="494" y="260">Руки / Когти</text>
+<text class="ts" x="494" y="277">волк · коготь · −3</text>
+</g>
+<g class="c-amber">
+<rect x="482" y="308" width="176" height="46" rx="4"/>
+<text class="th" x="494" y="330">Ноги</text>
+<text class="ts" x="494" y="347">человек</text>
+</g>
+
+<text class="ts" x="22" y="462">Пул мутагена · 7 / 10</text>
+<g>
+<circle cx="170" cy="457" r="6" fill="#BA7517"/>
+<circle cx="190" cy="457" r="6" fill="#BA7517"/>
+<circle cx="210" cy="457" r="6" fill="#BA7517"/>
+<circle cx="230" cy="457" r="6" fill="#BA7517"/>
+<circle cx="250" cy="457" r="6" fill="#BA7517"/>
+<circle cx="270" cy="457" r="6" fill="#BA7517"/>
+<circle cx="290" cy="457" r="6" fill="#BA7517"/>
+<circle cx="310" cy="457" r="6" fill="none" stroke="#B4B2A9" stroke-width="1.5"/>
+<circle cx="330" cy="457" r="6" fill="none" stroke="#B4B2A9" stroke-width="1.5"/>
+<circle cx="350" cy="457" r="6" fill="none" stroke="#B4B2A9" stroke-width="1.5"/>
+</g>
+
+<text class="ts" x="22" y="502">Шкала мозга · 3 / 6 звериных</text>
+<line x1="220" y1="497" x2="560" y2="497" stroke="#B4B2A9" stroke-width="3" stroke-linecap="round"/>
+<circle cx="390" cy="497" r="7" fill="#854F0B"/>
+<text class="ts" x="220" y="520">Человек</text>
+<text class="ts" x="528" y="520">Зверь</text>
+</svg>

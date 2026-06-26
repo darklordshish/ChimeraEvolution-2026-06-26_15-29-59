@@ -1,0 +1,60 @@
+<svg viewBox="0 0 680 482" xmlns="http://www.w3.org/2000/svg">
+<title>Чувство выбирает поверхность проекции (плоскость или сфера) и положение камеры</title>
+<desc>Хищник — плоскость вперёд, 1 лицо; нехищник 270 градусов — сфера, близкое 3 лицо; эхолокация — сфера, дальнее 3 лицо; вибро — плоскость-пол, вид сверху</desc>
+<style>
+text{font-family:'Segoe UI',Arial,sans-serif}
+.t{fill:#2C2C2A;font-size:15px;font-weight:600}
+.ts{fill:#5F5E5A;font-size:13px}
+</style>
+<rect width="680" height="482" fill="#ffffff"/>
+
+<line x1="340" y1="18" x2="340" y2="436" stroke="#B4B2A9" stroke-width="1"/>
+<line x1="18" y1="238" x2="662" y2="238" stroke="#B4B2A9" stroke-width="1"/>
+
+<text class="t" x="28" y="40">Хищник</text>
+<text class="ts" x="28" y="60">плоскость · вперёд · 1 лицо</text>
+<rect x="250" y="100" width="3" height="100" fill="#BA7517"/>
+<text class="ts" x="226" y="216">экран</text>
+<line x1="106" y1="145" x2="250" y2="100" stroke="#A8A6A0" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="106" y1="155" x2="250" y2="200" stroke="#A8A6A0" stroke-width="1" stroke-dasharray="3 3"/>
+<circle cx="96" cy="150" r="9" fill="none" stroke="#5F5E5A" stroke-width="1.6"/>
+<circle cx="96" cy="150" r="2.6" fill="#5F5E5A"/>
+
+<text class="t" x="368" y="40">Нехищник ~270°</text>
+<text class="ts" x="368" y="60">сфера · близкое 3-е</text>
+<path d="M486.1 116.1 A 48 48 0 1 1 486.1 183.9" fill="none" stroke="#1D9E75" stroke-width="2"/>
+<circle cx="520" cy="150" r="4.5" fill="#5F5E5A"/>
+<line x1="526" y1="150" x2="548" y2="150" stroke="#888780" stroke-width="1.4"/>
+<line x1="468" y1="110" x2="500" y2="138" stroke="#A8A6A0" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="468" y1="114" x2="500" y2="165" stroke="#A8A6A0" stroke-width="1" stroke-dasharray="3 3"/>
+<circle cx="462" cy="106" r="8" fill="none" stroke="#888780" stroke-width="1.6"/>
+<circle cx="462" cy="106" r="2.4" fill="#888780"/>
+
+<text class="t" x="28" y="278">Эхолокация</text>
+<text class="ts" x="28" y="298">сфера · дальнее 3-е</text>
+<circle cx="178" cy="372" r="18" fill="none" stroke="#1D9E75" stroke-width="2"/>
+<circle cx="178" cy="372" r="34" fill="none" stroke="#1D9E75" stroke-width="1.5" opacity="0.6"/>
+<circle cx="178" cy="372" r="50" fill="none" stroke="#1D9E75" stroke-width="1.1" opacity="0.4"/>
+<circle cx="178" cy="372" r="3.5" fill="#5F5E5A"/>
+<line x1="66" y1="322" x2="130" y2="345" stroke="#A8A6A0" stroke-width="1" stroke-dasharray="3 3"/>
+<line x1="66" y1="326" x2="152" y2="418" stroke="#A8A6A0" stroke-width="1" stroke-dasharray="3 3"/>
+<circle cx="58" cy="316" r="8" fill="none" stroke="#888780" stroke-width="1.6"/>
+<circle cx="58" cy="316" r="2.4" fill="#888780"/>
+
+<text class="t" x="368" y="278">Вибро-чутьё</text>
+<text class="ts" x="368" y="298">плоскость (пол) · сверху</text>
+<rect x="458" y="326" width="114" height="92" fill="none" stroke="#BA7517" stroke-width="2"/>
+<circle cx="515" cy="372" r="14" fill="none" stroke="#BA7517" stroke-width="1.8"/>
+<circle cx="515" cy="372" r="28" fill="none" stroke="#BA7517" stroke-width="1.4" opacity="0.55"/>
+<circle cx="515" cy="372" r="42" fill="none" stroke="#BA7517" stroke-width="1" opacity="0.4"/>
+<circle cx="515" cy="372" r="3.5" fill="#5F5E5A"/>
+<line x1="515" y1="320" x2="515" y2="344" stroke="#888780" stroke-width="1.4"/>
+<path d="M511 340 L515 348 L519 340" fill="none" stroke="#888780" stroke-width="1.4"/>
+<circle cx="515" cy="312" r="8" fill="none" stroke="#888780" stroke-width="1.6"/>
+<circle cx="515" cy="312" r="2.4" fill="#888780"/>
+
+<line x1="250" y1="462" x2="274" y2="462" stroke="#BA7517" stroke-width="3"/>
+<text class="ts" x="280" y="466">плоскость</text>
+<line x1="392" y1="462" x2="416" y2="462" stroke="#1D9E75" stroke-width="3"/>
+<text class="ts" x="422" y="466">сфера</text>
+</svg>
