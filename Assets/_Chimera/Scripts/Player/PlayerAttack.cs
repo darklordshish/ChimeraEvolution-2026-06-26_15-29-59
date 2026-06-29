@@ -66,6 +66,13 @@ public class PlayerAttack : MonoBehaviour
         }
     }
 
+    // конструктор меняет параметры удара при смене органа в слоте «Руки»
+    public void SetMelee(int newDamage, float newRange)
+    {
+        damage = newDamage;
+        range = newRange;
+    }
+
     Vector3 AttackCenter() => transform.position + transform.forward * range + Vector3.up * 0.5f;
 
     // красная сфера — зона удара. Всегда видна; включи тумблер Gizmos в Game view, чтобы видеть и в игре

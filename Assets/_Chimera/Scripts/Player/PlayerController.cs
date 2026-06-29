@@ -2,16 +2,16 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// Движение от третьего лица + независимый прицел (twin-stick) + рывок с i-frames.
-/// Двигаешься WASD/левый стик (относительно камеры), целишься мышью/правым стиком,
-/// рывок на Space/A — короткий бросок в сторону движения с неуязвимостью.
+/// Движение + прицел с тогглом вида (V).
+/// 3-е лицо: twin-stick (движение относительно камеры, прицел мышью/правым стиком).
+/// 1-е лицо: mouse-look (поворот мышью, движение от лица). Плюс рывок с i-frames.
 /// </summary>
 [RequireComponent(typeof(CharacterController))]
 public class PlayerController : MonoBehaviour
 {
     [Header("Движение")]
     [SerializeField] float moveSpeed = 6f;
-    [SerializeField] float aimRotationSpeed = 1080f; // доворот к прицелу (большой = почти мгновенно)
+    [SerializeField] float aimRotationSpeed = 1080f; // доворот к прицелу (3-е лицо)
     [SerializeField] float gravity = -20f;
 
     [Header("Рывок")]
@@ -19,12 +19,17 @@ public class PlayerController : MonoBehaviour
     [SerializeField] float dashDuration = 0.18f;
     [SerializeField] float dashCooldown = 0.7f;
 
+    [Header("Вид / прицел")]
+    [SerializeField] float lookSensitivity = 0.1f;  // мышь, поворот в FPS
+    [SerializeField] float gamepadYawSpeed = 180f;  // правый стик, поворот в FPS
+
+    public bool FirstPerson { get; private set; }
+
     CharacterController controller;
     Health health;
-    InputAction moveAction, lookAction, dashAction;
+    InputAction moveAction, lookAction, dashAction, toggleViewAction;
     Camera cam;
-    Vector3 velocity;       // только Y (гравитация)
-
+    Vector3 velocity;
     float dashTimer, dashReadyAt;
     Vector3 dashDir;
 
@@ -48,49 +53,63 @@ public class PlayerController : MonoBehaviour
         dashAction = new InputAction("Dash", InputActionType.Button);
         dashAction.AddBinding("<Keyboard>/space");
         dashAction.AddBinding("<Gamepad>/buttonSouth");
+
+        toggleViewAction = new InputAction("ToggleView", InputActionType.Button);
+        toggleViewAction.AddBinding("<Keyboard>/v");
+        toggleViewAction.AddBinding("<Gamepad>/buttonNorth");
     }
 
-    void Start() => cam = Camera.main;
+    void Start() { cam = Camera.main; SetFirstPerson(false); }
 
-    void OnEnable() { moveAction.Enable(); lookAction.Enable(); dashAction.Enable(); }
-    void OnDisable() { moveAction.Disable(); lookAction.Disable(); dashAction.Disable(); }
+    void OnEnable() { moveAction.Enable(); lookAction.Enable(); dashAction.Enable(); toggleViewAction.Enable(); }
+    void OnDisable() { moveAction.Disable(); lookAction.Disable(); dashAction.Disable(); toggleViewAction.Disable(); }
 
     void Update()
     {
+        if (toggleViewAction.WasPressedThisFrame()) SetFirstPerson(!FirstPerson);
+
         Vector3 camF = cam != null ? cam.transform.forward : Vector3.forward;
         Vector3 camR = cam != null ? cam.transform.right : Vector3.right;
         camF.y = 0f; camR.y = 0f; camF.Normalize(); camR.Normalize();
 
-        // движение — относительно камеры (не зависит от взгляда)
         Vector2 mv = moveAction.ReadValue<Vector2>();
-        Vector3 move = camF * mv.y + camR * mv.x;
 
-        // прицел — отдельно (правый стик, иначе мышь); работает и в рывке
-        Vector3 aim = AimDirection(camF, camR);
-        if (aim.sqrMagnitude > 0.001f)
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(aim), aimRotationSpeed * Time.deltaTime);
+        // поворот
+        if (FirstPerson)
+        {
+            float yaw = 0f;
+            if (Mouse.current != null) yaw += Mouse.current.delta.ReadValue().x * lookSensitivity;
+            yaw += lookAction.ReadValue<Vector2>().x * gamepadYawSpeed * Time.deltaTime;
+            transform.Rotate(0f, yaw, 0f);
+        }
+        else
+        {
+            Vector3 aim = AimDirection(camF, camR);
+            if (aim.sqrMagnitude > 0.001f)
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(aim), aimRotationSpeed * Time.deltaTime);
+        }
 
-        // старт рывка
+        // движение: FPS — относительно тела, 3-е лицо — относительно камеры
+        Vector3 move;
+        if (FirstPerson)
+        {
+            Vector3 f = transform.forward; f.y = 0f; f.Normalize();
+            Vector3 r = transform.right;   r.y = 0f; r.Normalize();
+            move = f * mv.y + r * mv.x;
+        }
+        else move = camF * mv.y + camR * mv.x;
+
+        // рывок
         if (dashAction.WasPressedThisFrame() && Time.time >= dashReadyAt && dashTimer <= 0f)
         {
             dashTimer = dashDuration;
             dashReadyAt = Time.time + dashCooldown;
-            dashDir = move.sqrMagnitude > 0.01f ? move.normalized : transform.forward; // куда рулишь, иначе вперёд
+            dashDir = move.sqrMagnitude > 0.01f ? move.normalized : transform.forward;
         }
 
-        // горизонтальная скорость: рывок или обычный ход
-        Vector3 horizontal;
-        if (dashTimer > 0f)
-        {
-            dashTimer -= Time.deltaTime;
-            horizontal = dashDir * dashSpeed;
-        }
-        else
-        {
-            horizontal = move * moveSpeed;
-        }
-
-        if (health != null) health.Invulnerable = dashTimer > 0f; // i-frames на время рывка
+        Vector3 horizontal = dashTimer > 0f ? dashDir * dashSpeed : move * moveSpeed;
+        if (dashTimer > 0f) dashTimer -= Time.deltaTime;
+        if (health != null) health.Invulnerable = dashTimer > 0f;
 
         // гравитация + общий Move
         if (controller.isGrounded && velocity.y < 0f) velocity.y = -2f;
@@ -100,9 +119,15 @@ public class PlayerController : MonoBehaviour
         controller.Move(motion * Time.deltaTime);
     }
 
+    void SetFirstPerson(bool on)
+    {
+        FirstPerson = on;
+        Cursor.lockState = on ? CursorLockMode.Locked : CursorLockMode.None;
+        Cursor.visible = !on;
+    }
+
     Vector3 AimDirection(Vector3 camF, Vector3 camR)
     {
-        // 1) геймпад — правый стик
         Vector2 look = lookAction.ReadValue<Vector2>();
         if (look.sqrMagnitude > 0.04f)
         {
@@ -111,7 +136,6 @@ public class PlayerController : MonoBehaviour
             return d;
         }
 
-        // 2) мышь — луч в горизонтальную плоскость на высоте игрока
         if (cam != null && Mouse.current != null)
         {
             Ray ray = cam.ScreenPointToRay(Mouse.current.position.ReadValue());

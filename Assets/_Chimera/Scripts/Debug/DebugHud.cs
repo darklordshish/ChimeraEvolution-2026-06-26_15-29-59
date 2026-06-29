@@ -7,12 +7,13 @@ using UnityEngine;
 public class DebugHud : MonoBehaviour
 {
     Health playerHealth;
+    ChimeraBody body;
     GUIStyle style;
 
     void Start()
     {
         var pc = FindAnyObjectByType<PlayerController>();
-        if (pc != null) playerHealth = pc.GetComponent<Health>();
+        if (pc != null) { playerHealth = pc.GetComponent<Health>(); body = pc.GetComponent<ChimeraBody>(); }
         Debug.Log($"DebugHud старт. Игрок найден: {pc != null}, Health на игроке: {playerHealth != null}");
     }
 
@@ -23,5 +24,6 @@ public class DebugHud : MonoBehaviour
         string hp = playerHealth != null ? $"{playerHealth.Current}/{playerHealth.Max}" : "—";
         GUI.Label(new Rect(14, 10, 500, 26), $"HP: {hp}", style);
         GUI.Label(new Rect(14, 34, 500, 26), $"Родство [Волк]: {AffinityTracker.Get("Волк")}", style);
+        GUI.Label(new Rect(14, 58, 500, 26), $"Рука: {(body != null && body.ClawEquipped ? "волчий коготь" : "человек")}  [1 — сменить]", style);
     }
 }
