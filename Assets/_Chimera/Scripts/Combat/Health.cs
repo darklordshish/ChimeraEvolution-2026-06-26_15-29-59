@@ -12,6 +12,7 @@ public class Health : MonoBehaviour
 
     public int Current { get; private set; }
     public int Max => maxHealth;
+    public bool Invulnerable { get; set; } // i-frames (напр. на время рывка)
 
     public UnityEvent onDamaged;
     public UnityEvent onDeath;
@@ -22,7 +23,7 @@ public class Health : MonoBehaviour
 
     public void TakeDamage(int amount)
     {
-        if (dead || amount <= 0) return;
+        if (dead || Invulnerable || amount <= 0) return;
 
         Current = Mathf.Max(0, Current - amount);
         Debug.Log($"{name} получил {amount} урона → {Current}/{maxHealth}"); // временно — видно, что удар регистрируется
