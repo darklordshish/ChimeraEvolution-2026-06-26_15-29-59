@@ -54,8 +54,8 @@ public class PlayerAttack : MonoBehaviour
 
     Vector3 AttackCenter() => transform.position + transform.forward * range + Vector3.up * 0.5f;
 
-    // красная сфера в сцене, когда объект выделен — видно дальность удара
-    void OnDrawGizmosSelected()
+    // красная сфера — зона удара. Всегда видна; включи тумблер Gizmos в Game view, чтобы видеть и в игре
+    void OnDrawGizmos()
     {
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(AttackCenter(), radius);
