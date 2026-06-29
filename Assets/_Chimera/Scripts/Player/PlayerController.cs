@@ -2,28 +2,28 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// Движение игрока от третьего лица на CharacterController.
-/// Ввод — новый Input System, биндинги создаются в коде (вешать сразу, без настройки в инспекторе).
-/// Движение относительно камеры; персонаж поворачивается лицом по направлению хода.
+/// Движение от третьего лица + НЕЗАВИСИМЫЙ прицел (twin-stick).
+/// Двигаешься на WASD/левый стик (относительно камеры), а смотришь/бьёшь туда, куда целишь:
+/// мышь (луч в пол) или правый стик геймпада. Можно отступать лицом к врагу.
 /// </summary>
 [RequireComponent(typeof(CharacterController))]
 public class PlayerController : MonoBehaviour
 {
     [Header("Движение")]
     [SerializeField] float moveSpeed = 6f;
-    [SerializeField] float rotationSpeed = 720f; // град/сек — скорость доворота к направлению хода
+    [SerializeField] float aimRotationSpeed = 1080f; // доворот к прицелу (большой = почти мгновенно)
     [SerializeField] float gravity = -20f;
 
     CharacterController controller;
     InputAction moveAction;
-    Transform cam;
-    Vector3 velocity; // храним только Y (гравитация)
+    InputAction lookAction;   // правый стик геймпада
+    Camera cam;
+    Vector3 velocity;         // храним только Y (гравитация)
 
     void Awake()
     {
         controller = GetComponent<CharacterController>();
 
-        // WASD + стрелки + левый стик геймпада
         moveAction = new InputAction("Move", InputActionType.Value);
         moveAction.AddCompositeBinding("2DVector")
             .With("Up", "<Keyboard>/w").With("Down", "<Keyboard>/s")
@@ -33,39 +33,65 @@ public class PlayerController : MonoBehaviour
             .With("Left", "<Keyboard>/leftArrow").With("Right", "<Keyboard>/rightArrow");
         moveAction.AddBinding("<Gamepad>/leftStick");
 
-        var mainCam = Camera.main;
-        if (mainCam != null) cam = mainCam.transform;
+        lookAction = new InputAction("Look", InputActionType.Value);
+        lookAction.AddBinding("<Gamepad>/rightStick");
     }
 
-    void OnEnable() => moveAction.Enable();
-    void OnDisable() => moveAction.Disable();
+    void Start() => cam = Camera.main;
+
+    void OnEnable() { moveAction.Enable(); lookAction.Enable(); }
+    void OnDisable() { moveAction.Disable(); lookAction.Disable(); }
 
     void Update()
     {
-        Vector2 input = moveAction.ReadValue<Vector2>();
+        Vector3 camF = cam != null ? cam.transform.forward : Vector3.forward;
+        Vector3 camR = cam != null ? cam.transform.right : Vector3.right;
+        camF.y = 0f; camR.y = 0f; camF.Normalize(); camR.Normalize();
 
-        // оси камеры, спроецированные на горизонталь
-        Vector3 forward = cam != null ? cam.forward : Vector3.forward;
-        Vector3 right = cam != null ? cam.right : Vector3.right;
-        forward.y = 0f; right.y = 0f;
-        forward.Normalize(); right.Normalize();
+        // движение — относительно камеры (НЕ зависит от взгляда)
+        Vector2 mv = moveAction.ReadValue<Vector2>();
+        Vector3 move = camF * mv.y + camR * mv.x;
 
-        Vector3 move = forward * input.y + right * input.x; // нормализованное направление хода
-
-        // доворот лицом к направлению
-        if (move.sqrMagnitude > 0.01f)
+        // прицел — отдельно: правый стик, иначе мышь
+        Vector3 aim = AimDirection(camF, camR);
+        if (aim.sqrMagnitude > 0.001f)
         {
-            Quaternion target = Quaternion.LookRotation(move);
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, target, rotationSpeed * Time.deltaTime);
+            Quaternion look = Quaternion.LookRotation(aim);
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, look, aimRotationSpeed * Time.deltaTime);
         }
 
-        // гравитация
+        // гравитация + общее перемещение
         if (controller.isGrounded && velocity.y < 0f) velocity.y = -2f;
         velocity.y += gravity * Time.deltaTime;
-
-        // одно общее перемещение: горизонталь + вертикаль
         Vector3 motion = move * moveSpeed;
         motion.y = velocity.y;
         controller.Move(motion * Time.deltaTime);
+    }
+
+    Vector3 AimDirection(Vector3 camF, Vector3 camR)
+    {
+        // 1) геймпад — правый стик (относительно камеры)
+        Vector2 look = lookAction.ReadValue<Vector2>();
+        if (look.sqrMagnitude > 0.04f)
+        {
+            Vector3 d = camF * look.y + camR * look.x;
+            d.y = 0f;
+            return d;
+        }
+
+        // 2) мышь — луч в горизонтальную плоскость на высоте игрока
+        if (cam != null && Mouse.current != null)
+        {
+            Ray ray = cam.ScreenPointToRay(Mouse.current.position.ReadValue());
+            Plane ground = new Plane(Vector3.up, new Vector3(0f, transform.position.y, 0f));
+            if (ground.Raycast(ray, out float enter))
+            {
+                Vector3 d = ray.GetPoint(enter) - transform.position;
+                d.y = 0f;
+                return d;
+            }
+        }
+
+        return Vector3.zero; // нет ввода — сохраняем текущий поворот
     }
 }

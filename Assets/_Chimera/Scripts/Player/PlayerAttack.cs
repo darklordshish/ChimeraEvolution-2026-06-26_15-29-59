@@ -5,6 +5,7 @@ using UnityEngine.InputSystem;
 /// <summary>
 /// Простой мечевой удар: по кнопке бьём сферой-хитбоксом перед игроком,
 /// наносим урон всем найденным Health (каждому — один раз за замах).
+/// При попадании — сочность: хитстоп + тряска камеры.
 /// </summary>
 public class PlayerAttack : MonoBehaviour
 {
@@ -15,9 +16,14 @@ public class PlayerAttack : MonoBehaviour
     [SerializeField] float cooldown = 0.45f;
     [SerializeField] LayerMask hitMask = ~0; // пока бьём по всему
 
+    [Header("Сочность")]
+    [SerializeField] float hitstopDuration = 0.06f;
+    [SerializeField] float shakeMagnitude = 0.25f;
+
     InputAction attackAction;
     float nextTime;
     readonly HashSet<Health> hitThisSwing = new();
+    CameraFollow cam;
 
     void Awake()
     {
@@ -27,6 +33,8 @@ public class PlayerAttack : MonoBehaviour
         attackAction.AddBinding("<Gamepad>/buttonWest");
         attackAction.AddBinding("<Keyboard>/j");
     }
+
+    void Start() => cam = FindAnyObjectByType<CameraFollow>();
 
     void OnEnable() => attackAction.Enable();
     void OnDisable() => attackAction.Disable();
@@ -49,6 +57,12 @@ public class PlayerAttack : MonoBehaviour
             var hp = col.GetComponentInParent<Health>();
             if (hp != null && hp.transform != transform && hitThisSwing.Add(hp))
                 hp.TakeDamage(damage);
+        }
+
+        if (hitThisSwing.Count > 0) // попали хотя бы по одному — даём сочность
+        {
+            if (hitstopDuration > 0f) Hitstop.Do(hitstopDuration); // 0 = выключить глобальный фриз
+            if (cam != null) cam.Shake(0.12f, shakeMagnitude);
         }
     }
 

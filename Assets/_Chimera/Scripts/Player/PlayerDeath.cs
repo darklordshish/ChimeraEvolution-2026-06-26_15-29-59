@@ -16,6 +16,7 @@ public class PlayerDeath : MonoBehaviour
     void OnDeath()
     {
         Debug.Log("Игрок погиб — перезапуск сцены");
+        Time.timeScale = 1f; // на случай, если смерть совпала с хитстопом
 
         // отключаем управление и атаку, чтобы «труп» не бегал
         if (TryGetComponent<PlayerController>(out var pc)) pc.enabled = false;
@@ -26,7 +27,7 @@ public class PlayerDeath : MonoBehaviour
 
     IEnumerator Restart()
     {
-        yield return new WaitForSeconds(restartDelay);
+        yield return new WaitForSecondsRealtime(restartDelay); // реальное время, не зависит от timeScale
         SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
     }
 }
