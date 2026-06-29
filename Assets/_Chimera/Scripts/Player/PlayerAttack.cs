@@ -24,6 +24,8 @@ public class PlayerAttack : MonoBehaviour
     float nextTime;
     readonly HashSet<Health> hitThisSwing = new();
     CameraFollow cam;
+    Health ownHealth;
+    int lifeSteal;
 
     void Awake()
     {
@@ -34,7 +36,11 @@ public class PlayerAttack : MonoBehaviour
         attackAction.AddBinding("<Keyboard>/j");
     }
 
-    void Start() => cam = FindAnyObjectByType<CameraFollow>();
+    void Start()
+    {
+        cam = FindAnyObjectByType<CameraFollow>();
+        ownHealth = GetComponent<Health>();
+    }
 
     void OnEnable() => attackAction.Enable();
     void OnDisable() => attackAction.Disable();
@@ -63,6 +69,7 @@ public class PlayerAttack : MonoBehaviour
         {
             if (hitstopDuration > 0f) Hitstop.Do(hitstopDuration); // 0 = выключить глобальный фриз
             if (cam != null) cam.Shake(0.12f, shakeMagnitude);
+            if (lifeSteal > 0 && ownHealth != null) ownHealth.Heal(lifeSteal * hitThisSwing.Count); // вампиризм (слот «Пасть»)
         }
     }
 
@@ -72,6 +79,12 @@ public class PlayerAttack : MonoBehaviour
         damage = newDamage;
         range = newRange;
     }
+
+    // слот «Сердце»: скорость атак (кулдаун)
+    public void SetCooldown(float newCooldown) => cooldown = newCooldown;
+
+    // слот «Пасть»: вампиризм (лечение при попадании)
+    public void SetLifeSteal(int v) => lifeSteal = v;
 
     Vector3 AttackCenter() => transform.position + transform.forward * range + Vector3.up * 0.5f;
 

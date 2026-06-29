@@ -126,6 +126,16 @@ public class PlayerController : MonoBehaviour
         Cursor.visible = !on;
     }
 
+    // конструктор меняет мобильность при смене органа в слоте «Ноги»
+    public void SetLegs(float newMoveSpeed, float newDashSpeed)
+    {
+        moveSpeed = newMoveSpeed;
+        dashSpeed = newDashSpeed;
+    }
+
+    // слот «Чутьё»: быстрее откат рывка
+    public void SetDashCooldown(float newCooldown) => dashCooldown = newCooldown;
+
     Vector3 AimDirection(Vector3 camF, Vector3 camR)
     {
         Vector2 look = lookAction.ReadValue<Vector2>();
