@@ -9,13 +9,15 @@ using UnityEngine;
 public static class WerewolfPrefab
 {
     public const string Path = "Assets/_Chimera/Prefabs/Werewolf.prefab";
-    const string MatPath = "Assets/_Chimera/Prefabs/WerewolfBody.mat";
+    const string MatPath = "Assets/_Chimera/Materials/WerewolfBody.mat";
 
     [MenuItem("Chimera/Создать префаб Вервольфа")]
     public static void Create()
     {
         if (!AssetDatabase.IsValidFolder("Assets/_Chimera/Prefabs"))
             AssetDatabase.CreateFolder("Assets/_Chimera", "Prefabs");
+        if (!AssetDatabase.IsValidFolder("Assets/_Chimera/Materials"))
+            AssetDatabase.CreateFolder("Assets/_Chimera", "Materials");
 
         var go = BuildWerewolf();
 

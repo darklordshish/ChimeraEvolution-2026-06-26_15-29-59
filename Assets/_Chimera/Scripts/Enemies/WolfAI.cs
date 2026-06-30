@@ -21,6 +21,7 @@ public class WolfAI : MonoBehaviour, IGrabber
     [SerializeField] float pathDirectRange = 5f; // ближе этого к цели — ведём напрямую (без пафайндинга)
     [SerializeField] float wanderRadius = 15f;  // радиус случайного блуждания в покое
     [SerializeField, Range(0f, 1f)] float wanderSpeed = 0.5f; // доля скорости при спокойном блуждании
+    [SerializeField] float scentRange = 16f;    // в каком радиусе берёт свежий след игрока
 
     [Header("Укус (ближний)")]
     [SerializeField] float attackRange = 2.0f;
@@ -131,7 +132,8 @@ public class WolfAI : MonoBehaviour, IGrabber
     {
         if (target == null) { Engaged = false; Disengage(0f); Settle(Vector3.zero); return; }
 
-        Engaged = (target.position - transform.position).sqrMagnitude <= sightRange * sightRange;
+        Engaged = (target.position - transform.position).sqrMagnitude <= sightRange * sightRange
+                  && Perception.HasLineOfSight(transform.position, target); // зрение требует прямой видимости
         if (Engaged) pack.ReportSighting(target.position); // увидел игрока → поднимаю всю стаю
 
         // пинок рвёт всё (включая захват): волк полностью теряет управление, пока летит
@@ -158,15 +160,20 @@ public class WolfAI : MonoBehaviour, IGrabber
 
         if (windingUp) { UpdateWindup(dist, dir, inCone); return; }
 
-        // не вижу игрока: стая в тревоге → иду к последней известной позиции; иначе спокойно брожу. Не стою столбом.
+        // не вижу: тревога стаи → к последней позиции; иначе по ЗАПАХУ (тропа); иначе брожу. Не стою столбом.
         if (!Engaged)
         {
             if (hasToken) ReleaseToken();
-            bool hunt = pack.Alerted && (pack.LastKnownPlayerPos - transform.position).sqrMagnitude > 9f;
-            Vector3 mv = NavDir(hunt ? pack.LastKnownPlayerPos : WanderTarget());
+            Vector3 dest; bool active = true;
+            if (pack.Alerted && (pack.LastKnownPlayerPos - transform.position).sqrMagnitude > 9f)
+                dest = pack.LastKnownPlayerPos;                                   // кто-то видел — на точку
+            else if (ScentField.Instance.TryFollow(transform.position, scentRange, out var scent))
+                dest = scent;                                                     // взял след — тропим из-за угла
+            else { dest = WanderTarget(); active = false; }                       // ничего — бродим
+            Vector3 mv = NavDir(dest);
             if (mv.sqrMagnitude > 0.001f)
                 transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(mv), rotationSpeed * Time.deltaTime);
-            Settle(mv * moveSpeed * (hunt ? 1f : wanderSpeed) + Separation());
+            Settle(mv * moveSpeed * (active ? 1f : wanderSpeed) + Separation());
             return;
         }
 

@@ -121,7 +121,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 07bc2ed469704554daec7a51477335c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HitFlash
-  flashColor: {r: 0, g: 0, b: 0, a: 1}
+  flashColor: {r: 1, g: 1, b: 1, a: 1}
   flashTime: 0.08
 --- !u!114 &1683690007009567405
 MonoBehaviour:
@@ -135,11 +135,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 45fe65a21b0772746a8abc9d821bb66e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WerewolfBoss
-  maxHp: 600
-  regenPerSec: 8
-  damageReduction: 0.4
+  maxHp: 300
+  regenPerSec: 6
+  damageReduction: 0.15
   tempHpCap: 50
-  moveSpeed: 10
+  moveSpeed: 12
   rotationSpeed: 300
   gravity: -20
   sightRange: 55
@@ -174,6 +174,7 @@ MonoBehaviour:
   pathDirectRange: 5
   wanderRadius: 18
   wanderSpeed: 0.5
+  scentRange: 22
 --- !u!1 &5103510595840929207
 GameObject:
   m_ObjectHideFlags: 0

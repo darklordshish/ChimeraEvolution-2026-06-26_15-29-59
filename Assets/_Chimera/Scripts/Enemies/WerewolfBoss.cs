@@ -11,14 +11,14 @@ using UnityEngine.AI;
 [RequireComponent(typeof(Health))]
 public class WerewolfBoss : MonoBehaviour
 {
-    [Header("Тело (зеркало игрока на 100 родстве, но мощнее)")]
-    [SerializeField] int maxHp = 600;
-    [SerializeField] float regenPerSec = 8f;
-    [SerializeField, Range(0f, 1f)] float damageReduction = 0.4f;
+    [Header("Тело — быстрый убийца, НЕ танк")]
+    [SerializeField] int maxHp = 300;
+    [SerializeField] float regenPerSec = 6f;
+    [SerializeField, Range(0f, 1f)] float damageReduction = 0.15f; // не вербеар — брони мало
     [SerializeField] int tempHpCap = 50;     // потолок временного HP свыше макс. (копится вампиризмом)
 
     [Header("Движение / чутьё")]
-    [SerializeField] float moveSpeed = 10f;
+    [SerializeField] float moveSpeed = 12f;  // быстрый — не укайтишь налегке
     [SerializeField] float rotationSpeed = 300f;
     [SerializeField] float gravity = -20f;
     [SerializeField] float sightRange = 55f; // чувствительное обнаружение
@@ -63,6 +63,7 @@ public class WerewolfBoss : MonoBehaviour
     [SerializeField] float pathDirectRange = 5f;
     [SerializeField] float wanderRadius = 18f;
     [SerializeField, Range(0f, 1f)] float wanderSpeed = 0.5f;
+    [SerializeField] float scentRange = 22f; // нюх острее волчьего
 
     enum Kind { Bite, Leap, Charge, Howl }
     static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
@@ -99,6 +100,8 @@ public class WerewolfBoss : MonoBehaviour
             var m = renderers[i].sharedMaterial;
             baseColors[i] = (m != null && m.HasProperty(BaseColor)) ? m.GetColor(BaseColor) : Color.gray;
         }
+
+        if (!TryGetComponent<ScentTrail>(out _)) gameObject.AddComponent<ScentTrail>(); // босс тоже пахнет (тропишь его)
     }
 
     void Start()
@@ -137,13 +140,17 @@ public class WerewolfBoss : MonoBehaviour
             nextHowl = Time.time + 3f; // стая ещё полная — перепроверим позже
         }
 
-        // не вижу игрока — брожу; временные HP пропадают (сначала снова набьёт вампиризмом)
-        if (dist > sightRange)
+        // не вижу игрока (далеко или за стеной): temp HP пропадают; тропим по ЗАПАХУ, иначе бродим
+        bool sees = dist <= sightRange && Perception.HasLineOfSight(transform.position, target);
+        if (!sees)
         {
             ownHealth.ClearOverheal();
-            Vector3 w = NavDir(WanderTarget());
-            if (w.sqrMagnitude > 0.001f) Face(w);
-            Settle(w * moveSpeed * wanderSpeed);
+            Vector3 dest; bool active = true;
+            if (ScentField.Instance.TryFollow(transform.position, scentRange, out var scent)) dest = scent;
+            else { dest = WanderTarget(); active = false; }
+            Vector3 mv = NavDir(dest);
+            if (mv.sqrMagnitude > 0.001f) Face(mv);
+            Settle(mv * moveSpeed * (active ? 1f : wanderSpeed));
             return;
         }
 

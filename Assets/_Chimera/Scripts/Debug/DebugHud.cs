@@ -24,6 +24,9 @@ public class DebugHud : MonoBehaviour
 
         if (Keyboard.current != null && Keyboard.current.kKey.wasPressedThisFrame)
             AffinityTracker.Add("Волк", 10); // K — +10 родства (отладка: проверить скидку/бонусы)
+
+        if (Keyboard.current != null && Keyboard.current.nKey.wasPressedThisFrame)
+            Perception.ShowOwnScent = !Perception.ShowOwnScent; // N — показ своего запаха
     }
 
     void OnGUI()
@@ -39,7 +42,7 @@ public class DebugHud : MonoBehaviour
         GUI.Label(new Rect(14, 34, 760, 26), $"Родство [Волк]: {AffinityTracker.Get("Волк")}  (бонус органов ×{(body != null ? body.BonusMult : 1f):0.00})   [K +10]", style);
         GUI.Label(new Rect(14, 58, 760, 26), $"Шкала мозга: {(body != null ? body.BeastSlots : 0)}/{(body != null ? body.MaxSlots : 0)} звериных", style);
         GUI.Label(new Rect(14, 82, 760, 26), $"Пул мутагена: {(body != null ? body.PoolUsed : 0)}/{(body != null ? body.Pool : 0)}", style);
-        GUI.Label(new Rect(14, 106, 760, 26), $"БОГ [G]: {(playerHealth != null && playerHealth.GodMode ? "ВКЛ" : "выкл")}", style);
+        GUI.Label(new Rect(14, 106, 760, 26), $"БОГ [G]: {(playerHealth != null && playerHealth.GodMode ? "ВКЛ" : "выкл")}   Запах: чутьё {(Perception.WolfScent ? "да" : "нет")}, свой [N] {(Perception.ShowOwnScent ? "вкл" : "выкл")}", style);
         var pack = PackCoordinator.Instance;
         GUI.Label(new Rect(14, 130, 760, 26), $"Стая: атакуют {pack.AttackerCount}/{pack.MaxAttackers}, захват: {(pack.GrabActive ? "да" : "нет")}", style);
         GUI.Label(new Rect(14, 162, 760, 200), body != null ? body.SlotsInfo : "", style);
