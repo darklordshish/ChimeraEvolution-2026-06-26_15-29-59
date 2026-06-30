@@ -32,6 +32,7 @@ public class PackCoordinator : MonoBehaviour
     readonly HashSet<WolfAI> attackers = new();
     WolfAI grabber;
     Transform player;
+    Health playerHealth;
 
     public int AttackerCount => attackers.Count;
     public int MaxAttackers => maxAttackers;
@@ -48,6 +49,23 @@ public class PackCoordinator : MonoBehaviour
             }
             return player;
         }
+    }
+
+    void Update()
+    {
+        // «в бою», если хоть один волк сейчас преследует игрока — это гейтит реген вне боя
+        Transform p = Player;
+        if (p == null) return;
+        if (playerHealth == null) playerHealth = p.GetComponent<Health>();
+        if (playerHealth != null) playerHealth.InCombat = AnyEngaged();
+    }
+
+    // есть ли хоть один волк, который сейчас держит игрока в поле зрения (агро на тебя)
+    public bool AnyEngaged()
+    {
+        foreach (var w in wolves)
+            if (w != null && w.Engaged) return true;
+        return false;
     }
 
     public void Register(WolfAI w) { if (!wolves.Contains(w)) wolves.Add(w); }

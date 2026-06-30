@@ -15,6 +15,7 @@ public class WolfAI : MonoBehaviour, IGrabber
     [SerializeField] float rotationSpeed = 250f;
     [SerializeField] float gravity = -20f;
     [SerializeField] float sightRange = 25f;
+    [SerializeField] float hpRegen = 1f;   // постоянная регенерация HP волка (живучесть стаи)
 
     [Header("Укус (ближний)")]
     [SerializeField] float attackRange = 2.0f;
@@ -75,6 +76,8 @@ public class WolfAI : MonoBehaviour, IGrabber
     Color activeTelegraph;
     Vector3 leapVel;
 
+    public bool Engaged { get; private set; } // игрок в поле зрения = волк агрессивен/нацелен (для «вне боя» игрока)
+
     void Awake()
     {
         controller = GetComponent<CharacterController>();
@@ -96,6 +99,7 @@ public class WolfAI : MonoBehaviour, IGrabber
     {
         playerCtl = FindAnyObjectByType<PlayerController>();
         if (playerCtl != null) { target = playerCtl.transform; targetHealth = playerCtl.GetComponent<Health>(); }
+        if (ownHealth != null) ownHealth.RegenPerSecond = hpRegen; // постоянный реген волка
     }
 
     void OnEnable()
@@ -112,7 +116,9 @@ public class WolfAI : MonoBehaviour, IGrabber
 
     void Update()
     {
-        if (target == null) { Disengage(0f); Settle(Vector3.zero); return; }
+        if (target == null) { Engaged = false; Disengage(0f); Settle(Vector3.zero); return; }
+
+        Engaged = (target.position - transform.position).sqrMagnitude <= sightRange * sightRange;
 
         // пинок рвёт всё (включая захват): волк полностью теряет управление, пока летит
         if (knockback != null && knockback.IsActive) { leaping = false; Disengage(attackCooldown); return; }

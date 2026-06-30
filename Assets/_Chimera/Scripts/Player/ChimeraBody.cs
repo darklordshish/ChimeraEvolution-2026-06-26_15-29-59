@@ -16,10 +16,15 @@ public class ChimeraBody : MonoBehaviour
     [SerializeField] string species = "Волк";
     [SerializeField] Color wolfTint = new Color(0.5f, 0.38f, 0.36f); // цвет при полном озверении
 
-    [Header("Экономика")]
+    [Header("Экономика — фаза 1: скидка (0…80 родства)")]
     [SerializeField] int mutagenPool = 10;              // бюджет очков
     [SerializeField] float discountPerAffinity = 0.01f; // −1% к цене за единицу родства (потолок к ~80 родства)
-    [SerializeField] float maxDiscount = 0.8f;          // при 100 родства все 6 органов влезают (~7/10)
+    [SerializeField] float maxDiscount = 0.8f;          // при 80 родства все 6 органов влезают (~7/10)
+
+    [Header("Экономика — фаза 2: мощь (80…100 родства)")]
+    [SerializeField] float bonusStartAffinity = 80f;    // ниже — бонус ×1; здесь скидка уже на капе
+    [SerializeField] float bonusFullAffinity = 100f;    // полное родство — бонус на максимуме
+    [SerializeField] float maxBonusMult = 2f;           // эффекты органов ×2 на 100 родства (×1.5 на 90)
 
     [Header("База (человек)")]
     [SerializeField] int baseDamage = 10;
@@ -29,13 +34,14 @@ public class ChimeraBody : MonoBehaviour
     [SerializeField] float baseDashSpeed = 20f;
     [SerializeField] float baseDashCooldown = 0.7f;
     [SerializeField] int baseMaxHp = 100;
+    [SerializeField] float baseRegenOOC = 1f;   // человек: медленный реген вне боя (1/с)
 
     class Augment
     {
         public string name, key;
         public int cost; // базовая цена в пуле
         public int dDamage, dMaxHp, dLifeSteal;
-        public float dRange, dAtkCd, dMove, dDash, dDashCd, dReduce;
+        public float dRange, dAtkCd, dMove, dDash, dDashCd, dReduce, dRegen;
         public bool enablesBite;
         public InputAction action;
         public bool equipped;
@@ -74,6 +80,15 @@ public class ChimeraBody : MonoBehaviour
         return Mathf.Max(1, Mathf.CeilToInt(a.cost * (1f - discount)));
     }
 
+    // Фаза 2: множитель эффектов органов. ×1 до bonusStartAffinity, линейно до maxBonusMult к bonusFullAffinity.
+    public float BonusMult => BonusMultiplier();
+    float BonusMultiplier()
+    {
+        float span = Mathf.Max(1f, bonusFullAffinity - bonusStartAffinity);
+        float t = Mathf.Clamp01((AffinityTracker.Get(species) - bonusStartAffinity) / span);
+        return Mathf.Lerp(1f, maxBonusMult, t);
+    }
+
     void Awake()
     {
         attack = GetComponent<PlayerAttack>();
@@ -85,7 +100,7 @@ public class ChimeraBody : MonoBehaviour
         {
             new Augment { name = "Когти",  key = "1", cost = 4, dDamage = 8, dRange = -0.1f },
             new Augment { name = "Ноги",   key = "2", cost = 4, dMove = 3f, dDash = 10f },
-            new Augment { name = "Сердце", key = "3", cost = 6, dAtkCd = -0.15f, dMaxHp = 50 },
+            new Augment { name = "Сердце", key = "3", cost = 6, dAtkCd = -0.15f, dMaxHp = 50, dRegen = 2f },
             new Augment { name = "Чутьё",  key = "4", cost = 3, dDashCd = -0.25f },
             new Augment { name = "Пасть",  key = "5", cost = 5, enablesBite = true },
             new Augment { name = "Шкура",  key = "6", cost = 4, dReduce = 0.3f },
@@ -111,10 +126,16 @@ public class ChimeraBody : MonoBehaviour
 
     void Start() => Recompute(); // выставить базу (человек)
 
+    int lastAffinity = -1;
+
     void Update()
     {
         foreach (var a in augments)
             if (a.action.WasPressedThisFrame()) Toggle(a);
+
+        // родство выросло (убил волка) → пересчитать скидку/множитель бонусов
+        int aff = AffinityTracker.Get(species);
+        if (aff != lastAffinity) { lastAffinity = aff; Recompute(); }
     }
 
     void Toggle(Augment a)
@@ -135,15 +156,18 @@ public class ChimeraBody : MonoBehaviour
 
     void Recompute()
     {
+        float mult = BonusMultiplier(); // родство 80→100 усиливает эффекты органов (×1 … ×2; на 90 ×1.5)
+
         int dmg = baseDamage, maxHp = baseMaxHp, life = 0, beast = 0;
-        float rng = baseRange, atkCd = baseAtkCooldown, mv = baseMoveSpeed, dash = baseDashSpeed, dashCd = baseDashCooldown, reduce = 0f;
+        float rng = baseRange, atkCd = baseAtkCooldown, mv = baseMoveSpeed, dash = baseDashSpeed, dashCd = baseDashCooldown, reduce = 0f, regen = 0f;
         bool biteOn = false;
 
         foreach (var a in augments)
         {
             if (!a.equipped) continue;
-            dmg += a.dDamage; maxHp += a.dMaxHp; life += a.dLifeSteal;
-            rng += a.dRange; atkCd += a.dAtkCd; mv += a.dMove; dash += a.dDash; dashCd += a.dDashCd; reduce += a.dReduce;
+            dmg += Mathf.RoundToInt(a.dDamage * mult); maxHp += Mathf.RoundToInt(a.dMaxHp * mult); life += Mathf.RoundToInt(a.dLifeSteal * mult);
+            rng += a.dRange; // дальность не масштабируем — остаётся фикс. трейдофф когтя
+            atkCd += a.dAtkCd * mult; mv += a.dMove * mult; dash += a.dDash * mult; dashCd += a.dDashCd * mult; reduce += a.dReduce * mult; regen += a.dRegen * mult;
             if (a.enablesBite) biteOn = true;
             beast++;
         }
@@ -157,6 +181,8 @@ public class ChimeraBody : MonoBehaviour
         move.SetDashCooldown(Mathf.Max(0.05f, dashCd));
         health.SetMaxHealth(maxHp);
         health.DamageReduction = Mathf.Clamp01(reduce);
+        health.RegenPerSecond = regen;         // слот «Сердце»: реген всегда (в т.ч. в бою)
+        health.OutOfCombatRegen = baseRegenOOC; // человек: реген вне боя
 
         UpdateTint(beast);
     }

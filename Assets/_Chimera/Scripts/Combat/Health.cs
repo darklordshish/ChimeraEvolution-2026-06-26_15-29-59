@@ -12,16 +12,37 @@ public class Health : MonoBehaviour
 
     public int Current { get; private set; }
     public int Max => maxHealth;
-    public bool Invulnerable { get; set; }      // i-frames (напр. на время рывка)
-    public float DamageReduction { get; set; }  // 0..1, броня (слот «Кожа»)
+    public bool Invulnerable { get; set; }       // i-frames (напр. на время рывка)
+    public float DamageReduction { get; set; }   // 0..1, броня (слот «Кожа»)
     public bool GodMode { get; set; }            // отладка: неуязвимость (клавиша G)
+    public float RegenPerSecond { get; set; }    // реген всегда, в т.ч. в бою (слот «Сердце»; волки)
+    public float OutOfCombatRegen { get; set; }  // реген только вне боя (база человека)
+    public bool InCombat { get; set; }           // «в бою» = есть агрессивный враг, нацеленный на тебя (ставит PackCoordinator)
 
     public UnityEvent onDamaged;
     public UnityEvent onDeath;
 
     bool dead;
+    float regenAccum;
 
     void Awake() => Current = maxHealth;
+
+    void Update()
+    {
+        // тихая регенерация (без лога): постоянная + добавочная вне боя; копим дробные HP, не выше максимума
+        if (dead || Current >= maxHealth) return;
+        float rate = RegenPerSecond;
+        if (!InCombat) rate += OutOfCombatRegen;
+        if (rate <= 0f) return;
+
+        regenAccum += rate * Time.deltaTime;
+        if (regenAccum >= 1f)
+        {
+            int whole = Mathf.FloorToInt(regenAccum);
+            regenAccum -= whole;
+            Current = Mathf.Min(maxHealth, Current + whole);
+        }
+    }
 
     // конструктор меняет макс. HP при смене органа в слоте «Сердце» (разницу даём/забираем у текущего)
     public void SetMaxHealth(int newMax)
