@@ -71,7 +71,7 @@ public class WolfAI : MonoBehaviour, IGrabber
     Health targetHealth;
 
     float nextAttackTime, verticalVel, windupEnd, leapEnd;
-    bool windingUp, leaping, leapHit, telegraphOn, hasToken, grabbing;
+    bool windingUp, leaping, telegraphOn, hasToken, grabbing;
     Kind pendingKind;
     Color activeTelegraph;
     Vector3 leapVel;
@@ -161,7 +161,11 @@ public class WolfAI : MonoBehaviour, IGrabber
         {
             if (dist <= attackRange)
             {
-                if (pack.TryAcquireGrab(this) && Random.value < grabChance) BeginAttack(Kind.Grab);
+                if (pack.TryAcquireGrab(this) && Random.value < grabChance)
+                {
+                    BeginAttack(Kind.Grab);
+                    pack.ReleaseAttack(this); hasToken = false; // захват — отдельная роль, освобождает слот атакующего
+                }
                 else { pack.ReleaseGrab(this); BeginAttack(Kind.Bite); }
                 Settle(Vector3.zero);
                 return;
@@ -268,7 +272,6 @@ public class WolfAI : MonoBehaviour, IGrabber
         windingUp = false;
         SetTelegraph(false);
         leaping = true;
-        leapHit = false;
         leapEnd = Time.time + leapDuration;
         Vector3 flat = dir; flat.y = 0f; flat.Normalize();
         leapVel = flat * leapSpeed + Vector3.up * leapUp;
@@ -279,13 +282,17 @@ public class WolfAI : MonoBehaviour, IGrabber
         leapVel.y += gravity * Time.deltaTime;
         controller.Move(leapVel * Time.deltaTime);
 
-        if (!leapHit && targetHealth != null)
+        if (Time.time >= leapEnd)
         {
-            Vector3 d = target.position - transform.position; d.y = 0f;
-            if (d.magnitude <= leapHitRadius) { targetHealth.TakeDamage(leapDamage); leapHit = true; }
+            leaping = false;
+            // приземлили наскок — кусаем, если цель ещё рядом (с приземления можно увернуться)
+            if (targetHealth != null)
+            {
+                Vector3 d = target.position - transform.position; d.y = 0f;
+                if (d.magnitude <= leapHitRadius) targetHealth.TakeDamage(leapDamage);
+            }
+            Disengage(attackCooldown);
         }
-
-        if (Time.time >= leapEnd) { leaping = false; Disengage(attackCooldown); }
     }
 
     void SetTelegraph(bool on)

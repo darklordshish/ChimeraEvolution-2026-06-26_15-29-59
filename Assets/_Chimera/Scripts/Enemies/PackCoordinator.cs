@@ -10,7 +10,7 @@ using UnityEngine;
 /// </summary>
 public class PackCoordinator : MonoBehaviour
 {
-    [SerializeField] int maxAttackers = 2;    // сколько волков лезут в атаку одновременно
+    [SerializeField] int maxAttackers = 4;    // сколько волков грызут одновременно (захват — сверх этого, отдельной ролью)
     [SerializeField] float standoff = 4.5f;   // радиус кольца, на котором ждут не-атакующие
 
     static PackCoordinator instance;
