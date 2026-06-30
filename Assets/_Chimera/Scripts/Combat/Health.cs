@@ -40,9 +40,14 @@ public class Health : MonoBehaviour
         Debug.Log($"{name} +{Current - before} HP (лечение) → {Current}/{maxHealth}");
     }
 
-    public void TakeDamage(int amount)
+    public void TakeDamage(int amount) => TakeDamage(amount, false);
+
+    // ignoreInvuln — для урона, который должен пройти сквозь i-frames (напр. сам себя рвёшь из захвата рывком).
+    // Режим бога и смерть по-прежнему защищают.
+    public void TakeDamage(int amount, bool ignoreInvuln)
     {
-        if (dead || Invulnerable || GodMode || amount <= 0) return;
+        if (dead || GodMode || amount <= 0) return;
+        if (Invulnerable && !ignoreInvuln) return;
 
         amount = Mathf.Max(1, Mathf.RoundToInt(amount * (1f - DamageReduction))); // броня (слот «Кожа»)
         Current = Mathf.Max(0, Current - amount);

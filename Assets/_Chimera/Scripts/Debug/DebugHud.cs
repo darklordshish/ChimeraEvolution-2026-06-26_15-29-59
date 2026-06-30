@@ -34,6 +34,8 @@ public class DebugHud : MonoBehaviour
         GUI.Label(new Rect(14, 58, 760, 26), $"Шкала мозга: {(body != null ? body.BeastSlots : 0)}/{(body != null ? body.MaxSlots : 0)} звериных", style);
         GUI.Label(new Rect(14, 82, 760, 26), $"Пул мутагена: {(body != null ? body.PoolUsed : 0)}/{(body != null ? body.Pool : 0)}", style);
         GUI.Label(new Rect(14, 106, 760, 26), $"БОГ [G]: {(playerHealth != null && playerHealth.GodMode ? "ВКЛ" : "выкл")}", style);
-        GUI.Label(new Rect(14, 138, 760, 200), body != null ? body.SlotsInfo : "", style);
+        var pack = PackCoordinator.Instance;
+        GUI.Label(new Rect(14, 130, 760, 26), $"Стая: атакуют {pack.AttackerCount}/{pack.MaxAttackers}, захват: {(pack.GrabActive ? "да" : "нет")}", style);
+        GUI.Label(new Rect(14, 162, 760, 200), body != null ? body.SlotsInfo : "", style);
     }
 }

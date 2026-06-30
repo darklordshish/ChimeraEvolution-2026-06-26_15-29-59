@@ -18,6 +18,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] float dashSpeed = 20f;
     [SerializeField] float dashDuration = 0.18f;
     [SerializeField] float dashCooldown = 0.7f;
+    [SerializeField] int dashRipDamage = 6;       // урон волку, когда срываемся рывком с захвата
+    [SerializeField] int dashRipSelfDamage = 5;   // и себе — вырываться из пасти больно (минует i-frames рывка)
 
     [Header("Вид / прицел")]
     [SerializeField] float lookSensitivity = 0.1f;  // мышь, поворот в FPS
@@ -32,6 +34,8 @@ public class PlayerController : MonoBehaviour
     Vector3 velocity;
     float dashTimer, dashReadyAt;
     Vector3 dashDir;
+    IGrabber grabber;        // волк, держащий игрока в захвате
+    float grabSlow = 1f;     // множитель скорости, пока в захвате (1 = свободно)
 
     void Awake()
     {
@@ -105,9 +109,15 @@ public class PlayerController : MonoBehaviour
             dashTimer = dashDuration;
             dashReadyAt = Time.time + dashCooldown;
             dashDir = move.sqrMagnitude > 0.01f ? move.normalized : transform.forward;
+            if (grabber != null) // срываемся рывком: рвём волка и себя (сквозь i-frames рывка)
+            {
+                var g = grabber; grabber = null; grabSlow = 1f;
+                g.BreakFree(dashRipDamage);
+                if (health != null) health.TakeDamage(dashRipSelfDamage, true);
+            }
         }
 
-        Vector3 horizontal = dashTimer > 0f ? dashDir * dashSpeed : move * moveSpeed;
+        Vector3 horizontal = dashTimer > 0f ? dashDir * dashSpeed : move * moveSpeed * grabSlow;
         if (dashTimer > 0f) dashTimer -= Time.deltaTime;
         if (health != null) health.Invulnerable = dashTimer > 0f;
 
@@ -135,6 +145,10 @@ public class PlayerController : MonoBehaviour
 
     // слот «Чутьё»: быстрее откат рывка
     public void SetDashCooldown(float newCooldown) => dashCooldown = newCooldown;
+
+    // захват волком: режем скорость, пока висит; рывок/пинок снимают
+    public void ApplyGrab(IGrabber g, float slow) { grabber = g; grabSlow = Mathf.Clamp(slow, 0.05f, 1f); }
+    public void ReleaseGrab(IGrabber g) { if (ReferenceEquals(grabber, g)) { grabber = null; grabSlow = 1f; } }
 
     Vector3 AimDirection(Vector3 camF, Vector3 camR)
     {
