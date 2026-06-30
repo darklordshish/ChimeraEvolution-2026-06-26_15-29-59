@@ -15,7 +15,6 @@ public class PlayerDeath : MonoBehaviour
 
     void OnDeath()
     {
-        Debug.Log("Игрок погиб — перезапуск сцены");
         Time.timeScale = 1f; // на случай, если смерть совпала с хитстопом
 
         // отключаем управление и атаку, чтобы «труп» не бегал

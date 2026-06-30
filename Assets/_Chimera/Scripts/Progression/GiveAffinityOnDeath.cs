@@ -3,7 +3,7 @@ using UnityEngine;
 
 /// <summary>
 /// Стаб родства: при смерти этого существа начисляет родство с его видом.
-/// Пока просто копит счётчик и логает — полноценную экономику (скидки, конструктор) прикрутим позже.
+/// Полноценную экономику (скидки, конструктор) уже потребляет ChimeraBody.
 /// </summary>
 [RequireComponent(typeof(Health))]
 public class GiveAffinityOnDeath : MonoBehaviour
@@ -13,11 +13,7 @@ public class GiveAffinityOnDeath : MonoBehaviour
 
     void Awake() => GetComponent<Health>().onDeath.AddListener(Grant);
 
-    void Grant()
-    {
-        AffinityTracker.Add(species, amount);
-        Debug.Log($"+{amount} родство [{species}] → всего {AffinityTracker.Get(species)}");
-    }
+    void Grant() => AffinityTracker.Add(species, amount);
 }
 
 /// <summary>
@@ -38,4 +34,6 @@ public static class AffinityTracker
         values.TryGetValue(species, out int c);
         return c;
     }
+
+    public static void Set(string species, int value) => values[species] = Mathf.Max(0, value); // dev: выставить точно
 }

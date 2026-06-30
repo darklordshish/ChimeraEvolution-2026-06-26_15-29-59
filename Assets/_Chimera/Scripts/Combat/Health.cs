@@ -56,9 +56,7 @@ public class Health : MonoBehaviour
     public void Heal(int amount)
     {
         if (dead || amount <= 0) return;
-        int before = Current;
         Current = Mathf.Min(maxHealth, Current + amount);
-        Debug.Log($"{name} +{Current - before} HP (лечение) → {Current}/{maxHealth}");
     }
 
     public void TakeDamage(int amount) => TakeDamage(amount, false);
@@ -72,7 +70,6 @@ public class Health : MonoBehaviour
 
         amount = Mathf.Max(1, Mathf.RoundToInt(amount * (1f - DamageReduction))); // броня (слот «Кожа»)
         Current = Mathf.Max(0, Current - amount);
-        Debug.Log($"{name} получил {amount} урона → {Current}/{maxHealth}"); // временно — видно, что удар регистрируется
         onDamaged?.Invoke();
 
         if (Current == 0)

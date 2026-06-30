@@ -546,6 +546,8 @@ MonoBehaviour:
   dashSpeed: 20
   dashDuration: 0.18
   dashCooldown: 0.7
+  dashRipDamage: 6
+  dashRipSelfDamage: 5
   lookSensitivity: 0.1
   gamepadYawSpeed: 180
 --- !u!143 &1083135090
@@ -729,18 +731,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2518f7a3646f61e44b32984eb2d8fce2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ChimeraBody
-  species: "\u0412\u043E\u043B\u043A"
-  wolfTint: {r: 0.5, g: 0.38, b: 0.36, a: 1}
-  mutagenPool: 10
+  chassis: {fileID: 11400000, guid: f8bb6d7567aed7e4f878f0b59a0ea030, type: 2}
+  donors:
+  - {fileID: 11400000, guid: 0c6b11574869a6b44a321162414452d6, type: 2}
   discountPerAffinity: 0.01
   maxDiscount: 0.8
-  baseDamage: 10
-  baseRange: 1.6
-  baseAtkCooldown: 0.45
-  baseMoveSpeed: 6
-  baseDashSpeed: 20
-  baseDashCooldown: 0.7
-  baseMaxHp: 100
+  bonusStartAffinity: 80
+  bonusFullAffinity: 100
+  maxBonusMult: 2
 --- !u!114 &1083135099
 MonoBehaviour:
   m_ObjectHideFlags: 0

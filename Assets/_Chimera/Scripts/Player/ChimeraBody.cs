@@ -3,51 +3,41 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// Конструктор (срез) — data-driven аугументы, 6 слотов MVP (хоткеи 1–6).
-/// Экономика по GDD: ПУЛ мутагена = бюджет (ставить можно, пока сумма цен надетых ≤ пул);
-/// РОДСТВО = скидка на цену (больше родства-вида → дешевле его органы → влезает больше зверя).
-/// Тинт тела растёт по числу звериных слотов («шкала мозга»). Дальше: нормальный UI, лаборатория-зона.
+/// Конструктор. ШАССИ (SpeciesSO) задаёт слоты + пул + органы по умолчанию (человеческие);
+/// ДОНОРЫ дают звериные альтернативы. Чистый человек = все слоты человеческими органами;
+/// химеризация = в слоте заменить человеческий орган звериным (хоткеи 1–6).
+/// Статы = сумма надетых органов по слотам (каждый стат «принадлежит» своему слоту).
+/// Родство: фаза 1 (0–80) — скидка на цену; фаза 2 (80–100) — множитель «звериной» части
+/// (насколько орган уходит от человеческого). Дальность из-под множителя исключена. Тинт по числу звериных слотов.
 /// </summary>
 [RequireComponent(typeof(PlayerAttack))]
 [RequireComponent(typeof(PlayerController))]
 [RequireComponent(typeof(Health))]
 public class ChimeraBody : MonoBehaviour
 {
-    [SerializeField] string species = "Волк";
-    [SerializeField] Color wolfTint = new Color(0.5f, 0.38f, 0.36f); // цвет при полном озверении
+    [Header("Виды")]
+    [SerializeField] SpeciesSO chassis;    // базовое тело (MVP: Человек) — слоты, пул, дефолт-органы
+    [SerializeField] SpeciesSO[] donors;   // доноры органов (MVP: [Волк])
 
-    [Header("Экономика — фаза 1: скидка (0…80 родства)")]
-    [SerializeField] int mutagenPool = 10;              // бюджет очков
-    [SerializeField] float discountPerAffinity = 0.01f; // −1% к цене за единицу родства (потолок к ~80 родства)
-    [SerializeField] float maxDiscount = 0.8f;          // при 80 родства все 6 органов влезают (~7/10)
+    [Header("Родство — фаза 1: скидка (0…80)")]
+    [SerializeField] float discountPerAffinity = 0.01f; // −1% к цене за единицу родства
+    [SerializeField] float maxDiscount = 0.8f;          // потолок скидки на ~80 родства
 
-    [Header("Экономика — фаза 2: мощь (80…100 родства)")]
-    [SerializeField] float bonusStartAffinity = 80f;    // ниже — бонус ×1; здесь скидка уже на капе
-    [SerializeField] float bonusFullAffinity = 100f;    // полное родство — бонус на максимуме
-    [SerializeField] float maxBonusMult = 2f;           // эффекты органов ×2 на 100 родства (×1.5 на 90)
+    [Header("Родство — фаза 2: мощь (80…100)")]
+    [SerializeField] float bonusStartAffinity = 80f;
+    [SerializeField] float bonusFullAffinity = 100f;
+    [SerializeField] float maxBonusMult = 2f;           // звериная часть органа ×2 на 100 родства
 
-    [Header("База (человек)")]
-    [SerializeField] int baseDamage = 10;
-    [SerializeField] float baseRange = 1.6f;
-    [SerializeField] float baseAtkCooldown = 0.45f;
-    [SerializeField] float baseMoveSpeed = 6f;
-    [SerializeField] float baseDashSpeed = 20f;
-    [SerializeField] float baseDashCooldown = 0.7f;
-    [SerializeField] int baseMaxHp = 100;
-    [SerializeField] float baseRegenOOC = 1f;   // человек: медленный реген вне боя (1/с)
-
-    class Augment
+    class Slot
     {
-        public string name, key;
-        public int cost; // базовая цена в пуле
-        public int dDamage, dMaxHp, dLifeSteal;
-        public float dRange, dAtkCd, dMove, dDash, dDashCd, dReduce, dRegen;
-        public bool enablesBite;
+        public string name, hotkey, donorSpecies;
+        public Organ human;       // орган шасси (дефолт слота)
+        public Organ beast;       // орган донора (альтернатива) или null
         public InputAction action;
-        public bool equipped;
+        public bool installed;    // надет звериный?
     }
 
-    Augment[] augments;
+    Slot[] slots;
     PlayerAttack attack;
     PlayerController move;
     Health health;
@@ -55,34 +45,40 @@ public class ChimeraBody : MonoBehaviour
     Renderer[] renderers;
     Color[] baseColors;
     MaterialPropertyBlock mpb;
+    int lastAffinitySum = -1;
     static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
 
-    public int Pool => mutagenPool;
-    public int PoolUsed { get { int s = 0; if (augments != null) foreach (var a in augments) if (a.equipped) s += EffectiveCost(a); return s; } }
-    public int MaxSlots => augments != null ? augments.Length : 0;
-    public int BeastSlots { get { int n = 0; if (augments != null) foreach (var a in augments) if (a.equipped) n++; return n; } }
+    public int Pool => chassis != null ? chassis.mutagenPool : 0;
+    public int PoolUsed { get { int s = 0; if (slots != null) foreach (var sl in slots) if (sl.installed && sl.beast != null) s += EffectiveCost(sl); return s; } }
+    public int MaxSlots => slots != null ? slots.Length : 0;
+    public int BeastSlots { get { int n = 0; if (slots != null) foreach (var sl in slots) if (sl.installed) n++; return n; } }
+    public float BonusMult => donors != null && donors.Length > 0 && donors[0] != null ? BonusMultiplier(donors[0].speciesName) : 1f;
 
     public string SlotsInfo
     {
         get
         {
-            if (augments == null) return "";
+            if (slots == null) return "";
             var lines = new List<string>();
-            foreach (var a in augments)
-                lines.Add($"{a.key} {a.name} — {EffectiveCost(a)}{(a.equipped ? "  ✓" : "")}");
+            foreach (var sl in slots)
+            {
+                string cur = sl.installed && sl.beast != null ? sl.beast.organName : sl.human.organName;
+                string cost = sl.beast != null ? $" — {EffectiveCost(sl)}" : "";
+                lines.Add($"{sl.hotkey} {sl.name}: {cur}{cost}{(sl.installed ? "  ✓" : "")}");
+            }
             return string.Join("\n", lines);
         }
     }
 
-    int EffectiveCost(Augment a)
+    int EffectiveCost(Slot sl)
     {
-        float discount = Mathf.Clamp(AffinityTracker.Get(species) * discountPerAffinity, 0f, maxDiscount);
-        return Mathf.Max(1, Mathf.CeilToInt(a.cost * (1f - discount)));
+        if (sl.beast == null) return 0;
+        float discount = Mathf.Clamp(AffinityTracker.Get(sl.donorSpecies) * discountPerAffinity, 0f, maxDiscount);
+        return Mathf.Max(1, Mathf.CeilToInt(sl.beast.cost * (1f - discount)));
     }
 
-    // Фаза 2: множитель эффектов органов. ×1 до bonusStartAffinity, линейно до maxBonusMult к bonusFullAffinity.
-    public float BonusMult => BonusMultiplier();
-    float BonusMultiplier()
+    // Фаза 2: множитель звериной части. ×1 до bonusStartAffinity, линейно до maxBonusMult к bonusFullAffinity.
+    float BonusMultiplier(string species)
     {
         float span = Mathf.Max(1f, bonusFullAffinity - bonusStartAffinity);
         float t = Mathf.Clamp01((AffinityTracker.Get(species) - bonusStartAffinity) / span);
@@ -96,20 +92,7 @@ public class ChimeraBody : MonoBehaviour
         health = GetComponent<Health>();
         bite = GetComponent<PlayerBite>();
 
-        augments = new[]
-        {
-            new Augment { name = "Когти",  key = "1", cost = 4, dDamage = 8, dRange = -0.1f },
-            new Augment { name = "Ноги",   key = "2", cost = 4, dMove = 3f, dDash = 10f },
-            new Augment { name = "Сердце", key = "3", cost = 6, dAtkCd = -0.15f, dMaxHp = 50, dRegen = 2f },
-            new Augment { name = "Чутьё",  key = "4", cost = 3, dDashCd = -0.25f },
-            new Augment { name = "Пасть",  key = "5", cost = 5, enablesBite = true },
-            new Augment { name = "Шкура",  key = "6", cost = 4, dReduce = 0.3f },
-        };
-        foreach (var a in augments)
-        {
-            a.action = new InputAction(a.name, InputActionType.Button);
-            a.action.AddBinding($"<Keyboard>/{a.key}");
-        }
+        BuildSlots();
 
         renderers = GetComponentsInChildren<Renderer>();
         baseColors = new Color[renderers.Length];
@@ -121,59 +104,109 @@ public class ChimeraBody : MonoBehaviour
         }
     }
 
-    void OnEnable() { foreach (var a in augments) a.action.Enable(); }
-    void OnDisable() { foreach (var a in augments) a.action.Disable(); }
+    // Слоты собираем из органов шасси; к каждому подбираем звериную альтернативу из доноров по имени слота.
+    void BuildSlots()
+    {
+        if (chassis == null || chassis.organs == null)
+        {
+            slots = new Slot[0];
+            Debug.LogWarning("ChimeraBody: не назначено шасси (SpeciesSO). Конструктор спит — компоненты работают на своих значениях.");
+            return;
+        }
 
-    void Start() => Recompute(); // выставить базу (человек)
+        var list = new List<Slot>();
+        foreach (var h in chassis.organs)
+        {
+            var sl = new Slot { name = h.slot, human = h };
+            if (donors != null)
+                foreach (var d in donors)
+                {
+                    if (d == null || d.organs == null) continue;
+                    foreach (var o in d.organs)
+                        if (o.slot == h.slot) { sl.beast = o; sl.donorSpecies = d.speciesName; break; }
+                    if (sl.beast != null) break;
+                }
 
-    int lastAffinity = -1;
+            sl.hotkey = sl.beast != null ? sl.beast.hotkey : h.hotkey;
+            if (sl.beast != null && !string.IsNullOrEmpty(sl.hotkey))
+            {
+                sl.action = new InputAction(sl.name, InputActionType.Button);
+                sl.action.AddBinding($"<Keyboard>/{sl.hotkey}");
+            }
+            list.Add(sl);
+        }
+        slots = list.ToArray();
+    }
+
+    void OnEnable() { if (slots != null) foreach (var sl in slots) sl.action?.Enable(); }
+    void OnDisable() { if (slots != null) foreach (var sl in slots) sl.action?.Disable(); }
+
+    void Start() => Recompute();
 
     void Update()
     {
-        foreach (var a in augments)
-            if (a.action.WasPressedThisFrame()) Toggle(a);
+        if (slots != null)
+            foreach (var sl in slots)
+                if (sl.action != null && sl.action.WasPressedThisFrame()) Toggle(sl);
 
-        // родство выросло (убил волка) → пересчитать скидку/множитель бонусов
-        int aff = AffinityTracker.Get(species);
-        if (aff != lastAffinity) { lastAffinity = aff; Recompute(); }
+        int affSum = AffinitySum();
+        if (affSum != lastAffinitySum) { lastAffinitySum = affSum; Recompute(); } // родство выросло → пересчёт
     }
 
-    void Toggle(Augment a)
+    int AffinitySum()
     {
-        if (!a.equipped)
-        {
-            int cost = EffectiveCost(a);
-            if (PoolUsed + cost > mutagenPool)
-            {
-                Debug.Log($"Не хватает пула для «{a.name}»: нужно {cost}, свободно {mutagenPool - PoolUsed}");
-                return;
-            }
-        }
-        a.equipped = !a.equipped;
-        Debug.Log((a.equipped ? "Поставлен орган: " : "Снят орган: ") + a.name);
+        int s = 0;
+        if (donors != null) foreach (var d in donors) if (d != null) s += AffinityTracker.Get(d.speciesName);
+        return s;
+    }
+
+    void Toggle(Slot sl)
+    {
+        if (sl.beast == null) return;
+        if (!sl.installed && PoolUsed + EffectiveCost(sl) > Pool) return; // не хватает пула
+        sl.installed = !sl.installed;
         Recompute();
     }
 
     void Recompute()
     {
-        float mult = BonusMultiplier(); // родство 80→100 усиливает эффекты органов (×1 … ×2; на 90 ×1.5)
+        if (slots == null || slots.Length == 0) return; // нет данных — не трогаем статы компонентов
 
-        int dmg = baseDamage, maxHp = baseMaxHp, life = 0, beast = 0;
-        float rng = baseRange, atkCd = baseAtkCooldown, mv = baseMoveSpeed, dash = baseDashSpeed, dashCd = baseDashCooldown, reduce = 0f, regen = 0f;
+        int dmg = 0, maxHp = 0, life = 0, beast = 0;
+        float rng = 0f, atkCd = 0f, mv = 0f, dash = 0f, dashCd = 0f, reduce = 0f, regen = 0f, regenOOC = 0f;
         bool biteOn = false;
 
-        foreach (var a in augments)
+        foreach (var sl in slots)
         {
-            if (!a.equipped) continue;
-            dmg += Mathf.RoundToInt(a.dDamage * mult); maxHp += Mathf.RoundToInt(a.dMaxHp * mult); life += Mathf.RoundToInt(a.dLifeSteal * mult);
-            rng += a.dRange; // дальность не масштабируем — остаётся фикс. трейдофф когтя
-            atkCd += a.dAtkCd * mult; mv += a.dMove * mult; dash += a.dDash * mult; dashCd += a.dDashCd * mult; reduce += a.dReduce * mult; regen += a.dRegen * mult;
-            if (a.enablesBite) biteOn = true;
-            beast++;
+            Organ h = sl.human;
+            if (sl.installed && sl.beast != null)
+            {
+                Organ b = sl.beast;
+                float m = BonusMultiplier(sl.donorSpecies);
+                dmg += Mathf.RoundToInt(Blend(h.damage, b.damage, m));
+                maxHp += Mathf.RoundToInt(Blend(h.maxHp, b.maxHp, m));
+                life += Mathf.RoundToInt(Blend(h.lifeSteal, b.lifeSteal, m));
+                rng += b.range; // дальность не масштабируем — фикс. трейдофф
+                atkCd += Blend(h.atkCooldown, b.atkCooldown, m);
+                mv += Blend(h.moveSpeed, b.moveSpeed, m);
+                dash += Blend(h.dashSpeed, b.dashSpeed, m);
+                dashCd += Blend(h.dashCooldown, b.dashCooldown, m);
+                reduce += Blend(h.damageReduction, b.damageReduction, m);
+                regen += Blend(h.regen, b.regen, m);
+                regenOOC += Blend(h.regenOOC, b.regenOOC, m);
+                if (b.enablesBite) biteOn = true;
+                beast++;
+            }
+            else
+            {
+                dmg += h.damage; maxHp += h.maxHp; life += h.lifeSteal;
+                rng += h.range; atkCd += h.atkCooldown; mv += h.moveSpeed; dash += h.dashSpeed;
+                dashCd += h.dashCooldown; reduce += h.damageReduction; regen += h.regen; regenOOC += h.regenOOC;
+                if (h.enablesBite) biteOn = true;
+            }
         }
 
         if (bite != null) bite.BiteEnabled = biteOn;
-
         attack.SetMelee(dmg, Mathf.Max(0.5f, rng));
         attack.SetCooldown(Mathf.Max(0.05f, atkCd));
         attack.SetLifeSteal(life);
@@ -181,20 +214,24 @@ public class ChimeraBody : MonoBehaviour
         move.SetDashCooldown(Mathf.Max(0.05f, dashCd));
         health.SetMaxHealth(maxHp);
         health.DamageReduction = Mathf.Clamp01(reduce);
-        health.RegenPerSecond = regen;         // слот «Сердце»: реген всегда (в т.ч. в бою)
-        health.OutOfCombatRegen = baseRegenOOC; // человек: реген вне боя
+        health.RegenPerSecond = regen;
+        health.OutOfCombatRegen = regenOOC;
 
         UpdateTint(beast);
     }
 
+    // человеч.значение + (звериное − человеч.) × множитель: на ×1 = звериное, на ×2 = вдвое дальше от человека
+    static float Blend(float human, float beast, float mult) => human + (beast - human) * mult;
+
     void UpdateTint(int beast)
     {
+        Color target = donors != null && donors.Length > 0 && donors[0] != null ? donors[0].tint : Color.gray;
         float k = MaxSlots > 0 ? (float)beast / MaxSlots : 0f;
         for (int i = 0; i < renderers.Length; i++)
         {
             if (renderers[i] == null) continue;
             renderers[i].GetPropertyBlock(mpb);
-            mpb.SetColor(BaseColor, Color.Lerp(baseColors[i], wolfTint, k));
+            mpb.SetColor(BaseColor, Color.Lerp(baseColors[i], target, k));
             renderers[i].SetPropertyBlock(mpb);
         }
     }

@@ -43,6 +43,8 @@ public class WolfSpawner : MonoBehaviour
         alive.Add(wolf);
     }
 
+    public void SpawnBurst(int n) { for (int i = 0; i < n; i++) TrySpawn(); } // dev: разовый наброс сверх лимита
+
     Vector3 PickSpawnPoint()
     {
         for (int attempt = 0; attempt < 10; attempt++)

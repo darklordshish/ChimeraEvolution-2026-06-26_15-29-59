@@ -15,7 +15,6 @@ public class DebugHud : MonoBehaviour
     {
         var pc = FindAnyObjectByType<PlayerController>();
         if (pc != null) { playerHealth = pc.GetComponent<Health>(); body = pc.GetComponent<ChimeraBody>(); }
-        Debug.Log($"DebugHud старт. Игрок найден: {pc != null}, Health на игроке: {playerHealth != null}");
     }
 
     void Update()
