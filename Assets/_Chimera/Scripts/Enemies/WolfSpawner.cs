@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
 /// <summary>
 /// Спавнит волков вокруг себя и поддерживает их количество (досыпает по мере гибели).
@@ -47,12 +48,13 @@ public class WolfSpawner : MonoBehaviour
 
     Vector3 PickSpawnPoint()
     {
-        for (int attempt = 0; attempt < 10; attempt++)
+        for (int attempt = 0; attempt < 20; attempt++)
         {
             Vector2 c = Random.insideUnitCircle * spawnRadius;
             Vector3 p = transform.position + new Vector3(c.x, 0f, c.y);
-            if (player == null || Vector3.Distance(p, player.position) >= minDistanceFromPlayer)
-                return new Vector3(p.x, transform.position.y, p.z);
+            if (!NavMesh.SamplePosition(p, out var hit, 4f, NavMesh.AllAreas)) continue; // спавним на навмеш, не в стену
+            if (player == null || Vector3.Distance(hit.position, player.position) >= minDistanceFromPlayer)
+                return hit.position;
         }
         return transform.position;
     }

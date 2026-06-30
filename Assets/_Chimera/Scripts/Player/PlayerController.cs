@@ -32,7 +32,7 @@ public class PlayerController : MonoBehaviour
     InputAction moveAction, lookAction, dashAction, toggleViewAction;
     Camera cam;
     Vector3 velocity;
-    float dashTimer, dashReadyAt;
+    float dashTimer, dashReadyAt, groundY;
     Vector3 dashDir;
     IGrabber grabber;        // волк, держащий игрока в захвате
     float grabSlow = 1f;     // множитель скорости, пока в захвате (1 = свободно)
@@ -63,7 +63,7 @@ public class PlayerController : MonoBehaviour
         toggleViewAction.AddBinding("<Gamepad>/buttonNorth");
     }
 
-    void Start() { cam = Camera.main; SetFirstPerson(false); }
+    void Start() { cam = Camera.main; groundY = transform.position.y; SetFirstPerson(false); }
 
     void OnEnable() { moveAction.Enable(); lookAction.Enable(); dashAction.Enable(); toggleViewAction.Enable(); }
     void OnDisable() { moveAction.Disable(); lookAction.Disable(); dashAction.Disable(); toggleViewAction.Disable(); }
@@ -127,6 +127,12 @@ public class PlayerController : MonoBehaviour
         Vector3 motion = horizontal;
         motion.y = velocity.y;
         controller.Move(motion * Time.deltaTime);
+
+        if (transform.position.y < groundY - 3f) // провалились сквозь пол (стая продавила) — возвращаем
+        {
+            var p = transform.position; p.y = groundY; transform.position = p;
+            velocity.y = 0f;
+        }
     }
 
     void SetFirstPerson(bool on)

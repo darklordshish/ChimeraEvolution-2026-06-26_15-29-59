@@ -12,6 +12,7 @@ public class PackCoordinator : MonoBehaviour
 {
     [SerializeField] int maxAttackers = 4;    // сколько волков грызут одновременно (захват — сверх этого, отдельной ролью)
     [SerializeField] float standoff = 4.5f;   // радиус кольца, на котором ждут не-атакующие
+    [SerializeField] float alertMemory = 8f;  // сколько стая «помнит» игрока после последнего обнаружения
 
     static PackCoordinator instance;
     public static PackCoordinator Instance
@@ -33,10 +34,17 @@ public class PackCoordinator : MonoBehaviour
     WolfAI grabber;
     Transform player;
     Health playerHealth;
+    Vector3 lastKnownPlayerPos;
+    float alertUntil;
 
     public int AttackerCount => attackers.Count;
     public int MaxAttackers => maxAttackers;
     public bool GrabActive => grabber != null;
+
+    // тревога стаи: любой увидевший игрока поднимает всю стаю на охоту к последней известной позиции
+    public bool Alerted => Time.time < alertUntil;
+    public Vector3 LastKnownPlayerPos => lastKnownPlayerPos;
+    public void ReportSighting(Vector3 pos) { lastKnownPlayerPos = pos; alertUntil = Time.time + alertMemory; }
 
     Transform Player
     {

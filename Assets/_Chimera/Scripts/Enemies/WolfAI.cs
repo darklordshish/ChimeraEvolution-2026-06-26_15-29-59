@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.AI;
 
 /// <summary>
 /// Волк без NavMesh. Приёмы: УКУС вблизи (красный телеграф), ПРЫЖОК со средней дистанции (оранжевый),
@@ -15,7 +16,11 @@ public class WolfAI : MonoBehaviour, IGrabber
     [SerializeField] float rotationSpeed = 250f;
     [SerializeField] float gravity = -20f;
     [SerializeField] float sightRange = 25f;
-    [SerializeField] float hpRegen = 1f;   // постоянная регенерация HP волка (живучесть стаи)
+    [SerializeField] float hpRegen = 1f;       // постоянная регенерация HP волка (живучесть стаи)
+    [SerializeField] float pathInterval = 0.2f; // как часто пересчитывать путь NavMesh
+    [SerializeField] float pathDirectRange = 5f; // ближе этого к цели — ведём напрямую (без пафайндинга)
+    [SerializeField] float wanderRadius = 15f;  // радиус случайного блуждания в покое
+    [SerializeField, Range(0f, 1f)] float wanderSpeed = 0.5f; // доля скорости при спокойном блуждании
 
     [Header("Укус (ближний)")]
     [SerializeField] float attackRange = 2.0f;
@@ -75,6 +80,11 @@ public class WolfAI : MonoBehaviour, IGrabber
     Kind pendingKind;
     Color activeTelegraph;
     Vector3 leapVel;
+    NavMeshPath navPath;
+    float nextPathTime;
+    Vector3 cachedNavDir;
+    Vector3 wanderTarget;
+    float nextWanderTime;
 
     public bool Engaged { get; private set; } // игрок в поле зрения = волк агрессивен/нацелен (для «вне боя» игрока)
 
@@ -84,6 +94,7 @@ public class WolfAI : MonoBehaviour, IGrabber
         stagger = GetComponent<Stagger>();
         knockback = GetComponent<Knockback>();
         ownHealth = GetComponent<Health>();
+        navPath = new NavMeshPath();
 
         renderers = GetComponentsInChildren<Renderer>();
         baseColors = new Color[renderers.Length];
@@ -121,6 +132,7 @@ public class WolfAI : MonoBehaviour, IGrabber
         if (target == null) { Engaged = false; Disengage(0f); Settle(Vector3.zero); return; }
 
         Engaged = (target.position - transform.position).sqrMagnitude <= sightRange * sightRange;
+        if (Engaged) pack.ReportSighting(target.position); // увидел игрока → поднимаю всю стаю
 
         // пинок рвёт всё (включая захват): волк полностью теряет управление, пока летит
         if (knockback != null && knockback.IsActive) { leaping = false; Disengage(attackCooldown); return; }
@@ -146,7 +158,17 @@ public class WolfAI : MonoBehaviour, IGrabber
 
         if (windingUp) { UpdateWindup(dist, dir, inCone); return; }
 
-        if (dist > sightRange) { if (hasToken) ReleaseToken(); Settle(Vector3.zero); return; }
+        // не вижу игрока: стая в тревоге → иду к последней известной позиции; иначе спокойно брожу. Не стою столбом.
+        if (!Engaged)
+        {
+            if (hasToken) ReleaseToken();
+            bool hunt = pack.Alerted && (pack.LastKnownPlayerPos - transform.position).sqrMagnitude > 9f;
+            Vector3 mv = NavDir(hunt ? pack.LastKnownPlayerPos : WanderTarget());
+            if (mv.sqrMagnitude > 0.001f)
+                transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(mv), rotationSpeed * Time.deltaTime);
+            Settle(mv * moveSpeed * (hunt ? 1f : wanderSpeed) + Separation());
+            return;
+        }
 
         // доворот мордой к цели (даже когда кружим — выглядит как преследование)
         transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(dir), rotationSpeed * Time.deltaTime);
@@ -175,16 +197,12 @@ public class WolfAI : MonoBehaviour, IGrabber
             if (dist >= leapMinRange && dist <= leapRange) { BeginAttack(Kind.Leap); Settle(Vector3.zero); return; }
         }
 
-        // движение: с жетоном — рвёмся в упор; без — кружим в своём слоте окружения
+        // движение: с жетоном — рвёмся в упор; без — кружим к слоту окружения
         Vector3 horizontal;
         if (hasToken)
-            horizontal = (dist > attackRange ? dir * moveSpeed : Vector3.zero) + Separation();
+            horizontal = (dist > attackRange ? NavDir(target.position) * moveSpeed : Vector3.zero) + Separation();
         else
-        {
-            Vector3 toSlot = pack.SlotPoint(this) - transform.position; toSlot.y = 0f;
-            Vector3 slotDir = toSlot.sqrMagnitude > 0.04f ? toSlot.normalized : Vector3.zero;
-            horizontal = slotDir * moveSpeed * circleSpeed + Separation();
-        }
+            horizontal = NavDir(pack.SlotPoint(this)) * moveSpeed * circleSpeed + Separation();
         Settle(horizontal);
     }
 
@@ -310,6 +328,46 @@ public class WolfAI : MonoBehaviour, IGrabber
         }
     }
 
+    // направление движения с учётом стен: к следующему углу пути NavMesh (троттлинг), фолбэк — прямо
+    Vector3 NavDir(Vector3 dest)
+    {
+        Vector3 flat = dest - transform.position; flat.y = 0f;
+        // вблизи цели — прямое направление (стен между нами нет): без рывков от пересчёта пути
+        if (flat.sqrMagnitude < pathDirectRange * pathDirectRange)
+            return flat.sqrMagnitude > 0.01f ? flat.normalized : transform.forward;
+
+        if (Time.time >= nextPathTime)
+        {
+            nextPathTime = Time.time + pathInterval;
+            cachedNavDir = ComputeNavDir(dest);
+        }
+        return cachedNavDir;
+    }
+
+    Vector3 ComputeNavDir(Vector3 dest)
+    {
+        if (NavMesh.CalculatePath(transform.position, dest, NavMesh.AllAreas, navPath) && navPath.corners.Length > 1)
+        {
+            Vector3 d = navPath.corners[1] - transform.position; d.y = 0f;
+            if (d.sqrMagnitude > 0.01f) return d.normalized;
+        }
+        Vector3 fb = dest - transform.position; fb.y = 0f;
+        return fb.sqrMagnitude > 0.01f ? fb.normalized : transform.forward;
+    }
+
+    // случайная точка на навмеше для спокойного блуждания (меняется по таймеру или при достижении)
+    Vector3 WanderTarget()
+    {
+        if (Time.time >= nextWanderTime || (wanderTarget - transform.position).sqrMagnitude < 4f)
+        {
+            nextWanderTime = Time.time + Random.Range(2f, 5f);
+            Vector2 c = Random.insideUnitCircle * wanderRadius;
+            Vector3 cand = transform.position + new Vector3(c.x, 0f, c.y);
+            wanderTarget = NavMesh.SamplePosition(cand, out var hit, 4f, NavMesh.AllAreas) ? hit.position : transform.position;
+        }
+        return wanderTarget;
+    }
+
     Vector3 Separation()
     {
         Vector3 push = Vector3.zero;
@@ -322,9 +380,9 @@ public class WolfAI : MonoBehaviour, IGrabber
             Vector3 away = transform.position - col.transform.position;
             away.y = 0f;
             float d = away.magnitude;
-            if (d > 0.001f) push += away / (d * d);
+            if (d > 0.001f) push += away.normalized / Mathf.Max(d, 0.7f); // пол по дистанции — не взрывается вплотную
         }
-        return push * separationStrength;
+        return Vector3.ClampMagnitude(push * separationStrength, moveSpeed); // кап силы — без радиальных рывков
     }
 
     void Settle(Vector3 horizontal)
