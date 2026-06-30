@@ -1,5 +1,6 @@
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.AI;
 
 /// <summary>
 /// Dev-панель: докаемое окно с кнопками для быстрой итерации (родство, игрок, волки).
@@ -73,5 +74,28 @@ public class ChimeraDevWindow : EditorWindow
                 foreach (var w in wolves)
                     if (w.TryGetComponent<Health>(out var h)) h.TakeDamage(99999, true);
         }
+
+        // ── Босс ──
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Босс — Вервольф", EditorStyles.boldLabel);
+        var boss = Object.FindAnyObjectByType<WerewolfBoss>();
+        if (boss != null && boss.TryGetComponent<Health>(out var bh))
+            EditorGUILayout.LabelField($"HP {bh.Current}/{bh.Max}{(bh.Current > bh.Max ? $"  (+{bh.Current - bh.Max} temp)" : "")}");
+        using (new EditorGUI.DisabledScope(boss != null))
+            if (GUILayout.Button("Спавн Вервольфа")) SpawnWerewolf();
+        if (boss != null && GUILayout.Button("Убить босса") && boss.TryGetComponent<Health>(out var bk))
+            bk.TakeDamage(999999, true);
+    }
+
+    static void SpawnWerewolf()
+    {
+        var pc = Object.FindAnyObjectByType<PlayerController>();
+        Vector3 pos = (pc != null ? pc.transform.position : Vector3.zero) + new Vector3(14f, 0f, 0f);
+        if (NavMesh.SamplePosition(pos, out var hit, 10f, NavMesh.AllAreas)) pos = hit.position;
+
+        // префаб (с твоим тюнингом), если создан через «Chimera → Создать префаб Вервольфа»; иначе — сборка с нуля
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(WerewolfPrefab.Path);
+        var go = prefab != null ? Object.Instantiate(prefab) : WerewolfPrefab.BuildWerewolf();
+        go.transform.position = pos;
     }
 }

@@ -16,6 +16,8 @@ public class PlayerBite : MonoBehaviour
     [SerializeField] float cooldown = 0.7f;
     [SerializeField] int lifeSteal = 6;    // лечение за результативный укус
     [SerializeField] float shake = 0.2f;
+    [SerializeField, Range(0f, 1f)] float regenDebuff = 0.5f; // укус сбивает реген цели (×0.5)
+    [SerializeField] float regenDebuffTime = 3f;
 
     public bool BiteEnabled { get; set; }  // включается слотом «Пасть»
 
@@ -61,6 +63,7 @@ public class PlayerBite : MonoBehaviour
             var hp = col.GetComponentInParent<Health>();
             if (hp == null || hp.transform == transform || !hitThisBite.Add(hp)) continue;
             hp.TakeDamage(damage);
+            hp.SuppressRegen(regenDebuff, regenDebuffTime); // сбиваем реген цели (контр-сустейн против босса)
             hits++;
         }
 

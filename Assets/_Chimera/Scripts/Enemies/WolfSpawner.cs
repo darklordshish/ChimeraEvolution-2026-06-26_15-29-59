@@ -46,6 +46,22 @@ public class WolfSpawner : MonoBehaviour
 
     public void SpawnBurst(int n) { for (int i = 0; i < n; i++) TrySpawn(); } // dev: разовый наброс сверх лимита
 
+    // призыв стаи вокруг точки (вой босса): на навмеш, кольцом радиусом 3..7
+    public void SpawnAt(Vector3 center, int n)
+    {
+        if (wolfPrefab == null) return;
+        for (int i = 0; i < n; i++)
+        {
+            Vector3 p = center;
+            for (int a = 0; a < 12; a++)
+            {
+                Vector2 c = Random.insideUnitCircle.normalized * Random.Range(3f, 7f);
+                if (NavMesh.SamplePosition(center + new Vector3(c.x, 0f, c.y), out var hit, 4f, NavMesh.AllAreas)) { p = hit.position; break; }
+            }
+            alive.Add(Instantiate(wolfPrefab, p, Quaternion.identity));
+        }
+    }
+
     Vector3 PickSpawnPoint()
     {
         for (int attempt = 0; attempt < 20; attempt++)

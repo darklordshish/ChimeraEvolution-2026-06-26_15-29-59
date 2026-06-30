@@ -18,12 +18,14 @@ public class Health : MonoBehaviour
     public float RegenPerSecond { get; set; }    // реген всегда, в т.ч. в бою (слот «Сердце»; волки)
     public float OutOfCombatRegen { get; set; }  // реген только вне боя (база человека)
     public bool InCombat { get; set; }           // «в бою» = есть агрессивный враг, нацеленный на тебя (ставит PackCoordinator)
+    public int OverhealCap { get; set; }         // на сколько можно перелечиться свыше макс. (temp HP боссa; не регенится)
 
-    public UnityEvent onDamaged;
-    public UnityEvent onDeath;
+    public UnityEvent onDamaged = new(); // = new(), чтобы не были null при AddComponent в рантайме (босс)
+    public UnityEvent onDeath = new();
 
     bool dead;
     float regenAccum;
+    float regenSuppressUntil, regenSuppressFactor = 1f; // дебафф регена (укус Пасти игрока)
 
     void Awake() => Current = maxHealth;
 
@@ -33,6 +35,7 @@ public class Health : MonoBehaviour
         if (dead || Current >= maxHealth) return;
         float rate = RegenPerSecond;
         if (!InCombat) rate += OutOfCombatRegen;
+        if (Time.time < regenSuppressUntil) rate *= regenSuppressFactor; // сбит укусом Пасти
         if (rate <= 0f) return;
 
         regenAccum += rate * Time.deltaTime;
@@ -56,8 +59,17 @@ public class Health : MonoBehaviour
     public void Heal(int amount)
     {
         if (dead || amount <= 0) return;
-        Current = Mathf.Min(maxHealth, Current + amount);
+        Current = Mathf.Min(maxHealth + OverhealCap, Current + amount); // вампиризм может уйти свыше макс. (temp HP)
     }
+
+    // временно сбить реген цели (укус Пасти): factor<1 уменьшает реген на duration секунд (рефрешится)
+    public void SuppressRegen(float factor, float duration)
+    {
+        regenSuppressFactor = Mathf.Clamp01(factor);
+        regenSuppressUntil = Time.time + duration;
+    }
+
+    public void ClearOverheal() { if (Current > maxHealth) Current = maxHealth; } // сброс temp HP (босс потерял цель)
 
     public void TakeDamage(int amount) => TakeDamage(amount, false);
 
