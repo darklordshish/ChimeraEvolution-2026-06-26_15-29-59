@@ -49,7 +49,8 @@ public class ChimeraBody : MonoBehaviour
     static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
 
     public int Pool => chassis != null ? chassis.mutagenPool : 0;
-    public int PoolUsed { get { int s = 0; if (slots != null) foreach (var sl in slots) if (sl.installed && sl.beast != null) s += EffectiveCost(sl); return s; } }
+    public int PoolUsed { get { int s = 0; if (slots != null) foreach (var sl in slots) s += SlotCost(sl); return s; } }
+    int SlotCost(Slot sl) => sl.installed && sl.beast != null ? EffectiveCost(sl) : (sl.human != null ? sl.human.cost : 0); // каждый слот занимает пул (человеческий орган тоже)
     public int MaxSlots => slots != null ? slots.Length : 0;
     public int BeastSlots { get { int n = 0; if (slots != null) foreach (var sl in slots) if (sl.installed) n++; return n; } }
     public float BonusMult => donors != null && donors.Length > 0 && donors[0] != null ? BonusMultiplier(donors[0].speciesName) : 1f;
@@ -63,8 +64,7 @@ public class ChimeraBody : MonoBehaviour
             foreach (var sl in slots)
             {
                 string cur = sl.installed && sl.beast != null ? sl.beast.organName : sl.human.organName;
-                string cost = sl.beast != null ? $" — {EffectiveCost(sl)}" : "";
-                lines.Add($"{sl.hotkey} {sl.name}: {cur}{cost}{(sl.installed ? "  ✓" : "")}");
+                lines.Add($"{sl.hotkey} {sl.name}: {cur} ({SlotCost(sl)}){(sl.installed ? "  ✓" : "")}");
             }
             return string.Join("\n", lines);
         }
@@ -163,7 +163,11 @@ public class ChimeraBody : MonoBehaviour
     void Toggle(Slot sl)
     {
         if (sl.beast == null) return;
-        if (!sl.installed && PoolUsed + EffectiveCost(sl) > Pool) return; // не хватает пула
+        if (!sl.installed) // химеризация = размен в ёмкости: снять человеческий орган (вернуть его цену), поставить звериный
+        {
+            int humanCost = sl.human != null ? sl.human.cost : 0;
+            if (PoolUsed - humanCost + EffectiveCost(sl) > Pool) return; // размен не влезает в пул
+        }
         sl.installed = !sl.installed;
         Recompute();
     }
@@ -174,7 +178,7 @@ public class ChimeraBody : MonoBehaviour
 
         int dmg = 0, maxHp = 0, life = 0, beast = 0;
         float rng = 0f, atkCd = 0f, mv = 0f, dash = 0f, dashCd = 0f, reduce = 0f, regen = 0f, regenOOC = 0f;
-        bool biteOn = false;
+        bool biteOn = false, scentOn = false;
 
         foreach (var sl in slots)
         {
@@ -195,6 +199,7 @@ public class ChimeraBody : MonoBehaviour
                 regen += Blend(h.regen, b.regen, m);
                 regenOOC += Blend(h.regenOOC, b.regenOOC, m);
                 if (b.enablesBite) biteOn = true;
+                if (b.enablesScent) scentOn = true;
                 beast++;
             }
             else
@@ -203,10 +208,12 @@ public class ChimeraBody : MonoBehaviour
                 rng += h.range; atkCd += h.atkCooldown; mv += h.moveSpeed; dash += h.dashSpeed;
                 dashCd += h.dashCooldown; reduce += h.damageReduction; regen += h.regen; regenOOC += h.regenOOC;
                 if (h.enablesBite) biteOn = true;
+                if (h.enablesScent) scentOn = true;
             }
         }
 
         if (bite != null) bite.BiteEnabled = biteOn;
+        Perception.WolfScent = scentOn; // слот «Чутьё»: видно запах волков
         attack.SetMelee(dmg, Mathf.Max(0.5f, rng));
         attack.SetCooldown(Mathf.Max(0.05f, atkCd));
         attack.SetLifeSteal(life);

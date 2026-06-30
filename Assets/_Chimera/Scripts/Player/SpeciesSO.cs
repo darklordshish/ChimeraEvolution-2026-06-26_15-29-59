@@ -29,5 +29,5 @@ public class Organ
 
     public int damage, maxHp, lifeSteal;
     public float range, atkCooldown, moveSpeed, dashSpeed, dashCooldown, damageReduction, regen, regenOOC;
-    public bool enablesBite;
+    public bool enablesBite, enablesScent;
 }

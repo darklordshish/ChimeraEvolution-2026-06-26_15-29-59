@@ -93,6 +93,8 @@ public class WolfAI : MonoBehaviour, IGrabber
             var m = renderers[i].sharedMaterial;
             baseColors[i] = (m != null && m.HasProperty(BaseColor)) ? m.GetColor(BaseColor) : Color.gray;
         }
+
+        if (!TryGetComponent<ScentTrail>(out _)) gameObject.AddComponent<ScentTrail>(); // запаховый след (виден при волчьем Чутье)
     }
 
     void Start()
