@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.AI;
 
 /// <summary>
 /// Волк без NavMesh. Приёмы: УКУС вблизи (красный телеграф), ПРЫЖОК со средней дистанции (оранжевый),
@@ -9,6 +8,8 @@ using UnityEngine.AI;
 /// пинок (Knockback) рвёт всё. Реализует IGrabber — рывок игрока срывает захват с уроном.
 /// </summary>
 [RequireComponent(typeof(CharacterController))]
+[RequireComponent(typeof(Telegraph))]
+[RequireComponent(typeof(NavLocomotion))]
 public class WolfAI : MonoBehaviour, IGrabber
 {
     [Header("Погоня")]
@@ -17,8 +18,6 @@ public class WolfAI : MonoBehaviour, IGrabber
     [SerializeField] float gravity = -20f;
     [SerializeField] float sightRange = 25f;
     [SerializeField] float hpRegen = 1f;       // постоянная регенерация HP волка (живучесть стаи)
-    [SerializeField] float pathInterval = 0.2f; // как часто пересчитывать путь NavMesh
-    [SerializeField] float pathDirectRange = 5f; // ближе этого к цели — ведём напрямую (без пафайндинга)
     [SerializeField] float wanderRadius = 15f;  // радиус случайного блуждания в покое
     [SerializeField, Range(0f, 1f)] float wanderSpeed = 0.5f; // доля скорости при спокойном блуждании
     [SerializeField] float scentRange = 16f;    // в каком радиусе берёт свежий след игрока
@@ -67,7 +66,6 @@ public class WolfAI : MonoBehaviour, IGrabber
     enum Kind { Bite, Leap, Grab }
 
     static readonly Collider[] neighbors = new Collider[16];
-    static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
 
     CharacterController controller;
     Stagger stagger;
@@ -75,22 +73,16 @@ public class WolfAI : MonoBehaviour, IGrabber
     Health ownHealth;
     PlayerController playerCtl;
     PackCoordinator pack;
-    Renderer[] renderers;
-    Color[] baseColors;
-    MaterialPropertyBlock mpb;
+    Telegraph telegraph;
+    NavLocomotion nav;
     Transform target;
     Health targetHealth;
 
     float nextAttackTime, verticalVel, windupEnd, leapEnd;
-    bool windingUp, leaping, telegraphOn, hasToken, grabbing;
+    bool windingUp, leaping, hasToken, grabbing;
     Kind pendingKind;
     Color activeTelegraph;
     Vector3 leapVel;
-    NavMeshPath navPath;
-    float nextPathTime;
-    Vector3 cachedNavDir;
-    Vector3 wanderTarget;
-    float nextWanderTime;
     Vector3 alertPos;               // куда сбегаться по услышанному вою (личная тревога, не глобальная)
     float alertUntil, nextHowlTime, routUntil;
     int fear, fearThreshold;        // личный страх: смерти сородичей рядом; набрал свой порог — паникую
@@ -124,16 +116,8 @@ public class WolfAI : MonoBehaviour, IGrabber
         stagger = GetComponent<Stagger>();
         knockback = GetComponent<Knockback>();
         ownHealth = GetComponent<Health>();
-        navPath = new NavMeshPath();
-
-        renderers = GetComponentsInChildren<Renderer>();
-        baseColors = new Color[renderers.Length];
-        mpb = new MaterialPropertyBlock();
-        for (int i = 0; i < renderers.Length; i++)
-        {
-            var m = renderers[i].sharedMaterial;
-            baseColors[i] = (m != null && m.HasProperty(BaseColor)) ? m.GetColor(BaseColor) : Color.gray;
-        }
+        if (!TryGetComponent(out telegraph)) telegraph = gameObject.AddComponent<Telegraph>();
+        if (!TryGetComponent(out nav)) nav = gameObject.AddComponent<NavLocomotion>();
 
         if (!TryGetComponent<ScentTrail>(out _)) gameObject.AddComponent<ScentTrail>(); // запаховый след (виден при волчьем Чутье)
     }
@@ -210,8 +194,8 @@ public class WolfAI : MonoBehaviour, IGrabber
                 dest = alertPos;                                                  // услышал вой — на точку сбора
             else if (ScentField.Instance.TryFollow(transform.position, scentRange, out var scent))
                 { dest = scent; TryHowl(scent); }                                 // взял след — тропим и зовём ближних
-            else { dest = WanderTarget(); active = false; }                       // ничего — бродим
-            Vector3 mv = NavDir(dest);
+            else { dest = nav.Wander(wanderRadius); active = false; }              // ничего — бродим
+            Vector3 mv = nav.DirTo(dest);
             if (mv.sqrMagnitude > 0.001f)
                 transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(mv), rotationSpeed * Time.deltaTime);
             Settle(mv * moveSpeed * (active ? 1f : wanderSpeed) + Separation());
@@ -248,9 +232,9 @@ public class WolfAI : MonoBehaviour, IGrabber
         // движение: с жетоном — рвёмся в упор; без — кружим к слоту окружения
         Vector3 horizontal;
         if (hasToken)
-            horizontal = (dist > attackRange ? NavDir(target.position) * moveSpeed : Vector3.zero) + Separation();
+            horizontal = (dist > attackRange ? nav.DirTo(target.position) * moveSpeed : Vector3.zero) + Separation();
         else
-            horizontal = NavDir(pack.SlotPoint(this)) * moveSpeed * circleSpeed + Separation();
+            horizontal = nav.DirTo(pack.SlotPoint(this)) * moveSpeed * circleSpeed + Separation();
         Settle(horizontal);
     }
 
@@ -278,7 +262,7 @@ public class WolfAI : MonoBehaviour, IGrabber
         pendingKind = kind;
         windupEnd = Time.time + (kind == Kind.Leap ? leapWindupTime : kind == Kind.Grab ? grabWindupTime : biteWindupTime);
         activeTelegraph = kind == Kind.Leap ? leapColor : kind == Kind.Grab ? grabColor : biteColor;
-        SetTelegraph(true);
+        telegraph.Set(true, activeTelegraph);
     }
 
     void StartGrab()
@@ -286,7 +270,7 @@ public class WolfAI : MonoBehaviour, IGrabber
         windingUp = false;
         grabbing = true;
         activeTelegraph = grabColor;
-        SetTelegraph(true);
+        telegraph.Set(true, activeTelegraph);
         if (playerCtl != null) playerCtl.ApplyGrab(this, grabSlow); // режем скорость игрока; урона от удержания нет
     }
 
@@ -330,7 +314,7 @@ public class WolfAI : MonoBehaviour, IGrabber
         grabbing = false;
         windingUp = false;
         pendingKind = Kind.Bite;
-        SetTelegraph(false);
+        telegraph.Clear();
         ReleaseToken();
         if (cooldown > 0f) nextAttackTime = Time.time + cooldown;
     }
@@ -338,7 +322,7 @@ public class WolfAI : MonoBehaviour, IGrabber
     // мораль сломлена: сбрасываем приём/захват/жетоны и бежим прочь от игрока
     void Rout()
     {
-        if (windingUp || grabbing || hasToken || telegraphOn) Disengage(0f);
+        if (windingUp || grabbing || hasToken) Disengage(0f);
         Vector3 from = target != null ? target.position : alertPos;
         Vector3 away = transform.position - from; away.y = 0f;
         Vector3 dir = away.sqrMagnitude > 0.01f ? away.normalized : transform.forward;
@@ -357,7 +341,7 @@ public class WolfAI : MonoBehaviour, IGrabber
     void LaunchLeap(Vector3 dir)
     {
         windingUp = false;
-        SetTelegraph(false);
+        telegraph.Clear();
         leaping = true;
         leapEnd = Time.time + leapDuration;
         Vector3 flat = dir; flat.y = 0f; flat.Normalize();
@@ -380,59 +364,6 @@ public class WolfAI : MonoBehaviour, IGrabber
             }
             Disengage(attackCooldown);
         }
-    }
-
-    void SetTelegraph(bool on)
-    {
-        if (on == telegraphOn) return;
-        telegraphOn = on;
-        for (int i = 0; i < renderers.Length; i++)
-        {
-            if (renderers[i] == null) continue;
-            renderers[i].GetPropertyBlock(mpb);
-            mpb.SetColor(BaseColor, on ? activeTelegraph : baseColors[i]);
-            renderers[i].SetPropertyBlock(mpb);
-        }
-    }
-
-    // направление движения с учётом стен: к следующему углу пути NavMesh (троттлинг), фолбэк — прямо
-    Vector3 NavDir(Vector3 dest)
-    {
-        Vector3 flat = dest - transform.position; flat.y = 0f;
-        // вблизи цели — прямое направление (стен между нами нет): без рывков от пересчёта пути
-        if (flat.sqrMagnitude < pathDirectRange * pathDirectRange)
-            return flat.sqrMagnitude > 0.01f ? flat.normalized : transform.forward;
-
-        if (Time.time >= nextPathTime)
-        {
-            nextPathTime = Time.time + pathInterval;
-            cachedNavDir = ComputeNavDir(dest);
-        }
-        return cachedNavDir;
-    }
-
-    Vector3 ComputeNavDir(Vector3 dest)
-    {
-        if (NavMesh.CalculatePath(transform.position, dest, NavMesh.AllAreas, navPath) && navPath.corners.Length > 1)
-        {
-            Vector3 d = navPath.corners[1] - transform.position; d.y = 0f;
-            if (d.sqrMagnitude > 0.01f) return d.normalized;
-        }
-        Vector3 fb = dest - transform.position; fb.y = 0f;
-        return fb.sqrMagnitude > 0.01f ? fb.normalized : transform.forward;
-    }
-
-    // случайная точка на навмеше для спокойного блуждания (меняется по таймеру или при достижении)
-    Vector3 WanderTarget()
-    {
-        if (Time.time >= nextWanderTime || (wanderTarget - transform.position).sqrMagnitude < 4f)
-        {
-            nextWanderTime = Time.time + Random.Range(2f, 5f);
-            Vector2 c = Random.insideUnitCircle * wanderRadius;
-            Vector3 cand = transform.position + new Vector3(c.x, 0f, c.y);
-            wanderTarget = NavMesh.SamplePosition(cand, out var hit, 4f, NavMesh.AllAreas) ? hit.position : transform.position;
-        }
-        return wanderTarget;
     }
 
     Vector3 Separation()
