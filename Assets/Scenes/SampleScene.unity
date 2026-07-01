@@ -441,10 +441,10 @@ MonoBehaviour:
   buildFloor: 1
   floorColor: {r: 0.34, g: 0.33, b: 0.31, a: 1}
   wallColor: {r: 0.24, g: 0.24, b: 0.27, a: 1}
-  mazeCells: 4
-  mazeFill: 0.7
+  mazeCells: 8
+  mazeFill: 0.8
   openness: 0.5
-  centerClear: 9
+  centerClear: 10
   seed: 12345
 --- !u!4 &421052347
 Transform:
@@ -832,7 +832,7 @@ MonoBehaviour:
   species: "\u0412\u043E\u043B\u043A"
   triggerAffinity: 80
   spawnDistance: 16
-  once: 1
+  respawnDelay: 5
 --- !u!4 &1185508200
 Transform:
   m_ObjectHideFlags: 0
