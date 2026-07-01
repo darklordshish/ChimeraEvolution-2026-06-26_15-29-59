@@ -1,13 +1,12 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 /// <summary>
 /// Укус — вторая атака (слот «Пасть»). Отдельная кнопка (Left Shift / левый шифтер):
 /// короткая дистанция, мощный единичный удар + вампиризм. Активен, только если слот «Пасть» надет
 /// (ChimeraBody выставляет BiteEnabled).
 /// </summary>
-public class PlayerBite : MonoBehaviour
+public class PlayerBite : MonoBehaviour, IAbility
 {
     [Header("Укус")]
     [SerializeField] int damage = 14;
@@ -21,18 +20,10 @@ public class PlayerBite : MonoBehaviour
 
     public bool BiteEnabled { get; set; }  // включается слотом «Пасть»
 
-    InputAction biteAction;
     float nextTime;
     CameraFollow cam;
     Health ownHealth;
     readonly HashSet<Health> hitThisBite = new();
-
-    void Awake()
-    {
-        biteAction = new InputAction("Bite", InputActionType.Button);
-        biteAction.AddBinding("<Keyboard>/leftShift");
-        biteAction.AddBinding("<Gamepad>/leftShoulder");
-    }
 
     void Start()
     {
@@ -40,18 +31,13 @@ public class PlayerBite : MonoBehaviour
         ownHealth = GetComponent<Health>();
     }
 
-    void OnEnable() => biteAction.Enable();
-    void OnDisable() => biteAction.Disable();
-
-    void Update()
+    // водитель зовёт по вводу; активен только с надетой Пастью; кулдаун проверяем сами
+    public bool TryUse()
     {
-        if (ConstructorUI.IsOpen) return; // в конструкторе не кусаем (хитстоп сбил бы замедление)
-        if (!BiteEnabled) return;
-        if (biteAction.WasPressedThisFrame() && Time.time >= nextTime)
-        {
-            nextTime = Time.time + cooldown;
-            DoBite();
-        }
+        if (!BiteEnabled || Time.time < nextTime) return false;
+        nextTime = Time.time + cooldown;
+        DoBite();
+        return true;
     }
 
     void DoBite()

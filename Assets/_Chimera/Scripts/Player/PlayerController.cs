@@ -7,6 +7,7 @@ using UnityEngine.InputSystem;
 /// 1-е лицо: mouse-look (поворот мышью, движение от лица). Плюс рывок с i-frames.
 /// </summary>
 [RequireComponent(typeof(CharacterController))]
+[RequireComponent(typeof(PlayerInputDriver))]
 public class PlayerController : MonoBehaviour
 {
     [Header("Движение")]

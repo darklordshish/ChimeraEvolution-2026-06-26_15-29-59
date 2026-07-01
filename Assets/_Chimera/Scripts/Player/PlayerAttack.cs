@@ -1,13 +1,12 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 /// <summary>
 /// Простой мечевой удар: по кнопке бьём сферой-хитбоксом перед игроком,
 /// наносим урон всем найденным Health (каждому — один раз за замах).
 /// При попадании — сочность: хитстоп + тряска камеры.
 /// </summary>
-public class PlayerAttack : MonoBehaviour
+public class PlayerAttack : MonoBehaviour, IAbility
 {
     [Header("Удар")]
     [SerializeField] int damage = 10;
@@ -20,21 +19,11 @@ public class PlayerAttack : MonoBehaviour
     [SerializeField] float hitstopDuration = 0.06f;
     [SerializeField] float shakeMagnitude = 0.25f;
 
-    InputAction attackAction;
     float nextTime;
     readonly HashSet<Health> hitThisSwing = new();
     CameraFollow cam;
     Health ownHealth;
     int lifeSteal;
-
-    void Awake()
-    {
-        // ЛКМ / X на геймпаде / J на клавиатуре
-        attackAction = new InputAction("Attack", InputActionType.Button);
-        attackAction.AddBinding("<Mouse>/leftButton");
-        attackAction.AddBinding("<Gamepad>/buttonWest");
-        attackAction.AddBinding("<Keyboard>/j");
-    }
 
     void Start()
     {
@@ -42,17 +31,13 @@ public class PlayerAttack : MonoBehaviour
         ownHealth = GetComponent<Health>();
     }
 
-    void OnEnable() => attackAction.Enable();
-    void OnDisable() => attackAction.Disable();
-
-    void Update()
+    // водитель (PlayerInputDriver) зовёт по вводу; кулдаун проверяем сами
+    public bool TryUse()
     {
-        if (ConstructorUI.IsOpen) return; // в конструкторе не деремся (иначе хитстоп сбивает замедление)
-        if (attackAction.WasPressedThisFrame() && Time.time >= nextTime)
-        {
-            nextTime = Time.time + cooldown;
-            DoAttack();
-        }
+        if (Time.time < nextTime) return false;
+        nextTime = Time.time + cooldown;
+        DoAttack();
+        return true;
     }
 
     void DoAttack()

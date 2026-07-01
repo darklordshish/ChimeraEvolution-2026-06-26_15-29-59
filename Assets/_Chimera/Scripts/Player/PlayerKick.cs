@@ -1,12 +1,11 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 /// <summary>
 /// Пинок на ПКМ (или B на геймпаде): отталкивает врагов перед игроком + лёгкий урон
 /// (через который идут вспышка и стаггер). Инструмент создания пространства под кайтинг.
 /// </summary>
-public class PlayerKick : MonoBehaviour
+public class PlayerKick : MonoBehaviour, IAbility
 {
     [Header("Пинок")]
     [SerializeField] int damage = 4;
@@ -16,31 +15,19 @@ public class PlayerKick : MonoBehaviour
     [SerializeField] float cooldown = 1.0f;
     [SerializeField] float shake = 0.4f;
 
-    InputAction kickAction;
     float nextTime;
     CameraFollow cam;
     readonly HashSet<Health> hitThisKick = new();
 
-    void Awake()
-    {
-        kickAction = new InputAction("Kick", InputActionType.Button);
-        kickAction.AddBinding("<Mouse>/rightButton");
-        kickAction.AddBinding("<Gamepad>/buttonEast");
-    }
-
     void Start() => cam = FindAnyObjectByType<CameraFollow>();
 
-    void OnEnable() => kickAction.Enable();
-    void OnDisable() => kickAction.Disable();
-
-    void Update()
+    // водитель зовёт по вводу; кулдаун проверяем сами
+    public bool TryUse()
     {
-        if (ConstructorUI.IsOpen) return; // в конструкторе не пинаем
-        if (kickAction.WasPressedThisFrame() && Time.time >= nextTime)
-        {
-            nextTime = Time.time + cooldown;
-            DoKick();
-        }
+        if (Time.time < nextTime) return false;
+        nextTime = Time.time + cooldown;
+        DoKick();
+        return true;
     }
 
     void DoKick()
