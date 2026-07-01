@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.AI;
 
 /// <summary>
 /// Босс «Вервольф» — вершина волчьей линии, зеркало игрока на 100 родстве, но мощнее: много HP,
@@ -9,6 +8,8 @@ using UnityEngine.AI;
 /// </summary>
 [RequireComponent(typeof(CharacterController))]
 [RequireComponent(typeof(Health))]
+[RequireComponent(typeof(Telegraph))]
+[RequireComponent(typeof(NavLocomotion))]
 public class WerewolfBoss : MonoBehaviour
 {
     [Header("Тело — быстрый убийца, НЕ танк")]
@@ -60,28 +61,23 @@ public class WerewolfBoss : MonoBehaviour
     [SerializeField] float attackCooldown = 1.2f;
     [SerializeField] Color biteColor = new Color(1f, 0.25f, 0.2f);
     [SerializeField] Color leapColor = new Color(1f, 0.55f, 0.1f);
-    [SerializeField] float pathInterval = 0.2f;
-    [SerializeField] float pathDirectRange = 5f;
     [SerializeField] float wanderRadius = 18f;
     [SerializeField, Range(0f, 1f)] float wanderSpeed = 0.5f;
     [SerializeField] float scentRange = 22f; // нюх острее волчьего
 
     enum Kind { Bite, Leap, Charge, Howl }
-    static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
 
     CharacterController controller;
     Stagger stagger;
     Knockback knockback;
     Health ownHealth, targetHealth;
     Transform target;
-    Renderer[] renderers;
-    Color[] baseColors;
-    MaterialPropertyBlock mpb;
-    NavMeshPath navPath;
+    Telegraph telegraph;
+    NavLocomotion nav;
 
-    float nextAttackTime, verticalVel, windupEnd, leapEnd, chargeEnd, nextHowl, nextPathTime, nextWanderTime;
-    Vector3 cachedNavDir, wanderTarget, leapVel;
-    bool windingUp, leaping, charging, telegraphOn;
+    float nextAttackTime, verticalVel, windupEnd, leapEnd, chargeEnd, nextHowl;
+    Vector3 leapVel;
+    bool windingUp, leaping, charging;
     Kind pendingKind;
     Color activeTelegraph;
 
@@ -91,16 +87,8 @@ public class WerewolfBoss : MonoBehaviour
         stagger = GetComponent<Stagger>();
         knockback = GetComponent<Knockback>();
         ownHealth = GetComponent<Health>();
-        navPath = new NavMeshPath();
-
-        renderers = GetComponentsInChildren<Renderer>();
-        baseColors = new Color[renderers.Length];
-        mpb = new MaterialPropertyBlock();
-        for (int i = 0; i < renderers.Length; i++)
-        {
-            var m = renderers[i].sharedMaterial;
-            baseColors[i] = (m != null && m.HasProperty(BaseColor)) ? m.GetColor(BaseColor) : Color.gray;
-        }
+        if (!TryGetComponent(out telegraph)) telegraph = gameObject.AddComponent<Telegraph>();
+        if (!TryGetComponent(out nav)) nav = gameObject.AddComponent<NavLocomotion>();
 
         if (!TryGetComponent<ScentTrail>(out _)) gameObject.AddComponent<ScentTrail>(); // босс тоже пахнет (тропишь его)
     }
@@ -148,8 +136,8 @@ public class WerewolfBoss : MonoBehaviour
             ownHealth.ClearOverheal();
             Vector3 dest; bool active = true;
             if (ScentField.Instance.TryFollow(transform.position, scentRange, out var scent)) dest = scent;
-            else { dest = WanderTarget(); active = false; }
-            Vector3 mv = NavDir(dest);
+            else { dest = nav.Wander(wanderRadius); active = false; }
+            Vector3 mv = nav.DirTo(dest);
             if (mv.sqrMagnitude > 0.001f) Face(mv);
             Settle(mv * moveSpeed * (active ? 1f : wanderSpeed));
             return;
@@ -165,7 +153,7 @@ public class WerewolfBoss : MonoBehaviour
         }
 
         // погоня по NavMesh
-        Settle(dist > attackRange ? NavDir(target.position) * moveSpeed : Vector3.zero);
+        Settle(dist > attackRange ? nav.DirTo(target.position) * moveSpeed : Vector3.zero);
     }
 
     void Face(Vector3 d) =>
@@ -215,15 +203,15 @@ public class WerewolfBoss : MonoBehaviour
         pendingKind = kind;
         windupEnd = Time.time + (kind == Kind.Leap ? leapWindup : kind == Kind.Charge ? chargeWindup : kind == Kind.Howl ? howlWindup : biteWindup);
         activeTelegraph = kind == Kind.Leap ? leapColor : kind == Kind.Charge ? chargeColor : kind == Kind.Howl ? howlColor : biteColor;
-        SetTelegraph(true);
+        telegraph.Set(true, activeTelegraph);
     }
 
-    void Cancel() { windingUp = false; SetTelegraph(false); }
+    void Cancel() { windingUp = false; telegraph.Clear(); }
 
     void LaunchLeap(Vector3 dir)
     {
         windingUp = false;
-        SetTelegraph(false);
+        telegraph.Clear();
         leaping = true;
         leapEnd = Time.time + leapDuration;
         Vector3 flat = dir; flat.y = 0f; flat.Normalize();
@@ -253,7 +241,7 @@ public class WerewolfBoss : MonoBehaviour
         charging = true;
         chargeEnd = Time.time + chargeMaxDuration;
         activeTelegraph = chargeColor;
-        SetTelegraph(true); // телеграф держим — видно, что несётся на четвереньках
+        telegraph.Set(true, activeTelegraph); // телеграф держим — видно, что несётся на четвереньках
     }
 
     void UpdateCharge()
@@ -269,59 +257,9 @@ public class WerewolfBoss : MonoBehaviour
         }
         if (Time.time >= chargeEnd) { charging = false; Cancel(); nextAttackTime = Time.time + attackCooldown; return; } // не успел
 
-        Vector3 moveDir = NavDir(target.position);
+        Vector3 moveDir = nav.DirTo(target.position);
         if (moveDir.sqrMagnitude > 0.001f) Face(moveDir);
         Settle(moveDir * chargeSpeed);
-    }
-
-    Vector3 NavDir(Vector3 dest)
-    {
-        Vector3 flat = dest - transform.position; flat.y = 0f;
-        if (flat.sqrMagnitude < pathDirectRange * pathDirectRange) // вблизи — прямо
-            return flat.sqrMagnitude > 0.01f ? flat.normalized : transform.forward;
-
-        if (Time.time >= nextPathTime)
-        {
-            nextPathTime = Time.time + pathInterval;
-            cachedNavDir = ComputeNavDir(dest);
-        }
-        return cachedNavDir;
-    }
-
-    Vector3 ComputeNavDir(Vector3 dest)
-    {
-        if (NavMesh.CalculatePath(transform.position, dest, NavMesh.AllAreas, navPath) && navPath.corners.Length > 1)
-        {
-            Vector3 d = navPath.corners[1] - transform.position; d.y = 0f;
-            if (d.sqrMagnitude > 0.01f) return d.normalized;
-        }
-        Vector3 fb = dest - transform.position; fb.y = 0f;
-        return fb.sqrMagnitude > 0.01f ? fb.normalized : transform.forward;
-    }
-
-    Vector3 WanderTarget()
-    {
-        if (Time.time >= nextWanderTime || (wanderTarget - transform.position).sqrMagnitude < 4f)
-        {
-            nextWanderTime = Time.time + Random.Range(2f, 5f);
-            Vector2 c = Random.insideUnitCircle * wanderRadius;
-            Vector3 cand = transform.position + new Vector3(c.x, 0f, c.y);
-            wanderTarget = NavMesh.SamplePosition(cand, out var hit, 4f, NavMesh.AllAreas) ? hit.position : transform.position;
-        }
-        return wanderTarget;
-    }
-
-    void SetTelegraph(bool on)
-    {
-        if (on == telegraphOn) return;
-        telegraphOn = on;
-        for (int i = 0; i < renderers.Length; i++)
-        {
-            if (renderers[i] == null) continue;
-            renderers[i].GetPropertyBlock(mpb);
-            mpb.SetColor(BaseColor, on ? activeTelegraph : baseColors[i]);
-            renderers[i].SetPropertyBlock(mpb);
-        }
     }
 
     void Settle(Vector3 horizontal)
