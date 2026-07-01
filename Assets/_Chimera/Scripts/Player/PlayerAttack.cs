@@ -58,19 +58,20 @@ public class PlayerAttack : MonoBehaviour
     void DoAttack()
     {
         hitThisSwing.Clear();
+        var hit = new Hit(ownHealth, transform.position);
         Collider[] hits = Physics.OverlapSphere(AttackCenter(), radius, hitMask, QueryTriggerInteraction.Ignore);
         foreach (var col in hits)
         {
             var hp = col.GetComponentInParent<Health>();
-            if (hp != null && hp.transform != transform && hitThisSwing.Add(hp))
-                hp.TakeDamage(damage);
+            if (hp == null || hp.transform == transform || !hitThisSwing.Add(hp)) continue;
+            hit.Apply(hp, HitEffect.Damage(damage));
+            if (lifeSteal > 0) hit.Apply(hp, HitEffect.LifeSteal(lifeSteal)); // вампиризм = сумма по целям (слот «Пасть»)
         }
 
-        if (hitThisSwing.Count > 0) // попали хотя бы по одному — даём сочность
+        if (hitThisSwing.Count > 0) // попали хотя бы по одному — сочность раз за замах
         {
             if (hitstopDuration > 0f) Hitstop.Do(hitstopDuration); // 0 = выключить глобальный фриз
             if (cam != null) cam.Shake(0.12f, shakeMagnitude);
-            if (lifeSteal > 0 && ownHealth != null) ownHealth.Heal(lifeSteal * hitThisSwing.Count); // вампиризм (слот «Пасть»)
         }
     }
 

@@ -250,7 +250,7 @@ public class WolfAI : MonoBehaviour, IGrabber
             else if (Time.time >= windupEnd)
             {
                 if (pendingKind == Kind.Grab) StartGrab();
-                else { targetHealth.TakeDamage(biteDamage); Disengage(attackCooldown); }
+                else { new Hit(ownHealth, transform.position).Apply(targetHealth, HitEffect.Damage(biteDamage)); Disengage(attackCooldown); }
             }
         }
         Settle(Vector3.zero);
@@ -371,7 +371,7 @@ public class WolfAI : MonoBehaviour, IGrabber
             if (targetHealth != null)
             {
                 Vector3 d = target.position - transform.position; d.y = 0f;
-                if (d.magnitude <= leapHitRadius) targetHealth.TakeDamage(leapDamage);
+                if (d.magnitude <= leapHitRadius) new Hit(ownHealth, transform.position).Apply(targetHealth, HitEffect.Damage(leapDamage));
             }
             Disengage(attackCooldown);
         }

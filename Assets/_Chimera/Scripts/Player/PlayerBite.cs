@@ -58,19 +58,20 @@ public class PlayerBite : MonoBehaviour
     {
         hitThisBite.Clear();
         int hits = 0;
+        var hit = new Hit(ownHealth, transform.position);
         Collider[] cols = Physics.OverlapSphere(BiteCenter(), radius, ~0, QueryTriggerInteraction.Ignore);
         foreach (var col in cols)
         {
             var hp = col.GetComponentInParent<Health>();
             if (hp == null || hp.transform == transform || !hitThisBite.Add(hp)) continue;
-            hp.TakeDamage(damage);
-            hp.SuppressRegen(regenDebuff, regenDebuffTime); // сбиваем реген цели (контр-сустейн против босса)
+            hit.Apply(hp, HitEffect.Damage(damage));
+            hit.Apply(hp, HitEffect.RegenDebuff(regenDebuff, regenDebuffTime)); // сбиваем реген цели (контр-сустейн против босса)
+            if (lifeSteal > 0) hit.Apply(hp, HitEffect.LifeSteal(lifeSteal)); // лечимся за укус
             hits++;
         }
 
         if (hits > 0)
         {
-            if (ownHealth != null && lifeSteal > 0) ownHealth.Heal(lifeSteal); // лечимся за укус
             if (cam != null) cam.Shake(0.12f, shake);
             Hitstop.Do(0.05f);
         }

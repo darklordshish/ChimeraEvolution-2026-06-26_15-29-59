@@ -179,8 +179,10 @@ public class WerewolfBoss : MonoBehaviour
 
     void Bite()
     {
-        if (targetHealth != null) targetHealth.TakeDamage(biteDamage);
-        if (ownHealth != null) ownHealth.Heal(biteLifeSteal); // вампиризм → может уйти в temp HP свыше макс.
+        if (targetHealth == null) return;
+        var h = new Hit(ownHealth, transform.position);
+        h.Apply(targetHealth, HitEffect.Damage(biteDamage));
+        h.Apply(targetHealth, HitEffect.LifeSteal(biteLifeSteal)); // вампиризм → может уйти в temp HP свыше макс.
     }
 
     void DoHowl()
@@ -225,7 +227,12 @@ public class WerewolfBoss : MonoBehaviour
             if (targetHealth != null) // приземление — укус с вампиризмом, если цель рядом
             {
                 Vector3 d = target.position - transform.position; d.y = 0f;
-                if (d.magnitude <= leapHitRadius) { targetHealth.TakeDamage(leapDamage); ownHealth.Heal(biteLifeSteal); }
+                if (d.magnitude <= leapHitRadius)
+                {
+                    var h = new Hit(ownHealth, transform.position);
+                    h.Apply(targetHealth, HitEffect.Damage(leapDamage));
+                    h.Apply(targetHealth, HitEffect.LifeSteal(biteLifeSteal));
+                }
             }
             nextAttackTime = Time.time + attackCooldown;
         }

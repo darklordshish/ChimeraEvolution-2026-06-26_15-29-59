@@ -47,6 +47,7 @@ public class PlayerKick : MonoBehaviour
     {
         hitThisKick.Clear();
         bool any = false;
+        var hit = new Hit(null, transform.position); // пинок сам не лечится
 
         Collider[] cols = Physics.OverlapSphere(KickCenter(), radius, ~0, QueryTriggerInteraction.Ignore);
         foreach (var col in cols)
@@ -54,14 +55,8 @@ public class PlayerKick : MonoBehaviour
             var hp = col.GetComponentInParent<Health>();
             if (hp == null || hp.transform == transform || !hitThisKick.Add(hp)) continue;
 
-            hp.TakeDamage(damage); // вспышка + стаггер через onDamaged
-
-            if (hp.TryGetComponent<Knockback>(out var kb))
-            {
-                Vector3 away = hp.transform.position - transform.position;
-                away.y = 0f;
-                kb.Push(away.normalized * force);
-            }
+            hit.Apply(hp, HitEffect.Damage(damage));   // вспышка + стаггер через onDamaged
+            hit.Apply(hp, HitEffect.Knockback(force)); // отталкивание от игрока
             any = true;
         }
 
