@@ -51,13 +51,11 @@ public class WolfAI : MonoBehaviour, IGrabber
     [Header("Вой (зов ближней стаи)")]
     [SerializeField] float howlRadius = 16f;    // на сколько разносится вой — сбегаются только ближние волки
     [SerializeField] float howlCooldown = 5f;   // как часто волк может выть
+    [SerializeField] float howlCueTime = 0.4f;  // сколько держится вспышка-телеграф воя
     [SerializeField] float alertMemory = 8f;    // сколько волк держит тревогу, услышав вой
 
-    [Header("Кулдаун / телеграф")]
+    [Header("Кулдаун")]
     [SerializeField] float attackCooldown = 1.4f;
-    [SerializeField] Color biteColor = new Color(1f, 0.3f, 0.2f);
-    [SerializeField] Color leapColor = new Color(1f, 0.65f, 0.1f);
-    [SerializeField] Color grabColor = new Color(0.7f, 0.2f, 0.9f);
 
     [Header("Расталкивание")]
     [SerializeField] float separationRadius = 1.6f;
@@ -84,7 +82,7 @@ public class WolfAI : MonoBehaviour, IGrabber
     Color activeTelegraph;
     Vector3 leapVel;
     Vector3 alertPos;               // куда сбегаться по услышанному вою (личная тревога, не глобальная)
-    float alertUntil, nextHowlTime, routUntil;
+    float alertUntil, nextHowlTime, routUntil, telegraphUntil;
     int fear, fearThreshold;        // личный страх: смерти сородичей рядом; набрал свой порог — паникую
 
     public bool Engaged { get; private set; } // игрок в поле зрения = волк агрессивен/нацелен (для «вне боя» игрока)
@@ -151,6 +149,8 @@ public class WolfAI : MonoBehaviour, IGrabber
     void Update()
     {
         if (target == null) { Engaged = false; Disengage(0f); Settle(Vector3.zero); return; }
+
+        if (telegraphUntil > 0f && Time.time >= telegraphUntil) HideTelegraph(); // погасить вспышку воя
 
         bool routing = Routing; // личная паника сломлена → бегство (в ярости от воя не бежим)
         Engaged = !routing
@@ -261,16 +261,16 @@ public class WolfAI : MonoBehaviour, IGrabber
         windingUp = true;
         pendingKind = kind;
         windupEnd = Time.time + (kind == Kind.Leap ? leapWindupTime : kind == Kind.Grab ? grabWindupTime : biteWindupTime);
-        activeTelegraph = kind == Kind.Leap ? leapColor : kind == Kind.Grab ? grabColor : biteColor;
-        telegraph.Set(true, activeTelegraph);
+        activeTelegraph = kind == Kind.Leap ? TelegraphColors.Leap : kind == Kind.Grab ? TelegraphColors.Grab : TelegraphColors.Bite;
+        ShowTelegraph(activeTelegraph);
     }
 
     void StartGrab()
     {
         windingUp = false;
         grabbing = true;
-        activeTelegraph = grabColor;
-        telegraph.Set(true, activeTelegraph);
+        activeTelegraph = TelegraphColors.Grab;
+        ShowTelegraph(activeTelegraph);
         if (playerCtl != null) playerCtl.ApplyGrab(this, grabSlow); // режем скорость игрока; урона от удержания нет
     }
 
@@ -314,7 +314,7 @@ public class WolfAI : MonoBehaviour, IGrabber
         grabbing = false;
         windingUp = false;
         pendingKind = Kind.Bite;
-        telegraph.Clear();
+        HideTelegraph();
         ReleaseToken();
         if (cooldown > 0f) nextAttackTime = Time.time + cooldown;
     }
@@ -336,12 +336,23 @@ public class WolfAI : MonoBehaviour, IGrabber
         if (Time.time < nextHowlTime) return;
         nextHowlTime = Time.time + howlCooldown;
         pack.Howl(transform.position, howlRadius, pos);
+        FlashTelegraph(TelegraphColors.Howl, howlCueTime); // видимый сигнал: волк зовёт стаю
     }
+
+    // телеграф через таймер telegraphUntil: персистентный (до Disengage) / краткая вспышка / гашение
+    void ShowTelegraph(Color c) { telegraph.Set(true, c); telegraphUntil = 0f; }
+    void FlashTelegraph(Color c, float dur)
+    {
+        if (windingUp || grabbing) return; // не перебиваем телеграф приёма
+        telegraph.Set(true, c);
+        telegraphUntil = Time.time + dur;
+    }
+    void HideTelegraph() { telegraph.Clear(); telegraphUntil = 0f; }
 
     void LaunchLeap(Vector3 dir)
     {
         windingUp = false;
-        telegraph.Clear();
+        HideTelegraph();
         leaping = true;
         leapEnd = Time.time + leapDuration;
         Vector3 flat = dir; flat.y = 0f; flat.Normalize();
@@ -397,7 +408,7 @@ public class WolfAI : MonoBehaviour, IGrabber
         Vector3 o = transform.position + Vector3.up * 0.5f;
         Quaternion lf = Quaternion.AngleAxis(-biteHalfAngle, Vector3.up);
         Quaternion rt = Quaternion.AngleAxis(biteHalfAngle, Vector3.up);
-        Gizmos.color = (windingUp || grabbing) ? activeTelegraph : (leaping ? leapColor : (hasToken ? Color.red : Color.yellow));
+        Gizmos.color = (windingUp || grabbing) ? activeTelegraph : (leaping ? TelegraphColors.Leap : (hasToken ? Color.red : Color.yellow));
         Gizmos.DrawLine(o, o + transform.forward * attackRange);
         Gizmos.DrawLine(o, o + lf * transform.forward * attackRange);
         Gizmos.DrawLine(o, o + rt * transform.forward * attackRange);

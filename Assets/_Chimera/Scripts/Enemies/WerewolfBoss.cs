@@ -46,7 +46,6 @@ public class WerewolfBoss : MonoBehaviour
     [SerializeField] float chargeWindup = 0.35f;
     [SerializeField] float chargeMaxDuration = 2f;  // не дорвался за это время — отбой
     [SerializeField] float chargeMaxRange = 30f;    // с какой макс. дистанции бросается в разбег
-    [SerializeField] Color chargeColor = new Color(0.9f, 0.1f, 0.5f);
 
     [Header("Вой (призыв стаи)")]
     [SerializeField] int summonCount = 5;        // волков за один вой (на все атакующие позиции)
@@ -55,12 +54,9 @@ public class WerewolfBoss : MonoBehaviour
     [SerializeField] float howlWindup = 1.1f;
     [SerializeField] float howlCooldown = 16f;
     [SerializeField] float howlInitialDelay = 8f; // не воет сразу при появлении
-    [SerializeField] Color howlColor = new Color(0.6f, 0.5f, 1f);
 
-    [Header("Кулдаун / телеграф / навигация")]
+    [Header("Кулдаун / навигация")]
     [SerializeField] float attackCooldown = 1.2f;
-    [SerializeField] Color biteColor = new Color(1f, 0.25f, 0.2f);
-    [SerializeField] Color leapColor = new Color(1f, 0.55f, 0.1f);
     [SerializeField] float wanderRadius = 18f;
     [SerializeField, Range(0f, 1f)] float wanderSpeed = 0.5f;
     [SerializeField] float scentRange = 22f; // нюх острее волчьего
@@ -202,7 +198,7 @@ public class WerewolfBoss : MonoBehaviour
         windingUp = true;
         pendingKind = kind;
         windupEnd = Time.time + (kind == Kind.Leap ? leapWindup : kind == Kind.Charge ? chargeWindup : kind == Kind.Howl ? howlWindup : biteWindup);
-        activeTelegraph = kind == Kind.Leap ? leapColor : kind == Kind.Charge ? chargeColor : kind == Kind.Howl ? howlColor : biteColor;
+        activeTelegraph = kind == Kind.Leap ? TelegraphColors.Leap : kind == Kind.Charge ? TelegraphColors.Charge : kind == Kind.Howl ? TelegraphColors.Howl : TelegraphColors.Bite;
         telegraph.Set(true, activeTelegraph);
     }
 
@@ -240,7 +236,7 @@ public class WerewolfBoss : MonoBehaviour
         windingUp = false;
         charging = true;
         chargeEnd = Time.time + chargeMaxDuration;
-        activeTelegraph = chargeColor;
+        activeTelegraph = TelegraphColors.Charge;
         telegraph.Set(true, activeTelegraph); // телеграф держим — видно, что несётся на четвереньках
     }
 
@@ -273,7 +269,7 @@ public class WerewolfBoss : MonoBehaviour
     void OnDrawGizmos()
     {
         Vector3 o = transform.position + Vector3.up * 0.5f;
-        Gizmos.color = windingUp ? activeTelegraph : (leaping ? leapColor : (charging ? chargeColor : Color.magenta));
+        Gizmos.color = windingUp ? activeTelegraph : (leaping ? TelegraphColors.Leap : (charging ? TelegraphColors.Charge : Color.magenta));
         Gizmos.DrawLine(o, o + transform.forward * attackRange);
     }
 }
