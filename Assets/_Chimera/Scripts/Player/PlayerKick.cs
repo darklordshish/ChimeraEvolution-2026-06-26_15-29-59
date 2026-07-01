@@ -35,6 +35,7 @@ public class PlayerKick : MonoBehaviour
 
     void Update()
     {
+        if (ConstructorUI.IsOpen) return; // в конструкторе не пинаем
         if (kickAction.WasPressedThisFrame() && Time.time >= nextTime)
         {
             nextTime = Time.time + cooldown;

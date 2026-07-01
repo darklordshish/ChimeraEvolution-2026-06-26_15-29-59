@@ -70,6 +70,49 @@ public class ChimeraBody : MonoBehaviour
         }
     }
 
+    // ── публичный слепок слота для UI ─────────────────────────────────────────
+    public struct SlotView
+    {
+        public string slot, hotkey, organName, humanName, beastName;
+        public int cost;
+        public bool installed;  // надет звериный орган
+        public bool hasBeast;   // есть ли звериная альтернатива (иначе слот фиксирован)
+        public bool canToggle;  // можно ли сейчас переключить (снять — всегда; надеть — если влезает в пул)
+    }
+
+    public int SlotCount => slots != null ? slots.Length : 0;
+
+    public SlotView GetSlot(int i)
+    {
+        var sl = slots[i];
+        bool installed = sl.installed && sl.beast != null;
+        return new SlotView
+        {
+            slot = sl.name,
+            hotkey = sl.hotkey,
+            organName = installed ? sl.beast.organName : sl.human.organName,
+            humanName = sl.human != null ? sl.human.organName : null,
+            beastName = sl.beast != null ? sl.beast.organName : null,
+            cost = SlotCost(sl),
+            installed = installed,
+            hasBeast = sl.beast != null,
+            canToggle = installed || CanInstall(sl),
+        };
+    }
+
+    public void ToggleSlot(int i)
+    {
+        if (slots != null && i >= 0 && i < slots.Length) Toggle(slots[i]);
+    }
+
+    // влезает ли химеризация слота в пул: снимаем человеческий орган (вернуть цену), ставим звериный
+    bool CanInstall(Slot sl)
+    {
+        if (sl.beast == null) return false;
+        int humanCost = sl.human != null ? sl.human.cost : 0;
+        return PoolUsed - humanCost + EffectiveCost(sl) <= Pool;
+    }
+
     int EffectiveCost(Slot sl)
     {
         if (sl.beast == null) return 0;
@@ -163,11 +206,7 @@ public class ChimeraBody : MonoBehaviour
     void Toggle(Slot sl)
     {
         if (sl.beast == null) return;
-        if (!sl.installed) // химеризация = размен в ёмкости: снять человеческий орган (вернуть его цену), поставить звериный
-        {
-            int humanCost = sl.human != null ? sl.human.cost : 0;
-            if (PoolUsed - humanCost + EffectiveCost(sl) > Pool) return; // размен не влезает в пул
-        }
+        if (!sl.installed && !CanInstall(sl)) return; // размен не влезает в пул
         sl.installed = !sl.installed;
         Recompute();
     }

@@ -45,6 +45,7 @@ public class PlayerBite : MonoBehaviour
 
     void Update()
     {
+        if (ConstructorUI.IsOpen) return; // в конструкторе не кусаем (хитстоп сбил бы замедление)
         if (!BiteEnabled) return;
         if (biteAction.WasPressedThisFrame() && Time.time >= nextTime)
         {

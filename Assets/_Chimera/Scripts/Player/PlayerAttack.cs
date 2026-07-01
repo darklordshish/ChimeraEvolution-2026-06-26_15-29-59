@@ -47,6 +47,7 @@ public class PlayerAttack : MonoBehaviour
 
     void Update()
     {
+        if (ConstructorUI.IsOpen) return; // в конструкторе не деремся (иначе хитстоп сбивает замедление)
         if (attackAction.WasPressedThisFrame() && Time.time >= nextTime)
         {
             nextTime = Time.time + cooldown;
