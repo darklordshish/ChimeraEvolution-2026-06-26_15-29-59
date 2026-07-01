@@ -50,6 +50,7 @@ public class WerewolfBoss : MonoBehaviour
     [Header("Вой (призыв стаи)")]
     [SerializeField] int summonCount = 5;        // волков за один вой (на все атакующие позиции)
     [SerializeField] int howlWolfCap = 15;       // потолок волков, до которого добивает вой (выше лимита спавнера)
+    [SerializeField] float rageDuration = 8f;    // вой = приказ атаковать без страха: стая не бежит + наваливается вся
     [SerializeField] float howlWindup = 1.1f;
     [SerializeField] float howlCooldown = 16f;
     [SerializeField] float howlInitialDelay = 8f; // не воет сразу при появлении
@@ -202,6 +203,7 @@ public class WerewolfBoss : MonoBehaviour
     {
         var spawner = FindAnyObjectByType<WolfSpawner>();
         if (spawner != null) spawner.SpawnAt(transform.position, summonCount); // призыв стаи вокруг себя
+        PackCoordinator.Instance.Rally(rageDuration); // ярость: перебить бегство, вся стая в атаку без страха
         nextHowl = Time.time + howlCooldown;
     }
 

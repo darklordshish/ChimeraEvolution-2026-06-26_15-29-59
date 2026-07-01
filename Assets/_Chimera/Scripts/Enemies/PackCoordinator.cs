@@ -12,7 +12,12 @@ public class PackCoordinator : MonoBehaviour
 {
     [SerializeField] int maxAttackers = 4;    // сколько волков грызут одновременно (захват — сверх этого, отдельной ролью)
     [SerializeField] float standoff = 4.5f;   // радиус кольца, на котором ждут не-атакующие
-    [SerializeField] float alertMemory = 8f;  // сколько стая «помнит» игрока после последнего обнаружения
+
+    [Header("Мораль стаи")]
+    [SerializeField] int routKillsMin = 3;    // после стольких смертей подряд (случайно из диапазона) ломается мораль
+    [SerializeField] int routKillsMax = 5;
+    [SerializeField] float routDuration = 4f; // сколько секунд бегут, прежде чем вернуться в режим поиска
+    [SerializeField] float routRadius = 12f;  // радиус паники вокруг места гибели — бегут только ближние участники боя
 
     static PackCoordinator instance;
     public static PackCoordinator Instance
@@ -34,17 +39,48 @@ public class PackCoordinator : MonoBehaviour
     WolfAI grabber;
     Transform player;
     Health playerHealth;
-    Vector3 lastKnownPlayerPos;
-    float alertUntil;
+    float fearlessUntil;
 
     public int AttackerCount => attackers.Count;
     public int MaxAttackers => maxAttackers;
     public bool GrabActive => grabber != null;
 
-    // тревога стаи: любой увидевший игрока поднимает всю стаю на охоту к последней известной позиции
-    public bool Alerted => Time.time < alertUntil;
-    public Vector3 LastKnownPlayerPos => lastKnownPlayerPos;
-    public void ReportSighting(Vector3 pos) { lastKnownPlayerPos = pos; alertUntil = Time.time + alertMemory; }
+    // волк завыл: слышат только ближние (в радиусе) — они и сбегаются в стаю. Глобального алерта на всю карту нет.
+    public void Howl(Vector3 origin, float radius, Vector3 playerPos)
+    {
+        float r2 = radius * radius;
+        foreach (var w in wolves)
+            if (w != null && (w.transform.position - origin).sqrMagnitude <= r2)
+                w.Hear(playerPos);
+    }
+
+    // мораль: страх/бегство — ЛИЧНОЕ у каждого волка (WolfAI). Пул задаёт лишь параметры; ярость вожака гасит страх.
+    public bool Fearless => Time.time < fearlessUntil;
+    public int RollPanicThreshold() => Random.Range(routKillsMin, routKillsMax + 1); // личный порог храбрости волка
+    public float RoutDuration => routDuration;
+
+    public bool AnyRouting()
+    {
+        foreach (var w in wolves) if (w != null && w.Routing) return true;
+        return false;
+    }
+
+    // смерть волка пугает ТОЛЬКО ближних участников боя (у места гибели) — каждому +1 к его личному страху
+    public void ReportKill(Vector3 deathPos)
+    {
+        if (Fearless) return;
+        float r2 = routRadius * routRadius;
+        foreach (var w in wolves)
+            if (w != null && w.Engaged && (w.transform.position - deathPos).sqrMagnitude <= r2)
+                w.AddFear();
+    }
+
+    // приказ вожака (вой): бесстрашие на duration — гасит текущее бегство и обнуляет страх у всех
+    public void Rally(float duration)
+    {
+        fearlessUntil = Time.time + duration;
+        foreach (var w in wolves) if (w != null) w.CalmRout();
+    }
 
     Transform Player
     {
@@ -88,7 +124,8 @@ public class PackCoordinator : MonoBehaviour
     public bool TryAcquireAttack(WolfAI w)
     {
         if (attackers.Contains(w)) return true;
-        if (attackers.Count >= maxAttackers) return false;
+        int cap = Fearless ? Mathf.Max(maxAttackers, wolves.Count) : maxAttackers; // ярость: наваливается вся стая
+        if (attackers.Count >= cap) return false;
         attackers.Add(w);
         return true;
     }
