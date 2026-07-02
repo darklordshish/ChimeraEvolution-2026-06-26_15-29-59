@@ -3,7 +3,7 @@ using UnityEngine;
 
 /// <summary>
 /// Утилита разработки: собирает префаб вервольфа (капсула-плейсхолдер + компоненты), чтобы можно было
-/// тюнить `WerewolfBoss` руками в инспекторе. Меню: Chimera → Создать префаб Вервольфа.
+/// тюнить `WerewolfPsyche` руками в инспекторе. Меню: Chimera → Создать префаб Вервольфа.
 /// Dev-спавн (ChimeraDevWindow) берёт этот префаб, если он есть. Editor-only.
 /// </summary>
 public static class WerewolfPrefab
@@ -37,7 +37,7 @@ public static class WerewolfPrefab
         AssetDatabase.SaveAssets();
         Selection.activeObject = prefab;
         EditorGUIUtility.PingObject(prefab);
-        Debug.Log("Префаб вервольфа создан: " + Path + ". Тюнь компонент WerewolfBoss в инспекторе. Dev-спавн теперь берёт этот префаб.");
+        Debug.Log("Префаб вервольфа создан: " + Path + ". Тюнь компонент WerewolfPsyche в инспекторе. Dev-спавн теперь берёт этот префаб.");
     }
 
     // Собирает GameObject вервольфа (капсула-плейсхолдер + компоненты). Используется и префабом, и dev-спавном (фолбэк).
@@ -66,7 +66,7 @@ public static class WerewolfPrefab
         Configure(leap, ("windupTime", 0.5f), ("minRange", 6f), ("maxRange", 11f), ("speed", 16f), ("up", 6f),
                         ("duration", 0.55f), ("damage", 30), ("lifeSteal", 25), ("hitRadius", 2f));
 
-        go.AddComponent<WerewolfBoss>();
+        go.AddComponent<WerewolfPsyche>();
         return go;
     }
 

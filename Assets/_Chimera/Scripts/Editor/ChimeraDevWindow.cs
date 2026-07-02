@@ -78,7 +78,7 @@ public class ChimeraDevWindow : EditorWindow
         // ── Босс ──
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("Босс — Вервольф", EditorStyles.boldLabel);
-        var boss = Object.FindAnyObjectByType<WerewolfBoss>();
+        var boss = Object.FindAnyObjectByType<WerewolfPsyche>();
         if (boss != null && boss.TryGetComponent<Health>(out var bh))
             EditorGUILayout.LabelField($"HP {bh.Current}/{bh.Max}{(bh.Current > bh.Max ? $"  (+{bh.Current - bh.Max} temp)" : "")}");
         using (new EditorGUI.DisabledScope(boss != null))

@@ -14,7 +14,7 @@ using UnityEngine;
 [RequireComponent(typeof(NavLocomotion))]
 [RequireComponent(typeof(BiteAbility))]
 [RequireComponent(typeof(LeapAbility))]
-public class WerewolfBoss : MonoBehaviour
+public class WerewolfPsyche : MonoBehaviour
 {
     [Header("Тело — быстрый убийца, НЕ танк")]
     [SerializeField] int maxHp = 300;

@@ -34,7 +34,7 @@ public class WerewolfSpawner : MonoBehaviour
             return;
         }
 
-        if (FindAnyObjectByType<WerewolfBoss>() != null) // босс жив — следующего не плодим, держим паузу свежей
+        if (FindAnyObjectByType<WerewolfPsyche>() != null) // босс жив — следующего не плодим, держим паузу свежей
         {
             nextSpawnTime = Time.time + respawnDelay;
             return;

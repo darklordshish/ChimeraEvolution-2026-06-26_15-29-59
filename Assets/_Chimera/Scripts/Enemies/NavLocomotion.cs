@@ -4,7 +4,7 @@ using UnityEngine.AI;
 /// <summary>
 /// Локомоция по NavMesh для ИИ: направление к точке с учётом стен (троттлинг пересчёта пути)
 /// и случайная точка блуждания. Само перемещение (CharacterController) остаётся у существа —
-/// здесь только «куда идти». Извлечено из дублей WolfPsyche/WerewolfBoss (Фаза 0).
+/// здесь только «куда идти». Извлечено из дублей WolfPsyche/WerewolfPsyche (Фаза 0).
 /// </summary>
 public class NavLocomotion : MonoBehaviour
 {

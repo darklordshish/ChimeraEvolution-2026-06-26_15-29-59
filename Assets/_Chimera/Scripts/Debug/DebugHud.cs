@@ -36,7 +36,7 @@ public class DebugHud : MonoBehaviour
         string hp = playerHealth != null ? $"{playerHealth.Current}/{playerHealth.Max}" : "—";
         string combat = playerHealth != null && !playerHealth.InCombat ? "  (вне боя — реген)" : "";
         GUI.Label(new Rect(14, 10, 520, 26), $"HP: {hp}{combat}", style);
-        var boss = FindAnyObjectByType<WerewolfBoss>();
+        var boss = FindAnyObjectByType<WerewolfPsyche>();
         if (boss != null && boss.TryGetComponent<Health>(out var bossHp))
             GUI.Label(new Rect(540, 10, 460, 26), $"БОСС: {bossHp.Current}/{bossHp.Max}{(bossHp.Current > bossHp.Max ? $" (+{bossHp.Current - bossHp.Max} temp)" : "")}", style);
         GUI.Label(new Rect(14, 34, 760, 26), $"Родство [Волк]: {AffinityTracker.Get("Волк")}  (бонус органов ×{(body != null ? body.BonusMult : 1f):0.00})   [K +10]", style);
