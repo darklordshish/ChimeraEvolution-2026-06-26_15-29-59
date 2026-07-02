@@ -58,7 +58,29 @@ public static class WerewolfPrefab
         go.AddComponent<Knockback>();
         go.AddComponent<Stagger>();
         go.AddComponent<HitFlash>();
+
+        // доставки босса: те же компоненты, что у волка, но с числами вервольфа (вампиризм)
+        var bite = go.AddComponent<BiteAbility>();
+        Configure(bite, ("windupTime", 0.4f), ("range", 2.5f), ("halfAngle", 60f), ("damage", 28), ("lifeSteal", 25));
+        var leap = go.AddComponent<LeapAbility>();
+        Configure(leap, ("windupTime", 0.5f), ("minRange", 6f), ("maxRange", 11f), ("speed", 16f), ("up", 6f),
+                        ("duration", 0.55f), ("damage", 30), ("lifeSteal", 25), ("hitRadius", 2f));
+
         go.AddComponent<WerewolfBoss>();
         return go;
+    }
+
+    // выставить приватные [SerializeField]-поля компонента по именам (editor-only, через SerializedObject)
+    static void Configure(Component c, params (string field, object value)[] values)
+    {
+        var so = new SerializedObject(c);
+        foreach (var (field, value) in values)
+        {
+            var p = so.FindProperty(field);
+            if (p == null) { Debug.LogWarning($"WerewolfPrefab: поле {field} не найдено на {c.GetType().Name}"); continue; }
+            if (value is float f) p.floatValue = f;
+            else if (value is int i) p.intValue = i;
+        }
+        so.ApplyModifiedPropertiesWithoutUndo();
     }
 }

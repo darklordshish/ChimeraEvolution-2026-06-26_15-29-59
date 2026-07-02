@@ -5,11 +5,15 @@ using UnityEngine;
 /// хорошая регенерация, чувствительное обнаружение. Приёмы: УКУС с ВАМПИРИЗМОМ (лечит себя, может
 /// набрать временный HP свыше максимума — он не регенится, только вампиризмом) и ПРЫЖОК-наскок.
 /// Соло (без стаи): хантит по NavMesh, в покое бродит. Уступает пинку/стаггеру, как волк.
+/// УКУС и ПРЫЖОК — те же доставки, что у волка (BiteAbility/LeapAbility), но с числами босса
+/// (вампиризм); ЧАРДЖ и ВОЙ — фирменные приёмы психики (чардж обналичивается в мгновенный наскок).
 /// </summary>
 [RequireComponent(typeof(CharacterController))]
 [RequireComponent(typeof(Health))]
 [RequireComponent(typeof(Telegraph))]
 [RequireComponent(typeof(NavLocomotion))]
+[RequireComponent(typeof(BiteAbility))]
+[RequireComponent(typeof(LeapAbility))]
 public class WerewolfBoss : MonoBehaviour
 {
     [Header("Тело — быстрый убийца, НЕ танк")]
@@ -24,22 +28,7 @@ public class WerewolfBoss : MonoBehaviour
     [SerializeField] float gravity = -20f;
     [SerializeField] float sightRange = 55f; // чувствительное обнаружение
 
-    [Header("Укус (вампиризм)")]
-    [SerializeField] float attackRange = 2.5f;
-    [SerializeField] float biteHalfAngle = 60f;
-    [SerializeField] int biteDamage = 28;
-    [SerializeField] int biteLifeSteal = 25; // лечит себя; может уйти в temp HP свыше макс.
-    [SerializeField] float biteWindup = 0.4f;
-
-    [Header("Прыжок")]
-    [SerializeField] float leapMinRange = 6f;
-    [SerializeField] float leapRange = 11f;
-    [SerializeField] float leapWindup = 0.5f;
-    [SerializeField] float leapSpeed = 16f;
-    [SerializeField] float leapUp = 6f;
-    [SerializeField] float leapDuration = 0.55f;
-    [SerializeField] int leapDamage = 30;
-    [SerializeField] float leapHitRadius = 2f;
+    // параметры укуса (вампиризм) и прыжка — на компонентах BiteAbility/LeapAbility (генерит префаб-меню)
 
     [Header("Чардж (разбег на четвереньках → прыжок)")]
     [SerializeField] float chargeSpeed = 20f;       // скорость бега на четвереньках
@@ -61,7 +50,7 @@ public class WerewolfBoss : MonoBehaviour
     [SerializeField, Range(0f, 1f)] float wanderSpeed = 0.5f;
     [SerializeField] float scentRange = 22f; // нюх острее волчьего
 
-    enum Kind { Bite, Leap, Charge, Howl }
+    enum Kind { Charge, Howl }   // укус/прыжок — доставки (activeAbility), здесь только спец-приёмы
 
     CharacterController controller;
     Stagger stagger;
@@ -70,10 +59,12 @@ public class WerewolfBoss : MonoBehaviour
     Transform target;
     Telegraph telegraph;
     NavLocomotion nav;
+    BiteAbility bite;
+    LeapAbility leap;
+    WindupAbility activeAbility;   // укус/прыжок в процессе (замах/полёт) — психика его тикает
 
-    float nextAttackTime, verticalVel, windupEnd, leapEnd, chargeEnd, nextHowl;
-    Vector3 leapVel;
-    bool windingUp, leaping, charging;
+    float nextAttackTime, verticalVel, windupEnd, chargeEnd, nextHowl;
+    bool windingUp, charging;
     Kind pendingKind;
     Color activeTelegraph;
 
@@ -85,6 +76,8 @@ public class WerewolfBoss : MonoBehaviour
         ownHealth = GetComponent<Health>();
         if (!TryGetComponent(out telegraph)) telegraph = gameObject.AddComponent<Telegraph>();
         if (!TryGetComponent(out nav)) nav = gameObject.AddComponent<NavLocomotion>();
+        if (!TryGetComponent(out bite)) bite = gameObject.AddComponent<BiteAbility>();
+        if (!TryGetComponent(out leap)) leap = gameObject.AddComponent<LeapAbility>();
 
         if (!TryGetComponent<ScentTrail>(out _)) gameObject.AddComponent<ScentTrail>(); // босс тоже пахнет (тропишь его)
     }
@@ -105,18 +98,35 @@ public class WerewolfBoss : MonoBehaviour
     {
         if (target == null) { Cancel(); Settle(Vector3.zero); return; }
 
-        if (knockback != null && knockback.IsActive) { leaping = false; charging = false; Cancel(); return; }
-        if (leaping) { UpdateLeap(); return; }
+        if (knockback != null && knockback.IsActive)
+        {
+            if (activeAbility != null) { activeAbility.Abort(true); activeAbility = null; }
+            charging = false;
+            Cancel();
+            return;
+        }
+
+        // активный приём (укус/прыжок) тикает сам: телом на это время рулит доставка
+        if (activeAbility != null)
+        {
+            if (stagger != null && stagger.IsStaggered) activeAbility.Abort(false); // полёт закоммичен — сам решит
+            var st = activeAbility.Tick();
+            if (st == AbilityRun.Running) return;
+            activeAbility = null;
+            nextAttackTime = Time.time + (st == AbilityRun.Done ? attackCooldown : 0.3f);
+            return;
+        }
+
         if (charging) { UpdateCharge(); return; }
 
         Vector3 to = target.position - transform.position; to.y = 0f;
         float dist = to.magnitude;
         Vector3 dir = dist > 0.001f ? to / dist : transform.forward;
-        bool inCone = Vector3.Angle(transform.forward, dir) <= biteHalfAngle;
+        bool inCone = Vector3.Angle(transform.forward, dir) <= bite.HalfAngle;
 
         if (stagger != null && stagger.IsStaggered) { Cancel(); Settle(Vector3.zero); return; }
 
-        if (windingUp) { UpdateWindup(dist, dir, inCone); return; }
+        if (windingUp) { UpdateWindup(); return; } // только чардж/вой — укус/прыжок тикают выше
 
         // вой-призыв: по кулдауну, если стая поредела — в любом состоянии (хоть в бою, хоть на патруле)
         if (Time.time >= nextHowl)
@@ -143,46 +153,29 @@ public class WerewolfBoss : MonoBehaviour
 
         if (Time.time >= nextAttackTime && inCone)
         {
-            if (dist <= attackRange) { BeginAttack(Kind.Bite); Settle(Vector3.zero); return; }
-            if (dist >= leapMinRange && dist <= leapRange) { BeginAttack(Kind.Leap); Settle(Vector3.zero); return; }
-            if (dist > leapRange && dist <= chargeMaxRange) { BeginAttack(Kind.Charge); Settle(Vector3.zero); return; }
+            if (dist <= bite.Range) { if (bite.TryUse()) activeAbility = bite; Settle(Vector3.zero); return; }
+            if (dist >= leap.MinRange && dist <= leap.MaxRange) { if (leap.TryUse()) activeAbility = leap; Settle(Vector3.zero); return; }
+            if (dist > leap.MaxRange && dist <= chargeMaxRange) { BeginAttack(Kind.Charge); Settle(Vector3.zero); return; }
         }
 
         // погоня по NavMesh
-        Settle(dist > attackRange ? nav.DirTo(target.position) * moveSpeed : Vector3.zero);
+        Settle(dist > bite.Range ? nav.DirTo(target.position) * moveSpeed : Vector3.zero);
     }
 
     void Face(Vector3 d) =>
         transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(d), rotationSpeed * Time.deltaTime);
 
-    void UpdateWindup(float dist, Vector3 dir, bool inCone)
+    void UpdateWindup()
     {
-        if (pendingKind == Kind.Leap)
-        {
-            if (Time.time >= windupEnd) LaunchLeap(dir);
-        }
-        else if (pendingKind == Kind.Charge)
+        if (pendingKind == Kind.Charge)
         {
             if (Time.time >= windupEnd) StartCharge();
         }
-        else if (pendingKind == Kind.Howl)
+        else // вой
         {
             if (Time.time >= windupEnd) { DoHowl(); Cancel(); nextAttackTime = Time.time + attackCooldown; }
         }
-        else // укус — отменяется уворотом из зоны/конуса
-        {
-            if (!(dist <= attackRange && inCone)) { Cancel(); nextAttackTime = Time.time + 0.3f; }
-            else if (Time.time >= windupEnd) { Bite(); Cancel(); nextAttackTime = Time.time + attackCooldown; }
-        }
         Settle(Vector3.zero);
-    }
-
-    void Bite()
-    {
-        if (targetHealth == null) return;
-        var h = new Hit(ownHealth, transform.position);
-        h.Apply(targetHealth, HitEffect.Damage(biteDamage));
-        h.Apply(targetHealth, HitEffect.LifeSteal(biteLifeSteal)); // вампиризм → может уйти в temp HP свыше макс.
     }
 
     void DoHowl()
@@ -200,44 +193,12 @@ public class WerewolfBoss : MonoBehaviour
     {
         windingUp = true;
         pendingKind = kind;
-        windupEnd = Time.time + (kind == Kind.Leap ? leapWindup : kind == Kind.Charge ? chargeWindup : kind == Kind.Howl ? howlWindup : biteWindup);
-        activeTelegraph = kind == Kind.Leap ? TelegraphColors.Leap : kind == Kind.Charge ? TelegraphColors.Charge : kind == Kind.Howl ? TelegraphColors.Howl : TelegraphColors.Bite;
+        windupEnd = Time.time + (kind == Kind.Charge ? chargeWindup : howlWindup);
+        activeTelegraph = kind == Kind.Charge ? TelegraphColors.Charge : TelegraphColors.Howl;
         telegraph.Set(true, activeTelegraph);
     }
 
     void Cancel() { windingUp = false; telegraph.Clear(); }
-
-    void LaunchLeap(Vector3 dir)
-    {
-        windingUp = false;
-        telegraph.Clear();
-        leaping = true;
-        leapEnd = Time.time + leapDuration;
-        Vector3 flat = dir; flat.y = 0f; flat.Normalize();
-        leapVel = flat * leapSpeed + Vector3.up * leapUp;
-    }
-
-    void UpdateLeap()
-    {
-        leapVel.y += gravity * Time.deltaTime;
-        controller.Move(leapVel * Time.deltaTime);
-
-        if (Time.time >= leapEnd)
-        {
-            leaping = false;
-            if (targetHealth != null) // приземление — укус с вампиризмом, если цель рядом
-            {
-                Vector3 d = target.position - transform.position; d.y = 0f;
-                if (d.magnitude <= leapHitRadius)
-                {
-                    var h = new Hit(ownHealth, transform.position);
-                    h.Apply(targetHealth, HitEffect.Damage(leapDamage));
-                    h.Apply(targetHealth, HitEffect.LifeSteal(biteLifeSteal));
-                }
-            }
-            nextAttackTime = Time.time + attackCooldown;
-        }
-    }
 
     void StartCharge()
     {
@@ -253,10 +214,11 @@ public class WerewolfBoss : MonoBehaviour
         Vector3 to = target.position - transform.position; to.y = 0f;
         float dist = to.magnitude;
 
-        if (dist <= leapRange) // дорвался — прыжок с атакой
+        if (dist <= leap.MaxRange) // дорвался — мгновенный наскок (разбег и был телеграфом)
         {
             charging = false;
-            LaunchLeap(dist > 0.001f ? to / dist : transform.forward);
+            telegraph.Clear();
+            if (leap.TryPounceNow()) activeAbility = leap;
             return;
         }
         if (Time.time >= chargeEnd) { charging = false; Cancel(); nextAttackTime = Time.time + attackCooldown; return; } // не успел
@@ -277,7 +239,7 @@ public class WerewolfBoss : MonoBehaviour
     void OnDrawGizmos()
     {
         Vector3 o = transform.position + Vector3.up * 0.5f;
-        Gizmos.color = windingUp ? activeTelegraph : (leaping ? TelegraphColors.Leap : (charging ? TelegraphColors.Charge : Color.magenta));
-        Gizmos.DrawLine(o, o + transform.forward * attackRange);
+        Gizmos.color = windingUp ? activeTelegraph : (charging ? TelegraphColors.Charge : Color.magenta);
+        Gizmos.DrawLine(o, o + transform.forward * (bite != null ? bite.Range : 2.5f));
     }
 }

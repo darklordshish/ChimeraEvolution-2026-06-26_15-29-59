@@ -51,6 +51,14 @@ public class LeapAbility : WindupAbility
         return AbilityRun.Done;
     }
 
+    /// <summary>Мгновенный наскок без замаха: чардж-разбег уже был телеграфом. Взлёт на первом же тике.</summary>
+    public bool TryPounceNow()
+    {
+        if (!TryUse()) return false;
+        windupEnd = Time.time;
+        return true;
+    }
+
     // полёт закоммичен: стаггер (мягкий срыв) не рвёт; нокбэк (hard) рвёт
     public override void Abort(bool hard)
     {
