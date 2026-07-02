@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 6400385125635897708}
   - component: {fileID: 9031596976022574525}
   - component: {fileID: 5884280649072417053}
+  - component: {fileID: 5159700073064122133}
   - component: {fileID: 2207140036348440661}
   - component: {fileID: 5469509999948184840}
   - component: {fileID: 1683690007009567405}
@@ -125,7 +126,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 07bc2ed469704554daec7a51477335c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HitFlash
-  flashColor: {r: 0.031446517, g: 0.030754296, b: 0.030754296, a: 1}
+  flashColor: {r: 0, g: 0, b: 0, a: 1}
   flashTime: 0.08
 --- !u!114 &9031596976022574525
 MonoBehaviour:
@@ -169,6 +170,22 @@ MonoBehaviour:
   damage: 30
   lifeSteal: 25
   hitRadius: 2
+--- !u!114 &5159700073064122133
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2584721357774835327}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95a14990812752144a38f393fa1091eb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Rage
+  permanent: 1
+  damageMult: 1.25
+  speedMult: 1.15
+  incomingMult: 1.5
 --- !u!114 &2207140036348440661
 MonoBehaviour:
   m_ObjectHideFlags: 0

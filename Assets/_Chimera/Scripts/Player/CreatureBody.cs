@@ -25,6 +25,11 @@ public class CreatureBody : MonoBehaviour
     [SerializeField] float bonusFullAffinity = 100f;
     [SerializeField] float maxBonusMult = 2f;           // звериная часть органа ×2 на 100 родства
 
+    [Header("NPC-режим (застывшая химера)")]
+    [SerializeField] bool installAllBeast;    // все звериные органы надеты с рождения (вервольф)
+    [SerializeField] float fixedBonusMult;    // >0 — фикс. множитель вместо кривой родства (босс: 2 = потолок игрока)
+    [SerializeField] bool applyVitals = true; // false: HP/броня/реген — «конституция» психики, тело их не трогает
+
     class Slot
     {
         public string name, hotkey, donorSpecies;
@@ -119,8 +124,10 @@ public class CreatureBody : MonoBehaviour
     }
 
     // Фаза 2: множитель звериной части. ×1 до bonusStartAffinity, линейно до maxBonusMult к bonusFullAffinity.
+    // NPC-режим: фиксированный множитель (босс не качает родство — он уже «готовая» химера).
     float BonusMultiplier(string species)
     {
+        if (fixedBonusMult > 0f) return fixedBonusMult;
         float span = Mathf.Max(1f, bonusFullAffinity - bonusStartAffinity);
         float t = Mathf.Clamp01((AffinityTracker.Get(species) - bonusStartAffinity) / span);
         return Mathf.Lerp(1f, maxBonusMult, t);
@@ -175,6 +182,9 @@ public class CreatureBody : MonoBehaviour
             list.Add(sl);
         }
         slots = list.ToArray();
+
+        if (installAllBeast) // застывшая химера (вервольф): весь звериный лоадаут надет с рождения
+            foreach (var sl in slots) sl.installed = sl.beast != null;
     }
 
     void Start() => Recompute();
@@ -259,7 +269,7 @@ public class CreatureBody : MonoBehaviour
             move.SetLegs(mv, dash);
             move.SetDashCooldown(Mathf.Max(0.05f, dashCd));
         }
-        if (health != null)
+        if (health != null && applyVitals) // у босса витальность — «конституция» психики
         {
             health.SetMaxHealth(maxHp);
             health.DamageReduction = Mathf.Clamp01(reduce);
@@ -267,7 +277,10 @@ public class CreatureBody : MonoBehaviour
             health.OutOfCombatRegen = regenOOC;
         }
 
-        UpdateTint(beast);
+        // НПС-потребители (психика): тело отдаёт деривированное — урон и скорость из органов
+        foreach (var c in GetComponents<IBodyStatConsumer>()) c.OnBodyStats(dmg, mv);
+
+        if (!installAllBeast) UpdateTint(beast); // застывшая химера красится своим материалом, не тинтом
     }
 
     // человеч.значение + (звериное − человеч.) × множитель: на ×1 = звериное, на ×2 = вдвое дальше от человека
@@ -285,4 +298,13 @@ public class CreatureBody : MonoBehaviour
             renderers[i].SetPropertyBlock(mpb);
         }
     }
+}
+
+/// <summary>
+/// НПС-потребитель статов тела: психика получает деривированное из органов (урон, скорость)
+/// и раздаёт своим доставкам. Витальность (HP/броня/реген) — отдельно («конституция», applyVitals).
+/// </summary>
+public interface IBodyStatConsumer
+{
+    void OnBodyStats(int damage, float moveSpeed);
 }

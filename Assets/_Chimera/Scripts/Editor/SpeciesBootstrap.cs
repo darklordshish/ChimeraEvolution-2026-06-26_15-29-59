@@ -53,8 +53,9 @@ public static class SpeciesBootstrap
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
-        // ── авто-привязка к телу игрока (CreatureBody) в открытой сцене ──
-        var body = Object.FindAnyObjectByType<CreatureBody>();
+        // ── авто-привязка к телу ИГРОКА в открытой сцене (в сцене бывают и NPC-тела — ищем через контроллер) ──
+        var pc = Object.FindAnyObjectByType<PlayerController>();
+        var body = pc != null ? pc.GetComponent<CreatureBody>() : null;
         if (body != null)
         {
             var so = new SerializedObject(body);

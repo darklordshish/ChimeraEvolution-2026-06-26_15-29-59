@@ -70,6 +70,23 @@ public static class WerewolfPrefab
         var rage = go.AddComponent<Rage>();
         Configure(rage, ("permanent", true));
 
+        // ШАССИ: человек + фулл волчьи аугументы ×2 (= потолок игрока на 100 родства); превосходство даёт ярость.
+        // Витальность (HP/броня/реген) — конституция психики (applyVitals=false), тело кормит урон и скорость.
+        var creatureBody = go.AddComponent<CreatureBody>();
+        var human = AssetDatabase.LoadAssetAtPath<SpeciesSO>("Assets/_Chimera/Data/Человек.asset");
+        var wolfSpecies = AssetDatabase.LoadAssetAtPath<SpeciesSO>("Assets/_Chimera/Data/Волк.asset");
+        if (human == null || wolfSpecies == null)
+            Debug.LogWarning("WerewolfPrefab: ассеты видов не найдены — прогони «Chimera → Создать дефолтные виды» и пересоздай префаб.");
+        var bodySo = new SerializedObject(creatureBody);
+        bodySo.FindProperty("chassis").objectReferenceValue = human;
+        var donorsProp = bodySo.FindProperty("donors");
+        donorsProp.arraySize = 1;
+        donorsProp.GetArrayElementAtIndex(0).objectReferenceValue = wolfSpecies;
+        bodySo.FindProperty("installAllBeast").boolValue = true;
+        bodySo.FindProperty("fixedBonusMult").floatValue = 2f;
+        bodySo.FindProperty("applyVitals").boolValue = false;
+        bodySo.ApplyModifiedPropertiesWithoutUndo();
+
         go.AddComponent<WerewolfPsyche>();
         return go;
     }

@@ -15,7 +15,7 @@ using UnityEngine;
 [RequireComponent(typeof(BiteAbility))]
 [RequireComponent(typeof(LeapAbility))]
 [RequireComponent(typeof(Rage))]
-public class WerewolfPsyche : MonoBehaviour
+public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
 {
     [Header("Тело — быстрый убийца, НЕ танк")]
     [SerializeField] int maxHp = 300;
@@ -166,6 +166,14 @@ public class WerewolfPsyche : MonoBehaviour
     }
 
     float Speed => moveSpeed * (rage != null ? rage.SpeedMult : 1f); // вечная ярость: быстрее (и уязвимее)
+
+    // тело-на-шасси (CreatureBody: человек + фулл волчьи органы ×2) кормит деривированное.
+    // Конституция (HP/броня/реген/temp HP) остаётся фирменной — задаётся в Start этой психики.
+    public void OnBodyStats(int damage, float bodyMoveSpeed)
+    {
+        moveSpeed = bodyMoveSpeed;
+        bite.SetDamage(damage);
+    }
 
     void Face(Vector3 d) =>
         transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(d), rotationSpeed * Time.deltaTime);

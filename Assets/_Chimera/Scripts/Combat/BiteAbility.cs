@@ -18,6 +18,9 @@ public class BiteAbility : WindupAbility
     public float Range => range;         // психика читает для решений (дистанция атаки/удержания)
     public float HalfAngle => halfAngle; // и для прицельного конуса
 
+    // тело-на-шасси (CreatureBody, NPC-режим) кормит урон из органов
+    public void SetDamage(int v) => damage = v;
+
     protected override Color TelegraphColor => TelegraphColors.Bite;
 
     protected override AbilityRun OnTick()

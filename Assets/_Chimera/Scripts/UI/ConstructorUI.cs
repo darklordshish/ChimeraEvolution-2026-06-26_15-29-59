@@ -179,10 +179,11 @@ public class ConstructorUI : MonoBehaviour
         Bottom(hint.rectTransform, 28, 30);
     }
 
-    // строим по строке на слот (один раз, когда в сцене найдено тело игрока)
+    // строим по строке на слот (один раз, когда найдено тело ИГРОКА — в сцене есть и NPC-тела, напр. босс)
     void BuildSlotRows()
     {
-        body = FindAnyObjectByType<CreatureBody>();
+        var pc = FindAnyObjectByType<PlayerController>();
+        body = pc != null ? pc.GetComponent<CreatureBody>() : null;
         if (body == null || body.SlotCount == 0) return;
 
         for (int i = 0; i < body.SlotCount; i++)
