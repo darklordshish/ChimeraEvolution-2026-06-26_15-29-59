@@ -4,7 +4,7 @@ using UnityEngine;
 /// Тип эффекта удара. Маленький закрытый набор — то, что УЖЕ есть в бою.
 /// Новый (яд/DoT) добавляется одной веткой в Hit.Apply — лакмус здоровья абстракции.
 /// </summary>
-public enum EffectKind { Damage, LifeSteal, Knockback, RegenDebuff }
+public enum EffectKind { Damage, LifeSteal, Knockback, RegenDebuff, Stun }
 
 /// <summary>
 /// Эффект удара как value-тип (ноль аллокаций на удар). Собирается фабриками, применяется через Hit.
@@ -24,6 +24,7 @@ public readonly struct HitEffect
     public static HitEffect LifeSteal(int amount) => new(EffectKind.LifeSteal, amount, 0f, 0f, 0f);
     public static HitEffect Knockback(float force) => new(EffectKind.Knockback, 0, force, 0f, 0f);
     public static HitEffect RegenDebuff(float factor, float duration) => new(EffectKind.RegenDebuff, 0, 0f, factor, duration);
+    public static HitEffect Stun(float duration) => new(EffectKind.Stun, 0, 0f, 0f, duration);
 }
 
 /// <summary>
@@ -58,6 +59,9 @@ public readonly struct Hit
                 break;
             case EffectKind.RegenDebuff:
                 target.SuppressRegen(e.Factor, e.Duration);
+                break;
+            case EffectKind.Stun: // оглушение без урона (вой): прерывает замахи через Stagger
+                if (target.TryGetComponent<Stagger>(out var st)) st.Stun(e.Duration);
                 break;
         }
     }

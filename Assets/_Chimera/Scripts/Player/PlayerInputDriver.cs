@@ -13,8 +13,9 @@ public class PlayerInputDriver : MonoBehaviour
     PlayerAttack melee;
     PlayerBite bite;
     PlayerKick kick;
+    PlayerHowl howl;
     CreatureBody body;
-    InputAction attackAction, biteAction, kickAction;
+    InputAction attackAction, biteAction, kickAction, howlAction;
     readonly List<(InputAction action, int slot)> slotActions = new();
 
     void Awake()
@@ -22,6 +23,7 @@ public class PlayerInputDriver : MonoBehaviour
         melee = GetComponent<PlayerAttack>();
         bite = GetComponent<PlayerBite>();
         kick = GetComponent<PlayerKick>();
+        howl = GetComponent<PlayerHowl>();
 
         // ЛКМ / X на геймпаде / J
         attackAction = new InputAction("Attack", InputActionType.Button);
@@ -38,6 +40,11 @@ public class PlayerInputDriver : MonoBehaviour
         kickAction = new InputAction("Kick", InputActionType.Button);
         kickAction.AddBinding("<Keyboard>/e");
         kickAction.AddBinding("<Gamepad>/buttonEast");
+
+        // Alt / правый шифтер (вой-стан — фича волчьей Пасти)
+        howlAction = new InputAction("Howl", InputActionType.Button);
+        howlAction.AddBinding("<Keyboard>/leftAlt");
+        howlAction.AddBinding("<Gamepad>/rightShoulder");
     }
 
     // хоткеи слотов строим в Start: тело собирает слоты в своём Awake
@@ -58,13 +65,13 @@ public class PlayerInputDriver : MonoBehaviour
 
     void OnEnable()
     {
-        attackAction.Enable(); biteAction.Enable(); kickAction.Enable();
+        attackAction.Enable(); biteAction.Enable(); kickAction.Enable(); howlAction.Enable();
         foreach (var (a, _) in slotActions) a.Enable();
     }
 
     void OnDisable()
     {
-        attackAction.Disable(); biteAction.Disable(); kickAction.Disable();
+        attackAction.Disable(); biteAction.Disable(); kickAction.Disable(); howlAction.Disable();
         foreach (var (a, _) in slotActions) a.Disable();
     }
 
@@ -79,5 +86,6 @@ public class PlayerInputDriver : MonoBehaviour
         if (attackAction.WasPressedThisFrame()) melee.TryUse();
         if (bite != null && biteAction.WasPressedThisFrame()) bite.TryUse();
         if (kick != null && kickAction.WasPressedThisFrame()) kick.TryUse();
+        if (howl != null && howlAction.WasPressedThisFrame()) howl.TryUse();
     }
 }

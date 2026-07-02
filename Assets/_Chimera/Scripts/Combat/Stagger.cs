@@ -12,5 +12,8 @@ public class Stagger : MonoBehaviour
     float until;
     public bool IsStaggered => Time.time < until;
 
-    void Awake() => GetComponent<Health>().onDamaged.AddListener(() => until = Time.time + staggerTime);
+    /// <summary>Прямое оглушение (без урона) — например, вой-стан. Не укорачивает уже идущий стаггер.</summary>
+    public void Stun(float duration) => until = Mathf.Max(until, Time.time + duration);
+
+    void Awake() => GetComponent<Health>().onDamaged.AddListener(() => Stun(staggerTime));
 }

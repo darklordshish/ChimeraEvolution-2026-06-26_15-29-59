@@ -57,6 +57,7 @@ public class PlayerController : MonoBehaviour
 
         dashAction = new InputAction("Dash", InputActionType.Button);
         dashAction.AddBinding("<Keyboard>/space");
+        dashAction.AddBinding("<Mouse>/rightButton"); // ПКМ освободился после переноса пинка на E
         dashAction.AddBinding("<Gamepad>/buttonSouth");
 
         toggleViewAction = new InputAction("ToggleView", InputActionType.Button);
