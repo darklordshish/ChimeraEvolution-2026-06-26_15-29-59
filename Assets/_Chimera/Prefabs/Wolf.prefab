@@ -196,6 +196,13 @@ GameObject:
   - component: {fileID: 7515132306626577852}
   - component: {fileID: 1563202922655136037}
   - component: {fileID: 1809133527111127115}
+  - component: {fileID: 2612343301891455656}
+  - component: {fileID: 2052576508668551129}
+  - component: {fileID: 4072779755421574342}
+  - component: {fileID: 7325843036856117730}
+  - component: {fileID: 2202026209194873107}
+  - component: {fileID: 2876609216102144494}
+  - component: {fileID: 4638369006917180185}
   m_Layer: 0
   m_Name: Wolf
   m_TagString: Untagged
@@ -261,20 +268,22 @@ MonoBehaviour:
   rotationSpeed: 540
   gravity: -20
   sightRange: 25
-  attackRange: 1.8
-  biteHalfAngle: 55
-  biteDamage: 8
-  biteWindupTime: 0.45
-  leapRange: 6.5
-  leapWindupTime: 0.5
-  leapSpeed: 13
-  leapUp: 5
-  leapDuration: 0.5
-  leapDamage: 12
-  leapHitRadius: 1.3
+  hpRegen: 1
+  wanderRadius: 15
+  wanderSpeed: 0.5
+  scentRange: 16
+  grabWindupTime: 0.35
+  grabChance: 0.5
+  grabSlow: 0.35
+  ripSelfKnock: 6
+  circleSpeed: 0.85
+  disengageRange: 9
+  howlRadius: 16
+  howlCooldown: 5
+  howlRageDuration: 3
+  howlCueTime: 0.4
+  alertMemory: 8
   attackCooldown: 1.2
-  biteColor: {r: 1, g: 0.3, b: 0.2, a: 1}
-  leapColor: {r: 1, g: 0.65, b: 0.1, a: 1}
   separationRadius: 1.6
   separationStrength: 4
 --- !u!114 &6546092155746536324
@@ -351,3 +360,124 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Knockback
   drag: 10
+--- !u!114 &2612343301891455656
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5391713426317768002}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 819dbf4fcff215841b06748214703154, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Telegraph
+--- !u!114 &2052576508668551129
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5391713426317768002}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eff730cb67aafbe42a976305b0bbf850, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NavLocomotion
+  pathInterval: 0.2
+  pathDirectRange: 5
+--- !u!114 &4072779755421574342
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5391713426317768002}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8120dfd90814e543a5f142f02adffbc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BiteAbility
+  windupTime: 0.45
+  gravity: -20
+  range: 2
+  halfAngle: 55
+  damage: 8
+  lifeSteal: 0
+  regenDebuff: 1
+  regenDebuffTime: 0
+--- !u!114 &7325843036856117730
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5391713426317768002}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: afa6fda7ccc3dd049bc2da89dfdc928b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LeapAbility
+  windupTime: 0.45
+  gravity: -20
+  minRange: 5
+  maxRange: 6.5
+  speed: 13
+  up: 5
+  duration: 0.5
+  damage: 12
+  lifeSteal: 0
+  hitRadius: 1.3
+--- !u!114 &2202026209194873107
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5391713426317768002}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 95a14990812752144a38f393fa1091eb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Rage
+  permanent: 0
+  damageMult: 1.25
+  speedMult: 1.15
+  incomingMult: 1.5
+--- !u!114 &2876609216102144494
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5391713426317768002}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aa93516b352ce804e89d1e43cea3cfb7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SpawnVariance
+  hpSpread: 0.15
+  damageSpread: 0.15
+  speedSpread: 0.1
+--- !u!114 &4638369006917180185
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5391713426317768002}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2518f7a3646f61e44b32984eb2d8fce2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CreatureBody
+  chassis: {fileID: 11400000, guid: 0c6b11574869a6b44a321162414452d6, type: 2}
+  donors: []
+  discountPerAffinity: 0.01
+  maxDiscount: 0.8
+  bonusStartAffinity: 80
+  bonusFullAffinity: 100
+  maxBonusMult: 2
+  installAllBeast: 0
+  expression: 0.45
+  applyVitals: 1
