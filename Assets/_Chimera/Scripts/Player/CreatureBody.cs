@@ -38,6 +38,7 @@ public class CreatureBody : MonoBehaviour
     PlayerController move;
     Health health;
     PlayerBite bite;
+    PlayerKick kick;
     Renderer[] renderers;
     Color[] baseColors;
     MaterialPropertyBlock mpb;
@@ -131,6 +132,7 @@ public class CreatureBody : MonoBehaviour
         TryGetComponent(out move);
         TryGetComponent(out health);
         TryGetComponent(out bite);
+        TryGetComponent(out kick);
 
         BuildSlots();
 
@@ -202,7 +204,7 @@ public class CreatureBody : MonoBehaviour
 
         int dmg = 0, maxHp = 0, life = 0, beast = 0;
         float rng = 0f, atkCd = 0f, mv = 0f, dash = 0f, dashCd = 0f, reduce = 0f, regen = 0f, regenOOC = 0f;
-        bool biteOn = false, scentOn = false;
+        bool biteOn = false, scentOn = false, kickOn = false;
 
         foreach (var sl in slots)
         {
@@ -224,6 +226,7 @@ public class CreatureBody : MonoBehaviour
                 regenOOC += Blend(h.regenOOC, b.regenOOC, m);
                 if (b.enablesBite) biteOn = true;
                 if (b.enablesScent) scentOn = true;
+                if (b.enablesKick) kickOn = true;
                 beast++;
             }
             else
@@ -233,10 +236,12 @@ public class CreatureBody : MonoBehaviour
                 dashCd += h.dashCooldown; reduce += h.damageReduction; regen += h.regen; regenOOC += h.regenOOC;
                 if (h.enablesBite) biteOn = true;
                 if (h.enablesScent) scentOn = true;
+                if (h.enablesKick) kickOn = true;
             }
         }
 
         if (bite != null) bite.BiteEnabled = biteOn;
+        if (kick != null) kick.KickEnabled = kickOn; // пинок — фича человеческих ног: с волчьими пропадает
         if (move != null) Perception.WolfScent = scentOn; // чутьё игрока меняет ТОЛЬКО тело игрока (NPC-тело не должно включать игроку запах)
         if (attack != null)
         {

@@ -2,8 +2,10 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Пинок на ПКМ (или B на геймпаде): отталкивает врагов перед игроком + лёгкий урон
+/// Пинок на E (или B на геймпаде): отталкивает врагов перед игроком + лёгкий урон
 /// (через который идут вспышка и стаггер). Инструмент создания пространства под кайтинг.
+/// Фича ЧЕЛОВЕЧЕСКИХ ног (CreatureBody выставляет KickEnabled) — с волчьими ногами пропадает,
+/// и захват снимается только рывком. Потом: копыто лося и т.п. на том же флаге.
 /// </summary>
 public class PlayerKick : MonoBehaviour, IAbility
 {
@@ -15,16 +17,19 @@ public class PlayerKick : MonoBehaviour, IAbility
     [SerializeField] float cooldown = 1.0f;
     [SerializeField] float shake = 0.4f;
 
+    // включается органом «Ноги» (человеческие). Дефолт true — без данных тела пинок работает как раньше.
+    public bool KickEnabled { get; set; } = true;
+
     float nextTime;
     CameraFollow cam;
     readonly HashSet<Health> hitThisKick = new();
 
     void Start() => cam = FindAnyObjectByType<CameraFollow>();
 
-    // водитель зовёт по вводу; кулдаун проверяем сами
+    // водитель зовёт по вводу; активен только с человеческими ногами; кулдаун проверяем сами
     public bool TryUse()
     {
-        if (Time.time < nextTime) return false;
+        if (!KickEnabled || Time.time < nextTime) return false;
         nextTime = Time.time + cooldown;
         DoKick();
         return true;
@@ -54,6 +59,7 @@ public class PlayerKick : MonoBehaviour, IAbility
 
     void OnDrawGizmos()
     {
+        if (!KickEnabled) return;
         Gizmos.color = Color.cyan;
         Gizmos.DrawWireSphere(KickCenter(), radius);
     }

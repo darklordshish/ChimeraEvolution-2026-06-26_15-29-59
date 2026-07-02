@@ -26,7 +26,7 @@ public static class SpeciesBootstrap
         human.organs = new[]
         {
             new Organ { organName = "Кисть",  slot = "Руки",   hotkey = "1", cost = 2, damage = 10, range = 1.6f },
-            new Organ { organName = "Ноги",   slot = "Ноги",   hotkey = "2", cost = 2, moveSpeed = 6f, dashSpeed = 20f },
+            new Organ { organName = "Ноги",   slot = "Ноги",   hotkey = "2", cost = 2, moveSpeed = 6f, dashSpeed = 20f, enablesKick = true }, // пинок — фича человеческих ног
             new Organ { organName = "Сердце", slot = "Сердце", hotkey = "3", cost = 2, atkCooldown = 0.45f, maxHp = 100, regen = 0f, regenOOC = 1f },
             new Organ { organName = "Чутьё",  slot = "Чутьё",  hotkey = "4", cost = 2, dashCooldown = 0.7f },
             new Organ { organName = "Рот",    slot = "Пасть",  hotkey = "5", cost = 2, enablesBite = false },
