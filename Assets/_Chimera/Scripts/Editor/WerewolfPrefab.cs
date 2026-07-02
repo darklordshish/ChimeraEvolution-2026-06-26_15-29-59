@@ -66,6 +66,10 @@ public static class WerewolfPrefab
         Configure(leap, ("windupTime", 0.5f), ("minRange", 6f), ("maxRange", 11f), ("speed", 16f), ("up", 6f),
                         ("duration", 0.55f), ("damage", 30), ("lifeSteal", 25), ("hitRadius", 2f));
 
+        // вервольф под ВЕЧНОЙ яростью: урон/скорость выше, входящий урон больше («быстрый убийца, не танк»)
+        var rage = go.AddComponent<Rage>();
+        Configure(rage, ("permanent", true));
+
         go.AddComponent<WerewolfPsyche>();
         return go;
     }
@@ -80,6 +84,7 @@ public static class WerewolfPrefab
             if (p == null) { Debug.LogWarning($"WerewolfPrefab: поле {field} не найдено на {c.GetType().Name}"); continue; }
             if (value is float f) p.floatValue = f;
             else if (value is int i) p.intValue = i;
+            else if (value is bool b) p.boolValue = b;
         }
         so.ApplyModifiedPropertiesWithoutUndo();
     }

@@ -29,7 +29,7 @@ public class BiteAbility : WindupAbility
         if (Time.time >= windupEnd)
         {
             var hit = new Hit(ownHealth, transform.position);
-            hit.Apply(targetHealth, HitEffect.Damage(damage));
+            hit.Apply(targetHealth, HitEffect.Damage(Mathf.RoundToInt(damage * DamageMult)));
             if (lifeSteal > 0) hit.Apply(targetHealth, HitEffect.LifeSteal(lifeSteal));
             if (regenDebuff < 1f) hit.Apply(targetHealth, HitEffect.RegenDebuff(regenDebuff, regenDebuffTime));
             return AbilityRun.Done;

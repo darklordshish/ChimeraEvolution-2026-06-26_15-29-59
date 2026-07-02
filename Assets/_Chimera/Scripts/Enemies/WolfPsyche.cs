@@ -12,6 +12,7 @@ using UnityEngine;
 [RequireComponent(typeof(NavLocomotion))]
 [RequireComponent(typeof(BiteAbility))]
 [RequireComponent(typeof(LeapAbility))]
+[RequireComponent(typeof(Rage))]
 public class WolfPsyche : MonoBehaviour, IGrabber
 {
     [Header("Погоня")]
@@ -39,6 +40,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber
     [Header("Вой (зов ближней стаи)")]
     [SerializeField] float howlRadius = 16f;    // на сколько разносится вой — сбегаются только ближние волки
     [SerializeField] float howlCooldown = 5f;   // как часто волк может выть
+    [SerializeField] float howlRageDuration = 3f; // ярость ближним от воя (< кулдауна — пульс, не фон)
     [SerializeField] float howlCueTime = 0.4f;  // сколько держится вспышка-телеграф воя
     [SerializeField] float alertMemory = 8f;    // сколько волк держит тревогу, услышав вой
 
@@ -59,6 +61,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber
     PackCoordinator pack;
     Telegraph telegraph;
     NavLocomotion nav;
+    Rage rage;
     BiteAbility bite;
     LeapAbility leap;
     WindupAbility activeAbility;    // укус/прыжок в процессе (замах/полёт) — психика его тикает
@@ -79,13 +82,16 @@ public class WolfPsyche : MonoBehaviour, IGrabber
     public void Hear(Vector3 playerPos) { alertUntil = Time.time + alertMemory; alertPos = playerPos; }
     public void ForgetAlert() => alertUntil = 0f; // сброс личной тревоги (при бегстве стаи — теряем игрока)
 
-    public bool Routing => Time.time < routUntil && !pack.Fearless; // личная паника; ярость вожака её перебивает
+    public bool Routing => Time.time < routUntil && !pack.Fearless && !(rage != null && rage.IsEnraged); // паника; ярость её перебивает
     public void CalmRout() { routUntil = 0f; fear = 0; }                   // вой вожака гасит бегство и страх
+    public void EnrageFor(float duration) => rage.Enrage(duration);        // вой сородича/вожака бесит
+
+    float Speed => moveSpeed * (rage != null ? rage.SpeedMult : 1f);       // ярость ускоряет
 
     // сородич погиб рядом (и я в бою) → +1 к личному страху; набрал свой порог — паникую и бегу
     public void AddFear()
     {
-        if (!Engaged) return;
+        if (!Engaged || (rage != null && rage.IsEnraged)) return; // яростные не боятся
         if (++fear >= fearThreshold)
         {
             routUntil = Time.time + pack.RoutDuration; // брошу бой и убегу (жетоны отпущу сам в Rout)
@@ -105,6 +111,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber
         if (!TryGetComponent(out nav)) nav = gameObject.AddComponent<NavLocomotion>();
         if (!TryGetComponent(out bite)) bite = gameObject.AddComponent<BiteAbility>();
         if (!TryGetComponent(out leap)) leap = gameObject.AddComponent<LeapAbility>();
+        if (!TryGetComponent(out rage)) rage = gameObject.AddComponent<Rage>();
 
         if (!TryGetComponent<ScentTrail>(out _)) gameObject.AddComponent<ScentTrail>(); // запаховый след (виден при волчьем Чутье)
     }
@@ -201,7 +208,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber
             Vector3 mv = nav.DirTo(dest);
             if (mv.sqrMagnitude > 0.001f)
                 transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(mv), rotationSpeed * Time.deltaTime);
-            Settle(mv * moveSpeed * (active ? 1f : wanderSpeed) + Separation());
+            Settle(mv * Speed * (active ? 1f : wanderSpeed) + Separation());
             return;
         }
 
@@ -235,9 +242,9 @@ public class WolfPsyche : MonoBehaviour, IGrabber
         // движение: с жетоном — рвёмся в упор; без — кружим к слоту окружения
         Vector3 horizontal;
         if (hasToken)
-            horizontal = (dist > bite.Range ? nav.DirTo(target.position) * moveSpeed : Vector3.zero) + Separation();
+            horizontal = (dist > bite.Range ? nav.DirTo(target.position) * Speed : Vector3.zero) + Separation();
         else
-            horizontal = nav.DirTo(pack.SlotPoint(this)) * moveSpeed * circleSpeed + Separation();
+            horizontal = nav.DirTo(pack.SlotPoint(this)) * Speed * circleSpeed + Separation();
         Settle(horizontal);
     }
 
@@ -318,15 +325,15 @@ public class WolfPsyche : MonoBehaviour, IGrabber
         Vector3 away = transform.position - from; away.y = 0f;
         Vector3 dir = away.sqrMagnitude > 0.01f ? away.normalized : transform.forward;
         transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(dir), rotationSpeed * Time.deltaTime);
-        Settle(dir * moveSpeed + Separation());
+        Settle(dir * Speed + Separation());
     }
 
-    // вой: зову ближних волков (в радиусе) на точку — глобального алерта на всю карту больше нет
+    // вой: зову ближних волков (в радиусе) на точку + бешу их — глобального алерта на всю карту больше нет
     void TryHowl(Vector3 pos)
     {
         if (Time.time < nextHowlTime) return;
         nextHowlTime = Time.time + howlCooldown;
-        pack.Howl(transform.position, howlRadius, pos);
+        pack.Howl(transform.position, howlRadius, pos, howlRageDuration);
         FlashTelegraph(TelegraphColors.Howl, howlCueTime); // видимый сигнал: волк зовёт стаю
     }
 

@@ -45,7 +45,7 @@ public class LeapAbility : WindupAbility
         if (targetHealth != null && DistToTarget() <= hitRadius) // приземлили наскок — кусаем
         {
             var hit = new Hit(ownHealth, transform.position);
-            hit.Apply(targetHealth, HitEffect.Damage(damage));
+            hit.Apply(targetHealth, HitEffect.Damage(Mathf.RoundToInt(damage * DamageMult)));
             if (lifeSteal > 0) hit.Apply(targetHealth, HitEffect.LifeSteal(lifeSteal));
         }
         return AbilityRun.Done;

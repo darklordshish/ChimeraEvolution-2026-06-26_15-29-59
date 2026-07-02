@@ -14,6 +14,7 @@ using UnityEngine;
 [RequireComponent(typeof(NavLocomotion))]
 [RequireComponent(typeof(BiteAbility))]
 [RequireComponent(typeof(LeapAbility))]
+[RequireComponent(typeof(Rage))]
 public class WerewolfPsyche : MonoBehaviour
 {
     [Header("Тело — быстрый убийца, НЕ танк")]
@@ -59,6 +60,7 @@ public class WerewolfPsyche : MonoBehaviour
     Transform target;
     Telegraph telegraph;
     NavLocomotion nav;
+    Rage rage;
     BiteAbility bite;
     LeapAbility leap;
     WindupAbility activeAbility;   // укус/прыжок в процессе (замах/полёт) — психика его тикает
@@ -78,6 +80,7 @@ public class WerewolfPsyche : MonoBehaviour
         if (!TryGetComponent(out nav)) nav = gameObject.AddComponent<NavLocomotion>();
         if (!TryGetComponent(out bite)) bite = gameObject.AddComponent<BiteAbility>();
         if (!TryGetComponent(out leap)) leap = gameObject.AddComponent<LeapAbility>();
+        if (!TryGetComponent(out rage)) rage = gameObject.AddComponent<Rage>();
 
         if (!TryGetComponent<ScentTrail>(out _)) gameObject.AddComponent<ScentTrail>(); // босс тоже пахнет (тропишь его)
     }
@@ -145,7 +148,7 @@ public class WerewolfPsyche : MonoBehaviour
             else { dest = nav.Wander(wanderRadius); active = false; }
             Vector3 mv = nav.DirTo(dest);
             if (mv.sqrMagnitude > 0.001f) Face(mv);
-            Settle(mv * moveSpeed * (active ? 1f : wanderSpeed));
+            Settle(mv * Speed * (active ? 1f : wanderSpeed));
             return;
         }
 
@@ -159,8 +162,10 @@ public class WerewolfPsyche : MonoBehaviour
         }
 
         // погоня по NavMesh
-        Settle(dist > bite.Range ? nav.DirTo(target.position) * moveSpeed : Vector3.zero);
+        Settle(dist > bite.Range ? nav.DirTo(target.position) * Speed : Vector3.zero);
     }
+
+    float Speed => moveSpeed * (rage != null ? rage.SpeedMult : 1f); // вечная ярость: быстрее (и уязвимее)
 
     void Face(Vector3 d) =>
         transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(d), rotationSpeed * Time.deltaTime);
@@ -225,7 +230,7 @@ public class WerewolfPsyche : MonoBehaviour
 
         Vector3 moveDir = nav.DirTo(target.position);
         if (moveDir.sqrMagnitude > 0.001f) Face(moveDir);
-        Settle(moveDir * chargeSpeed);
+        Settle(moveDir * chargeSpeed * (rage != null ? rage.SpeedMult : 1f));
     }
 
     void Settle(Vector3 horizontal)

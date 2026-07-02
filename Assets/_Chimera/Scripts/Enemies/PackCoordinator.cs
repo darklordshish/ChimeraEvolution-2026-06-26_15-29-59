@@ -45,13 +45,16 @@ public class PackCoordinator : MonoBehaviour
     public int MaxAttackers => maxAttackers;
     public bool GrabActive => grabber != null;
 
-    // волк завыл: слышат только ближние (в радиусе) — они и сбегаются в стаю. Глобального алерта на всю карту нет.
-    public void Howl(Vector3 origin, float radius, Vector3 playerPos)
+    // волк завыл: слышат только ближние (в радиусе) — сбегаются в стаю и ЗАВОДЯТСЯ (ярость-пульс).
+    public void Howl(Vector3 origin, float radius, Vector3 playerPos, float rageDuration)
     {
         float r2 = radius * radius;
         foreach (var w in wolves)
             if (w != null && (w.transform.position - origin).sqrMagnitude <= r2)
+            {
                 w.Hear(playerPos);
+                if (rageDuration > 0f) w.EnrageFor(rageDuration);
+            }
     }
 
     // вой ВОЖАКА слышен по всей карте: ВСЕ волки узнают, где игрок, и сходятся (в отличие от локального Howl волка)
@@ -82,11 +85,12 @@ public class PackCoordinator : MonoBehaviour
                 w.AddFear();
     }
 
-    // приказ вожака (вой): бесстрашие на duration — гасит текущее бегство и обнуляет страх у всех
+    // приказ вожака (вой): бесстрашие + ЯРОСТЬ всей стае на duration — гасит бегство, обнуляет страх, заводит
     public void Rally(float duration)
     {
         fearlessUntil = Time.time + duration;
-        foreach (var w in wolves) if (w != null) w.CalmRout();
+        foreach (var w in wolves)
+            if (w != null) { w.CalmRout(); w.EnrageFor(duration); }
     }
 
     Transform Player

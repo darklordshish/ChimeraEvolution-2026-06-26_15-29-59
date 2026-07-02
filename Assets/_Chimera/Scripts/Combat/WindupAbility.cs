@@ -17,6 +17,7 @@ public abstract class WindupAbility : MonoBehaviour, IAbility
     protected CharacterController controller;
     protected Telegraph telegraph;
     protected Health ownHealth;
+    protected Rage rage;
     protected Transform target;
     protected Health targetHealth;
     protected float windupEnd;
@@ -29,7 +30,10 @@ public abstract class WindupAbility : MonoBehaviour, IAbility
         controller = GetComponent<CharacterController>();
         if (!TryGetComponent(out telegraph)) telegraph = gameObject.AddComponent<Telegraph>();
         TryGetComponent(out ownHealth);
+        TryGetComponent(out rage);
     }
+
+    protected float DamageMult => rage != null ? rage.DamageMult : 1f; // ярость поднимает урон доставки
 
     protected virtual void Start()
     {
