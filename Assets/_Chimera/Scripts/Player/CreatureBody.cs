@@ -240,7 +240,7 @@ public class CreatureBody : MonoBehaviour
                 dashCd += Blend(h.dashCooldown, b.dashCooldown, m);
                 reduce += Blend(h.damageReduction, b.damageReduction, m);
                 regen += Blend(h.regen, b.regen, m);
-                regenOOC += Blend(h.regenOOC, b.regenOOC, m);
+                regenOOC += b.regenOOC; // вне-боя реген не блендим — фича органа (как дальность): иначе на Э=2 уходит в минус
                 if (b.enablesBite) biteOn = true;
                 if (b.enablesScent) scentOn = true;
                 if (b.enablesKick) kickOn = true;

@@ -34,7 +34,8 @@ public class DebugHud : MonoBehaviour
         style ??= new GUIStyle(GUI.skin.label) { fontSize = 18, normal = { textColor = Color.white } };
 
         string hp = playerHealth != null ? $"{playerHealth.Current}/{playerHealth.Max}" : "—";
-        string combat = playerHealth != null && !playerHealth.InCombat ? "  (вне боя — реген)" : "";
+        string combat = playerHealth != null && !playerHealth.InCombat
+            ? (playerHealth.OutOfCombatRegen > 0f ? "  (вне боя — реген)" : "  (вне боя)") : "";
         GUI.Label(new Rect(14, 10, 520, 26), $"HP: {hp}{combat}", style);
         var boss = FindAnyObjectByType<WerewolfPsyche>();
         if (boss != null && boss.TryGetComponent<Health>(out var bossHp))
