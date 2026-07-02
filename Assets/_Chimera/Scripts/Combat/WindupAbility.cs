@@ -18,6 +18,7 @@ public abstract class WindupAbility : MonoBehaviour, IAbility
     protected Telegraph telegraph;
     protected Health ownHealth;
     protected Rage rage;
+    SpawnVariance variance;
     protected Transform target;
     protected Health targetHealth;
     protected float windupEnd;
@@ -31,9 +32,11 @@ public abstract class WindupAbility : MonoBehaviour, IAbility
         if (!TryGetComponent(out telegraph)) telegraph = gameObject.AddComponent<Telegraph>();
         TryGetComponent(out ownHealth);
         TryGetComponent(out rage);
+        TryGetComponent(out variance);
     }
 
-    protected float DamageMult => rage != null ? rage.DamageMult : 1f; // ярость поднимает урон доставки
+    // ярость поднимает урон доставки; разброс особи делает волков разными
+    protected float DamageMult => (rage != null ? rage.DamageMult : 1f) * (variance != null ? variance.DamageMult : 1f);
 
     protected virtual void Start()
     {

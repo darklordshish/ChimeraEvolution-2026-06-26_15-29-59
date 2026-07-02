@@ -13,6 +13,7 @@ using UnityEngine;
 [RequireComponent(typeof(BiteAbility))]
 [RequireComponent(typeof(LeapAbility))]
 [RequireComponent(typeof(Rage))]
+[RequireComponent(typeof(SpawnVariance))]
 public class WolfPsyche : MonoBehaviour, IGrabber
 {
     [Header("Погоня")]
@@ -62,6 +63,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber
     Telegraph telegraph;
     NavLocomotion nav;
     Rage rage;
+    SpawnVariance variance;
     BiteAbility bite;
     LeapAbility leap;
     WindupAbility activeAbility;    // укус/прыжок в процессе (замах/полёт) — психика его тикает
@@ -86,7 +88,8 @@ public class WolfPsyche : MonoBehaviour, IGrabber
     public void CalmRout() { routUntil = 0f; fear = 0; }                   // вой вожака гасит бегство и страх
     public void EnrageFor(float duration) => rage.Enrage(duration);        // вой сородича/вожака бесит
 
-    float Speed => moveSpeed * (rage != null ? rage.SpeedMult : 1f);       // ярость ускоряет
+    float Speed => moveSpeed * (rage != null ? rage.SpeedMult : 1f)
+                             * (variance != null ? variance.SpeedMult : 1f); // ярость ускоряет; разброс делает особей разными
 
     // сородич погиб рядом (и я в бою) → +1 к личному страху; набрал свой порог — паникую и бегу
     public void AddFear()
@@ -112,6 +115,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber
         if (!TryGetComponent(out bite)) bite = gameObject.AddComponent<BiteAbility>();
         if (!TryGetComponent(out leap)) leap = gameObject.AddComponent<LeapAbility>();
         if (!TryGetComponent(out rage)) rage = gameObject.AddComponent<Rage>();
+        if (!TryGetComponent(out variance)) variance = gameObject.AddComponent<SpawnVariance>();
 
         if (!TryGetComponent<ScentTrail>(out _)) gameObject.AddComponent<ScentTrail>(); // запаховый след (виден при волчьем Чутье)
     }

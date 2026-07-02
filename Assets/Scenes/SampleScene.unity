@@ -562,6 +562,7 @@ GameObject:
   - component: {fileID: 1083135098}
   - component: {fileID: 1083135099}
   - component: {fileID: 1083135100}
+  - component: {fileID: 1083135101}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -812,6 +813,22 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bd873ffbf9e37f147b85b90abd661e8e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerInputDriver
+--- !u!114 &1083135101
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1083135088}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 69b224ba9ce9b5d4fa120c5dcc8b33dc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerHowl
+  radius: 7
+  stunDuration: 0.6
+  cooldown: 8
+  shake: 0.3
 --- !u!1 &1185508198
 GameObject:
   m_ObjectHideFlags: 0
