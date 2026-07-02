@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 /// <summary>
 /// ТЕЛО существа — общее для игрока и (в будущих фазах) NPC. ШАССИ (SpeciesSO) задаёт слоты + пул +
@@ -25,9 +26,11 @@ public class CreatureBody : MonoBehaviour
     [SerializeField] float bonusFullAffinity = 100f;
     [SerializeField] float maxBonusMult = 2f;           // звериная часть органа ×2 на 100 родства
 
-    [Header("NPC-режим (застывшая химера)")]
-    [SerializeField] bool installAllBeast;    // все звериные органы надеты с рождения (вервольф)
-    [SerializeField] float fixedBonusMult;    // >0 — фикс. множитель вместо кривой родства (босс: 2 = потолок игрока)
+    [Header("NPC-режим (тело как данные)")]
+    [SerializeField] bool installAllBeast;    // все звериные органы надеты с рождения (вервольф — застывшая химера)
+    [FormerlySerializedAs("fixedBonusMult")]
+    [SerializeField] float expression;        // ЭКСПРЕССИЯ: насколько раскрыты гены зверя. 0 = авто (кривая родства);
+                                              // >0 фикс: вервольф 2 (= потолок игрока), природный волк ~0.45 (без сыворотки)
     [SerializeField] bool applyVitals = true; // false: HP/броня/реген — «конституция» психики, тело их не трогает
 
     class Slot
@@ -45,6 +48,7 @@ public class CreatureBody : MonoBehaviour
     PlayerBite bite;
     PlayerKick kick;
     PlayerHowl howl;
+    SpawnVariance variance; // разброс особи: HP учитываем при раздаче витальности (иначе гонка Start'ов)
     Renderer[] renderers;
     Color[] baseColors;
     MaterialPropertyBlock mpb;
@@ -123,11 +127,11 @@ public class CreatureBody : MonoBehaviour
         return Mathf.Max(1, Mathf.CeilToInt(sl.beast.cost * (1f - discount)));
     }
 
-    // Фаза 2: множитель звериной части. ×1 до bonusStartAffinity, линейно до maxBonusMult к bonusFullAffinity.
-    // NPC-режим: фиксированный множитель (босс не качает родство — он уже «готовая» химера).
+    // ЭКСПРЕССИЯ звериной части: у игрока авто — ×1 до bonusStartAffinity, линейно до maxBonusMult
+    // к bonusFullAffinity (мутаген раскрывает гены с родством). У NPC — фиксированная.
     float BonusMultiplier(string species)
     {
-        if (fixedBonusMult > 0f) return fixedBonusMult;
+        if (expression > 0f) return expression;
         float span = Mathf.Max(1f, bonusFullAffinity - bonusStartAffinity);
         float t = Mathf.Clamp01((AffinityTracker.Get(species) - bonusStartAffinity) / span);
         return Mathf.Lerp(1f, maxBonusMult, t);
@@ -142,6 +146,7 @@ public class CreatureBody : MonoBehaviour
         TryGetComponent(out bite);
         TryGetComponent(out kick);
         TryGetComponent(out howl);
+        TryGetComponent(out variance);
 
         BuildSlots();
 
@@ -244,9 +249,13 @@ public class CreatureBody : MonoBehaviour
             }
             else
             {
-                dmg += h.damage; maxHp += h.maxHp; life += h.lifeSteal;
-                rng += h.range; atkCd += h.atkCooldown; mv += h.moveSpeed; dash += h.dashSpeed;
-                dashCd += h.dashCooldown; reduce += h.damageReduction; regen += h.regen; regenOOC += h.regenOOC;
+                // Природная особь (фикс. экспрессия): органы записаны в МУТАГЕННОЙ шкале — без сыворотки
+                // раскрыты лишь на Э (волк ~0.45). У игрока (Э авто) человеческая база идёт как есть (e=1).
+                // Времена (кулдауны) и дальность не скейлим — как и в химерном бленде.
+                float e = expression > 0f ? expression : 1f;
+                dmg += Mathf.RoundToInt(h.damage * e); maxHp += Mathf.RoundToInt(h.maxHp * e); life += Mathf.RoundToInt(h.lifeSteal * e);
+                rng += h.range; atkCd += h.atkCooldown; mv += h.moveSpeed * e; dash += h.dashSpeed * e;
+                dashCd += h.dashCooldown; reduce += h.damageReduction * e; regen += h.regen * e; regenOOC += h.regenOOC * e;
                 if (h.enablesBite) biteOn = true;
                 if (h.enablesScent) scentOn = true;
                 if (h.enablesKick) kickOn = true;
@@ -271,11 +280,11 @@ public class CreatureBody : MonoBehaviour
         }
         if (health != null && applyVitals) // у босса витальность — «конституция» психики
         {
-            health.SetMaxHealth(maxHp);
+            health.SetMaxHealth(Mathf.Max(1, Mathf.RoundToInt(maxHp * (variance != null ? variance.HpMult : 1f))));
             health.DamageReduction = Mathf.Clamp01(reduce);
             health.RegenPerSecond = regen;
             health.OutOfCombatRegen = regenOOC;
-        }
+        } // maxHp здесь уже с разбросом особи (SpawnVariance.HpMult)
 
         // НПС-потребители (психика): тело отдаёт деривированное — урон и скорость из органов
         foreach (var c in GetComponents<IBodyStatConsumer>()) c.OnBodyStats(dmg, mv);

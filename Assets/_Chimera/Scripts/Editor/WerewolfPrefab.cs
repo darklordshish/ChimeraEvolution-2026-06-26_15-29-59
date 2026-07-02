@@ -83,7 +83,7 @@ public static class WerewolfPrefab
         donorsProp.arraySize = 1;
         donorsProp.GetArrayElementAtIndex(0).objectReferenceValue = wolfSpecies;
         bodySo.FindProperty("installAllBeast").boolValue = true;
-        bodySo.FindProperty("fixedBonusMult").floatValue = 2f;
+        bodySo.FindProperty("expression").floatValue = 2f; // экспрессия = потолок игрока; превосходство даёт ярость
         bodySo.FindProperty("applyVitals").boolValue = false;
         bodySo.ApplyModifiedPropertiesWithoutUndo();
 

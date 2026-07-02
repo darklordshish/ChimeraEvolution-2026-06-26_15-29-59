@@ -14,7 +14,7 @@ using UnityEngine;
 [RequireComponent(typeof(LeapAbility))]
 [RequireComponent(typeof(Rage))]
 [RequireComponent(typeof(SpawnVariance))]
-public class WolfPsyche : MonoBehaviour, IGrabber
+public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer
 {
     [Header("Погоня")]
     [SerializeField] float moveSpeed = 4f;
@@ -91,6 +91,14 @@ public class WolfPsyche : MonoBehaviour, IGrabber
     float Speed => moveSpeed * (rage != null ? rage.SpeedMult : 1f)
                              * (variance != null ? variance.SpeedMult : 1f); // ярость ускоряет; разброс делает особей разными
 
+    // тело-на-шасси (CreatureBody: органы Волка × экспрессия ~0.45) кормит деривированное.
+    // Урон прыжка и ритм атак остаются фирменными (сериализованы здесь/на LeapAbility).
+    public void OnBodyStats(int damage, float bodyMoveSpeed)
+    {
+        moveSpeed = bodyMoveSpeed;
+        bite.SetDamage(damage);
+    }
+
     // сородич погиб рядом (и я в бою) → +1 к личному страху; набрал свой порог — паникую и бегу
     public void AddFear()
     {
@@ -126,7 +134,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber
         if (playerCtl != null) { target = playerCtl.transform; targetHealth = playerCtl.GetComponent<Health>(); }
         if (ownHealth != null)
         {
-            ownHealth.RegenPerSecond = hpRegen; // постоянный реген волка
+            if (GetComponent<CreatureBody>() == null) ownHealth.RegenPerSecond = hpRegen; // без тела-на-шасси реген свой; с телом — из органов
             ownHealth.onDeath.AddListener(OnKilled); // смерть бьёт по морали стаи
         }
         fearThreshold = pack.RollPanicThreshold(); // личный порог храбрости (случайный из диапазона пула)

@@ -14,17 +14,21 @@ public class SpawnVariance : MonoBehaviour
 
     public float DamageMult { get; private set; } = 1f;
     public float SpeedMult { get; private set; } = 1f;
+    public float HpMult { get; private set; } = 1f;
 
     void Awake()
     {
         DamageMult = Roll(damageSpread);
         SpeedMult = Roll(speedSpread);
+        HpMult = Roll(hpSpread);
     }
 
-    void Start() // HP один раз при спавне; SetMaxHealth сам подведёт текущее
+    // HP: с телом-на-шасси (CreatureBody) разброс учитывает само тело при раздаче витальности
+    // (иначе гонка Start'ов); без тела — применяем сами один раз.
+    void Start()
     {
-        if (TryGetComponent<Health>(out var hp))
-            hp.SetMaxHealth(Mathf.Max(1, Mathf.RoundToInt(hp.Max * Roll(hpSpread))));
+        if (GetComponent<CreatureBody>() == null && TryGetComponent<Health>(out var hp))
+            hp.SetMaxHealth(Mathf.Max(1, Mathf.RoundToInt(hp.Max * HpMult)));
     }
 
     static float Roll(float spread) => 1f + Random.Range(-spread, spread);
