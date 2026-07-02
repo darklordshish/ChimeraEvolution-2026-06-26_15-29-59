@@ -5,7 +5,7 @@ using UnityEngine;
 /// Телеграф приёма: красит материалы ТЕЛА в цвет замаха и возвращает исходные.
 /// Per-renderer _BaseColor через MaterialPropertyBlock (без инстансинга материалов).
 /// Красит только Mesh/SkinnedMesh — TrailRenderer (запаховый след) не трогает.
-/// Извлечено из дублей WolfAI/WerewolfBoss (Фаза 0 рефактора существ).
+/// Извлечено из дублей WolfPsyche/WerewolfBoss (Фаза 0 рефактора существ).
 /// </summary>
 public class Telegraph : MonoBehaviour
 {

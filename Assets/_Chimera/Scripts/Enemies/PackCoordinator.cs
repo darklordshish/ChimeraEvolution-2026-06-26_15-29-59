@@ -34,9 +34,9 @@ public class PackCoordinator : MonoBehaviour
         }
     }
 
-    readonly List<WolfAI> wolves = new();
-    readonly HashSet<WolfAI> attackers = new();
-    WolfAI grabber;
+    readonly List<WolfPsyche> wolves = new();
+    readonly HashSet<WolfPsyche> attackers = new();
+    WolfPsyche grabber;
     Transform player;
     Health playerHealth;
     float fearlessUntil;
@@ -61,7 +61,7 @@ public class PackCoordinator : MonoBehaviour
             if (w != null) w.Hear(playerPos);
     }
 
-    // мораль: страх/бегство — ЛИЧНОЕ у каждого волка (WolfAI). Пул задаёт лишь параметры; ярость вожака гасит страх.
+    // мораль: страх/бегство — ЛИЧНОЕ у каждого волка (WolfPsyche). Пул задаёт лишь параметры; ярость вожака гасит страх.
     public bool Fearless => Time.time < fearlessUntil;
     public int RollPanicThreshold() => Random.Range(routKillsMin, routKillsMax + 1); // личный порог храбрости волка
     public float RoutDuration => routDuration;
@@ -119,16 +119,16 @@ public class PackCoordinator : MonoBehaviour
         return false;
     }
 
-    public void Register(WolfAI w) { if (!wolves.Contains(w)) wolves.Add(w); }
+    public void Register(WolfPsyche w) { if (!wolves.Contains(w)) wolves.Add(w); }
 
-    public void Unregister(WolfAI w)
+    public void Unregister(WolfPsyche w)
     {
         wolves.Remove(w);
         attackers.Remove(w);
         if (grabber == w) grabber = null;
     }
 
-    public bool TryAcquireAttack(WolfAI w)
+    public bool TryAcquireAttack(WolfPsyche w)
     {
         if (attackers.Contains(w)) return true;
         int cap = Fearless ? Mathf.Max(maxAttackers, wolves.Count) : maxAttackers; // ярость: наваливается вся стая
@@ -137,18 +137,18 @@ public class PackCoordinator : MonoBehaviour
         return true;
     }
 
-    public void ReleaseAttack(WolfAI w) => attackers.Remove(w);
+    public void ReleaseAttack(WolfPsyche w) => attackers.Remove(w);
 
-    public bool TryAcquireGrab(WolfAI w)
+    public bool TryAcquireGrab(WolfPsyche w)
     {
         if (grabber == null || grabber == w) { grabber = w; return true; }
         return false;
     }
 
-    public void ReleaseGrab(WolfAI w) { if (grabber == w) grabber = null; }
+    public void ReleaseGrab(WolfPsyche w) { if (grabber == w) grabber = null; }
 
     // Точка на кольце окружения для данного волка (слот = его индекс в стае).
-    public Vector3 SlotPoint(WolfAI w)
+    public Vector3 SlotPoint(WolfPsyche w)
     {
         Transform p = Player;
         if (p == null) return w.transform.position;

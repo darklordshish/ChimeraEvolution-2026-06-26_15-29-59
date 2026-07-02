@@ -2,7 +2,7 @@ using UnityEngine;
 
 /// <summary>
 /// Оглушение при получении урона (через Health.onDamaged). Пока оглушён — ИИ должен стоять и не атаковать.
-/// Читается из WolfAI через свойство IsStaggered.
+/// Читается из WolfPsyche через свойство IsStaggered.
 /// </summary>
 [RequireComponent(typeof(Health))]
 public class Stagger : MonoBehaviour

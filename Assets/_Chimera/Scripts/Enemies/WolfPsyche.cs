@@ -12,7 +12,7 @@ using UnityEngine;
 [RequireComponent(typeof(NavLocomotion))]
 [RequireComponent(typeof(BiteAbility))]
 [RequireComponent(typeof(LeapAbility))]
-public class WolfAI : MonoBehaviour, IGrabber
+public class WolfPsyche : MonoBehaviour, IGrabber
 {
     [Header("Погоня")]
     [SerializeField] float moveSpeed = 4f;
@@ -348,7 +348,7 @@ public class WolfAI : MonoBehaviour, IGrabber
         {
             Collider col = neighbors[i];
             if (col.transform == transform) continue;
-            if (col.GetComponentInParent<WolfAI>() == null) continue;
+            if (col.GetComponentInParent<WolfPsyche>() == null) continue;
             Vector3 away = transform.position - col.transform.position;
             away.y = 0f;
             float d = away.magnitude;

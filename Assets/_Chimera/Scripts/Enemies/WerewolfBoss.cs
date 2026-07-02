@@ -194,7 +194,7 @@ public class WerewolfBoss : MonoBehaviour
         nextHowl = Time.time + howlCooldown;
     }
 
-    int CountWolves() => FindObjectsByType<WolfAI>().Length;
+    int CountWolves() => FindObjectsByType<WolfPsyche>().Length;
 
     void BeginAttack(Kind kind)
     {

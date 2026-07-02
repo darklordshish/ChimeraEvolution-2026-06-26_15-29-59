@@ -63,7 +63,7 @@ public class ChimeraDevWindow : EditorWindow
         // ── Волки ──
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("Волки", EditorStyles.boldLabel);
-        var wolves = Object.FindObjectsByType<WolfAI>();
+        var wolves = Object.FindObjectsByType<WolfPsyche>();
         EditorGUILayout.LabelField($"Живых: {wolves.Length}");
         using (new EditorGUILayout.HorizontalScope())
         {
