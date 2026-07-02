@@ -1,15 +1,17 @@
 using UnityEngine;
 
 /// <summary>
-/// Волк без NavMesh. Приёмы: УКУС вблизи (красный телеграф), ПРЫЖОК со средней дистанции (оранжевый),
-/// ЗАХВАТ-удержание вблизи (фиолетовый) — виснет и режет скорость игрока, пока его не отпнут/не сорвут рывком.
-/// Тактика стаи через PackCoordinator: слоты окружения + жетоны атаки (одновременно лезут немногие),
-/// единственный жетон захвата. Замах укуса/захвата отменяется уворотом и стаггером; прыжок коммитится;
-/// пинок (Knockback) рвёт всё. Реализует IGrabber — рывок игрока срывает захват с уроном.
+/// Психика волка: решения (стая/мораль/вой/выбор приёма) поверх общих частей тела.
+/// УКУС и ПРЫЖОК — компоненты-доставки (BiteAbility/LeapAbility): психика решает «когда» (TryUse),
+/// доставка сама ведёт замах/полёт (Tick). ЗАХВАТ-удержание — спец-механика стаи (жетон, IGrabber),
+/// живёт здесь. Тактика стаи через PackCoordinator: слоты окружения + жетоны атаки, единственный
+/// жетон захвата. Пинок (Knockback) рвёт всё, включая полёт прыжка.
 /// </summary>
 [RequireComponent(typeof(CharacterController))]
 [RequireComponent(typeof(Telegraph))]
 [RequireComponent(typeof(NavLocomotion))]
+[RequireComponent(typeof(BiteAbility))]
+[RequireComponent(typeof(LeapAbility))]
 public class WolfAI : MonoBehaviour, IGrabber
 {
     [Header("Погоня")]
@@ -22,21 +24,7 @@ public class WolfAI : MonoBehaviour, IGrabber
     [SerializeField, Range(0f, 1f)] float wanderSpeed = 0.5f; // доля скорости при спокойном блуждании
     [SerializeField] float scentRange = 16f;    // в каком радиусе берёт свежий след игрока
 
-    [Header("Укус (ближний)")]
-    [SerializeField] float attackRange = 2.0f;
-    [SerializeField] float biteHalfAngle = 55f;
-    [SerializeField] int biteDamage = 8;
-    [SerializeField] float biteWindupTime = 0.45f;
-
-    [Header("Прыжок (средняя дистанция)")]
-    [SerializeField] float leapMinRange = 5.0f;
-    [SerializeField] float leapRange = 6.5f;
-    [SerializeField] float leapWindupTime = 0.5f;
-    [SerializeField] float leapSpeed = 13f;
-    [SerializeField] float leapUp = 5f;
-    [SerializeField] float leapDuration = 0.5f;
-    [SerializeField] int leapDamage = 12;
-    [SerializeField] float leapHitRadius = 1.3f;
+    // параметры укуса и прыжка теперь на компонентах-доставках BiteAbility/LeapAbility (тюнить там)
 
     [Header("Захват (удержание)")]
     [SerializeField] float grabWindupTime = 0.35f;
@@ -61,8 +49,6 @@ public class WolfAI : MonoBehaviour, IGrabber
     [SerializeField] float separationRadius = 1.6f;
     [SerializeField] float separationStrength = 4f;
 
-    enum Kind { Bite, Leap, Grab }
-
     static readonly Collider[] neighbors = new Collider[16];
 
     CharacterController controller;
@@ -73,14 +59,15 @@ public class WolfAI : MonoBehaviour, IGrabber
     PackCoordinator pack;
     Telegraph telegraph;
     NavLocomotion nav;
+    BiteAbility bite;
+    LeapAbility leap;
+    WindupAbility activeAbility;    // укус/прыжок в процессе (замах/полёт) — психика его тикает
     Transform target;
     Health targetHealth;
 
-    float nextAttackTime, verticalVel, windupEnd, leapEnd;
-    bool windingUp, leaping, hasToken, grabbing;
-    Kind pendingKind;
+    float nextAttackTime, verticalVel, windupEnd;
+    bool windingUp, hasToken, grabbing;  // windingUp — только замах ЗАХВАТА
     Color activeTelegraph;
-    Vector3 leapVel;
     Vector3 alertPos;               // куда сбегаться по услышанному вою (личная тревога, не глобальная)
     float alertUntil, nextHowlTime, routUntil, telegraphUntil;
     int fear, fearThreshold;        // личный страх: смерти сородичей рядом; набрал свой порог — паникую
@@ -116,6 +103,8 @@ public class WolfAI : MonoBehaviour, IGrabber
         ownHealth = GetComponent<Health>();
         if (!TryGetComponent(out telegraph)) telegraph = gameObject.AddComponent<Telegraph>();
         if (!TryGetComponent(out nav)) nav = gameObject.AddComponent<NavLocomotion>();
+        if (!TryGetComponent(out bite)) bite = gameObject.AddComponent<BiteAbility>();
+        if (!TryGetComponent(out leap)) leap = gameObject.AddComponent<LeapAbility>();
 
         if (!TryGetComponent<ScentTrail>(out _)) gameObject.AddComponent<ScentTrail>(); // запаховый след (виден при волчьем Чутье)
     }
@@ -158,11 +147,25 @@ public class WolfAI : MonoBehaviour, IGrabber
                   && Perception.HasLineOfSight(transform.position, target); // зрение требует прямой видимости
         if (Engaged) TryHowl(target.position); // увидел игрока → взвыл, зову ближних в стаю
 
-        // пинок рвёт всё (включая захват): волк полностью теряет управление, пока летит
-        if (knockback != null && knockback.IsActive) { leaping = false; Disengage(attackCooldown); return; }
+        // пинок рвёт всё (включая захват и полёт прыжка): волк полностью теряет управление, пока летит
+        if (knockback != null && knockback.IsActive)
+        {
+            if (activeAbility != null) { activeAbility.Abort(true); activeAbility = null; }
+            Disengage(attackCooldown);
+            return;
+        }
 
-        // прыжок коммитится — стаггер его не трогает
-        if (leaping) { UpdateLeap(); return; }
+        // активный приём (укус/прыжок) тикает сам: телом на это время рулит доставка
+        if (activeAbility != null)
+        {
+            // паника/стаггер срывают замах; полёт прыжка закоммичен — Abort(false) он игнорит
+            if (routing || (stagger != null && stagger.IsStaggered)) activeAbility.Abort(false);
+            var st = activeAbility.Tick();
+            if (st == AbilityRun.Running) return;
+            activeAbility = null;
+            Disengage(st == AbilityRun.Done ? attackCooldown : 0.3f);
+            return;
+        }
 
         // стая в панике: бросаем приём/захват/жетоны и убегаем прочь (потом вернёмся в поиск)
         if (routing) { Rout(); return; }
@@ -178,12 +181,12 @@ public class WolfAI : MonoBehaviour, IGrabber
         toTarget.y = 0f;
         float dist = toTarget.magnitude;
         Vector3 dir = dist > 0.001f ? toTarget / dist : transform.forward;
-        bool inCone = Vector3.Angle(transform.forward, dir) <= biteHalfAngle;
+        bool inCone = Vector3.Angle(transform.forward, dir) <= bite.HalfAngle;
 
         // оглушение отменяет замах
         if (stagger != null && stagger.IsStaggered) { Disengage(0.3f); Settle(Vector3.zero); return; }
 
-        if (windingUp) { UpdateWindup(dist, dir, inCone); return; }
+        if (windingUp) { UpdateGrabWindup(dist, inCone); return; } // только замах захвата — укус/прыжок тикают выше
 
         // не вижу: услышал вой → к точке сбора; иначе по ЗАПАХУ (тропа) + сам вою, зову ближних; иначе брожу.
         if (!Engaged)
@@ -209,59 +212,48 @@ public class WolfAI : MonoBehaviour, IGrabber
         if (hasToken && dist > disengageRange) ReleaseToken();
 
         // берём жетон атаки, когда готовы и цель в досягаемости
-        if (!hasToken && Time.time >= nextAttackTime && inCone && dist <= leapRange)
+        if (!hasToken && Time.time >= nextAttackTime && inCone && dist <= leap.MaxRange)
             if (pack.TryAcquireAttack(this)) hasToken = true;
 
         // с жетоном — атакуем по дистанции
         if (hasToken && Time.time >= nextAttackTime && inCone)
         {
-            if (dist <= attackRange)
+            if (dist <= bite.Range)
             {
                 if (pack.TryAcquireGrab(this) && Random.value < grabChance)
                 {
-                    BeginAttack(Kind.Grab);
+                    BeginGrabWindup();
                     pack.ReleaseAttack(this); hasToken = false; // захват — отдельная роль, освобождает слот атакующего
                 }
-                else { pack.ReleaseGrab(this); BeginAttack(Kind.Bite); }
+                else { pack.ReleaseGrab(this); if (bite.TryUse()) activeAbility = bite; }
                 Settle(Vector3.zero);
                 return;
             }
-            if (dist >= leapMinRange && dist <= leapRange) { BeginAttack(Kind.Leap); Settle(Vector3.zero); return; }
+            if (dist >= leap.MinRange && dist <= leap.MaxRange) { if (leap.TryUse()) activeAbility = leap; Settle(Vector3.zero); return; }
         }
 
         // движение: с жетоном — рвёмся в упор; без — кружим к слоту окружения
         Vector3 horizontal;
         if (hasToken)
-            horizontal = (dist > attackRange ? nav.DirTo(target.position) * moveSpeed : Vector3.zero) + Separation();
+            horizontal = (dist > bite.Range ? nav.DirTo(target.position) * moveSpeed : Vector3.zero) + Separation();
         else
             horizontal = nav.DirTo(pack.SlotPoint(this)) * moveSpeed * circleSpeed + Separation();
         Settle(horizontal);
     }
 
-    void UpdateWindup(float dist, Vector3 dir, bool inCone)
+    // замах захвата: отменяется уворотом из зоны/конуса (стаггер ловится выше, в Update)
+    void UpdateGrabWindup(float dist, bool inCone)
     {
-        if (pendingKind == Kind.Leap)
-        {
-            if (Time.time >= windupEnd) LaunchLeap(dir);
-        }
-        else // укус или захват — оба отменяются уворотом из зоны/конуса
-        {
-            if (!(dist <= attackRange && inCone)) Disengage(0.3f);
-            else if (Time.time >= windupEnd)
-            {
-                if (pendingKind == Kind.Grab) StartGrab();
-                else { new Hit(ownHealth, transform.position).Apply(targetHealth, HitEffect.Damage(biteDamage)); Disengage(attackCooldown); }
-            }
-        }
+        if (!(dist <= bite.Range && inCone)) Disengage(0.3f);
+        else if (Time.time >= windupEnd) StartGrab();
         Settle(Vector3.zero);
     }
 
-    void BeginAttack(Kind kind)
+    void BeginGrabWindup()
     {
         windingUp = true;
-        pendingKind = kind;
-        windupEnd = Time.time + (kind == Kind.Leap ? leapWindupTime : kind == Kind.Grab ? grabWindupTime : biteWindupTime);
-        activeTelegraph = kind == Kind.Leap ? TelegraphColors.Leap : kind == Kind.Grab ? TelegraphColors.Grab : TelegraphColors.Bite;
+        windupEnd = Time.time + grabWindupTime;
+        activeTelegraph = TelegraphColors.Grab;
         ShowTelegraph(activeTelegraph);
     }
 
@@ -282,7 +274,7 @@ public class WolfAI : MonoBehaviour, IGrabber
         transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(dir), rotationSpeed * Time.deltaTime);
 
         // висим вплотную, мягко подтягиваясь к точке удержания (игрока за собой не тащим)
-        float hold = attackRange * 0.6f;
+        float hold = bite.Range * 0.6f;
         Vector3 pull = Vector3.ClampMagnitude(dir * (d - hold) * 8f, moveSpeed);
         Settle(pull);
         // отпускает только пинок (Knockback) или рывок (BreakFree) — ни таймаута, ни срыва ударом
@@ -313,7 +305,6 @@ public class WolfAI : MonoBehaviour, IGrabber
         if (grabbing && playerCtl != null) playerCtl.ReleaseGrab(this);
         grabbing = false;
         windingUp = false;
-        pendingKind = Kind.Bite;
         HideTelegraph();
         ReleaseToken();
         if (cooldown > 0f) nextAttackTime = Time.time + cooldown;
@@ -349,34 +340,6 @@ public class WolfAI : MonoBehaviour, IGrabber
     }
     void HideTelegraph() { telegraph.Clear(); telegraphUntil = 0f; }
 
-    void LaunchLeap(Vector3 dir)
-    {
-        windingUp = false;
-        HideTelegraph();
-        leaping = true;
-        leapEnd = Time.time + leapDuration;
-        Vector3 flat = dir; flat.y = 0f; flat.Normalize();
-        leapVel = flat * leapSpeed + Vector3.up * leapUp;
-    }
-
-    void UpdateLeap()
-    {
-        leapVel.y += gravity * Time.deltaTime;
-        controller.Move(leapVel * Time.deltaTime);
-
-        if (Time.time >= leapEnd)
-        {
-            leaping = false;
-            // приземлили наскок — кусаем, если цель ещё рядом (с приземления можно увернуться)
-            if (targetHealth != null)
-            {
-                Vector3 d = target.position - transform.position; d.y = 0f;
-                if (d.magnitude <= leapHitRadius) new Hit(ownHealth, transform.position).Apply(targetHealth, HitEffect.Damage(leapDamage));
-            }
-            Disengage(attackCooldown);
-        }
-    }
-
     Vector3 Separation()
     {
         Vector3 push = Vector3.zero;
@@ -405,12 +368,14 @@ public class WolfAI : MonoBehaviour, IGrabber
 
     void OnDrawGizmos()
     {
+        float r = bite != null ? bite.Range : 2f;          // в эдит-режиме (до Awake) — дефолты
+        float half = bite != null ? bite.HalfAngle : 55f;
         Vector3 o = transform.position + Vector3.up * 0.5f;
-        Quaternion lf = Quaternion.AngleAxis(-biteHalfAngle, Vector3.up);
-        Quaternion rt = Quaternion.AngleAxis(biteHalfAngle, Vector3.up);
-        Gizmos.color = (windingUp || grabbing) ? activeTelegraph : (leaping ? TelegraphColors.Leap : (hasToken ? Color.red : Color.yellow));
-        Gizmos.DrawLine(o, o + transform.forward * attackRange);
-        Gizmos.DrawLine(o, o + lf * transform.forward * attackRange);
-        Gizmos.DrawLine(o, o + rt * transform.forward * attackRange);
+        Quaternion lf = Quaternion.AngleAxis(-half, Vector3.up);
+        Quaternion rt = Quaternion.AngleAxis(half, Vector3.up);
+        Gizmos.color = (windingUp || grabbing) ? activeTelegraph : (hasToken ? Color.red : Color.yellow);
+        Gizmos.DrawLine(o, o + transform.forward * r);
+        Gizmos.DrawLine(o, o + lf * transform.forward * r);
+        Gizmos.DrawLine(o, o + rt * transform.forward * r);
     }
 }
