@@ -14,6 +14,10 @@ GameObject:
   - component: {fileID: 8988137453412289385}
   - component: {fileID: 2291463792745989270}
   - component: {fileID: 6400385125635897708}
+  - component: {fileID: 9031596976022574525}
+  - component: {fileID: 5884280649072417053}
+  - component: {fileID: 2207140036348440661}
+  - component: {fileID: 5469509999948184840}
   - component: {fileID: 1683690007009567405}
   m_Layer: 0
   m_Name: Werewolf
@@ -121,8 +125,76 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 07bc2ed469704554daec7a51477335c7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::HitFlash
-  flashColor: {r: 0.044025064, g: 0.044025064, b: 0.044025064, a: 1}
+  flashColor: {r: 0.031446517, g: 0.030754296, b: 0.030754296, a: 1}
   flashTime: 0.08
+--- !u!114 &9031596976022574525
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2584721357774835327}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b8120dfd90814e543a5f142f02adffbc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BiteAbility
+  windupTime: 0.4
+  gravity: -20
+  range: 2.5
+  halfAngle: 60
+  damage: 28
+  lifeSteal: 25
+  regenDebuff: 1
+  regenDebuffTime: 0
+--- !u!114 &5884280649072417053
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2584721357774835327}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: afa6fda7ccc3dd049bc2da89dfdc928b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LeapAbility
+  windupTime: 0.5
+  gravity: -20
+  minRange: 6
+  maxRange: 11
+  speed: 16
+  up: 6
+  duration: 0.55
+  damage: 30
+  lifeSteal: 25
+  hitRadius: 2
+--- !u!114 &2207140036348440661
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2584721357774835327}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 819dbf4fcff215841b06748214703154, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Telegraph
+--- !u!114 &5469509999948184840
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2584721357774835327}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eff730cb67aafbe42a976305b0bbf850, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NavLocomotion
+  pathInterval: 0.2
+  pathDirectRange: 5
 --- !u!114 &1683690007009567405
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -134,7 +206,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 45fe65a21b0772746a8abc9d821bb66e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::WerewolfBoss
+  m_EditorClassIdentifier: Assembly-CSharp::WerewolfPsyche
   maxHp: 300
   regenPerSec: 6
   damageReduction: 0.15
@@ -143,35 +215,17 @@ MonoBehaviour:
   rotationSpeed: 300
   gravity: -20
   sightRange: 55
-  attackRange: 2.5
-  biteHalfAngle: 60
-  biteDamage: 28
-  biteLifeSteal: 25
-  biteWindup: 0.4
-  leapMinRange: 6
-  leapRange: 11
-  leapWindup: 0.5
-  leapSpeed: 16
-  leapUp: 6
-  leapDuration: 0.55
-  leapDamage: 30
-  leapHitRadius: 2
   chargeSpeed: 20
   chargeWindup: 0.35
   chargeMaxDuration: 2
   chargeMaxRange: 30
-  chargeColor: {r: 0.9, g: 0.1, b: 0.5, a: 1}
   summonCount: 5
   howlWolfCap: 15
+  rageDuration: 8
   howlWindup: 1.1
   howlCooldown: 16
   howlInitialDelay: 8
-  howlColor: {r: 0.6, g: 0.5, b: 1, a: 1}
   attackCooldown: 1.2
-  biteColor: {r: 1, g: 0.25, b: 0.2, a: 1}
-  leapColor: {r: 1, g: 0.55, b: 0.1, a: 1}
-  pathInterval: 0.2
-  pathDirectRange: 5
   wanderRadius: 18
   wanderSpeed: 0.5
   scentRange: 22
