@@ -3,7 +3,7 @@ using UnityEngine;
 
 /// <summary>
 /// Стаб родства: при смерти этого существа начисляет родство с его видом.
-/// Полноценную экономику (скидки, конструктор) уже потребляет ChimeraBody.
+/// Полноценную экономику (скидки, конструктор) уже потребляет CreatureBody.
 /// </summary>
 [RequireComponent(typeof(Health))]
 public class GiveAffinityOnDeath : MonoBehaviour

@@ -1,19 +1,16 @@
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 /// <summary>
-/// Конструктор. ШАССИ (SpeciesSO) задаёт слоты + пул + органы по умолчанию (человеческие);
-/// ДОНОРЫ дают звериные альтернативы. Чистый человек = все слоты человеческими органами;
-/// химеризация = в слоте заменить человеческий орган звериным (хоткеи 1–6).
-/// Статы = сумма надетых органов по слотам (каждый стат «принадлежит» своему слоту).
+/// ТЕЛО существа — общее для игрока и (в будущих фазах) NPC. ШАССИ (SpeciesSO) задаёт слоты + пул +
+/// органы по умолчанию; ДОНОРЫ дают звериные альтернативы; химеризация = размен органа в слоте.
+/// Статы = сумма надетых органов по слотам; раздаются ТЕМ компонентам, какие есть на объекте
+/// (игрок: PlayerAttack/PlayerController/Health/PlayerBite; NPC-потребители придут в Ф4/5).
+/// Ввод тело НЕ читает — переключением слотов рулит водитель (PlayerInputDriver / UI конструктора).
 /// Родство: фаза 1 (0–80) — скидка на цену; фаза 2 (80–100) — множитель «звериной» части
 /// (насколько орган уходит от человеческого). Дальность из-под множителя исключена. Тинт по числу звериных слотов.
 /// </summary>
-[RequireComponent(typeof(PlayerAttack))]
-[RequireComponent(typeof(PlayerController))]
-[RequireComponent(typeof(Health))]
-public class ChimeraBody : MonoBehaviour
+public class CreatureBody : MonoBehaviour
 {
     [Header("Виды")]
     [SerializeField] SpeciesSO chassis;    // базовое тело (MVP: Человек) — слоты, пул, дефолт-органы
@@ -33,7 +30,6 @@ public class ChimeraBody : MonoBehaviour
         public string name, hotkey, donorSpecies;
         public Organ human;       // орган шасси (дефолт слота)
         public Organ beast;       // орган донора (альтернатива) или null
-        public InputAction action;
         public bool installed;    // надет звериный?
     }
 
@@ -130,10 +126,11 @@ public class ChimeraBody : MonoBehaviour
 
     void Awake()
     {
-        attack = GetComponent<PlayerAttack>();
-        move = GetComponent<PlayerController>();
-        health = GetComponent<Health>();
-        bite = GetComponent<PlayerBite>();
+        // тело не предполагает игрока: берём тех потребителей, какие есть на объекте
+        TryGetComponent(out attack);
+        TryGetComponent(out move);
+        TryGetComponent(out health);
+        TryGetComponent(out bite);
 
         BuildSlots();
 
@@ -153,7 +150,7 @@ public class ChimeraBody : MonoBehaviour
         if (chassis == null || chassis.organs == null)
         {
             slots = new Slot[0];
-            Debug.LogWarning("ChimeraBody: не назначено шасси (SpeciesSO). Конструктор спит — компоненты работают на своих значениях.");
+            Debug.LogWarning("CreatureBody: не назначено шасси (SpeciesSO). Конструктор спит — компоненты работают на своих значениях.");
             return;
         }
 
@@ -171,27 +168,15 @@ public class ChimeraBody : MonoBehaviour
                 }
 
             sl.hotkey = sl.beast != null ? sl.beast.hotkey : h.hotkey;
-            if (sl.beast != null && !string.IsNullOrEmpty(sl.hotkey))
-            {
-                sl.action = new InputAction(sl.name, InputActionType.Button);
-                sl.action.AddBinding($"<Keyboard>/{sl.hotkey}");
-            }
             list.Add(sl);
         }
         slots = list.ToArray();
     }
 
-    void OnEnable() { if (slots != null) foreach (var sl in slots) sl.action?.Enable(); }
-    void OnDisable() { if (slots != null) foreach (var sl in slots) sl.action?.Disable(); }
-
     void Start() => Recompute();
 
     void Update()
     {
-        if (slots != null)
-            foreach (var sl in slots)
-                if (sl.action != null && sl.action.WasPressedThisFrame()) Toggle(sl);
-
         int affSum = AffinitySum();
         if (affSum != lastAffinitySum) { lastAffinitySum = affSum; Recompute(); } // родство выросло → пересчёт
     }
@@ -252,16 +237,25 @@ public class ChimeraBody : MonoBehaviour
         }
 
         if (bite != null) bite.BiteEnabled = biteOn;
-        Perception.WolfScent = scentOn; // слот «Чутьё»: видно запах волков
-        attack.SetMelee(dmg, Mathf.Max(0.5f, rng));
-        attack.SetCooldown(Mathf.Max(0.05f, atkCd));
-        attack.SetLifeSteal(life);
-        move.SetLegs(mv, dash);
-        move.SetDashCooldown(Mathf.Max(0.05f, dashCd));
-        health.SetMaxHealth(maxHp);
-        health.DamageReduction = Mathf.Clamp01(reduce);
-        health.RegenPerSecond = regen;
-        health.OutOfCombatRegen = regenOOC;
+        if (move != null) Perception.WolfScent = scentOn; // чутьё игрока меняет ТОЛЬКО тело игрока (NPC-тело не должно включать игроку запах)
+        if (attack != null)
+        {
+            attack.SetMelee(dmg, Mathf.Max(0.5f, rng));
+            attack.SetCooldown(Mathf.Max(0.05f, atkCd));
+            attack.SetLifeSteal(life);
+        }
+        if (move != null)
+        {
+            move.SetLegs(mv, dash);
+            move.SetDashCooldown(Mathf.Max(0.05f, dashCd));
+        }
+        if (health != null)
+        {
+            health.SetMaxHealth(maxHp);
+            health.DamageReduction = Mathf.Clamp01(reduce);
+            health.RegenPerSecond = regen;
+            health.OutOfCombatRegen = regenOOC;
+        }
 
         UpdateTint(beast);
     }

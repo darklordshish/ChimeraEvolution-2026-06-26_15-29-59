@@ -41,7 +41,7 @@ public class ConstructorUI : MonoBehaviour
     bool open;
     Font font;
 
-    ChimeraBody body;
+    CreatureBody body;
     Transform slotsContainer;
     Text metersText;
     readonly List<SlotRow> rows = new();
@@ -179,10 +179,10 @@ public class ConstructorUI : MonoBehaviour
         Bottom(hint.rectTransform, 28, 30);
     }
 
-    // строим по строке на слот (один раз, когда в сцене найден ChimeraBody)
+    // строим по строке на слот (один раз, когда в сцене найдено тело игрока)
     void BuildSlotRows()
     {
-        body = FindAnyObjectByType<ChimeraBody>();
+        body = FindAnyObjectByType<CreatureBody>();
         if (body == null || body.SlotCount == 0) return;
 
         for (int i = 0; i < body.SlotCount; i++)

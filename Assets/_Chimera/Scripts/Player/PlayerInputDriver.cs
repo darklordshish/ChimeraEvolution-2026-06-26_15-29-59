@@ -1,9 +1,11 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
 /// Водитель игрока: читает ввод и дёргает приёмы-способности (IAbility) на теле. Сами приёмы ввод
 /// больше не читают — активацию решает драйвер (симметрично будущей психике ИИ). ЛКМ→меч, Shift→укус, ПКМ→пинок.
+/// Плюс хоткеи химеризации (1–6) — по данным слотов тела (CreatureBody.ToggleSlot).
 /// </summary>
 [RequireComponent(typeof(PlayerAttack))]
 public class PlayerInputDriver : MonoBehaviour
@@ -11,7 +13,9 @@ public class PlayerInputDriver : MonoBehaviour
     PlayerAttack melee;
     PlayerBite bite;
     PlayerKick kick;
+    CreatureBody body;
     InputAction attackAction, biteAction, kickAction;
+    readonly List<(InputAction action, int slot)> slotActions = new();
 
     void Awake()
     {
@@ -36,11 +40,40 @@ public class PlayerInputDriver : MonoBehaviour
         kickAction.AddBinding("<Gamepad>/buttonEast");
     }
 
-    void OnEnable() { attackAction.Enable(); biteAction.Enable(); kickAction.Enable(); }
-    void OnDisable() { attackAction.Disable(); biteAction.Disable(); kickAction.Disable(); }
+    // хоткеи слотов строим в Start: тело собирает слоты в своём Awake
+    void Start()
+    {
+        body = GetComponent<CreatureBody>();
+        if (body == null) return;
+        for (int i = 0; i < body.SlotCount; i++)
+        {
+            var v = body.GetSlot(i);
+            if (!v.hasBeast || string.IsNullOrEmpty(v.hotkey)) continue;
+            var a = new InputAction(v.slot, InputActionType.Button);
+            a.AddBinding($"<Keyboard>/{v.hotkey}");
+            a.Enable();
+            slotActions.Add((a, i));
+        }
+    }
+
+    void OnEnable()
+    {
+        attackAction.Enable(); biteAction.Enable(); kickAction.Enable();
+        foreach (var (a, _) in slotActions) a.Enable();
+    }
+
+    void OnDisable()
+    {
+        attackAction.Disable(); biteAction.Disable(); kickAction.Disable();
+        foreach (var (a, _) in slotActions) a.Disable();
+    }
 
     void Update()
     {
+        // химеризация хоткеями — работает и при открытом конструкторе (UI сам синхронится)
+        for (int i = 0; i < slotActions.Count; i++)
+            if (slotActions[i].action.WasPressedThisFrame()) body.ToggleSlot(slotActions[i].slot);
+
         if (ConstructorUI.IsOpen) return; // в конструкторе не деремся (иначе хитстоп сбивает замедление)
 
         if (attackAction.WasPressedThisFrame()) melee.TryUse();

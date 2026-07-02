@@ -4,7 +4,7 @@ using UnityEngine;
 
 /// <summary>
 /// Утилита разработки: создаёт/обновляет дефолтные виды (Человек, Волк) как ассеты с готовыми числами
-/// и прицепляет их к ChimeraBody в открытой сцене. Идемпотентно — повторный запуск обновляет значения
+/// и прицепляет их к CreatureBody в открытой сцене. Идемпотентно — повторный запуск обновляет значения
 /// существующих ассетов (удобно гонять баланс). Меню: Chimera → Создать дефолтные виды. Editor-only.
 /// </summary>
 public static class SpeciesBootstrap
@@ -53,8 +53,8 @@ public static class SpeciesBootstrap
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
-        // ── авто-привязка к ChimeraBody в открытой сцене ──
-        var body = Object.FindAnyObjectByType<ChimeraBody>();
+        // ── авто-привязка к телу игрока (CreatureBody) в открытой сцене ──
+        var body = Object.FindAnyObjectByType<CreatureBody>();
         if (body != null)
         {
             var so = new SerializedObject(body);
@@ -65,11 +65,11 @@ public static class SpeciesBootstrap
             so.ApplyModifiedProperties();
             EditorUtility.SetDirty(body);
             EditorSceneManager.MarkSceneDirty(body.gameObject.scene);
-            Debug.Log("Виды обновлены в " + Dir + " и привязаны к ChimeraBody. Сохрани сцену (Ctrl+S).");
+            Debug.Log("Виды обновлены в " + Dir + " и привязаны к CreatureBody. Сохрани сцену (Ctrl+S).");
         }
         else
         {
-            Debug.Log("Виды обновлены в " + Dir + ". ChimeraBody в сцене не найден — назначь chassis/donors вручную.");
+            Debug.Log("Виды обновлены в " + Dir + ". CreatureBody в сцене не найден — назначь chassis/donors вручную.");
         }
     }
 

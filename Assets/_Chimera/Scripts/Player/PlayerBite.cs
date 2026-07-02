@@ -4,7 +4,7 @@ using UnityEngine;
 /// <summary>
 /// Укус — вторая атака (слот «Пасть»). Отдельная кнопка (Left Shift / левый шифтер):
 /// короткая дистанция, мощный единичный удар + вампиризм. Активен, только если слот «Пасть» надет
-/// (ChimeraBody выставляет BiteEnabled).
+/// (CreatureBody выставляет BiteEnabled).
 /// </summary>
 public class PlayerBite : MonoBehaviour, IAbility
 {

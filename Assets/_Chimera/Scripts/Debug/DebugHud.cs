@@ -8,13 +8,13 @@ using UnityEngine.InputSystem;
 public class DebugHud : MonoBehaviour
 {
     Health playerHealth;
-    ChimeraBody body;
+    CreatureBody body;
     GUIStyle style;
 
     void Start()
     {
         var pc = FindAnyObjectByType<PlayerController>();
-        if (pc != null) { playerHealth = pc.GetComponent<Health>(); body = pc.GetComponent<ChimeraBody>(); }
+        if (pc != null) { playerHealth = pc.GetComponent<Health>(); body = pc.GetComponent<CreatureBody>(); }
     }
 
     void Update()
