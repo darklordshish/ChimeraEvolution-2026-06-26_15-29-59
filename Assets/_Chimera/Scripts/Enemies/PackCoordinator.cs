@@ -54,6 +54,13 @@ public class PackCoordinator : MonoBehaviour
                 w.Hear(playerPos);
     }
 
+    // вой ВОЖАКА слышен по всей карте: ВСЕ волки узнают, где игрок, и сходятся (в отличие от локального Howl волка)
+    public void AlertAll(Vector3 playerPos)
+    {
+        foreach (var w in wolves)
+            if (w != null) w.Hear(playerPos);
+    }
+
     // мораль: страх/бегство — ЛИЧНОЕ у каждого волка (WolfAI). Пул задаёт лишь параметры; ярость вожака гасит страх.
     public bool Fearless => Time.time < fearlessUntil;
     public int RollPanicThreshold() => Random.Range(routKillsMin, routKillsMax + 1); // личный порог храбрости волка
