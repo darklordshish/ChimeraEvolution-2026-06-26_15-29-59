@@ -7,7 +7,7 @@ using UnityEngine;
 [RequireComponent(typeof(Health))]
 public class HitFlash : MonoBehaviour
 {
-    [SerializeField] Color flashColor = Color.white;
+    [SerializeField] Color flashColor = Color.black; // чёрная читается лучше белой на светлых телах
     [SerializeField] float flashTime = 0.08f;
 
     static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
