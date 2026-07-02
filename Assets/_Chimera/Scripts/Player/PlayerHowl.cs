@@ -11,7 +11,7 @@ public class PlayerHowl : MonoBehaviour, IAbility
 {
     [Header("Вой")]
     [SerializeField] float radius = 7f;
-    [SerializeField] float stunDuration = 0.6f; // микро-стан: сорвать замахи, не выключить стаю
+    [SerializeField] float stunDuration = 1f;   // СТАН (контроль ≥1с): вырубает стаю на окно действий
     [SerializeField] float cooldown = 8f;
     [SerializeField] float shake = 0.3f;
 

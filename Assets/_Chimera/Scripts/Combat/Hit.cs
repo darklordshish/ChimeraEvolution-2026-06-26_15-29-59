@@ -60,7 +60,7 @@ public readonly struct Hit
             case EffectKind.RegenDebuff:
                 target.SuppressRegen(e.Factor, e.Duration);
                 break;
-            case EffectKind.Stun: // оглушение без урона (вой): прерывает замахи через Stagger
+            case EffectKind.Stun: // СТАН — контроль ≥1с (вой и т.п.); короткий стаггер цель даёт себе сама от урона
                 if (target.TryGetComponent<Stagger>(out var st)) st.Stun(e.Duration);
                 break;
         }
