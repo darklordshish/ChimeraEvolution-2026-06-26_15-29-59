@@ -91,6 +91,29 @@ public class ChimeraDevWindow : EditorWindow
             if (GUILayout.Button("Спавн Вервольфа")) SpawnWerewolf();
         if (boss != null && GUILayout.Button("Убить босса") && boss.TryGetComponent<Health>(out var bk))
             bk.TakeDamage(999999, true);
+
+        // ── Змея ──
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Змея", EditorStyles.boldLabel);
+        var snakes = Object.FindObjectsByType<SnakePsyche>();
+        EditorGUILayout.LabelField($"Живых: {snakes.Length}");
+        using (new EditorGUILayout.HorizontalScope())
+        {
+            if (GUILayout.Button("Спавн змеи")) SpawnSnake();
+            if (GUILayout.Button("Убить всех змей"))
+                foreach (var s in snakes)
+                    if (s.TryGetComponent<Health>(out var sh)) sh.TakeDamage(99999, true);
+        }
+    }
+
+    static void SpawnSnake()
+    {
+        var pc = Object.FindAnyObjectByType<PlayerController>();
+        Vector3 pos = (pc != null ? pc.transform.position : Vector3.zero) + new Vector3(8f, 0f, 6f);
+        if (NavMesh.SamplePosition(pos, out var hit, 10f, NavMesh.AllAreas)) pos = hit.position;
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(SnakePrefab.Path);
+        var go = prefab != null ? Object.Instantiate(prefab) : SnakePrefab.BuildSnake();
+        go.transform.position = pos;
     }
 
     static void SpawnWerewolf()

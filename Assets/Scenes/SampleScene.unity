@@ -781,6 +781,9 @@ MonoBehaviour:
   bonusStartAffinity: 80
   bonusFullAffinity: 100
   maxBonusMult: 2
+  installAllBeast: 0
+  expression: 0
+  applyVitals: 1
 --- !u!114 &1083135099
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -826,7 +829,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerHowl
   radius: 7
-  stunDuration: 0.6
+  stunDuration: 1
   cooldown: 8
   shake: 0.3
 --- !u!1 &1185508198

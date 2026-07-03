@@ -112,7 +112,7 @@ public class PackCoordinator : MonoBehaviour
         Transform p = Player;
         if (p == null) return;
         if (playerHealth == null) playerHealth = p.GetComponent<Health>();
-        if (playerHealth != null) playerHealth.InCombat = AnyEngaged();
+        if (playerHealth != null && AnyEngaged()) playerHealth.MarkInCombat(); // хоть один волк агрится → в бою
     }
 
     // есть ли хоть один волк, который сейчас держит игрока в поле зрения (агро на тебя)

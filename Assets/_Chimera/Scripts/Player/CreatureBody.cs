@@ -309,6 +309,8 @@ public class CreatureBody : MonoBehaviour
 
     void UpdateTint(int beast)
     {
+        // тинт — динамика ИГРОКА (лерп к тинту донора по числу звериных слотов). У NPC доноров нет → k=0,
+        // цвет берётся из ЗАПЕЧЁННОГО материала префаба (генератор красит в тинт вида) — чтобы не драться с Telegraph.
         Color target = donors != null && donors.Length > 0 && donors[0] != null ? donors[0].tint : Color.gray;
         float k = MaxSlots > 0 ? (float)beast / MaxSlots : 0f;
         for (int i = 0; i < renderers.Length; i++)

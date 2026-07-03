@@ -11,7 +11,7 @@ public static class SpeciesBootstrap
 {
     const string Dir = "Assets/_Chimera/Data";
 
-    [MenuItem("Chimera/Создать дефолтные виды (Человек, Волк)")]
+    [MenuItem("Chimera/Создать дефолтные виды (Человек, Волк, Змея)")]
     public static void CreateDefaults()
     {
         if (!AssetDatabase.IsValidFolder(Dir))
@@ -49,6 +49,21 @@ public static class SpeciesBootstrap
             new Organ { organName = "Шкура",         slot = "Шкура",  hotkey = "6", cost = 4, damageReduction = 0.3f },
         };
         EditorUtility.SetDirty(wolf);
+
+        // ── Змея: соло-засадный вид (NPC-шасси; органы в мутагенной шкале, природная особь на Э~0.5) ──
+        var snake = GetOrCreate("Змея");
+        snake.speciesName = "Змея";
+        snake.tint = new Color(0.35f, 0.5f, 0.3f);
+        snake.mutagenPool = 20;
+        snake.organs = new[]
+        {
+            new Organ { organName = "Ядовитые клыки",       slot = "Пасть",  cost = 5, damage = 24, enablesBite = true },
+            new Organ { organName = "Хладнокровное сердце", slot = "Сердце", cost = 5, maxHp = 200, regen = 4f, coldBlooded = true },
+            new Organ { organName = "Тело-хвост",           slot = "Тело",   cost = 5, moveSpeed = 10f, dashSpeed = 20f },
+            new Organ { organName = "Чешуя",                slot = "Шкура",  cost = 4, damageReduction = 0.4f },
+            new Organ { organName = "Пит-орган",            slot = "Чутьё",  cost = 3 },
+        };
+        EditorUtility.SetDirty(snake);
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();

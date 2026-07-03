@@ -91,8 +91,9 @@ public static class WerewolfPrefab
         return go;
     }
 
-    // выставить приватные [SerializeField]-поля компонента по именам (editor-only, через SerializedObject)
-    static void Configure(Component c, params (string field, object value)[] values)
+    // выставить приватные [SerializeField]-поля компонента по именам (editor-only, через SerializedObject).
+    // public — переиспользует генератор змеи (SnakePrefab).
+    public static void Configure(Component c, params (string field, object value)[] values)
     {
         var so = new SerializedObject(c);
         foreach (var (field, value) in values)

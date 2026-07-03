@@ -153,6 +153,7 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
         }
 
         Face(dir);
+        if (targetHealth != null) targetHealth.MarkInCombat(); // босс видит игрока → бой (соло-босс тоже гейтит реген)
 
         if (Time.time >= nextAttackTime && inCone)
         {
