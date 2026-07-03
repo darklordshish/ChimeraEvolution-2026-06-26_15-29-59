@@ -368,3 +368,15 @@ MonoBehaviour:
   creepRange: 11
   creepSpeed: 0.5
   attackCooldown: 1.6
+  grabChance: 0.5
+  grabWindup: 0.35
+  tightenRate: 1
+  stage2At: 1.5
+  stage3At: 3.5
+  loosenPerDamage: 0.12
+  chokeDamage: 4
+  chokeInterval: 0.5
+  grabSlow1: 0.35
+  grabSlow2: 0.15
+  grabSlow3: 0
+  ripSelfKnock: 5

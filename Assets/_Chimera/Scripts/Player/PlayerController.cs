@@ -35,8 +35,9 @@ public class PlayerController : MonoBehaviour
     Vector3 velocity;
     float dashTimer, dashReadyAt, groundY;
     Vector3 dashDir;
-    IGrabber grabber;        // волк, держащий игрока в захвате
-    float grabSlow = 1f;     // множитель скорости, пока в захвате (1 = свободно)
+    IGrabber grabber;        // волк/змея, держащий игрока в захвате
+    float grabSlow = 1f;     // множитель скорости И рывка, пока в захвате (1 = свободно; 0 = корень на 3-й стадии обхвата)
+    public bool GrabImmune { get; set; } // чёрный ход: будущая способность даёт иммунитет к захвату (обхват змеи и т.п.)
 
     void Awake()
     {
@@ -120,15 +121,17 @@ public class PlayerController : MonoBehaviour
             dashTimer = dashDuration;
             dashReadyAt = Time.time + dashCooldown;
             dashDir = move.sqrMagnitude > 0.01f ? move.normalized : transform.forward;
-            if (grabber != null) // срываемся рывком: рвём волка и себя (сквозь i-frames рывка)
+            // срываемся рывком: держащий решает, отпустит ли (змея на поздних стадиях обхвата — нет). Иммун — всегда свободен.
+            if (grabber != null && (GrabImmune || grabber.BreakFree(dashRipDamage)))
             {
-                var g = grabber; grabber = null; grabSlow = 1f;
-                g.BreakFree(dashRipDamage);
-                if (health != null) health.TakeDamage(dashRipSelfDamage, true);
+                grabber = null; grabSlow = 1f;
+                if (!GrabImmune && health != null) health.TakeDamage(dashRipSelfDamage, true); // рвал себя из захвата — больно (минует i-frames)
             }
         }
 
-        Vector3 horizontal = dashTimer > 0f ? dashDir * dashSpeed : move * moveSpeed * grabSlow;
+        // захват режет И перемещение, И рывок (чем туже, тем короче рывок; на 3-й стадии — корень). Иммун снимает всё.
+        float grip = GrabImmune ? 1f : grabSlow;
+        Vector3 horizontal = (dashTimer > 0f ? dashDir * dashSpeed : move * moveSpeed) * grip;
         if (dashTimer > 0f) dashTimer -= Time.deltaTime;
         if (health != null) health.Invulnerable = dashTimer > 0f;
 
@@ -164,7 +167,7 @@ public class PlayerController : MonoBehaviour
     public void SetDashCooldown(float newCooldown) => dashCooldown = newCooldown;
 
     // захват волком: режем скорость, пока висит; рывок/пинок снимают
-    public void ApplyGrab(IGrabber g, float slow) { grabber = g; grabSlow = Mathf.Clamp(slow, 0.05f, 1f); }
+    public void ApplyGrab(IGrabber g, float slow) { grabber = g; grabSlow = Mathf.Clamp01(slow); } // 0 = полный корень (3-я стадия)
     public void ReleaseGrab(IGrabber g) { if (ReferenceEquals(grabber, g)) { grabber = null; grabSlow = 1f; } }
 
     Vector3 AimDirection(Vector3 camF, Vector3 camR)

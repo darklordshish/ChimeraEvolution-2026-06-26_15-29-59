@@ -21,6 +21,8 @@ public class Knockback : MonoBehaviour
         vel = velocity;
     }
 
+    public void Cancel() => vel = Vector3.zero; // обхват змеи (стадия 2+) гасит отлёт от пинка — сжатие держит
+
     void Update()
     {
         if (vel.sqrMagnitude < 0.02f) { vel = Vector3.zero; return; }

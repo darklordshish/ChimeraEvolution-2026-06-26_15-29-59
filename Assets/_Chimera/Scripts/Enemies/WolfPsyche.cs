@@ -287,6 +287,8 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer
 
     void UpdateGrab()
     {
+        if (playerCtl != null && playerCtl.GrabImmune) { Disengage(attackCooldown); return; } // иммунитет к захвату — отпускаем
+
         Vector3 to = target.position - transform.position; to.y = 0f;
         float d = to.magnitude;
         Vector3 dir = d > 0.001f ? to / d : transform.forward;
@@ -299,17 +301,20 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer
         // отпускает только пинок (Knockback) или рывок (BreakFree) — ни таймаута, ни срыва ударом
     }
 
-    // IGrabber: игрок сорвался рывком — урон цепляющемуся + лёгкий отлёт + отпускаем
-    public void BreakFree(int damage)
+    // IGrabber: игрок сорвался рывком — урон цепляющемуся + лёгкий отлёт + отпускаем. Волк рвётся ВСЕГДА.
+    public bool BreakFree(int damage)
     {
-        if (!grabbing) return;
-        if (ownHealth != null && damage > 0) ownHealth.TakeDamage(damage);
-        if (knockback != null)
+        if (grabbing)
         {
-            Vector3 away = transform.position - target.position; away.y = 0f;
-            if (away.sqrMagnitude > 0.001f) knockback.Push(away.normalized * ripSelfKnock);
+            if (ownHealth != null && damage > 0) ownHealth.TakeDamage(damage);
+            if (knockback != null)
+            {
+                Vector3 away = transform.position - target.position; away.y = 0f;
+                if (away.sqrMagnitude > 0.001f) knockback.Push(away.normalized * ripSelfKnock);
+            }
+            Disengage(attackCooldown);
         }
-        Disengage(attackCooldown);
+        return true;
     }
 
     void ReleaseToken()
