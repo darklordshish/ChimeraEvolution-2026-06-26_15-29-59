@@ -27,6 +27,7 @@ public class Health : MonoBehaviour
     float regenAccum;
     float regenSuppressUntil, regenSuppressFactor = 1f; // дебафф регена (укус Пасти игрока)
     Rage rage; // ярость: входящий урон больше (может добавиться в рантайме — ленивый поиск)
+    Venom venom; // яд: 2+ стака поднимают входящий урон (стадия уязвимости)
 
     void Awake() => Current = maxHealth;
 
@@ -82,7 +83,8 @@ public class Health : MonoBehaviour
         if (Invulnerable && !ignoreInvuln) return;
 
         if (rage == null) TryGetComponent(out rage);
-        float incoming = rage != null ? rage.IncomingMult : 1f; // плата за ярость: защита проседает
+        if (venom == null) TryGetComponent(out venom);
+        float incoming = (rage != null ? rage.IncomingMult : 1f) * (venom != null ? venom.IncomingMult : 1f); // ярость + яд роняют защиту
         amount = Mathf.Max(1, Mathf.RoundToInt(amount * (1f - DamageReduction) * incoming)); // броня (слот «Кожа»)
         Current = Mathf.Max(0, Current - amount);
         onDamaged?.Invoke();

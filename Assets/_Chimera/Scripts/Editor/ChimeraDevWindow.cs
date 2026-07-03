@@ -57,6 +57,12 @@ public class ChimeraDevWindow : EditorWindow
                 if (GUILayout.Button("Лечить до полного")) health.Heal(health.Max);
                 if (GUILayout.Button("−20 HP")) health.TakeDamage(20, true);
             }
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                var v = health.GetComponent<Venom>();
+                EditorGUILayout.LabelField($"Яд: {(v != null ? v.Stacks : 0)} стак(ов)", GUILayout.Width(120));
+                if (GUILayout.Button("Отравить +1")) (health.GetComponent<Venom>() ?? health.gameObject.AddComponent<Venom>()).AddStack();
+            }
         }
         else EditorGUILayout.HelpBox("Игрок (PlayerController) не найден.", MessageType.Warning);
 

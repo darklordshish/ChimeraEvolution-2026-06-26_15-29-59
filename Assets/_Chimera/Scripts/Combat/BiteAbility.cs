@@ -14,6 +14,7 @@ public class BiteAbility : WindupAbility
     [SerializeField] int lifeSteal = 0;                      // вервольф лечится укусом (может уйти в temp HP)
     [SerializeField, Range(0f, 1f)] float regenDebuff = 1f;  // <1 — сбивает реген цели
     [SerializeField] float regenDebuffTime = 0f;
+    [SerializeField] int venomStacks = 0;                   // >0 — укус впрыскивает яд (змея)
 
     public float Range => range;         // психика читает для решений (дистанция атаки/удержания)
     public float HalfAngle => halfAngle; // и для прицельного конуса
@@ -35,6 +36,7 @@ public class BiteAbility : WindupAbility
             hit.Apply(targetHealth, HitEffect.Damage(Mathf.RoundToInt(damage * DamageMult)));
             if (lifeSteal > 0) hit.Apply(targetHealth, HitEffect.LifeSteal(lifeSteal));
             if (regenDebuff < 1f) hit.Apply(targetHealth, HitEffect.RegenDebuff(regenDebuff, regenDebuffTime));
+            for (int i = 0; i < venomStacks; i++) hit.Apply(targetHealth, HitEffect.Venom());
             return AbilityRun.Done;
         }
 

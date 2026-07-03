@@ -36,7 +36,9 @@ public class DebugHud : MonoBehaviour
         string hp = playerHealth != null ? $"{playerHealth.Current}/{playerHealth.Max}" : "—";
         string combat = playerHealth != null && !playerHealth.InCombat
             ? (playerHealth.OutOfCombatRegen > 0f ? "  (вне боя — реген)" : "  (вне боя)") : "";
-        GUI.Label(new Rect(14, 10, 520, 26), $"HP: {hp}{combat}", style);
+        var venom = playerHealth != null ? playerHealth.GetComponent<Venom>() : null;
+        string poison = venom != null && venom.Stacks > 0 ? $"   ☠ яд {venom.Stacks}" : "";
+        GUI.Label(new Rect(14, 10, 640, 26), $"HP: {hp}{combat}{poison}", style);
         var boss = FindAnyObjectByType<WerewolfPsyche>();
         if (boss != null && boss.TryGetComponent<Health>(out var bossHp))
             GUI.Label(new Rect(540, 10, 460, 26), $"БОСС: {bossHp.Current}/{bossHp.Max}{(bossHp.Current > bossHp.Max ? $" (+{bossHp.Current - bossHp.Max} temp)" : "")}", style);
