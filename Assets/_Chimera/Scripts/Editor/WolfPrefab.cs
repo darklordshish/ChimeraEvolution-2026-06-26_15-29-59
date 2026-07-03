@@ -72,6 +72,7 @@ public static class WolfPrefab
                                        ("up", 5f), ("duration", 0.5f), ("damage", 12), ("hitRadius", 1.3f));
         go.AddComponent<Rage>();          // может взбеситься от воя вожака
         go.AddComponent<SpawnVariance>(); // разброс особи
+        // родство на смерть начисляет САМО тело (CreatureBody ниже): +1 за видо-флаг шасси «Волк»
 
         // тело на шасси Волк (природная особь: экспрессия 0.45; витальность/урон/скорость — из органов)
         var cbody = go.AddComponent<CreatureBody>();

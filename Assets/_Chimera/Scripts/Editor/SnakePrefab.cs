@@ -55,6 +55,7 @@ public static class SnakePrefab
         go.AddComponent<Knockback>();
         go.AddComponent<Stagger>();
         go.AddComponent<HitFlash>();
+        // родство на смерть начисляет САМО тело (CreatureBody ниже): +1 за видо-флаг шасси «Змея» (нужно для донора/наги в слайсе 2)
 
         // укус с ЯДОМ; рывок — быстрый низкий страйк из засады
         var bite = go.AddComponent<BiteAbility>();

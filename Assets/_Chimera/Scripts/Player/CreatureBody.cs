@@ -152,6 +152,9 @@ public class CreatureBody : MonoBehaviour
 
         BuildSlots();
 
+        // РОДСТВО: NPC (не игрок) на смерть даёт +1 за каждый УНИКАЛЬНЫЙ видо-флаг тела (шасси + доноры с органами)
+        if (health != null && move == null) health.onDeath.AddListener(GrantAffinityOnDeath);
+
         renderers = GetComponentsInChildren<Renderer>();
         baseColors = new Color[renderers.Length];
         mpb = new MaterialPropertyBlock();
@@ -207,6 +210,18 @@ public class CreatureBody : MonoBehaviour
         int s = 0;
         if (donors != null) foreach (var d in donors) if (d != null) s += AffinityTracker.Get(d.speciesName);
         return s;
+    }
+
+    // РОДСТВО на смерть (только NPC): +1 за каждый УНИКАЛЬНЫЙ видо-флаг тела — шасси + каждый вид-донор с ≥1 надетым
+    // органом. Волк→+1 Волк; змея→+1 Змея; вервольф (человек+волчьи ауги)→+1 Человек, +1 Волк. Дубли по виду не растят.
+    void GrantAffinityOnDeath()
+    {
+        var present = new HashSet<string>();
+        if (chassis != null) present.Add(chassis.speciesName);
+        if (slots != null)
+            foreach (var sl in slots)
+                if (sl.installed && sl.beast != null && sl.donorSpecies != null) present.Add(sl.donorSpecies);
+        foreach (var species in present) AffinityTracker.Add(species, 1);
     }
 
     void Toggle(Slot sl)

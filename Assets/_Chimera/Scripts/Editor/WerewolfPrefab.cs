@@ -103,6 +103,7 @@ public static class WerewolfPrefab
             if (value is float f) p.floatValue = f;
             else if (value is int i) p.intValue = i;
             else if (value is bool b) p.boolValue = b;
+            else if (value is string s) p.stringValue = s;
         }
         so.ApplyModifiedPropertiesWithoutUndo();
     }

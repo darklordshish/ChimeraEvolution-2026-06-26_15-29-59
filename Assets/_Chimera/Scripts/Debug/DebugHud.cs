@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -42,7 +43,10 @@ public class DebugHud : MonoBehaviour
         var boss = FindAnyObjectByType<WerewolfPsyche>();
         if (boss != null && boss.TryGetComponent<Health>(out var bossHp))
             GUI.Label(new Rect(540, 10, 460, 26), $"БОСС: {bossHp.Current}/{bossHp.Max}{(bossHp.Current > bossHp.Max ? $" (+{bossHp.Current - bossHp.Max} temp)" : "")}", style);
-        GUI.Label(new Rect(14, 34, 760, 26), $"Родство [Волк]: {AffinityTracker.Get("Волк")}  (бонус органов ×{(body != null ? body.BonusMult : 1f):0.00})   [K +10]", style);
+        var affParts = new List<string>();
+        foreach (var kv in AffinityTracker.All) if (kv.Value != 0) affParts.Add($"{kv.Key} {kv.Value}");
+        string aff = affParts.Count > 0 ? string.Join(" · ", affParts) : "—";
+        GUI.Label(new Rect(14, 34, 900, 26), $"Родство: {aff}   (бонус органов ×{(body != null ? body.BonusMult : 1f):0.00})   [K: Волк +10]", style);
         GUI.Label(new Rect(14, 58, 760, 26), $"Шкала мозга: {(body != null ? body.BeastSlots : 0)}/{(body != null ? body.MaxSlots : 0)} звериных", style);
         GUI.Label(new Rect(14, 82, 760, 26), $"Пул мутагена: {(body != null ? body.PoolUsed : 0)}/{(body != null ? body.Pool : 0)}", style);
         GUI.Label(new Rect(14, 106, 760, 26), $"БОГ [G]: {(playerHealth != null && playerHealth.GodMode ? "ВКЛ" : "выкл")}   Запах: чутьё {(Perception.WolfScent ? "да" : "нет")}, свой [N] {(Perception.ShowOwnScent ? "вкл" : "выкл")}", style);
