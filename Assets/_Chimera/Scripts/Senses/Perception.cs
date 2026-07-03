@@ -24,4 +24,14 @@ public static class Perception
             return hit.collider.transform == target;
         return true;
     }
+
+    // термозрение (глаза змеи): видит «тёплого» (живого = есть Health) в радиусе СКВОЗЬ укрытия;
+    // холоднокровный (ColdBlooded) невидим. Не требует прямой видимости — этим и отличается от зрения.
+    public static bool SeesThermal(Vector3 from, Transform target, float range)
+    {
+        if (target == null) return false;
+        if ((target.position - from).sqrMagnitude > range * range) return false;
+        if (target.GetComponent<ColdBlooded>() != null) return false; // не излучает тепло — невидим
+        return target.GetComponent<Health>() != null;                 // «тёплый» = живой
+    }
 }
