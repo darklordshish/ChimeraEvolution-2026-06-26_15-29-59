@@ -49,4 +49,6 @@ public class Telegraph : MonoBehaviour
     }
 
     public void Clear() => Set(false, activeColor);
+
+    public bool IsShowing => active; // «существо сейчас что-то телеграфирует» = раскрыто (сигнал для камуфляжа)
 }

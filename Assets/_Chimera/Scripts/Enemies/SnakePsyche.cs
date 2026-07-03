@@ -29,6 +29,9 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     [SerializeField] float thermalRange = 14f;              // термозрение: видит тёплого сквозь укрытия
     [SerializeField] float creepRange = 11f;               // ближе — подкрадывается; дальше в термо-радиусе — ждёт
     [SerializeField, Range(0f, 1f)] float creepSpeed = 0.5f;
+    [SerializeField] float revealMemory = 2f;              // камуфляж: держится «раскрыта» столько после приёма (> кулдауна — не мигает в мили)
+    [SerializeField] float rattleInterval = 3f;            // гремок: как часто затаившаяся змея выдаёт себя (единственная зацепка на невидимку)
+    [SerializeField] float rattleCue = 0.4f;               // длительность проблеска-гремка (звук ляжет сверху позже)
 
     [Header("Кулдаун")]
     [SerializeField] float attackCooldown = 1.6f;
@@ -59,8 +62,9 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     BiteAbility bite;
     LeapAbility leap;
     WindupAbility activeAbility;   // укус/рывок в процессе — психика его тикает
+    Camouflage camo;               // камуфляж (Чешуя): раскрываем на время боя (лениво — CreatureBody вешает его после нашего Awake)
 
-    float nextAttackTime, verticalVel, windupEnd;
+    float nextAttackTime, verticalVel, windupEnd, nextRattle;
     bool windingUp, constricting;                // windingUp — только замах ОБХВАТА
     float grip, gripFloor, chokeNext;             // grip — «сжатие»; gripFloor — ратчет: ниже достигнутой стадии не откатывается
     int stage, maxStage, lastHp;                  // stage 1..3; maxStage — чтобы яд впрыснуть раз на новую стадию
@@ -100,12 +104,28 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         if (bite != null) bite.SetDamage(damage);
     }
 
+    // камуфляж: раскрыть себя на время боя (лениво берём компонент — CreatureBody вешает его в свой Start, после нашего Awake)
+    void RevealSelf()
+    {
+        if (camo == null) TryGetComponent(out camo);
+        if (camo != null) camo.Reveal(revealMemory);
+    }
+
+    // ГРЕМОК: затаившаяся змея периодически выдаёт себя кратким проблеском (звук позже) — единственная зацепка на невидимку/приманка
+    void TryRattle()
+    {
+        if (Time.time < nextRattle) return;
+        nextRattle = Time.time + rattleInterval;
+        if (camo == null) TryGetComponent(out camo);
+        if (camo != null) camo.Reveal(rattleCue);
+    }
+
     void Update()
     {
         if (target == null) { Settle(Vector3.zero); return; }
 
         // ОБХВАТ имеет приоритет: змея закоммичена в дуэль (стоит и душит), знает свои срывы сама
-        if (constricting) { UpdateConstrict(); return; }
+        if (constricting) { RevealSelf(); UpdateConstrict(); return; }
 
         // пинок рвёт активный приём / замах обхвата (вне обхвата)
         if (knockback != null && knockback.IsActive)
@@ -119,6 +139,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         // активный приём (укус/рывок) тикает сам
         if (activeAbility != null)
         {
+            RevealSelf(); // приём в процессе — змея видна (и ещё revealMemory после, чтобы не мигала на кулдауне)
             if (stagger != null && stagger.IsStaggered) activeAbility.Abort(false); // полёт рывка сам решит
             var st = activeAbility.Tick();
             if (st == AbilityRun.Running) return;
@@ -129,10 +150,10 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
 
         if (stagger != null && stagger.IsStaggered) { Settle(Vector3.zero); return; }
 
-        if (windingUp) { UpdateGrabWindup(); return; }
+        if (windingUp) { RevealSelf(); UpdateGrabWindup(); return; }
 
         // ЗАСАДА: термозрение — тёплый игрок сквозь укрытия в радиусе. Не чует — ждёт неподвижно.
-        if (!Perception.SeesThermal(transform.position, target, thermalRange)) { Settle(Vector3.zero); return; }
+        if (!Perception.SeesThermal(transform.position, target, thermalRange)) { TryRattle(); Settle(Vector3.zero); return; }
         if (targetHealth != null) targetHealth.MarkInCombat(); // змея на охоте → игрок в бою
 
         Vector3 to = target.position - transform.position; to.y = 0f;
@@ -151,8 +172,9 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
             if (dist >= leap.MinRange && dist <= leap.MaxRange) { if (leap.TryUse()) activeAbility = leap; Settle(Vector3.zero); return; }
         }
 
-        // подпустил близко → подкрадывается; далеко в термо-радиусе → терпеливо ждёт (засада, не гонит по карте)
-        Settle(dist <= creepRange ? nav.DirTo(target.position) * Speed * creepSpeed : Vector3.zero);
+        // подпустил близко → подкрадывается; далеко в термо-радиусе → терпеливо ждёт (засада) + гремит-выдаёт себя
+        if (dist <= creepRange) Settle(nav.DirTo(target.position) * Speed * creepSpeed);
+        else { TryRattle(); Settle(Vector3.zero); }
     }
 
     // замах обхвата: увернулся из радиуса — сорван; выдержал — обвивает

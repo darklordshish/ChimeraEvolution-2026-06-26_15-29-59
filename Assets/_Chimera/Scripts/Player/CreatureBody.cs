@@ -50,6 +50,7 @@ public class CreatureBody : MonoBehaviour
     PlayerHowl howl;
     SpawnVariance variance; // разброс особи: HP учитываем при раздаче витальности (иначе гонка Start'ов)
     ColdBlooded cold;       // холоднокровность (Сердце змеи) — компонент-маркер, вешаем/снимаем по сборке
+    Camouflage camoComp;    // камуфляж-в-неподвижности (Чешуя змеи) — вешаем/снимаем по сборке
     Renderer[] renderers;
     Color[] baseColors;
     MaterialPropertyBlock mpb;
@@ -149,6 +150,7 @@ public class CreatureBody : MonoBehaviour
         TryGetComponent(out howl);
         TryGetComponent(out variance);
         TryGetComponent(out cold);
+        TryGetComponent(out camoComp);
 
         BuildSlots();
 
@@ -238,7 +240,7 @@ public class CreatureBody : MonoBehaviour
 
         int dmg = 0, maxHp = 0, life = 0, beast = 0;
         float rng = 0f, atkCd = 0f, mv = 0f, dash = 0f, dashCd = 0f, reduce = 0f, regen = 0f, regenOOC = 0f;
-        bool biteOn = false, scentOn = false, kickOn = false, howlOn = false, coldOn = false;
+        bool biteOn = false, scentOn = false, kickOn = false, howlOn = false, coldOn = false, camoOn = false;
 
         foreach (var sl in slots)
         {
@@ -263,6 +265,7 @@ public class CreatureBody : MonoBehaviour
                 if (b.enablesKick) kickOn = true;
                 if (b.enablesHowl) howlOn = true;
                 if (b.coldBlooded) coldOn = true;
+                if (b.camo) camoOn = true;
                 beast++;
             }
             else
@@ -279,6 +282,7 @@ public class CreatureBody : MonoBehaviour
                 if (h.enablesKick) kickOn = true;
                 if (h.enablesHowl) howlOn = true;
                 if (h.coldBlooded) coldOn = true;
+                if (h.camo) camoOn = true;
             }
         }
 
@@ -286,6 +290,7 @@ public class CreatureBody : MonoBehaviour
         if (kick != null) kick.KickEnabled = kickOn; // пинок — фича человеческих ног: с волчьими пропадает
         if (howl != null) howl.HowlEnabled = howlOn; // вой-стан — фича волчьей Пасти
         SetColdBlooded(coldOn); // холоднокровность (Сердце змеи): невидимость для термозрения врагов
+        SetCamouflage(camoOn);  // камуфляж (Чешуя змеи): невидимость в неподвижности
         if (move != null) Perception.WolfScent = scentOn; // чутьё игрока меняет ТОЛЬКО тело игрока (NPC-тело не должно включать игроку запах)
         if (attack != null)
         {
@@ -317,6 +322,13 @@ public class CreatureBody : MonoBehaviour
     {
         if (on && cold == null) cold = gameObject.AddComponent<ColdBlooded>();
         else if (!on && cold != null) { Destroy(cold); cold = null; }
+    }
+
+    // камуфляж-в-неподвижности как компонент: вешаем/снимаем по итогу сборки (живо на смене Шкуры у игрока)
+    void SetCamouflage(bool on)
+    {
+        if (on && camoComp == null) camoComp = gameObject.AddComponent<Camouflage>();
+        else if (!on && camoComp != null) { Destroy(camoComp); camoComp = null; }
     }
 
     // человеч.значение + (звериное − человеч.) × множитель: на ×1 = звериное, на ×2 = вдвое дальше от человека
