@@ -51,6 +51,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer
     [Header("Расталкивание")]
     [SerializeField] float separationRadius = 1.6f;
     [SerializeField] float separationStrength = 4f;
+    [SerializeField, Range(0f, 1f)] float attackSeparation = 0.25f; // жетон атаки: толпа почти не тормозит — иначе равновесие запирает в мёртвой зоне между укусом и прыжком
 
     static readonly Collider[] neighbors = new Collider[16];
 
@@ -180,9 +181,11 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer
         {
             // паника/стаггер срывают замах; полёт прыжка закоммичен — Abort(false) он игнорит
             if (routing || (stagger != null && stagger.IsStaggered)) activeAbility.Abort(false);
+            bool wasLeap = ReferenceEquals(activeAbility, leap);
             var st = activeAbility.Tick();
             if (st == AbilityRun.Running) return;
             activeAbility = null;
+            if (st == AbilityRun.Done && wasLeap && TryFollowUpGrab()) return; // наскочил → сразу пробует вцепиться
             Disengage(st == AbilityRun.Done ? attackCooldown : 0.3f);
             return;
         }
@@ -252,13 +255,26 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer
             if (dist >= leap.MinRange && dist <= leap.MaxRange) { if (leap.TryUse()) activeAbility = leap; Settle(Vector3.zero); return; }
         }
 
-        // движение: с жетоном — рвёмся в упор; без — кружим к слоту окружения
+        // движение: с жетоном И ГОТОВЫМ ударом — рвёмся в упор (расталкивание приглушено — сквозь толпу);
+        // на откате/без жетона — кружим на кольце (укусил → отпрянул на дистанцию прыжка, не стоим столбом)
         Vector3 horizontal;
-        if (hasToken)
-            horizontal = (dist > bite.Range ? nav.DirTo(target.position) * Speed : Vector3.zero) + Separation();
+        if (hasToken && Time.time >= nextAttackTime)
+            horizontal = (dist > bite.Range ? nav.DirTo(target.position) * Speed : Vector3.zero) + Separation() * attackSeparation;
         else
             horizontal = nav.DirTo(pack.SlotPoint(this)) * Speed * circleSpeed + Separation();
         Settle(horizontal);
+    }
+
+    // приземлился прыжком у цели — шанс сразу вцепиться (с новым ритмом «кольцо → прыжок» мили-ветка
+    // захвата почти недостижима, поэтому захват заходит С ПРЫЖКА; урона не добавляет — только контроль)
+    bool TryFollowUpGrab()
+    {
+        Vector3 to = target.position - transform.position; to.y = 0f;
+        if (to.magnitude > bite.Range) return false;
+        if (!pack.TryAcquireGrab(this) || Random.value >= grabChance) { pack.ReleaseGrab(this); return false; }
+        BeginGrabWindup();
+        pack.ReleaseAttack(this); hasToken = false; // захват — отдельная роль, освобождает слот атакующего
+        return true;
     }
 
     // замах захвата: отменяется уворотом из зоны/конуса (стаггер ловится выше, в Update)

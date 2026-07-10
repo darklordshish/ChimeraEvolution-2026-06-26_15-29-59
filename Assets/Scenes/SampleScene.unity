@@ -527,6 +527,8 @@ MonoBehaviour:
   mapHalfExtent: 48
   spawnInterval: 6
   minDistanceFromPlayer: 15
+  snakeSpacing: 20
+  wallClearance: 1.8
 --- !u!4 &596098558
 Transform:
   m_ObjectHideFlags: 0
@@ -831,6 +833,8 @@ MonoBehaviour:
   bonusStartAffinity: 80
   bonusFullAffinity: 100
   maxBonusMult: 2
+  chimeraSlots: 0
+  chimeraSlotMult: 2
   installAllBeast: 0
   expression: 0
   applyVitals: 1
@@ -1167,7 +1171,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PackCoordinator
   maxAttackers: 4
-  standoff: 4.5
+  standoff: 5.5
   routKillsMin: 3
   routKillsMax: 5
   routDuration: 4
