@@ -83,6 +83,7 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
         if (!TryGetComponent(out rage)) rage = gameObject.AddComponent<Rage>();
 
         if (!TryGetComponent<ScentTrail>(out _)) gameObject.AddComponent<ScentTrail>(); // босс тоже пахнет (тропишь его)
+        if (!TryGetComponent<HeatSignature>(out _)) gameObject.AddComponent<HeatSignature>(); // и тёплый — виден термозрению
     }
 
     void Start()

@@ -32,12 +32,14 @@ MonoBehaviour:
     damageReduction: 0
     regen: 0
     regenOOC: 0
+    thermalRange: 0
     enablesBite: 1
     enablesScent: 0
     enablesKick: 0
     enablesHowl: 0
     coldBlooded: 0
     camo: 0
+    enablesThermal: 0
   - organName: "\u0425\u043B\u0430\u0434\u043D\u043E\u043A\u0440\u043E\u0432\u043D\u043E\u0435
       \u0441\u0435\u0440\u0434\u0446\u0435"
     slot: "\u0421\u0435\u0440\u0434\u0446\u0435"
@@ -55,12 +57,14 @@ MonoBehaviour:
     damageReduction: 0
     regen: 4
     regenOOC: 0
+    thermalRange: 0
     enablesBite: 0
     enablesScent: 0
     enablesKick: 0
     enablesHowl: 0
     coldBlooded: 1
     camo: 0
+    enablesThermal: 0
   - organName: "\u0422\u0435\u043B\u043E-\u0445\u0432\u043E\u0441\u0442"
     slot: "\u0422\u0435\u043B\u043E"
     hotkey: 7
@@ -77,12 +81,14 @@ MonoBehaviour:
     damageReduction: 0
     regen: 0
     regenOOC: 0
+    thermalRange: 0
     enablesBite: 0
     enablesScent: 0
     enablesKick: 0
     enablesHowl: 0
     coldBlooded: 0
     camo: 0
+    enablesThermal: 0
   - organName: "\u0427\u0435\u0448\u0443\u044F"
     slot: "\u0428\u043A\u0443\u0440\u0430"
     hotkey: 6
@@ -99,12 +105,14 @@ MonoBehaviour:
     damageReduction: 0.4
     regen: 0
     regenOOC: 0
+    thermalRange: 0
     enablesBite: 0
     enablesScent: 0
     enablesKick: 0
     enablesHowl: 0
     coldBlooded: 0
     camo: 1
+    enablesThermal: 0
   - organName: "\u041F\u0438\u0442-\u043E\u0440\u0433\u0430\u043D"
     slot: "\u0427\u0443\u0442\u044C\u0451"
     hotkey: 4
@@ -121,9 +129,11 @@ MonoBehaviour:
     damageReduction: 0
     regen: 0
     regenOOC: 0
+    thermalRange: 14
     enablesBite: 0
     enablesScent: 0
     enablesKick: 0
     enablesHowl: 0
     coldBlooded: 0
     camo: 0
+    enablesThermal: 1

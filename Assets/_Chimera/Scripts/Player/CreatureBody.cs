@@ -263,8 +263,8 @@ public class CreatureBody : MonoBehaviour
         if (slots == null || slots.Length == 0) return; // нет данных — не трогаем статы компонентов
 
         int dmg = 0, dmgBite = 0, maxHp = 0, life = 0, venom = 0, beast = 0;
-        float rng = 0f, atkCd = 0f, mv = 0f, dash = 0f, dashCd = 0f, reduce = 0f, regen = 0f, regenOOC = 0f;
-        bool biteOn = false, scentOn = false, kickOn = false, howlOn = false, coldOn = false, camoOn = false;
+        float rng = 0f, atkCd = 0f, mv = 0f, dash = 0f, dashCd = 0f, reduce = 0f, regen = 0f, regenOOC = 0f, thermal = 0f;
+        bool biteOn = false, scentOn = false, kickOn = false, howlOn = false, coldOn = false, camoOn = false, thermalOn = false;
 
         foreach (var sl in slots)
         {
@@ -287,12 +287,14 @@ public class CreatureBody : MonoBehaviour
                 reduce += Blend(h.damageReduction, b.damageReduction, m);
                 regen += Blend(h.regen, b.regen, m);
                 regenOOC += b.regenOOC; // вне-боя реген не блендим — фича органа (как дальность): иначе на Э=2 уходит в минус
+                thermal += b.thermalRange; // фикс-фича органа (как range) — не блендим
                 if (b.enablesBite) biteOn = true;
                 if (b.enablesScent) scentOn = true;
                 if (b.enablesKick) kickOn = true;
                 if (b.enablesHowl) howlOn = true;
                 if (b.coldBlooded) coldOn = true;
                 if (b.camo) camoOn = true;
+                if (b.enablesThermal) thermalOn = true;
                 beast++;
             }
             else
@@ -307,12 +309,14 @@ public class CreatureBody : MonoBehaviour
                 venom += h.venomStacks;
                 rng += h.range; atkCd += h.atkCooldown; mv += h.moveSpeed * e; dash += h.dashSpeed * e;
                 dashCd += h.dashCooldown; reduce += h.damageReduction * e; regen += h.regen * e; regenOOC += h.regenOOC * e;
+                thermal += h.thermalRange;
                 if (h.enablesBite) biteOn = true;
                 if (h.enablesScent) scentOn = true;
                 if (h.enablesKick) kickOn = true;
                 if (h.enablesHowl) howlOn = true;
                 if (h.coldBlooded) coldOn = true;
                 if (h.camo) camoOn = true;
+                if (h.enablesThermal) thermalOn = true;
             }
         }
 
@@ -326,7 +330,12 @@ public class CreatureBody : MonoBehaviour
         if (howl != null) howl.HowlEnabled = howlOn; // вой-стан — фича волчьей Пасти
         SetColdBlooded(coldOn); // холоднокровность (Сердце змеи): невидимость для термозрения врагов
         SetCamouflage(camoOn);  // камуфляж (Чешуя змеи): невидимость в неподвижности
-        if (move != null) Perception.WolfScent = scentOn; // чутьё игрока меняет ТОЛЬКО тело игрока (NPC-тело не должно включать игроку запах)
+        if (move != null) // чувства игрока меняет ТОЛЬКО тело игрока (NPC-тело не должно включать их игроку)
+        {
+            Perception.WolfScent = scentOn;
+            Perception.SnakeThermal = thermalOn; // термозрение (Пит-орган): тепло сквозь стены
+            Perception.ThermalRange = thermal;
+        }
         if (attack != null)
         {
             attack.SetMelee(dmg, Mathf.Max(0.5f, rng));

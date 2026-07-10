@@ -10,6 +10,17 @@ public static class Perception
     public static bool WolfScent;            // надето волчье Чутьё → видно запах
     public static bool ShowOwnScent = true;  // показывать свой запаховый след (тоггл)
 
+    public static bool SnakeThermal;         // надет Пит-орган → термозрение игрока (тепло сквозь стены)
+    public static float ThermalRange;        // радиус термо игрока (из органа)
+    public static bool DevThermal;           // dev-тоггл T: форс термо без органа (леса до настоящего UI)
+    public static bool ThermalOn => SnakeThermal || DevThermal;
+    public static float ThermalRadius => SnakeThermal && ThermalRange > 0f ? ThermalRange : 14f; // dev-дефолт = радиус змеи
+
+    // «тёплый» = живой (есть Health) и НЕ холоднокровный — единый источник правды для термо:
+    // им пользуются и ИИ змеи (SeesThermal), и визуал игрока (HeatSignature). Расхождение = баг.
+    public static bool IsWarm(Transform t) =>
+        t != null && t.GetComponent<Health>() != null && t.GetComponent<ColdBlooded>() == null;
+
     // прямая видимость от точки до цели: стена между = нет. Вблизи считаем, что видно.
     public static bool HasLineOfSight(Vector3 from, Transform target)
     {
@@ -25,13 +36,12 @@ public static class Perception
         return true;
     }
 
-    // термозрение (глаза змеи): видит «тёплого» (живого = есть Health) в радиусе СКВОЗЬ укрытия;
-    // холоднокровный (ColdBlooded) невидим. Не требует прямой видимости — этим и отличается от зрения.
+    // термозрение (Пит-орган): видит ТЁПЛОГО в радиусе СКВОЗЬ укрытия — прямой видимости не требует,
+    // этим и отличается от зрения. Холоднокровный не излучает тепло — невидим (см. IsWarm).
     public static bool SeesThermal(Vector3 from, Transform target, float range)
     {
         if (target == null) return false;
         if ((target.position - from).sqrMagnitude > range * range) return false;
-        if (target.GetComponent<ColdBlooded>() != null) return false; // не излучает тепло — невидим
-        return target.GetComponent<Health>() != null;                 // «тёплый» = живой
+        return IsWarm(target);
     }
 }

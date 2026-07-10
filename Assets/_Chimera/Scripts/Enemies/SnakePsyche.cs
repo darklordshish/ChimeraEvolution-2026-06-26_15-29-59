@@ -82,6 +82,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         if (!TryGetComponent(out variance)) variance = gameObject.AddComponent<SpawnVariance>();
 
         if (!TryGetComponent<ScentTrail>(out _)) gameObject.AddComponent<ScentTrail>(); // змея тоже пахнет — нюх волка её ловит (RPS)
+        if (!TryGetComponent<HeatSignature>(out _)) gameObject.AddComponent<HeatSignature>(); // подпись гаснет сама: змея холоднокровна (а тёплая химера-змея засветится)
     }
 
     void Start()

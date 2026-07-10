@@ -61,7 +61,7 @@ public static class SpeciesBootstrap
             new Organ { organName = "Хладнокровное сердце", slot = "Сердце", hotkey = "3", cost = 5, maxHp = 200, regen = 4f, coldBlooded = true },
             new Organ { organName = "Тело-хвост",           slot = "Тело",   hotkey = "7", cost = 5, moveSpeed = 10f, dashSpeed = 20f },
             new Organ { organName = "Чешуя",                slot = "Шкура",  hotkey = "6", cost = 4, damageReduction = 0.4f, camo = true }, // невидимость в неподвижности
-            new Organ { organName = "Пит-орган",            slot = "Чутьё",  hotkey = "4", cost = 3 },
+            new Organ { organName = "Пит-орган",            slot = "Чутьё",  hotkey = "4", cost = 3, enablesThermal = true, thermalRange = 14f }, // тепло сквозь стены (= радиус змеи)
         };
         EditorUtility.SetDirty(snake);
 
