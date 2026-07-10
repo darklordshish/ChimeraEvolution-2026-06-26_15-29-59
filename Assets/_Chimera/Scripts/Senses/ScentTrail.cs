@@ -14,6 +14,8 @@ public class ScentTrail : MonoBehaviour
     [SerializeField] float auraSize = 1.6f;
     [SerializeField] bool isOwn;
 
+    [SerializeField, Range(0f, 1f)] float strength = 1f; // сила запаха: 1 = потеющий зверь; змея ~0.35 (не потеет, мало движется)
+
     TrailRenderer trail;
     Renderer aura;
 
@@ -58,15 +60,29 @@ public class ScentTrail : MonoBehaviour
         ApplyColor();
     }
 
-    void ApplyColor()
+    // сила запаха существа: короче/тоньше след, меньше/бледнее аура (змея не потеет и мало движется)
+    public void SetStrength(float k)
     {
+        strength = Mathf.Clamp01(k);
         if (trail != null)
         {
-            trail.startColor = tint;
+            trail.time = linger * Mathf.Lerp(0.4f, 1f, strength);
+            trail.startWidth = startWidth * Mathf.Lerp(0.45f, 1f, strength);
+        }
+        if (aura != null) aura.transform.localScale = Vector3.one * auraSize * Mathf.Lerp(0.55f, 1f, strength);
+        ApplyColor();
+    }
+
+    void ApplyColor()
+    {
+        float a = Mathf.Lerp(0.3f, 1f, strength); // слабый запах — бледнее
+        if (trail != null)
+        {
+            trail.startColor = new Color(tint.r, tint.g, tint.b, tint.a * a);
             trail.endColor = new Color(tint.r, tint.g, tint.b, 0f);
         }
         if (aura != null && aura.sharedMaterial != null)
-            aura.sharedMaterial.color = new Color(tint.r, tint.g, tint.b, 0.22f);
+            aura.sharedMaterial.color = new Color(tint.r, tint.g, tint.b, 0.22f * a);
     }
 
     void Update()

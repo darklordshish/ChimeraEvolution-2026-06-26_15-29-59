@@ -945,6 +945,7 @@ MonoBehaviour:
   triggerAffinity: 80
   spawnDistance: 16
   respawnDelay: 5
+  autoSpawn: 1
 --- !u!4 &1185508200
 Transform:
   m_ObjectHideFlags: 0

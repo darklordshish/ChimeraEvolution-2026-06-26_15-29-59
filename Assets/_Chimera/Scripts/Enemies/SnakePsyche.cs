@@ -32,6 +32,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     [SerializeField] float revealMemory = 2f;              // камуфляж: держится «раскрыта» столько после приёма (> кулдауна — не мигает в мили)
     [SerializeField] float rattleInterval = 3f;            // гремок: как часто затаившаяся змея выдаёт себя (единственная зацепка на невидимку)
     [SerializeField] float rattleCue = 0.4f;               // длительность проблеска-гремка (звук ляжет сверху позже)
+    [SerializeField, Range(0f, 1f)] float scentStrength = 0.35f; // запах слабый: не потеет, мало движется (нюх волка — зацепка, но бледная)
 
     [Header("Кулдаун")]
     [SerializeField] float attackCooldown = 1.6f;
@@ -81,7 +82,8 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         if (!TryGetComponent(out leap)) leap = gameObject.AddComponent<LeapAbility>();
         if (!TryGetComponent(out variance)) variance = gameObject.AddComponent<SpawnVariance>();
 
-        if (!TryGetComponent<ScentTrail>(out _)) gameObject.AddComponent<ScentTrail>(); // змея тоже пахнет — нюх волка её ловит (RPS)
+        if (!TryGetComponent<ScentTrail>(out var scent)) scent = gameObject.AddComponent<ScentTrail>(); // змея тоже пахнет — нюх её ловит (RPS)…
+        scent.SetStrength(scentStrength); // …но слабо: не потеет, мало движется — облака запаха почти не разносит
         if (!TryGetComponent<HeatSignature>(out _)) gameObject.AddComponent<HeatSignature>(); // подпись гаснет сама: змея холоднокровна (а тёплая химера-змея засветится)
         if (!TryGetComponent<StunTint>(out _)) gameObject.AddComponent<StunTint>(); // статус-сигнал «выключен» (стан/схвачен)
     }
