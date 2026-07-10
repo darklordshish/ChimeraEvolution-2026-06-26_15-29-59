@@ -229,6 +229,7 @@ public class ConstructorUI : MonoBehaviour
             string tail = !v.hasBeast ? ""                                    // нет альтернатив — слот фиксирован
                         : v.canToggle ? $"      → {v.nextName} ({v.nextCost})" // следующий шаг цикла по донорам
                         : "      → не по карману";                             // все варианты не влезают в пул
+            if (v.unaffordable > 0 && v.canToggle) tail += $"   · скрыто по цене: {v.unaffordable}"; // цикл пропускает дорогие МОЛЧА — говорим об этом
             string key = string.IsNullOrEmpty(v.hotkey) ? "   " : v.hotkey;
             r.label.text = $"{key}   {v.slot}:  {v.organName}   ({v.cost}){check}{tail}";
 

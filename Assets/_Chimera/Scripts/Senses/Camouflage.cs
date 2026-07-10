@@ -14,6 +14,7 @@ public class Camouflage : MonoBehaviour
 
     CharacterController controller;
     Telegraph telegraph;
+    Stagger stagger;
     Renderer[] bodyRenderers;
     bool hidden;
     float revealUntil;
@@ -25,6 +26,7 @@ public class Camouflage : MonoBehaviour
     {
         controller = GetComponent<CharacterController>();
         TryGetComponent(out telegraph);
+        TryGetComponent(out stagger);
         var list = new List<Renderer>();
         foreach (var r in GetComponentsInChildren<Renderer>())
             if (r is MeshRenderer || r is SkinnedMeshRenderer) list.Add(r); // след/линии не прячем — запах = зацепка
@@ -36,7 +38,8 @@ public class Camouflage : MonoBehaviour
     void Update()
     {
         Vector3 v = controller.velocity; v.y = 0f;
-        bool revealed = (telegraph != null && telegraph.IsShowing) || Time.time < revealUntil; // телеграф ИЛИ память боя = раскрыт
+        bool revealed = (telegraph != null && telegraph.IsShowing) || Time.time < revealUntil
+                        || (stagger != null && stagger.IsStaggered); // телеграф / память боя / боль (стаггер, обхват) = раскрыт
         SetHidden(v.sqrMagnitude < moveThreshold * moveThreshold && !revealed);
     }
 

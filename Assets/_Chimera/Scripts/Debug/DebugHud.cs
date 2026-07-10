@@ -10,12 +10,26 @@ public class DebugHud : MonoBehaviour
 {
     Health playerHealth;
     CreatureBody body;
+    PlayerController player;
+    PlayerBite bite;
+    PlayerKick kick;
+    PlayerHowl howl;
+    PlayerConstrict constrict;
     GUIStyle style;
 
     void Start()
     {
         var pc = FindAnyObjectByType<PlayerController>();
-        if (pc != null) { playerHealth = pc.GetComponent<Health>(); body = pc.GetComponent<CreatureBody>(); }
+        if (pc != null)
+        {
+            player = pc;
+            playerHealth = pc.GetComponent<Health>();
+            body = pc.GetComponent<CreatureBody>();
+            bite = pc.GetComponent<PlayerBite>();
+            kick = pc.GetComponent<PlayerKick>();
+            howl = pc.GetComponent<PlayerHowl>();
+            constrict = pc.GetComponent<PlayerConstrict>();
+        }
     }
 
     void Update()
@@ -59,6 +73,23 @@ public class DebugHud : MonoBehaviour
         var pack = PackCoordinator.Instance;
         string morale = pack.AnyRouting() ? "БЕГСТВО" : pack.Fearless ? "ЯРОСТЬ" : "норма";
         GUI.Label(new Rect(14, 130, 760, 26), $"Стая: атакуют {pack.AttackerCount}/{pack.MaxAttackers}, захват: {(pack.GrabActive ? "да" : "нет")}, мораль: {morale}", style);
-        GUI.Label(new Rect(14, 162, 760, 200), body != null ? body.SlotsInfo : "", style);
+
+        // какие способности сейчас активны (видно, что даёт сборка) + что происходит с тобой прямо сейчас
+        var abil = new List<string> { "меч ЛКМ" };
+        if (kick != null && kick.KickEnabled) abil.Add("пинок E");
+        if (bite != null && bite.BiteEnabled) abil.Add("укус Shift");
+        if (howl != null && howl.HowlEnabled) abil.Add("вой Alt");
+        if (constrict != null && constrict.ConstrictEnabled) abil.Add("обхват F");
+        GUI.Label(new Rect(14, 154, 900, 26), $"Способности: {string.Join(" · ", abil)}", style);
+
+        string action = "";
+        if (constrict != null && constrict.Holding)
+            action = $"➤ ОБХВАТ ст.{constrict.Stage}{(constrict.Stage >= 2 ? " — ЗАЩЁЛКНУТО" : " — держи, вырывается!")}" +
+                     (constrict.Victim != null ? $" · жертва {constrict.Victim.Current}/{constrict.Victim.Max}" : "") + "   [F — отпустить]";
+        else if (player != null && player.IsGrabbed)
+            action = "➤ ТЫ СХВАЧЕН — рывок/пинок!";
+        GUI.Label(new Rect(14, 178, 900, 26), action, style);
+
+        GUI.Label(new Rect(14, 210, 760, 200), body != null ? body.SlotsInfo : "", style);
     }
 }
