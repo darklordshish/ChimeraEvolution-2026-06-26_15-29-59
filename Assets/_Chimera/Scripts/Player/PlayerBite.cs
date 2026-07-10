@@ -20,6 +20,12 @@ public class PlayerBite : MonoBehaviour, IAbility
 
     public bool BiteEnabled { get; set; }  // включается слотом «Пасть»
 
+    int organDamage;  // урон из данных органа Пасти (0 = орган молчит → сериализованный дефолт выше)
+    int venomStacks;  // яд из данных органа (змеиные клыки)
+
+    public void SetDamage(int v) => organDamage = v;
+    public void SetVenom(int stacks) => venomStacks = stacks;
+
     float nextTime;
     CameraFollow cam;
     Health ownHealth;
@@ -50,9 +56,10 @@ public class PlayerBite : MonoBehaviour, IAbility
         {
             var hp = col.GetComponentInParent<Health>();
             if (hp == null || hp.transform == transform || !hitThisBite.Add(hp)) continue;
-            hit.Apply(hp, HitEffect.Damage(damage));
+            hit.Apply(hp, HitEffect.Damage(organDamage > 0 ? organDamage : damage));
             hit.Apply(hp, HitEffect.RegenDebuff(regenDebuff, regenDebuffTime)); // сбиваем реген цели (контр-сустейн против босса)
             if (lifeSteal > 0) hit.Apply(hp, HitEffect.LifeSteal(lifeSteal)); // лечимся за укус
+            for (int i = 0; i < venomStacks; i++) hit.Apply(hp, HitEffect.Venom()); // яд змеиных клыков
             hits++;
         }
 

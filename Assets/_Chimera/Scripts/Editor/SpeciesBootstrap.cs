@@ -57,11 +57,11 @@ public static class SpeciesBootstrap
         snake.mutagenPool = 20;
         snake.organs = new[]
         {
-            new Organ { organName = "Ядовитые клыки",       slot = "Пасть",  cost = 5, damage = 24, enablesBite = true },
-            new Organ { organName = "Хладнокровное сердце", slot = "Сердце", cost = 5, maxHp = 200, regen = 4f, coldBlooded = true },
-            new Organ { organName = "Тело-хвост",           slot = "Тело",   cost = 5, moveSpeed = 10f, dashSpeed = 20f },
-            new Organ { organName = "Чешуя",                slot = "Шкура",  cost = 4, damageReduction = 0.4f, camo = true }, // невидимость в неподвижности
-            new Organ { organName = "Пит-орган",            slot = "Чутьё",  cost = 3 },
+            new Organ { organName = "Ядовитые клыки",       slot = "Пасть",  hotkey = "5", cost = 5, damage = 24, enablesBite = true, venomStacks = 1 }, // укус игрока травит
+            new Organ { organName = "Хладнокровное сердце", slot = "Сердце", hotkey = "3", cost = 5, maxHp = 200, regen = 4f, coldBlooded = true },
+            new Organ { organName = "Тело-хвост",           slot = "Тело",   hotkey = "7", cost = 5, moveSpeed = 10f, dashSpeed = 20f },
+            new Organ { organName = "Чешуя",                slot = "Шкура",  hotkey = "6", cost = 4, damageReduction = 0.4f, camo = true }, // невидимость в неподвижности
+            new Organ { organName = "Пит-орган",            slot = "Чутьё",  hotkey = "4", cost = 3 },
         };
         EditorUtility.SetDirty(snake);
 
@@ -76,8 +76,9 @@ public static class SpeciesBootstrap
             var so = new SerializedObject(body);
             so.FindProperty("chassis").objectReferenceValue = human;
             var donorsProp = so.FindProperty("donors");
-            donorsProp.arraySize = 1;
+            donorsProp.arraySize = 2; // мультидонор: слот циклирует человек → волчий → змеиный
             donorsProp.GetArrayElementAtIndex(0).objectReferenceValue = wolf;
+            donorsProp.GetArrayElementAtIndex(1).objectReferenceValue = snake;
             so.ApplyModifiedProperties();
             EditorUtility.SetDirty(body);
             EditorSceneManager.MarkSceneDirty(body.gameObject.scene);

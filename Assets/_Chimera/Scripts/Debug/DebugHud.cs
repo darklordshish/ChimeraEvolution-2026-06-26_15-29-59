@@ -24,7 +24,10 @@ public class DebugHud : MonoBehaviour
             playerHealth.GodMode = !playerHealth.GodMode; // G — режим бога (отладка)
 
         if (Keyboard.current != null && Keyboard.current.kKey.wasPressedThisFrame)
-            AffinityTracker.Add("Волк", 10); // K — +10 родства (отладка: проверить скидку/бонусы)
+            AffinityTracker.Add("Волк", 10); // K — +10 родства-волк (отладка: проверить скидку/бонусы)
+
+        if (Keyboard.current != null && Keyboard.current.lKey.wasPressedThisFrame)
+            AffinityTracker.Add("Змея", 10); // L — +10 родства-змея
 
         if (Keyboard.current != null && Keyboard.current.nKey.wasPressedThisFrame)
             Perception.ShowOwnScent = !Perception.ShowOwnScent; // N — показ своего запаха
@@ -46,7 +49,7 @@ public class DebugHud : MonoBehaviour
         var affParts = new List<string>();
         foreach (var kv in AffinityTracker.All) if (kv.Value != 0) affParts.Add($"{kv.Key} {kv.Value}");
         string aff = affParts.Count > 0 ? string.Join(" · ", affParts) : "—";
-        GUI.Label(new Rect(14, 34, 900, 26), $"Родство: {aff}   (бонус органов ×{(body != null ? body.BonusMult : 1f):0.00})   [K: Волк +10]", style);
+        GUI.Label(new Rect(14, 34, 900, 26), $"Родство: {aff}   (бонус органов ×{(body != null ? body.BonusMult : 1f):0.00})   [K: Волк +10 · L: Змея +10]", style);
         GUI.Label(new Rect(14, 58, 760, 26), $"Шкала мозга: {(body != null ? body.BeastSlots : 0)}/{(body != null ? body.MaxSlots : 0)} звериных", style);
         GUI.Label(new Rect(14, 82, 760, 26), $"Пул мутагена: {(body != null ? body.PoolUsed : 0)}/{(body != null ? body.Pool : 0)}", style);
         GUI.Label(new Rect(14, 106, 760, 26), $"БОГ [G]: {(playerHealth != null && playerHealth.GodMode ? "ВКЛ" : "выкл")}   Запах: чутьё {(Perception.WolfScent ? "да" : "нет")}, свой [N] {(Perception.ShowOwnScent ? "вкл" : "выкл")}", style);

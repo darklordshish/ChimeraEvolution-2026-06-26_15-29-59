@@ -3,10 +3,10 @@ using UnityEngine;
 using UnityEngine.Serialization;
 
 /// <summary>
-/// ТЕЛО существа — общее для игрока и (в будущих фазах) NPC. ШАССИ (SpeciesSO) задаёт слоты + пул +
-/// органы по умолчанию; ДОНОРЫ дают звериные альтернативы; химеризация = размен органа в слоте.
-/// Статы = сумма надетых органов по слотам; раздаются ТЕМ компонентам, какие есть на объекте
-/// (игрок: PlayerAttack/PlayerController/Health/PlayerBite; NPC-потребители придут в Ф4/5).
+/// ТЕЛО существа — общее для игрока и NPC. ШАССИ (SpeciesSO) задаёт слоты + пул + органы по умолчанию;
+/// ДОНОРЫ дают альтернативы: слот ЦИКЛИРУЕТ по вариантам всех доноров (человек → волчий → змеиный → человек).
+/// Статы = сумма надетых органов по слотам; урон Пасти уходит в укус (PlayerBite), не в оружие Рук.
+/// Раздаются ТЕМ компонентам, какие есть на объекте (игрок: PlayerAttack/PlayerController/Health/PlayerBite).
 /// Ввод тело НЕ читает — переключением слотов рулит водитель (PlayerInputDriver / UI конструктора).
 /// Родство: фаза 1 (0–80) — скидка на цену; фаза 2 (80–100) — множитель «звериной» части
 /// (насколько орган уходит от человеческого). Дальность из-под множителя исключена. Тинт по числу звериных слотов.
@@ -33,12 +33,19 @@ public class CreatureBody : MonoBehaviour
                                               // >0 фикс: вервольф 2 (= потолок игрока), природный волк ~0.45 (без сыворотки)
     [SerializeField] bool applyVitals = true; // false: HP/броня/реген — «конституция» психики, тело их не трогает
 
+    // вариант органа для слота: орган конкретного донора (мультидонор: волчий ИЛИ змеиный на один слот)
+    class Variant { public Organ organ; public string species; }
+
     class Slot
     {
-        public string name, hotkey, donorSpecies;
-        public Organ human;       // орган шасси (дефолт слота)
-        public Organ beast;       // орган донора (альтернатива) или null
-        public bool installed;    // надет звериный?
+        public string name, hotkey;                     // хоткей задаёт ШАССИ — раскладка стабильна при любых донорах
+        public Organ human;                             // орган шасси (дефолт слота)
+        public readonly List<Variant> variants = new(); // звериные альтернативы по всем донорам
+        public int current = -1;                        // -1 = человеческий; иначе индекс в variants
+
+        public bool Installed => current >= 0;
+        public Organ Beast => current >= 0 ? variants[current].organ : null;
+        public string DonorSpecies => current >= 0 ? variants[current].species : null;
     }
 
     Slot[] slots;
@@ -59,9 +66,9 @@ public class CreatureBody : MonoBehaviour
 
     public int Pool => chassis != null ? chassis.mutagenPool : 0;
     public int PoolUsed { get { int s = 0; if (slots != null) foreach (var sl in slots) s += SlotCost(sl); return s; } }
-    int SlotCost(Slot sl) => sl.installed && sl.beast != null ? EffectiveCost(sl) : (sl.human != null ? sl.human.cost : 0); // каждый слот занимает пул (человеческий орган тоже)
+    int SlotCost(Slot sl) => sl.Installed ? EffectiveCost(sl.Beast, sl.DonorSpecies) : (sl.human != null ? sl.human.cost : 0); // каждый слот занимает пул (человеческий орган тоже)
     public int MaxSlots => slots != null ? slots.Length : 0;
-    public int BeastSlots { get { int n = 0; if (slots != null) foreach (var sl in slots) if (sl.installed) n++; return n; } }
+    public int BeastSlots { get { int n = 0; if (slots != null) foreach (var sl in slots) if (sl.Installed) n++; return n; } }
     public float BonusMult => donors != null && donors.Length > 0 && donors[0] != null ? BonusMultiplier(donors[0].speciesName) : 1f;
 
     public string SlotsInfo
@@ -72,8 +79,8 @@ public class CreatureBody : MonoBehaviour
             var lines = new List<string>();
             foreach (var sl in slots)
             {
-                string cur = sl.installed && sl.beast != null ? sl.beast.organName : sl.human.organName;
-                lines.Add($"{sl.hotkey} {sl.name}: {cur} ({SlotCost(sl)}){(sl.installed ? "  ✓" : "")}");
+                string cur = sl.Installed ? sl.Beast.organName : sl.human.organName;
+                lines.Add($"{sl.hotkey} {sl.name}: {cur} ({SlotCost(sl)}){(sl.Installed ? "  ✓" : "")}");
             }
             return string.Join("\n", lines);
         }
@@ -82,11 +89,11 @@ public class CreatureBody : MonoBehaviour
     // ── публичный слепок слота для UI ─────────────────────────────────────────
     public struct SlotView
     {
-        public string slot, hotkey, organName, humanName, beastName;
-        public int cost;
-        public bool installed;  // надет звериный орган
-        public bool hasBeast;   // есть ли звериная альтернатива (иначе слот фиксирован)
-        public bool canToggle;  // можно ли сейчас переключить (снять — всегда; надеть — если влезает в пул)
+        public string slot, hotkey, organName, nextName; // nextName — куда приведёт следующий клик (цикл по донорам)
+        public int cost, nextCost;
+        public bool installed;  // надет звериный (не человеческий) орган
+        public bool hasBeast;   // есть ли альтернативы (иначе слот фиксирован)
+        public bool canToggle;  // есть ли достижимый следующий шаг цикла (иначе всё не по карману)
     }
 
     public int SlotCount => slots != null ? slots.Length : 0;
@@ -94,18 +101,18 @@ public class CreatureBody : MonoBehaviour
     public SlotView GetSlot(int i)
     {
         var sl = slots[i];
-        bool installed = sl.installed && sl.beast != null;
+        int next = NextStep(sl);
         return new SlotView
         {
             slot = sl.name,
             hotkey = sl.hotkey,
-            organName = installed ? sl.beast.organName : sl.human.organName,
-            humanName = sl.human != null ? sl.human.organName : null,
-            beastName = sl.beast != null ? sl.beast.organName : null,
+            organName = sl.Installed ? sl.Beast.organName : sl.human.organName,
             cost = SlotCost(sl),
-            installed = installed,
-            hasBeast = sl.beast != null,
-            canToggle = installed || CanInstall(sl),
+            installed = sl.Installed,
+            hasBeast = sl.variants.Count > 0,
+            canToggle = sl.variants.Count > 0 && next != sl.current,
+            nextName = next >= 0 ? sl.variants[next].organ.organName : (sl.human != null ? sl.human.organName : null),
+            nextCost = next >= 0 ? EffectiveCost(sl.variants[next].organ, sl.variants[next].species) : (sl.human != null ? sl.human.cost : 0),
         };
     }
 
@@ -114,19 +121,33 @@ public class CreatureBody : MonoBehaviour
         if (slots != null && i >= 0 && i < slots.Length) Toggle(slots[i]);
     }
 
-    // влезает ли химеризация слота в пул: снимаем человеческий орган (вернуть цену), ставим звериный
-    bool CanInstall(Slot sl)
+    // влезает ли вариант в пул: снимаем текущий орган слота (вернуть его цену), ставим вариант idx
+    bool CanInstall(Slot sl, int idx)
     {
-        if (sl.beast == null) return false;
-        int humanCost = sl.human != null ? sl.human.cost : 0;
-        return PoolUsed - humanCost + EffectiveCost(sl) <= Pool;
+        var v = sl.variants[idx];
+        return PoolUsed - SlotCost(sl) + EffectiveCost(v.organ, v.species) <= Pool;
     }
 
-    int EffectiveCost(Slot sl)
+    // цена органа со скидкой от родства ЕГО вида (волчьи дешевеют от родства-волк, змеиные — от родства-змея)
+    int EffectiveCost(Organ organ, string species)
     {
-        if (sl.beast == null) return 0;
-        float discount = Mathf.Clamp(AffinityTracker.Get(sl.donorSpecies) * discountPerAffinity, 0f, maxDiscount);
-        return Mathf.Max(1, Mathf.CeilToInt(sl.beast.cost * (1f - discount)));
+        if (organ == null) return 0;
+        float discount = Mathf.Clamp(AffinityTracker.Get(species) * discountPerAffinity, 0f, maxDiscount);
+        return Mathf.Max(1, Mathf.CeilToInt(organ.cost * (1f - discount)));
+    }
+
+    // следующий достижимый шаг цикла слота: человек → вариант0 → вариант1 → … → человек;
+    // не влезающие в пул варианты пропускаются (снятие в человеческий доступно всегда)
+    int NextStep(Slot sl)
+    {
+        int n = sl.variants.Count;
+        int idx = sl.current;
+        for (int step = 0; step <= n; step++)
+        {
+            idx = idx + 1 >= n ? -1 : idx + 1;
+            if (idx == -1 || CanInstall(sl, idx)) return idx;
+        }
+        return sl.current;
     }
 
     // ЭКСПРЕССИЯ звериной части: у игрока авто — ×1 до bonusStartAffinity, линейно до maxBonusMult
@@ -157,6 +178,10 @@ public class CreatureBody : MonoBehaviour
         // РОДСТВО: NPC (не игрок) на смерть даёт +1 за каждый УНИКАЛЬНЫЙ видо-флаг тела (шасси + доноры с органами)
         if (health != null && move == null) health.onDeath.AddListener(GrantAffinityOnDeath);
 
+        // игрок: родство с СОБСТВЕННЫМ шасси полное с рождения (мы и есть человек). Мета-шкала
+        // человечности (падение/возврат через социальность) — потом, когда появятся люди.
+        if (move != null && chassis != null) AffinityTracker.Set(chassis.speciesName, AffinityTracker.Cap);
+
         renderers = GetComponentsInChildren<Renderer>();
         baseColors = new Color[renderers.Length];
         mpb = new MaterialPropertyBlock();
@@ -180,23 +205,20 @@ public class CreatureBody : MonoBehaviour
         var list = new List<Slot>();
         foreach (var h in chassis.organs)
         {
-            var sl = new Slot { name = h.slot, human = h };
+            var sl = new Slot { name = h.slot, human = h, hotkey = h.hotkey }; // раскладку задаёт шасси
             if (donors != null)
                 foreach (var d in donors)
                 {
                     if (d == null || d.organs == null) continue;
                     foreach (var o in d.organs)
-                        if (o.slot == h.slot) { sl.beast = o; sl.donorSpecies = d.speciesName; break; }
-                    if (sl.beast != null) break;
+                        if (o.slot == h.slot) sl.variants.Add(new Variant { organ = o, species = d.speciesName }); // ВСЕ доноры (мультидонор)
                 }
-
-            sl.hotkey = sl.beast != null ? sl.beast.hotkey : h.hotkey;
             list.Add(sl);
         }
         slots = list.ToArray();
 
-        if (installAllBeast) // застывшая химера (вервольф): весь звериный лоадаут надет с рождения
-            foreach (var sl in slots) sl.installed = sl.beast != null;
+        if (installAllBeast) // застывшая химера (вервольф): весь лоадаут ПЕРВОГО донора надет с рождения
+            foreach (var sl in slots) sl.current = sl.variants.Count > 0 ? 0 : -1;
     }
 
     void Start() => Recompute();
@@ -222,15 +244,17 @@ public class CreatureBody : MonoBehaviour
         if (chassis != null) present.Add(chassis.speciesName);
         if (slots != null)
             foreach (var sl in slots)
-                if (sl.installed && sl.beast != null && sl.donorSpecies != null) present.Add(sl.donorSpecies);
+                if (sl.Installed && sl.DonorSpecies != null) present.Add(sl.DonorSpecies);
         foreach (var species in present) AffinityTracker.Add(species, 1);
     }
 
+    // цикл слота: человеческий → варианты доноров по кругу → человеческий (не по карману — пропускаются)
     void Toggle(Slot sl)
     {
-        if (sl.beast == null) return;
-        if (!sl.installed && !CanInstall(sl)) return; // размен не влезает в пул
-        sl.installed = !sl.installed;
+        if (sl.variants.Count == 0) return;
+        int next = NextStep(sl);
+        if (next == sl.current) return; // некуда шагнуть (все варианты не влезают в пул)
+        sl.current = next;
         Recompute();
     }
 
@@ -238,20 +262,23 @@ public class CreatureBody : MonoBehaviour
     {
         if (slots == null || slots.Length == 0) return; // нет данных — не трогаем статы компонентов
 
-        int dmg = 0, maxHp = 0, life = 0, beast = 0;
+        int dmg = 0, dmgBite = 0, maxHp = 0, life = 0, venom = 0, beast = 0;
         float rng = 0f, atkCd = 0f, mv = 0f, dash = 0f, dashCd = 0f, reduce = 0f, regen = 0f, regenOOC = 0f;
         bool biteOn = false, scentOn = false, kickOn = false, howlOn = false, coldOn = false, camoOn = false;
 
         foreach (var sl in slots)
         {
             Organ h = sl.human;
-            if (sl.installed && sl.beast != null)
+            bool maw = sl.name == "Пасть"; // урон Пасти принадлежит УКУСУ, не мечу — клыки не усиливают оружие Рук
+            if (sl.Installed)
             {
-                Organ b = sl.beast;
-                float m = BonusMultiplier(sl.donorSpecies);
-                dmg += Mathf.RoundToInt(Blend(h.damage, b.damage, m));
+                Organ b = sl.Beast;
+                float m = BonusMultiplier(sl.DonorSpecies);
+                int d = Mathf.RoundToInt(Blend(h.damage, b.damage, m));
+                if (maw) dmgBite += d; else dmg += d;
                 maxHp += Mathf.RoundToInt(Blend(h.maxHp, b.maxHp, m));
                 life += Mathf.RoundToInt(Blend(h.lifeSteal, b.lifeSteal, m));
+                venom += b.venomStacks; // дискретная фича органа (как флаги) — не блендим
                 rng += b.range; // дальность не масштабируем — фикс. трейдофф
                 atkCd += Blend(h.atkCooldown, b.atkCooldown, m);
                 mv += Blend(h.moveSpeed, b.moveSpeed, m);
@@ -274,7 +301,10 @@ public class CreatureBody : MonoBehaviour
                 // раскрыты лишь на Э (волк ~0.45). У игрока (Э авто) человеческая база идёт как есть (e=1).
                 // Времена (кулдауны) и дальность не скейлим — как и в химерном бленде.
                 float e = expression > 0f ? expression : 1f;
-                dmg += Mathf.RoundToInt(h.damage * e); maxHp += Mathf.RoundToInt(h.maxHp * e); life += Mathf.RoundToInt(h.lifeSteal * e);
+                int d = Mathf.RoundToInt(h.damage * e);
+                if (maw) dmgBite += d; else dmg += d;
+                maxHp += Mathf.RoundToInt(h.maxHp * e); life += Mathf.RoundToInt(h.lifeSteal * e);
+                venom += h.venomStacks;
                 rng += h.range; atkCd += h.atkCooldown; mv += h.moveSpeed * e; dash += h.dashSpeed * e;
                 dashCd += h.dashCooldown; reduce += h.damageReduction * e; regen += h.regen * e; regenOOC += h.regenOOC * e;
                 if (h.enablesBite) biteOn = true;
@@ -286,7 +316,12 @@ public class CreatureBody : MonoBehaviour
             }
         }
 
-        if (bite != null) bite.BiteEnabled = biteOn;
+        if (bite != null)
+        {
+            bite.BiteEnabled = biteOn;
+            bite.SetDamage(dmgBite); // 0 = органы молчат → PlayerBite остаётся на своём дефолте
+            bite.SetVenom(venom);    // яд змеиных клыков на укусе игрока
+        }
         if (kick != null) kick.KickEnabled = kickOn; // пинок — фича человеческих ног: с волчьими пропадает
         if (howl != null) howl.HowlEnabled = howlOn; // вой-стан — фича волчьей Пасти
         SetColdBlooded(coldOn); // холоднокровность (Сердце змеи): невидимость для термозрения врагов
@@ -311,8 +346,8 @@ public class CreatureBody : MonoBehaviour
             health.OutOfCombatRegen = regenOOC;
         } // maxHp здесь уже с разбросом особи (SpawnVariance.HpMult)
 
-        // НПС-потребители (психика): тело отдаёт деривированное — урон и скорость из органов
-        foreach (var c in GetComponents<IBodyStatConsumer>()) c.OnBodyStats(dmg, mv);
+        // НПС-потребители (психика): тело отдаёт деривированное — урон (суммарный: их мили и есть укус) и скорость
+        foreach (var c in GetComponents<IBodyStatConsumer>()) c.OnBodyStats(dmg + dmgBite, mv);
 
         if (!installAllBeast) UpdateTint(beast); // застывшая химера красится своим материалом, не тинтом
     }

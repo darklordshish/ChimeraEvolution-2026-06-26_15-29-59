@@ -8,12 +8,14 @@ using UnityEngine;
 /// </summary>
 public static class AffinityTracker
 {
+    public const int Cap = 100; // потолок родства на вид: дальше 100 некуда (скидка+мощь выходят на полку)
+
     static readonly Dictionary<string, int> values = new();
 
     public static void Add(string species, int n)
     {
         values.TryGetValue(species, out int c);
-        values[species] = c + n;
+        values[species] = Mathf.Min(Cap, c + n);
     }
 
     public static int Get(string species)
@@ -22,7 +24,7 @@ public static class AffinityTracker
         return c;
     }
 
-    public static void Set(string species, int value) => values[species] = Mathf.Max(0, value); // dev: выставить точно
+    public static void Set(string species, int value) => values[species] = Mathf.Clamp(value, 0, Cap); // dev: выставить точно
 
     public static IEnumerable<KeyValuePair<string, int>> All => values; // HUD/dev: перечислить все виды с родством
 }

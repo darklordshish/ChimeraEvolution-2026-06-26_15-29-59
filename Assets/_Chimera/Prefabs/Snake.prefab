@@ -367,6 +367,9 @@ MonoBehaviour:
   thermalRange: 14
   creepRange: 11
   creepSpeed: 0.5
+  revealMemory: 2
+  rattleInterval: 3
+  rattleCue: 0.4
   attackCooldown: 1.6
   grabChance: 0.5
   grabWindup: 0.35

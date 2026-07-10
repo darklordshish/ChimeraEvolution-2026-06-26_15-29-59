@@ -175,7 +175,7 @@ public class ConstructorUI : MonoBehaviour
         metersText = CreateText("Meters", panel.transform, "", 22, Sepia, TextAnchor.LowerCenter);
         Bottom(metersText.rectTransform, 60, 30);
 
-        var hint = CreateText("Hint", panel.transform, "1–6 или клик — сменить орган · Tab — закрыть", 20, SepiaFaint, TextAnchor.LowerCenter);
+        var hint = CreateText("Hint", panel.transform, "1–6 или клик — цикл органа по донорам · Tab — закрыть", 20, SepiaFaint, TextAnchor.LowerCenter);
         Bottom(hint.rectTransform, 28, 30);
     }
 
@@ -216,13 +216,13 @@ public class ConstructorUI : MonoBehaviour
             var r = rows[i];
 
             string check = v.installed ? "  ✓" : "";
-            string tail = !v.hasBeast ? ""                       // нет альтернативы — слот фиксирован
-                        : v.installed ? $"      ← {v.humanName}"  // клик вернёт человеческий
-                        : $"      → {v.beastName}";               // клик поставит звериный
+            string tail = !v.hasBeast ? ""                                    // нет альтернатив — слот фиксирован
+                        : v.canToggle ? $"      → {v.nextName} ({v.nextCost})" // следующий шаг цикла по донорам
+                        : "      → не по карману";                             // все варианты не влезают в пул
             string key = string.IsNullOrEmpty(v.hotkey) ? "   " : v.hotkey;
             r.label.text = $"{key}   {v.slot}:  {v.organName}   ({v.cost}){check}{tail}";
 
-            bool cantAfford = v.hasBeast && !v.installed && !v.canToggle;
+            bool cantAfford = v.hasBeast && !v.canToggle;
             r.button.interactable = v.hasBeast && v.canToggle;
             r.bg.color = !v.hasBeast ? RowLocked : v.installed ? RowInstalled : RowColor;
             r.label.color = cantAfford ? CantAfford : Sepia;

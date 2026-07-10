@@ -28,6 +28,7 @@ public class Organ
     public int cost;               // цена в пуле
 
     public int damage, maxHp, lifeSteal;
+    public int venomStacks;        // яд на укусе (змеиные клыки): стаков за попадание
     public float range, atkCooldown, moveSpeed, dashSpeed, dashCooldown, damageReduction, regen, regenOOC;
     public bool enablesBite, enablesScent, enablesKick, enablesHowl, coldBlooded, camo;
 }

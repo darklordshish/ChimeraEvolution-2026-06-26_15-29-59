@@ -8,7 +8,8 @@ using UnityEngine.AI;
 /// </summary>
 public class ChimeraDevWindow : EditorWindow
 {
-    const string Species = "Волк";
+    static readonly string[] SpeciesList = { "Волк", "Змея", "Человек" }; // новые виды дописывать сюда
+    int speciesIdx;
     int affinityField = 100;
 
     [MenuItem("Chimera/Dev-панель")]
@@ -29,20 +30,22 @@ public class ChimeraDevWindow : EditorWindow
         var pc = Object.FindAnyObjectByType<PlayerController>();
         var health = pc != null ? pc.GetComponent<Health>() : null;
 
-        // ── Родство ──
+        // ── Родство (кап 100 на вид) ──
         EditorGUILayout.Space();
-        EditorGUILayout.LabelField($"Родство [{Species}]: {AffinityTracker.Get(Species)}", EditorStyles.boldLabel);
+        EditorGUILayout.LabelField($"Родство: Волк {AffinityTracker.Get("Волк")} · Змея {AffinityTracker.Get("Змея")} · Человек {AffinityTracker.Get("Человек")}", EditorStyles.boldLabel);
+        speciesIdx = GUILayout.Toolbar(speciesIdx, SpeciesList);
+        string sp = SpeciesList[speciesIdx];
         using (new EditorGUILayout.HorizontalScope())
         {
-            if (GUILayout.Button("Обнулить")) AffinityTracker.Set(Species, 0);
-            if (GUILayout.Button("+10")) AffinityTracker.Add(Species, 10);
-            if (GUILayout.Button("= 80")) AffinityTracker.Set(Species, 80);
-            if (GUILayout.Button("= 100")) AffinityTracker.Set(Species, 100);
+            if (GUILayout.Button("Обнулить")) AffinityTracker.Set(sp, 0);
+            if (GUILayout.Button("+10")) AffinityTracker.Add(sp, 10);
+            if (GUILayout.Button("= 80")) AffinityTracker.Set(sp, 80);
+            if (GUILayout.Button("= 100")) AffinityTracker.Set(sp, 100);
         }
         using (new EditorGUILayout.HorizontalScope())
         {
             affinityField = EditorGUILayout.IntField("Точно:", affinityField);
-            if (GUILayout.Button("Set", GUILayout.Width(60))) AffinityTracker.Set(Species, affinityField);
+            if (GUILayout.Button("Set", GUILayout.Width(60))) AffinityTracker.Set(sp, affinityField);
         }
 
         // ── Игрок ──
@@ -99,7 +102,10 @@ public class ChimeraDevWindow : EditorWindow
         EditorGUILayout.LabelField($"Живых: {snakes.Length}");
         using (new EditorGUILayout.HorizontalScope())
         {
-            if (GUILayout.Button("Спавн змеи")) SpawnSnake();
+            if (GUILayout.Button("Спавн змеи")) SpawnSnake(); // одна, рядом с игроком (посмотреть вблизи)
+            var snakeSpawner = Object.FindAnyObjectByType<SnakeSpawner>();
+            using (new EditorGUI.DisabledScope(snakeSpawner == null))
+                if (GUILayout.Button("+3 по карте")) snakeSpawner.SpawnBurst(3);
             if (GUILayout.Button("Убить всех змей"))
                 foreach (var s in snakes)
                     if (s.TryGetComponent<Health>(out var sh)) sh.TakeDamage(99999, true);

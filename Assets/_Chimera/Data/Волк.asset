@@ -23,6 +23,7 @@ MonoBehaviour:
     damage: 18
     maxHp: 0
     lifeSteal: 0
+    venomStacks: 0
     range: 1.5
     atkCooldown: 0
     moveSpeed: 0
@@ -44,6 +45,7 @@ MonoBehaviour:
     damage: 0
     maxHp: 0
     lifeSteal: 0
+    venomStacks: 0
     range: 0
     atkCooldown: 0
     moveSpeed: 9
@@ -65,6 +67,7 @@ MonoBehaviour:
     damage: 0
     maxHp: 150
     lifeSteal: 0
+    venomStacks: 0
     range: 0
     atkCooldown: 0.3
     moveSpeed: 0
@@ -86,6 +89,7 @@ MonoBehaviour:
     damage: 0
     maxHp: 0
     lifeSteal: 0
+    venomStacks: 0
     range: 0
     atkCooldown: 0
     moveSpeed: 0
@@ -107,6 +111,7 @@ MonoBehaviour:
     damage: 0
     maxHp: 0
     lifeSteal: 0
+    venomStacks: 0
     range: 0
     atkCooldown: 0
     moveSpeed: 0
@@ -128,6 +133,7 @@ MonoBehaviour:
     damage: 0
     maxHp: 0
     lifeSteal: 0
+    venomStacks: 0
     range: 0
     atkCooldown: 0
     moveSpeed: 0
