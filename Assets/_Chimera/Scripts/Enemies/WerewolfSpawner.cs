@@ -13,6 +13,9 @@ public class WerewolfSpawner : MonoBehaviour
     [SerializeField] int triggerAffinity = 80;
     [SerializeField] float spawnDistance = 16f;  // на каком расстоянии от игрока появляется
     [SerializeField] float respawnDelay = 5f;    // пауза после смерти босса до следующего
+    [SerializeField] bool autoSpawn = true;      // авто-призыв по родству; выключается в Dev-панели (тесты без босса)
+
+    public bool AutoSpawn { get => autoSpawn; set => autoSpawn = value; }
 
     bool warned;
     float nextSpawnTime;
@@ -26,6 +29,7 @@ public class WerewolfSpawner : MonoBehaviour
 
     void Update()
     {
+        if (!autoSpawn) return;
         if (AffinityTracker.Get(species) < triggerAffinity) return;
 
         if (werewolfPrefab == null)

@@ -101,8 +101,15 @@ public class ChimeraDevWindow : EditorWindow
         var boss = Object.FindAnyObjectByType<WerewolfPsyche>();
         if (boss != null && boss.TryGetComponent<Health>(out var bh))
             EditorGUILayout.LabelField($"HP {bh.Current}/{bh.Max}{(bh.Current > bh.Max ? $"  (+{bh.Current - bh.Max} temp)" : "")}");
-        using (new EditorGUI.DisabledScope(boss != null))
-            if (GUILayout.Button("Спавн Вервольфа")) SpawnWerewolf();
+        using (new EditorGUILayout.HorizontalScope())
+        {
+            using (new EditorGUI.DisabledScope(boss != null))
+                if (GUILayout.Button("Спавн Вервольфа")) SpawnWerewolf();
+            var wwSpawner = Object.FindAnyObjectByType<WerewolfSpawner>();
+            using (new EditorGUI.DisabledScope(wwSpawner == null))
+                if (GUILayout.Button(wwSpawner != null && wwSpawner.AutoSpawn ? "Автоспавн: ВКЛ" : "Автоспавн: выкл"))
+                    wwSpawner.AutoSpawn = !wwSpawner.AutoSpawn;
+        }
         if (boss != null && GUILayout.Button("Убить босса") && boss.TryGetComponent<Health>(out var bk))
             bk.TakeDamage(999999, true);
 
