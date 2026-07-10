@@ -15,6 +15,8 @@ public class SnakeSpawner : MonoBehaviour
     [SerializeField] float mapHalfExtent = 48f;          // полукрай зоны спавна от позиции спавнера (арена 100 → 48)
     [SerializeField] float spawnInterval = 6f;           // как часто досыпать до maxAlive
     [SerializeField] float minDistanceFromPlayer = 15f;  // появляться вне поля зрения игрока
+    [SerializeField] float snakeSpacing = 20f;           // разлёт между змеями — засады не кучкуются
+    [SerializeField] float wallClearance = 1.8f;         // зазор до кромки навмеша: змея длинная — впритык к стене торчит сквозь неё
 
     readonly List<GameObject> alive = new();
     Transform player;
@@ -50,15 +52,29 @@ public class SnakeSpawner : MonoBehaviour
 
     Vector3 PickSpawnPoint()
     {
-        for (int attempt = 0; attempt < 30; attempt++)
-        {
-            Vector3 p = transform.position + new Vector3(Random.Range(-mapHalfExtent, mapHalfExtent), 0f,
-                                                         Random.Range(-mapHalfExtent, mapHalfExtent));
-            if (!NavMesh.SamplePosition(p, out var hit, 4f, NavMesh.AllAreas)) continue; // на навмеш, не в стену
-            if (player == null || Vector3.Distance(hit.position, player.position) >= minDistanceFromPlayer)
+        // ступенчатое ослабление: (0) далеко от игрока И от других змей → (1) далеко от игрока →
+        // (2) лишь бы на навмеше. Фолбэк в позицию спавнера — только совсем безнадёжно (и с криком).
+        for (int pass = 0; pass < 3; pass++)
+            for (int attempt = 0; attempt < 40; attempt++)
+            {
+                Vector3 p = transform.position + new Vector3(Random.Range(-mapHalfExtent, mapHalfExtent), 0f,
+                                                             Random.Range(-mapHalfExtent, mapHalfExtent));
+                if (!NavMesh.SamplePosition(p, out var hit, 8f, NavMesh.AllAreas)) continue; // на навмеш, не в стену
+                if (pass <= 1 && NavMesh.FindClosestEdge(hit.position, out var edge, NavMesh.AllAreas)
+                              && edge.distance < wallClearance) continue; // не впритык к стене (длинное тело торчит сквозь)
+                if (pass <= 1 && player != null && Vector3.Distance(hit.position, player.position) < minDistanceFromPlayer) continue;
+                if (pass == 0 && TooCloseToOtherSnake(hit.position)) continue;
                 return hit.position;
-        }
+            }
+        Debug.LogWarning("SnakeSpawner: не нашёл точку на NavMesh по всей зоне — проверь позицию спавнера/масштаб mapHalfExtent.");
         return transform.position;
+    }
+
+    bool TooCloseToOtherSnake(Vector3 p)
+    {
+        foreach (var s in alive)
+            if (s != null && (s.transform.position - p).sqrMagnitude < snakeSpacing * snakeSpacing) return true;
+        return false;
     }
 
     void OnDrawGizmosSelected()
