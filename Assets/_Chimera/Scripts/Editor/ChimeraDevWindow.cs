@@ -66,6 +66,17 @@ public class ChimeraDevWindow : EditorWindow
                 EditorGUILayout.LabelField($"Яд: {(v != null ? v.Stacks : 0)} стак(ов)", GUILayout.Width(120));
                 if (GUILayout.Button("Отравить +1")) (health.GetComponent<Venom>() ?? health.gameObject.AddComponent<Venom>()).AddStack();
             }
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                var body = health.GetComponent<CreatureBody>();
+                EditorGUILayout.LabelField($"Химерных слотов: {(body != null ? body.ChimeraSlots : 0)}", GUILayout.Width(160));
+                using (new EditorGUI.DisabledScope(body == null))
+                {
+                    if (GUILayout.Button("+1 химерный слот")) body.GrantChimeraSlot();
+                    using (new EditorGUI.DisabledScope(body != null && body.ChimeraSlots == 0))
+                        if (GUILayout.Button("−1")) body.RemoveChimeraSlot(); // надетый орган снимется, пул вернётся
+                }
+            }
         }
         else EditorGUILayout.HelpBox("Игрок (PlayerController) не найден.", MessageType.Warning);
 

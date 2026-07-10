@@ -47,11 +47,21 @@ public class PlayerInputDriver : MonoBehaviour
         howlAction.AddBinding("<Gamepad>/rightShoulder");
     }
 
+    int knownSlots; // пересобрать хоткеи, когда слотов стало больше (выдан химерный слот)
+
     // хоткеи слотов строим в Start: тело собирает слоты в своём Awake
     void Start()
     {
         body = GetComponent<CreatureBody>();
+        BuildSlotHotkeys();
+    }
+
+    void BuildSlotHotkeys()
+    {
         if (body == null) return;
+        foreach (var (a, _) in slotActions) a.Disable();
+        slotActions.Clear();
+        knownSlots = body.SlotCount;
         for (int i = 0; i < body.SlotCount; i++)
         {
             var v = body.GetSlot(i);
@@ -77,6 +87,8 @@ public class PlayerInputDriver : MonoBehaviour
 
     void Update()
     {
+        if (body != null && body.SlotCount != knownSlots) BuildSlotHotkeys(); // выдали химерный слот — новый хоткей
+
         // химеризация хоткеями — работает и при открытом конструкторе (UI сам синхронится)
         for (int i = 0; i < slotActions.Count; i++)
             if (slotActions[i].action.WasPressedThisFrame()) body.ToggleSlot(slotActions[i].slot);

@@ -26,6 +26,10 @@ public class CreatureBody : MonoBehaviour
     [SerializeField] float bonusFullAffinity = 100f;
     [SerializeField] float maxBonusMult = 2f;           // звериная часть органа ×2 на 100 родства
 
+    [Header("Химерные слоты (мета: награда суперхимеры)")]
+    [SerializeField, Min(0)] int chimeraSlots;    // выданные универсальные слоты (dev-кнопка / SuperBossReward)
+    [SerializeField] float chimeraSlotMult = 2f;  // множитель цены органа в химерном слоте (не-нативный «графт»)
+
     [Header("NPC-режим (тело как данные)")]
     [SerializeField] bool installAllBeast;    // все звериные органы надеты с рождения (вервольф — застывшая химера)
     [FormerlySerializedAs("fixedBonusMult")]
@@ -39,9 +43,10 @@ public class CreatureBody : MonoBehaviour
     class Slot
     {
         public string name, hotkey;                     // хоткей задаёт ШАССИ — раскладка стабильна при любых донорах
-        public Organ human;                             // орган шасси (дефолт слота)
+        public Organ human;                             // орган шасси (дефолт слота); у ХИМЕРНОГО слота = null (пусто)
+        public bool chimera;                            // универсальный доп-слот: любой донорский орган, цена ×chimeraSlotMult
         public readonly List<Variant> variants = new(); // звериные альтернативы по всем донорам
-        public int current = -1;                        // -1 = человеческий; иначе индекс в variants
+        public int current = -1;                        // -1 = человеческий/пусто; иначе индекс в variants
 
         public bool Installed => current >= 0;
         public Organ Beast => current >= 0 ? variants[current].organ : null;
@@ -64,9 +69,15 @@ public class CreatureBody : MonoBehaviour
     int lastAffinitySum = -1;
     static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
 
-    public int Pool => chassis != null ? chassis.mutagenPool : 0;
+    int poolBonus; // расширение пула наградами (SuperBossReward) — рантайм-бонус, ассет шасси не трогаем
+
+    public int Pool => (chassis != null ? chassis.mutagenPool : 0) + poolBonus;
+
+    /// <summary>Расширить пул мутагена (награда суперхимеры). Живо в рантайме.</summary>
+    public void ExpandPool(int n) { poolBonus += n; Recompute(); }
     public int PoolUsed { get { int s = 0; if (slots != null) foreach (var sl in slots) s += SlotCost(sl); return s; } }
-    int SlotCost(Slot sl) => sl.Installed ? EffectiveCost(sl.Beast, sl.DonorSpecies) : (sl.human != null ? sl.human.cost : 0); // каждый слот занимает пул (человеческий орган тоже)
+    int SlotCost(Slot sl) => sl.Installed ? CostOf(sl, sl.variants[sl.current]) : (sl.human != null ? sl.human.cost : 0); // каждый слот занимает пул (человеческий орган тоже; пустой химерный = 0)
+    int CostOf(Slot sl, Variant v) => Mathf.CeilToInt(EffectiveCost(v.organ, v.species) * (sl.chimera ? chimeraSlotMult : 1f)); // химерный слот — дорогой «графт»
     public int MaxSlots => slots != null ? slots.Length : 0;
     public int BeastSlots { get { int n = 0; if (slots != null) foreach (var sl in slots) if (sl.Installed) n++; return n; } }
     public float BonusMult => donors != null && donors.Length > 0 && donors[0] != null ? BonusMultiplier(donors[0].speciesName) : 1f;
@@ -79,7 +90,7 @@ public class CreatureBody : MonoBehaviour
             var lines = new List<string>();
             foreach (var sl in slots)
             {
-                string cur = sl.Installed ? sl.Beast.organName : sl.human.organName;
+                string cur = sl.Installed ? sl.Beast.organName : (sl.human != null ? sl.human.organName : "—"); // пустой химерный
                 lines.Add($"{sl.hotkey} {sl.name}: {cur} ({SlotCost(sl)}){(sl.Installed ? "  ✓" : "")}");
             }
             return string.Join("\n", lines);
@@ -106,14 +117,50 @@ public class CreatureBody : MonoBehaviour
         {
             slot = sl.name,
             hotkey = sl.hotkey,
-            organName = sl.Installed ? sl.Beast.organName : sl.human.organName,
+            organName = sl.Installed ? sl.Beast.organName : (sl.human != null ? sl.human.organName : "—"), // пустой химерный слот
             cost = SlotCost(sl),
             installed = sl.Installed,
             hasBeast = sl.variants.Count > 0,
             canToggle = sl.variants.Count > 0 && next != sl.current,
-            nextName = next >= 0 ? sl.variants[next].organ.organName : (sl.human != null ? sl.human.organName : null),
-            nextCost = next >= 0 ? EffectiveCost(sl.variants[next].organ, sl.variants[next].species) : (sl.human != null ? sl.human.cost : 0),
+            nextName = next >= 0 ? sl.variants[next].organ.organName : (sl.human != null ? sl.human.organName : "—"),
+            nextCost = next >= 0 ? CostOf(sl, sl.variants[next]) : (sl.human != null ? sl.human.cost : 0),
         };
+    }
+
+    /// <summary>Выдать универсальный ХИМЕРНЫЙ слот (награда суперхимеры / dev). Живо в рантайме.</summary>
+    public void GrantChimeraSlot()
+    {
+        chimeraSlots++;
+        var list = new List<Slot>(slots) { MakeChimeraSlot(slots.Length) };
+        slots = list.ToArray();
+        Recompute();
+    }
+
+    public int ChimeraSlots => chimeraSlots;
+
+    /// <summary>Убрать последний химерный слот (dev). Надетый в нём орган снимается, пул вернётся сам.</summary>
+    public void RemoveChimeraSlot()
+    {
+        if (chimeraSlots <= 0) return;
+        chimeraSlots--;
+        var list = new List<Slot>(slots);
+        for (int i = list.Count - 1; i >= 0; i--)
+            if (list[i].chimera) { list.RemoveAt(i); break; }
+        slots = list.ToArray();
+        Recompute();
+    }
+
+    // химерный слот: без человеческой базы, принимает ЛЮБОЙ орган ЛЮБОГО донора (в т.ч. дубль занятого слота)
+    Slot MakeChimeraSlot(int index)
+    {
+        var sl = new Slot { name = "Химерный", hotkey = (index + 1).ToString(), chimera = true };
+        if (donors != null)
+            foreach (var d in donors)
+            {
+                if (d == null || d.organs == null) continue;
+                foreach (var o in d.organs) sl.variants.Add(new Variant { organ = o, species = d.speciesName });
+            }
+        return sl;
     }
 
     public void ToggleSlot(int i)
@@ -124,8 +171,7 @@ public class CreatureBody : MonoBehaviour
     // влезает ли вариант в пул: снимаем текущий орган слота (вернуть его цену), ставим вариант idx
     bool CanInstall(Slot sl, int idx)
     {
-        var v = sl.variants[idx];
-        return PoolUsed - SlotCost(sl) + EffectiveCost(v.organ, v.species) <= Pool;
+        return PoolUsed - SlotCost(sl) + CostOf(sl, sl.variants[idx]) <= Pool;
     }
 
     // цена органа со скидкой от родства ЕГО вида (волчьи дешевеют от родства-волк, змеиные — от родства-змея)
@@ -215,10 +261,12 @@ public class CreatureBody : MonoBehaviour
                 }
             list.Add(sl);
         }
+        for (int i = 0; i < chimeraSlots; i++) list.Add(MakeChimeraSlot(list.Count)); // выданные химерные слоты
         slots = list.ToArray();
 
         if (installAllBeast) // застывшая химера (вервольф): весь лоадаут ПЕРВОГО донора надет с рождения
-            foreach (var sl in slots) sl.current = sl.variants.Count > 0 ? 0 : -1;
+            foreach (var sl in slots)
+                if (!sl.chimera) sl.current = sl.variants.Count > 0 ? 0 : -1;
     }
 
     void Start() => Recompute();
@@ -258,67 +306,111 @@ public class CreatureBody : MonoBehaviour
         Recompute();
     }
 
+    // вклад одного надетого органа в статы тела (после бленда/экспрессии)
+    struct Contribution
+    {
+        public float dmg, maxHp, life, rng, atkCd, mv, dash, dashCd, reduce, regen, regenOOC, thermal;
+        public int venom;
+        public bool bite, scent, kick, howl, cold, camo, thermalOn;
+
+        // СУПРЕМУМ дублей одного типа слота: скаляры — max (кулдауны — min: меньше = лучше), флаги — OR.
+        // Дубль оси силу НЕ растит (второе сердце ≠ ×2 регена) — окупается только НОВЫМ направлением.
+        public static Contribution Sup(Contribution a, Contribution b) => new()
+        {
+            dmg = Mathf.Max(a.dmg, b.dmg), maxHp = Mathf.Max(a.maxHp, b.maxHp), life = Mathf.Max(a.life, b.life),
+            rng = Mathf.Max(a.rng, b.rng), atkCd = Mathf.Min(a.atkCd, b.atkCd),
+            mv = Mathf.Max(a.mv, b.mv), dash = Mathf.Max(a.dash, b.dash), dashCd = Mathf.Min(a.dashCd, b.dashCd),
+            reduce = Mathf.Max(a.reduce, b.reduce), regen = Mathf.Max(a.regen, b.regen),
+            regenOOC = Mathf.Max(a.regenOOC, b.regenOOC), thermal = Mathf.Max(a.thermal, b.thermal),
+            venom = Mathf.Max(a.venom, b.venom),
+            bite = a.bite || b.bite, scent = a.scent || b.scent, kick = a.kick || b.kick,
+            howl = a.howl || b.howl, cold = a.cold || b.cold, camo = a.camo || b.camo,
+            thermalOn = a.thermalOn || b.thermalOn,
+        };
+    }
+
+    static readonly Organ EmptyOrgan = new(); // «нет базы» для химерного слота: бленд от нуля = чистый орган × м
+
     void Recompute()
     {
         if (slots == null || slots.Length == 0) return; // нет данных — не трогаем статы компонентов
 
-        int dmg = 0, dmgBite = 0, maxHp = 0, life = 0, venom = 0, beast = 0;
-        float rng = 0f, atkCd = 0f, mv = 0f, dash = 0f, dashCd = 0f, reduce = 0f, regen = 0f, regenOOC = 0f, thermal = 0f;
-        bool biteOn = false, scentOn = false, kickOn = false, howlOn = false, coldOn = false, camoOn = false, thermalOn = false;
+        // Вклады группируются по РОДНОМУ ТИПУ СЛОТА органа: дубли (второе Сердце в химерном слоте)
+        // схлопываются супремумом, группы суммируются. Без дублей == прежняя сумма по слотам.
+        var groups = new Dictionary<string, Contribution>();
+        int beast = 0;
 
         foreach (var sl in slots)
         {
-            Organ h = sl.human;
-            bool maw = sl.name == "Пасть"; // урон Пасти принадлежит УКУСУ, не мечу — клыки не усиливают оружие Рук
+            Contribution c;
+            string key;
             if (sl.Installed)
             {
                 Organ b = sl.Beast;
+                Organ h = sl.human ?? EmptyOrgan;
                 float m = BonusMultiplier(sl.DonorSpecies);
-                int d = Mathf.RoundToInt(Blend(h.damage, b.damage, m));
-                if (maw) dmgBite += d; else dmg += d;
-                maxHp += Mathf.RoundToInt(Blend(h.maxHp, b.maxHp, m));
-                life += Mathf.RoundToInt(Blend(h.lifeSteal, b.lifeSteal, m));
-                venom += b.venomStacks; // дискретная фича органа (как флаги) — не блендим
-                rng += b.range; // дальность не масштабируем — фикс. трейдофф
-                atkCd += Blend(h.atkCooldown, b.atkCooldown, m);
-                mv += Blend(h.moveSpeed, b.moveSpeed, m);
-                dash += Blend(h.dashSpeed, b.dashSpeed, m);
-                dashCd += Blend(h.dashCooldown, b.dashCooldown, m);
-                reduce += Blend(h.damageReduction, b.damageReduction, m);
-                regen += Blend(h.regen, b.regen, m);
-                regenOOC += b.regenOOC; // вне-боя реген не блендим — фича органа (как дальность): иначе на Э=2 уходит в минус
-                thermal += b.thermalRange; // фикс-фича органа (как range) — не блендим
-                if (b.enablesBite) biteOn = true;
-                if (b.enablesScent) scentOn = true;
-                if (b.enablesKick) kickOn = true;
-                if (b.enablesHowl) howlOn = true;
-                if (b.coldBlooded) coldOn = true;
-                if (b.camo) camoOn = true;
-                if (b.enablesThermal) thermalOn = true;
+                c = new Contribution
+                {
+                    dmg = Blend(h.damage, b.damage, m),
+                    maxHp = Blend(h.maxHp, b.maxHp, m),
+                    life = Blend(h.lifeSteal, b.lifeSteal, m),
+                    venom = b.venomStacks,        // дискретная фича органа (как флаги) — не блендим
+                    rng = b.range,                // дальность не масштабируем — фикс. трейдофф
+                    atkCd = Blend(h.atkCooldown, b.atkCooldown, m),
+                    mv = Blend(h.moveSpeed, b.moveSpeed, m),
+                    dash = Blend(h.dashSpeed, b.dashSpeed, m),
+                    dashCd = Blend(h.dashCooldown, b.dashCooldown, m),
+                    reduce = Blend(h.damageReduction, b.damageReduction, m),
+                    regen = Blend(h.regen, b.regen, m),
+                    regenOOC = b.regenOOC,        // вне-боя реген не блендим — фича органа: иначе на Э=2 уходит в минус
+                    thermal = b.thermalRange,     // фикс-фича органа (как range) — не блендим
+                    bite = b.enablesBite, scent = b.enablesScent, kick = b.enablesKick,
+                    howl = b.enablesHowl, cold = b.coldBlooded, camo = b.camo, thermalOn = b.enablesThermal,
+                };
+                key = b.slot; // дубль типа (второе Сердце) идёт в ту же группу — супремум
                 beast++;
             }
-            else
+            else if (sl.human != null)
             {
                 // Природная особь (фикс. экспрессия): органы записаны в МУТАГЕННОЙ шкале — без сыворотки
                 // раскрыты лишь на Э (волк ~0.45). У игрока (Э авто) человеческая база идёт как есть (e=1).
                 // Времена (кулдауны) и дальность не скейлим — как и в химерном бленде.
+                Organ h = sl.human;
                 float e = expression > 0f ? expression : 1f;
-                int d = Mathf.RoundToInt(h.damage * e);
-                if (maw) dmgBite += d; else dmg += d;
-                maxHp += Mathf.RoundToInt(h.maxHp * e); life += Mathf.RoundToInt(h.lifeSteal * e);
-                venom += h.venomStacks;
-                rng += h.range; atkCd += h.atkCooldown; mv += h.moveSpeed * e; dash += h.dashSpeed * e;
-                dashCd += h.dashCooldown; reduce += h.damageReduction * e; regen += h.regen * e; regenOOC += h.regenOOC * e;
-                thermal += h.thermalRange;
-                if (h.enablesBite) biteOn = true;
-                if (h.enablesScent) scentOn = true;
-                if (h.enablesKick) kickOn = true;
-                if (h.enablesHowl) howlOn = true;
-                if (h.coldBlooded) coldOn = true;
-                if (h.camo) camoOn = true;
-                if (h.enablesThermal) thermalOn = true;
+                c = new Contribution
+                {
+                    dmg = h.damage * e, maxHp = h.maxHp * e, life = h.lifeSteal * e,
+                    venom = h.venomStacks,
+                    rng = h.range, atkCd = h.atkCooldown, mv = h.moveSpeed * e, dash = h.dashSpeed * e,
+                    dashCd = h.dashCooldown, reduce = h.damageReduction * e, regen = h.regen * e,
+                    regenOOC = h.regenOOC * e, thermal = h.thermalRange,
+                    bite = h.enablesBite, scent = h.enablesScent, kick = h.enablesKick,
+                    howl = h.enablesHowl, cold = h.coldBlooded, camo = h.camo, thermalOn = h.enablesThermal,
+                };
+                key = h.slot;
             }
+            else continue; // пустой химерный слот
+
+            groups[key] = groups.TryGetValue(key, out var prev) ? Contribution.Sup(prev, c) : c;
         }
+
+        // суммирование групп; урон группы «Пасть» принадлежит УКУСУ, не мечу
+        float dmgF = 0f, dmgBiteF = 0f, maxHpF = 0f, lifeF = 0f;
+        float rng = 0f, atkCd = 0f, mv = 0f, dash = 0f, dashCd = 0f, reduce = 0f, regen = 0f, regenOOC = 0f, thermal = 0f;
+        int venom = 0;
+        bool biteOn = false, scentOn = false, kickOn = false, howlOn = false, coldOn = false, camoOn = false, thermalOn = false;
+        foreach (var kv in groups)
+        {
+            var c = kv.Value;
+            if (kv.Key == "Пасть") dmgBiteF += c.dmg; else dmgF += c.dmg;
+            maxHpF += c.maxHp; lifeF += c.life; venom += c.venom;
+            rng += c.rng; atkCd += c.atkCd; mv += c.mv; dash += c.dash; dashCd += c.dashCd;
+            reduce += c.reduce; regen += c.regen; regenOOC += c.regenOOC; thermal += c.thermal;
+            biteOn |= c.bite; scentOn |= c.scent; kickOn |= c.kick; howlOn |= c.howl;
+            coldOn |= c.cold; camoOn |= c.camo; thermalOn |= c.thermalOn;
+        }
+        int dmg = Mathf.RoundToInt(dmgF), dmgBite = Mathf.RoundToInt(dmgBiteF);
+        int maxHp = Mathf.RoundToInt(maxHpF), life = Mathf.RoundToInt(lifeF);
 
         if (bite != null)
         {

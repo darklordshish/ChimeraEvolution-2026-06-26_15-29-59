@@ -84,6 +84,7 @@ public class ConstructorUI : MonoBehaviour
             // держим замедление насильно: хитстоп удара и прочие охотники за timeScale не должны его сбросить
             Time.timeScale = timeScaleWhenOpen;
             if (!slotsBuilt) BuildSlotRows();
+            else if (body != null && rows.Count != body.SlotCount) RebuildRows(); // выдали химерный слот — дострой строку
             RefreshSlots();   // хоткеи 1–6 тоже переключают слоты — держим UI в синхроне
             RefreshMeters();
         }
@@ -205,6 +206,15 @@ public class ConstructorUI : MonoBehaviour
             rows.Add(new SlotRow { bg = bg, button = btn, label = label });
         }
         slotsBuilt = true;
+    }
+
+    // пересобрать строки с нуля (в рантайме добавился химерный слот)
+    void RebuildRows()
+    {
+        foreach (var r in rows) if (r.bg != null) Destroy(r.bg.gameObject);
+        rows.Clear();
+        slotsBuilt = false;
+        BuildSlotRows();
     }
 
     void RefreshSlots()
