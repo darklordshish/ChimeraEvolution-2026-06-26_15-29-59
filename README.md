@@ -42,7 +42,7 @@
 
 | Документ | Что это |
 |---|---|
-| [Docs/CHIMERA_GDD_v0.16.md](Docs/CHIMERA_GDD_v0.16.md) | GDD — дизайн-решения, экономика, мета, роадмап |
+| [Docs/CHIMERA_GDD_v0.17.md](Docs/CHIMERA_GDD_v0.17.md) | GDD — дизайн-решения, экономика, мета, роадмап |
 | [Docs/CONSTRUCTOR_GUIDE.md](Docs/CONSTRUCTOR_GUIDE.md) | Конструктор существ: законы, словарь, рецепты, тюнинг |
 | [Docs/superpowers/specs/](Docs/superpowers/specs/) | Спеки слайсов (spec-first: сначала спека, потом код) |
 | [Docs/CHIMERA_chat_history.md](Docs/CHIMERA_chat_history.md) | Ретроспектива исходного брейншторма |
