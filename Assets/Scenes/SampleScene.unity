@@ -493,6 +493,55 @@ MonoBehaviour:
   m_MinRegionArea: 2
   m_NavMeshData: {fileID: 0}
   m_BuildHeightMesh: 0
+--- !u!1 &596098556
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 596098558}
+  - component: {fileID: 596098557}
+  m_Layer: 0
+  m_Name: SnakeSpawner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &596098557
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 596098556}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 329814be6fa400a478cc201f185a407d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SnakeSpawner
+  snakePrefab: {fileID: 6641276580433421429, guid: 8bd5a3162d1968f4d8f4fc47643aea72, type: 3}
+  maxAlive: 3
+  mapHalfExtent: 48
+  spawnInterval: 6
+  minDistanceFromPlayer: 15
+--- !u!4 &596098558
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 596098556}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &832575517
 GameObject:
   m_ObjectHideFlags: 0
@@ -776,6 +825,7 @@ MonoBehaviour:
   chassis: {fileID: 11400000, guid: f8bb6d7567aed7e4f878f0b59a0ea030, type: 2}
   donors:
   - {fileID: 11400000, guid: 0c6b11574869a6b44a321162414452d6, type: 2}
+  - {fileID: 11400000, guid: dab52963bf459da4b934b85751aeac96, type: 2}
   discountPerAffinity: 0.01
   maxDiscount: 0.8
   bonusStartAffinity: 80
@@ -1151,3 +1201,4 @@ SceneRoots:
   - {fileID: 421052347}
   - {fileID: 1185508200}
   - {fileID: 1779511326}
+  - {fileID: 596098558}
