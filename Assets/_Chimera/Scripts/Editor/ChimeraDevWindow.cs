@@ -48,6 +48,15 @@ public class ChimeraDevWindow : EditorWindow
             if (GUILayout.Button("Set", GUILayout.Width(60))) AffinityTracker.Set(sp, affinityField);
         }
 
+        // ── ПРИЗРАК: чувства NPC игрока не воспринимают (наблюдение за психикой в естественной среде).
+        //    Атака раскрывает (дальше всё натурально: вой, сбор стаи); повторное ВКЛ сбрасывает интерес.
+        EditorGUILayout.Space();
+        if (GUILayout.Button(Perception.PlayerGhost ? "ПРИЗРАК: ВКЛ — не видят/не чуют (атака раскроет)" : "Призрак: выкл"))
+        {
+            Perception.PlayerGhost = !Perception.PlayerGhost;
+            if (Perception.PlayerGhost) ResetNpcInterest(); // подошёл → триггернул → отошёл → снова призрак
+        }
+
         // ── Игрок ──
         EditorGUILayout.Space();
         EditorGUILayout.LabelField("Игрок", EditorStyles.boldLabel);
@@ -128,6 +137,13 @@ public class ChimeraDevWindow : EditorWindow
                 foreach (var s in snakes)
                     if (s.TryGetComponent<Health>(out var sh)) sh.TakeDamage(99999, true);
         }
+    }
+
+    // сброс интереса NPC к игроку: тревоги волков и запаховый след стираются (свежий «чистый лист»)
+    static void ResetNpcInterest()
+    {
+        ScentField.Instance.Clear();
+        foreach (var w in Object.FindObjectsByType<WolfPsyche>()) w.ForgetAlert();
     }
 
     static void SpawnSnake()

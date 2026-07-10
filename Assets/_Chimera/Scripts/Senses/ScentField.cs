@@ -29,6 +29,8 @@ public class ScentField : MonoBehaviour
 
     public void Drop(Vector3 pos) => points.Add(new Point { pos = pos, born = Time.time });
 
+    public void Clear() => points.Clear(); // dev-призрак: сброс интереса — старый след стирается
+
     void Update()
     {
         float cutoff = Time.time - lifetime;

@@ -37,6 +37,7 @@ public class PlayerKick : MonoBehaviour, IAbility
 
     void DoKick()
     {
+        Perception.BreakGhost(); // dev-призрак: атака раскрывает
         hitThisKick.Clear();
         bool any = false;
         var hit = new Hit(null, transform.position); // пинок сам не лечится

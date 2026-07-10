@@ -39,6 +39,7 @@ public class PlayerHowl : MonoBehaviour, IAbility
 
     void DoHowl()
     {
+        Perception.BreakGhost(); // dev-призрак: вой раскрывает
         hitThisHowl.Clear();
         var hit = new Hit(ownHealth, transform.position);
         Collider[] cols = Physics.OverlapSphere(transform.position, radius, ~0, QueryTriggerInteraction.Ignore);

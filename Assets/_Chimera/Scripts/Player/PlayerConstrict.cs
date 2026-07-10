@@ -65,6 +65,7 @@ public class PlayerConstrict : MonoBehaviour, IAbility
         grip = 0f; stage = 1;
         escapeAt = Time.time + Random.Range(escapeMin, escapeMax); // гонка: продержи до защёлка
         lastHp = ownHealth != null ? ownHealth.Current : 0;
+        Perception.BreakGhost(); // dev-призрак: обхват раскрывает
         return true;
     }
 

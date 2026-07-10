@@ -29,7 +29,14 @@ public class Camouflage : MonoBehaviour
         TryGetComponent(out stagger);
         var list = new List<Renderer>();
         foreach (var r in GetComponentsInChildren<Renderer>())
-            if (r is MeshRenderer || r is SkinnedMeshRenderer) list.Add(r); // след/линии не прячем — запах = зацепка
+        {
+            if (!(r is MeshRenderer || r is SkinnedMeshRenderer)) continue; // след/линии не прячем — запах = зацепка
+            string n = r.gameObject.name;
+            // каналы чувств НЕ трогаем — ими рулят свои системы: термо-контур (HeatGhost, сквозь стены!)
+            // гаснет сам по холоднокровности, аура запаха (Sphere) — по нюху. Камуфляж прячет только ТЕЛО.
+            if (n == "HeatGhost" || n == "Sphere") continue;
+            list.Add(r);
+        }
         bodyRenderers = list.ToArray();
     }
 

@@ -24,7 +24,14 @@ public class CameraFollow : MonoBehaviour
     float shakeTimer, shakeDuration, shakeMag, pitch;
     PlayerController player;
 
-    void Awake() => followPos = transform.position;
+    void Awake()
+    {
+        followPos = transform.position;
+        // FPS вплотную к стене: голова на +0.25 вперёд, до стены остаётся ~0.25 — штатный near clip 0.3
+        // протыкает геометрию (видно сквозь). Поджимаем плоскость отсечения.
+        if (TryGetComponent<Camera>(out var cam)) cam.nearClipPlane = Mathf.Min(cam.nearClipPlane, 0.05f);
+    }
+
     void Start() { if (target != null) player = target.GetComponent<PlayerController>(); }
 
     public void Shake(float duration = 0.12f, float magnitude = 0.3f)

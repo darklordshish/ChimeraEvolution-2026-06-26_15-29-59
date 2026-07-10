@@ -10,6 +10,14 @@ public static class Perception
     public static bool WolfScent;            // надето волчье Чутьё → видно запах
     public static bool ShowOwnScent = true;  // показывать свой запаховый след (тоггл)
 
+    // DEV-ПРИЗРАК: чувства NPC игрока НЕ воспринимают (зрение/термо/запах), модель обычная — наблюдение
+    // за психикой «в естественной среде». Атака игрока РАСКРЫВАЕТ (BreakGhost) — дальше всё натурально;
+    // повторное включение (Dev-панель) заново прячет и сбрасывает интерес NPC.
+    public static bool PlayerGhost;
+    public static void BreakGhost() { PlayerGhost = false; }
+    static bool GhostHides(Transform target) =>
+        PlayerGhost && target != null && target.GetComponent<PlayerController>() != null;
+
     public static bool SnakeThermal;         // надет Пит-орган → термозрение игрока (тепло сквозь стены)
     public static float ThermalRange;        // радиус термо игрока (из органа)
     public static bool DevThermal;           // dev-тоггл T: форс термо без органа (леса до настоящего UI)
@@ -24,6 +32,7 @@ public static class Perception
     // прямая видимость от точки до цели: стена между = нет. Вблизи считаем, что видно.
     public static bool HasLineOfSight(Vector3 from, Transform target)
     {
+        if (GhostHides(target)) return false; // dev-призрак невидим для зрения
         Vector3 to = target.position + Vector3.up * 0.6f;
         Vector3 eye = from + Vector3.up * 1.0f;
         Vector3 delta = to - eye;
@@ -41,6 +50,7 @@ public static class Perception
     public static bool SeesThermal(Vector3 from, Transform target, float range)
     {
         if (target == null) return false;
+        if (GhostHides(target)) return false; // dev-призрак не излучает и тепла
         if ((target.position - from).sqrMagnitude > range * range) return false;
         return IsWarm(target);
     }

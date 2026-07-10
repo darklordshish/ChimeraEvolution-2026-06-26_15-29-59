@@ -12,6 +12,7 @@ public class ScentEmitter : MonoBehaviour
 
     void Update()
     {
+        if (Perception.PlayerGhost) return; // dev-призрак не пахнет
         if (Time.time < nextDrop) return;
         nextDrop = Time.time + dropInterval;
         ScentField.Instance.Drop(transform.position);

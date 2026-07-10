@@ -48,6 +48,7 @@ public class PlayerBite : MonoBehaviour, IAbility
 
     void DoBite()
     {
+        Perception.BreakGhost(); // dev-призрак: атака раскрывает
         hitThisBite.Clear();
         int hits = 0;
         var hit = new Hit(ownHealth, transform.position);
