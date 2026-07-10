@@ -21,6 +21,7 @@ GameObject:
   - component: {fileID: 2207140036348440661}
   - component: {fileID: 5469509999948184840}
   - component: {fileID: 1683690007009567405}
+  - component: {fileID: 4218597707306330013}
   m_Layer: 0
   m_Name: Werewolf
   m_TagString: Untagged
@@ -208,6 +209,8 @@ MonoBehaviour:
   bonusStartAffinity: 80
   bonusFullAffinity: 100
   maxBonusMult: 2
+  chimeraSlots: 0
+  chimeraSlotMult: 2
   installAllBeast: 1
   expression: 2
   applyVitals: 0
@@ -271,6 +274,21 @@ MonoBehaviour:
   wanderRadius: 18
   wanderSpeed: 0.5
   scentRange: 22
+--- !u!114 &4218597707306330013
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2584721357774835327}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6128daf6555ac464596b34b5a2ebe560, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SuperBossReward
+  typeId: "\u0412\u0435\u0440\u0432\u043E\u043B\u044C\u0444"
+  poolBonus: 4
+  grantsChimeraSlot: 1
 --- !u!1 &5103510595840929207
 GameObject:
   m_ObjectHideFlags: 0
