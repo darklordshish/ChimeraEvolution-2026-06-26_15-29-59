@@ -83,6 +83,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
 
         if (!TryGetComponent<ScentTrail>(out _)) gameObject.AddComponent<ScentTrail>(); // змея тоже пахнет — нюх волка её ловит (RPS)
         if (!TryGetComponent<HeatSignature>(out _)) gameObject.AddComponent<HeatSignature>(); // подпись гаснет сама: змея холоднокровна (а тёплая химера-змея засветится)
+        if (!TryGetComponent<StunTint>(out _)) gameObject.AddComponent<StunTint>(); // статус-сигнал «выключен» (стан/схвачен)
     }
 
     void Start()
@@ -211,6 +212,10 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     {
         // чёрный ход: игрок получил иммунитет к захвату (будущая способность) — кольца слетают
         if (playerCtl != null && playerCtl.GrabImmune) { EndConstrict(attackCooldown); return; }
+
+        // СТАН (вой волчьей Пасти) рвёт обхват — RPS: волчий вой = козырь против змеи.
+        // Но НЕ на 3-й стадии: там мёртвая хватка, выть поздно (только дожать змею).
+        if (stagger != null && stagger.IsStunned && stage < 3) { EndConstrict(attackCooldown); return; }
 
         // пинок: в 1-й стадии срывает (окно), в 2+ сжатие держит — гасим отлёт
         if (knockback != null && knockback.IsActive)

@@ -14,8 +14,9 @@ public class PlayerInputDriver : MonoBehaviour
     PlayerBite bite;
     PlayerKick kick;
     PlayerHowl howl;
+    PlayerConstrict constrict;
     CreatureBody body;
-    InputAction attackAction, biteAction, kickAction, howlAction;
+    InputAction attackAction, biteAction, kickAction, howlAction, constrictAction;
     readonly List<(InputAction action, int slot)> slotActions = new();
 
     void Awake()
@@ -24,6 +25,7 @@ public class PlayerInputDriver : MonoBehaviour
         bite = GetComponent<PlayerBite>();
         kick = GetComponent<PlayerKick>();
         howl = GetComponent<PlayerHowl>();
+        // constrict берём в Start: его может до-создать CreatureBody.Awake (порядок Awake не гарантирован)
 
         // ЛКМ / X на геймпаде / J
         attackAction = new InputAction("Attack", InputActionType.Button);
@@ -45,6 +47,11 @@ public class PlayerInputDriver : MonoBehaviour
         howlAction = new InputAction("Howl", InputActionType.Button);
         howlAction.AddBinding("<Keyboard>/leftAlt");
         howlAction.AddBinding("<Gamepad>/rightShoulder");
+
+        // F / левый триггер (обхват — фича Удушающего хвоста; повторное F = отпустить)
+        constrictAction = new InputAction("Constrict", InputActionType.Button);
+        constrictAction.AddBinding("<Keyboard>/f");
+        constrictAction.AddBinding("<Gamepad>/leftTrigger");
     }
 
     int knownSlots; // пересобрать хоткеи, когда слотов стало больше (выдан химерный слот)
@@ -53,6 +60,7 @@ public class PlayerInputDriver : MonoBehaviour
     void Start()
     {
         body = GetComponent<CreatureBody>();
+        constrict = GetComponent<PlayerConstrict>(); // после всех Awake — увидит и до-созданный телом
         BuildSlotHotkeys();
     }
 
@@ -75,13 +83,13 @@ public class PlayerInputDriver : MonoBehaviour
 
     void OnEnable()
     {
-        attackAction.Enable(); biteAction.Enable(); kickAction.Enable(); howlAction.Enable();
+        attackAction.Enable(); biteAction.Enable(); kickAction.Enable(); howlAction.Enable(); constrictAction.Enable();
         foreach (var (a, _) in slotActions) a.Enable();
     }
 
     void OnDisable()
     {
-        attackAction.Disable(); biteAction.Disable(); kickAction.Disable(); howlAction.Disable();
+        attackAction.Disable(); biteAction.Disable(); kickAction.Disable(); howlAction.Disable(); constrictAction.Disable();
         foreach (var (a, _) in slotActions) a.Disable();
     }
 
@@ -99,5 +107,6 @@ public class PlayerInputDriver : MonoBehaviour
         if (bite != null && biteAction.WasPressedThisFrame()) bite.TryUse();
         if (kick != null && kickAction.WasPressedThisFrame()) kick.TryUse();
         if (howl != null && howlAction.WasPressedThisFrame()) howl.TryUse();
+        if (constrict != null && constrictAction.WasPressedThisFrame()) constrict.TryUse();
     }
 }

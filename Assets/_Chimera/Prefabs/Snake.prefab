@@ -305,6 +305,8 @@ MonoBehaviour:
   bonusStartAffinity: 80
   bonusFullAffinity: 100
   maxBonusMult: 2
+  chimeraSlots: 0
+  chimeraSlotMult: 2
   installAllBeast: 0
   expression: 0.5
   applyVitals: 1

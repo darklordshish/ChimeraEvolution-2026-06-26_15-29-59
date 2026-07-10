@@ -60,6 +60,7 @@ public class CreatureBody : MonoBehaviour
     PlayerBite bite;
     PlayerKick kick;
     PlayerHowl howl;
+    PlayerConstrict constrictAb;
     SpawnVariance variance; // разброс особи: HP учитываем при раздаче витальности (иначе гонка Start'ов)
     ColdBlooded cold;       // холоднокровность (Сердце змеи) — компонент-маркер, вешаем/снимаем по сборке
     Camouflage camoComp;    // камуфляж-в-неподвижности (Чешуя змеи) — вешаем/снимаем по сборке
@@ -102,6 +103,7 @@ public class CreatureBody : MonoBehaviour
     {
         public string slot, hotkey, organName, nextName; // nextName — куда приведёт следующий клик (цикл по донорам)
         public int cost, nextCost;
+        public int unaffordable; // сколько вариантов скрыто по цене (цикл их пропускает МОЛЧА — UI должен сказать)
         public bool installed;  // надет звериный (не человеческий) орган
         public bool hasBeast;   // есть ли альтернативы (иначе слот фиксирован)
         public bool canToggle;  // есть ли достижимый следующий шаг цикла (иначе всё не по карману)
@@ -113,8 +115,12 @@ public class CreatureBody : MonoBehaviour
     {
         var sl = slots[i];
         int next = NextStep(sl);
+        int unaffordable = 0;
+        for (int v = 0; v < sl.variants.Count; v++)
+            if (v != sl.current && !CanInstall(sl, v)) unaffordable++;
         return new SlotView
         {
+            unaffordable = unaffordable,
             slot = sl.name,
             hotkey = sl.hotkey,
             organName = sl.Installed ? sl.Beast.organName : (sl.human != null ? sl.human.organName : "—"), // пустой химерный слот
@@ -158,7 +164,8 @@ public class CreatureBody : MonoBehaviour
             foreach (var d in donors)
             {
                 if (d == null || d.organs == null) continue;
-                foreach (var o in d.organs) sl.variants.Add(new Variant { organ = o, species = d.speciesName });
+                foreach (var o in d.organs)
+                    if (!o.chassisOnly) sl.variants.Add(new Variant { organ = o, species = d.speciesName }); // локомоция шасси не аугумент
             }
         return sl;
     }
@@ -215,6 +222,10 @@ public class CreatureBody : MonoBehaviour
         TryGetComponent(out bite);
         TryGetComponent(out kick);
         TryGetComponent(out howl);
+        TryGetComponent(out constrictAb);
+        // обхват — новая способность: достраиваем скелет сами (руками не повесить = F молча мёртв).
+        // Крутилки видны на добавленном компоненте в рантайме; для перманентного тюнинга добавь в редакторе.
+        if (move != null && constrictAb == null) constrictAb = gameObject.AddComponent<PlayerConstrict>();
         TryGetComponent(out variance);
         TryGetComponent(out cold);
         TryGetComponent(out camoComp);
@@ -257,7 +268,7 @@ public class CreatureBody : MonoBehaviour
                 {
                     if (d == null || d.organs == null) continue;
                     foreach (var o in d.organs)
-                        if (o.slot == h.slot) sl.variants.Add(new Variant { organ = o, species = d.speciesName }); // ВСЕ доноры (мультидонор)
+                        if (o.slot == h.slot && !o.chassisOnly) sl.variants.Add(new Variant { organ = o, species = d.speciesName }); // все доноры; ходовые части шасси не крадутся
                 }
             list.Add(sl);
         }
@@ -311,7 +322,7 @@ public class CreatureBody : MonoBehaviour
     {
         public float dmg, maxHp, life, rng, atkCd, mv, dash, dashCd, reduce, regen, regenOOC, thermal;
         public int venom;
-        public bool bite, scent, kick, howl, cold, camo, thermalOn;
+        public bool bite, scent, kick, howl, cold, camo, thermalOn, constrict;
 
         // СУПРЕМУМ дублей одного типа слота: скаляры — max (кулдауны — min: меньше = лучше), флаги — OR.
         // Дубль оси силу НЕ растит (второе сердце ≠ ×2 регена) — окупается только НОВЫМ направлением.
@@ -325,7 +336,7 @@ public class CreatureBody : MonoBehaviour
             venom = Mathf.Max(a.venom, b.venom),
             bite = a.bite || b.bite, scent = a.scent || b.scent, kick = a.kick || b.kick,
             howl = a.howl || b.howl, cold = a.cold || b.cold, camo = a.camo || b.camo,
-            thermalOn = a.thermalOn || b.thermalOn,
+            thermalOn = a.thermalOn || b.thermalOn, constrict = a.constrict || b.constrict,
         };
     }
 
@@ -366,6 +377,7 @@ public class CreatureBody : MonoBehaviour
                     thermal = b.thermalRange,     // фикс-фича органа (как range) — не блендим
                     bite = b.enablesBite, scent = b.enablesScent, kick = b.enablesKick,
                     howl = b.enablesHowl, cold = b.coldBlooded, camo = b.camo, thermalOn = b.enablesThermal,
+                    constrict = b.enablesConstrict,
                 };
                 key = b.slot; // дубль типа (второе Сердце) идёт в ту же группу — супремум
                 beast++;
@@ -386,6 +398,7 @@ public class CreatureBody : MonoBehaviour
                     regenOOC = h.regenOOC * e, thermal = h.thermalRange,
                     bite = h.enablesBite, scent = h.enablesScent, kick = h.enablesKick,
                     howl = h.enablesHowl, cold = h.coldBlooded, camo = h.camo, thermalOn = h.enablesThermal,
+                    constrict = h.enablesConstrict,
                 };
                 key = h.slot;
             }
@@ -398,7 +411,8 @@ public class CreatureBody : MonoBehaviour
         float dmgF = 0f, dmgBiteF = 0f, maxHpF = 0f, lifeF = 0f;
         float rng = 0f, atkCd = 0f, mv = 0f, dash = 0f, dashCd = 0f, reduce = 0f, regen = 0f, regenOOC = 0f, thermal = 0f;
         int venom = 0;
-        bool biteOn = false, scentOn = false, kickOn = false, howlOn = false, coldOn = false, camoOn = false, thermalOn = false;
+        bool biteOn = false, scentOn = false, kickOn = false, howlOn = false, coldOn = false, camoOn = false,
+             thermalOn = false, constrictOn = false;
         foreach (var kv in groups)
         {
             var c = kv.Value;
@@ -407,7 +421,7 @@ public class CreatureBody : MonoBehaviour
             rng += c.rng; atkCd += c.atkCd; mv += c.mv; dash += c.dash; dashCd += c.dashCd;
             reduce += c.reduce; regen += c.regen; regenOOC += c.regenOOC; thermal += c.thermal;
             biteOn |= c.bite; scentOn |= c.scent; kickOn |= c.kick; howlOn |= c.howl;
-            coldOn |= c.cold; camoOn |= c.camo; thermalOn |= c.thermalOn;
+            coldOn |= c.cold; camoOn |= c.camo; thermalOn |= c.thermalOn; constrictOn |= c.constrict;
         }
         int dmg = Mathf.RoundToInt(dmgF), dmgBite = Mathf.RoundToInt(dmgBiteF);
         int maxHp = Mathf.RoundToInt(maxHpF), life = Mathf.RoundToInt(lifeF);
@@ -420,6 +434,7 @@ public class CreatureBody : MonoBehaviour
         }
         if (kick != null) kick.KickEnabled = kickOn; // пинок — фича человеческих ног: с волчьими пропадает
         if (howl != null) howl.HowlEnabled = howlOn; // вой-стан — фича волчьей Пасти
+        if (constrictAb != null) constrictAb.ConstrictEnabled = constrictOn; // обхват — фича Удушающего хвоста (химерный слот)
         SetColdBlooded(coldOn); // холоднокровность (Сердце змеи): невидимость для термозрения врагов
         SetCamouflage(camoOn);  // камуфляж (Чешуя змеи): невидимость в неподвижности
         if (move != null) // чувства игрока меняет ТОЛЬКО тело игрока (NPC-тело не должно включать их игроку)

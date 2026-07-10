@@ -31,5 +31,6 @@ public class Organ
     public int venomStacks;        // яд на укусе (змеиные клыки): стаков за попадание
     public float range, atkCooldown, moveSpeed, dashSpeed, dashCooldown, damageReduction, regen, regenOOC;
     public float thermalRange;     // радиус термозрения (Пит-орган); фикс-фича, как range — не блендится
-    public bool enablesBite, enablesScent, enablesKick, enablesHowl, coldBlooded, camo, enablesThermal;
+    public bool enablesBite, enablesScent, enablesKick, enablesHowl, coldBlooded, camo, enablesThermal, enablesConstrict;
+    public bool chassisOnly;       // ходовая часть/локомоция шасси: аугументом НЕ крадётся (закон: локомоция = свойство шасси)
 }

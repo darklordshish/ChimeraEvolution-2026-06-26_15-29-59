@@ -89,6 +89,7 @@ public static class WerewolfPrefab
 
         go.AddComponent<WerewolfPsyche>();
         go.AddComponent<SuperBossReward>(); // суперхимера: первое убийство типа — +пул + химерный слот (дефолты компонента)
+        go.AddComponent<Massive>();         // массивная туша: обхват игрока держит босса на стадию слабее
         return go;
     }
 

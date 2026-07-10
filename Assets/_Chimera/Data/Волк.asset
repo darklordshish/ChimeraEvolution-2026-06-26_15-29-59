@@ -40,6 +40,7 @@ MonoBehaviour:
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
+    enablesConstrict: 0
   - organName: "\u0412\u043E\u043B\u0447\u044C\u0438 \u043D\u043E\u0433\u0438"
     slot: "\u041D\u043E\u0433\u0438"
     hotkey: 2
@@ -64,6 +65,7 @@ MonoBehaviour:
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
+    enablesConstrict: 0
   - organName: "\u0412\u043E\u043B\u0447\u044C\u0435 \u0441\u0435\u0440\u0434\u0446\u0435"
     slot: "\u0421\u0435\u0440\u0434\u0446\u0435"
     hotkey: 3
@@ -88,6 +90,7 @@ MonoBehaviour:
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
+    enablesConstrict: 0
   - organName: "\u041D\u044E\u0445"
     slot: "\u0427\u0443\u0442\u044C\u0451"
     hotkey: 4
@@ -112,6 +115,7 @@ MonoBehaviour:
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
+    enablesConstrict: 0
   - organName: "\u041F\u0430\u0441\u0442\u044C"
     slot: "\u041F\u0430\u0441\u0442\u044C"
     hotkey: 5
@@ -136,6 +140,7 @@ MonoBehaviour:
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
+    enablesConstrict: 0
   - organName: "\u0428\u043A\u0443\u0440\u0430"
     slot: "\u0428\u043A\u0443\u0440\u0430"
     hotkey: 6
@@ -160,3 +165,4 @@ MonoBehaviour:
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
+    enablesConstrict: 0

@@ -37,12 +37,15 @@ public class PlayerController : MonoBehaviour
     Vector3 dashDir;
     IGrabber grabber;        // волк/змея, держащий игрока в захвате
     float grabSlow = 1f;     // множитель скорости И рывка, пока в захвате (1 = свободно; 0 = корень на 3-й стадии обхвата)
+    PlayerConstrict constrict; // СВОЙ обхват (хвост): пока держишь жертву — сам замедлен (SelfSlow)
     public bool GrabImmune { get; set; } // чёрный ход: будущая способность даёт иммунитет к захвату (обхват змеи и т.п.)
+    public bool IsGrabbed => grabber != null; // тебя держат (гейт для своего обхвата и т.п.)
 
     void Awake()
     {
         controller = GetComponent<CharacterController>();
         health = GetComponent<Health>();
+        TryGetComponent(out constrict);
 
         moveAction = new InputAction("Move", InputActionType.Value);
         moveAction.AddCompositeBinding("2DVector")
@@ -71,6 +74,7 @@ public class PlayerController : MonoBehaviour
         cam = Camera.main;
         groundY = transform.position.y;
         SetFirstPerson(false);
+        if (constrict == null) TryGetComponent(out constrict); // мог до-создаться в CreatureBody.Awake
 
         // запах игрока: эмиттер следа (его тропят враги) + визуал своего следа (тёплый, в Чутье по тогглу)
         if (!TryGetComponent<ScentEmitter>(out _)) gameObject.AddComponent<ScentEmitter>();
@@ -130,8 +134,10 @@ public class PlayerController : MonoBehaviour
         }
 
         // захват режет И перемещение, И рывок (чем туже, тем короче рывок; на 3-й стадии — корень). Иммун снимает всё.
+        // СВОЙ обхват (хвост) замедляет только ход — рывок остаётся полным (и сам рвёт хватку дистанцией).
         float grip = GrabImmune ? 1f : grabSlow;
-        Vector3 horizontal = (dashTimer > 0f ? dashDir * dashSpeed : move * moveSpeed) * grip;
+        float hold = constrict != null ? constrict.SelfSlow : 1f;
+        Vector3 horizontal = dashTimer > 0f ? dashDir * dashSpeed * grip : move * moveSpeed * grip * hold;
         if (dashTimer > 0f) dashTimer -= Time.deltaTime;
         if (health != null) health.Invulnerable = dashTimer > 0f;
 

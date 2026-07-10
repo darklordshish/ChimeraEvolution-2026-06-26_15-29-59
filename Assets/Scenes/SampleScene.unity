@@ -614,6 +614,7 @@ GameObject:
   - component: {fileID: 1083135099}
   - component: {fileID: 1083135100}
   - component: {fileID: 1083135101}
+  - component: {fileID: 1083135102}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -886,6 +887,30 @@ MonoBehaviour:
   stunDuration: 1
   cooldown: 8
   shake: 0.3
+--- !u!114 &1083135102
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1083135088}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 671b93079e84bfd42b0347189e3951fe, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerConstrict
+  grabRange: 2.2
+  holdRange: 3.2
+  cooldown: 2.5
+  tightenRate: 1
+  stage2At: 1.5
+  escapeMin: 1
+  escapeMax: 2.5
+  selfSlow1: 0.55
+  selfSlow2: 0.3
+  breakDamage: 5
+  maxStage: 2
+  escapeKnock: 6
 --- !u!1 &1185508198
 GameObject:
   m_ObjectHideFlags: 0

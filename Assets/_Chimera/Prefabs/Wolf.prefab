@@ -338,6 +338,8 @@ MonoBehaviour:
   bonusStartAffinity: 80
   bonusFullAffinity: 100
   maxBonusMult: 2
+  chimeraSlots: 0
+  chimeraSlotMult: 2
   installAllBeast: 0
   expression: 0.45
   applyVitals: 1
@@ -401,6 +403,7 @@ MonoBehaviour:
   attackCooldown: 1.4
   separationRadius: 1.6
   separationStrength: 4
+  attackSeparation: 0.25
 --- !u!1 &8906260546707489737
 GameObject:
   m_ObjectHideFlags: 0
