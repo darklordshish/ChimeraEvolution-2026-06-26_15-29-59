@@ -38,7 +38,10 @@ public class PlayerController : MonoBehaviour
     IGrabber grabber;        // волк/змея, держащий игрока в захвате
     float grabSlow = 1f;     // множитель скорости И рывка, пока в захвате (1 = свободно; 0 = корень на 3-й стадии обхвата)
     PlayerConstrict constrict; // СВОЙ обхват (хвост): пока держишь жертву — сам замедлен (SelfSlow)
-    public bool GrabImmune { get; set; } // чёрный ход: будущая способность даёт иммунитет к захвату (обхват змеи и т.п.)
+    bool grabImmune; // чёрный ход: будущая способность даёт иммунитет к захвату
+    // dev-призрак даёт иммунитет к захватам автоматически (и теряет его вместе с призраком при атаке):
+    // волк/змея уже проверяют GrabImmune в своих захватах — распускаются сами
+    public bool GrabImmune { get => grabImmune || Perception.PlayerGhost; set => grabImmune = value; }
     public bool IsGrabbed => grabber != null; // тебя держат (гейт для своего обхвата и т.п.)
 
     void Awake()

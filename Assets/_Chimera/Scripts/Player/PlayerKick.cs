@@ -22,9 +22,14 @@ public class PlayerKick : MonoBehaviour, IAbility
 
     float nextTime;
     CameraFollow cam;
+    Health ownHealth;
     readonly HashSet<Health> hitThisKick = new();
 
-    void Start() => cam = FindAnyObjectByType<CameraFollow>();
+    void Start()
+    {
+        cam = FindAnyObjectByType<CameraFollow>();
+        ownHealth = GetComponent<Health>();
+    }
 
     // водитель зовёт по вводу; активен только с человеческими ногами; кулдаун проверяем сами
     public bool TryUse()
@@ -37,10 +42,9 @@ public class PlayerKick : MonoBehaviour, IAbility
 
     void DoKick()
     {
-        Perception.BreakGhost(); // dev-призрак: атака раскрывает
         hitThisKick.Clear();
         bool any = false;
-        var hit = new Hit(null, transform.position); // пинок сам не лечится
+        var hit = new Hit(ownHealth, transform.position); // источник нужен раскрытию призрака (вампиризма у пинка всё равно нет)
 
         Collider[] cols = Physics.OverlapSphere(KickCenter(), radius, ~0, QueryTriggerInteraction.Ignore);
         foreach (var col in cols)

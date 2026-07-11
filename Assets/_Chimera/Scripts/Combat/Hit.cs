@@ -43,6 +43,10 @@ public readonly struct Hit
     public void Apply(Health target, HitEffect e)
     {
         if (target == null) return;
+        // dev-призрак: раскрывает НАНЕСЁННОЕ воздействие (не замах в воздух) — так можно выцепить
+        // единичную цель; централизовано здесь, чтобы будущие способности игрока подхватили правило сами
+        if (Perception.PlayerGhost && Source != null && Source.GetComponent<PlayerController>() != null)
+            Perception.BreakGhost();
         switch (e.Kind)
         {
             case EffectKind.Damage:

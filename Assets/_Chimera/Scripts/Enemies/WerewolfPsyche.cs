@@ -199,7 +199,8 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
         var spawner = FindAnyObjectByType<WolfSpawner>();
         if (spawner != null) spawner.SpawnAt(transform.position, summonCount); // призыв стаи вокруг себя
         PackCoordinator.Instance.Rally(rageDuration); // ярость: перебить бегство, вся стая в атаку без страха
-        if (target != null) PackCoordinator.Instance.AlertAll(target.position); // вой альфы на всю карту — вся стая сходится на игрока
+        if (target != null && !Perception.PlayerGhost) // dev-призрака вой не выцеливает (иначе стая вечно кластером на наблюдателе)
+            PackCoordinator.Instance.AlertAll(target.position); // вой альфы на всю карту — вся стая сходится на игрока
         nextHowl = Time.time + howlCooldown;
     }
 

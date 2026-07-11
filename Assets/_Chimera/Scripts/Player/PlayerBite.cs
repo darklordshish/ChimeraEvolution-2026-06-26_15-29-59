@@ -48,8 +48,7 @@ public class PlayerBite : MonoBehaviour, IAbility
 
     void DoBite()
     {
-        Perception.BreakGhost(); // dev-призрак: атака раскрывает
-        hitThisBite.Clear();
+        hitThisBite.Clear(); // призрака раскрывает попадание (Hit.Apply), не замах
         int hits = 0;
         var hit = new Hit(ownHealth, transform.position);
         Collider[] cols = Physics.OverlapSphere(BiteCenter(), radius, ~0, QueryTriggerInteraction.Ignore);

@@ -42,8 +42,7 @@ public class PlayerAttack : MonoBehaviour, IAbility
 
     void DoAttack()
     {
-        Perception.BreakGhost(); // dev-призрак: атака раскрывает
-        hitThisSwing.Clear();
+        hitThisSwing.Clear(); // призрака раскрывает ПОПАДАНИЕ (Hit.Apply), не замах — холостой взмах безопасен
         var hit = new Hit(ownHealth, transform.position);
         Collider[] hits = Physics.OverlapSphere(AttackCenter(), radius, hitMask, QueryTriggerInteraction.Ignore);
         foreach (var col in hits)
