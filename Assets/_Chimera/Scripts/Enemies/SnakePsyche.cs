@@ -65,7 +65,8 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     WindupAbility activeAbility;   // укус/рывок в процессе — психика его тикает
     Camouflage camo;               // камуфляж (Чешуя): раскрываем на время боя (лениво — CreatureBody вешает его после нашего Awake)
 
-    float nextAttackTime, verticalVel, windupEnd, nextRattle;
+    float nextAttackTime, verticalVel, windupEnd, nextRattle, rattleBlinkUntil;
+    Renderer rattleRenderer; // жёлтая погремушка: гремок мигает ИМЕННО ей (тело остаётся невидимым)
     bool windingUp, constricting;                // windingUp — только замах ОБХВАТА
     float grip, gripFloor, chokeNext;             // grip — «сжатие»; gripFloor — ратчет: ниже достигнутой стадии не откатывается
     int stage, maxStage, lastHp;                  // stage 1..3; maxStage — чтобы яд впрыснуть раз на новую стадию
@@ -92,6 +93,9 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     {
         playerCtl = FindAnyObjectByType<PlayerController>();
         if (playerCtl != null) { target = playerCtl.transform; targetHealth = playerCtl.GetComponent<Health>(); }
+
+        var r = transform.Find("Rattle");
+        if (r != null) rattleRenderer = r.GetComponentInChildren<Renderer>();
     }
 
     void OnDisable()
@@ -115,13 +119,21 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         if (camo != null) camo.Reveal(revealMemory);
     }
 
-    // ГРЕМОК: затаившаяся змея периодически выдаёт себя кратким проблеском (звук позже) — единственная зацепка на невидимку/приманка
+    // ГРЕМОК: затаившаяся змея периодически выдаёт себя миганием ПОГРЕМУШКИ (тело остаётся невидимым;
+    // звук позже) — единственная зацепка на невидимку и будущая приманка (3d)
     void TryRattle()
     {
         if (Time.time < nextRattle) return;
         nextRattle = Time.time + rattleInterval;
+        rattleBlinkUntil = Time.time + rattleCue;
+    }
+
+    // видимость погремушки: вместе с телом (камуфляж её не трогает) ЛИБО мигание гремка
+    void LateUpdate()
+    {
+        if (rattleRenderer == null) return;
         if (camo == null) TryGetComponent(out camo);
-        if (camo != null) camo.Reveal(rattleCue);
+        rattleRenderer.enabled = camo == null || !camo.Hidden || Time.time < rattleBlinkUntil;
     }
 
     void Update()

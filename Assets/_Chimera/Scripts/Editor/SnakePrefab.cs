@@ -10,6 +10,7 @@ public static class SnakePrefab
 {
     public const string Path = "Assets/_Chimera/Prefabs/Snake.prefab";
     const string MatPath = "Assets/_Chimera/Materials/SnakeBody.mat";
+    const string RattleMatPath = "Assets/_Chimera/Materials/SnakeRattle.mat";
 
     [MenuItem("Chimera/Создать префаб Змеи")]
     public static void Create()
@@ -19,15 +20,23 @@ public static class SnakePrefab
 
         var go = BuildSnake();
 
-        var body = go.transform.Find("Body").GetComponent<Renderer>();
+        var anyRenderer = go.GetComponentInChildren<Renderer>();
         var mat = AssetDatabase.LoadAssetAtPath<Material>(MatPath);
         if (mat == null)
         {
-            mat = new Material(body.sharedMaterial);
+            mat = new Material(anyRenderer.sharedMaterial);
             mat.SetColor("_BaseColor", new Color(0.25f, 0.4f, 0.22f)); // тёмно-зелёная
             AssetDatabase.CreateAsset(mat, MatPath);
         }
-        body.sharedMaterial = mat;
+        var rattleMat = AssetDatabase.LoadAssetAtPath<Material>(RattleMatPath);
+        if (rattleMat == null)
+        {
+            rattleMat = new Material(anyRenderer.sharedMaterial);
+            rattleMat.SetColor("_BaseColor", new Color(0.95f, 0.85f, 0.2f)); // жёлтая погремушка
+            AssetDatabase.CreateAsset(rattleMat, RattleMatPath);
+        }
+        foreach (var r in go.GetComponentsInChildren<Renderer>())
+            r.sharedMaterial = r.gameObject.name == "RattleMesh" ? rattleMat : mat;
 
         var prefab = PrefabUtility.SaveAsPrefabAsset(go, Path);
         Object.DestroyImmediate(go);
@@ -43,13 +52,47 @@ public static class SnakePrefab
         var cc = go.AddComponent<CharacterController>();
         cc.height = 0.8f; cc.radius = 0.5f; cc.center = new Vector3(0f, 0.4f, 0f); // низкий силуэт
 
-        var body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-        body.name = "Body";
-        body.GetComponent<Collider>().enabled = false; // коллайдер — у CharacterController
-        body.transform.SetParent(go.transform, false);
-        body.transform.localPosition = new Vector3(0f, 0.4f, 0f);
-        body.transform.localRotation = Quaternion.Euler(90f, 0f, 0f); // лежит горизонтально — «ползёт»
-        body.transform.localScale = new Vector3(0.6f, 1.6f, 0.6f);    // длинная тонкая
+        // ГОЛОВА — капсула покрупнее, вдоль forward. Коллайдеры головы/сегментов ВКЛЮЧЕНЫ:
+        // тело плотное по всей длине (свой CC игнорирует их — SnakeBodyChain.Awake)
+        var head = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+        head.name = "Head";
+        head.transform.SetParent(go.transform, false);
+        head.transform.localPosition = new Vector3(0f, 0.42f, 0.35f);
+        head.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+        head.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
+
+        // ТЕЛО — 5 шариков-сегментов, тянутся за головой (SnakeBodyChain раскладывает по пути)
+        float[] sizes = { 0.55f, 0.52f, 0.48f, 0.45f, 0.42f };
+        var segments = new Transform[sizes.Length + 1];
+        for (int i = 0; i < sizes.Length; i++)
+        {
+            var s = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            s.name = "Seg" + i;
+            s.transform.SetParent(go.transform, false);
+            s.transform.localPosition = new Vector3(0f, 0.3f, -0.35f - 0.45f * (i + 1)); // стартовая раскладка позади
+            s.transform.localScale = Vector3.one * sizes[i];
+            segments[i] = s.transform;
+        }
+
+        // ПОГРЕМУШКА — маленькая ЖЁЛТАЯ капсула на кончике хвоста: гремок мигает именно ей
+        var rattle = new GameObject("Rattle");
+        rattle.transform.SetParent(go.transform, false);
+        rattle.transform.localPosition = new Vector3(0f, 0.3f, -0.35f - 0.45f * (sizes.Length + 1));
+        var rattleMesh = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+        rattleMesh.name = "RattleMesh";
+        Object.DestroyImmediate(rattleMesh.GetComponent<Collider>()); // мелочь, коллайдер не нужен
+        rattleMesh.transform.SetParent(rattle.transform, false);
+        rattleMesh.transform.localRotation = Quaternion.Euler(90f, 0f, 0f); // вдоль пути (Rattle ориентирует цепочка)
+        rattleMesh.transform.localScale = new Vector3(0.16f, 0.22f, 0.16f);
+        segments[sizes.Length] = rattle.transform;
+
+        // цепочка тела: раскладывает сегменты по пути головы + игнорирует их коллайдеры для своего CC
+        var chain = go.AddComponent<SnakeBodyChain>();
+        var chainSo = new SerializedObject(chain);
+        var arr = chainSo.FindProperty("segments");
+        arr.arraySize = segments.Length;
+        for (int i = 0; i < segments.Length; i++) arr.GetArrayElementAtIndex(i).objectReferenceValue = segments[i];
+        chainSo.ApplyModifiedPropertiesWithoutUndo();
 
         go.AddComponent<Health>();
         go.AddComponent<Knockback>();
