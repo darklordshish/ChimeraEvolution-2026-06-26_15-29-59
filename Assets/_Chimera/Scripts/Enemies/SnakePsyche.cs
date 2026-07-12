@@ -1,18 +1,14 @@
 using UnityEngine;
 
 /// <summary>
-/// Психика змеи — СОЛО-засадный хищник. Термозрение видит тёплого игрока СКВОЗЬ укрытия (в радиусе);
-/// не чует — ждёт НЕПОДВИЖНО (в 1d станет невидимой). Подпустил → гремок-замах → рывок из засады
-/// (`LeapAbility`) → в упор либо ядовитый укус (`BiteAbility.venomStacks`), либо ОБХВАТ.
-///
-/// ОБХВАТ (эволюция волчьего `IGrabber`) — «сжатие» с РАТЧЕТОМ: время тянет к удушению, урон по змее
-/// откатывает, но НЕ ниже достигнутой стадии. Змея на обхвате СОЛО-закоммичена (стоит, душит — дуэль 1-на-1):
-///  • стадия 1 — как волк: замедляет, рвётся РЫВКОМ/ПИНКОМ (единственное окно на побег);
-///  • стадия 2 — сжатие защёлкнулось (назад в ст.1 хода нет): рывок/пинок бесполезны, УРОН по змее лишь
-///    ДЕРЖИТ сжатие, не давая дойти до ст.3; выход один — забить змею;
-///  • стадия 3 — жёсткое удушение (DoT): чистая гонка «забьёшь vs додушит».
-/// На каждой новой стадии сжатие впрыскивает ЯД (яд + обхват давят разом).
-/// Нет стаи/воя/ярости — проще волка. Числа тела (урон/скорость) — из органов через IBodyStatConsumer.
+/// Психика змеи — СОЛО-засадный охотник ХОЛОДНОГО РАСЧЁТА. Цель — ближайшая ТЁПЛАЯ ОДИНОЧКА
+/// в термо-радиусе: игрок ИЛИ волк — для змеи всё добыча, поведение унифицировано (первое
+/// NPC-против-NPC в игре). Рядом с жертвой другие тёплые (стая, компания) — тихо сидит в засаде;
+/// Massive-туши не трогает. Рывок из засады (`LeapAbility`) → ядовитый укус (`BiteAbility`) → ОБХВАТ:
+/// ИГРОКА — стадийная машина с ратчетом (ст.1 рвётся рывком/пинком → ст.2 защёлк, бить змею →
+/// ст.3 корень+удушение; вой-стан рвёт ст.1–2, ст.3 — мёртвая хватка); NPC-ЖЕРТВУ — унифицированный
+/// хват: стан + удушение до смерти (урон по змее спасает). Гремок мигает жёлтой погремушкой.
+/// Числа тела (урон/скорость) приходят из органов через IBodyStatConsumer.
 /// </summary>
 [RequireComponent(typeof(CharacterController))]
 [RequireComponent(typeof(Telegraph))]
@@ -22,17 +18,19 @@ using UnityEngine;
 [RequireComponent(typeof(SpawnVariance))]
 public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
 {
-    [Header("Засада / термочутьё")]
+    [Header("Засада / термочутьё / выбор жертвы")]
     [SerializeField] float moveSpeed = 5f;
     [SerializeField] float rotationSpeed = 320f;
     [SerializeField] float gravity = -20f;
     [SerializeField] float thermalRange = 14f;              // термозрение: видит тёплого сквозь укрытия
-    [SerializeField] float creepRange = 11f;               // ближе — подкрадывается; дальше в термо-радиусе — ждёт
+    [SerializeField] float creepRange = 11f;                // ближе — подкрадывается; дальше в термо-радиусе — ждёт
     [SerializeField, Range(0f, 1f)] float creepSpeed = 0.5f;
-    [SerializeField] float revealMemory = 2f;              // камуфляж: держится «раскрыта» столько после приёма (> кулдауна — не мигает в мили)
-    [SerializeField] float rattleInterval = 3f;            // гремок: как часто затаившаяся змея выдаёт себя (единственная зацепка на невидимку)
-    [SerializeField] float rattleCue = 0.4f;               // длительность проблеска-гремка (звук ляжет сверху позже)
-    [SerializeField, Range(0f, 1f)] float scentStrength = 0.35f; // запах слабый: не потеет, мало движется (нюх волка — зацепка, но бледная)
+    [SerializeField] float lonelyRadius = 6f;               // «одиночка» = нет ДРУГИХ тёплых в этом радиусе вокруг жертвы
+    [SerializeField] float retargetInterval = 0.5f;         // как часто пересматриваем выбор жертвы
+    [SerializeField] float revealMemory = 2f;               // камуфляж: «раскрыта» столько после приёма (> кулдауна — не мигает в мили)
+    [SerializeField] float rattleInterval = 3f;             // гремок: как часто затаившаяся змея выдаёт себя
+    [SerializeField] float rattleCue = 0.4f;                // длительность мигания погремушки (звук ляжет сверху позже)
+    [SerializeField, Range(0f, 1f)] float scentStrength = 0.35f; // запах слабый: не потеет, мало движется
 
     [Header("Кулдаун")]
     [SerializeField] float attackCooldown = 1.6f;
@@ -40,22 +38,23 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     [Header("Обхват (удушающий захват)")]
     [SerializeField, Range(0f, 1f)] float grabChance = 0.5f; // шанс обвить вместо простого укуса (в упор)
     [SerializeField] float grabWindup = 0.35f;               // замах перед обхватом (телеграф — увернись)
-    [SerializeField] float tightenRate = 1f;                 // сжатие/сек: тянет к удушению
+    [SerializeField] float tightenRate = 1f;                 // сжатие/сек: тянет к удушению (игрок)
     [SerializeField] float stage2At = 1.5f;                  // сжатие ≥ этого → стадия 2 (рывок/пинок не пускают)
     [SerializeField] float stage3At = 3.5f;                  // сжатие ≥ этого → стадия 3 (удушение-DoT)
-    [SerializeField] float loosenPerDamage = 0.12f;          // каждый 1 HP урона по змее откатывает сжатие
-    [SerializeField] float chokeDamage = 4f;                 // урон удушения (стадия 3) за тик
+    [SerializeField] float loosenPerDamage = 0.12f;          // 1 HP урона по змее откатывает сжатие (игрок)
+    [SerializeField] float chokeDamage = 4f;                 // удушение игрока (ст.3): урон за тик
     [SerializeField] float chokeInterval = 0.5f;
-    [SerializeField, Range(0f, 1f)] float grabSlow1 = 0.35f; // режет скорость И рывок игрока по стадиям (туже → короче рывок)
+    [SerializeField, Range(0f, 1f)] float grabSlow1 = 0.35f; // замедление игрока по стадиям (ход И рывок)
     [SerializeField, Range(0f, 1f)] float grabSlow2 = 0.15f;
-    [SerializeField, Range(0f, 1f)] float grabSlow3 = 0f;    // 3-я стадия — полный корень (ни рывка, ни хода; выход — иммун/убить)
-    [SerializeField] int ripSelfKnock = 5;                   // отлёт змеи, когда сорвались рывком (стадия 1)
+    [SerializeField, Range(0f, 1f)] float grabSlow3 = 0f;    // ст.3 — полный корень
+    [SerializeField] int ripSelfKnock = 5;                   // отлёт змеи, когда игрок сорвался рывком (ст.1)
+    [SerializeField] int npcChokeDamage = 6;                 // удушение NPC-жертвы: урон за тик (хват без стадий)
+    [SerializeField] float npcChokeInterval = 0.6f;
 
     CharacterController controller;
     Stagger stagger;
     Knockback knockback;
-    Health ownHealth, targetHealth;
-    Transform target;
+    Health ownHealth;
     PlayerController playerCtl;
     Telegraph telegraph;
     NavLocomotion nav;
@@ -63,13 +62,22 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     BiteAbility bite;
     LeapAbility leap;
     WindupAbility activeAbility;   // укус/рывок в процессе — психика его тикает
-    Camouflage camo;               // камуфляж (Чешуя): раскрываем на время боя (лениво — CreatureBody вешает его после нашего Awake)
+    Camouflage camo;               // камуфляж (Чешуя): раскрываем на время боя (лениво — вешается после нашего Awake)
 
-    float nextAttackTime, verticalVel, windupEnd, nextRattle, rattleBlinkUntil;
-    Renderer rattleRenderer; // жёлтая погремушка: гремок мигает ИМЕННО ей (тело остаётся невидимым)
-    bool windingUp, constricting;                // windingUp — только замах ОБХВАТА
-    float grip, gripFloor, chokeNext;             // grip — «сжатие»; gripFloor — ратчет: ниже достигнутой стадии не откатывается
-    int stage, maxStage, lastHp;                  // stage 1..3; maxStage — чтобы яд впрыснуть раз на новую стадию
+    // текущая ЖЕРТВА охоты (игрок или NPC) — выбирается сканом «тёплая одиночка»
+    Transform target;
+    Health targetHealth;
+
+    // жертва ОБХВАТА фиксируется на входе (retarget её не трогает)
+    Health heldHealth;
+    Stagger heldStagger;
+    bool heldIsPlayer;
+
+    float nextAttackTime, verticalVel, windupEnd, nextRattle, rattleBlinkUntil, nextScan;
+    bool windingUp, constricting;                 // windingUp — только замах ОБХВАТА
+    float grip, gripFloor, chokeNext;             // игрок: «сжатие» + ратчет (ниже достигнутой стадии не откат)
+    int stage, maxStage, lastHp;                  // stage 1..3; maxStage — яд впрыскивается раз на новую стадию
+    Renderer rattleRenderer;                      // жёлтая погремушка: гремок мигает ИМЕННО ей
 
     void Awake()
     {
@@ -85,14 +93,13 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
 
         if (!TryGetComponent<ScentTrail>(out var scent)) scent = gameObject.AddComponent<ScentTrail>(); // змея тоже пахнет — нюх её ловит (RPS)…
         scent.SetStrength(scentStrength); // …но слабо: не потеет, мало движется — облака запаха почти не разносит
-        if (!TryGetComponent<HeatSignature>(out _)) gameObject.AddComponent<HeatSignature>(); // подпись гаснет сама: змея холоднокровна (а тёплая химера-змея засветится)
+        if (!TryGetComponent<HeatSignature>(out _)) gameObject.AddComponent<HeatSignature>(); // подпись гаснет сама: змея холоднокровна
         if (!TryGetComponent<StunTint>(out _)) gameObject.AddComponent<StunTint>(); // статус-сигнал «выключен» (стан/схвачен)
     }
 
     void Start()
     {
         playerCtl = FindAnyObjectByType<PlayerController>();
-        if (playerCtl != null) { target = playerCtl.transform; targetHealth = playerCtl.GetComponent<Health>(); }
 
         var r = transform.Find("Rattle");
         if (r != null) rattleRenderer = r.GetComponentInChildren<Renderer>();
@@ -100,7 +107,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
 
     void OnDisable()
     {
-        if (constricting && playerCtl != null) playerCtl.ReleaseGrab(this); // убили на обхвате — отпускаем игрока
+        if (constricting) ReleaseHeld(); // убили на обхвате — отпустить жертву
     }
 
     float Speed => moveSpeed * (variance != null ? variance.SpeedMult : 1f);
@@ -112,15 +119,14 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         if (bite != null) bite.SetDamage(damage);
     }
 
-    // камуфляж: раскрыть себя на время боя (лениво берём компонент — CreatureBody вешает его в свой Start, после нашего Awake)
+    // камуфляж: раскрыть себя на время боя (лениво берём компонент — CreatureBody вешает его после нашего Awake)
     void RevealSelf()
     {
         if (camo == null) TryGetComponent(out camo);
         if (camo != null) camo.Reveal(revealMemory);
     }
 
-    // ГРЕМОК: затаившаяся змея периодически выдаёт себя миганием ПОГРЕМУШКИ (тело остаётся невидимым;
-    // звук позже) — единственная зацепка на невидимку и будущая приманка (3d)
+    // ГРЕМОК: затаившаяся змея периодически мигает ПОГРЕМУШКОЙ (тело невидимо; звук позже) — зацепка/приманка
     void TryRattle()
     {
         if (Time.time < nextRattle) return;
@@ -138,8 +144,6 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
 
     void Update()
     {
-        if (target == null) { Settle(Vector3.zero); return; }
-
         // ОБХВАТ имеет приоритет: змея закоммичена в дуэль (стоит и душит), знает свои срывы сама
         if (constricting) { RevealSelf(); UpdateConstrict(); return; }
 
@@ -155,7 +159,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         // активный приём (укус/рывок) тикает сам
         if (activeAbility != null)
         {
-            RevealSelf(); // приём в процессе — змея видна (и ещё revealMemory после, чтобы не мигала на кулдауне)
+            RevealSelf(); // приём в процессе — змея видна (и ещё revealMemory после)
             if (stagger != null && stagger.IsStaggered) activeAbility.Abort(false); // полёт рывка сам решит
             var st = activeAbility.Tick();
             if (st == AbilityRun.Running) return;
@@ -168,9 +172,22 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
 
         if (windingUp) { RevealSelf(); UpdateGrabWindup(); return; }
 
-        // ЗАСАДА: термозрение — тёплый игрок сквозь укрытия в радиусе. Не чует — ждёт неподвижно.
-        if (!Perception.SeesThermal(transform.position, target, thermalRange)) { TryRattle(); Settle(Vector3.zero); return; }
-        if (targetHealth != null) targetHealth.MarkInCombat(); // змея на охоте → игрок в бою
+        // ХОЛОДНЫЙ РАСЧЁТ: пересматриваем жертву (тёплая одиночка в термо-радиусе; стая рядом — никого не трогаем)
+        if (Time.time >= nextScan)
+        {
+            nextScan = Time.time + retargetInterval;
+            ChooseTarget();
+        }
+
+        // жертвы нет ЛИБО пропала из термо (умерла/призрак/ушла) → засада: сидим тихо, гремим
+        if (target == null || !Perception.SeesThermal(transform.position, target, thermalRange))
+        {
+            TryRattle();
+            Settle(Vector3.zero);
+            return;
+        }
+
+        if (heldIsPlayerTarget()) targetHealth.MarkInCombat(); // охота на ИГРОКА → он в бою (чужая охота его реген не трогает)
 
         Vector3 to = target.position - transform.position; to.y = 0f;
         float dist = to.magnitude;
@@ -188,14 +205,49 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
             if (dist >= leap.MinRange && dist <= leap.MaxRange) { if (leap.TryUse()) activeAbility = leap; Settle(Vector3.zero); return; }
         }
 
-        // подпустил близко → подкрадывается; далеко в термо-радиусе → терпеливо ждёт (засада) + гремит-выдаёт себя
-        if (dist <= creepRange) Settle(nav.DirTo(target.position) * Speed * creepSpeed);
-        else { TryRattle(); Settle(Vector3.zero); }
+        // подпустила близко → подкрадывается; далеко в термо-радиусе → терпеливо ждёт (засада, не гонит по карте)
+        Settle(dist <= creepRange ? nav.DirTo(target.position) * Speed * creepSpeed : Vector3.zero);
     }
 
-    // замах обхвата: увернулся из радиуса — сорван; выдержал — обвивает
+    bool heldIsPlayerTarget() => targetHealth != null && playerCtl != null && targetHealth.transform == playerCtl.transform;
+
+    // выбор жертвы: ближайшая ТЁПЛАЯ ОДИНОЧКА (термо гейтит и холодных, и призрака); Massive не по зубам
+    void ChooseTarget()
+    {
+        Health best = null;
+        float bestD = float.MaxValue;
+        foreach (var col in Physics.OverlapSphere(transform.position, thermalRange, ~0, QueryTriggerInteraction.Ignore))
+        {
+            var hp = col.GetComponentInParent<Health>();
+            if (hp == null || hp.transform == transform || hp == best) continue;
+            if (!Perception.SeesThermal(transform.position, hp.transform, thermalRange)) continue;
+            if (hp.GetComponent<Massive>() != null) continue; // на массивную тушу холодный расчёт не пойдёт
+            if (!IsLonely(hp)) continue;
+            float d = (hp.transform.position - transform.position).sqrMagnitude;
+            if (d < bestD) { bestD = d; best = hp; }
+        }
+        target = best != null ? best.transform : null;
+        targetHealth = best;
+        bite.SetTarget(best); // доставки бьют по текущей жертве (activeAbility сейчас нет — скан идёт после его ветки)
+        leap.SetTarget(best);
+    }
+
+    // «одиночка» = рядом с жертвой нет ДРУГИХ тёплых (стая/компания отпугивает; сама змея холодная — не мешает)
+    bool IsLonely(Health candidate)
+    {
+        foreach (var col in Physics.OverlapSphere(candidate.transform.position, lonelyRadius, ~0, QueryTriggerInteraction.Ignore))
+        {
+            var other = col.GetComponentInParent<Health>();
+            if (other == null || other == candidate || other.transform == transform) continue;
+            if (Perception.IsWarm(other.transform)) return false;
+        }
+        return true;
+    }
+
+    // замах обхвата: жертва увернулась из радиуса — сорван; выдержала — обвивает
     void UpdateGrabWindup()
     {
+        if (target == null) { windingUp = false; telegraph.Clear(); Settle(Vector3.zero); return; }
         Vector3 to = target.position - transform.position; to.y = 0f;
         float d = to.magnitude;
         Face(d > 0.001f ? to / d : transform.forward);
@@ -214,32 +266,45 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
 
     void StartConstrict()
     {
+        if (targetHealth == null) return;
         constricting = true;
+        heldHealth = targetHealth;
+        heldHealth.TryGetComponent(out heldStagger);
+        heldIsPlayer = playerCtl != null && heldHealth.transform == playerCtl.transform;
+
         grip = 0f; gripFloor = 0f; stage = 1; maxStage = 1;
         lastHp = ownHealth != null ? ownHealth.Current : 0;
         chokeNext = 0f;
         telegraph.Set(true, TelegraphColors.Grab);
-        if (playerCtl != null) playerCtl.ApplyGrab(this, grabSlow1); // режем скорость игрока (усилится к стадии 3)
+        if (heldIsPlayer) playerCtl.ApplyGrab(this, grabSlow1); // игрок: режем ход и рывок (усилится к ст.3)
     }
 
     void UpdateConstrict()
     {
-        // чёрный ход: игрок получил иммунитет к захвату (будущая способность) — кольца слетают
-        if (playerCtl != null && playerCtl.GrabImmune) { EndConstrict(attackCooldown); return; }
+        if (heldHealth == null) { EndConstrict(attackCooldown); return; } // жертва умерла — хвост свободен
+        if (ownHealth == null) { EndConstrict(0.3f); return; }
 
-        // СТАН (вой волчьей Пасти) рвёт обхват — RPS: волчий вой = козырь против змеи.
-        // Но НЕ на 3-й стадии: там мёртвая хватка, выть поздно (только дожать змею).
+        // чёрный ход/призрак: иммунитет игрока распускает хват НА ИГРОКЕ (жертву-NPC призрак не спасает)
+        if (heldIsPlayer && playerCtl != null && playerCtl.GrabImmune) { EndConstrict(attackCooldown); return; }
+
+        // СТАН (вой волчьей Пасти) рвёт обхват — но не мёртвую хватку 3-й стадии
         if (stagger != null && stagger.IsStunned && stage < 3) { EndConstrict(attackCooldown); return; }
 
+        if (heldIsPlayer) UpdatePlayerConstrict();
+        else UpdateNpcConstrict();
+    }
+
+    // обхват ИГРОКА: стадийная машина с ратчетом (контр-игра расписана в спеке змеи)
+    void UpdatePlayerConstrict()
+    {
         // пинок: в 1-й стадии срывает (окно), в 2+ сжатие держит — гасим отлёт
         if (knockback != null && knockback.IsActive)
         {
             if (stage <= 1) { EndConstrict(attackCooldown); return; }
             knockback.Cancel();
         }
-        if (ownHealth == null) { EndConstrict(0.3f); return; }
 
-        if (targetHealth != null) targetHealth.MarkInCombat();
+        heldHealth.MarkInCombat();
 
         // сжатие тикает вверх (время); урон по змее откатывает вниз, но НЕ ниже пола достигнутой стадии (ратчет)
         grip += tightenRate * Time.deltaTime;
@@ -252,14 +317,42 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         if (newStage != stage) SetStage(newStage);
 
         // стадия 3 — удушение: DoT-гонка (минует i-frames — рывком из удушения не спрятаться)
-        if (stage >= 3 && targetHealth != null && Time.time >= chokeNext)
+        if (stage >= 3 && Time.time >= chokeNext)
         {
-            targetHealth.TakeDamage(Mathf.RoundToInt(chokeDamage), true);
+            heldHealth.LastAttacker = ownHealth; // смерть от удушения — убийство змеи
+            heldHealth.TakeDamage(Mathf.RoundToInt(chokeDamage), true);
             chokeNext = Time.time + chokeInterval;
         }
 
-        // стоим на месте, морда к игроку, мягко держим дистанцию удержания (не таскаем игрока за собой)
-        Vector3 to = target.position - transform.position; to.y = 0f;
+        HoldNearVictim();
+    }
+
+    // обхват NPC-ЖЕРТВЫ (волк и будущие тёплые): унифицированный хват — стан + удушение до смерти.
+    // Спасение: ЛЮБОЙ урон по змее рвёт хват (игрок может отбить волка — или дождаться конца охоты)
+    void UpdateNpcConstrict()
+    {
+        if (lastHp > ownHealth.Current) { EndConstrict(attackCooldown); return; } // по змее попали — хват сорван
+        lastHp = ownHealth.Current;
+
+        Vector3 to = heldHealth.transform.position - transform.position; to.y = 0f;
+        if (to.magnitude > bite.Range * 1.6f) { EndConstrict(0.5f); return; } // жертву оттолкнуло — соскользнула
+
+        if (heldStagger != null) heldStagger.Stun(0.3f); // жертва обездвижена (психики уважают стан, StunTint красит)
+
+        if (Time.time >= chokeNext)
+        {
+            heldHealth.LastAttacker = ownHealth; // жертва «достаётся змее» (родство — убийце, задел эволюции)
+            heldHealth.TakeDamage(npcChokeDamage, true); // смерть жертвы отпустит хват сама (heldHealth → null)
+            chokeNext = Time.time + npcChokeInterval;
+        }
+
+        HoldNearVictim();
+    }
+
+    // стоим у жертвы, морда к ней, мягко держим дистанцию удержания (не таскаем её за собой)
+    void HoldNearVictim()
+    {
+        Vector3 to = heldHealth.transform.position - transform.position; to.y = 0f;
         float d = to.magnitude;
         Vector3 dir = d > 0.001f ? to / d : transform.forward;
         Face(dir);
@@ -277,31 +370,42 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         }
         stage = s;
         telegraph.Set(true, StageColor(s));
-        if (playerCtl != null) playerCtl.ApplyGrab(this, SlowFor(s));
+        if (heldIsPlayer && playerCtl != null) playerCtl.ApplyGrab(this, SlowFor(s));
     }
 
     void InjectVenom()
     {
-        if (targetHealth != null) new Hit(null, transform.position).Apply(targetHealth, HitEffect.Venom());
+        if (heldHealth != null) new Hit(null, transform.position).Apply(heldHealth, HitEffect.Venom());
+    }
+
+    void ReleaseHeld()
+    {
+        if (heldIsPlayer && playerCtl != null) playerCtl.ReleaseGrab(this);
+        heldHealth = null; heldStagger = null; heldIsPlayer = false;
     }
 
     void EndConstrict(float cooldown)
     {
         constricting = false; windingUp = false;
         telegraph.Clear();
-        if (playerCtl != null) playerCtl.ReleaseGrab(this);
+        ReleaseHeld();
+        stage = 0; grip = 0f; gripFloor = 0f;
         nextAttackTime = Time.time + cooldown;
     }
 
     // IGrabber: игрок рвётся рывком. Отпускаем ТОЛЬКО в 1-й стадии (урон + отлёт змеи); в 2+ сжатие держит.
     public bool BreakFree(int damage)
     {
-        if (!constricting) return true;   // нечего держать — считаем свободным
-        if (stage >= 2) return false;     // сжатие: рывок бесполезен, не отпускаем
-        if (ownHealth != null && damage > 0) ownHealth.TakeDamage(damage);
-        if (knockback != null)
+        if (!constricting || !heldIsPlayer) return true; // игрока не держим — считаем свободным
+        if (stage >= 2) return false;                    // сжатие: рывок бесполезен, не отпускаем
+        if (ownHealth != null && damage > 0)
         {
-            Vector3 away = transform.position - target.position; away.y = 0f;
+            ownHealth.LastAttacker = heldHealth; // рывок-срыв ранит змею — это удар игрока
+            ownHealth.TakeDamage(damage);
+        }
+        if (knockback != null && heldHealth != null)
+        {
+            Vector3 away = transform.position - heldHealth.transform.position; away.y = 0f;
             if (away.sqrMagnitude > 0.001f) knockback.Push(away.normalized * ripSelfKnock);
         }
         EndConstrict(attackCooldown);

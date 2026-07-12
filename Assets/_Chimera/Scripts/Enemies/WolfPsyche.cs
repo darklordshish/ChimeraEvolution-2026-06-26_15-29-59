@@ -139,11 +139,20 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer
         {
             if (GetComponent<CreatureBody>() == null) ownHealth.RegenPerSecond = hpRegen; // без тела-на-шасси реген свой; с телом — из органов
             ownHealth.onDeath.AddListener(OnKilled); // смерть бьёт по морали стаи
+            ownHealth.onDamaged.AddListener(OnHurt); // боль от невидимого источника (змея!) — паника
         }
         fearThreshold = pack.RollPanicThreshold(); // личный порог храбрости (случайный из диапазона пула)
     }
 
     void OnKilled() => PackCoordinator.Instance.ReportKill(transform.position); // страх идёт от места гибели
+
+    // укушен, но противника НЕ ВИЖУ (змея из засады, удар со спины) → короткая паника: отскочить и бежать.
+    // В бою с видимой целью и в ярости не паникуем; из стана не убежать (гейт в Update)
+    void OnHurt()
+    {
+        if (Engaged || (rage != null && rage.IsEnraged)) return;
+        routUntil = Time.time + 2f;
+    }
 
     void OnEnable()
     {
@@ -191,8 +200,9 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer
             return;
         }
 
-        // стая в панике: бросаем приём/захват/жетоны и убегаем прочь (потом вернёмся в поиск)
-        if (routing) { Rout(); return; }
+        // стая в панике: бросаем приём/захват/жетоны и убегаем прочь. Оглушённый паникёр НЕ бежит
+        // (стан держит — иначе жертва убегала бы из обхвата змеи); стан дойдёт до стаггер-чека ниже
+        if (routing && !(stagger != null && stagger.IsStaggered)) { Rout(); return; }
 
         // захват: висим и держим. Срывают только пинок (выше) и рывок (BreakFree). Удар/стаггер НЕ прерывают.
         if (grabbing)
@@ -324,7 +334,11 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer
     {
         if (grabbing)
         {
-            if (ownHealth != null && damage > 0) ownHealth.TakeDamage(damage);
+            if (ownHealth != null && damage > 0)
+            {
+                ownHealth.LastAttacker = playerCtl != null ? playerCtl.GetComponent<Health>() : null; // срыв = удар игрока
+                ownHealth.TakeDamage(damage);
+            }
             if (knockback != null)
             {
                 Vector3 away = transform.position - target.position; away.y = 0f;

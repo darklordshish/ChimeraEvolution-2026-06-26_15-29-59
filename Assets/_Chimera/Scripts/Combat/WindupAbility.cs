@@ -40,8 +40,20 @@ public abstract class WindupAbility : MonoBehaviour, IAbility
 
     protected virtual void Start()
     {
-        var pc = FindAnyObjectByType<PlayerController>();
-        if (pc != null) { target = pc.transform; targetHealth = pc.GetComponent<Health>(); }
+        // дефолтная цель — игрок (волк/вервольф охотятся только на него); психика змеи переключает
+        // цель на ЛЮБУЮ тёплую жертву через SetTarget (NPC-против-NPC)
+        if (target == null)
+        {
+            var pc = FindAnyObjectByType<PlayerController>();
+            if (pc != null) { target = pc.transform; targetHealth = pc.GetComponent<Health>(); }
+        }
+    }
+
+    /// <summary>Сменить цель доставки (охота на NPC). null — вернуться к «нет цели». Не звать, пока Busy.</summary>
+    public void SetTarget(Health h)
+    {
+        targetHealth = h;
+        target = h != null ? h.transform : null;
     }
 
     // запуск замаха; false — если уже занят или нет цели
