@@ -50,6 +50,7 @@ public readonly struct Hit
         switch (e.Kind)
         {
             case EffectKind.Damage:
+                if (Source != null) target.LastAttacker = Source; // атрибуция убийства (родство — убийце)
                 target.TakeDamage(e.Amount);
                 break;
             case EffectKind.LifeSteal:
@@ -69,7 +70,9 @@ public readonly struct Hit
                 if (target.TryGetComponent<Stagger>(out var st)) st.Stun(e.Duration);
                 break;
             case EffectKind.Venom: // ЯД — накопительный статус; стак (компонент до-создаётся при первом укусе)
-                (target.GetComponent<Venom>() ?? target.gameObject.AddComponent<Venom>()).AddStack();
+                var venom = target.GetComponent<Venom>() ?? target.gameObject.AddComponent<Venom>();
+                venom.AddStack();
+                if (Source != null) venom.SetSource(Source); // смерть от DoT — на счету отравителя
                 break;
         }
     }

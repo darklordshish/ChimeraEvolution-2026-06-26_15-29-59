@@ -30,22 +30,28 @@ public class ChimeraDevWindow : EditorWindow
         var pc = Object.FindAnyObjectByType<PlayerController>();
         var health = pc != null ? pc.GetComponent<Health>() : null;
 
-        // ── Родство (кап 100 на вид) ──
+        // ── Родство ИГРОКА (локальное, в его теле; кап 100 на вид) ──
         EditorGUILayout.Space();
-        EditorGUILayout.LabelField($"Родство: Волк {AffinityTracker.Get("Волк")} · Змея {AffinityTracker.Get("Змея")} · Человек {AffinityTracker.Get("Человек")}", EditorStyles.boldLabel);
+        var pb = CreatureBody.PlayerBody;
+        EditorGUILayout.LabelField(pb != null
+            ? $"Родство: Волк {pb.GetAffinity("Волк")} · Змея {pb.GetAffinity("Змея")} · Человек {pb.GetAffinity("Человек")}"
+            : "Родство: тело игрока не найдено", EditorStyles.boldLabel);
         speciesIdx = GUILayout.Toolbar(speciesIdx, SpeciesList);
         string sp = SpeciesList[speciesIdx];
-        using (new EditorGUILayout.HorizontalScope())
+        using (new EditorGUI.DisabledScope(pb == null))
         {
-            if (GUILayout.Button("Обнулить")) AffinityTracker.Set(sp, 0);
-            if (GUILayout.Button("+10")) AffinityTracker.Add(sp, 10);
-            if (GUILayout.Button("= 80")) AffinityTracker.Set(sp, 80);
-            if (GUILayout.Button("= 100")) AffinityTracker.Set(sp, 100);
-        }
-        using (new EditorGUILayout.HorizontalScope())
-        {
-            affinityField = EditorGUILayout.IntField("Точно:", affinityField);
-            if (GUILayout.Button("Set", GUILayout.Width(60))) AffinityTracker.Set(sp, affinityField);
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                if (GUILayout.Button("Обнулить")) pb.SetAffinity(sp, 0);
+                if (GUILayout.Button("+10")) pb.AddAffinity(sp, 10);
+                if (GUILayout.Button("= 80")) pb.SetAffinity(sp, 80);
+                if (GUILayout.Button("= 100")) pb.SetAffinity(sp, 100);
+            }
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                affinityField = EditorGUILayout.IntField("Точно:", affinityField);
+                if (GUILayout.Button("Set", GUILayout.Width(60))) pb.SetAffinity(sp, affinityField);
+            }
         }
 
         // ── ПРИЗРАК: чувства NPC игрока не воспринимают (наблюдение за психикой в естественной среде).

@@ -70,6 +70,20 @@ public class CreatureBody : MonoBehaviour
     int lastAffinitySum = -1;
     static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
 
+    public const int AffinityCap = 100; // потолок родства на вид (дальше некуда: скидка и мощь на полке)
+
+    // РОДСТВО — ЛОКАЛЬНОЕ, в теле КАЖДОГО существа (не в глобальном трекере: «ЦНС» игры не грузим).
+    // Все звери мира — эксперименты с сывороткой (или съевшие их) → родство = база любого тела.
+    // Задел эволюции химер-NPC: змея, съевшая волков, копит родство-волк (пока ничего с ним не делает).
+    readonly Dictionary<string, int> affinity = new();
+
+    public static CreatureBody PlayerBody { get; private set; } // тело ИГРОКА: HUD/dev/спавнеры читают его родство
+
+    public int GetAffinity(string species) { affinity.TryGetValue(species, out int v); return v; }
+    public void AddAffinity(string species, int n) => affinity[species] = Mathf.Clamp(GetAffinity(species) + n, 0, AffinityCap);
+    public void SetAffinity(string species, int v) => affinity[species] = Mathf.Clamp(v, 0, AffinityCap);
+    public IEnumerable<KeyValuePair<string, int>> AllAffinity => affinity;
+
     int poolBonus; // расширение пула наградами (SuperBossReward) — рантайм-бонус, ассет шасси не трогаем
 
     public int Pool => (chassis != null ? chassis.mutagenPool : 0) + poolBonus;
@@ -181,11 +195,11 @@ public class CreatureBody : MonoBehaviour
         return PoolUsed - SlotCost(sl) + CostOf(sl, sl.variants[idx]) <= Pool;
     }
 
-    // цена органа со скидкой от родства ЕГО вида (волчьи дешевеют от родства-волк, змеиные — от родства-змея)
+    // цена органа со скидкой от НАШЕГО родства с ЕГО видом (родство теперь локальное — у каждого тела своё)
     int EffectiveCost(Organ organ, string species)
     {
         if (organ == null) return 0;
-        float discount = Mathf.Clamp(AffinityTracker.Get(species) * discountPerAffinity, 0f, maxDiscount);
+        float discount = Mathf.Clamp(GetAffinity(species) * discountPerAffinity, 0f, maxDiscount);
         return Mathf.Max(1, Mathf.CeilToInt(organ.cost * (1f - discount)));
     }
 
@@ -209,7 +223,7 @@ public class CreatureBody : MonoBehaviour
     {
         if (expression > 0f) return expression;
         float span = Mathf.Max(1f, bonusFullAffinity - bonusStartAffinity);
-        float t = Mathf.Clamp01((AffinityTracker.Get(species) - bonusStartAffinity) / span);
+        float t = Mathf.Clamp01((GetAffinity(species) - bonusStartAffinity) / span);
         return Mathf.Lerp(1f, maxBonusMult, t);
     }
 
@@ -232,12 +246,13 @@ public class CreatureBody : MonoBehaviour
 
         BuildSlots();
 
-        // РОДСТВО: NPC (не игрок) на смерть даёт +1 за каждый УНИКАЛЬНЫЙ видо-флаг тела (шасси + доноры с органами)
-        if (health != null && move == null) health.onDeath.AddListener(GrantAffinityOnDeath);
+        // РОДСТВО — УБИЙЦЕ: на нашу смерть кредитуем ТОГО, КТО УБИЛ (см. CreditKiller)
+        if (health != null) health.onDeath.AddListener(CreditKiller);
 
-        // игрок: родство с СОБСТВЕННЫМ шасси полное с рождения (мы и есть человек). Мета-шкала
-        // человечности (падение/возврат через социальность) — потом, когда появятся люди.
-        if (move != null && chassis != null) AffinityTracker.Set(chassis.speciesName, AffinityTracker.Cap);
+        // каждое существо рождается с полным родством к СВОЕМУ шасси (волк уверен в своей волчности;
+        // мета-шкала человечности игрока — потом, при социальном слое)
+        if (chassis != null) SetAffinity(chassis.speciesName, AffinityCap);
+        if (move != null) PlayerBody = this;
 
         renderers = GetComponentsInChildren<Renderer>();
         baseColors = new Color[renderers.Length];
@@ -291,21 +306,28 @@ public class CreatureBody : MonoBehaviour
     int AffinitySum()
     {
         int s = 0;
-        if (donors != null) foreach (var d in donors) if (d != null) s += AffinityTracker.Get(d.speciesName);
+        if (donors != null) foreach (var d in donors) if (d != null) s += GetAffinity(d.speciesName);
         return s;
     }
 
-    // РОДСТВО на смерть (только NPC): +1 за каждый УНИКАЛЬНЫЙ видо-флаг тела — шасси + каждый вид-донор с ≥1 надетым
-    // органом. Волк→+1 Волк; змея→+1 Змея; вервольф (человек+волчьи ауги)→+1 Человек, +1 Волк. Дубли по виду не растят.
-    void GrantAffinityOnDeath()
+    // РОДСТВО — УБИЙЦЕ: на нашу смерть тело кредитует убийцу (+1 за каждый УНИКАЛЬНЫЙ видо-флаг НАШЕГО
+    // тела: шасси + доноры с надетыми органами). Убийца — любой с телом: игрок ✓, змея-охотница ✓
+    // (волк, задушенный змеёй, «достаётся змее» — задел эволюции химер-NPC). Наблюдатели не получают ничего.
+    void CreditKiller()
     {
+        var killer = health != null && health.LastAttacker != null
+            ? health.LastAttacker.GetComponent<CreatureBody>() : null;
+        if (killer == null || killer == this) return;
+
         var present = new HashSet<string>();
         if (chassis != null) present.Add(chassis.speciesName);
         if (slots != null)
             foreach (var sl in slots)
                 if (sl.Installed && sl.DonorSpecies != null) present.Add(sl.DonorSpecies);
-        foreach (var species in present) AffinityTracker.Add(species, 1);
+        foreach (var species in present) killer.AddAffinity(species, 1);
     }
+
+    void OnDestroy() { if (PlayerBody == this) PlayerBody = null; }
 
     // цикл слота: человеческий → варианты доноров по кругу → человеческий (не по карману — пропускаются)
     void Toggle(Slot sl)

@@ -30,7 +30,8 @@ public class WerewolfSpawner : MonoBehaviour
     void Update()
     {
         if (!autoSpawn) return;
-        if (AffinityTracker.Get(species) < triggerAffinity) return;
+        var pb = CreatureBody.PlayerBody; // родство теперь локальное — читаем тело игрока
+        if (pb == null || pb.GetAffinity(species) < triggerAffinity) return;
 
         if (werewolfPrefab == null)
         {

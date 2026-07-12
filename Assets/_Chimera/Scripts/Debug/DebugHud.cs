@@ -38,10 +38,10 @@ public class DebugHud : MonoBehaviour
             playerHealth.GodMode = !playerHealth.GodMode; // G — режим бога (отладка)
 
         if (Keyboard.current != null && Keyboard.current.kKey.wasPressedThisFrame)
-            AffinityTracker.Add("Волк", 10); // K — +10 родства-волк (отладка: проверить скидку/бонусы)
+            CreatureBody.PlayerBody?.AddAffinity("Волк", 10); // K — +10 родства-волк (отладка: проверить скидку/бонусы)
 
         if (Keyboard.current != null && Keyboard.current.lKey.wasPressedThisFrame)
-            AffinityTracker.Add("Змея", 10); // L — +10 родства-змея
+            CreatureBody.PlayerBody?.AddAffinity("Змея", 10); // L — +10 родства-змея
 
         if (Keyboard.current != null && Keyboard.current.nKey.wasPressedThisFrame)
             Perception.ShowOwnScent = !Perception.ShowOwnScent; // N — показ своего запаха
@@ -64,7 +64,8 @@ public class DebugHud : MonoBehaviour
         if (boss != null && boss.TryGetComponent<Health>(out var bossHp))
             GUI.Label(new Rect(540, 10, 460, 26), $"БОСС: {bossHp.Current}/{bossHp.Max}{(bossHp.Current > bossHp.Max ? $" (+{bossHp.Current - bossHp.Max} temp)" : "")}", style);
         var affParts = new List<string>();
-        foreach (var kv in AffinityTracker.All) if (kv.Value != 0) affParts.Add($"{kv.Key} {kv.Value}");
+        if (CreatureBody.PlayerBody != null)
+            foreach (var kv in CreatureBody.PlayerBody.AllAffinity) if (kv.Value != 0) affParts.Add($"{kv.Key} {kv.Value}");
         string aff = affParts.Count > 0 ? string.Join(" · ", affParts) : "—";
         GUI.Label(new Rect(14, 34, 900, 26), $"Родство: {aff}   (бонус органов ×{(body != null ? body.BonusMult : 1f):0.00})   [K: Волк +10 · L: Змея +10]", style);
         GUI.Label(new Rect(14, 58, 760, 26), $"Шкала мозга: {(body != null ? body.BeastSlots : 0)}/{(body != null ? body.MaxSlots : 0)} звериных", style);

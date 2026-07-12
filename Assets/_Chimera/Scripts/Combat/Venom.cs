@@ -17,6 +17,7 @@ public class Venom : MonoBehaviour
     int stacks;
     float expireAt, nextDot;
     Health health;
+    Health source; // кто отравил: смерть от DoT — на счету отравителя (родство убийце)
 
     public int Stacks => Time.time < expireAt ? stacks : 0;
     public float IncomingMult => Stacks >= 2 ? vulnerabilityMult : 1f; // читает Health.TakeDamage
@@ -29,6 +30,8 @@ public class Venom : MonoBehaviour
         expireAt = Time.time + stackDuration;
     }
 
+    public void SetSource(Health s) => source = s;
+
     void Update()
     {
         int s = Stacks;
@@ -37,6 +40,7 @@ public class Venom : MonoBehaviour
         if (s >= 3 && Time.time >= nextDot)   // стадия 3: DoT
         {
             nextDot = Time.time + dotInterval;
+            if (source != null) health.LastAttacker = source; // смерть от яда — убийство отравителя
             health.TakeDamage(dotDamage, true); // яд минует i-frames — от того, что уже внутри, не увернёшься
         }
     }

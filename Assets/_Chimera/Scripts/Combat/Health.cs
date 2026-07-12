@@ -22,6 +22,7 @@ public class Health : MonoBehaviour
     public bool InCombat => Time.time < combatUntil;
     public void MarkInCombat(float seconds = 1f) => combatUntil = Mathf.Max(combatUntil, Time.time + seconds);
     public int OverhealCap { get; set; }         // на сколько можно перелечиться свыше макс. (temp HP боссa; не регенится)
+    public Health LastAttacker { get; set; }     // кто ударил последним: родство за смерть — УБИЙЦЕ (ставят Hit.Apply/яд/удушение)
 
     public UnityEvent onDamaged = new(); // = new(), чтобы не были null при AddComponent в рантайме (босс)
     public UnityEvent onDeath = new();
