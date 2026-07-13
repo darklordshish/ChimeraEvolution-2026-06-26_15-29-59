@@ -82,6 +82,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     LeapAbility leap;
     WindupAbility activeAbility;   // укус/рывок в процессе — психика его тикает
     Camouflage camo;               // камуфляж (Чешуя): раскрываем на время боя (лениво — вешается после нашего Awake)
+    AlertState alert;              // S1: общая машина восприятия (зеркало — поведение ещё не завязано на State)
 
     // текущая ЖЕРТВА охоты (игрок или NPC) — выбирается сканом «тёплая одиночка»
     Transform target;
@@ -115,6 +116,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         if (!TryGetComponent(out bite)) bite = gameObject.AddComponent<BiteAbility>();
         if (!TryGetComponent(out leap)) leap = gameObject.AddComponent<LeapAbility>();
         if (!TryGetComponent(out variance)) variance = gameObject.AddComponent<SpawnVariance>();
+        if (!TryGetComponent(out alert)) alert = gameObject.AddComponent<AlertState>(); // общая машина восприятия (S1)
 
         if (!TryGetComponent<ScentTrail>(out var scent)) scent = gameObject.AddComponent<ScentTrail>(); // змея тоже пахнет — нюх её ловит (RPS)…
         scent.SetStrength(scentStrength); // …но слабо: не потеет, мало движется — облака запаха почти не разносит
@@ -241,7 +243,8 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         transform.position = p;
     }
 
-    // полная стая рядом → бегство от центроида толпы (проверка раз в 0.3с)
+    // полная стая рядом → РАЦИОНАЛЬНОЕ отступление к стене (проверка раз в 0.3с). ХОЛОДНЫЙ РАСЧЁТ, НЕ Страх:
+    // змея не боится (холоднокровна → иммунна к эффекту Fear, S1 срез 5) — она сама РЕШАЕТ выйти из безнадёги
     bool CheckFlee()
     {
         if (Time.time >= nextFleeCheck)
@@ -306,6 +309,8 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
 
     void Update()
     {
+        UpdateAlert(); // S1: кормим машину восприятия каждый кадр, до любых ранних return (зеркало)
+
         // ОБХВАТ имеет приоритет: змея закоммичена в дуэль (стоит и душит), знает свои срывы сама
         if (constricting) { RevealSelf(); UpdateConstrict(); return; }
 
@@ -390,6 +395,16 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     }
 
     bool heldIsPlayerTarget() => targetHealth != null && playerCtl != null && targetHealth.transform == playerCtl.transform;
+
+    // S1: маппинг восприятия змеи на общую машину (зеркало). Атака = держит/бьёт/есть тёплая цель в термо;
+    // Настороженность = реагирует (бежит/на стене) ЛИБО прокрадывается к почуянной тёплой жизни; иначе Спокойствие (засада)
+    void UpdateAlert()
+    {
+        bool attacking = constricting || activeAbility != null || windingUp
+                         || (target != null && Perception.SeesThermal(transform.position, target, thermalRange));
+        bool cue = !attacking && (fleeing || climb != ClimbPhase.None || NearestWarm(roamSenseRadius, out _) != null);
+        alert.Observe(attacking, cue);
+    }
 
     // выбор жертвы: ближайшая ТЁПЛАЯ ОДИНОЧКА (термо гейтит и холодных, и призрака); Massive не по зубам
     void ChooseTarget()

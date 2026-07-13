@@ -52,6 +52,19 @@ public class DebugHud : MonoBehaviour
 
     static string AlertRu(Alert s) => s == Alert.Attack ? "АТАКА" : s == Alert.Wary ? "настороже" : "спокоен"; // S1-отладка
 
+    // S1-отладка: восприятие ближайшего к игроку существа типа T (пусто, если таких нет)
+    string NearestAlertStr<T>(string label) where T : Component
+    {
+        if (player == null) return "";
+        T near = null; float best = float.MaxValue;
+        foreach (var c in FindObjectsByType<T>())
+        {
+            float d = (c.transform.position - player.transform.position).sqrMagnitude;
+            if (d < best) { best = d; near = c; }
+        }
+        return near != null && near.TryGetComponent<AlertState>(out var a) ? $"{label} {AlertRu(a.State)} [{Mathf.Sqrt(best):0}м]" : "";
+    }
+
     void OnGUI()
     {
         style ??= new GUIStyle(GUI.skin.label) { fontSize = 18, normal = { textColor = Color.white } };
@@ -77,18 +90,11 @@ public class DebugHud : MonoBehaviour
         string morale = pack.AnyRouting() ? "БЕГСТВО" : pack.Fearless ? "ЯРОСТЬ" : "норма";
         GUI.Label(new Rect(14, 130, 600, 26), $"Стая: атакуют {pack.AttackerCount}/{pack.MaxAttackers}, захват: {(pack.GrabActive ? "да" : "нет")}, мораль: {morale}", style);
 
-        // S1-отладка: восприятие БЛИЖАЙШЕГО волка — видно, как машина Спокойствие→Настороженность→Атака ходит
-        if (player != null)
-        {
-            WolfPsyche near = null; float best = float.MaxValue;
-            foreach (var w in FindObjectsByType<WolfPsyche>())
-            {
-                float d = (w.transform.position - player.transform.position).sqrMagnitude;
-                if (d < best) { best = d; near = w; }
-            }
-            if (near != null && near.TryGetComponent<AlertState>(out var wolfAlert))
-                GUI.Label(new Rect(620, 130, 380, 26), $"Ближ.волк [{Mathf.Sqrt(best):0}м]: {AlertRu(wolfAlert.State)}", style);
-        }
+        // S1-отладка: восприятие БЛИЖАЙШИХ волка и змеи — видно, как машина Спок→Настор→Атака ходит у обоих видов
+        string wDbg = NearestAlertStr<WolfPsyche>("волк:");
+        string sDbg = NearestAlertStr<SnakePsyche>("змея:");
+        string percept = wDbg + (wDbg != "" && sDbg != "" ? "   " : "") + sDbg;
+        if (percept != "") GUI.Label(new Rect(620, 130, 460, 26), $"Восприятие — {percept}", style);
 
         // какие способности сейчас активны (видно, что даёт сборка) + что происходит с тобой прямо сейчас
         var abil = new List<string> { "меч ЛКМ" };
