@@ -24,6 +24,8 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     [SerializeField] float gravity = -20f;
     [SerializeField] float thermalRange = 14f;              // термозрение: видит тёплого сквозь укрытия
     [SerializeField, Range(0f, 1f)] float creepSpeed = 0.5f;
+    [SerializeField] float roamSenseRadius = 22f;           // праздный поиск: чуем тёплую жизнь ЗА термо-радиусом — крадёмся к ней (не застываем точкой-приманкой)
+    [SerializeField] float wanderRadius = 12f;              // ничего не чуем — тихо бродим этим радиусом (перемешиваем засады)
     [SerializeField] float lureInterval = 1.2f;             // ПРИМАНКА: жертва вне броска — гремим часто и маним
     [SerializeField] float rattleHearRadius = 15f;          // пассивный гремок: тихий (будит любопытство рядом)
     [SerializeField] float lureHearRadius = 28f;            // приманка: ГРОМКАЯ — тянет зверьё издалека (должна перекрывать термо и блуждание стаи)
@@ -38,7 +40,10 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     [SerializeField] float perchHeight = 5f;                // высота насеста над землёй (недосягаема для наземной стаи)
     [SerializeField] float climbSpeed = 5f;
     [SerializeField] float wallHugSpeed = 3f;               // как быстро прилипаем к плоскости стены (XZ)
-    [SerializeField] float wallHugOffset = -0.3f;          // центр тела чуть ЗА поверхностью → меши (голова+сегменты) садятся флэш; CC при климбе невидим
+    [SerializeField] float wallHugOffset = 0.4f;           // центр тела ПЕРЕД поверхностью (сторона арены) ~на радиус тела: прижат к стене, но не проваливается сквозь (стены тонкие, 1 м)
+    [SerializeField, Range(0.3f, 1f)] float carrySpeedMult = 0.7f; // с ношей ползём к стене медленнее (тащит тушу)
+    [SerializeField] float carryDrop = 1.2f;               // 3e-ii: насколько НИЖЕ головы висит жертва в кольцах на стене
+    [SerializeField] float carryStandoff = 0.7f;           // отжатие жертвы ОТ плоскости стены (не влипает в неё)
     [SerializeField] float lonelyRadius = 6f;               // «одиночка» = нет ДРУГИХ тёплых в этом радиусе вокруг жертвы
     [SerializeField] float retargetInterval = 0.5f;         // как часто пересматриваем выбор жертвы
     [SerializeField] float revealMemory = 2f;               // камуфляж: «раскрыта» столько после приёма (> кулдауна — не мигает в мили)
@@ -146,6 +151,14 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     {
         if (camo == null) TryGetComponent(out camo);
         if (camo != null) camo.Reveal(revealMemory);
+    }
+
+    // прокрадывание-поиск: держим камуфляж даже на ходу (память > кадра — снимается сразу, как перестали красться;
+    // раскрытие атакой/уроном приоритетнее). БЕГСТВО к стене стелс НЕ зовёт — там змея видима, стая её гонит
+    void HoldStealth()
+    {
+        if (camo == null) TryGetComponent(out camo);
+        if (camo != null) camo.HoldStealth(0.25f);
     }
 
     // ГРЕМОК: пассивный ритм засады (редкий, ТИХИЙ) — зацепка на невидимку И самозарядная ловушка:
@@ -344,11 +357,11 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
             ChooseTarget();
         }
 
-        // жертвы нет ЛИБО пропала из термо (умерла/призрак/ушла) → засада: сидим тихо, гремим
+        // жертвы нет ЛИБО пропала из термо (умерла/призрак/ушла) → не застываем засадой навечно, а ПРОКРАДЫВАЕМСЯ
+        // искать тёплую жизнь (иначе стационарные точки-приманки сгоняют волков в осциллирующие кучи между змеями)
         if (target == null || !Perception.SeesThermal(transform.position, target, thermalRange))
         {
-            TryRattle();
-            Settle(Vector3.zero);
+            Prowl();
             return;
         }
 
@@ -409,6 +422,46 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
             if (Perception.IsWarm(other.transform)) return false;
         }
         return true;
+    }
+
+    // ПРАЗДНЫЙ ПОИСК: добычи в термо нет — не застываем (стационарные засады сгоняют волков в осциллирующие кучи).
+    // Крадёмся к ближайшей тёплой жизни: одиночка — манить и сближаться; толпа — уйти в сторону искать отбившихся;
+    // пусто — тихо бродить (пассивный гремок-ловушка). Всё на засадном темпе (creepSpeed) — не превращаемся в гончую
+    void Prowl()
+    {
+        HoldStealth(); // прокрадываемся-ищем в камуфляже: охотник-невидимка не собирает вокруг себя роящуюся стаю
+        Health warm = NearestWarm(roamSenseRadius, out bool lonely);
+        if (warm == null) { TryRattle(); CreepTo(nav.Wander(wanderRadius)); return; } // никого — бродим, изредка гремим
+        if (lonely) { TryLure(); CreepTo(warm.transform.position); return; }          // одинокая жизнь за термо — манить и красться навстречу
+        // рядом ТОЛПА без одиночек: не кормим осцилляцию — тихо уходим прочь от центра массы искать отбившихся
+        Vector3 away = transform.position - warm.transform.position; away.y = 0f;
+        Vector3 spot = transform.position + (away.sqrMagnitude > 0.01f ? away.normalized : transform.forward) * (roamSenseRadius * 0.5f);
+        CreepTo(spot);
+    }
+
+    // ближайшая тёплая жизнь в радиусе (термочутьё сквозь стены; Massive и своя ноша не в счёт); заодно — одиночка ли она
+    Health NearestWarm(float radius, out bool lonely)
+    {
+        Health best = null; float bestD = radius * radius;
+        foreach (var col in Physics.OverlapSphere(transform.position, radius, ~0, QueryTriggerInteraction.Ignore))
+        {
+            var hp = col.GetComponentInParent<Health>();
+            if (hp == null || hp.transform == transform || hp == heldHealth || hp == best) continue;
+            if (hp.GetComponent<Massive>() != null) continue;
+            if (!Perception.IsWarm(hp.transform)) continue;
+            float d = (hp.transform.position - transform.position).sqrMagnitude;
+            if (d < bestD) { bestD = d; best = hp; }
+        }
+        lonely = best != null && IsLonely(best);
+        return best;
+    }
+
+    // засадный шаг к точке: доворот + ход на creepSpeed (крадёмся, не мчим)
+    void CreepTo(Vector3 dest)
+    {
+        Vector3 mv = nav.DirTo(dest);
+        if (mv.sqrMagnitude > 0.001f) Face(mv);
+        Settle(mv * Speed * creepSpeed);
     }
 
     // замах обхвата: жертва увернулась из радиуса — сорван; выдержала — обвивает
@@ -494,29 +547,85 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         HoldNearVictim();
     }
 
-    // обхват NPC-ЖЕРТВЫ (волк и будущие тёплые): унифицированный хват — стан + удушение до смерти.
-    // Спасение: ЛЮБОЙ урон по змее рвёт хват (игрок может отбить волка — или дождаться конца охоты)
+    // обхват NPC-ЖЕРТВЫ (волк и будущие тёплые): унифицированный хват — стан + удушение до смерти. Стратегия
+    // 3e-ii: НЕ душить на земле (стая-спасатели достаёт), а УТАЩИТЬ на стену-насест и додушить там, где
+    // наземные волки бессильны. Фазы (пере-используют ClimbPhase): земля → Approach (тащим к стене) →
+    // Rise/Perch (несём вверх, душим). Срыв хвата: урон по ЗМЕЕ — в ЛЮБОЙ фазе; толпа-спасатели (CrowdNear) —
+    // ТОЛЬКО на земле (наверху гейт отключён — волки не достают ни змею, ни жертву, держать безопасно).
     void UpdateNpcConstrict()
     {
-        if (lastHp > ownHealth.Current) { EndConstrict(attackCooldown); return; } // по змее попали — хват сорван
+        if (lastHp > ownHealth.Current) { EndConstrict(attackCooldown); return; } // урон по змее — срыв хвата (в ЛЮБОЙ фазе)
         lastHp = ownHealth.Current;
 
-        // стая прибежала отбивать (вой свидетеля) — холодный расчёт бросает добычу, не геройствует
-        if (CrowdNear()) { EndConstrict(attackCooldown); return; }
+        // УЖЕ НЕСЁМ (тащим по земле / лезем): гейт CrowdNear отключён — прервать может только урон. Волки, кусая
+        // змею, сами рвут хват (проверка выше); на стене они не достают — держим безопасно. Ведём фазу переноски
+        if (climb == ClimbPhase.Approach) { ChokeHeld(); CarryApproach(); return; }
+        if (climb == ClimbPhase.Rise || climb == ClimbPhase.Perch) { ChokeHeld(); CarryRise(); return; }
 
+        // ЕЩЁ НА ЗЕМЛЕ, не несём. Стая-спасатели пришла отбивать (CrowdNear ≥2)?
+        if (CrowdNear())
+        {
+            // есть досягаемая стена → УТАЩИТЬ добычу наверх (спасти мясо от стаи); нет — холодный расчёт бросает
+            if (FindRefugeWall(out wallPoint, out wallNormal)) { climb = ClimbPhase.Approach; BeginCarry(); return; }
+            EndConstrict(attackCooldown); return;
+        }
+
+        // жертву оттолкнуло далеко — соскользнула
         Vector3 to = heldHealth.transform.position - transform.position; to.y = 0f;
-        if (to.magnitude > bite.Range * 1.6f) { EndConstrict(0.5f); return; } // жертву оттолкнуло — соскользнула
+        if (to.magnitude > bite.Range * 1.6f) { EndConstrict(0.5f); return; }
 
-        if (heldStagger != null) heldStagger.Stun(0.3f); // жертва обездвижена (психики уважают стан, StunTint красит)
+        // ОДИНОЧКА, стаи рядом нет → спокойно додушиваем на земле (утаскивать незачем — так безопасно)
+        ChokeHeld();
+        HoldNearVictim();
+    }
 
+    // удушающий хват NPC: обездвижить (психики уважают стан, StunTint красит «выключенным») + DoT до смерти
+    void ChokeHeld()
+    {
+        if (heldStagger != null) heldStagger.Stun(0.3f);
         if (Time.time >= chokeNext)
         {
             heldHealth.LastAttacker = ownHealth; // жертва «достаётся змее» (родство — убийце, задел эволюции)
             heldHealth.TakeDamage(npcChokeDamage, true); // смерть жертвы отпустит хват сама (heldHealth → null)
             chokeNext = Time.time + npcChokeInterval;
         }
+    }
 
-        HoldNearVictim();
+    // взяли ношу: жертва становится куклой (глушит свою локомоцию/гравитацию — позицией владеем мы)
+    void BeginCarry()
+    {
+        if (heldHealth != null && heldHealth.TryGetComponent<ICarried>(out var carried)) carried.SetCarried(true);
+    }
+
+    // тащим тушу по земле к основанию стены; спасатели-стая достают (гейт CrowdNear отработал выше)
+    void CarryApproach()
+    {
+        Vector3 to = wallPoint - transform.position; to.y = 0f;
+        if (to.magnitude <= 1.6f) { climb = ClimbPhase.Rise; return; } // у стены — лезем
+        Vector3 dir = nav.DirTo(wallPoint);
+        if (dir.sqrMagnitude > 0.001f) Face(dir);
+        CarryVictim();
+        Settle(dir * Speed * carrySpeedMult);
+    }
+
+    // несём вверх на насест и держим там, додушивая; наземная стая внизу бессильна (воет/паникует)
+    void CarryRise()
+    {
+        FaceWall();
+        float perchY = groundY + perchHeight;
+        ClimbMove(perchY);
+        CarryVictim();
+        if (climb == ClimbPhase.Rise && transform.position.y >= perchY - 0.05f) climb = ClimbPhase.Perch;
+    }
+
+    // позиционируем ношу: на земле — позади (в кольцах, морда змеи к стене свободна); на стене — висит ниже головы
+    void CarryVictim()
+    {
+        if (heldHealth == null) return;
+        Vector3 pos = climb == ClimbPhase.Approach
+            ? transform.position - transform.forward * (bite.Range * 0.5f)   // ПОЗАДИ — своя CC-морда к стене свободна (не упирается в ношу)
+            : transform.position - Vector3.up * carryDrop + wallNormal * carryStandoff; // на стене — висит ниже головы, отжата от плоскости
+        heldHealth.transform.position = pos;
     }
 
     // стоим у жертвы, морда к ней, мягко держим дистанцию удержания (не таскаем её за собой)
@@ -551,6 +660,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     void ReleaseHeld()
     {
         if (heldIsPlayer && playerCtl != null) playerCtl.ReleaseGrab(this);
+        else if (heldHealth != null && heldHealth.TryGetComponent<ICarried>(out var carried)) carried.SetCarried(false); // ноша отпущена — оживает и падает
         heldHealth = null; heldStagger = null; heldIsPlayer = false;
     }
 
@@ -560,6 +670,10 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         telegraph.Clear();
         ReleaseHeld();
         stage = 0; grip = 0f; gripFloor = 0f;
+        // конец переноски: были на стене (Rise/Perch) → сползаем вниз (не падаем); тащили по земле (Approach) → просто отпускаем.
+        // У обхвата ИГРОКА climb всегда None — его концовки это не касается
+        if (climb == ClimbPhase.Rise || climb == ClimbPhase.Perch) climb = ClimbPhase.Descend;
+        else if (climb == ClimbPhase.Approach) climb = ClimbPhase.None;
         nextAttackTime = Time.time + cooldown;
     }
 

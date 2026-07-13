@@ -821,8 +821,27 @@ MonoBehaviour:
   rotationSpeed: 320
   gravity: -20
   thermalRange: 14
-  creepRange: 11
   creepSpeed: 0.5
+  roamSenseRadius: 22
+  wanderRadius: 12
+  lureInterval: 1.2
+  rattleHearRadius: 15
+  lureHearRadius: 28
+  quietCrowdRadius: 8
+  quietCrowdSize: 2
+  fleeCrowdSize: 5
+  fleeCheckRadius: 12
+  fleeSpeedMult: 0.75
+  wallSeekRadius: 12
+  perchHeight: 5
+  climbSpeed: 5
+  wallHugSpeed: 3
+  wallHugOffset: 0.4
+  carrySpeedMult: 0.7
+  carryDrop: 1.2
+  carryStandoff: 0.7
+  lonelyRadius: 6
+  retargetInterval: 0.5
   revealMemory: 2
   rattleInterval: 3
   rattleCue: 0.4
@@ -840,6 +859,8 @@ MonoBehaviour:
   grabSlow2: 0.15
   grabSlow3: 0
   ripSelfKnock: 5
+  npcChokeDamage: 6
+  npcChokeInterval: 0.6
 --- !u!1 &7166530904502509952
 GameObject:
   m_ObjectHideFlags: 0

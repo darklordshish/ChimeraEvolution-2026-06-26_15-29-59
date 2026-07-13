@@ -14,7 +14,7 @@ using UnityEngine;
 [RequireComponent(typeof(LeapAbility))]
 [RequireComponent(typeof(Rage))]
 [RequireComponent(typeof(SpawnVariance))]
-public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer
+public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
 {
     [Header("Погоня")]
     [SerializeField] float moveSpeed = 4f;
@@ -84,6 +84,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer
     float alertUntil, nextHowlTime, routUntil, telegraphUntil, curiosityUntil, rescueUntil, nextMateScan, nextPreyScan;
     Health playerHealth;            // кэш для возврата цели с добычи-змеи на игрока
     bool huntingPrey;              // цель сейчас — змея (захват не применяем, он завязан на игрока)
+    bool carried;                  // 3e-ii: змея тащит нас на стену — тело-кукла, рулит носитель
     SnakeBodyChain preyBody;       // тело добычи-змеи — рвём по ДЛИНЕ, каждый за свой участок
     float preyT;                   // личный участок вдоль тела змеи (0 голова … 1 хвост)
     int fear, fearThreshold;        // личный страх: смерти сородичей рядом; набрал свой порог — паникую
@@ -197,6 +198,14 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer
 
     void OnKilled() => PackCoordinator.Instance.ReportKill(transform.position); // страх идёт от места гибели
 
+    // ICarried (3e-ii): змея тащит на стену. Пока несут — тело-кукла: локомоцию/гравитацию глушим
+    // (иначе стан всё равно доходит до Settle и дёргает вниз), позицией владеет змея. Отпуск — падаем с нуля.
+    public void SetCarried(bool on)
+    {
+        carried = on;
+        if (!on) verticalVel = 0f; // сброс накопленной вертикали — падаем с места, а не рикошетом вниз
+    }
+
     // «ХИЩНИК СТАЛ ЖЕРТВОЙ»: раскрытая змея рядом (движется/бежит — камуфляж её не прячет) становится
     // добычей стаи. Те же укус/прыжок, что по игроку (SetTarget доставкам); захват НЕ применяем — он
     // завязан на PlayerController. Затаившуюся (Camouflage.Hidden) глазами не видим — там работал бы нюх (RPS).
@@ -250,6 +259,8 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer
 
     void Update()
     {
+        if (carried) return; // тащат на стену: телом рулит змея, сами замираем (StunTint красит «выключенным»)
+
         // цель пропала. Гнали змею и она сдохла/скрылась → вернуться на игрока; иначе (нет и игрока) — простой
         if (target == null)
         {
