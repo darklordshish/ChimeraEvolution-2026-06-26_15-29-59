@@ -436,7 +436,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ArenaWalls
   arenaSide: 150
-  wallHeight: 4
+  wallHeight: 8
   wallThickness: 1
   buildFloor: 1
   floorColor: {r: 0.34, g: 0.33, b: 0.31, a: 1}
@@ -885,6 +885,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PlayerHowl
   radius: 7
   stunDuration: 1
+  fearRadius: 14
+  fearDuration: 2.5
   cooldown: 8
   shake: 0.3
 --- !u!114 &1083135102

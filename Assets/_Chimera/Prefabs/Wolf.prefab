@@ -400,6 +400,9 @@ MonoBehaviour:
   howlRageDuration: 3
   howlCueTime: 0.4
   alertMemory: 8
+  curiosityMemory: 5
+  rescueRadius: 12
+  preyRange: 14
   attackCooldown: 1.4
   separationRadius: 1.6
   separationStrength: 4
