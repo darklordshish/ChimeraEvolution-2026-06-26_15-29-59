@@ -50,6 +50,8 @@ public class DebugHud : MonoBehaviour
             Perception.DevThermal = !Perception.DevThermal; // T — форс термозрения без органа (отладка)
     }
 
+    static string AlertRu(Alert s) => s == Alert.Attack ? "АТАКА" : s == Alert.Wary ? "настороже" : "спокоен"; // S1-отладка
+
     void OnGUI()
     {
         style ??= new GUIStyle(GUI.skin.label) { fontSize = 18, normal = { textColor = Color.white } };
@@ -73,7 +75,20 @@ public class DebugHud : MonoBehaviour
         GUI.Label(new Rect(14, 106, 900, 26), $"БОГ [G]: {(playerHealth != null && playerHealth.GodMode ? "ВКЛ" : "выкл")}   Запах: чутьё {(Perception.WolfScent ? "да" : "нет")}, свой [N] {(Perception.ShowOwnScent ? "вкл" : "выкл")}   Термо [T]: {(Perception.ThermalOn ? (Perception.SnakeThermal ? "орган" : "дев") : "выкл")}{(Perception.PlayerGhost ? "   ПРИЗРАК" : "")}", style);
         var pack = PackCoordinator.Instance;
         string morale = pack.AnyRouting() ? "БЕГСТВО" : pack.Fearless ? "ЯРОСТЬ" : "норма";
-        GUI.Label(new Rect(14, 130, 760, 26), $"Стая: атакуют {pack.AttackerCount}/{pack.MaxAttackers}, захват: {(pack.GrabActive ? "да" : "нет")}, мораль: {morale}", style);
+        GUI.Label(new Rect(14, 130, 600, 26), $"Стая: атакуют {pack.AttackerCount}/{pack.MaxAttackers}, захват: {(pack.GrabActive ? "да" : "нет")}, мораль: {morale}", style);
+
+        // S1-отладка: восприятие БЛИЖАЙШЕГО волка — видно, как машина Спокойствие→Настороженность→Атака ходит
+        if (player != null)
+        {
+            WolfPsyche near = null; float best = float.MaxValue;
+            foreach (var w in FindObjectsByType<WolfPsyche>())
+            {
+                float d = (w.transform.position - player.transform.position).sqrMagnitude;
+                if (d < best) { best = d; near = w; }
+            }
+            if (near != null && near.TryGetComponent<AlertState>(out var wolfAlert))
+                GUI.Label(new Rect(620, 130, 380, 26), $"Ближ.волк [{Mathf.Sqrt(best):0}м]: {AlertRu(wolfAlert.State)}", style);
+        }
 
         // какие способности сейчас активны (видно, что даёт сборка) + что происходит с тобой прямо сейчас
         var abil = new List<string> { "меч ЛКМ" };

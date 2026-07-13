@@ -71,6 +71,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     BiteAbility bite;
     LeapAbility leap;
     WindupAbility activeAbility;    // укус/прыжок в процессе (замах/полёт) — психика его тикает
+    AlertState alert;               // S1: общая машина восприятия (пока ЗЕРКАЛО — поведение ещё не завязано на State)
     Transform target;
     Health targetHealth;
 
@@ -135,6 +136,14 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         ForgetAlert(); // со страху теряет и точку сбора
     }
 
+    // S1-зацепка для машины восприятия: чую что-то, что ведёт к Настороженности (но не подтверждённую цель —
+    // ту даёт Engaged). Услышал вой / любопытство к гремку / собрата схватили / взял свежий след.
+    bool HasCue()
+        => Alerted
+        || Time.time < curiosityUntil
+        || Time.time < rescueUntil
+        || (ScentField.Instance != null && ScentField.Instance.TryFollow(transform.position, scentRange, out _));
+
     float Speed => moveSpeed * (rage != null ? rage.SpeedMult : 1f)
                              * (variance != null ? variance.SpeedMult : 1f); // ярость ускоряет; разброс делает особей разными
 
@@ -171,6 +180,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         if (!TryGetComponent(out leap)) leap = gameObject.AddComponent<LeapAbility>();
         if (!TryGetComponent(out rage)) rage = gameObject.AddComponent<Rage>();
         if (!TryGetComponent(out variance)) variance = gameObject.AddComponent<SpawnVariance>();
+        if (!TryGetComponent(out alert)) alert = gameObject.AddComponent<AlertState>(); // общая машина восприятия (S1)
 
         if (!TryGetComponent<ScentTrail>(out _)) gameObject.AddComponent<ScentTrail>(); // запаховый след (виден при волчьем Чутье)
         if (!TryGetComponent<HeatSignature>(out _)) gameObject.AddComponent<HeatSignature>(); // тёплый — виден термозрению игрока
@@ -282,6 +292,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
                   && (target.position - transform.position).sqrMagnitude <= sightRange * sightRange
                   && Perception.HasLineOfSight(transform.position, target); // зрение требует прямой видимости
         if (Engaged) TryHowl(target.position); // увидел игрока → взвыл, зову ближних в стаю
+        alert.Observe(Engaged, HasCue());      // S1: кормим машину восприятия (зеркало — поведение ниже пока не трогаем)
 
         // пинок рвёт всё (включая захват и полёт прыжка): волк полностью теряет управление, пока летит
         if (knockback != null && knockback.IsActive)
