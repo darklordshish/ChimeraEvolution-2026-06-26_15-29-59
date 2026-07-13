@@ -44,6 +44,9 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer
     [SerializeField] float howlRageDuration = 3f; // ярость ближним от воя (< кулдауна — пульс, не фон)
     [SerializeField] float howlCueTime = 0.4f;  // сколько держится вспышка-телеграф воя
     [SerializeField] float alertMemory = 8f;    // сколько волк держит тревогу, услышав вой
+    [SerializeField] float curiosityMemory = 5f; // любопытство к странному звуку (гремок): сколько идём проверять
+    [SerializeField] float rescueRadius = 12f;   // замечаем возню схваченного сородича (стан рядом) — воем и идём отбивать
+    [SerializeField] float preyRange = 14f;      // РАСКРЫТАЯ змея (движется/бежит) в этом радиусе — добыча стаи (хищник стал жертвой)
 
     [Header("Кулдаун")]
     [SerializeField] float attackCooldown = 1.4f;
@@ -75,7 +78,12 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer
     bool windingUp, hasToken, grabbing;  // windingUp — только замах ЗАХВАТА
     Color activeTelegraph;
     Vector3 alertPos;               // куда сбегаться по услышанному вою (личная тревога, не глобальная)
-    float alertUntil, nextHowlTime, routUntil, telegraphUntil;
+    Vector3 curiosityPos;           // странный звук (гремок) — точка любопытства
+    Vector3 rescuePos;              // схваченный сородич — точка спасения
+    Vector3 personalOffset;         // личное место у точки интереса: стая встаёт кольцом, а не стопкой (анти-дёргание)
+    float alertUntil, nextHowlTime, routUntil, telegraphUntil, curiosityUntil, rescueUntil, nextMateScan, nextPreyScan;
+    Health playerHealth;            // кэш для возврата цели с добычи-змеи на игрока
+    bool huntingPrey;              // цель сейчас — змея (захват не применяем, он завязан на игрока)
     int fear, fearThreshold;        // личный страх: смерти сородичей рядом; набрал свой порог — паникую
 
     public bool Engaged { get; private set; } // игрок в поле зрения = волк агрессивен/нацелен (для «вне боя» игрока)
@@ -85,9 +93,44 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer
     public void Hear(Vector3 playerPos) { alertUntil = Time.time + alertMemory; alertPos = playerPos; }
     public void ForgetAlert() => alertUntil = 0f; // сброс личной тревоги (при бегстве стаи — теряем игрока)
 
+    // странный звук (гремок змеи): ЛЮБОПЫТСТВО — осторожно иду проверить, если не занят
+    // (бой/тревога/паника важнее). Шаг в самозарядную ловушку: у змеи любопытный станет одиночкой-добычей
+    public void HearRattle(Vector3 pos)
+    {
+        if (Engaged || Alerted || Routing) return;
+        curiosityPos = pos;
+        curiosityUntil = Time.time + curiosityMemory;
+    }
+
+    // возня схваченного сородича рядом (стан = скорее всего в кольцах змеи): запомнить точку спасения.
+    // Скан раз в полсекунды; память освежается, пока собрата держат
+    void SenseGrabbedMate()
+    {
+        if (Time.time < nextMateScan) return;
+        nextMateScan = Time.time + 0.5f;
+        foreach (var col in Physics.OverlapSphere(transform.position, rescueRadius, ~0, QueryTriggerInteraction.Ignore))
+        {
+            var mate = col.GetComponentInParent<WolfPsyche>();
+            if (mate == null || mate == this) continue;
+            if (mate.stagger == null || !mate.stagger.IsStunned) continue;
+            rescuePos = mate.transform.position;
+            rescueUntil = Time.time + 3f;
+            return;
+        }
+    }
+
     public bool Routing => Time.time < routUntil && !pack.Fearless && !(rage != null && rage.IsEnraged); // паника; ярость её перебивает
     public void CalmRout() { routUntil = 0f; fear = 0; }                   // вой вожака гасит бегство и страх
     public void EnrageFor(float duration) => rage.Enrage(duration);        // вой сородича/вожака бесит
+
+    // ИСПУГ (страшный вой игрока, дальнее кольцо): сорваться и бежать. Ярость не боится.
+    // Зачаток эффекта «страх» из очереди словаря (полная версия с потерей управления игрока — потом)
+    public void Frighten(float duration)
+    {
+        if (rage != null && rage.IsEnraged) return;
+        routUntil = Mathf.Max(routUntil, Time.time + duration);
+        ForgetAlert(); // со страху теряет и точку сбора
+    }
 
     float Speed => moveSpeed * (rage != null ? rage.SpeedMult : 1f)
                              * (variance != null ? variance.SpeedMult : 1f); // ярость ускоряет; разброс делает особей разными
@@ -135,6 +178,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer
     {
         playerCtl = FindAnyObjectByType<PlayerController>();
         if (playerCtl != null) { target = playerCtl.transform; targetHealth = playerCtl.GetComponent<Health>(); }
+        playerHealth = targetHealth;
         if (ownHealth != null)
         {
             if (GetComponent<CreatureBody>() == null) ownHealth.RegenPerSecond = hpRegen; // без тела-на-шасси реген свой; с телом — из органов
@@ -142,9 +186,42 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer
             ownHealth.onDamaged.AddListener(OnHurt); // боль от невидимого источника (змея!) — паника
         }
         fearThreshold = pack.RollPanicThreshold(); // личный порог храбрости (случайный из диапазона пула)
+
+        // личный угол особи (случайный на спавне) → у общих точек интереса (тревога/спасение/гремок)
+        // каждый стоит на СВОЁМ месте кольцом, а не стопкой; заодно зачаток «личности» волка
+        personalOffset = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f) * Vector3.forward * 2.2f;
     }
 
     void OnKilled() => PackCoordinator.Instance.ReportKill(transform.position); // страх идёт от места гибели
+
+    // «ХИЩНИК СТАЛ ЖЕРТВОЙ»: раскрытая змея рядом (движется/бежит — камуфляж её не прячет) становится
+    // добычей стаи. Те же укус/прыжок, что по игроку (SetTarget доставкам); захват НЕ применяем — он
+    // завязан на PlayerController. Затаившуюся (Camouflage.Hidden) глазами не видим — там работал бы нюх (RPS).
+    void RetargetPrey()
+    {
+        if (Time.time < nextPreyScan) return;
+        nextPreyScan = Time.time + 0.4f;
+
+        Health prey = null; float best = preyRange * preyRange;
+        foreach (var col in Physics.OverlapSphere(transform.position, preyRange, ~0, QueryTriggerInteraction.Ignore))
+        {
+            var snake = col.GetComponentInParent<SnakePsyche>();
+            if (snake == null) continue;
+            if (snake.TryGetComponent<Camouflage>(out var camo) && camo.Hidden) continue; // затаилась — не видим
+            float d = (snake.transform.position - transform.position).sqrMagnitude;
+            if (d < best) { best = d; prey = snake.GetComponent<Health>(); }
+        }
+
+        Transform newTarget = prey != null ? prey.transform : (playerCtl != null ? playerCtl.transform : null);
+        Health newHealth = prey != null ? prey : playerHealth;
+        if (ReferenceEquals(newTarget, target)) return;
+
+        if (grabbing && playerCtl != null) playerCtl.ReleaseGrab(this);
+        grabbing = false; windingUp = false; HideTelegraph(); ReleaseToken();
+        target = newTarget; targetHealth = newHealth; huntingPrey = prey != null;
+        if (bite != null) bite.SetTarget(newHealth);
+        if (leap != null) leap.SetTarget(newHealth);
+    }
 
     // укушен, но противника НЕ ВИЖУ (змея из засады, удар со спины) → короткая паника: отскочить и бежать.
     // В бою с видимой целью и в ярости не паникуем; из стана не убежать (гейт в Update)
@@ -168,9 +245,21 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer
 
     void Update()
     {
-        if (target == null) { Engaged = false; Disengage(0f); Settle(Vector3.zero); return; }
+        // цель пропала. Гнали змею и она сдохла/скрылась → вернуться на игрока; иначе (нет и игрока) — простой
+        if (target == null)
+        {
+            if (huntingPrey && playerCtl != null)
+            {
+                target = playerCtl.transform; targetHealth = playerHealth; huntingPrey = false;
+                if (bite != null) bite.SetTarget(playerHealth);
+                if (leap != null) leap.SetTarget(playerHealth);
+            }
+            else { Engaged = false; Disengage(0f); Settle(Vector3.zero); return; }
+        }
 
         if (telegraphUntil > 0f && Time.time >= telegraphUntil) HideTelegraph(); // погасить вспышку воя
+
+        if (activeAbility == null && !grabbing && !windingUp) RetargetPrey(); // раскрытая змея рядом → добыча стаи
 
         bool routing = Routing; // личная паника сломлена → бегство (в ярости от воя не бежим)
         Engaged = !routing
@@ -226,16 +315,23 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer
         if (!Engaged)
         {
             if (hasToken) ReleaseToken();
+            SenseGrabbedMate(); // заметить возню схваченного сородича (точка спасения)
             Vector3 dest; bool active = true;
-            if (Alerted && (alertPos - transform.position).sqrMagnitude > 9f)
-                dest = alertPos;                                                  // услышал вой — на точку сбора
+            if (Alerted && (alertPos + personalOffset - transform.position).sqrMagnitude > 9f)
+                dest = alertPos + personalOffset;                                  // услышал вой — на СВОЁ место у точки сбора
+            else if (Time.time < rescueUntil && (rescuePos + personalOffset - transform.position).sqrMagnitude > 4f)
+                { dest = rescuePos + personalOffset; TryHowl(rescuePos); }         // собрата схватили! вой — стая, отбивать
             else if (ScentField.Instance.TryFollow(transform.position, scentRange, out var scent))
                 { dest = scent; TryHowl(scent); }                                 // взял след — тропим и зовём ближних
+            else if (Time.time < curiosityUntil && (curiosityPos + personalOffset - transform.position).sqrMagnitude > 4f)
+                { dest = curiosityPos + personalOffset; active = false; }          // любопытство: ОСТОРОЖНО проверить гремок
             else { dest = nav.Wander(wanderRadius); active = false; }              // ничего — бродим
             Vector3 mv = nav.DirTo(dest);
             if (mv.sqrMagnitude > 0.001f)
                 transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(mv), rotationSpeed * Time.deltaTime);
-            Settle(mv * Speed * (active ? 1f : wanderSpeed) + Separation());
+            Vector3 sep = Separation();
+            if (mv.sqrMagnitude < 0.01f) sep *= 0.3f; // прибыл и стоит — не танцуем от расталкивания
+            Settle(mv * Speed * (active ? 1f : wanderSpeed) + sep);
             return;
         }
 
@@ -254,7 +350,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer
         {
             if (dist <= bite.Range)
             {
-                if (pack.TryAcquireGrab(this) && Random.value < grabChance)
+                if (!huntingPrey && pack.TryAcquireGrab(this) && Random.value < grabChance)
                 {
                     BeginGrabWindup();
                     pack.ReleaseAttack(this); hasToken = false; // захват — отдельная роль, освобождает слот атакующего
@@ -280,6 +376,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer
     // захвата почти недостижима, поэтому захват заходит С ПРЫЖКА; урона не добавляет — только контроль)
     bool TryFollowUpGrab()
     {
+        if (huntingPrey) return false; // захват завязан на игрока — змею только грызём
         Vector3 to = target.position - transform.position; to.y = 0f;
         if (to.magnitude > bite.Range) return false;
         if (!pack.TryAcquireGrab(this) || Random.value >= grabChance) { pack.ReleaseGrab(this); return false; }

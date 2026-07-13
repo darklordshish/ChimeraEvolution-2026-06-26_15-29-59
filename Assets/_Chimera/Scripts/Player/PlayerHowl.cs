@@ -2,16 +2,18 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Вой — АоЕ микро-стан вокруг игрока (Alt / правый шифтер). Фича волчьей Пасти
-/// (CreatureBody выставляет HowlEnabled): с полным волчьим лоадаутом играешь управляемого вервольфа.
-/// Урона нет — чистый контроль: прерывает замахи стаи, даёт окно. Активное УДЕРЖАНИЕ захвата
-/// воем не рвётся (как и ударом) — только пинок/рывок.
+/// Вой — СТРАШНЫЙ звук хищника (Alt / правый шифтер), два кольца: БЛИЖНИЕ оглохли (стан ≥1с — окно
+/// действий), ДАЛЬНИЕ в испуге разбегаются (страх; ярость не боится). Фича волчьей Пасти
+/// (CreatureBody выставляет HowlEnabled). Урона нет. Активное УДЕРЖАНИЕ захвата воем не рвётся —
+/// только пинок/рывок (но обхват ЗМЕИ вой рвёт на ст.1–2 — её собственный стан).
 /// </summary>
 public class PlayerHowl : MonoBehaviour, IAbility
 {
     [Header("Вой")]
     [SerializeField] float radius = 7f;
-    [SerializeField] float stunDuration = 1f;   // СТАН (контроль ≥1с): вырубает стаю на окно действий
+    [SerializeField] float stunDuration = 1f;   // СТАН (контроль ≥1с): вырубает ближних на окно действий
+    [SerializeField] float fearRadius = 14f;    // дальнее кольцо (radius..fearRadius): испуг — разбегаются
+    [SerializeField] float fearDuration = 2.5f;
     [SerializeField] float cooldown = 8f;
     [SerializeField] float shake = 0.3f;
 
@@ -39,14 +41,21 @@ public class PlayerHowl : MonoBehaviour, IAbility
 
     void DoHowl()
     {
-        hitThisHowl.Clear(); // призрака раскрывает ЗАДЕТЫЙ воем (Hit.Apply), не сам вой в пустоту
+        hitThisHowl.Clear(); // призрака раскрывает ЗАДЕТЫЙ воем (стан через Hit.Apply / испуг ниже), не вой в пустоту
         var hit = new Hit(ownHealth, transform.position);
-        Collider[] cols = Physics.OverlapSphere(transform.position, radius, ~0, QueryTriggerInteraction.Ignore);
+        Collider[] cols = Physics.OverlapSphere(transform.position, fearRadius, ~0, QueryTriggerInteraction.Ignore);
         foreach (var col in cols)
         {
             var hp = col.GetComponentInParent<Health>();
             if (hp == null || hp.transform == transform || !hitThisHowl.Add(hp)) continue;
-            hit.Apply(hp, HitEffect.Stun(stunDuration));
+
+            float d = Vector3.Distance(hp.transform.position, transform.position);
+            if (d <= radius) hit.Apply(hp, HitEffect.Stun(stunDuration)); // ближние ОГЛОХЛИ
+            else if (hp.TryGetComponent<WolfPsyche>(out var w))
+            {
+                w.Frighten(fearDuration); // дальние в ИСПУГЕ разбегаются (змея — холодный расчёт, не боится)
+                Perception.BreakGhost();  // напугал — воздействие: призрак раскрыт
+            }
         }
         if (cam != null) cam.Shake(0.15f, shake); // визуальный сигнал воя (VFX/звук — потом)
     }

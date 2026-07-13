@@ -23,8 +23,15 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     [SerializeField] float rotationSpeed = 320f;
     [SerializeField] float gravity = -20f;
     [SerializeField] float thermalRange = 14f;              // термозрение: видит тёплого сквозь укрытия
-    [SerializeField] float creepRange = 11f;                // ближе — подкрадывается; дальше в термо-радиусе — ждёт
     [SerializeField, Range(0f, 1f)] float creepSpeed = 0.5f;
+    [SerializeField] float lureInterval = 1.2f;             // ПРИМАНКА: жертва вне броска — гремим часто и маним
+    [SerializeField] float rattleHearRadius = 15f;          // пассивный гремок: тихий (будит любопытство рядом)
+    [SerializeField] float lureHearRadius = 28f;            // приманка: ГРОМКАЯ — тянет зверьё издалека (должна перекрывать термо и блуждание стаи)
+    [SerializeField] float quietCrowdRadius = 8f;           // толпа: ≥quietCrowdSize ДРУГИХ тёплых в этом радиусе — гремок молчит, добыча брошена
+    [SerializeField] int quietCrowdSize = 2;
+    [SerializeField] int fleeCrowdSize = 5;                 // ПОЛНАЯ СТАЯ: столько тёплых рядом — хищник стал жертвой, бежим
+    [SerializeField] float fleeCheckRadius = 12f;
+    [SerializeField, Range(0.3f, 1f)] float fleeSpeedMult = 0.75f; // бежит чуть медленнее волков — настигаема (укрытие на стене придёт в 3e)
     [SerializeField] float lonelyRadius = 6f;               // «одиночка» = нет ДРУГИХ тёплых в этом радиусе вокруг жертвы
     [SerializeField] float retargetInterval = 0.5f;         // как часто пересматриваем выбор жертвы
     [SerializeField] float revealMemory = 2f;               // камуфляж: «раскрыта» столько после приёма (> кулдауна — не мигает в мили)
@@ -73,7 +80,9 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     Stagger heldStagger;
     bool heldIsPlayer;
 
-    float nextAttackTime, verticalVel, windupEnd, nextRattle, rattleBlinkUntil, nextScan;
+    float nextAttackTime, verticalVel, windupEnd, nextRattle, rattleBlinkUntil, nextScan, nextFleeCheck;
+    bool fleeing;
+    Vector3 fleeDir;
     bool windingUp, constricting;                 // windingUp — только замах ОБХВАТА
     float grip, gripFloor, chokeNext;             // игрок: «сжатие» + ратчет (ниже достигнутой стадии не откат)
     int stage, maxStage, lastHp;                  // stage 1..3; maxStage — яд впрыскивается раз на новую стадию
@@ -126,12 +135,66 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         if (camo != null) camo.Reveal(revealMemory);
     }
 
-    // ГРЕМОК: затаившаяся змея периодически мигает ПОГРЕМУШКОЙ (тело невидимо; звук позже) — зацепка/приманка
-    void TryRattle()
+    // ГРЕМОК: пассивный ритм засады (редкий, ТИХИЙ) — зацепка на невидимку И самозарядная ловушка:
+    // любопытный волк придёт проверить звук, станет одиночкой у змеи — станет добычей
+    void TryRattle() => DoRattle(rattleInterval, rattleHearRadius);
+
+    // ПРИМАНКА (3d): жертва-одиночка видна в термо, но вне броска — гремим ЧАСТО и ГРОМКО, маним подойти
+    void TryLure() => DoRattle(lureInterval, lureHearRadius);
+
+    // полная стая рядом → бегство от центроида толпы (проверка раз в 0.3с)
+    bool CheckFlee()
+    {
+        if (Time.time >= nextFleeCheck)
+        {
+            nextFleeCheck = Time.time + 0.3f;
+            Vector3 centroid = Vector3.zero;
+            int warm = 0;
+            foreach (var col in Physics.OverlapSphere(transform.position, fleeCheckRadius, ~0, QueryTriggerInteraction.Ignore))
+            {
+                var hp = col.GetComponentInParent<Health>();
+                if (hp == null || hp.transform == transform || hp == heldHealth) continue;
+                if (!Perception.IsWarm(hp.transform)) continue;
+                centroid += hp.transform.position; warm++;
+            }
+            fleeing = warm >= fleeCrowdSize;
+            if (fleeing)
+            {
+                Vector3 away = transform.position - centroid / warm; away.y = 0f;
+                fleeDir = away.sqrMagnitude > 0.01f ? away.normalized : -transform.forward;
+            }
+        }
+        return fleeing;
+    }
+
+    // «толпа рядом»: ≥N других тёплых вокруг змеи (схваченная жертва не в счёт) — шуметь опасно и незачем
+    bool CrowdNear()
+    {
+        int warm = 0;
+        foreach (var col in Physics.OverlapSphere(transform.position, quietCrowdRadius, ~0, QueryTriggerInteraction.Ignore))
+        {
+            var hp = col.GetComponentInParent<Health>();
+            if (hp == null || hp.transform == transform || hp == heldHealth) continue;
+            if (!Perception.IsWarm(hp.transform)) continue;
+            if (++warm >= quietCrowdSize) return true;
+        }
+        return false;
+    }
+
+    void DoRattle(float interval, float hearRadius)
     {
         if (Time.time < nextRattle) return;
-        nextRattle = Time.time + rattleInterval;
+        if (CrowdNear()) { nextRattle = Time.time + interval; return; } // стая пришла — гремок молчит (любопытство угаснет, разбредутся)
+        nextRattle = Time.time + interval;
         rattleBlinkUntil = Time.time + rattleCue;
+
+        // звук будит любопытство зверья вокруг; пока змея гремит, память любопытства ОСВЕЖАЕТСЯ —
+        // волк доходит и издалека (игрока манит сам сигнал — видит мигание; аудио позже)
+        foreach (var col in Physics.OverlapSphere(transform.position, hearRadius, ~0, QueryTriggerInteraction.Ignore))
+        {
+            var w = col.GetComponentInParent<WolfPsyche>();
+            if (w != null) w.HearRattle(transform.position);
+        }
     }
 
     // видимость погремушки: вместе с телом (камуфляж её не трогает) ЛИБО мигание гремка
@@ -170,6 +233,17 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
 
         if (stagger != null && stagger.IsStaggered) { Settle(Vector3.zero); return; }
 
+        // ХИЩНИК СТАЛ ЖЕРТВОЙ: полная стая рядом — бросаем всё и бежим (движение само раскрывает камуфляж)
+        if (CheckFlee())
+        {
+            if (windingUp) { windingUp = false; telegraph.Clear(); }
+            target = null; targetHealth = null;
+            Vector3 mv = nav.DirTo(transform.position + fleeDir * 8f);
+            if (mv.sqrMagnitude > 0.001f) Face(mv);
+            Settle(mv * Speed * fleeSpeedMult);
+            return;
+        }
+
         if (windingUp) { RevealSelf(); UpdateGrabWindup(); return; }
 
         // ХОЛОДНЫЙ РАСЧЁТ: пересматриваем жертву (тёплая одиночка в термо-радиусе; стая рядом — никого не трогаем)
@@ -205,8 +279,10 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
             if (dist >= leap.MinRange && dist <= leap.MaxRange) { if (leap.TryUse()) activeAbility = leap; Settle(Vector3.zero); return; }
         }
 
-        // подпустила близко → подкрадывается; далеко в термо-радиусе → терпеливо ждёт (засада, не гонит по карте)
-        Settle(dist <= creepRange ? nav.DirTo(target.position) * Speed * creepSpeed : Vector3.zero);
+        // вне броска: ЗАМРИ И МАНИ — подкрадывание выдало бы засаду, пусть любопытная жертва подойдёт сама;
+        // в зоне броска на откате — доползаем в упор
+        if (dist > leap.MaxRange) { TryLure(); Settle(Vector3.zero); return; }
+        Settle(dist > bite.Range ? nav.DirTo(target.position) * Speed * creepSpeed : Vector3.zero);
     }
 
     bool heldIsPlayerTarget() => targetHealth != null && playerCtl != null && targetHealth.transform == playerCtl.transform;
@@ -333,6 +409,9 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     {
         if (lastHp > ownHealth.Current) { EndConstrict(attackCooldown); return; } // по змее попали — хват сорван
         lastHp = ownHealth.Current;
+
+        // стая прибежала отбивать (вой свидетеля) — холодный расчёт бросает добычу, не геройствует
+        if (CrowdNear()) { EndConstrict(attackCooldown); return; }
 
         Vector3 to = heldHealth.transform.position - transform.position; to.y = 0f;
         if (to.magnitude > bite.Range * 1.6f) { EndConstrict(0.5f); return; } // жертву оттолкнуло — соскользнула
