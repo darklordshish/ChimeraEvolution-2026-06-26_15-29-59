@@ -25,9 +25,10 @@ public static class Perception
     public static float ThermalRadius => SnakeThermal && ThermalRange > 0f ? ThermalRange : 14f; // dev-дефолт = радиус змеи
 
     // «тёплый» = живой (есть Health) и НЕ холоднокровный — единый источник правды для термо:
-    // им пользуются и ИИ змеи (SeesThermal), и визуал игрока (HeatSignature). Расхождение = баг.
+    // им пользуются и ИИ змеи (SeesThermal + прямые опросы CrowdNear/IsLonely/NearestWarm), и визуал игрока
+    // (HeatSignature). Расхождение = баг. Dev-призрак тепла НЕ излучает — иначе змея кралась бы тыкаться в него.
     public static bool IsWarm(Transform t) =>
-        t != null && t.GetComponent<Health>() != null && t.GetComponent<ColdBlooded>() == null;
+        t != null && !GhostHides(t) && t.GetComponent<Health>() != null && t.GetComponent<ColdBlooded>() == null;
 
     // прямая видимость от точки до цели: стена между = нет. Вблизи считаем, что видно.
     public static bool HasLineOfSight(Vector3 from, Transform target)
