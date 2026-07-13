@@ -31,7 +31,14 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     [SerializeField] int quietCrowdSize = 2;
     [SerializeField] int fleeCrowdSize = 5;                 // ПОЛНАЯ СТАЯ: столько тёплых рядом — хищник стал жертвой, бежим
     [SerializeField] float fleeCheckRadius = 12f;
-    [SerializeField, Range(0.3f, 1f)] float fleeSpeedMult = 0.75f; // бежит чуть медленнее волков — настигаема (укрытие на стене придёт в 3e)
+    [SerializeField, Range(0.3f, 1f)] float fleeSpeedMult = 0.75f; // бежит чуть медленнее волков — настигаема (спасение = стена)
+
+    [Header("Стены-убежище (3e)")]
+    [SerializeField] float wallSeekRadius = 12f;            // при бегстве ищем стену-убежище в этом радиусе
+    [SerializeField] float perchHeight = 5f;                // высота насеста над землёй (недосягаема для наземной стаи)
+    [SerializeField] float climbSpeed = 5f;
+    [SerializeField] float wallHugSpeed = 3f;               // как быстро прилипаем к плоскости стены (XZ)
+    [SerializeField] float wallHugOffset = -0.3f;          // центр тела чуть ЗА поверхностью → меши (голова+сегменты) садятся флэш; CC при климбе невидим
     [SerializeField] float lonelyRadius = 6f;               // «одиночка» = нет ДРУГИХ тёплых в этом радиусе вокруг жертвы
     [SerializeField] float retargetInterval = 0.5f;         // как часто пересматриваем выбор жертвы
     [SerializeField] float revealMemory = 2f;               // камуфляж: «раскрыта» столько после приёма (> кулдауна — не мигает в мили)
@@ -80,9 +87,13 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     Stagger heldStagger;
     bool heldIsPlayer;
 
-    float nextAttackTime, verticalVel, windupEnd, nextRattle, rattleBlinkUntil, nextScan, nextFleeCheck;
+    float nextAttackTime, verticalVel, windupEnd, nextRattle, rattleBlinkUntil, nextScan, nextFleeCheck, groundY;
     bool fleeing;
     Vector3 fleeDir;
+
+    enum ClimbPhase { None, Approach, Rise, Perch, Descend }
+    ClimbPhase climb;
+    Vector3 wallPoint, wallNormal;
     bool windingUp, constricting;                 // windingUp — только замах ОБХВАТА
     float grip, gripFloor, chokeNext;             // игрок: «сжатие» + ратчет (ниже достигнутой стадии не откат)
     int stage, maxStage, lastHp;                  // stage 1..3; maxStage — яд впрыскивается раз на новую стадию
@@ -112,6 +123,8 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
 
         var r = transform.Find("Rattle");
         if (r != null) rattleRenderer = r.GetComponentInChildren<Renderer>();
+
+        groundY = transform.position.y; // уровень земли на спавне — от него меряем высоту насеста
     }
 
     void OnDisable()
@@ -141,6 +154,79 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
 
     // ПРИМАНКА (3d): жертва-одиночка видна в термо, но вне броска — гремим ЧАСТО и ГРОМКО, маним подойти
     void TryLure() => DoRattle(lureInterval, lureHearRadius);
+
+    // ищем ближайшую ВЕРТИКАЛЬНУЮ стену без Health (стена лабиринта) кольцом лучей — убежище от стаи
+    bool FindRefugeWall(out Vector3 point, out Vector3 normal)
+    {
+        point = Vector3.zero; normal = Vector3.zero;
+        float best = wallSeekRadius; bool found = false;
+        Vector3 origin = transform.position + Vector3.up * 0.5f;
+        for (int i = 0; i < 12; i++)
+        {
+            Vector3 dir = Quaternion.Euler(0f, i * 30f, 0f) * Vector3.forward;
+            foreach (var hit in Physics.RaycastAll(origin, dir, wallSeekRadius, ~0, QueryTriggerInteraction.Ignore))
+            {
+                if (Mathf.Abs(hit.normal.y) > 0.3f) continue;                        // не вертикаль — пол/скос
+                if (hit.collider.GetComponentInParent<Health>() != null) continue;  // живое (или своё тело) — не стена
+                if (hit.distance < best) { best = hit.distance; point = hit.point; normal = hit.normal; found = true; }
+            }
+        }
+        return found;
+    }
+
+    // стейт-машина убежища: доползти к стене → подняться на насест → сидеть-манить → спуск, когда стая ушла
+    void UpdateClimb()
+    {
+        bool safe = !CheckFlee(); // стая разошлась?
+
+        switch (climb)
+        {
+            case ClimbPhase.Approach:
+            {
+                Vector3 to = wallPoint - transform.position; to.y = 0f;
+                if (to.magnitude <= 1.6f) { climb = ClimbPhase.Rise; break; }
+                if (safe) { climb = ClimbPhase.None; break; } // угроза ушла по пути — незачем лезть
+                Vector3 dir = nav.DirTo(wallPoint);
+                if (dir.sqrMagnitude > 0.001f) Face(dir);
+                Settle(dir * Speed);
+                break;
+            }
+            case ClimbPhase.Rise:
+                FaceWall();
+                ClimbMove(groundY + perchHeight);
+                if (transform.position.y >= groundY + perchHeight - 0.05f) climb = ClimbPhase.Perch;
+                break;
+            case ClimbPhase.Perch:
+                FaceWall();
+                ClimbMove(groundY + perchHeight); // держим позицию у стены
+                TryLure();                        // с насеста гремим-манишь — жертва подходит под неожиданный вектор
+                if (safe) climb = ClimbPhase.Descend;
+                break;
+            case ClimbPhase.Descend:
+                FaceWall();
+                ClimbMove(groundY);
+                if (transform.position.y <= groundY + 0.15f) climb = ClimbPhase.None;
+                break;
+        }
+    }
+
+    // морда ВВЕРХ вдоль стены, «спиной» от стены (up = нормаль) — не перпендикулярно, как на полу
+    void FaceWall()
+    {
+        Quaternion wallRot = Quaternion.LookRotation(Vector3.up, wallNormal);
+        transform.rotation = Quaternion.RotateTowards(transform.rotation, wallRot, rotationSpeed * Time.deltaTime);
+    }
+
+    // держим XZ у плоскости стены (в CC не толкаем — не проваливается) и рампой ведём Y к цели
+    void ClimbMove(float targetY)
+    {
+        Vector3 anchor = wallPoint + wallNormal * wallHugOffset; // ближе к стене — голова прижимается (CC при климбе невидим, клип не важен)
+        Vector3 p = transform.position;
+        p.x = Mathf.MoveTowards(p.x, anchor.x, wallHugSpeed * Time.deltaTime);
+        p.z = Mathf.MoveTowards(p.z, anchor.z, wallHugSpeed * Time.deltaTime);
+        p.y = Mathf.MoveTowards(p.y, targetY, climbSpeed * Time.deltaTime);
+        transform.position = p;
+    }
 
     // полная стая рядом → бегство от центроида толпы (проверка раз в 0.3с)
     bool CheckFlee()
@@ -233,11 +319,16 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
 
         if (stagger != null && stagger.IsStaggered) { Settle(Vector3.zero); return; }
 
-        // ХИЩНИК СТАЛ ЖЕРТВОЙ: полная стая рядом — бросаем всё и бежим (движение само раскрывает камуфляж)
+        // УБЕЖИЩЕ НА СТЕНЕ: если уже лезем/сидим — приоритетное состояние (спуск при исчезновении угрозы)
+        if (climb != ClimbPhase.None) { UpdateClimb(); return; }
+
+        // ХИЩНИК СТАЛ ЖЕРТВОЙ: полная стая рядом — бросаем всё, ищем СТЕНУ и лезем на недосягаемый насест;
+        // стены рядом нет — бежим по земле от центроида (настигаема), пока не найдём стену
         if (CheckFlee())
         {
             if (windingUp) { windingUp = false; telegraph.Clear(); }
             target = null; targetHealth = null;
+            if (FindRefugeWall(out wallPoint, out wallNormal)) { climb = ClimbPhase.Approach; UpdateClimb(); return; }
             Vector3 mv = nav.DirTo(transform.position + fleeDir * 8f);
             if (mv.sqrMagnitude > 0.001f) Face(mv);
             Settle(mv * Speed * fleeSpeedMult);

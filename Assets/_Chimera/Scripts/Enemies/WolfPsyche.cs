@@ -84,6 +84,8 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer
     float alertUntil, nextHowlTime, routUntil, telegraphUntil, curiosityUntil, rescueUntil, nextMateScan, nextPreyScan;
     Health playerHealth;            // кэш для возврата цели с добычи-змеи на игрока
     bool huntingPrey;              // цель сейчас — змея (захват не применяем, он завязан на игрока)
+    SnakeBodyChain preyBody;       // тело добычи-змеи — рвём по ДЛИНЕ, каждый за свой участок
+    float preyT;                   // личный участок вдоль тела змеи (0 голова … 1 хвост)
     int fear, fearThreshold;        // личный страх: смерти сородичей рядом; набрал свой порог — паникую
 
     public bool Engaged { get; private set; } // игрок в поле зрения = волк агрессивен/нацелен (для «вне боя» игрока)
@@ -190,6 +192,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer
         // личный угол особи (случайный на спавне) → у общих точек интереса (тревога/спасение/гремок)
         // каждый стоит на СВОЁМ месте кольцом, а не стопкой; заодно зачаток «личности» волка
         personalOffset = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f) * Vector3.forward * 2.2f;
+        preyT = Random.value; // личный участок вдоль тела змеи-добычи
     }
 
     void OnKilled() => PackCoordinator.Instance.ReportKill(transform.position); // страх идёт от места гибели
@@ -208,6 +211,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer
             var snake = col.GetComponentInParent<SnakePsyche>();
             if (snake == null) continue;
             if (snake.TryGetComponent<Camouflage>(out var camo) && camo.Hidden) continue; // затаилась — не видим
+            if (snake.transform.position.y > transform.position.y + 2f) continue;          // на стене-насесте — не достать, теряем интерес
             float d = (snake.transform.position - transform.position).sqrMagnitude;
             if (d < best) { best = d; prey = snake.GetComponent<Health>(); }
         }
@@ -219,6 +223,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer
         if (grabbing && playerCtl != null) playerCtl.ReleaseGrab(this);
         grabbing = false; windingUp = false; HideTelegraph(); ReleaseToken();
         target = newTarget; targetHealth = newHealth; huntingPrey = prey != null;
+        preyBody = prey != null ? prey.GetComponent<SnakeBodyChain>() : null; // тело добычи — рвём по длине
         if (bite != null) bite.SetTarget(newHealth);
         if (leap != null) leap.SetTarget(newHealth);
     }
@@ -341,12 +346,12 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer
         // цель ушла из зоны вовлечения — отпускаем жетон
         if (hasToken && dist > disengageRange) ReleaseToken();
 
-        // берём жетон атаки, когда готовы и цель в досягаемости
-        if (!hasToken && Time.time >= nextAttackTime && inCone && dist <= leap.MaxRange)
+        // жетон атаки — только против ИГРОКА (кольцо/лимит атакующих вокруг него); добычу-змею грызут все без жетона
+        if (!huntingPrey && !hasToken && Time.time >= nextAttackTime && inCone && dist <= leap.MaxRange)
             if (pack.TryAcquireAttack(this)) hasToken = true;
 
-        // с жетоном — атакуем по дистанции
-        if (hasToken && Time.time >= nextAttackTime && inCone)
+        // атакуем по дистанции (по змее — без жетона)
+        if ((huntingPrey || hasToken) && Time.time >= nextAttackTime && inCone)
         {
             if (dist <= bite.Range)
             {
@@ -362,10 +367,16 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer
             if (dist >= leap.MinRange && dist <= leap.MaxRange) { if (leap.TryUse()) activeAbility = leap; Settle(Vector3.zero); return; }
         }
 
-        // движение: с жетоном И ГОТОВЫМ ударом — рвёмся в упор (расталкивание приглушено — сквозь толпу);
-        // на откате/без жетона — кружим на кольце (укусил → отпрянул на дистанцию прыжка, не стоим столбом)
+        // движение: по ЗМЕЕ окружаем КОЛЬЦОМ (личный угол вокруг добычи — не давимся в её центр, не трясёмся);
+        // против игрока — с жетоном рвёмся в упор, на откате кружим на своём слоте окружения
         Vector3 horizontal;
-        if (hasToken && Time.time >= nextAttackTime)
+        if (huntingPrey)
+        {
+            // свой участок ВДОЛЬ тела змеи (она длинная) + лёгкий личный бок — рвут по всей длине, не давятся в центр
+            Vector3 spot = (preyBody != null ? preyBody.BodyPoint(preyT) : target.position) + personalOffset * 0.35f;
+            horizontal = ((spot - transform.position).sqrMagnitude > 0.4f ? nav.DirTo(spot) * Speed : Vector3.zero) + Separation() * attackSeparation;
+        }
+        else if (hasToken && Time.time >= nextAttackTime)
             horizontal = (dist > bite.Range ? nav.DirTo(target.position) * Speed : Vector3.zero) + Separation() * attackSeparation;
         else
             horizontal = nav.DirTo(pack.SlotPoint(this)) * Speed * circleSpeed + Separation();

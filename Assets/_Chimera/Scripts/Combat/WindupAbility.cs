@@ -71,6 +71,7 @@ public abstract class WindupAbility : MonoBehaviour, IAbility
     public AbilityRun Tick()
     {
         if (!Busy) return AbilityRun.Cancelled; // сорван извне (Abort) — психика уйдёт в короткий откат
+        if (target == null || targetHealth == null) { Busy = false; telegraph.Clear(); return AbilityRun.Cancelled; } // цель умерла посреди приёма (NPC-жертва)
         var st = OnTick();
         if (st != AbilityRun.Running) { Busy = false; telegraph.Clear(); }
         return st;

@@ -12,7 +12,7 @@ public class ArenaWalls : MonoBehaviour
 {
     [Header("Арена")]
     [SerializeField] float arenaSide = 100f;  // сторона арены (×4 площади от прежних 50)
-    [SerializeField] float wallHeight = 4f;
+    [SerializeField] float wallHeight = 8f;  // повыше: даёт змее вертикаль-убежище (climb) + меньше «вида поверх»
     [SerializeField] float wallThickness = 1f;
     [SerializeField] bool buildFloor = true;  // строить свой пол (отключи старый пол в сцене)
     [SerializeField] Color floorColor = new Color(0.34f, 0.33f, 0.31f); // приглушённый грунт

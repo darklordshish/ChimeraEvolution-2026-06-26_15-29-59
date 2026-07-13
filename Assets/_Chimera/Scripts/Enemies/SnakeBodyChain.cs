@@ -19,6 +19,18 @@ public class SnakeBodyChain : MonoBehaviour
     readonly List<Vector3> path = new(); // [0] — новейшая точка
     Vector3 lastSample;
 
+    /// <summary>Точка вдоль тела: t01 0=голова(корень) … 1=хвост. Волки рвут змею ПО ДЛИНЕ, не кольцом.</summary>
+    public Vector3 BodyPoint(float t01)
+    {
+        int n = segments != null ? segments.Length : 0;
+        if (n == 0) return transform.position;
+        float f = Mathf.Clamp01(t01) * n;          // точки: [голова, seg0..seg(n-1)]
+        int i = Mathf.Clamp((int)f, 0, n - 1);
+        Vector3 a = i == 0 ? transform.position : (segments[i - 1] != null ? segments[i - 1].position : transform.position);
+        Vector3 b = segments[i] != null ? segments[i].position : a;
+        return Vector3.Lerp(a, b, f - i);
+    }
+
     void Awake()
     {
         // сегменты не должны становиться препятствием для СВОЕГО CharacterController
@@ -49,8 +61,10 @@ public class SnakeBodyChain : MonoBehaviour
         {
             if (segments[i] == null) continue;
             Vector3 p = PointAlongPath((i + 1) * spacing, out Vector3 toHead);
-            segments[i].position = p + Vector3.up * height;
-            if (toHead.sqrMagnitude > 0.0001f) segments[i].rotation = Quaternion.LookRotation(toHead); // погремушка ложится вдоль пути
+            // смещение вдоль ВЕРХА ТЕЛА (transform.up): на земле = мировой верх (как было), на стене = нормаль
+            // стены → сегменты отходят ОТ стены заодно с головой, а не влипают в плоскость
+            segments[i].position = p + transform.up * height;
+            if (toHead.sqrMagnitude > 0.0001f) segments[i].rotation = Quaternion.LookRotation(toHead, transform.up); // ориентация с учётом верха тела
         }
     }
 
