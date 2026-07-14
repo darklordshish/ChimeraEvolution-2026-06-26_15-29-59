@@ -58,7 +58,7 @@ public static class SpeciesBootstrap
         snake.organs = new[]
         {
             new Organ { organName = "Ядовитые клыки",       slot = "Пасть",  hotkey = "5", cost = 5, damage = 24, enablesBite = true, venomStacks = 1 }, // укус игрока травит
-            new Organ { organName = "Хладнокровное сердце", slot = "Сердце", hotkey = "3", cost = 5, maxHp = 200, regen = 4f, atkCooldown = 0.5f, coldBlooded = true }, // кулдаун ОБЯЗАТЕЛЕН: 0 в бленде = меч-пулемёт (медленнее человека — холодный метаболизм)
+            new Organ { organName = "Хладнокровное сердце", slot = "Сердце", hotkey = "3", cost = 5, maxHp = 200, regen = 0f, regenOOC = 2f, atkCooldown = 0.5f, coldBlooded = true }, // ХОЛОДНЫЙ МЕТАБОЛИЗМ: в бою НЕ регенит (regen 0), вне боя восстанавливается ЛУЧШЕ человека (regenOOC 2 > 1). Кулдаун ОБЯЗАТЕЛЕН (0 в бленде = меч-пулемёт)
             new Organ { organName = "Тело-хвост",           slot = "Тело",   hotkey = "7", cost = 5, moveSpeed = 10f, dashSpeed = 20f, chassisOnly = true }, // ходовая часть ШАССИ змеи: аугументом не крадётся (локомоция = свойство шасси)
             new Organ { organName = "Чешуя",                slot = "Шкура",  hotkey = "6", cost = 4, damageReduction = 0.4f, camo = true }, // невидимость в неподвижности
             new Organ { organName = "Пит-орган",            slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.7f, enablesThermal = true, thermalRange = 14f }, // тепло сквозь стены; dashCd обязателен (0 = спам рывка)

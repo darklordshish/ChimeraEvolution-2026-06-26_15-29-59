@@ -59,8 +59,8 @@ MonoBehaviour:
     dashSpeed: 0
     dashCooldown: 0
     damageReduction: 0
-    regen: 4
-    regenOOC: 0
+    regen: 0
+    regenOOC: 2
     thermalRange: 0
     enablesBite: 0
     enablesScent: 0
