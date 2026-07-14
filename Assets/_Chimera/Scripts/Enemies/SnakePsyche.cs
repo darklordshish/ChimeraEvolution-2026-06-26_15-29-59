@@ -83,6 +83,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     WindupAbility activeAbility;   // укус/рывок в процессе — психика его тикает
     Camouflage camo;               // камуфляж (Чешуя): раскрываем на время боя (лениво — вешается после нашего Awake)
     AlertState alert;              // S1: общая машина восприятия (зеркало — поведение ещё не завязано на State)
+    Senses senses;                 // S1: сенсорный профиль — термо-дальность идёт через него (пер-состоянчато; множитель=1 пока)
 
     // текущая ЖЕРТВА охоты (игрок или NPC) — выбирается сканом «тёплая одиночка»
     Transform target;
@@ -117,6 +118,8 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         if (!TryGetComponent(out leap)) leap = gameObject.AddComponent<LeapAbility>();
         if (!TryGetComponent(out variance)) variance = gameObject.AddComponent<SpawnVariance>();
         if (!TryGetComponent(out alert)) alert = gameObject.AddComponent<AlertState>(); // общая машина восприятия (S1)
+        if (!TryGetComponent(out senses)) senses = gameObject.AddComponent<Senses>(); // сенсорный профиль (S1)
+        senses.Seed(SenseKind.Thermal, thermalRange); // сид базовой термо-дальности (если профиль не задан на префабе)
 
         if (!TryGetComponent<ScentTrail>(out var scent)) scent = gameObject.AddComponent<ScentTrail>(); // змея тоже пахнет — нюх её ловит (RPS)…
         scent.SetStrength(scentStrength); // …но слабо: не потеет, мало движется — облака запаха почти не разносит
@@ -364,7 +367,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
 
         // жертвы нет ЛИБО пропала из термо (умерла/призрак/ушла) → не застываем засадой навечно, а ПРОКРАДЫВАЕМСЯ
         // искать тёплую жизнь (иначе стационарные точки-приманки сгоняют волков в осциллирующие кучи между змеями)
-        if (target == null || !Perception.SeesThermal(transform.position, target, thermalRange))
+        if (target == null || !Perception.SeesThermal(transform.position, target, senses.Range(SenseKind.Thermal)))
         {
             Prowl();
             return;
@@ -401,7 +404,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     void UpdateAlert()
     {
         bool attacking = constricting || activeAbility != null || windingUp
-                         || (target != null && Perception.SeesThermal(transform.position, target, thermalRange));
+                         || (target != null && Perception.SeesThermal(transform.position, target, senses.Range(SenseKind.Thermal)));
         bool cue = !attacking && (fleeing || climb != ClimbPhase.None || NearestWarm(roamSenseRadius, out _) != null);
         alert.Observe(attacking, cue);
     }
@@ -411,11 +414,12 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     {
         Health best = null;
         float bestD = float.MaxValue;
-        foreach (var col in Physics.OverlapSphere(transform.position, thermalRange, ~0, QueryTriggerInteraction.Ignore))
+        float tr = senses.Range(SenseKind.Thermal); // S1: термо-дальность через профиль (пер-состоянчато; множитель=1 пока)
+        foreach (var col in Physics.OverlapSphere(transform.position, tr, ~0, QueryTriggerInteraction.Ignore))
         {
             var hp = col.GetComponentInParent<Health>();
             if (hp == null || hp.transform == transform || hp == best) continue;
-            if (!Perception.SeesThermal(transform.position, hp.transform, thermalRange)) continue;
+            if (!Perception.SeesThermal(transform.position, hp.transform, tr)) continue;
             if (hp.GetComponent<Massive>() != null) continue; // на массивную тушу холодный расчёт не пойдёт
             if (!IsLonely(hp)) continue;
             float d = (hp.transform.position - transform.position).sqrMagnitude;
