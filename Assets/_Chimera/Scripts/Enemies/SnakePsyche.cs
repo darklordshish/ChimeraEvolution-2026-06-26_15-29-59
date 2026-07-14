@@ -655,7 +655,10 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         Vector3 dir = d > 0.001f ? to / d : transform.forward;
         Face(dir);
         float hold = bite.Range * 0.6f;
-        Settle(Vector3.ClampMagnitude(dir * (d - hold) * 8f, moveSpeed));
+        float err = d - hold;
+        // анти-тремор: дедзона у дистанции удержания + мягкий гейн (был ×8) — не долбим CC жертвы туда-сюда,
+        // особенно игрока (взаимный CC-push давал дрожь). В пределах ±0.3м просто стоим
+        Settle(Mathf.Abs(err) > 0.3f ? Vector3.ClampMagnitude(dir * err * 3f, moveSpeed) : Vector3.zero);
     }
 
     void SetStage(int s)

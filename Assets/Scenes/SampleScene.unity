@@ -1200,6 +1200,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::PackCoordinator
   maxAttackers: 4
   standoff: 5.5
+  ringSlots: 10
+  looseRadius: 9
   routKillsMin: 3
   routKillsMax: 5
   routDuration: 4

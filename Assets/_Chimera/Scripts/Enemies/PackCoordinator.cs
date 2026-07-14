@@ -10,8 +10,10 @@ using UnityEngine;
 /// </summary>
 public class PackCoordinator : MonoBehaviour
 {
-    [SerializeField] int maxAttackers = 4;    // сколько волков грызут одновременно (захват — сверх этого, отдельной ролью)
-    [SerializeField] float standoff = 4.5f;   // радиус кольца, на котором ждут не-атакующие
+    [SerializeField] int maxAttackers = 4;    // грызут одновременно (захват — сверх, отдельной ролью): 4 грызут + 1 держит = 5 в упоре
+    [SerializeField] float standoff = 5.5f;   // радиус КОЛЬЦА ОЖИДАНИЯ (battle-circle: слотовые ждут здесь)
+    [SerializeField] int ringSlots = 10;      // фикс. слотов на кольце ожидания — волк резервирует БЛИЖАЙШИЙ свободный
+    [SerializeField] float looseRadius = 9f;  // РЫХЛАЯ СТАЯ: кому не хватило слота — держатся поодаль на этом радиусе (не жмутся)
 
     [Header("Мораль стаи")]
     [SerializeField] int routKillsMin = 3;    // после стольких смертей подряд (случайно из диапазона) ломается мораль
@@ -36,7 +38,12 @@ public class PackCoordinator : MonoBehaviour
 
     readonly List<WolfPsyche> wolves = new();
     readonly HashSet<WolfPsyche> attackers = new();
+    readonly Dictionary<WolfPsyche, float> looseAngle = new(); // персональный угол РЫХЛОЙ стаи (золотой угол, стабилен на всю жизнь)
+    int looseCounter;
+    WolfPsyche[] ring;   // слоты кольца ожидания: ring[i] = владелец слота i (или null)
     WolfPsyche grabber;
+
+    void EnsureRing() { if (ring == null || ring.Length != Mathf.Max(1, ringSlots)) ring = new WolfPsyche[Mathf.Max(1, ringSlots)]; }
     Transform player;
     Health playerHealth;
     float fearlessUntil;
@@ -123,21 +130,31 @@ public class PackCoordinator : MonoBehaviour
         return false;
     }
 
-    public void Register(WolfPsyche w) { if (!wolves.Contains(w)) wolves.Add(w); }
+    public void Register(WolfPsyche w)
+    {
+        if (wolves.Contains(w)) return;
+        wolves.Add(w);
+        looseAngle[w] = looseCounter++ * 137.508f; // ЗОЛОТОЙ УГОЛ рыхлой стаи: ровный разброс при любом числе
+    }
 
     public void Unregister(WolfPsyche w)
     {
         wolves.Remove(w);
         attackers.Remove(w);
+        looseAngle.Remove(w);
+        ReleaseRingSlot(w);
         if (grabber == w) grabber = null;
     }
+
+    void ReleaseRingSlot(WolfPsyche w) { if (ring != null) for (int i = 0; i < ring.Length; i++) if (ring[i] == w) ring[i] = null; }
 
     public bool TryAcquireAttack(WolfPsyche w)
     {
         if (attackers.Contains(w)) return true;
         int cap = Fearless ? Mathf.Max(maxAttackers, wolves.Count) : maxAttackers; // ярость: наваливается вся стая
         if (attackers.Count >= cap) return false;
-        attackers.Add(w);
+        attackers.Add(w); // first-come среди готовых в зоне; «ближайший-гейт» пробовали — голодание жетонов (кусал один)
+        ReleaseRingSlot(w); // ушёл в упор → слот на кольце свободен (ротация: ближайший из рыхлой стаи займёт)
         return true;
     }
 
@@ -145,20 +162,44 @@ public class PackCoordinator : MonoBehaviour
 
     public bool TryAcquireGrab(WolfPsyche w)
     {
-        if (grabber == null || grabber == w) { grabber = w; return true; }
+        if (grabber == null || grabber == w) { grabber = w; ReleaseRingSlot(w); return true; } // держит в упоре → слот свободен
         return false;
     }
 
     public void ReleaseGrab(WolfPsyche w) { if (grabber == w) grabber = null; }
 
-    // Точка на кольце окружения для данного волка (слот = его индекс в стае).
-    public Vector3 SlotPoint(WolfPsyche w)
+    // волк покинул строй (потерял игрока/бежит) → освободить его слот кольца, чтобы занял другой
+    public void LeaveRing(WolfPsyche w) => ReleaseRingSlot(w);
+
+    // BATTLE-CIRCLE: куда идёт НЕ-атакующий волк. Владеет слотом кольца → его точка; иначе занимает БЛИЖАЙШИЙ
+    // свободный слот (резервация — никто не пересекает толпу, не дерётся за место); нет свободных → РЫХЛАЯ СТАЯ
+    // поодаль (личный золотой угол). Слоты кольца разнесены шире радиуса расталкивания → сел → сепарация 0 → не дрожит.
+    public Vector3 StandoffPoint(WolfPsyche w)
     {
         Transform p = Player;
         if (p == null) return w.transform.position;
-        int n = Mathf.Max(1, wolves.Count);
-        int i = wolves.IndexOf(w); if (i < 0) i = 0;
-        Vector3 dir = Quaternion.Euler(0f, 360f / n * i, 0f) * Vector3.forward;
-        return p.position + dir * standoff;
+        EnsureRing();
+        int slot = System.Array.IndexOf(ring, w);
+        if (slot < 0) slot = ClaimRingSlot(w); // ещё не на кольце — займём ближайший свободный слот
+        if (slot >= 0) return p.position + RingDir(slot) * standoff; // ждём на своём слоте кольца
+        float a = looseAngle.TryGetValue(w, out float ang) ? ang : 0f; // кольцо занято → рыхлая стая снаружи
+        return p.position + Quaternion.Euler(0f, a, 0f) * Vector3.forward * looseRadius;
     }
+
+    // ближайший к волку СВОБОДНЫЙ слот кольца (резервируем за ним); -1 если все заняты
+    int ClaimRingSlot(WolfPsyche w)
+    {
+        Transform p = Player; if (p == null) return -1;
+        int best = -1; float bestD = float.MaxValue;
+        for (int i = 0; i < ring.Length; i++)
+        {
+            if (ring[i] != null) continue;
+            float d = (p.position + RingDir(i) * standoff - w.transform.position).sqrMagnitude;
+            if (d < bestD) { bestD = d; best = i; }
+        }
+        if (best >= 0) ring[best] = w;
+        return best;
+    }
+
+    Vector3 RingDir(int i) => Quaternion.Euler(0f, 360f / Mathf.Max(1, ring.Length) * i, 0f) * Vector3.forward;
 }

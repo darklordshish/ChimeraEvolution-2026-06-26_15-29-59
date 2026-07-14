@@ -36,6 +36,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
 
     [Header("Окружение (стая)")]
     [SerializeField] float circleSpeed = 0.85f;  // доля скорости при кружении в слоте
+    [SerializeField] float arriveRadius = 2.5f;  // battle-circle: в этом радиусе от слота ПЛАВНО тормозим (arrive) — садимся без осцилляции
     [SerializeField] float disengageRange = 9f;  // дальше — отпускаем жетон атаки
 
     [Header("Вой (зов ближней стаи)")]
@@ -55,6 +56,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     [SerializeField] float separationRadius = 1.6f;
     [SerializeField] float separationStrength = 4f;
     [SerializeField, Range(0f, 1f)] float attackSeparation = 0.25f; // жетон атаки: толпа почти не тормозит — иначе равновесие запирает в мёртвой зоне между укусом и прыжком
+    [SerializeField] float jitterDamp = 0.08f;   // анти-тремор: постоянная времени сглаживания скорости роя (гасит дрожь расталкивание↔притяжение)
 
     static readonly Collider[] neighbors = new Collider[16];
 
@@ -77,6 +79,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     Health targetHealth;
 
     float nextAttackTime, verticalVel, windupEnd;
+    Vector3 smoothHoriz;                 // анти-тремор: сглаженная горизонтальная скорость роя (низкочастотный фильтр)
     bool windingUp, hasToken, grabbing;  // windingUp — только замах ЗАХВАТА
     Color activeTelegraph;
     Vector3 alertPos;               // куда сбегаться по услышанному вою (личная тревога, не глобальная)
@@ -347,6 +350,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         if (!Engaged)
         {
             if (hasToken) ReleaseToken();
+            pack.LeaveRing(this); // потерял игрока — освобождаем слот кольца (занят бродит/тропит, не держит место)
             SenseGrabbedMate(); // заметить возню схваченного сородича (точка спасения)
             Vector3 dest; bool active = true;
             if (Alerted && (alertPos + personalOffset - transform.position).sqrMagnitude > 9f)
@@ -394,20 +398,29 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
             if (dist >= leap.MinRange && dist <= leap.MaxRange) { if (leap.TryUse()) activeAbility = leap; Settle(Vector3.zero); return; }
         }
 
-        // движение: по ЗМЕЕ окружаем КОЛЬЦОМ (личный угол вокруг добычи — не давимся в её центр, не трясёмся);
-        // против игрока — с жетоном рвёмся в упор, на откате кружим на своём слоте окружения
+        // движение: по ЗМЕЕ окружаем КОЛЬЦОМ (личный угол вокруг добычи); против игрока — с жетоном рвёмся в упор,
+        // на откате идём на слот кольца / в рыхлую стаю (battle-circle в PackCoordinator.StandoffPoint)
         Vector3 horizontal;
         if (huntingPrey)
         {
-            // свой участок ВДОЛЬ тела змеи (она длинная) + лёгкий личный бок — рвут по всей длине, не давятся в центр
             Vector3 spot = (preyBody != null ? preyBody.BodyPoint(preyT) : target.position) + personalOffset * 0.35f;
             horizontal = ((spot - transform.position).sqrMagnitude > 0.4f ? nav.DirTo(spot) * Speed : Vector3.zero) + Separation() * attackSeparation;
         }
         else if (hasToken && Time.time >= nextAttackTime)
             horizontal = (dist > bite.Range ? nav.DirTo(target.position) * Speed : Vector3.zero) + Separation() * attackSeparation;
         else
-            horizontal = nav.DirTo(pack.SlotPoint(this)) * Speed * circleSpeed + Separation();
-        Settle(horizontal);
+        {
+            // battle-circle: идём к своей точке (слот кольца / рыхлая стая) с ARRIVE — плавно тормозим у цели,
+            // не «мчим и бьёмся о дедзону». Слоты разнесены → на месте сепарация ≈ 0 → садимся без дрожи
+            Vector3 dest = pack.StandoffPoint(this);
+            Vector3 flat = dest - transform.position; flat.y = 0f;
+            float arv = Speed * circleSpeed * Mathf.Clamp01(flat.magnitude / Mathf.Max(arriveRadius, 0.01f));
+            horizontal = nav.DirTo(dest) * arv + Separation();
+        }
+        // анти-тремор: низкочастотный фильтр гасит дрожь роя (расталкивание↔притяжение в дедзоне у цели/на слоте),
+        // не мешая ровному преследованию — устойчивое направление сходится за ~jitterDamp секунд (кадронезависимо)
+        smoothHoriz = Vector3.Lerp(smoothHoriz, horizontal, 1f - Mathf.Exp(-Time.deltaTime / Mathf.Max(jitterDamp, 0.001f)));
+        Settle(smoothHoriz);
     }
 
     // приземлился прыжком у цели — шанс сразу вцепиться (с новым ритмом «кольцо → прыжок» мили-ветка
@@ -498,13 +511,15 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         windingUp = false;
         HideTelegraph();
         ReleaseToken();
-        if (cooldown > 0f) nextAttackTime = Time.time + cooldown;
+        // лёгкая рандомизация ритма (±15%): рассинхрон стаи — не дёргаются к жетону все одновременно
+        if (cooldown > 0f) nextAttackTime = Time.time + cooldown * Random.Range(0.85f, 1.15f);
     }
 
     // мораль сломлена: сбрасываем приём/захват/жетоны и бежим прочь от игрока
     void Rout()
     {
         if (windingUp || grabbing || hasToken) Disengage(0f);
+        pack.LeaveRing(this); // паника — покидаем строй, слот кольца свободен
         Vector3 from = target != null ? target.position : alertPos;
         Vector3 away = transform.position - from; away.y = 0f;
         Vector3 dir = away.sqrMagnitude > 0.01f ? away.normalized : transform.forward;
