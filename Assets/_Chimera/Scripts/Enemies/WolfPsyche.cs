@@ -21,6 +21,8 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     [SerializeField] float rotationSpeed = 250f;
     [SerializeField] float gravity = -20f;
     [SerializeField] float sightRange = 25f;
+    [SerializeField] float sightHalfAngle = 60f;   // СЕКТОР ОБЗОРА зрения (полу-угол; 60 = конус 120°): вне конуса не видит (стелс со спины)
+    [SerializeField] float proximityRadius = 2.5f; // «в упор»: вплотную чует и вне конуса (шорох/дыхание — не подкрасться впритык)
     [SerializeField] float hpRegen = 1f;       // постоянная регенерация HP волка (живучесть стаи)
     [SerializeField] float wanderRadius = 15f;  // радиус случайного блуждания в покое
     [SerializeField, Range(0f, 1f)] float wanderSpeed = 0.5f; // доля скорости при спокойном блуждании
@@ -188,6 +190,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         if (!TryGetComponent(out senses)) senses = gameObject.AddComponent<Senses>(); // сенсорный профиль (S1)
         senses.Seed(SenseKind.Sight, sightRange);   // сид базовых дальностей из полей психики (если профиль не задан на префабе)
         senses.Seed(SenseKind.Scent, scentRange);
+        senses.SeedViewAngle(SenseKind.Sight, sightHalfAngle); // зрение — КОНУС (термо/запах остаются круговыми)
 
         if (!TryGetComponent<ScentTrail>(out _)) gameObject.AddComponent<ScentTrail>(); // запаховый след (виден при волчьем Чутье)
         if (!TryGetComponent<HeatSignature>(out _)) gameObject.AddComponent<HeatSignature>(); // тёплый — виден термозрению игрока
@@ -295,10 +298,15 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         if (activeAbility == null && !grabbing && !windingUp) RetargetPrey(); // раскрытая змея рядом → добыча стаи
 
         bool routing = Routing; // личная паника сломлена → бегство (в ярости от воя не бежим)
-        float sight = senses.Range(SenseKind.Sight); // S1: дальность зрения через профиль (пер-состоянчато; множитель=1 пока)
-        Engaged = !routing
-                  && (target.position - transform.position).sqrMagnitude <= sight * sight
-                  && Perception.HasLineOfSight(transform.position, target); // зрение требует прямой видимости
+        float sight = senses.Range(SenseKind.Sight); // дальность зрения через профиль (пер-состоянчато)
+        Vector3 toT = target.position - transform.position; toT.y = 0f;
+        float distSq = toT.sqrMagnitude;
+        // зрение = дальность + КОНУС (вне сектора обзора не видим — стелс со спины/сбоку) ИЛИ «в упор» + прямая видимость.
+        // «в упор» ловит цель вплотную вне конуса (шорох); once Engaged волк доворачивает мордой к цели → держит в конусе
+        bool inView = distSq <= proximityRadius * proximityRadius
+                      || Vector3.Angle(transform.forward, toT) <= senses.ViewHalfAngle(SenseKind.Sight);
+        Engaged = !routing && distSq <= sight * sight && inView
+                  && Perception.HasLineOfSight(transform.position, target);
         if (Engaged) TryHowl(target.position); // увидел игрока → взвыл, зову ближних в стаю
         alert.Observe(Engaged, HasCue());      // S1: кормим машину восприятия (зеркало — поведение ниже пока не трогаем)
 

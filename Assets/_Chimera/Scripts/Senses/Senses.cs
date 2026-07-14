@@ -25,10 +25,20 @@ public class Senses : MonoBehaviour
 
     public float Acuity(SenseKind k) => Ch(k).acuity;
 
+    /// <summary>Полу-угол сектора обзора чувства (180 = круговое; зрение — узкий конус).</summary>
+    public float ViewHalfAngle(SenseKind k) => Ch(k).viewHalfAngle;
+
     /// <summary>Сид базовой дальности из психики — только если канал ещё НЕ настроен на префабе (range ≤ 0).</summary>
     public void Seed(SenseKind k, float range)
     {
         var c = Ch(k);
         if (c.range <= 0f) c.range = range;
+    }
+
+    /// <summary>Сид сектора обзора из психики — только если канал ещё круговой по умолчанию (не задан на префабе).</summary>
+    public void SeedViewAngle(SenseKind k, float halfAngle)
+    {
+        var c = Ch(k);
+        if (c.viewHalfAngle >= 180f) c.viewHalfAngle = halfAngle;
     }
 }
