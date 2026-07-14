@@ -50,6 +50,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     [SerializeField] float curiosityMemory = 5f; // любопытство к странному звуку (гремок): сколько идём проверять
     [SerializeField] float rescueRadius = 12f;   // замечаем возню схваченного сородича (стан рядом) — воем и идём отбивать
     [SerializeField] float preyRange = 14f;      // РАСКРЫТАЯ змея (движется/бежит) в этом радиусе — добыча стаи (хищник стал жертвой)
+    [SerializeField] float frightenScare = 6f;   // острый испуг (вой игрока / удар из невидимости): величина страха разом > порога → срыв
 
     [Header("Кулдаун")]
     [SerializeField] float attackCooldown = 1.4f;
@@ -88,13 +89,13 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     Vector3 curiosityPos;           // странный звук (гремок) — точка любопытства
     Vector3 rescuePos;              // схваченный сородич — точка спасения
     Vector3 personalOffset;         // личное место у точки интереса: стая встаёт кольцом, а не стопкой (анти-дёргание)
-    float alertUntil, nextHowlTime, routUntil, telegraphUntil, curiosityUntil, rescueUntil, nextMateScan, nextPreyScan;
+    float alertUntil, nextHowlTime, telegraphUntil, curiosityUntil, rescueUntil, nextMateScan, nextPreyScan;
     Health playerHealth;            // кэш для возврата цели с добычи-змеи на игрока
     bool huntingPrey;              // цель сейчас — змея (захват не применяем, он завязан на игрока)
     bool carried;                  // 3e-ii: змея тащит нас на стену — тело-кукла, рулит носитель
     SnakeBodyChain preyBody;       // тело добычи-змеи — рвём по ДЛИНЕ, каждый за свой участок
     float preyT;                   // личный участок вдоль тела змеи (0 голова … 1 хвост)
-    int fear, fearThreshold;        // личный страх: смерти сородичей рядом; набрал свой порог — паникую
+    Fear fearStatus;                // накопительный СТРАХ (эффект-компонент); порог храбрости — личность
 
     public bool Engaged { get; private set; } // игрок в поле зрения = волк агрессивен/нацелен (для «вне боя» игрока)
     bool Alerted => Time.time < alertUntil;   // услышал вой — знает, куда сбегаться (личная память)
@@ -129,17 +130,17 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         }
     }
 
-    public bool Routing => Time.time < routUntil && !pack.Fearless && !(rage != null && rage.IsEnraged); // паника; ярость её перебивает
-    public void CalmRout() { routUntil = 0f; fear = 0; }                   // вой вожака гасит бегство и страх
+    public bool Routing => fearStatus != null && fearStatus.IsRouting && !pack.Fearless; // паника (Fear-эффект); ярость/вой вожака перебивают
+    public void CalmRout() { if (fearStatus != null) fearStatus.Calm(); }  // вой вожака гасит страх и бегство
     public void EnrageFor(float duration) => rage.Enrage(duration);        // вой сородича/вожака бесит
 
     // ИСПУГ (страшный вой игрока, дальнее кольцо): сорваться и бежать. Ярость не боится.
     // Зачаток эффекта «страх» из очереди словаря (полная версия с потерей управления игрока — потом)
+    // острый испуг (страшный вой игрока, дальнее кольцо): величина страха разом > порога → срыв в бегство.
+    // duration — легаси (длину бегства держит Fear.routDuration); иммунитет ярости/холода — внутри Fear.Add
     public void Frighten(float duration)
     {
-        if (rage != null && rage.IsEnraged) return;
-        routUntil = Mathf.Max(routUntil, Time.time + duration);
-        ForgetAlert(); // со страху теряет и точку сбора
+        if (fearStatus != null) fearStatus.Add(frightenScare);
     }
 
     // S1-зацепка для машины восприятия: чую что-то, что ведёт к Настороженности (но не подтверждённую цель —
@@ -161,17 +162,11 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         bite.SetDamage(damage);
     }
 
-    // сородич погиб рядом (и я в бою) → +1 к личному страху; набрал свой порог — паникую и бегу
+    // сородич погиб рядом (и я в бою) → +1 к накопленному страху; перевалит личный порог — паникую (Fear-эффект)
     public void AddFear()
     {
-        if (!Engaged || (rage != null && rage.IsEnraged)) return; // яростные не боятся
-        if (++fear >= fearThreshold)
-        {
-            routUntil = Time.time + pack.RoutDuration; // брошу бой и убегу (жетоны отпущу сам в Rout)
-            ForgetAlert();                             // потеряю игрока — назад в поиск
-            fear = 0;
-            fearThreshold = pack.RollPanicThreshold(); // следующий раз — новый порог храбрости
-        }
+        if (!Engaged) return; // страх копится только в бою; иммунитет ярости/холода — внутри Fear.Add
+        if (fearStatus != null) fearStatus.Add(1f);
     }
 
     void Awake()
@@ -188,6 +183,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         if (!TryGetComponent(out variance)) variance = gameObject.AddComponent<SpawnVariance>();
         if (!TryGetComponent(out alert)) alert = gameObject.AddComponent<AlertState>(); // общая машина восприятия (S1)
         if (!TryGetComponent(out senses)) senses = gameObject.AddComponent<Senses>(); // сенсорный профиль (S1)
+        if (!TryGetComponent(out fearStatus)) fearStatus = gameObject.AddComponent<Fear>(); // накопительный страх (S1 срез 5)
         senses.Seed(SenseKind.Sight, sightRange);   // сид базовых дальностей из полей психики (если профиль не задан на префабе)
         senses.Seed(SenseKind.Scent, scentRange);
         senses.SeedViewAngle(SenseKind.Sight, sightHalfAngle); // зрение — КОНУС (термо/запах остаются круговыми)
@@ -208,7 +204,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
             ownHealth.onDeath.AddListener(OnKilled); // смерть бьёт по морали стаи
             ownHealth.onDamaged.AddListener(OnHurt); // боль от невидимого источника (змея!) — паника
         }
-        fearThreshold = pack.RollPanicThreshold(); // личный порог храбрости (случайный из диапазона пула)
+        if (fearStatus != null) fearStatus.SetThreshold(pack.RollPanicThreshold()); // личный порог храбрости (личность; срез 6 заменит)
 
         // личный угол особи (случайный на спавне) → у общих точек интереса (тревога/спасение/гремок)
         // каждый стоит на СВОЁМ месте кольцом, а не стопкой; заодно зачаток «личности» волка
@@ -261,8 +257,8 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     // В бою с видимой целью и в ярости не паникуем; из стана не убежать (гейт в Update)
     void OnHurt()
     {
-        if (Engaged || (rage != null && rage.IsEnraged)) return;
-        routUntil = Time.time + 2f;
+        if (Engaged) return; // враг ВИДЕН — не паникуем от удара; иммунитет ярости/холода — внутри Fear.Add
+        if (fearStatus != null) fearStatus.Add(frightenScare);
     }
 
     void OnEnable()
@@ -528,6 +524,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     {
         if (windingUp || grabbing || hasToken) Disengage(0f);
         pack.LeaveRing(this); // паника — покидаем строй, слот кольца свободен
+        ForgetAlert();        // со страху теряем и точку сбора (игрока) — назад в поиск
         Vector3 from = target != null ? target.position : alertPos;
         Vector3 away = transform.position - from; away.y = 0f;
         Vector3 dir = away.sqrMagnitude > 0.01f ? away.normalized : transform.forward;

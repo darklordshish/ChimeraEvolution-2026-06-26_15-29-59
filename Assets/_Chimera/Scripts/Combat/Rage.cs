@@ -21,6 +21,11 @@ public class Rage : MonoBehaviour
     public float SpeedMult => IsEnraged ? speedMult : 1f;
     public float IncomingMult => IsEnraged ? incomingMult : 1f;
 
-    /// <summary>Взбесить на duration (вой). Не укорачивает уже идущую ярость.</summary>
-    public void Enrage(float duration) => until = Mathf.Max(until, Time.time + duration);
+    /// <summary>Взбесить на duration (вой). Не укорачивает уже идущую. Холоднокровный ИММУНЕН к ВНЕШНЕЙ ярости
+    /// (эмоционально неподвижен — рациональный расчёт). Врождённую вечную (permanent, вервольф) это не трогает.</summary>
+    public void Enrage(float duration)
+    {
+        if (GetComponent<ColdBlooded>() != null) return; // холоднокровный не раскачивается чужим воем
+        until = Mathf.Max(until, Time.time + duration);
+    }
 }
