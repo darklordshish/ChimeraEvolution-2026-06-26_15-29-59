@@ -152,6 +152,7 @@ MonoBehaviour:
   regenDebuff: 1
   regenDebuffTime: 0
   venomStacks: 0
+  bleedStacks: 0
 --- !u!114 &5884280649072417053
 MonoBehaviour:
   m_ObjectHideFlags: 0

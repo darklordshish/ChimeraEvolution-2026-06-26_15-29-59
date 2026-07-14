@@ -4,7 +4,7 @@ using UnityEngine;
 /// Тип эффекта удара. Маленький закрытый набор — то, что УЖЕ есть в бою.
 /// Новый (яд/DoT) добавляется одной веткой в Hit.Apply — лакмус здоровья абстракции.
 /// </summary>
-public enum EffectKind { Damage, LifeSteal, Knockback, RegenDebuff, Stun, Venom, Fear, Rage }
+public enum EffectKind { Damage, LifeSteal, Knockback, RegenDebuff, Stun, Venom, Fear, Rage, Bleed }
 
 /// <summary>
 /// Эффект удара как value-тип (ноль аллокаций на удар). Собирается фабриками, применяется через Hit.
@@ -28,6 +28,7 @@ public readonly struct HitEffect
     public static HitEffect Venom() => new(EffectKind.Venom, 0, 0f, 0f, 0f); // добавляет стак яда цели
     public static HitEffect Fear(int amount) => new(EffectKind.Fear, amount, 0f, 0f, 0f);      // +величина страха (холоднокровный иммунен)
     public static HitEffect Rage(float duration) => new(EffectKind.Rage, 0, 0f, 0f, duration); // взбесить извне (холоднокровный иммунен)
+    public static HitEffect Bleed() => new(EffectKind.Bleed, 0, 0f, 0f, 0f);                   // добавляет стак кровотечения (клыки)
 }
 
 /// <summary>
@@ -82,6 +83,11 @@ public readonly struct Hit
                 break;
             case EffectKind.Rage: // ЯРОСТЬ извне (вой/феромон); Enrage сам гейтит холоднокровных (иммунны к внешней)
                 (target.GetComponent<Rage>() ?? target.gameObject.AddComponent<Rage>()).Enrage(e.Duration);
+                break;
+            case EffectKind.Bleed: // КРОВОТЕЧЕНИЕ — накопительный статус; стак (компонент до-создаётся при первом порезе)
+                var bleed = target.GetComponent<Bleed>() ?? target.gameObject.AddComponent<Bleed>();
+                bleed.AddStack();
+                if (Source != null) bleed.SetSource(Source); // смерть от кровопотери — на счету источника
                 break;
         }
     }

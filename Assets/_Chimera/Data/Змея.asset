@@ -24,6 +24,7 @@ MonoBehaviour:
     maxHp: 0
     lifeSteal: 0
     venomStacks: 1
+    bleedStacks: 0
     range: 0
     atkCooldown: 0
     moveSpeed: 0
@@ -51,6 +52,7 @@ MonoBehaviour:
     maxHp: 200
     lifeSteal: 0
     venomStacks: 0
+    bleedStacks: 0
     range: 0
     atkCooldown: 0.5
     moveSpeed: 0
@@ -77,6 +79,7 @@ MonoBehaviour:
     maxHp: 0
     lifeSteal: 0
     venomStacks: 0
+    bleedStacks: 0
     range: 0
     atkCooldown: 0
     moveSpeed: 10
@@ -103,6 +106,7 @@ MonoBehaviour:
     maxHp: 0
     lifeSteal: 0
     venomStacks: 0
+    bleedStacks: 0
     range: 0
     atkCooldown: 0
     moveSpeed: 0
@@ -129,6 +133,7 @@ MonoBehaviour:
     maxHp: 0
     lifeSteal: 0
     venomStacks: 0
+    bleedStacks: 0
     range: 0
     atkCooldown: 0
     moveSpeed: 0
@@ -155,6 +160,7 @@ MonoBehaviour:
     maxHp: 0
     lifeSteal: 0
     venomStacks: 0
+    bleedStacks: 0
     range: 0
     atkCooldown: 0
     moveSpeed: 0

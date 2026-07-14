@@ -343,7 +343,7 @@ public class CreatureBody : MonoBehaviour
     struct Contribution
     {
         public float dmg, maxHp, life, rng, atkCd, mv, dash, dashCd, reduce, regen, regenOOC, thermal;
-        public int venom;
+        public int venom, bleed;
         public bool bite, scent, kick, howl, cold, camo, thermalOn, constrict;
 
         // СУПРЕМУМ дублей одного типа слота: скаляры — max (кулдауны — min: меньше = лучше), флаги — OR.
@@ -355,7 +355,7 @@ public class CreatureBody : MonoBehaviour
             mv = Mathf.Max(a.mv, b.mv), dash = Mathf.Max(a.dash, b.dash), dashCd = Mathf.Min(a.dashCd, b.dashCd),
             reduce = Mathf.Max(a.reduce, b.reduce), regen = Mathf.Max(a.regen, b.regen),
             regenOOC = Mathf.Max(a.regenOOC, b.regenOOC), thermal = Mathf.Max(a.thermal, b.thermal),
-            venom = Mathf.Max(a.venom, b.venom),
+            venom = Mathf.Max(a.venom, b.venom), bleed = Mathf.Max(a.bleed, b.bleed),
             bite = a.bite || b.bite, scent = a.scent || b.scent, kick = a.kick || b.kick,
             howl = a.howl || b.howl, cold = a.cold || b.cold, camo = a.camo || b.camo,
             thermalOn = a.thermalOn || b.thermalOn, constrict = a.constrict || b.constrict,
@@ -387,7 +387,7 @@ public class CreatureBody : MonoBehaviour
                     dmg = Blend(h.damage, b.damage, m),
                     maxHp = Blend(h.maxHp, b.maxHp, m),
                     life = Blend(h.lifeSteal, b.lifeSteal, m),
-                    venom = b.venomStacks,        // дискретная фича органа (как флаги) — не блендим
+                    venom = b.venomStacks, bleed = b.bleedStacks, // дискретные фичи органа (как флаги) — не блендим
                     rng = b.range,                // дальность не масштабируем — фикс. трейдофф
                     atkCd = Blend(h.atkCooldown, b.atkCooldown, m),
                     mv = Blend(h.moveSpeed, b.moveSpeed, m),
@@ -414,7 +414,7 @@ public class CreatureBody : MonoBehaviour
                 c = new Contribution
                 {
                     dmg = h.damage * e, maxHp = h.maxHp * e, life = h.lifeSteal * e,
-                    venom = h.venomStacks,
+                    venom = h.venomStacks, bleed = h.bleedStacks,
                     rng = h.range, atkCd = h.atkCooldown, mv = h.moveSpeed * e, dash = h.dashSpeed * e,
                     dashCd = h.dashCooldown, reduce = h.damageReduction * e, regen = h.regen * e,
                     regenOOC = h.regenOOC * e, thermal = h.thermalRange,
@@ -432,14 +432,14 @@ public class CreatureBody : MonoBehaviour
         // суммирование групп; урон группы «Пасть» принадлежит УКУСУ, не мечу
         float dmgF = 0f, dmgBiteF = 0f, maxHpF = 0f, lifeF = 0f;
         float rng = 0f, atkCd = 0f, mv = 0f, dash = 0f, dashCd = 0f, reduce = 0f, regen = 0f, regenOOC = 0f, thermal = 0f;
-        int venom = 0;
+        int venom = 0, bleed = 0;
         bool biteOn = false, scentOn = false, kickOn = false, howlOn = false, coldOn = false, camoOn = false,
              thermalOn = false, constrictOn = false;
         foreach (var kv in groups)
         {
             var c = kv.Value;
             if (kv.Key == "Пасть") dmgBiteF += c.dmg; else dmgF += c.dmg;
-            maxHpF += c.maxHp; lifeF += c.life; venom += c.venom;
+            maxHpF += c.maxHp; lifeF += c.life; venom += c.venom; bleed += c.bleed;
             rng += c.rng; atkCd += c.atkCd; mv += c.mv; dash += c.dash; dashCd += c.dashCd;
             reduce += c.reduce; regen += c.regen; regenOOC += c.regenOOC; thermal += c.thermal;
             biteOn |= c.bite; scentOn |= c.scent; kickOn |= c.kick; howlOn |= c.howl;
@@ -453,6 +453,7 @@ public class CreatureBody : MonoBehaviour
             bite.BiteEnabled = biteOn;
             bite.SetDamage(dmgBite); // 0 = органы молчат → PlayerBite остаётся на своём дефолте
             bite.SetVenom(venom);    // яд змеиных клыков на укусе игрока
+            bite.SetBleed(bleed);    // кровотечение волчьих клыков на укусе игрока
         }
         if (kick != null) kick.KickEnabled = kickOn; // пинок — фича человеческих ног: с волчьими пропадает
         if (howl != null) howl.HowlEnabled = howlOn; // вой-стан — фича волчьей Пасти
@@ -484,8 +485,9 @@ public class CreatureBody : MonoBehaviour
             health.OutOfCombatRegen = regenOOC;
         } // maxHp здесь уже с разбросом особи (SpawnVariance.HpMult)
 
-        // НПС-потребители (психика): тело отдаёт деривированное — урон (суммарный: их мили и есть укус) и скорость
-        foreach (var c in GetComponents<IBodyStatConsumer>()) c.OnBodyStats(dmg + dmgBite, mv);
+        // НПС-потребители (психика): тело отдаёт деривированное — урон (суммарный: их мили и есть укус), скорость
+        // и ЭФФЕКТЫ УКУСА (яд/кровь из органа Пасти) — раньше баканы генератором, теперь текут data-driven как у игрока
+        foreach (var c in GetComponents<IBodyStatConsumer>()) c.OnBodyStats(dmg + dmgBite, mv, venom, bleed);
 
         if (!installAllBeast) UpdateTint(beast); // застывшая химера красится своим материалом, не тинтом
     }
@@ -529,5 +531,5 @@ public class CreatureBody : MonoBehaviour
 /// </summary>
 public interface IBodyStatConsumer
 {
-    void OnBodyStats(int damage, float moveSpeed);
+    void OnBodyStats(int damage, float moveSpeed, int venom, int bleed);
 }

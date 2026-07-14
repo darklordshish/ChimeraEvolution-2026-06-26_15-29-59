@@ -22,9 +22,11 @@ public class PlayerBite : MonoBehaviour, IAbility
 
     int organDamage;  // урон из данных органа Пасти (0 = орган молчит → сериализованный дефолт выше)
     int venomStacks;  // яд из данных органа (змеиные клыки)
+    int bleedStacks;  // кровь из данных органа (волчьи клыки)
 
     public void SetDamage(int v) => organDamage = v;
     public void SetVenom(int stacks) => venomStacks = stacks;
+    public void SetBleed(int stacks) => bleedStacks = stacks;
 
     float nextTime;
     CameraFollow cam;
@@ -60,6 +62,7 @@ public class PlayerBite : MonoBehaviour, IAbility
             hit.Apply(hp, HitEffect.RegenDebuff(regenDebuff, regenDebuffTime)); // сбиваем реген цели (контр-сустейн против босса)
             if (lifeSteal > 0) hit.Apply(hp, HitEffect.LifeSteal(lifeSteal)); // лечимся за укус
             for (int i = 0; i < venomStacks; i++) hit.Apply(hp, HitEffect.Venom()); // яд змеиных клыков
+            for (int i = 0; i < bleedStacks; i++) hit.Apply(hp, HitEffect.Bleed()); // кровь волчьих клыков
             hits++;
         }
 

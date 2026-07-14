@@ -172,10 +172,12 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
 
     // тело-на-шасси (CreatureBody: человек + фулл волчьи органы ×2) кормит деривированное.
     // Конституция (HP/броня/реген/temp HP) остаётся фирменной — задаётся в Start этой психики.
-    public void OnBodyStats(int damage, float bodyMoveSpeed)
+    public void OnBodyStats(int damage, float bodyMoveSpeed, int venom, int bleed)
     {
         moveSpeed = bodyMoveSpeed;
         bite.SetDamage(damage);
+        bite.SetVenom(venom);
+        bite.SetBleed(bleed); // вервольф несёт волчью Пасть → кровотечение приходит АВТОМАТИЧЕСКИ (боссовый вампиризм остаётся запечённым)
     }
 
     void Face(Vector3 d) =>

@@ -266,6 +266,7 @@ MonoBehaviour:
   regenDebuff: 1
   regenDebuffTime: 0
   venomStacks: 0
+  bleedStacks: 0
 --- !u!114 &7325843036856117730
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -385,6 +386,8 @@ MonoBehaviour:
   rotationSpeed: 250
   gravity: -20
   sightRange: 25
+  sightHalfAngle: 60
+  proximityRadius: 2.5
   hpRegen: 1
   wanderRadius: 15
   wanderSpeed: 0.5
@@ -394,6 +397,7 @@ MonoBehaviour:
   grabSlow: 0.35
   ripSelfKnock: 6
   circleSpeed: 0.85
+  arriveRadius: 2.5
   disengageRange: 9
   howlRadius: 16
   howlCooldown: 5
@@ -403,10 +407,12 @@ MonoBehaviour:
   curiosityMemory: 5
   rescueRadius: 12
   preyRange: 14
+  frightenScare: 6
   attackCooldown: 1.4
   separationRadius: 1.6
   separationStrength: 4
   attackSeparation: 0.25
+  jitterDamp: 0.08
 --- !u!1 &8906260546707489737
 GameObject:
   m_ObjectHideFlags: 0
