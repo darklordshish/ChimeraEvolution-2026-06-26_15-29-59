@@ -65,6 +65,28 @@ public class DebugHud : MonoBehaviour
         return near != null && near.TryGetComponent<AlertState>(out var a) ? $"{label} {AlertRu(a.State)} [{Mathf.Sqrt(best):0}м]" : "";
     }
 
+    // отладка эффектов: HP + стаки крови/яда БЛИЖАЙШЕГО врага (видно, как цель истекает от твоего укуса)
+    string EnemyStatusStr()
+    {
+        if (player == null) return "";
+        Health near = null; float best = float.MaxValue;
+        foreach (var h in FindObjectsByType<Health>())
+        {
+            if (h == playerHealth || h.transform == player.transform) continue;
+            float d = (h.transform.position - player.transform.position).sqrMagnitude;
+            if (d < best) { best = d; near = h; }
+        }
+        return near != null ? $"Ближ.враг: HP {near.Current}/{near.Max}{EffectTags(near)} [{Mathf.Sqrt(best):0}м]" : "";
+    }
+
+    static string EffectTags(Health h)
+    {
+        string s = "";
+        if (h.TryGetComponent<Bleed>(out var b) && b.Stacks > 0) s += $"  кровь {b.Stacks}";
+        if (h.TryGetComponent<Venom>(out var v) && v.Stacks > 0) s += $"  ☠ яд {v.Stacks}";
+        return s;
+    }
+
     void OnGUI()
     {
         style ??= new GUIStyle(GUI.skin.label) { fontSize = 18, normal = { textColor = Color.white } };
@@ -74,7 +96,9 @@ public class DebugHud : MonoBehaviour
             ? (playerHealth.OutOfCombatRegen > 0f ? "  (вне боя — реген)" : "  (вне боя)") : "";
         var venom = playerHealth != null ? playerHealth.GetComponent<Venom>() : null;
         string poison = venom != null && venom.Stacks > 0 ? $"   ☠ яд {venom.Stacks}" : "";
-        GUI.Label(new Rect(14, 10, 640, 26), $"HP: {hp}{combat}{poison}", style);
+        var bleedC = playerHealth != null ? playerHealth.GetComponent<Bleed>() : null;
+        string bleeding = bleedC != null && bleedC.Stacks > 0 ? $"   кровь {bleedC.Stacks}" : "";
+        GUI.Label(new Rect(14, 10, 760, 26), $"HP: {hp}{combat}{poison}{bleeding}", style);
         var boss = FindAnyObjectByType<WerewolfPsyche>();
         if (boss != null && boss.TryGetComponent<Health>(out var bossHp))
             GUI.Label(new Rect(540, 10, 460, 26), $"БОСС: {bossHp.Current}/{bossHp.Max}{(bossHp.Current > bossHp.Max ? $" (+{bossHp.Current - bossHp.Max} temp)" : "")}", style);
@@ -83,7 +107,9 @@ public class DebugHud : MonoBehaviour
             foreach (var kv in CreatureBody.PlayerBody.AllAffinity) if (kv.Value != 0) affParts.Add($"{kv.Key} {kv.Value}");
         string aff = affParts.Count > 0 ? string.Join(" · ", affParts) : "—";
         GUI.Label(new Rect(14, 34, 900, 26), $"Родство: {aff}   (бонус органов ×{(body != null ? body.BonusMult : 1f):0.00})   [K: Волк +10 · L: Змея +10]", style);
-        GUI.Label(new Rect(14, 58, 760, 26), $"Шкала мозга: {(body != null ? body.BeastSlots : 0)}/{(body != null ? body.MaxSlots : 0)} звериных", style);
+        GUI.Label(new Rect(14, 58, 600, 26), $"Шкала мозга: {(body != null ? body.BeastSlots : 0)}/{(body != null ? body.MaxSlots : 0)} звериных", style);
+        string enemyStatus = EnemyStatusStr(); // HP + кровь/яд ближайшего врага — видно эффекты
+        if (enemyStatus != "") GUI.Label(new Rect(620, 58, 460, 26), enemyStatus, style);
         GUI.Label(new Rect(14, 82, 760, 26), $"Пул мутагена: {(body != null ? body.PoolUsed : 0)}/{(body != null ? body.Pool : 0)}", style);
         GUI.Label(new Rect(14, 106, 900, 26), $"БОГ [G]: {(playerHealth != null && playerHealth.GodMode ? "ВКЛ" : "выкл")}   Запах: чутьё {(Perception.WolfScent ? "да" : "нет")}, свой [N] {(Perception.ShowOwnScent ? "вкл" : "выкл")}   Термо [T]: {(Perception.ThermalOn ? (Perception.SnakeThermal ? "орган" : "дев") : "выкл")}{(Perception.PlayerGhost ? "   ПРИЗРАК" : "")}", style);
         var pack = PackCoordinator.Instance;

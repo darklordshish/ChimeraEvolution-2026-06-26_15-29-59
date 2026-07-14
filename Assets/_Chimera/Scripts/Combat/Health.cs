@@ -14,7 +14,7 @@ public class Health : MonoBehaviour
     public int Max => maxHealth;
     public bool Invulnerable { get; set; }       // i-frames (напр. на время рывка)
     public float DamageReduction { get; set; }   // 0..1, броня (слот «Кожа»)
-    public bool GodMode { get; set; }            // отладка: неуязвимость (клавиша G)
+    public bool GodMode { get; set; }            // отладка (G): не убивает — урон ВИДЕН, но пол в 1 HP (тестить эффекты не умирая)
     public float RegenPerSecond { get; set; }    // реген всегда, в т.ч. в бою (слот «Сердце»; волки)
     public float OutOfCombatRegen { get; set; }  // реген только вне боя (база человека)
     // «в бою» = недавно тебя АКТИВНО преследовал враг (любой: волк/змея/босс зовёт MarkInCombat). Таймер: гаснет сам.
@@ -83,14 +83,15 @@ public class Health : MonoBehaviour
     // Режим бога и смерть по-прежнему защищают.
     public void TakeDamage(int amount, bool ignoreInvuln)
     {
-        if (dead || GodMode || amount <= 0) return;
+        if (dead || amount <= 0) return;
         if (Invulnerable && !ignoreInvuln) return;
 
         if (rage == null) TryGetComponent(out rage);
         if (venom == null) TryGetComponent(out venom);
         float incoming = (rage != null ? rage.IncomingMult : 1f) * (venom != null ? venom.IncomingMult : 1f); // ярость + яд роняют защиту
         amount = Mathf.Max(1, Mathf.RoundToInt(amount * (1f - DamageReduction) * incoming)); // броня (слот «Кожа»)
-        Current = Mathf.Max(0, Current - amount);
+        // РЕЖИМ БОГА: урон ПРИМЕНЯЕТСЯ (виден — тестить яд/кровь/эффекты), но не убивает — пол в 1 HP
+        Current = Mathf.Max(GodMode ? 1 : 0, Current - amount);
         onDamaged?.Invoke();
 
         if (Current == 0)
