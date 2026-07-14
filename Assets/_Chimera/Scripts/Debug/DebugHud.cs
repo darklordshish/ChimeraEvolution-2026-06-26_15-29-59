@@ -87,6 +87,23 @@ public class DebugHud : MonoBehaviour
         return s;
     }
 
+    // отладка разброса: личность + множители особи БЛИЖАЙШЕГО волка (get-only, в инспекторе не видны)
+    string NearestWolfTraits()
+    {
+        if (player == null) return "";
+        WolfPsyche near = null; float best = float.MaxValue;
+        foreach (var w in FindObjectsByType<WolfPsyche>())
+        {
+            float d = (w.transform.position - player.transform.position).sqrMagnitude;
+            if (d < best) { best = d; near = w; }
+        }
+        if (near == null) return "";
+        string s = "Ближ.волк особь:";
+        if (near.TryGetComponent<Personality>(out var p)) s += $"  храбр {p.Bravery:0.0} · агр {p.Aggression:0.00} · любоп {p.Curiosity:0.00}";
+        if (near.TryGetComponent<SpawnVariance>(out var v)) s += $"   |  hp×{v.HpMult:0.00} ск×{v.SpeedMult:0.00} ур×{v.DamageMult:0.00}";
+        return s;
+    }
+
     void OnGUI()
     {
         style ??= new GUIStyle(GUI.skin.label) { fontSize = 18, normal = { textColor = Color.white } };
@@ -110,7 +127,9 @@ public class DebugHud : MonoBehaviour
         GUI.Label(new Rect(14, 58, 600, 26), $"Шкала мозга: {(body != null ? body.BeastSlots : 0)}/{(body != null ? body.MaxSlots : 0)} звериных", style);
         string enemyStatus = EnemyStatusStr(); // HP + кровь/яд ближайшего врага — видно эффекты
         if (enemyStatus != "") GUI.Label(new Rect(620, 58, 460, 26), enemyStatus, style);
-        GUI.Label(new Rect(14, 82, 760, 26), $"Пул мутагена: {(body != null ? body.PoolUsed : 0)}/{(body != null ? body.Pool : 0)}", style);
+        GUI.Label(new Rect(14, 82, 300, 26), $"Пул мутагена: {(body != null ? body.PoolUsed : 0)}/{(body != null ? body.Pool : 0)}", style);
+        string traits = NearestWolfTraits(); // разброс особи (личность + множители) — get-only, в инспекторе не видны
+        if (traits != "") GUI.Label(new Rect(330, 82, 900, 26), traits, style);
         GUI.Label(new Rect(14, 106, 900, 26), $"БОГ [G]: {(playerHealth != null && playerHealth.GodMode ? "ВКЛ" : "выкл")}   Запах: чутьё {(Perception.WolfScent ? "да" : "нет")}, свой [N] {(Perception.ShowOwnScent ? "вкл" : "выкл")}   Термо [T]: {(Perception.ThermalOn ? (Perception.SnakeThermal ? "орган" : "дев") : "выкл")}{(Perception.PlayerGhost ? "   ПРИЗРАК" : "")}", style);
         var pack = PackCoordinator.Instance;
         string morale = pack.AnyRouting() ? "БЕГСТВО" : pack.Fearless ? "ЯРОСТЬ" : "норма";

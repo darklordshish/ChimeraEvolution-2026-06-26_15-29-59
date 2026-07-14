@@ -232,6 +232,9 @@ public class CreatureBody : MonoBehaviour
         // тело не предполагает игрока: берём тех потребителей, какие есть на объекте
         TryGetComponent(out attack);
         TryGetComponent(out move);
+        // авто-РАЗБРОС ПОВЕДЕНИЯ: любой NPC-вид (не игрок) получает Личность от ТЕЛА — психики её только ЧИТАЮТ
+        // (в Start, после этого Awake). Новый вид разбрасывается сам, без ручной проводки в каждой психике.
+        if (move == null && !TryGetComponent<Personality>(out _)) gameObject.AddComponent<Personality>();
         TryGetComponent(out health);
         TryGetComponent(out bite);
         TryGetComponent(out kick);

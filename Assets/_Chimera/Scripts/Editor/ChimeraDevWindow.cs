@@ -109,6 +109,16 @@ public class ChimeraDevWindow : EditorWindow
                 foreach (var w in wolves)
                     if (w.TryGetComponent<Health>(out var h)) h.TakeDamage(99999, true);
         }
+        // диагностика разброса: множители/личность живут в get-only свойствах (в инспекторе НЕ видны) — дамп в консоль
+        if (GUILayout.Button("Разброс волков → консоль"))
+            foreach (var w in wolves)
+            {
+                string t = w.name;
+                if (w.TryGetComponent<Health>(out var h)) t += $"  HP {h.Current}/{h.Max}";
+                if (w.TryGetComponent<SpawnVariance>(out var v)) t += $"  hp×{v.HpMult:0.00} ск×{v.SpeedMult:0.00} ур×{v.DamageMult:0.00}";
+                if (w.TryGetComponent<Personality>(out var p)) t += $"  храбр {p.Bravery:0.0} агр {p.Aggression:0.00} любоп {p.Curiosity:0.00}";
+                Debug.Log(t, w);
+            }
 
         // ── Босс ──
         EditorGUILayout.Space();

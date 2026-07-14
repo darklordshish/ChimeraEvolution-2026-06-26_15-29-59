@@ -96,6 +96,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     SnakeBodyChain preyBody;       // тело добычи-змеи — рвём по ДЛИНЕ, каждый за свой участок
     float preyT;                   // личный участок вдоль тела змеи (0 голова … 1 хвост)
     Fear fearStatus;                // накопительный СТРАХ (эффект-компонент); порог храбрости — личность
+    Personality personality;        // S1 срез 6: личность особи (храбрость/агрессия/любопытство) — разброс поведения
 
     public bool Engaged { get; private set; } // игрок в поле зрения = волк агрессивен/нацелен (для «вне боя» игрока)
     bool Alerted => Time.time < alertUntil;   // услышал вой — знает, куда сбегаться (личная память)
@@ -110,7 +111,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     {
         if (Engaged || Alerted || Routing) return;
         curiosityPos = pos;
-        curiosityUntil = Time.time + curiosityMemory;
+        curiosityUntil = Time.time + curiosityMemory * (personality != null ? personality.Curiosity : 1f); // любопытные проверяют дольше (личность)
     }
 
     // возня схваченного сородича рядом (стан = скорее всего в кольцах змеи): запомнить точку спасения.
@@ -206,7 +207,8 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
             ownHealth.onDeath.AddListener(OnKilled); // смерть бьёт по морали стаи
             ownHealth.onDamaged.AddListener(OnHurt); // боль от невидимого источника (змея!) — паника
         }
-        if (fearStatus != null) fearStatus.SetThreshold(pack.RollPanicThreshold()); // личный порог храбрости (личность; срез 6 заменит)
+        TryGetComponent(out personality); // личность вешает ТЕЛО (CreatureBody) в своём Awake — читаем здесь (после всех Awake)
+        if (fearStatus != null && personality != null) fearStatus.SetThreshold(personality.Bravery); // личный порог храбрости = ЛИЧНОСТЬ (срез 6)
 
         // личный угол особи (случайный на спавне) → у общих точек интереса (тревога/спасение/гремок)
         // каждый стоит на СВОЁМ месте кольцом, а не стопкой; заодно зачаток «личности» волка
@@ -517,8 +519,8 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         windingUp = false;
         HideTelegraph();
         ReleaseToken();
-        // лёгкая рандомизация ритма (±15%): рассинхрон стаи — не дёргаются к жетону все одновременно
-        if (cooldown > 0f) nextAttackTime = Time.time + cooldown * Random.Range(0.85f, 1.15f);
+        // ритм атаки: АГРЕССИЯ особи (личность — >1 частит) + лёгкая рандомизация (±10%, рассинхрон стаи)
+        if (cooldown > 0f) nextAttackTime = Time.time + cooldown / (personality != null ? Mathf.Max(0.5f, personality.Aggression) : 1f) * Random.Range(0.9f, 1.1f);
     }
 
     // мораль сломлена: сбрасываем приём/захват/жетоны и бежим прочь от игрока
