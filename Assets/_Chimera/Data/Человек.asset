@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: "\u0427\u0435\u043B\u043E\u0432\u0435\u043A"
   m_EditorClassIdentifier: Assembly-CSharp::SpeciesSO
   speciesName: "\u0427\u0435\u043B\u043E\u0432\u0435\u043A"
-  tint: {r: 0.8, g: 0.7, b: 0.6, a: 1}
+  tint: {r: 0.9, g: 0.72, b: 0.62, a: 1}
   mutagenPool: 16
   organs:
   - organName: "\u041A\u0438\u0441\u0442\u044C"

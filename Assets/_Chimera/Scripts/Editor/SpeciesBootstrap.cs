@@ -11,7 +11,7 @@ public static class SpeciesBootstrap
 {
     const string Dir = "Assets/_Chimera/Data";
 
-    [MenuItem("Chimera/Создать дефолтные виды (Человек, Волк, Змея)")]
+    [MenuItem("Chimera/Создать дефолтные виды (Человек, Волк, Змея, Лось)")]
     public static void CreateDefaults()
     {
         if (!AssetDatabase.IsValidFolder(Dir))
@@ -21,7 +21,7 @@ public static class SpeciesBootstrap
         //    чистый человек = 12/16 → свободно 4 = стартовый бюджет химеризации ──
         var human = GetOrCreate("Человек");
         human.speciesName = "Человек";
-        human.tint = new Color(0.8f, 0.7f, 0.6f);
+        human.tint = new Color(0.9f, 0.72f, 0.62f); // телесный — база палитры (все органы человечьи → этот цвет)
         human.mutagenPool = 16;
         human.organs = new[]
         {
@@ -37,7 +37,7 @@ public static class SpeciesBootstrap
         // ── Волк: донор органов (абсолютные значения = человек + прежняя дельта) ──
         var wolf = GetOrCreate("Волк");
         wolf.speciesName = "Волк";
-        wolf.tint = new Color(0.5f, 0.38f, 0.36f);
+        wolf.tint = new Color(0.5f, 0.5f, 0.52f);   // серый — по-волчьи и отличимо от бурого лося
         wolf.mutagenPool = 16;
         wolf.organs = new[]
         {
@@ -65,6 +65,22 @@ public static class SpeciesBootstrap
             new Organ { organName = "Змеиный хвост",        slot = "Хвост",  hotkey = "8", cost = 5, enablesConstrict = true }, // АУГУМЕНТ игроку (обхват); у человека слота «Хвост» нет → только химерный слот. «Тело-хвост» выше — ходовая часть ШАССИ змеи, не путать
         };
         EditorUtility.SetDirty(snake);
+
+        // ── Лось: массивный травоядный-таран (NPC-шасси; экспрессия 0.5). Рёв/рога — срезы A2/D ──
+        var moose = GetOrCreate("Лось");
+        moose.speciesName = "Лось";
+        moose.tint = new Color(0.42f, 0.32f, 0.22f); // тёмно-бурый
+        moose.mutagenPool = 24;
+        moose.organs = new[]
+        {
+            new Organ { organName = "Копыто",         slot = "Руки",   hotkey = "1", cost = 5, damage = 22, range = 1.8f }, // удар копытом — оружие
+            new Organ { organName = "Лосиные ноги",   slot = "Ноги",   hotkey = "2", cost = 5, moveSpeed = 4.5f, dashSpeed = 16f }, // медленный, но таранит
+            new Organ { organName = "Глотка",         slot = "Пасть",  hotkey = "5", cost = 4 }, // рёв — срез D (enablesHowl не ставим сейчас)
+            new Organ { organName = "Слух",           slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.7f }, // слух/зрение — модуль слуха в срезе B
+            new Organ { organName = "Лосиное сердце", slot = "Сердце", hotkey = "3", cost = 6, maxHp = 260, regen = 1f, regenOOC = 0f, atkCooldown = 0.5f }, // много HP
+            new Organ { organName = "Толстая шкура",  slot = "Шкура",  hotkey = "6", cost = 5, damageReduction = 0.35f }, // броня против ПРЯМОГО урона (не крови)
+        };
+        EditorUtility.SetDirty(moose);
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
