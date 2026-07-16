@@ -556,6 +556,7 @@ GameObject:
   - component: {fileID: 4414540323983190167}
   - component: {fileID: 3469938234132053447}
   - component: {fileID: 6653761275301679341}
+  - component: {fileID: 540149628129843522}
   - component: {fileID: 9161123172754931802}
   - component: {fileID: 887393739937710776}
   - component: {fileID: 5577791565694724231}
@@ -709,6 +710,27 @@ MonoBehaviour:
   hitRadius: 1.8
   knockForce: 12
   staggerTime: 0.5
+  stompRadius: 4
+  stompStagger: 0.4
+  stompForce: 13
+--- !u!114 &540149628129843522
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8022075473016765431}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7dcaa0b342a42d84d8664143a4f76aeb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AntlerAbility
+  windupTime: 0.35
+  gravity: -20
+  range: 2.5
+  damage: 12
+  knockForce: 9
+  bleedStacks: 2
 --- !u!114 &9161123172754931802
 MonoBehaviour:
   m_ObjectHideFlags: 0

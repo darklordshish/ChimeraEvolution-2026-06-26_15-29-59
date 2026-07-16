@@ -16,9 +16,15 @@ public class ChargeAbility : WindupAbility
     [SerializeField] float hitRadius = 1.8f;
     [SerializeField] float knockForce = 12f;   // отлёт цели (Knockback сам резистит Massive)
     [SerializeField] float staggerTime = 0.5f; // сбив цели при попадании
+    [SerializeField] float stompRadius = 4f;   // топот-приземление: AOE в конце тарана (разгоняет скопления)
+    [SerializeField] float stompStagger = 0.4f;
+    [SerializeField] float stompForce = 13f;   // радиальный толчок топота у эпицентра — «землетрясение» (спад к краю; Massive резистит)
 
     public float MinRange => minRange; // психика читает окно дистанций тарана
     public float MaxRange => maxRange;
+
+    protected override float GizmoRange => maxRange; // хитбокс — дальность разбега тарана
+    protected override float GizmoHalfAngle => 30f;
 
     bool charging, hit;
     float chargeEnd;
@@ -50,8 +56,26 @@ public class ChargeAbility : WindupAbility
         }
         if (Time.time < chargeEnd) return AbilityRun.Running;
 
+        Stomp(); // топот на приземлении тарана: землетрясение вокруг
         charging = false;
         return AbilityRun.Done;
+    }
+
+    // топот-приземление: сбивает всех со Stagger в радиусе (кроме себя) — разгоняет скопления, «землетрясение»
+    void Stomp()
+    {
+        foreach (var col in Physics.OverlapSphere(transform.position, stompRadius, ~0, QueryTriggerInteraction.Ignore))
+        {
+            var st = col.GetComponentInParent<Stagger>();
+            if (st == null || st.gameObject == gameObject) continue;
+            st.Hitstun(stompStagger);
+            if (st.TryGetComponent<Knockback>(out var kb)) // радиальный толчок = видимое землетрясение (Massive резистит)
+            {
+                Vector3 away = st.transform.position - transform.position; away.y = 0f;
+                float d = away.magnitude;
+                if (d > 0.0001f) kb.Push(away / d * stompForce * Mathf.Clamp01(1f - d / stompRadius * 0.6f)); // ближе к эпицентру — сильнее
+            }
+        }
     }
 
     // таран закоммичен: стаггер (мягкий срыв) не рвёт; нокбэк (hard) рвёт

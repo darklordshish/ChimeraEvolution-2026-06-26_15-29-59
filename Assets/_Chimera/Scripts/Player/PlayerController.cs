@@ -29,6 +29,7 @@ public class PlayerController : MonoBehaviour
     public bool FirstPerson { get; private set; }
 
     CharacterController controller;
+    Knockback knockback;
     Health health;
     InputAction moveAction, lookAction, dashAction, toggleViewAction;
     Camera cam;
@@ -48,6 +49,7 @@ public class PlayerController : MonoBehaviour
     {
         controller = GetComponent<CharacterController>();
         health = GetComponent<Health>();
+        if (!TryGetComponent(out knockback)) knockback = gameObject.AddComponent<Knockback>(); // отлёт от ударов (рога/таран/топот/пинок)
         TryGetComponent(out constrict);
 
         moveAction = new InputAction("Move", InputActionType.Value);
@@ -141,6 +143,7 @@ public class PlayerController : MonoBehaviour
         float grip = GrabImmune ? 1f : grabSlow;
         float hold = constrict != null ? constrict.SelfSlow : 1f;
         Vector3 horizontal = dashTimer > 0f ? dashDir * dashSpeed * grip : move * moveSpeed * grip * hold;
+        if (knockback != null && knockback.IsActive) horizontal = Vector3.zero; // пока откидывает — не рулим (толкает Knockback)
         if (dashTimer > 0f) dashTimer -= Time.deltaTime;
         if (health != null) health.Invulnerable = dashTimer > 0f;
 

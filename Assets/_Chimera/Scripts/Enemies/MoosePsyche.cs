@@ -10,6 +10,7 @@ using UnityEngine;
 [RequireComponent(typeof(Telegraph))]
 [RequireComponent(typeof(NavLocomotion))]
 [RequireComponent(typeof(ChargeAbility))]
+[RequireComponent(typeof(AntlerAbility))]
 [RequireComponent(typeof(Rage))]
 [RequireComponent(typeof(SpawnVariance))]
 public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
@@ -34,6 +35,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     Health ownHealth;
     NavLocomotion nav;
     ChargeAbility charge;
+    AntlerAbility antler;
     Rage rage;
     SpawnVariance variance;
     AlertState alert;
@@ -60,6 +62,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
         ownHealth = GetComponent<Health>();
         if (!TryGetComponent(out nav)) nav = gameObject.AddComponent<NavLocomotion>();
         if (!TryGetComponent(out charge)) charge = gameObject.AddComponent<ChargeAbility>();
+        if (!TryGetComponent(out antler)) antler = gameObject.AddComponent<AntlerAbility>();
         if (!TryGetComponent(out rage)) rage = gameObject.AddComponent<Rage>();
         if (!TryGetComponent(out variance)) variance = gameObject.AddComponent<SpawnVariance>();
         if (!TryGetComponent(out alert)) alert = gameObject.AddComponent<AlertState>();
@@ -108,13 +111,21 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
         if (sees && dist <= provokeRadius) provoked = true; // СРЕЗ A: подошёл слишком близко → провокация
         alert.Observe(provoked, sees);                      // кормим машину восприятия
 
-        if (provoked && sees)
+        // РАЗЪЯРЁН: преследует игрока ОТ и ДО — всегда мордой к нему, догоняет, бьёт когда ВИДИТ и в дистанции.
+        // Не отвлекается на выпас (потому раньше «внезапно отворачивался» / «терял интерес» при потере кадра видимости).
+        // Остывание + лесенка предупреждений + реакция на стаю — срез C/D.
+        if (provoked)
         {
             Vector3 dir = dist > 0.001f ? toT / dist : transform.forward;
             transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(dir), rotationSpeed * Time.deltaTime);
-            if (Time.time >= nextAttackTime && dist >= charge.MinRange && dist <= charge.MaxRange)
-            { if (charge.TryUse()) activeAbility = charge; Settle(Vector3.zero); return; } // в окне → таранит
-            Settle(nav.DirTo(target.position) * Speed); // не в окне — доводим дистанцию
+            if (sees && Time.time >= nextAttackTime) // приёмы — только когда ВИДИТ (не бьёт сквозь стену/со спины)
+            {
+                if (dist <= antler.Range)                                // вплотную — не разогнаться, бьём РОГАМИ (урон+кровь+отлёт)
+                { if (antler.TryUse()) activeAbility = antler; Settle(Vector3.zero); return; }
+                if (dist >= charge.MinRange && dist <= charge.MaxRange)  // в окне — ТАРАН копытами (+топот на приземлении)
+                { if (charge.TryUse()) activeAbility = charge; Settle(Vector3.zero); return; }
+            }
+            Settle(nav.DirTo(target.position) * Speed);                  // догоняет игрока
             return;
         }
 

@@ -89,6 +89,8 @@ public static class MoosePrefab
         WerewolfPrefab.Configure(charge, ("windupTime", 0.5f), ("minRange", 4f), ("maxRange", 12f),
                                           ("chargeSpeed", 16f), ("duration", 0.7f), ("damage", 22),
                                           ("hitRadius", 1.8f), ("knockForce", 12f), ("staggerTime", 0.5f));
+        var antler = go.AddComponent<AntlerAbility>(); // удар рогами по липнущим вплотную (урон+отлёт+кровь)
+        WerewolfPrefab.Configure(antler, ("windupTime", 0.35f), ("range", 2.5f), ("damage", 12), ("knockForce", 9f), ("bleedStacks", 2));
 
         // тело на шасси Лось (природная особь: экспрессия 0.5; витальность/скорость из органов)
         var cbody = go.AddComponent<CreatureBody>();
