@@ -65,7 +65,6 @@ public class CreatureBody : MonoBehaviour
     ColdBlooded cold;       // холоднокровность (Сердце змеи) — компонент-маркер, вешаем/снимаем по сборке
     Camouflage camoComp;    // камуфляж-в-неподвижности (Чешуя змеи) — вешаем/снимаем по сборке
     Renderer[] renderers;
-    Color[] baseColors;
     MaterialPropertyBlock mpb;
     int lastAffinitySum = -1;
     static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
@@ -258,13 +257,7 @@ public class CreatureBody : MonoBehaviour
         if (move != null) PlayerBody = this;
 
         renderers = GetComponentsInChildren<Renderer>();
-        baseColors = new Color[renderers.Length];
         mpb = new MaterialPropertyBlock();
-        for (int i = 0; i < renderers.Length; i++)
-        {
-            var m = renderers[i].sharedMaterial;
-            baseColors[i] = (m != null && m.HasProperty(BaseColor)) ? m.GetColor(BaseColor) : Color.gray;
-        }
     }
 
     // Слоты собираем из органов шасси; к каждому подбираем звериную альтернативу из доноров по имени слота.
@@ -492,7 +485,7 @@ public class CreatureBody : MonoBehaviour
         // и ЭФФЕКТЫ УКУСА (яд/кровь из органа Пасти) — раньше баканы генератором, теперь текут data-driven как у игрока
         foreach (var c in GetComponents<IBodyStatConsumer>()) c.OnBodyStats(dmg + dmgBite, mv, venom, bleed);
 
-        if (!installAllBeast) UpdateTint(beast); // застывшая химера красится своим материалом, не тинтом
+        if (move != null) UpdateTint(); // ТОЛЬКО игрок: тело = смесь тинтов видов надетых органов. NPC — запечённый материал (не драться с Telegraph)
     }
 
     // холоднокровность как компонент-маркер: вешаем/снимаем по итогу сборки (живо на смене Сердца у игрока)
@@ -512,19 +505,37 @@ public class CreatureBody : MonoBehaviour
     // человеч.значение + (звериное − человеч.) × множитель: на ×1 = звериное, на ×2 = вдвое дальше от человека
     static float Blend(float human, float beast, float mult) => human + (beast - human) * mult;
 
-    void UpdateTint(int beast)
+    // цвет тела ИГРОКА = СМЕСЬ тинтов ВИДОВ надетых органов: человеческий слот → тинт шасси (телесный),
+    // звериный → тинт вида-донора. Палитра отражает СОСТАВ (волчий билд серее, змеиный зеленее, микс — смешанный;
+    // чем химернее, тем «грязнее»/чуждее — визуальная цена химеризации). NPC сюда не заходят (запечённый материал).
+    void UpdateTint()
     {
-        // тинт — динамика ИГРОКА (лерп к тинту донора по числу звериных слотов). У NPC доноров нет → k=0,
-        // цвет берётся из ЗАПЕЧЁННОГО материала префаба (генератор красит в тинт вида) — чтобы не драться с Telegraph.
-        Color target = donors != null && donors.Length > 0 && donors[0] != null ? donors[0].tint : Color.gray;
-        float k = MaxSlots > 0 ? (float)beast / MaxSlots : 0f;
+        float r = 0f, g = 0f, b = 0f; int n = 0;
+        foreach (var sl in slots)
+        {
+            Color? t = null;
+            if (sl.Installed) t = SpeciesTint(sl.DonorSpecies);                          // звериный орган → тинт его вида
+            else if (sl.human != null) t = chassis != null ? chassis.tint : Color.gray;  // человеческий → телесный
+            if (t.HasValue) { r += t.Value.r; g += t.Value.g; b += t.Value.b; n++; }      // пустой химерный слот не считаем
+        }
+        Color body = n > 0 ? new Color(r / n, g / n, b / n) : (chassis != null ? chassis.tint : Color.gray);
         for (int i = 0; i < renderers.Length; i++)
         {
             if (renderers[i] == null) continue;
             renderers[i].GetPropertyBlock(mpb);
-            mpb.SetColor(BaseColor, Color.Lerp(baseColors[i], target, k));
+            mpb.SetColor(BaseColor, body);
             renderers[i].SetPropertyBlock(mpb);
         }
+    }
+
+    // тинт вида по имени (шасси или донор) — для смеси палитры
+    Color SpeciesTint(string species)
+    {
+        if (chassis != null && chassis.speciesName == species) return chassis.tint;
+        if (donors != null)
+            foreach (var d in donors)
+                if (d != null && d.speciesName == species) return d.tint;
+        return chassis != null ? chassis.tint : Color.gray;
     }
 }
 

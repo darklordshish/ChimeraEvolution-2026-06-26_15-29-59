@@ -10,7 +10,7 @@ public static class WolfPrefab
 {
     public const string Path = "Assets/_Chimera/Prefabs/Wolf.prefab";
     const string MatPath = "Assets/_Chimera/Materials/WolfBody.mat";
-    static readonly Color WolfTint = new(0.5f, 0.38f, 0.36f); // = Волк.tint
+    static readonly Color WolfTint = new(0.5f, 0.5f, 0.52f); // = Волк.tint (серый — отличимо от бурого лося)
 
     [MenuItem("Chimera/Создать префаб Волка")]
     public static void Create()

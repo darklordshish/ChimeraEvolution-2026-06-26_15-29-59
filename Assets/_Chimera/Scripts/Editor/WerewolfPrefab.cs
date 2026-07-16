@@ -21,15 +21,16 @@ public static class WerewolfPrefab
 
         var go = BuildWerewolf();
 
-        // тёмно-бордовый материал-ассет, чтобы отличать от волков (телеграф уважает цвет материала)
+        // серый материал под цвет волка (вервольф = волчья химера); телеграф уважает цвет материала.
+        // SetColor вне if — повторный запуск генератора перекрашивает уже существующий материал
         var body = go.transform.Find("Body").GetComponent<Renderer>();
         var mat = AssetDatabase.LoadAssetAtPath<Material>(MatPath);
         if (mat == null)
         {
             mat = new Material(body.sharedMaterial);
-            mat.SetColor("_BaseColor", new Color(0.32f, 0.11f, 0.12f));
             AssetDatabase.CreateAsset(mat, MatPath);
         }
+        mat.SetColor("_BaseColor", new Color(0.5f, 0.5f, 0.52f)); // серый как волк (отличается размером/ХП босса)
         body.sharedMaterial = mat;
 
         var prefab = PrefabUtility.SaveAsPrefabAsset(go, Path);
