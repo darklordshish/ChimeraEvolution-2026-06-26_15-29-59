@@ -135,11 +135,22 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         if (r != null) rattleRenderer = r.GetComponentInChildren<Renderer>();
 
         groundY = transform.position.y; // уровень земли на спавне — от него меряем высоту насеста
+        if (ownHealth != null) ownHealth.onDamaged.AddListener(OnHurt); // ударили → обидчик становится добычей (реактивный агр)
     }
 
     void OnDisable()
     {
         if (constricting) ReleaseHeld(); // убили на обхвате — отпустить жертву
+    }
+
+    // холодный расчёт (НЕ паника): ударивший становится ДОБЫЧЕЙ, если он тёплый. Так удар по змее её натравливает —
+    // в т.ч. когда призрак только что раскрылся атакой (боец стал тёплым к моменту onDamaged: BreakGhost в Hit.Apply идёт до урона).
+    void OnHurt()
+    {
+        var attacker = ownHealth != null ? ownHealth.LastAttacker : null;
+        if (constricting || attacker == null || !Perception.IsWarm(attacker.transform)) return; // держим кого-то / нет источника / холодный-призрак
+        target = attacker.transform; targetHealth = attacker;
+        nextScan = Time.time + retargetInterval; // не дать скану тут же переклинить цель
     }
 
     float Speed => moveSpeed * (variance != null ? variance.SpeedMult : 1f);
@@ -576,6 +587,10 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         if (lastHp > ownHealth.Current) { EndConstrict(attackCooldown); return; } // урон по змее — срыв хвата (в ЛЮБОЙ фазе)
         lastHp = ownHealth.Current;
 
+        // телеграф-градиент удушения (ОДНОРОДНО с обхватом игрока): родной→фиолетовый по мере выдавленного HP жертвы
+        if (heldHealth != null)
+            telegraph.SetGradient(TelegraphColors.Grab, Mathf.Lerp(0.33f, 1f, 1f - (float)heldHealth.Current / Mathf.Max(1, heldHealth.Max)));
+
         // УЖЕ НЕСЁМ (тащим по земле / лезем): гейт CrowdNear отключён — прервать может только урон. Волки, кусая
         // змею, сами рвут хват (проверка выше); на стене они не достают — держим безопасно. Ведём фазу переноски
         if (climb == ClimbPhase.Approach) { ChokeHeld(); CarryApproach(); return; }
@@ -670,7 +685,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
             gripFloor = s >= 3 ? stage3At : stage2At;         // ратчет: защёлкнулись — назад за порог стадии не пускаем
         }
         stage = s;
-        telegraph.Set(true, StageColor(s));
+        telegraph.SetGradient(TelegraphColors.Grab, s / 3f); // стадии обхвата — ГРАДИЕНТ родной→фиолетовый по сжатию
         if (heldIsPlayer && playerCtl != null) playerCtl.ApplyGrab(this, SlowFor(s));
     }
 
@@ -718,7 +733,6 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         return true;
     }
 
-    Color StageColor(int s) => s >= 3 ? TelegraphColors.Bite : s == 2 ? TelegraphColors.Charge : TelegraphColors.Grab;
     float SlowFor(int s) => s >= 3 ? grabSlow3 : s == 2 ? grabSlow2 : grabSlow1;
 
     void Face(Vector3 d) =>
@@ -730,13 +744,5 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         verticalVel += gravity * Time.deltaTime;
         Vector3 motion = horizontal; motion.y = verticalVel;
         controller.Move(motion * Time.deltaTime);
-    }
-
-    void OnDrawGizmos()
-    {
-        float r = bite != null ? bite.Range : 2f;
-        Vector3 o = transform.position + Vector3.up * 0.5f;
-        Gizmos.color = constricting ? StageColor(stage) : (windingUp ? TelegraphColors.Grab : new Color(0.4f, 0.8f, 0.4f));
-        Gizmos.DrawLine(o, o + transform.forward * r);
     }
 }
