@@ -123,7 +123,7 @@ public class PlayerConstrict : MonoBehaviour, IAbility
 
     void OnDrawGizmosSelected()
     {
-        Gizmos.color = new Color(0.6f, 0.4f, 0.9f);
+        Gizmos.color = TelegraphColors.Grab;
         Gizmos.DrawWireSphere(transform.position, grabRange);
     }
 }

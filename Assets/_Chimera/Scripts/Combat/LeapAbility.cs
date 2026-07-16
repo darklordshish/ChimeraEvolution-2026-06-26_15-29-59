@@ -20,6 +20,9 @@ public class LeapAbility : WindupAbility
     public float MinRange => minRange; // психика читает окно дистанций для решения
     public float MaxRange => maxRange;
 
+    protected override float GizmoRange => maxRange; // хитбокс — дальность наскока
+    protected override float GizmoHalfAngle => 20f;
+
     bool flying;
     float flightEnd;
     Vector3 vel;

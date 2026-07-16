@@ -78,7 +78,7 @@ public class PlayerBite : MonoBehaviour, IAbility
     void OnDrawGizmos()
     {
         if (!BiteEnabled) return;
-        Gizmos.color = Color.green;
+        Gizmos.color = TelegraphColors.Bite;
         Gizmos.DrawWireSphere(BiteCenter(), radius);
     }
 }

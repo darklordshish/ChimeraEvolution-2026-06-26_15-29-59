@@ -580,17 +580,4 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         motion.y = verticalVel;
         controller.Move(motion * Time.deltaTime);
     }
-
-    void OnDrawGizmos()
-    {
-        float r = bite != null ? bite.Range : 2f;          // в эдит-режиме (до Awake) — дефолты
-        float half = bite != null ? bite.HalfAngle : 55f;
-        Vector3 o = transform.position + Vector3.up * 0.5f;
-        Quaternion lf = Quaternion.AngleAxis(-half, Vector3.up);
-        Quaternion rt = Quaternion.AngleAxis(half, Vector3.up);
-        Gizmos.color = (windingUp || grabbing) ? activeTelegraph : (hasToken ? Color.red : Color.yellow);
-        Gizmos.DrawLine(o, o + transform.forward * r);
-        Gizmos.DrawLine(o, o + lf * transform.forward * r);
-        Gizmos.DrawLine(o, o + rt * transform.forward * r);
-    }
 }

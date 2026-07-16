@@ -14,6 +14,7 @@ public class HitFlash : MonoBehaviour
     Renderer[] renderers;
     Color[] baseColors;
     MaterialPropertyBlock mpb;
+    Telegraph telegraph;
     float timer;
 
     void Awake()
@@ -36,6 +37,13 @@ public class HitFlash : MonoBehaviour
         if (timer <= 0f) return;
         timer -= Time.deltaTime;
         bool on = timer > 0f;
+
+        // откат вспышки: если существо ТЕЛЕГРАФИТ (замах / градиент обхвата) — восстановить телеграф, не родной цвет
+        if (!on)
+        {
+            if (telegraph == null) TryGetComponent(out telegraph);
+            if (telegraph != null && telegraph.IsShowing) { telegraph.Reapply(); return; }
+        }
 
         for (int i = 0; i < renderers.Length; i++)
         {

@@ -89,6 +89,22 @@ public abstract class WindupAbility : MonoBehaviour, IAbility
     protected virtual void OnBegin() { }
     protected abstract AbilityRun OnTick();
 
+    // ── ОТЛАДОЧНЫЙ ХИТБОКС (единая система): конус приёма (луч + сектор) в ЦВЕТЕ ТЕЛЕГРАФА этого приёма —
+    //    легенда хитбоксов = легенда сигналов (TelegraphColors). Каждый приём рисует себя САМ; психики гизмо не держат.
+    //    Наследник задаёт дальность/угол; в эдит-режиме читает сериализованные поля (Awake не нужен).
+    protected virtual float GizmoRange => 2f;
+    protected virtual float GizmoHalfAngle => 45f;
+
+    void OnDrawGizmos()
+    {
+        Vector3 o = transform.position + Vector3.up * 0.5f;
+        Vector3 f = transform.forward;
+        Gizmos.color = TelegraphColor;
+        Gizmos.DrawLine(o, o + f * GizmoRange);
+        Gizmos.DrawLine(o, o + Quaternion.AngleAxis(-GizmoHalfAngle, Vector3.up) * f * GizmoRange);
+        Gizmos.DrawLine(o, o + Quaternion.AngleAxis(GizmoHalfAngle, Vector3.up) * f * GizmoRange);
+    }
+
     // стоим на замахе: горизонталь ноль, гравитация работает
     protected void SettleInPlace()
     {

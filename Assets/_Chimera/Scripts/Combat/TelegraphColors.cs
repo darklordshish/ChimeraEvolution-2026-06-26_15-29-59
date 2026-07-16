@@ -16,6 +16,9 @@ public static class TelegraphColors
     public static readonly Color Grab   = new(0.70f, 0.20f, 0.90f); // захват — фиолетовый
     public static readonly Color Charge = new(0.90f, 0.10f, 0.50f); // чардж — розовый
     public static readonly Color Howl   = new(0.60f, 0.50f, 1f);    // вой — бледно-синий
+    public static readonly Color Antler = new(0.20f, 0.85f, 0.60f); // рога — зелёно-бирюзовый (протыкание, не таран)
+    public static readonly Color Sword  = new(0.55f, 0.75f, 0.95f); // меч (человек) — стальной
+    public static readonly Color Kick   = new(0.80f, 0.85f, 0.25f); // пинок (человек) — лаймовый
 
     // статусы
     public static readonly Color Stunned = new(0.92f, 0.92f, 0.85f); // «выключен из боя» (стан/схвачен) — белёсый

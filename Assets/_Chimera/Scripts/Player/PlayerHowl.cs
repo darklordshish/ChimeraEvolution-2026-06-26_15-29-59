@@ -63,7 +63,7 @@ public class PlayerHowl : MonoBehaviour, IAbility
     void OnDrawGizmos()
     {
         if (!HowlEnabled) return;
-        Gizmos.color = new Color(0.6f, 0.5f, 1f); // цвет воя из легенды
+        Gizmos.color = TelegraphColors.Howl;
         Gizmos.DrawWireSphere(transform.position, radius);
     }
 }

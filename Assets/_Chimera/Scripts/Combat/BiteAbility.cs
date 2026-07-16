@@ -20,6 +20,9 @@ public class BiteAbility : WindupAbility
     public float Range => range;         // психика читает для решений (дистанция атаки/удержания)
     public float HalfAngle => halfAngle; // и для прицельного конуса
 
+    protected override float GizmoRange => range;         // хитбокс = реальный конус укуса
+    protected override float GizmoHalfAngle => halfAngle;
+
     // тело-на-шасси (CreatureBody, NPC-режим) кормит урон И ЭФФЕКТЫ укуса из органов (data-driven, как у игрока)
     public void SetDamage(int v) => damage = v;
     public void SetVenom(int v) => venomStacks = v;

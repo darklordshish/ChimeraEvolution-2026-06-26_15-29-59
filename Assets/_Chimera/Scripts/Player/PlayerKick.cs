@@ -65,7 +65,7 @@ public class PlayerKick : MonoBehaviour, IAbility
     void OnDrawGizmos()
     {
         if (!KickEnabled) return;
-        Gizmos.color = Color.cyan;
+        Gizmos.color = TelegraphColors.Kick;
         Gizmos.DrawWireSphere(KickCenter(), radius);
     }
 }

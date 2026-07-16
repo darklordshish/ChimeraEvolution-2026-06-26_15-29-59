@@ -15,7 +15,8 @@ public class Telegraph : MonoBehaviour
     Color[] baseColors;
     MaterialPropertyBlock mpb;
     bool active;
-    Color activeColor;
+    Color activeColor;   // цель: плоский цвет ИЛИ target градиента
+    float activeT = -1f; // ≥0 → градиент по t (родной→target); <0 → плоский цвет
 
     void Awake()
     {
@@ -33,22 +34,38 @@ public class Telegraph : MonoBehaviour
         }
     }
 
-    /// <summary>Включить/выключить телеграф заданного цвета. Идемпотентно — лишней работы нет.</summary>
+    /// <summary>Плоский цвет телеграфа (вкл/выкл).</summary>
     public void Set(bool on, Color color)
     {
-        if (on == active && (!on || color == activeColor)) return;
-        active = on;
-        activeColor = color;
+        active = on; activeColor = color; activeT = -1f;
+        Apply();
+    }
+
+    /// <summary>Градиент телеграфа: каждый рендерер лерпит от СВОЕГО родного цвета к target по t (0=родной … 1=полный).
+    /// Для СТАДИЙНЫХ приёмов (обхват): нарастание читается как переход родной→цвет-приёма, а не три разных цвета.</summary>
+    public void SetGradient(Color target, float t)
+    {
+        active = true; activeColor = target; activeT = Mathf.Clamp01(t); // IsShowing=true — раскрытие для камуфляжа
+        Apply();
+    }
+
+    /// <summary>Восстановить текущий телеграф — после того как HitFlash перебил вспышкой (иначе откат к родному съел бы телеграф).</summary>
+    public void Reapply() { if (active) Apply(); }
+
+    public void Clear() { active = false; Apply(); }
+
+    // применить текущее состояние: выкл → родной цвет рендерера; градиент → лерп; плоский → цвет
+    void Apply()
+    {
         for (int i = 0; i < renderers.Length; i++)
         {
             if (renderers[i] == null) continue;
             renderers[i].GetPropertyBlock(mpb);
-            mpb.SetColor(BaseColor, on ? color : baseColors[i]);
+            Color c = !active ? baseColors[i] : activeT >= 0f ? Color.Lerp(baseColors[i], activeColor, activeT) : activeColor;
+            mpb.SetColor(BaseColor, c);
             renderers[i].SetPropertyBlock(mpb);
         }
     }
-
-    public void Clear() => Set(false, activeColor);
 
     public bool IsShowing => active; // «существо сейчас что-то телеграфирует» = раскрыто (сигнал для камуфляжа)
 }

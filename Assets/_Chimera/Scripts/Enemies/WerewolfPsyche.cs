@@ -254,11 +254,4 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
         Vector3 motion = horizontal; motion.y = verticalVel;
         controller.Move(motion * Time.deltaTime);
     }
-
-    void OnDrawGizmos()
-    {
-        Vector3 o = transform.position + Vector3.up * 0.5f;
-        Gizmos.color = windingUp ? activeTelegraph : (charging ? TelegraphColors.Charge : Color.magenta);
-        Gizmos.DrawLine(o, o + transform.forward * (bite != null ? bite.Range : 2.5f));
-    }
 }

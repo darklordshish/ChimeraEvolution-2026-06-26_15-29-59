@@ -78,7 +78,7 @@ public class PlayerAttack : MonoBehaviour, IAbility
     // красная сфера — зона удара. Всегда видна; включи тумблер Gizmos в Game view, чтобы видеть и в игре
     void OnDrawGizmos()
     {
-        Gizmos.color = Color.red;
+        Gizmos.color = TelegraphColors.Sword;
         Gizmos.DrawWireSphere(AttackCenter(), radius);
     }
 }
