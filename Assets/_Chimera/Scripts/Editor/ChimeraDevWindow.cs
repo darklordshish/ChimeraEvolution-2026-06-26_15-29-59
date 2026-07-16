@@ -153,6 +153,19 @@ public class ChimeraDevWindow : EditorWindow
                 foreach (var s in snakes)
                     if (s.TryGetComponent<Health>(out var sh)) sh.TakeDamage(99999, true);
         }
+
+        // ── Лось ──
+        EditorGUILayout.Space();
+        EditorGUILayout.LabelField("Лось", EditorStyles.boldLabel);
+        var moose = Object.FindObjectsByType<MoosePsyche>();
+        EditorGUILayout.LabelField($"Живых: {moose.Length}");
+        using (new EditorGUILayout.HorizontalScope())
+        {
+            if (GUILayout.Button("Спавн лося")) SpawnMoose();
+            if (GUILayout.Button("Убить всех лосей"))
+                foreach (var m in moose)
+                    if (m.TryGetComponent<Health>(out var mh)) mh.TakeDamage(99999, true);
+        }
     }
 
     // сброс интереса NPC к игроку: тревоги волков и запаховый след стираются (свежий «чистый лист»)
@@ -169,6 +182,16 @@ public class ChimeraDevWindow : EditorWindow
         if (NavMesh.SamplePosition(pos, out var hit, 10f, NavMesh.AllAreas)) pos = hit.position;
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(SnakePrefab.Path);
         var go = prefab != null ? Object.Instantiate(prefab) : SnakePrefab.BuildSnake();
+        go.transform.position = pos;
+    }
+
+    static void SpawnMoose()
+    {
+        var pc = Object.FindAnyObjectByType<PlayerController>();
+        Vector3 pos = (pc != null ? pc.transform.position : Vector3.zero) + new Vector3(10f, 0f, 8f);
+        if (NavMesh.SamplePosition(pos, out var hit, 10f, NavMesh.AllAreas)) pos = hit.position;
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(MoosePrefab.Path);
+        var go = prefab != null ? Object.Instantiate(prefab) : MoosePrefab.BuildMoose();
         go.transform.position = pos;
     }
 
