@@ -70,6 +70,7 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
     Kind pendingKind;
     Color activeTelegraph;
     Grabbed grabbedStatus; // единый захват: НАС держат (хвост игрока) — массивного не защёлкнуть, кусаемся в ответ
+    Noise noiseSrc;        // источник звука (вешает тело): всплеск воя (ось Noise)
 
     void Awake()
     {
@@ -216,6 +217,8 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
 
     void DoHowl()
     {
+        if (noiseSrc == null) TryGetComponent(out noiseSrc);
+        if (noiseSrc != null) noiseSrc.Spike(1f, 1.2f); // вой альфы ЗВУЧИТ в мире (ось Noise): уши слышат
         var spawner = FindAnyObjectByType<WolfSpawner>();
         if (spawner != null) spawner.SpawnAt(transform.position, summonCount); // призыв стаи вокруг себя
         PackCoordinator.Instance.Rally(rageDuration); // ярость: перебить бегство, вся стая в атаку без страха

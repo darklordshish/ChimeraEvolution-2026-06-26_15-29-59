@@ -21,7 +21,8 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     [SerializeField] float proximityRadius = 3f;
     [SerializeField] float hearRange = 24f;              // СЛУХ — топ-чувство лося (дальше мутного зрения, круговой)
     [SerializeField, Range(0f, 1f)] float hearThreshold = 0.12f; // порог реакции: тихий шаг под ним — «крадёшься — прошёл»
-    [SerializeField] float noiseMemory = 4f;             // сколько идём проверять источник шума после последнего звука
+    [SerializeField] float noiseMemory = 4f;             // сколько следим за источником шума после последнего звука
+    [SerializeField] float comfortDistance = 12f;        // зона комфорта: шум ближе — ТАКТИЧНО отходим (травоядное не проверяет странное)
 
     [Header("Поведение")]
     [SerializeField] float moveSpeed = 3f;
@@ -76,6 +77,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
         senses.Seed(SenseKind.Sight, sightRange);
         senses.SeedViewAngle(SenseKind.Sight, sightHalfAngle);
         senses.Seed(SenseKind.Hearing, hearRange); // слух — круговой (viewHalfAngle 180 по умолчанию)
+        senses.SeedCalmMult(SenseKind.Hearing, 1f); // уши дежурят и у спокойного: стелс от слуха — ТИХИЙ шаг, не «зверь расслабился»
         if (!TryGetComponent<HeatSignature>(out _)) gameObject.AddComponent<HeatSignature>(); // тёплый — виден термо
         if (!TryGetComponent<StunTint>(out _)) gameObject.AddComponent<StunTint>();            // статус «выключен»
     }
@@ -135,10 +137,10 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
 
         if (sees && dist <= provokeRadius) provoked = true; // СРЕЗ A: подошёл слишком близко → провокация
 
-        // СЛУХ (срез B): шум над порогом — запоминаем точку и идём проверить (память освежается, пока шумит).
+        // СЛУХ (срез B): шум над порогом — запоминаем точку и СЛЕДИМ (память освежается, пока шумит).
         // «Бежишь мимо — заметил; крадёшься/замер — прошёл»: тихий шаг игрока живёт ПОД порогом
         if (!provoked
-            && Noise.Hear(transform.position, senses.Range(SenseKind.Hearing), transform, out var nPos, out var nStr)
+            && Noise.Hear(transform.position, senses.Range(SenseKind.Hearing), transform, out var nPos, out var nStr, out _)
             && nStr >= hearThreshold)
         { noisePos = nPos; noiseUntil = Time.time + noiseMemory; }
 
@@ -162,19 +164,36 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
             return;
         }
 
-        // НАСТОРОЖЕН ШУМОМ: разворачиваемся и идём проверить источник (не бегом — любопытная туша, не атака);
-        // дошёл или звук угас — возвращаемся к выпасу. Провокация по-прежнему только близость/урон (лесенка — срез C)
+        // НАСТОРОЖЕН ШУМОМ: травоядное НЕ идёт проверять странный звук (любопытство — волчье) — оно СЛЕДИТ
+        // и ДЕРЖИТ ДИСТАНЦИЮ: поднял голову, морда к источнику; шум ближе зоны комфорта — ТАКТИЧНО отходит
+        // (спокойным шагом, не паника). Звук угас — выпас. Провокация по-прежнему близость/урон (лесенка — срез C)
         if (Time.time < noiseUntil)
         {
             Vector3 toN = noisePos - transform.position; toN.y = 0f;
-            if (toN.magnitude > 2f)
+            float dN = toN.magnitude;
+            Vector3 watch = dN > 0.001f ? toN / dN : transform.forward;
+            if (dN < comfortDistance)
             {
-                if (toN.sqrMagnitude > 0.001f)
-                    transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(toN.normalized), rotationSpeed * Time.deltaTime);
-                Settle(nav.DirTo(noisePos) * Speed);
+                // отходим от шума, восстанавливая комфортную дистанцию (навигация обходит стены)
+                Vector3 away = transform.position - noisePos; away.y = 0f;
+                Vector3 dir = nav.DirTo(transform.position + (away.sqrMagnitude > 0.01f ? away.normalized : -transform.forward) * 6f);
+                // ЗАГНАН (отступать некуда — угол/стены): не дрожим об стену, а встаём МОРДОЙ к угрозе.
+                // Это ступень-ноль ЛЕСЕНКИ ПРЕДУПРЕЖДЕНИЙ — холка/фырк/топот/рога лягут сюда в срезе C
+                if (dir.sqrMagnitude < 0.04f)
+                {
+                    transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(watch), rotationSpeed * Time.deltaTime);
+                    Settle(Vector3.zero);
+                    return;
+                }
+                if (dir.sqrMagnitude > 0.001f)
+                    transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(dir), rotationSpeed * Time.deltaTime);
+                Settle(dir * Speed * grazeSpeed);
                 return;
             }
-            noiseUntil = 0f; // пришёл — тихо: ложная тревога
+            // дистанция комфортна: замер и СМОТРИТ в сторону звука (живой телеграф «я тебя слышу»)
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(watch), rotationSpeed * Time.deltaTime);
+            Settle(Vector3.zero);
+            return;
         }
 
         // спокоен: пасётся/бродит

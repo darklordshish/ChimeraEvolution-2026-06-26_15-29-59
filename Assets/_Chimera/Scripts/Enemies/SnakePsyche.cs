@@ -123,6 +123,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     enum ClimbPhase { None, Approach, Rise, Perch, Descend }
     ClimbPhase climb;
     Personality personality; // ЛИЧНОСТЬ (вешает тело): ось ОСТОРОЖНОСТИ — выжидание в сокрытии/склонность отползать
+    Noise noiseSrc;          // источник звука (вешает тело): гремок/приманка — всплески громкости (ось Noise)
     bool wary, traversing;   // сокрытие после бегства (насест = укрытие, НЕ засада: манок молчит); отползание по стене
     int traverseSign;        // направление траверса вдоль стены (прочь от стаи)
     float waryUntil, traverseUntil;
@@ -416,17 +417,12 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         nextRattle = Time.time + interval;
         rattleBlinkUntil = Time.time + rattleCue;
 
-        // звук будит любопытство зверья вокруг; пока змея гремит, память любопытства ОСВЕЖАЕТСЯ —
-        // волк доходит и издалека (игрока манит сам сигнал — видит мигание; аудио позже).
-        // СИЛА ЗОВА убывает с расстоянием (1 в упор → 0 на краю слышимости): волк тянется к большей силе
-        // и скатывается в ВОРОНКУ ближней змеи — конкурирующие манки не пинг-понгят стаю между собой
-        foreach (var col in Physics.OverlapSphere(transform.position, hearRadius, ~0, QueryTriggerInteraction.Ignore))
-        {
-            var w = col.GetComponentInParent<WolfPsyche>();
-            if (w == null) continue;
-            float d = (w.transform.position - transform.position).magnitude;
-            w.HearRattle(transform.position, 1f - Mathf.Clamp01(d / hearRadius));
-        }
+        // ЗВУК (ось Noise, B2): гремок — ВСПЛЕСК громкости, физика доносит сама (слышимая дальность =
+        // громкость × ухо слушателя, воронка силы — в Hear). Приманка гремит на полную (1.0), пассивный
+        // гремок тихий (~0.55 — прежние радиусы 15/28 переведены в громкость). Кто и как реагирует —
+        // решают уши: волчье любопытство ловит гремок, лось ходит проверять любой шум
+        if (noiseSrc == null) TryGetComponent(out noiseSrc);
+        if (noiseSrc != null) noiseSrc.Spike(hearRadius / lureHearRadius, rattleCue + 0.2f);
     }
 
     // видимость погремушки: вместе с телом (камуфляж её не трогает) ЛИБО мигание гремка

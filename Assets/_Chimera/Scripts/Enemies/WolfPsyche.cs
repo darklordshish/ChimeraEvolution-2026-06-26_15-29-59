@@ -27,6 +27,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     [SerializeField] float wanderRadius = 15f;  // радиус случайного блуждания в покое
     [SerializeField, Range(0f, 1f)] float wanderSpeed = 0.5f; // доля скорости при спокойном блуждании
     [SerializeField] float scentRange = 16f;    // в каком радиусе берёт свежий след игрока
+    [SerializeField] float hearRange = 28f;     // СЛУХ: приманку змеи (громкость 1.0) слышно с этой дальности, тихий гремок (~0.55) — с ~15м
 
     // параметры укуса и прыжка теперь на компонентах-доставках BiteAbility/LeapAbility (тюнить там)
 
@@ -99,6 +100,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     Fear fearStatus;                // накопительный СТРАХ (эффект-компонент); порог храбрости — личность
     Personality personality;        // S1 срез 6: личность особи (храбрость/агрессия/любопытство) — разброс поведения
     Grabbed grabbedStatus;          // единый захват: НАС держат (кольца змеи / хвост игрока) — на слабом хвате кусаемся
+    Noise noiseSrc;                 // источник звука (вешает тело): всплеск воя — мир слышит (ось Noise)
 
     public bool Engaged { get; private set; } // игрок в поле зрения = волк агрессивен/нацелен (для «вне боя» игрока)
     bool Alerted => Time.time < alertUntil;   // услышал вой — знает, куда сбегаться (личная память)
@@ -107,16 +109,18 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     public void Hear(Vector3 playerPos) { alertUntil = Time.time + alertMemory; alertPos = playerPos; }
     public void ForgetAlert() => alertUntil = 0f; // сброс личной тревоги (при бегстве стаи — теряем игрока)
 
-    // странный звук (гремок змеи): ЛЮБОПЫТСТВО — осторожно иду проверить, если не занят
+    // СЛУХ (ось Noise, B2 — прото-канал HearRattle переехал на общую физику): ловим ухом самый громкий
+    // источник; СТРАННЫЙ звук (гремок змеи) будит ЛЮБОПЫТСТВО — осторожно иду проверить, если не занят
     // (бой/тревога/паника важнее). Шаг в самозарядную ловушку: у змеи любопытный станет одиночкой-добычей.
-    // ВОРОНКА: сила зова убывает с расстоянием — слабый дальний манок НЕ перебивает сильный ближний;
-    // подходя, слышим тот же зов всё сильнее (самоподкрепление) → скатываемся к одной змее без пинг-понга.
-    // ПРОТО-ЗВУК: strength = воспринятая громкость. Ось звука (лось, срез B: SenseKind-слух + источники
-    // с затуханием) заменит этот частный канал общим — гремок станет обычным источником, слух приёмником
-    public void HearRattle(Vector3 pos, float strength)
+    // ВОРОНКА — теперь свойство самой физики (Hear: сила = громкость × близость): слабый дальний манок
+    // не перебивает сильный ближний, подходя — слышим сильнее → скатываемся к одной змее без пинг-понга.
+    // Шум ДВИЖЕНИЯ чужаков (топот игрока/лося) пока НЕ слушаем — отдельное решение, сдвинет баланс встреч
+    void ListenForRattle()
     {
         if (Engaged || Alerted || Routing) return;
-        if (Time.time < curiosityUntil && strength < curiosityStrength) return; // уже идём на более сильный зов
+        if (!Noise.Hear(transform.position, senses.Range(SenseKind.Hearing), transform, out var pos, out var strength, out var src)) return;
+        if (src == null || src.GetComponentInParent<SnakePsyche>() == null) return; // странное = гремок; свои шумят привычно
+        if (Time.time < curiosityUntil && strength < curiosityStrength) return;     // уже идём на более сильный зов
         curiosityPos = pos;
         curiosityStrength = strength;
         curiosityUntil = Time.time + curiosityMemory * (personality != null ? personality.Curiosity : 1f); // любопытные проверяют дольше (личность)
@@ -197,6 +201,8 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         if (!TryGetComponent(out fearStatus)) fearStatus = gameObject.AddComponent<Fear>(); // накопительный страх (S1 срез 5)
         senses.Seed(SenseKind.Sight, sightRange);   // сид базовых дальностей из полей психики (если профиль не задан на префабе)
         senses.Seed(SenseKind.Scent, scentRange);
+        senses.Seed(SenseKind.Hearing, hearRange);  // слух — круговой (приёмник гремка/воя; ось Noise)
+        senses.SeedCalmMult(SenseKind.Hearing, 1f); // уши дежурят и у спокойного — иначе приманка не тянула бы праздных издалека
         senses.SeedViewAngle(SenseKind.Sight, sightHalfAngle); // зрение — КОНУС (термо/запах остаются круговыми)
 
         if (!TryGetComponent<ScentTrail>(out _)) gameObject.AddComponent<ScentTrail>(); // запаховый след (виден при волчьем Чутье)
@@ -387,7 +393,8 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         {
             if (hasToken) ReleaseToken();
             pack.LeaveRing(this); // потерял игрока — освобождаем слот кольца (занят бродит/тропит, не держит место)
-            SenseGrabbedMate(); // заметить возню схваченного сородича (точка спасения)
+            SenseGrabbedMate();   // заметить возню схваченного сородича (точка спасения)
+            ListenForRattle();    // слух: странный звук (гремок) → любопытство (ось Noise)
             Vector3 dest; bool active = true;
             if (Alerted && (alertPos + personalOffset - transform.position).sqrMagnitude > 9f)
                 dest = alertPos + personalOffset;                                  // услышал вой — на СВОЁ место у точки сбора
@@ -564,12 +571,16 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         Settle(dir * Speed + Separation());
     }
 
-    // вой: зову ближних волков (в радиусе) на точку + бешу их — глобального алерта на всю карту больше нет
+    // вой: зову ближних волков (в радиусе) на точку + бешу их — глобального алерта на всю карту больше нет.
+    // Координация стаи (куда бежать, ярость) — ЯЗЫК, идёт через pack; ЗВУК воя — всплеск Noise: мир слышит
+    // (лось пойдёт проверить, будущие уши тоже) — физика и семантика разнесены
     void TryHowl(Vector3 pos)
     {
         if (Time.time < nextHowlTime) return;
         nextHowlTime = Time.time + howlCooldown;
         pack.Howl(transform.position, howlRadius, pos, howlRageDuration);
+        if (noiseSrc == null) TryGetComponent(out noiseSrc);
+        if (noiseSrc != null) noiseSrc.Spike(1f, 0.8f); // вой ЗВУЧИТ в мире
         FlashTelegraph(TelegraphColors.Howl, howlCueTime); // видимый сигнал: волк зовёт стаю
     }
 

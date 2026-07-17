@@ -22,6 +22,7 @@ public class PlayerHowl : MonoBehaviour, IAbility
     float nextTime;
     CameraFollow cam;
     Health ownHealth;
+    Noise noiseSrc; // источник звука (вешает тело): вой игрока звучит в мире (ось Noise) — лось услышит
     readonly HashSet<Health> hitThisHowl = new();
 
     void Start()
@@ -41,6 +42,8 @@ public class PlayerHowl : MonoBehaviour, IAbility
 
     void DoHowl()
     {
+        if (noiseSrc == null) TryGetComponent(out noiseSrc);
+        if (noiseSrc != null) noiseSrc.Spike(1f, 0.8f); // вой ЗВУЧИТ (Noise): в призраке Hear сам глушит (беззвучен)
         hitThisHowl.Clear(); // призрака раскрывает ЗАДЕТЫЙ воем (стан через Hit.Apply / испуг ниже), не вой в пустоту
         var hit = new Hit(ownHealth, transform.position);
         Collider[] cols = Physics.OverlapSphere(transform.position, fearRadius, ~0, QueryTriggerInteraction.Ignore);

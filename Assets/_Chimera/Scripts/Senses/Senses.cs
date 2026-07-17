@@ -43,4 +43,12 @@ public class Senses : MonoBehaviour
         var c = Ch(k);
         if (c.viewHalfAngle >= 180f) c.viewHalfAngle = halfAngle;
     }
+
+    /// <summary>Сид множителя СПОКОЙСТВИЯ — только если канал на дефолте (0.4). СЛУХ не расслабляется
+    /// (спящего зверя будит звук — вечно дежурное чувство): психики-слухачи сидят ему 1.</summary>
+    public void SeedCalmMult(SenseKind k, float mult)
+    {
+        var c = Ch(k);
+        if (Mathf.Approximately(c.calmMult, 0.4f)) c.calmMult = mult;
+    }
 }

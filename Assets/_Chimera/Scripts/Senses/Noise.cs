@@ -41,10 +41,11 @@ public class Noise : MonoBehaviour
     }
 
     /// <summary>Самый громкий СЛЫШИМЫЙ источник для уха в точке ear с радиусом слуха range (свой — исключён;
-    /// dev-призрак беззвучен). Слышимая дальность источника = его громкость × range слушателя.</summary>
-    public static bool Hear(Vector3 ear, float range, Transform self, out Vector3 pos, out float strength)
+    /// dev-призрак беззвучен). Слышимая дальность источника = его громкость × range слушателя.
+    /// source — КТО шумит: слушатель сам решает семантику (странный звук → любопытство, свой — не новость).</summary>
+    public static bool Hear(Vector3 ear, float range, Transform self, out Vector3 pos, out float strength, out Noise source)
     {
-        pos = Vector3.zero; strength = 0f;
+        pos = Vector3.zero; strength = 0f; source = null;
         foreach (var n in all)
         {
             if (n == null || n.transform == self) continue;
@@ -55,7 +56,7 @@ public class Noise : MonoBehaviour
             float dist = Vector3.Distance(ear, n.transform.position);
             if (dist > audible) continue;
             float s = loud * (1f - dist / Mathf.Max(audible, 0.01f)); // сила восприятия: громче и ближе — сильнее
-            if (s > strength) { strength = s; pos = n.transform.position; }
+            if (s > strength) { strength = s; pos = n.transform.position; source = n; }
         }
         return strength > 0f;
     }
