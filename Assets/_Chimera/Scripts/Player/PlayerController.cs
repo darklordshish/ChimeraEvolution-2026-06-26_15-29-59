@@ -52,6 +52,11 @@ public class PlayerController : MonoBehaviour
         if (!TryGetComponent(out knockback)) knockback = gameObject.AddComponent<Knockback>(); // отлёт от ударов (рога/таран/топот/пинок)
         TryGetComponent(out constrict);
 
+        // запах игрока: эмиттер следа (его тропят враги) + визуал своего следа. В Awake (не Start!) —
+        // чтобы след существовал к первому Recompute тела: оно красит след ЦВЕТОМ СОСТАВА (видовой отпечаток)
+        if (!TryGetComponent<ScentEmitter>(out _)) gameObject.AddComponent<ScentEmitter>();
+        if (!TryGetComponent<ScentTrail>(out _)) gameObject.AddComponent<ScentTrail>().Configure(new Color(1f, 0.45f, 0.3f), true);
+
         moveAction = new InputAction("Move", InputActionType.Value);
         moveAction.AddCompositeBinding("2DVector")
             .With("Up", "<Keyboard>/w").With("Down", "<Keyboard>/s")
@@ -80,10 +85,6 @@ public class PlayerController : MonoBehaviour
         groundY = transform.position.y;
         SetFirstPerson(false);
         if (constrict == null) TryGetComponent(out constrict); // мог до-создаться в CreatureBody.Awake
-
-        // запах игрока: эмиттер следа (его тропят враги) + визуал своего следа (тёплый, в Чутье по тогглу)
-        if (!TryGetComponent<ScentEmitter>(out _)) gameObject.AddComponent<ScentEmitter>();
-        if (!TryGetComponent<ScentTrail>(out _)) gameObject.AddComponent<ScentTrail>().Configure(new Color(1f, 0.45f, 0.3f), true);
     }
 
     void OnEnable() { moveAction.Enable(); lookAction.Enable(); dashAction.Enable(); toggleViewAction.Enable(); }

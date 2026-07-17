@@ -493,6 +493,15 @@ public class CreatureBody : MonoBehaviour
         foreach (var c in GetComponents<IBodyStatConsumer>()) c.OnBodyStats(dmg + dmgBite, mv, venom, bleed);
 
         if (move != null) UpdateTint(); // ТОЛЬКО игрок: тело = смесь тинтов видов надетых органов. NPC — запечённый материал (не драться с Telegraph)
+
+        // ВИДОВОЙ ОТПЕЧАТОК В ЗАПАХЕ: след пахнет СОСТАВОМ — красится смесью тинтов шасси+аугументов
+        // (природная особь → чистый тинт вида, химера → грязный микс). Волчье Чутьё читает, КТО прошёл,
+        // прямо из цвета следа — у всех тел, не только у игрока
+        if (TryGetComponent<ScentTrail>(out var scentTrail))
+        {
+            Color comp = CompositionTint();
+            scentTrail.Configure(new Color(comp.r, comp.g, comp.b, 0.65f), move != null);
+        }
     }
 
     // холоднокровность как компонент-маркер: вешаем/снимаем по итогу сборки (живо на смене Сердца у игрока)
@@ -519,10 +528,24 @@ public class CreatureBody : MonoBehaviour
     // человеч.значение + (звериное − человеч.) × множитель: на ×1 = звериное, на ×2 = вдвое дальше от человека
     static float Blend(float human, float beast, float mult) => human + (beast - human) * mult;
 
-    // цвет тела ИГРОКА = СМЕСЬ тинтов ВИДОВ надетых органов: человеческий слот → тинт шасси (телесный),
-    // звериный → тинт вида-донора. Палитра отражает СОСТАВ (волчий билд серее, змеиный зеленее, микс — смешанный;
-    // чем химернее, тем «грязнее»/чуждее — визуальная цена химеризации). NPC сюда не заходят (запечённый материал).
+    // цвет тела ИГРОКА = СМЕСЬ тинтов ВИДОВ надетых органов (CompositionTint). NPC сюда не заходят
+    // (запечённый материал — не драться с Telegraph), но их ЗАПАХ красится той же смесью в Recompute.
     void UpdateTint()
+    {
+        Color body = CompositionTint();
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            if (renderers[i] == null) continue;
+            renderers[i].GetPropertyBlock(mpb);
+            mpb.SetColor(BaseColor, body);
+            renderers[i].SetPropertyBlock(mpb);
+        }
+    }
+
+    // СМЕСЬ тинтов ВИДОВ по составу тела: человеческий слот → тинт шасси (телесный), звериный → тинт
+    // вида-донора. Отражает СОСТАВ (волчий билд серее, змеиный зеленее; чем химернее, тем «грязнее»/чуждее —
+    // визуальная цена химеризации). ОБЩАЯ для палитры тела и запахового следа (видовой отпечаток в запахе)
+    Color CompositionTint()
     {
         float r = 0f, g = 0f, b = 0f; int n = 0;
         foreach (var sl in slots)
@@ -532,14 +555,7 @@ public class CreatureBody : MonoBehaviour
             else if (sl.human != null) t = chassis != null ? chassis.tint : Color.gray;  // человеческий → телесный
             if (t.HasValue) { r += t.Value.r; g += t.Value.g; b += t.Value.b; n++; }      // пустой химерный слот не считаем
         }
-        Color body = n > 0 ? new Color(r / n, g / n, b / n) : (chassis != null ? chassis.tint : Color.gray);
-        for (int i = 0; i < renderers.Length; i++)
-        {
-            if (renderers[i] == null) continue;
-            renderers[i].GetPropertyBlock(mpb);
-            mpb.SetColor(BaseColor, body);
-            renderers[i].SetPropertyBlock(mpb);
-        }
+        return n > 0 ? new Color(r / n, g / n, b / n) : (chassis != null ? chassis.tint : Color.gray);
     }
 
     // тинт вида по имени (шасси или донор) — для смеси палитры
