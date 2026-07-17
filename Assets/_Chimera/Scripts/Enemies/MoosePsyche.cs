@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -43,6 +44,13 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     [SerializeField] float calmDistance = 18f;       // разъярённый остывает: цель дальше этого ИЛИ вне зрения дольше calmDelay
     [SerializeField] float calmDelay = 5f;
 
+    [Header("Рёв — крик угрозы (срез D)")]
+    [SerializeField] float bellowRadius = 14f;      // удар по морали волков — ужас ВБЛИЗИ
+    [SerializeField] float bellowChainRadius = 26f; // цепная ярость сородичей — рёв слышен ДАЛЕКО (~ухо лося)
+    [SerializeField] float bellowScare = 3.5f;   // Fear волкам (порог храбрости 2..5): мелкую стаю срывает, крупная держится
+    [SerializeField] float bellowCooldown = 10f;
+    [SerializeField] float bellowCueTime = 1.2f; // вспышка-сигнал рёва (Howl-цвет): длинная — рёв нельзя проморгать
+
     CharacterController controller;
     Stagger stagger;
     Knockback knockback;
@@ -63,7 +71,9 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     Grabbed grabbedStatus; // единый захват: НАС держат (хвост игрока) — массивного не защёлкнуть, бодаемся в ответ
     EmotionTint emo;       // морда наливается по лесенке (SetMood); полный бордовый берсерка — статус Rage сам
     Noise noiseSrc;        // теллы-ступени СЛЫШНЫ: фырк/топот-демонстрация — всплески громкости
-    float nextAttackTime, verticalVel;
+    Telegraph telegraph;   // вспышка-сигнал рёва (Howl-цвет)
+    CameraFollow cam;      // рёв рядом с игроком встряхивает камеру (вес туши)
+    float nextAttackTime, verticalVel, nextBellow, bellowCueUntil;
     bool provoked;
     float irritation;      // ЛЕСЕНКА 0..1: копится от видимого провокатора, спадает без него
     float calmSince = -1f; // разъярён: с какого момента сцена «рассосалась» (не видит/далеко)
@@ -102,18 +112,52 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     void Start()
     {
         playerCtl = FindAnyObjectByType<PlayerController>();
+        cam = FindAnyObjectByType<CameraFollow>();
+        TryGetComponent(out telegraph);
         if (playerCtl != null) { target = playerCtl.transform; targetHealth = playerCtl.GetComponent<Health>(); }
         if (ownHealth != null) ownHealth.onDamaged.AddListener(Provoke); // удар = максимальная провокация (минуя лесенку)
         TryGetComponent(out personality); // личность вешает CreatureBody в своём Awake — читаем после
     }
 
-    // ПРОДАВИЛИ (вплотную / лесенка дозрела / загнан / урон): боевой режим + ЛОКАЛЬНЫЙ БЕРСЕРК
-    // «загнанный зверь» — Rage (морду красит статус сам, урон/скорость выше). В бою ярость поддерживается
-    void Provoke()
+    // ПРОДАВИЛИ (вплотную / лесенка дозрела / загнан / урон / рёв сородича): боевой режим + ЛОКАЛЬНЫЙ
+    // БЕРСЕРК «загнанный зверь» — Rage (морду красит статус, урон/скорость выше) + РЁВ на входе.
+    // public: рёв сородича заводит каскадом (цепная ярость). В бою ярость поддерживается
+    public void Provoke()
     {
-        if (!provoked && rage != null) rage.Enrage(berserkDuration);
+        bool fresh = !provoked;
+        if (fresh && rage != null) rage.Enrage(berserkDuration);
         provoked = true;
         irritation = 1f;
+        if (fresh) TryBellow(); // вход в ярость — крик угрозы
+    }
+
+    // РЁВ (срез D): волкам вокруг — удар по МОРАЛИ (Fear сам гейтит холодных/яростных; мелкую стаю срывает),
+    // сородичам-лосям — ЦЕПНАЯ ЯРОСТЬ (каждый ревёт дальше — хаос «бьёт ближайшего чужеродного»);
+    // слышен всем ушам (Noise.Spike), рядом с игроком трясёт камеру. Вспышка Howl-цвета — визуальный сигнал
+    void TryBellow()
+    {
+        if (Time.time < nextBellow) return;
+        nextBellow = Time.time + bellowCooldown;
+
+        if (noiseSrc == null) TryGetComponent(out noiseSrc);
+        if (noiseSrc != null) noiseSrc.Spike(1f, 1f);
+        if (telegraph != null) { telegraph.Set(true, TelegraphColors.Howl); bellowCueUntil = Time.time + bellowCueTime; }
+
+        var hit = new HashSet<Component>(); // дедуп коллайдеров одного существа
+        float maxR = Mathf.Max(bellowRadius, bellowChainRadius);
+        foreach (var col in Physics.OverlapSphere(transform.position, maxR, ~0, QueryTriggerInteraction.Ignore))
+        {
+            var fear = col.GetComponentInParent<Fear>();
+            if (fear != null && fear.transform != transform && hit.Add(fear)
+                && (fear.transform.position - transform.position).sqrMagnitude <= bellowRadius * bellowRadius)
+                fear.Add(bellowScare); // ужас — только вблизи
+            var mate = col.GetComponentInParent<MoosePsyche>();
+            if (mate != null && mate != this && hit.Add(mate)) mate.Provoke(); // цепь — на всю слышимость; яростный не ревёт заново
+        }
+
+        if (cam != null && playerCtl != null
+            && (playerCtl.transform.position - transform.position).sqrMagnitude <= bellowRadius * bellowRadius)
+            cam.Shake(0.25f, 0.35f); // вес туши чувствуется телом
     }
 
     // морда наливается кровью по лесенке (градиент к ярости); полный бордовый берсерка — статус, он сильнее mood
@@ -139,6 +183,13 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     void Update()
     {
         if (target == null) { Settle(Vector3.zero); return; }
+
+        // погасить вспышку рёва (замах-телеграф активного приёма не трогаем — им рулит доставка)
+        if (bellowCueUntil > 0f && Time.time >= bellowCueUntil)
+        {
+            bellowCueUntil = 0f;
+            if (activeAbility == null && telegraph != null) telegraph.Clear();
+        }
 
         if (knockback != null && knockback.IsActive) // нокбэк рвёт всё
         {
