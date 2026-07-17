@@ -4,7 +4,7 @@ using UnityEngine.InputSystem;
 
 /// <summary>
 /// Водитель игрока: читает ввод и дёргает приёмы-способности (IAbility) на теле. Сами приёмы ввод
-/// больше не читают — активацию решает драйвер (симметрично будущей психике ИИ). ЛКМ→меч, Shift→укус, E→пинок.
+/// больше не читают — активацию решает драйвер (симметрично будущей психике ИИ). ЛКМ→меч, Q→укус, E→пинок.
 /// Плюс хоткеи химеризации (1–6) — по данным слотов тела (CreatureBody.ToggleSlot).
 /// </summary>
 [RequireComponent(typeof(PlayerAttack))]
@@ -33,10 +33,10 @@ public class PlayerInputDriver : MonoBehaviour
         attackAction.AddBinding("<Gamepad>/buttonWest");
         attackAction.AddBinding("<Keyboard>/j");
 
-        // Left Shift / левый шифтер
+        // Q / правый триггер (Shift и левый шифтер отданы ТИХОМУ ШАГУ — ось звука)
         biteAction = new InputAction("Bite", InputActionType.Button);
-        biteAction.AddBinding("<Keyboard>/leftShift");
-        biteAction.AddBinding("<Gamepad>/leftShoulder");
+        biteAction.AddBinding("<Keyboard>/q");
+        biteAction.AddBinding("<Gamepad>/rightTrigger");
 
         // E / B на геймпаде (пинок — фича человеческих ног)
         kickAction = new InputAction("Kick", InputActionType.Button);
