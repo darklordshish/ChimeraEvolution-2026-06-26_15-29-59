@@ -830,6 +830,7 @@ MonoBehaviour:
   hearRange: 24
   hearThreshold: 0.12
   noiseMemory: 4
+  comfortDistance: 12
   moveSpeed: 3
   rotationSpeed: 200
   gravity: -20
@@ -837,3 +838,13 @@ MonoBehaviour:
   grazeSpeed: 0.5
   provokeRadius: 5
   attackCooldown: 2.5
+  warnRadius: 10
+  irritationRise: 0.35
+  irritationDecay: 0.2
+  berserkDuration: 6
+  calmDistance: 18
+  calmDelay: 5
+  bellowRadius: 14
+  bellowChainRadius: 26
+  bellowCooldown: 10
+  bellowCueTime: 1.2

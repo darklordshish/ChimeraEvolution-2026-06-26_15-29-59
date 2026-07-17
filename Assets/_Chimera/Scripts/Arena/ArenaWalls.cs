@@ -23,10 +23,16 @@ public class ArenaWalls : MonoBehaviour
     [SerializeField] float mazeFill = 0.7f;     // доля арены под лабиринт (остальное — кольцо у стен)
     [SerializeField, Range(0f, 1f)] float openness = 0.5f; // сколько лишних стен убрать (loops/открытость)
     [SerializeField] float centerClear = 9f;    // радиус чистого «кармана» под спавн игрока в центре
-    [SerializeField] int seed = 12345;          // фикс. сид → стабильный уровень (поменяй для другой раскладки)
+    [SerializeField] int seed = 12345;          // фикс. сид → стабильный уровень (работает при выключенном randomSeed)
+    [SerializeField] bool randomSeed = true;    // РОГАЛИК: каждый запуск — новая раскладка лабиринта (сид пишется в лог)
 
     void Awake()
     {
+        if (randomSeed)
+        {
+            seed = System.Environment.TickCount;
+            Debug.Log($"ArenaWalls: случайный сид {seed} (для воспроизведения раскладки — выключи randomSeed и впиши его)");
+        }
         if (buildFloor)
             CreateBox("Floor", new Vector3(0f, -3f, 0f), new Vector3(arenaSide, 6f, arenaSide), floorColor); // толстый — не продавить
 

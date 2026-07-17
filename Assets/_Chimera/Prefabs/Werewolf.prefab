@@ -270,11 +270,11 @@ MonoBehaviour:
   chargeWindup: 0.35
   chargeMaxDuration: 2
   chargeMaxRange: 30
-  summonCount: 5
-  howlWolfCap: 15
+  summonCount: 7
+  howlWolfCap: 45
   rageDuration: 8
   howlWindup: 1.1
-  howlCooldown: 16
+  howlCooldown: 9
   howlInitialDelay: 8
   attackCooldown: 1.2
   wanderRadius: 18

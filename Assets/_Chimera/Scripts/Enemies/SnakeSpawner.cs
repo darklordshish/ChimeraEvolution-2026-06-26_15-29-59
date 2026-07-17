@@ -11,8 +11,8 @@ using UnityEngine.AI;
 public class SnakeSpawner : MonoBehaviour
 {
     [SerializeField] GameObject snakePrefab;
-    [SerializeField] int maxAlive = 3;
-    [SerializeField] float mapHalfExtent = 48f;          // полукрай зоны спавна от позиции спавнера (арена 100 → 48)
+    [SerializeField] int maxAlive = 7;
+    [SerializeField] float mapHalfExtent = 72f;          // полукрай зоны спавна от позиции спавнера (арена 150 → 72)
     [SerializeField] float spawnInterval = 6f;           // как часто досыпать до maxAlive
     [SerializeField] float minDistanceFromPlayer = 15f;  // появляться вне поля зрения игрока
     [SerializeField] float snakeSpacing = 20f;           // разлёт между змеями — засады не кучкуются

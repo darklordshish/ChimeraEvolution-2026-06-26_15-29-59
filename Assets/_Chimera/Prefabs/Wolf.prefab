@@ -516,7 +516,7 @@ MonoBehaviour:
   arriveRadius: 2.5
   disengageRange: 9
   howlRadius: 16
-  howlCooldown: 5
+  howlCooldown: 10
   howlRageDuration: 3
   howlCueTime: 0.4
   alertMemory: 8

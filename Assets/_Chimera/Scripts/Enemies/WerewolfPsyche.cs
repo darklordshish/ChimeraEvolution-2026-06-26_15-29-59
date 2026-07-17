@@ -38,8 +38,8 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
     [SerializeField] float chargeMaxRange = 30f;    // с какой макс. дистанции бросается в разбег
 
     [Header("Вой (призыв стаи)")]
-    [SerializeField] int summonCount = 5;        // волков за один вой (на все атакующие позиции)
-    [SerializeField] int howlWolfCap = 15;       // потолок волков, до которого добивает вой (выше лимита спавнера)
+    [SerializeField] int summonCount = 7;        // волков за один вой (на все атакующие позиции)
+    [SerializeField] int howlWolfCap = 45;       // потолок волков, ДО которого вой ещё призывает (44 → зовёт; выше лимита спавнера)
     [SerializeField] float rageDuration = 8f;    // вой = приказ атаковать без страха: стая не бежит + наваливается вся
     [SerializeField] float howlWindup = 1.1f;
     [SerializeField] float howlCooldown = 9f; // < жизни стака морали (10с): окна приказа +5 ПЕРЕКРЫВАЮТСЯ — при вожаке стая не ломается

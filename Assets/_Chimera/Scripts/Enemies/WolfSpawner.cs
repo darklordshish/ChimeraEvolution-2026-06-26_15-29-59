@@ -3,16 +3,17 @@ using UnityEngine;
 using UnityEngine.AI;
 
 /// <summary>
-/// Спавнит волков вокруг себя и поддерживает их количество (досыпает по мере гибели).
-/// Спавнит из префаба; не ближе minDistanceFromPlayer к игроку.
+/// Спавнит волков ПРЯМОУГОЛЬНИКОМ ПО КАРТЕ (как змеиный/лосиный спавнеры — единый паттерн) и
+/// поддерживает число. Логова-кластера больше нет: волки рождаются рассеянно и сбиваются в стаи
+/// САМИ (вои/след/точки сбора). Призыв воем босса (SpawnAt) по-прежнему кольцом вокруг него.
 /// </summary>
 public class WolfSpawner : MonoBehaviour
 {
     [SerializeField] GameObject wolfPrefab;
-    [SerializeField] int maxAlive = 5;
-    [SerializeField] float spawnRadius = 12f;
+    [SerializeField] int maxAlive = 30;
+    [SerializeField] float mapHalfExtent = 95f;         // полукрай зоны спавна (под арену 200)
     [SerializeField] float spawnInterval = 2f;          // как часто досыпать до maxAlive
-    [SerializeField] float minDistanceFromPlayer = 6f;  // не спавнить вплотную к игроку
+    [SerializeField] float minDistanceFromPlayer = 12f; // не спавнить на глазах у игрока
 
     readonly List<GameObject> alive = new();
     Transform player;
@@ -64,20 +65,23 @@ public class WolfSpawner : MonoBehaviour
 
     Vector3 PickSpawnPoint()
     {
-        for (int attempt = 0; attempt < 20; attempt++)
-        {
-            Vector2 c = Random.insideUnitCircle * spawnRadius;
-            Vector3 p = transform.position + new Vector3(c.x, 0f, c.y);
-            if (!NavMesh.SamplePosition(p, out var hit, 4f, NavMesh.AllAreas)) continue; // спавним на навмеш, не в стену
-            if (player == null || Vector3.Distance(hit.position, player.position) >= minDistanceFromPlayer)
+        // ступенчатое ослабление (паттерн змеиного спавнера): вне глаз игрока → лишь бы на навмеше
+        for (int pass = 0; pass < 2; pass++)
+            for (int attempt = 0; attempt < 40; attempt++)
+            {
+                Vector3 p = transform.position + new Vector3(Random.Range(-mapHalfExtent, mapHalfExtent), 0f,
+                                                             Random.Range(-mapHalfExtent, mapHalfExtent));
+                if (!NavMesh.SamplePosition(p, out var hit, 8f, NavMesh.AllAreas)) continue; // на навмеш, не в стену
+                if (pass == 0 && player != null && Vector3.Distance(hit.position, player.position) < minDistanceFromPlayer) continue;
                 return hit.position;
-        }
+            }
+        Debug.LogWarning("WolfSpawner: не нашёл точку на NavMesh — проверь позицию спавнера/mapHalfExtent.");
         return transform.position;
     }
 
     void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.cyan;
-        Gizmos.DrawWireSphere(transform.position, spawnRadius);
+        Gizmos.DrawWireCube(transform.position, new Vector3(mapHalfExtent * 2f, 1f, mapHalfExtent * 2f));
     }
 }
