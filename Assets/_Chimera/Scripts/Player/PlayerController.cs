@@ -12,7 +12,6 @@ public class PlayerController : MonoBehaviour
 {
     [Header("Движение")]
     [SerializeField] float moveSpeed = 6f;
-    [SerializeField] float aimRotationSpeed = 1080f; // доворот к прицелу (3-е лицо)
     [SerializeField] float gravity = -20f;
     [SerializeField, Range(0.2f, 1f)] float sneakMult = 0.4f; // ТИХИЙ ШАГ (Shift): медленнее = тише (шум меряется скоростью — Noise)
 
@@ -33,7 +32,6 @@ public class PlayerController : MonoBehaviour
     Knockback knockback;
     Health health;
     InputAction moveAction, lookAction, dashAction, toggleViewAction, sneakAction;
-    Camera cam;
     Vector3 velocity;
     float dashTimer, dashReadyAt, groundY;
     Vector3 dashDir;
@@ -86,7 +84,6 @@ public class PlayerController : MonoBehaviour
 
     void Start()
     {
-        cam = Camera.main;
         groundY = transform.position.y;
         SetFirstPerson(false);
         if (constrict == null) TryGetComponent(out constrict); // мог до-создаться в CreatureBody.Awake
@@ -99,36 +96,18 @@ public class PlayerController : MonoBehaviour
     {
         if (toggleViewAction.WasPressedThisFrame()) SetFirstPerson(!FirstPerson);
 
-        Vector3 camF = cam != null ? cam.transform.forward : Vector3.forward;
-        Vector3 camR = cam != null ? cam.transform.right : Vector3.right;
-        camF.y = 0f; camR.y = 0f; camF.Normalize(); camR.Normalize();
-
         Vector2 mv = moveAction.ReadValue<Vector2>();
 
-        // поворот
-        if (FirstPerson)
-        {
-            float yaw = 0f;
-            if (Mouse.current != null) yaw += Mouse.current.delta.ReadValue().x * lookSensitivity;
-            yaw += lookAction.ReadValue<Vector2>().x * gamepadYawSpeed * Time.deltaTime;
-            transform.Rotate(0f, yaw, 0f);
-        }
-        else
-        {
-            Vector3 aim = AimDirection(camF, camR);
-            if (aim.sqrMagnitude > 0.001f)
-                transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(aim), aimRotationSpeed * Time.deltaTime);
-        }
+        // ЕДИНОЕ управление обоих видов (решение пользователя): мышь/правый стик крутят ТЕЛО,
+        // WASD — относительно тела. Виды отличаются только камерой (в голове / за плечом)
+        float yaw = 0f;
+        if (Mouse.current != null) yaw += Mouse.current.delta.ReadValue().x * lookSensitivity;
+        yaw += lookAction.ReadValue<Vector2>().x * gamepadYawSpeed * Time.deltaTime;
+        transform.Rotate(0f, yaw, 0f);
 
-        // движение: FPS — относительно тела, 3-е лицо — относительно камеры
-        Vector3 move;
-        if (FirstPerson)
-        {
-            Vector3 f = transform.forward; f.y = 0f; f.Normalize();
-            Vector3 r = transform.right;   r.y = 0f; r.Normalize();
-            move = f * mv.y + r * mv.x;
-        }
-        else move = camF * mv.y + camR * mv.x;
+        Vector3 f = transform.forward; f.y = 0f; f.Normalize();
+        Vector3 r = transform.right;   r.y = 0f; r.Normalize();
+        Vector3 move = f * mv.y + r * mv.x;
 
         // рывок
         if (dashAction.WasPressedThisFrame() && Time.time >= dashReadyAt && dashTimer <= 0f)
@@ -171,8 +150,8 @@ public class PlayerController : MonoBehaviour
     void SetFirstPerson(bool on)
     {
         FirstPerson = on;
-        Cursor.lockState = on ? CursorLockMode.Locked : CursorLockMode.None;
-        Cursor.visible = !on;
+        Cursor.lockState = CursorLockMode.Locked; // мышь — руль тела в ОБОИХ видах, курсор не нужен (Esc отпускает)
+        Cursor.visible = false;
         // свою голову от ПЕРВОГО лица не рендерим (нос/куб лезут в камеру) — классика FPS; в 3-м лице возвращаем
         foreach (var r in GetComponentsInChildren<Renderer>())
             if (r.name == "Head" || r.name == "Nose") r.enabled = !on;
@@ -192,28 +171,4 @@ public class PlayerController : MonoBehaviour
     public void ApplyGrab(IGrabber g, float slow) { grabber = g; grabSlow = Mathf.Clamp01(slow); } // 0 = полный корень (3-я стадия)
     public void ReleaseGrab(IGrabber g) { if (ReferenceEquals(grabber, g)) { grabber = null; grabSlow = 1f; } }
 
-    Vector3 AimDirection(Vector3 camF, Vector3 camR)
-    {
-        Vector2 look = lookAction.ReadValue<Vector2>();
-        if (look.sqrMagnitude > 0.04f)
-        {
-            Vector3 d = camF * look.y + camR * look.x;
-            d.y = 0f;
-            return d;
-        }
-
-        if (cam != null && Mouse.current != null)
-        {
-            Ray ray = cam.ScreenPointToRay(Mouse.current.position.ReadValue());
-            Plane ground = new Plane(Vector3.up, new Vector3(0f, transform.position.y, 0f));
-            if (ground.Raycast(ray, out float enter))
-            {
-                Vector3 d = ray.GetPoint(enter) - transform.position;
-                d.y = 0f;
-                return d;
-            }
-        }
-
-        return Vector3.zero;
-    }
 }

@@ -12,6 +12,8 @@ public class CameraFollow : MonoBehaviour
     [SerializeField] Vector3 offset = new Vector3(0f, 6f, -7f);
     [SerializeField] float followLerp = 10f;
     [SerializeField] float lookHeight = 1.2f;
+    [SerializeField] bool rotateBehind = true;   // камера висит ЗА СПИНОЙ тела (мышь крутит тело — камера следом)
+    [SerializeField] float yawFollowSpeed = 240f; // град/с доворота за телом (мягкое запаздывание, не жёсткая палка)
 
     [Header("Первое лицо")]
     [SerializeField] float headHeight = 1.4f;
@@ -22,6 +24,7 @@ public class CameraFollow : MonoBehaviour
 
     Vector3 followPos;
     float shakeTimer, shakeDuration, shakeMag, pitch;
+    float yaw; // угол камеры вокруг цели (0 = исходный офсет); догоняет направление ДВИЖЕНИЯ игрока
     PlayerController player;
 
     void Awake()
@@ -62,8 +65,12 @@ public class CameraFollow : MonoBehaviour
             return;
         }
 
-        // третье лицо
-        Vector3 desired = target.position + offset;
+        // третье лицо «ЗА ПЛЕЧОМ»: мышь крутит ТЕЛО (PlayerController), камера мягко доворачивается
+        // за его спину — единое управление с FPS, различие видов только в позиции камеры
+        if (rotateBehind)
+            yaw = Mathf.MoveTowardsAngle(yaw, target.eulerAngles.y, yawFollowSpeed * Time.deltaTime);
+
+        Vector3 desired = target.position + Quaternion.Euler(0f, yaw, 0f) * offset;
         followPos = Vector3.Lerp(followPos, desired, followLerp * Time.deltaTime);
         transform.position = followPos + shake;
         transform.LookAt(target.position + Vector3.up * lookHeight);
