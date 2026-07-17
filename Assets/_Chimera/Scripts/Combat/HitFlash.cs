@@ -38,11 +38,12 @@ public class HitFlash : MonoBehaviour
         timer -= Time.deltaTime;
         bool on = timer > 0f;
 
-        // откат вспышки: если существо ТЕЛЕГРАФИТ (замах / градиент обхвата) — восстановить телеграф, не родной цвет
+        // откат вспышки: восстановление — ЧЕРЕЗ Telegraph (он знает полный стек: вспышка приёма / градиент
+        // обхвата / эмоц-рест-тинт / натуральный) — иначе откат к родному съедал бы телеграф и эмоцию
         if (!on)
         {
             if (telegraph == null) TryGetComponent(out telegraph);
-            if (telegraph != null && telegraph.IsShowing) { telegraph.Reapply(); return; }
+            if (telegraph != null) { telegraph.Reapply(); return; }
         }
 
         for (int i = 0; i < renderers.Length; i++)

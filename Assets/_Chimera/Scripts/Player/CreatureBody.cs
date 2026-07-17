@@ -240,6 +240,8 @@ public class CreatureBody : MonoBehaviour
         // ЗАПАХ — тоже физика любого тела: след вешает ТЕЛО (не каждая психика поштучно — лось однажды остался
         // без запаха). Цвет = состав (Recompute), сила — тюнинг психики (змея приглушает SetStrength)
         if (!TryGetComponent<ScentTrail>(out _)) gameObject.AddComponent<ScentTrail>();
+        // ЭМОЦ-ИНДИКАЦИЯ — тоже тело: ярость/страх подкрашивают (у холоднокровных эмоций нет — тинт молчит сам)
+        if (!TryGetComponent<EmotionTint>(out _)) gameObject.AddComponent<EmotionTint>();
         TryGetComponent(out health);
         TryGetComponent(out bite);
         TryGetComponent(out kick);
