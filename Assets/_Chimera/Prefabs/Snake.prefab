@@ -832,6 +832,7 @@ MonoBehaviour:
   quietCrowdSize: 2
   fleeCrowdSize: 5
   fleeCheckRadius: 12
+  rescueThreatRadius: 13
   fleeSpeedMult: 0.75
   waryWait: 7
   traverseChance: 0.5

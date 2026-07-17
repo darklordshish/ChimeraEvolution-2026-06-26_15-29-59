@@ -39,6 +39,8 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     [SerializeField] int quietCrowdSize = 2;
     [SerializeField] int fleeCrowdSize = 5;                 // ПОЛНАЯ СТАЯ: столько тёплых рядом — хищник стал жертвой, бежим
     [SerializeField] float fleeCheckRadius = 12f;
+    [SerializeField] float rescueThreatRadius = 13f;        // спасатели НА ПОДХОДЕ: тёплый в этом радиусе во время удушения →
+                                                            // защёлкнутую тушу заранее тащим на стену (гонка по вертикали)
     [SerializeField, Range(0.3f, 1f)] float fleeSpeedMult = 0.75f; // бежит чуть медленнее волков — настигаема (спасение = стена)
 
     [Header("Осторожность (сокрытие после бегства; × Caution личности)")]
@@ -378,6 +380,19 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
             }
         }
         return fleeing;
+    }
+
+    // спасатели НА ПОДХОДЕ: хоть один ДРУГОЙ тёплый в радиусе угрозы. Жертва была изолированной
+    // (гейт одиночества) — новый тёплый рядом почти наверняка бежит отбивать (SenseGrabbedMate стаи)
+    bool RescuersIncoming()
+    {
+        foreach (var col in Physics.OverlapSphere(transform.position, rescueThreatRadius, ~0, QueryTriggerInteraction.Ignore))
+        {
+            var hp = col.GetComponentInParent<Health>();
+            if (hp == null || hp.transform == transform || hp == heldHealth) continue;
+            if (Perception.IsWarm(hp.transform)) return true;
+        }
+        return false;
     }
 
     // «толпа рядом»: ≥N других тёплых вокруг змеи (схваченная жертва не в счёт) — шуметь опасно и незачем
@@ -756,13 +771,18 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         if (climb == ClimbPhase.Approach) { CarryApproach(); return; }
         if (climb == ClimbPhase.Rise || climb == ClimbPhase.Perch) { CarryRise(); return; }
 
-        // ЕЩЁ НА ЗЕМЛЕ. Стая-спасатели пришла отбивать (CrowdNear ≥2)?
-        if (CrowdNear())
+        // ЕЩЁ НА ЗЕМЛЕ. СПАСАТЕЛИ НА ПОДХОДЕ (издалека, не вплотную!) — защёлкнутую (ст.2+) тушу ЗАРАНЕЕ
+        // тащим на стену: гонка по вертикали — успели укусить до высоты (внешний урон рвёт хват) → отбили,
+        // не успели → стая воет внизу, а мы додушиваем на насесте. Поздний триггер (толпа в упор) гонку
+        // всегда проигрывал — с ношей ползём медленно
+        if (stage >= 2 && RescuersIncoming() && Time.time >= nextWallSeek)
         {
-            // защёлкнутую тушу тащим наверх (спасти мясо от стаи); не защёлкнул — дерущаяся жертва + толпа = бросаем
-            if (stage >= 2 && FindRefugeWall(out wallPoint, out wallNormal)) { climb = ClimbPhase.Approach; BeginCarry(); return; }
-            EndConstrict(attackCooldown); return;
+            nextWallSeek = Time.time + 0.5f; // сканы стены не каждый кадр (12 лучей)
+            if (FindRefugeWall(out wallPoint, out wallNormal)) { climb = ClimbPhase.Approach; BeginCarry(); return; }
         }
+
+        // толпа уже вплотную, а защёлка/стены нет — дерущаяся жертва + стая = безнадёга, бросаем
+        if (CrowdNear()) { EndConstrict(attackCooldown); return; }
 
         // жертву оттолкнуло далеко — соскользнула
         Vector3 to = heldHealth.transform.position - transform.position; to.y = 0f;
