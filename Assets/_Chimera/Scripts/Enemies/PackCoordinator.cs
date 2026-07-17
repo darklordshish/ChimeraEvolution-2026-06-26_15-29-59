@@ -16,9 +16,6 @@ public class PackCoordinator : MonoBehaviour
     [SerializeField] float looseRadius = 9f;  // РЫХЛАЯ СТАЯ: кому не хватило слота — держатся поодаль на этом радиусе (не жмутся)
 
     [Header("Мораль стаи")]
-    [SerializeField] int routKillsMin = 3;    // после стольких смертей подряд (случайно из диапазона) ломается мораль
-    [SerializeField] int routKillsMax = 5;
-    [SerializeField] float routDuration = 4f; // сколько секунд бегут, прежде чем вернуться в режим поиска
     [SerializeField] float routRadius = 12f;  // радиус паники вокруг места гибели — бегут только ближние участники боя
 
     static PackCoordinator instance;
@@ -53,6 +50,17 @@ public class PackCoordinator : MonoBehaviour
     public bool GrabActive => grabber != null;
 
     // волк завыл: слышат только ближние (в радиусе) — сбегаются в стаю и ЗАВОДЯТСЯ (ярость-пульс).
+    [SerializeField] float packHowlGap = 7f; // стая не воет ХОРОМ: один голос раз в столько секунд (фон морали ≈ +1)
+    float lastHowlAt = -999f;
+
+    // волк просит право голоса: занято — молчит (перекличка, не сирена). Вой вервольфа-вожака вне очереди
+    public bool TryClaimHowl()
+    {
+        if (Time.time < lastHowlAt + packHowlGap) return false;
+        lastHowlAt = Time.time;
+        return true;
+    }
+
     public void Howl(Vector3 origin, float radius, Vector3 playerPos, float rageDuration)
     {
         float r2 = radius * radius;
@@ -60,7 +68,8 @@ public class PackCoordinator : MonoBehaviour
             if (w != null && (w.transform.position - origin).sqrMagnitude <= r2)
             {
                 w.Hear(playerPos);
-                if (rageDuration > 0f) w.EnrageFor(rageDuration);
+                w.Cheer(1f); // вой сородича = +1 к шкале морали (стаки ±1×10с, спека 2026-07-17)
+                if (rageDuration > 0f) w.EnrageFor(rageDuration); // M1: прямая ярость пока остаётся (M2 переведёт на коммит)
             }
     }
 
@@ -73,8 +82,7 @@ public class PackCoordinator : MonoBehaviour
 
     // мораль: страх/бегство — ЛИЧНОЕ у каждого волка (WolfPsyche). Пул задаёт лишь параметры; ярость вожака гасит страх.
     public bool Fearless => Time.time < fearlessUntil;
-    public int RollPanicThreshold() => Random.Range(routKillsMin, routKillsMax + 1); // личный порог храбрости волка
-    public float RoutDuration => routDuration;
+    // пороги храбрости и длительность паники живут теперь в Morale/Personality (шкала стаков, спека 2026-07-17)
 
     public bool AnyRouting()
     {
@@ -85,7 +93,7 @@ public class PackCoordinator : MonoBehaviour
     // смерть волка пугает ТОЛЬКО ближних участников боя (у места гибели) — каждому +1 к его личному страху
     public void ReportKill(Vector3 deathPos)
     {
-        if (Fearless) return;
+        // гейт Fearless не нужен: приказ вожака (+5) перевешивает −1 смерти АРИФМЕТИЧЕСКИ (шкала сама решает)
         float r2 = routRadius * routRadius;
         foreach (var w in wolves)
             if (w != null && w.Engaged && (w.transform.position - deathPos).sqrMagnitude <= r2)
@@ -95,9 +103,9 @@ public class PackCoordinator : MonoBehaviour
     // приказ вожака (вой): бесстрашие + ЯРОСТЬ всей стае на duration — гасит бегство, обнуляет страх, заводит
     public void Rally(float duration)
     {
-        fearlessUntil = Time.time + duration;
+        fearlessUntil = Time.time + duration; // приказное окно: кап атакующих снят (вся стая наваливается)
         foreach (var w in wolves)
-            if (w != null) { w.CalmRout(); w.EnrageFor(duration); }
+            if (w != null) { w.CalmRout(); w.Cheer(5f); w.EnrageFor(duration); } // ПРИКАЗ = +5 (перекрывает любой порог) + стирает страхи
     }
 
     Transform Player

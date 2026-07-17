@@ -12,8 +12,8 @@ public class PlayerHowl : MonoBehaviour, IAbility
     [Header("Вой")]
     [SerializeField] float radius = 7f;
     [SerializeField] float stunDuration = 1f;   // СТАН (контроль ≥1с): вырубает ближних на окно действий
-    [SerializeField] float fearRadius = 14f;    // дальнее кольцо (radius..fearRadius): испуг — разбегаются
-    [SerializeField] float fearDuration = 2.5f;
+    [SerializeField] float fearRadius = 14f;    // дальнее кольцо (radius..fearRadius): испуг — удар по морали
+    [SerializeField] float fearMoraleHit = 2f;  // −вклад шкалы морали; × бонус органов (родство): до −4 на сотке (почти вожак)
     [SerializeField] float cooldown = 8f;
     [SerializeField] float shake = 0.3f;
 
@@ -22,6 +22,7 @@ public class PlayerHowl : MonoBehaviour, IAbility
     float nextTime;
     CameraFollow cam;
     Health ownHealth;
+    CreatureBody body; // бонус органов (родство) масштабирует вес воя по морали
     Noise noiseSrc; // источник звука (вешает тело): вой игрока звучит в мире (ось Noise) — лось услышит
     readonly HashSet<Health> hitThisHowl = new();
 
@@ -29,6 +30,7 @@ public class PlayerHowl : MonoBehaviour, IAbility
     {
         cam = FindAnyObjectByType<CameraFollow>();
         ownHealth = GetComponent<Health>();
+        TryGetComponent(out body);
     }
 
     // водитель зовёт по вводу; активен только с волчьей Пастью; кулдаун проверяем сами
@@ -56,7 +58,8 @@ public class PlayerHowl : MonoBehaviour, IAbility
             if (d <= radius) hit.Apply(hp, HitEffect.Stun(stunDuration)); // ближние ОГЛОХЛИ
             else if (hp.TryGetComponent<WolfPsyche>(out var w))
             {
-                w.Frighten(fearDuration); // дальние в ИСПУГЕ разбегаются (змея — холодный расчёт, не боится)
+                // удар по морали дальнего кольца: вес растёт с родством (бонус органов ×1..×2 → −2..−4)
+                w.Frighten(fearMoraleHit * (body != null ? body.BonusMult : 1f));
                 Perception.BreakGhost();  // напугал — воздействие: призрак раскрыт
             }
         }

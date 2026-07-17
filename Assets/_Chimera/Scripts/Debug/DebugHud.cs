@@ -86,7 +86,9 @@ public class DebugHud : MonoBehaviour
             float d = (c.transform.position - player.transform.position).sqrMagnitude;
             if (d < best) { best = d; near = c; }
         }
-        return near != null && near.TryGetComponent<AlertState>(out var a) ? $"{label} {AlertRu(a.State)} [{Mathf.Sqrt(best):0}м]" : "";
+        if (near == null || !near.TryGetComponent<AlertState>(out var a)) return "";
+        string mor = near.TryGetComponent<Morale>(out var m) ? $" м:{m.Current:+0.#;-0.#;0}" : ""; // шкала морали (стайные)
+        return $"{label} {AlertRu(a.State)}{mor} [{Mathf.Sqrt(best):0}м]";
     }
 
     // отладка эффектов: HP + стаки крови/яда БЛИЖАЙШЕГО врага (видно, как цель истекает от твоего укуса)

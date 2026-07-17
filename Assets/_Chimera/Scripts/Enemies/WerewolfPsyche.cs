@@ -42,7 +42,7 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
     [SerializeField] int howlWolfCap = 15;       // потолок волков, до которого добивает вой (выше лимита спавнера)
     [SerializeField] float rageDuration = 8f;    // вой = приказ атаковать без страха: стая не бежит + наваливается вся
     [SerializeField] float howlWindup = 1.1f;
-    [SerializeField] float howlCooldown = 16f;
+    [SerializeField] float howlCooldown = 9f; // < жизни стака морали (10с): окна приказа +5 ПЕРЕКРЫВАЮТСЯ — при вожаке стая не ломается
     [SerializeField] float howlInitialDelay = 8f; // не воет сразу при появлении
 
     [Header("Кулдаун / навигация")]
@@ -152,12 +152,9 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
 
         if (windingUp) { UpdateWindup(); return; } // только чардж/вой — укус/прыжок тикают выше
 
-        // вой-призыв: по кулдауну, если стая поредела — в любом состоянии (хоть в бою, хоть на патруле)
-        if (Time.time >= nextHowl)
-        {
-            if (CountWolves() < howlWolfCap) { Face(dir); BeginAttack(Kind.Howl); Settle(Vector3.zero); return; }
-            nextHowl = Time.time + 3f; // стая ещё полная — перепроверим позже
-        }
+        // ВОЙ ВОЖАКА — всегда по КД (приказ +5 держит мораль стаи непрерывно, пока альфа жив);
+        // призыв подкреплений — внутри DoHowl и только если стая поредела
+        if (Time.time >= nextHowl) { Face(dir); BeginAttack(Kind.Howl); Settle(Vector3.zero); return; }
 
         // не вижу игрока (далеко или за стеной): temp HP пропадают; тропим по ЗАПАХУ, иначе бродим
         bool sees = dist <= sightRange && Perception.HasLineOfSight(transform.position, target);
@@ -220,7 +217,7 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
         if (noiseSrc == null) TryGetComponent(out noiseSrc);
         if (noiseSrc != null) noiseSrc.Spike(1f, 1.2f); // вой альфы ЗВУЧИТ в мире (ось Noise): уши слышат
         var spawner = FindAnyObjectByType<WolfSpawner>();
-        if (spawner != null) spawner.SpawnAt(transform.position, summonCount); // призыв стаи вокруг себя
+        if (spawner != null && CountWolves() < howlWolfCap) spawner.SpawnAt(transform.position, summonCount); // призыв — только поредевшей стае
         PackCoordinator.Instance.Rally(rageDuration); // ярость: перебить бегство, вся стая в атаку без страха
         if (target != null && !Perception.PlayerGhost) // dev-призрака вой не выцеливает (иначе стая вечно кластером на наблюдателе)
             PackCoordinator.Instance.AlertAll(target.position); // вой альфы на всю карту — вся стая сходится на игрока

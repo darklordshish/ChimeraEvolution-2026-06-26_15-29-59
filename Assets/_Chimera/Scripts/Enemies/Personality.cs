@@ -10,7 +10,8 @@ using UnityEngine;
 /// </summary>
 public class Personality : MonoBehaviour
 {
-    [SerializeField] Vector2 braveryRange = new(2f, 5f);         // порог Страха (сколько накопить до паники)
+    [SerializeField] Vector2 braveryRange = new(2f, 4f);         // порог шкалы морали (смерть = −2): «сколько смертей пугает» —
+                                                                 // трус одна, железный две-три; фон воя +1 даёт полсмерти запаса
     [SerializeField] Vector2 aggressionRange = new(0.85f, 1.2f); // >1 — чаще атакует (короче кулдаун); <1 — осторожнее
     [SerializeField] Vector2 curiosityRange = new(0.7f, 1.3f);   // множитель памяти любопытства (охота проверять гремок/след)
     [SerializeField] Vector2 cautionRange = new(0.7f, 1.4f);     // множитель выжидания в сокрытии + склонности отползать (змея)

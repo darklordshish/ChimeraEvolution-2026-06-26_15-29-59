@@ -47,7 +47,6 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     [Header("Рёв — крик угрозы (срез D)")]
     [SerializeField] float bellowRadius = 14f;      // удар по морали волков — ужас ВБЛИЗИ
     [SerializeField] float bellowChainRadius = 26f; // цепная ярость сородичей — рёв слышен ДАЛЕКО (~ухо лося)
-    [SerializeField] float bellowScare = 3.5f;   // Fear волкам (порог храбрости 2..5): мелкую стаю срывает, крупная держится
     [SerializeField] float bellowCooldown = 10f;
     [SerializeField] float bellowCueTime = 1.2f; // вспышка-сигнал рёва (Howl-цвет): длинная — рёв нельзя проморгать
 
@@ -147,10 +146,10 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
         float maxR = Mathf.Max(bellowRadius, bellowChainRadius);
         foreach (var col in Physics.OverlapSphere(transform.position, maxR, ~0, QueryTriggerInteraction.Ignore))
         {
-            var fear = col.GetComponentInParent<Fear>();
-            if (fear != null && fear.transform != transform && hit.Add(fear)
-                && (fear.transform.position - transform.position).sqrMagnitude <= bellowRadius * bellowRadius)
-                fear.Add(bellowScare); // ужас — только вблизи
+            var morale = col.GetComponentInParent<Morale>();
+            if (morale != null && morale.transform != transform && hit.Add(morale)
+                && (morale.transform.position - transform.position).sqrMagnitude <= bellowRadius * bellowRadius)
+                morale.Add(-1f); // ужас — только вблизи; единая арифметика шкалы (±1)
             var mate = col.GetComponentInParent<MoosePsyche>();
             if (mate != null && mate != this && hit.Add(mate)) mate.Provoke(); // цепь — на всю слышимость; яростный не ревёт заново
         }

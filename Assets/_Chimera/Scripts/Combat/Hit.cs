@@ -77,9 +77,11 @@ public readonly struct Hit
                 venom.AddStack();
                 if (Source != null) venom.SetSource(Source); // смерть от DoT — на счету отравителя
                 break;
-            case EffectKind.Fear: // СТРАХ — накопительный; холоднокровный НЕ боится (иммунитет — рационально отступает сам)
-                if (target.GetComponent<ColdBlooded>() == null)
-                    (target.GetComponent<Fear>() ?? target.gameObject.AddComponent<Fear>()).Add(e.Amount);
+            case EffectKind.Fear: // СТРАХ; холоднокровный НЕ боится (иммунитет — рационально отступает сам)
+                if (target.GetComponent<ColdBlooded>() != null) break;
+                var moraleT = target.GetComponent<Morale>();
+                if (moraleT != null) moraleT.Add(-1f); // стайный: страх = −вклад шкалы морали (единая арифметика)
+                else (target.GetComponent<Fear>() ?? target.gameObject.AddComponent<Fear>()).Add(e.Amount); // одиночки — накопительный Fear
                 break;
             case EffectKind.Rage: // ЯРОСТЬ извне (вой/феромон); Enrage сам гейтит холоднокровных (иммунны к внешней)
                 (target.GetComponent<Rage>() ?? target.gameObject.AddComponent<Rage>()).Enrage(e.Duration);

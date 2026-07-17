@@ -16,6 +16,7 @@ public class EmotionTint : MonoBehaviour
     Telegraph telegraph;
     Rage rage;
     Fear fear;
+    Morale moraleRef; // стайные: паника — по шкале морали
     Color moodColor;  // градиентное «настроение» от психики (лесенка лося)
     float moodT;
     Color lastColor;
@@ -30,11 +31,20 @@ public class EmotionTint : MonoBehaviour
         if (telegraph == null && !TryGetComponent(out telegraph)) return;
         if (rage == null) TryGetComponent(out rage);
         if (fear == null) TryGetComponent(out fear);
+        if (moraleRef == null) TryGetComponent(out moraleRef);
 
         Color c; float t;
-        if (rage != null && rage.IsEnraged) { c = TelegraphColors.RageTint; t = statusStrength; }
-        else if (fear != null && fear.IsRouting) { c = TelegraphColors.FearTint; t = statusStrength; }
-        else { c = moodColor; t = moodT; }
+        if (moraleRef != null)
+        {
+            // СТАЙНЫЙ: морда = живой градусник ШКАЛЫ МОРАЛИ (идея пользователя): −кап чисто-синяя ↔
+            // 0 натуральная ↔ +кап чисто-бордовая. Статус-оверрайды не нужны — дух виден напрямую
+            float n = moraleRef.Normalized;
+            c = n >= 0f ? TelegraphColors.RageTint : TelegraphColors.FearTint;
+            t = Mathf.Abs(n) * statusStrength;
+        }
+        else if (rage != null && rage.IsEnraged) { c = TelegraphColors.RageTint; t = statusStrength; } // берсерк/вожак
+        else if (fear != null && fear.IsRouting) { c = TelegraphColors.FearTint; t = statusStrength; } // одиночки
+        else { c = moodColor; t = moodT; } // градиент-настроение психики (лесенка лося)
 
         if (t == lastT && c == lastColor) return; // рест трогаем только на изменение
         lastColor = c; lastT = t;
