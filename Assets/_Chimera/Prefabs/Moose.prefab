@@ -827,6 +827,9 @@ MonoBehaviour:
   sightRange: 20
   sightHalfAngle: 100
   proximityRadius: 3
+  hearRange: 24
+  hearThreshold: 0.12
+  noiseMemory: 4
   moveSpeed: 3
   rotationSpeed: 200
   gravity: -20

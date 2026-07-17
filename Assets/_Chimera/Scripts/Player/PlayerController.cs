@@ -14,6 +14,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] float moveSpeed = 6f;
     [SerializeField] float aimRotationSpeed = 1080f; // доворот к прицелу (3-е лицо)
     [SerializeField] float gravity = -20f;
+    [SerializeField, Range(0.2f, 1f)] float sneakMult = 0.4f; // ТИХИЙ ШАГ (Shift): медленнее = тише (шум меряется скоростью — Noise)
 
     [Header("Рывок")]
     [SerializeField] float dashSpeed = 20f;
@@ -31,7 +32,7 @@ public class PlayerController : MonoBehaviour
     CharacterController controller;
     Knockback knockback;
     Health health;
-    InputAction moveAction, lookAction, dashAction, toggleViewAction;
+    InputAction moveAction, lookAction, dashAction, toggleViewAction, sneakAction;
     Camera cam;
     Vector3 velocity;
     float dashTimer, dashReadyAt, groundY;
@@ -77,6 +78,10 @@ public class PlayerController : MonoBehaviour
         toggleViewAction = new InputAction("ToggleView", InputActionType.Button);
         toggleViewAction.AddBinding("<Keyboard>/v");
         toggleViewAction.AddBinding("<Gamepad>/buttonNorth");
+
+        sneakAction = new InputAction("Sneak", InputActionType.Button); // ТИХИЙ ШАГ: держать
+        sneakAction.AddBinding("<Keyboard>/leftShift");
+        sneakAction.AddBinding("<Gamepad>/leftShoulder");
     }
 
     void Start()
@@ -87,8 +92,8 @@ public class PlayerController : MonoBehaviour
         if (constrict == null) TryGetComponent(out constrict); // мог до-создаться в CreatureBody.Awake
     }
 
-    void OnEnable() { moveAction.Enable(); lookAction.Enable(); dashAction.Enable(); toggleViewAction.Enable(); }
-    void OnDisable() { moveAction.Disable(); lookAction.Disable(); dashAction.Disable(); toggleViewAction.Disable(); }
+    void OnEnable() { moveAction.Enable(); lookAction.Enable(); dashAction.Enable(); toggleViewAction.Enable(); sneakAction.Enable(); }
+    void OnDisable() { moveAction.Disable(); lookAction.Disable(); dashAction.Disable(); toggleViewAction.Disable(); sneakAction.Disable(); }
 
     void Update()
     {
@@ -143,7 +148,8 @@ public class PlayerController : MonoBehaviour
         // СВОЙ обхват (хвост) замедляет только ход — рывок остаётся полным (и сам рвёт хватку дистанцией).
         float grip = GrabImmune ? 1f : grabSlow;
         float hold = constrict != null ? constrict.SelfSlow : 1f;
-        Vector3 horizontal = dashTimer > 0f ? dashDir * dashSpeed * grip : move * moveSpeed * grip * hold;
+        float sneak = sneakAction.IsPressed() ? sneakMult : 1f; // тихий шаг: скорость ↓ → шум ↓ (Noise сам заметит)
+        Vector3 horizontal = dashTimer > 0f ? dashDir * dashSpeed * grip : move * moveSpeed * grip * hold * sneak;
         if (knockback != null && knockback.IsActive) horizontal = Vector3.zero; // пока откидывает — не рулим (толкает Knockback)
         if (dashTimer > 0f) dashTimer -= Time.deltaTime;
         if (health != null) health.Invulnerable = dashTimer > 0f;

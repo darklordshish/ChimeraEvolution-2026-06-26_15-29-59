@@ -130,7 +130,10 @@ public class DebugHud : MonoBehaviour
         GUI.Label(new Rect(14, 82, 300, 26), $"Пул мутагена: {(body != null ? body.PoolUsed : 0)}/{(body != null ? body.Pool : 0)}", style);
         string traits = NearestWolfTraits(); // разброс особи (личность + множители) — get-only, в инспекторе не видны
         if (traits != "") GUI.Label(new Rect(330, 82, 900, 26), traits, style);
-        GUI.Label(new Rect(14, 106, 900, 26), $"БОГ [G]: {(playerHealth != null && playerHealth.GodMode ? "ВКЛ" : "выкл")}   Запах: чутьё {(Perception.WolfScent ? "да" : "нет")}, свой [N] {(Perception.ShowOwnScent ? "вкл" : "выкл")}   Термо [T]: {(Perception.ThermalOn ? (Perception.SnakeThermal ? "орган" : "дев") : "выкл")}{(Perception.PlayerGhost ? "   ПРИЗРАК" : "")}", style);
+        // ШУМ игрока (дебаг-слушатель оси звука): 0 = беззвучен, 1 = полная громкость (бег/рывок)
+        var noise = playerHealth != null ? playerHealth.GetComponent<Noise>() : null;
+        string noiseStr = noise != null ? $"   Шум: {noise.Loudness:0.00}{(noise.Loudness < 0.15f ? " (тихо)" : noise.Loudness > 0.6f ? " (ГРОМКО)" : "")}" : "";
+        GUI.Label(new Rect(14, 106, 900, 26), $"БОГ [G]: {(playerHealth != null && playerHealth.GodMode ? "ВКЛ" : "выкл")}   Запах: чутьё {(Perception.WolfScent ? "да" : "нет")}, свой [N] {(Perception.ShowOwnScent ? "вкл" : "выкл")}   Термо [T]: {(Perception.ThermalOn ? (Perception.SnakeThermal ? "орган" : "дев") : "выкл")}{(Perception.PlayerGhost ? "   ПРИЗРАК" : "")}{noiseStr}", style);
         var pack = PackCoordinator.Instance;
         string morale = pack.AnyRouting() ? "БЕГСТВО" : pack.Fearless ? "ЯРОСТЬ" : "норма";
         GUI.Label(new Rect(14, 130, 600, 26), $"Стая: атакуют {pack.AttackerCount}/{pack.MaxAttackers}, захват: {(pack.GrabActive ? "да" : "нет")}, мораль: {morale}", style);
@@ -144,7 +147,7 @@ public class DebugHud : MonoBehaviour
         // какие способности сейчас активны (видно, что даёт сборка) + что происходит с тобой прямо сейчас
         var abil = new List<string> { "меч ЛКМ" };
         if (kick != null && kick.KickEnabled) abil.Add("пинок E");
-        if (bite != null && bite.BiteEnabled) abil.Add("укус Shift");
+        if (bite != null && bite.BiteEnabled) abil.Add("укус Q");
         if (howl != null && howl.HowlEnabled) abil.Add("вой Alt");
         if (constrict != null && constrict.ConstrictEnabled) abil.Add("обхват F");
         GUI.Label(new Rect(14, 154, 900, 26), $"Способности: {string.Join(" · ", abil)}", style);

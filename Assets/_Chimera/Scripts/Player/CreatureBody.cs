@@ -235,6 +235,8 @@ public class CreatureBody : MonoBehaviour
         // авто-РАЗБРОС ПОВЕДЕНИЯ: любой NPC-вид (не игрок) получает Личность от ТЕЛА — психики её только ЧИТАЮТ
         // (в Start, после этого Awake). Новый вид разбрасывается сам, без ручной проводки в каждой психике.
         if (move == null && !TryGetComponent<Personality>(out _)) gameObject.AddComponent<Personality>();
+        // ШУМ — физика любого тела (ось звука): движение слышно, сам меряет скорость. Уши — у кого есть канал Hearing
+        if (!TryGetComponent<Noise>(out _)) gameObject.AddComponent<Noise>();
         TryGetComponent(out health);
         TryGetComponent(out bite);
         TryGetComponent(out kick);

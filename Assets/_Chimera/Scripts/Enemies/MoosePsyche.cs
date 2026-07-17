@@ -19,6 +19,9 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     [SerializeField] float sightRange = 20f;
     [SerializeField] float sightHalfAngle = 100f; // травоядный — ШИРЕ конус (панорама), короткий/мутный (острота — срез B)
     [SerializeField] float proximityRadius = 3f;
+    [SerializeField] float hearRange = 24f;              // СЛУХ — топ-чувство лося (дальше мутного зрения, круговой)
+    [SerializeField, Range(0f, 1f)] float hearThreshold = 0.12f; // порог реакции: тихий шаг под ним — «крадёшься — прошёл»
+    [SerializeField] float noiseMemory = 4f;             // сколько идём проверять источник шума после последнего звука
 
     [Header("Поведение")]
     [SerializeField] float moveSpeed = 3f;
@@ -49,6 +52,8 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     Grabbed grabbedStatus; // единый захват: НАС держат (хвост игрока) — массивного не защёлкнуть, бодаемся в ответ
     float nextAttackTime, verticalVel;
     bool provoked;
+    Vector3 noisePos;      // слух: последний услышанный шум — идём проверить
+    float noiseUntil;
 
     float Speed => moveSpeed * (rage != null ? rage.SpeedMult : 1f) * (variance != null ? variance.SpeedMult : 1f);
 
@@ -70,6 +75,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
         if (!TryGetComponent(out senses)) senses = gameObject.AddComponent<Senses>();
         senses.Seed(SenseKind.Sight, sightRange);
         senses.SeedViewAngle(SenseKind.Sight, sightHalfAngle);
+        senses.Seed(SenseKind.Hearing, hearRange); // слух — круговой (viewHalfAngle 180 по умолчанию)
         if (!TryGetComponent<HeatSignature>(out _)) gameObject.AddComponent<HeatSignature>(); // тёплый — виден термо
         if (!TryGetComponent<StunTint>(out _)) gameObject.AddComponent<StunTint>();            // статус «выключен»
     }
@@ -128,7 +134,15 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
         bool sees = dist <= senses.Range(SenseKind.Sight) && inView && Perception.HasLineOfSight(transform.position, target);
 
         if (sees && dist <= provokeRadius) provoked = true; // СРЕЗ A: подошёл слишком близко → провокация
-        alert.Observe(provoked, sees);                      // кормим машину восприятия
+
+        // СЛУХ (срез B): шум над порогом — запоминаем точку и идём проверить (память освежается, пока шумит).
+        // «Бежишь мимо — заметил; крадёшься/замер — прошёл»: тихий шаг игрока живёт ПОД порогом
+        if (!provoked
+            && Noise.Hear(transform.position, senses.Range(SenseKind.Hearing), transform, out var nPos, out var nStr)
+            && nStr >= hearThreshold)
+        { noisePos = nPos; noiseUntil = Time.time + noiseMemory; }
+
+        alert.Observe(provoked, sees || Time.time < noiseUntil); // кормим машину восприятия (шум = настороженность)
 
         // РАЗЪЯРЁН: преследует игрока ОТ и ДО — всегда мордой к нему, догоняет, бьёт когда ВИДИТ и в дистанции.
         // Не отвлекается на выпас (потому раньше «внезапно отворачивался» / «терял интерес» при потере кадра видимости).
@@ -146,6 +160,21 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
             }
             Settle(nav.DirTo(target.position) * Speed);                  // догоняет игрока
             return;
+        }
+
+        // НАСТОРОЖЕН ШУМОМ: разворачиваемся и идём проверить источник (не бегом — любопытная туша, не атака);
+        // дошёл или звук угас — возвращаемся к выпасу. Провокация по-прежнему только близость/урон (лесенка — срез C)
+        if (Time.time < noiseUntil)
+        {
+            Vector3 toN = noisePos - transform.position; toN.y = 0f;
+            if (toN.magnitude > 2f)
+            {
+                if (toN.sqrMagnitude > 0.001f)
+                    transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(toN.normalized), rotationSpeed * Time.deltaTime);
+                Settle(nav.DirTo(noisePos) * Speed);
+                return;
+            }
+            noiseUntil = 0f; // пришёл — тихо: ложная тревога
         }
 
         // спокоен: пасётся/бродит

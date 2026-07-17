@@ -11,10 +11,12 @@ public class Senses : MonoBehaviour
     [SerializeField] SenseChannel sight = new();
     [SerializeField] SenseChannel thermal = new();
     [SerializeField] SenseChannel scent = new();
+    [SerializeField] SenseChannel hearing = new(); // СЛУХ (ось звука, срез B лося): дальность уха; источники — Noise
 
     AlertState alert;
 
-    SenseChannel Ch(SenseKind k) => k == SenseKind.Sight ? sight : k == SenseKind.Thermal ? thermal : scent;
+    SenseChannel Ch(SenseKind k) =>
+        k == SenseKind.Sight ? sight : k == SenseKind.Thermal ? thermal : k == SenseKind.Hearing ? hearing : scent;
 
     /// <summary>Дальность чувства с учётом ТЕКУЩЕГО состояния восприятия (Спок/Настор/Атака).</summary>
     public float Range(SenseKind k)
