@@ -69,6 +69,7 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
     bool windingUp, charging;
     Kind pendingKind;
     Color activeTelegraph;
+    Grabbed grabbedStatus; // единый захват: НАС держат (хвост игрока) — массивного не защёлкнуть, кусаемся в ответ
 
     void Awake()
     {
@@ -119,6 +120,23 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
             if (st == AbilityRun.Running) return;
             activeAbility = null;
             nextAttackTime = Time.time + (st == AbilityRun.Done ? attackCooldown : 0.3f);
+            return;
+        }
+
+        // НАС СХВАТИЛИ (хвост игрока): массивного не защёлкнуть (кап ст.1) — вервольф в слабом хвате
+        // КУСАЕТСЯ в ответ (единый захват: с места не уйти, но действия по силе хвата). Цель = игрок = хвататель.
+        if (grabbedStatus == null) TryGetComponent(out grabbedStatus);
+        if (grabbedStatus != null && grabbedStatus.IsHeld)
+        {
+            if (windingUp || charging) { charging = false; Cancel(); } // разбег/вой в хвате гаснут
+            if (stagger == null || !stagger.IsStaggered)
+            {
+                Vector3 gto = target.position - transform.position; gto.y = 0f;
+                float gd = gto.magnitude;
+                if (gd > 0.001f) Face(gto / gd);
+                if (Time.time >= nextAttackTime && gd <= bite.Range && bite.TryUse()) activeAbility = bite;
+            }
+            Settle(Vector3.zero);
             return;
         }
 

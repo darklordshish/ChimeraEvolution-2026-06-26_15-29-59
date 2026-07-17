@@ -46,6 +46,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     Health targetHealth;
 
     WindupAbility activeAbility;
+    Grabbed grabbedStatus; // единый захват: НАС держат (хвост игрока) — массивного не защёлкнуть, бодаемся в ответ
     float nextAttackTime, verticalVel;
     bool provoked;
 
@@ -98,6 +99,24 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
             if (st == AbilityRun.Running) return;
             activeAbility = null;
             nextAttackTime = Time.time + attackCooldown;
+            return;
+        }
+
+        // НАС СХВАТИЛИ (хвост игрока): массивного не защёлкнуть (кап ст.1) — лось в слабом хвате БОДАЕТСЯ
+        // (рога: урон+кровь+отлёт; отлёт сам рвёт хват дистанцией). Хватать лося = провокация.
+        if (grabbedStatus == null) TryGetComponent(out grabbedStatus);
+        if (grabbedStatus != null && grabbedStatus.IsHeld)
+        {
+            provoked = true;
+            if (stagger == null || !stagger.IsStaggered)
+            {
+                Vector3 gto = target.position - transform.position; gto.y = 0f;
+                float gd = gto.magnitude;
+                if (gd > 0.001f)
+                    transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(gto / gd), rotationSpeed * Time.deltaTime);
+                if (Time.time >= nextAttackTime && gd <= antler.Range && antler.TryUse()) activeAbility = antler;
+            }
+            Settle(Vector3.zero);
             return;
         }
 
