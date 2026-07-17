@@ -48,7 +48,31 @@ public class DebugHud : MonoBehaviour
 
         if (Keyboard.current != null && Keyboard.current.tKey.wasPressedThisFrame)
             Perception.DevThermal = !Perception.DevThermal; // T — форс термозрения без органа (отладка)
+
+        if (Keyboard.current != null && Keyboard.current.f1Key.wasPressedThisFrame)
+            showLegend = !showLegend; // F1 — легенда цвет-сигналов (правый край)
     }
+
+    bool showLegend = true; // легенда видна по умолчанию — учебник языка сигналов; F1 прячет
+
+    // строка легенды: цветной квадратик + подпись (квадрат — белая текстура, тонированная GUI.color)
+    void LegendRow(ref float y, float x, Color c, string label)
+    {
+        var old = GUI.color;
+        GUI.color = c;
+        GUI.DrawTexture(new Rect(x, y + 4, 16, 16), Texture2D.whiteTexture);
+        GUI.color = old;
+        GUI.Label(new Rect(x + 22, y, 220, 24), label, legendStyle);
+        y += 22f;
+    }
+
+    void LegendHeader(ref float y, float x, string text)
+    {
+        GUI.Label(new Rect(x, y, 220, 24), text, legendStyle);
+        y += 24f;
+    }
+
+    GUIStyle legendStyle;
 
     static string AlertRu(Alert s) => s == Alert.Attack ? "АТАКА" : s == Alert.Wary ? "настороже" : "спокоен"; // S1-отладка
 
@@ -161,5 +185,30 @@ public class DebugHud : MonoBehaviour
         GUI.Label(new Rect(14, 178, 900, 26), action, style);
 
         GUI.Label(new Rect(14, 210, 760, 200), body != null ? body.SlotsInfo : "", style);
+
+        // ЛЕГЕНДА ЦВЕТ-СИГНАЛОВ (правый край, F1): язык игры — приёмы (вспышка тела) / статусы / эмоции (морда)
+        if (showLegend)
+        {
+            legendStyle ??= new GUIStyle(GUI.skin.label) { fontSize = 14, normal = { textColor = Color.white } };
+            float x = Screen.width - 230f, y = 40f;
+            GUI.Label(new Rect(x, y, 220, 24), "ЛЕГЕНДА [F1]", style); y += 30f;
+
+            LegendHeader(ref y, x, "— приёмы (вспышка тела) —");
+            LegendRow(ref y, x, TelegraphColors.Bite,   "укус");
+            LegendRow(ref y, x, TelegraphColors.Leap,   "прыжок");
+            LegendRow(ref y, x, TelegraphColors.Grab,   "захват/обхват (стадии — градиент)");
+            LegendRow(ref y, x, TelegraphColors.Charge, "таран/чардж");
+            LegendRow(ref y, x, TelegraphColors.Howl,   "вой/рёв");
+            LegendRow(ref y, x, TelegraphColors.Antler, "рога");
+            LegendRow(ref y, x, TelegraphColors.Sword,  "меч");
+            LegendRow(ref y, x, TelegraphColors.Kick,   "пинок");
+
+            LegendHeader(ref y, x, "— статусы (всё тело) —");
+            LegendRow(ref y, x, TelegraphColors.Stunned, "стан / схвачен");
+
+            LegendHeader(ref y, x, "— эмоции (морда) —");
+            LegendRow(ref y, x, TelegraphColors.RageTint, "ярость (лесенка — градиент)");
+            LegendRow(ref y, x, TelegraphColors.FearTint, "паника/страх");
+        }
     }
 }
