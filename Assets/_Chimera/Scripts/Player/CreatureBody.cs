@@ -237,6 +237,9 @@ public class CreatureBody : MonoBehaviour
         if (move == null && !TryGetComponent<Personality>(out _)) gameObject.AddComponent<Personality>();
         // ШУМ — физика любого тела (ось звука): движение слышно, сам меряет скорость. Уши — у кого есть канал Hearing
         if (!TryGetComponent<Noise>(out _)) gameObject.AddComponent<Noise>();
+        // ЗАПАХ — тоже физика любого тела: след вешает ТЕЛО (не каждая психика поштучно — лось однажды остался
+        // без запаха). Цвет = состав (Recompute), сила — тюнинг психики (змея приглушает SetStrength)
+        if (!TryGetComponent<ScentTrail>(out _)) gameObject.AddComponent<ScentTrail>();
         TryGetComponent(out health);
         TryGetComponent(out bite);
         TryGetComponent(out kick);
