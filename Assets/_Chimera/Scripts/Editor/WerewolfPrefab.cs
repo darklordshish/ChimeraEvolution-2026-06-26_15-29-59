@@ -31,7 +31,7 @@ public static class WerewolfPrefab
             AssetDatabase.CreateAsset(mat, MatPath);
         }
         mat.SetColor("_BaseColor", new Color(0.5f, 0.5f, 0.52f)); // серый как волк (отличается размером/ХП босса)
-        body.sharedMaterial = mat;
+        foreach (var r in go.GetComponentsInChildren<Renderer>()) r.sharedMaterial = mat; // туша + волчья голова
 
         var prefab = PrefabUtility.SaveAsPrefabAsset(go, Path);
         Object.DestroyImmediate(go);
@@ -54,6 +54,10 @@ public static class WerewolfPrefab
         body.transform.SetParent(go.transform, false);
         body.transform.localPosition = new Vector3(0f, 1.3f, 0f);
         body.transform.localScale = new Vector3(1.5f, 1.3f, 1.5f);
+
+        // ГОЛОВА ВОЛКА на прямоходящей туше (идея пользователя: «на место головы человека поставить голову
+        // волка» — химера собирается из ЧАСТЕЙ, задел конструктора моделек). Крупнее волчьей (босс)
+        WolfPrefab.AttachWolfHead(go.transform, new Vector3(0f, 2.8f, 0.25f), 1.5f);
 
         go.AddComponent<Health>();
         go.AddComponent<Knockback>();
