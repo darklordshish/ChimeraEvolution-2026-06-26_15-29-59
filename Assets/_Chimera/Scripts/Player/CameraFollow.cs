@@ -13,7 +13,8 @@ public class CameraFollow : MonoBehaviour
     [SerializeField] float followLerp = 10f;
     [SerializeField] float lookHeight = 1.2f;
     [SerializeField] bool rotateBehind = true;   // камера висит ЗА СПИНОЙ тела (мышь крутит тело — камера следом)
-    [SerializeField] float yawFollowSpeed = 240f; // град/с доворота за телом (мягкое запаздывание, не жёсткая палка)
+    [SerializeField] bool rigidYaw = true;       // БЕЗЫНЕРЦИОННО: жёстко за телом, без запаздывания (удобно тестить/целиться)
+    [SerializeField] float yawFollowSpeed = 240f; // град/с доворота при ВЫКЛЮЧЕННОМ rigidYaw (мягкое запаздывание)
 
     [Header("Первое лицо")]
     [SerializeField] float headHeight = 1.4f;
@@ -35,7 +36,12 @@ public class CameraFollow : MonoBehaviour
         if (TryGetComponent<Camera>(out var cam)) cam.nearClipPlane = Mathf.Min(cam.nearClipPlane, 0.05f);
     }
 
-    void Start() { if (target != null) player = target.GetComponent<PlayerController>(); }
+    void Start()
+    {
+        if (target == null) return;
+        player = target.GetComponent<PlayerController>();
+        followPos = target.position; // followPos теперь сглаженная ПОЗИЦИЯ ЦЕЛИ (не камеры) — стартуем с неё
+    }
 
     public void Shake(float duration = 0.12f, float magnitude = 0.3f)
     {
@@ -65,14 +71,15 @@ public class CameraFollow : MonoBehaviour
             return;
         }
 
-        // третье лицо «ЗА ПЛЕЧОМ»: мышь крутит ТЕЛО (PlayerController), камера мягко доворачивается
-        // за его спину — единое управление с FPS, различие видов только в позиции камеры
+        // третье лицо «ЗА ПЛЕЧОМ»: мышь крутит ТЕЛО (PlayerController), камера за его спиной.
+        // Сглаживаем только ХОД (позицию цели); поворот — жёсткий (rigidYaw) или мягкий — иначе
+        // разворот мышью «плавал» дугой и целиться было тяжело
         if (rotateBehind)
-            yaw = Mathf.MoveTowardsAngle(yaw, target.eulerAngles.y, yawFollowSpeed * Time.deltaTime);
+            yaw = rigidYaw ? target.eulerAngles.y
+                           : Mathf.MoveTowardsAngle(yaw, target.eulerAngles.y, yawFollowSpeed * Time.deltaTime);
 
-        Vector3 desired = target.position + Quaternion.Euler(0f, yaw, 0f) * offset;
-        followPos = Vector3.Lerp(followPos, desired, followLerp * Time.deltaTime);
-        transform.position = followPos + shake;
+        followPos = Vector3.Lerp(followPos, target.position, followLerp * Time.deltaTime);
+        transform.position = followPos + Quaternion.Euler(0f, yaw, 0f) * offset + shake;
         transform.LookAt(target.position + Vector3.up * lookHeight);
     }
 
