@@ -833,6 +833,9 @@ MonoBehaviour:
   fleeCrowdSize: 5
   fleeCheckRadius: 12
   fleeSpeedMult: 0.75
+  waryWait: 7
+  traverseChance: 0.5
+  traverseTime: 4
   wallSeekRadius: 12
   perchHeight: 5
   climbSpeed: 5
@@ -841,7 +844,7 @@ MonoBehaviour:
   carrySpeedMult: 0.7
   carryDrop: 1.2
   carryStandoff: 0.7
-  lonelyRadius: 6
+  lonelyRadius: 9
   retargetInterval: 0.5
   revealMemory: 2
   rattleInterval: 3
@@ -862,6 +865,9 @@ MonoBehaviour:
   ripSelfKnock: 5
   npcChokeDamage: 6
   npcChokeInterval: 0.6
+  escapeMin: 2.6
+  escapeMax: 4
+  npcLoosenPerDamage: 0.04
 --- !u!1 &7166530904502509952
 GameObject:
   m_ObjectHideFlags: 0

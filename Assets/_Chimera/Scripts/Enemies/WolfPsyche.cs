@@ -90,6 +90,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     Vector3 rescuePos;              // схваченный сородич — точка спасения
     Vector3 personalOffset;         // личное место у точки интереса: стая встаёт кольцом, а не стопкой (анти-дёргание)
     float alertUntil, nextHowlTime, telegraphUntil, curiosityUntil, rescueUntil, nextMateScan, nextPreyScan;
+    float curiosityStrength;        // сила текущего зова-манка (воронка): дальний слабый не перебивает ближний сильный
     Health playerHealth;            // кэш для возврата цели с добычи-змеи на игрока
     bool huntingPrey;              // цель сейчас — змея (захват не применяем, он завязан на игрока)
     bool carried;                  // 3e-ii: змея тащит нас на стену — тело-кукла, рулит носитель
@@ -97,6 +98,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     float preyT;                   // личный участок вдоль тела змеи (0 голова … 1 хвост)
     Fear fearStatus;                // накопительный СТРАХ (эффект-компонент); порог храбрости — личность
     Personality personality;        // S1 срез 6: личность особи (храбрость/агрессия/любопытство) — разброс поведения
+    Grabbed grabbedStatus;          // единый захват: НАС держат (кольца змеи / хвост игрока) — на слабом хвате кусаемся
 
     public bool Engaged { get; private set; } // игрок в поле зрения = волк агрессивен/нацелен (для «вне боя» игрока)
     bool Alerted => Time.time < alertUntil;   // услышал вой — знает, куда сбегаться (личная память)
@@ -106,11 +108,17 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     public void ForgetAlert() => alertUntil = 0f; // сброс личной тревоги (при бегстве стаи — теряем игрока)
 
     // странный звук (гремок змеи): ЛЮБОПЫТСТВО — осторожно иду проверить, если не занят
-    // (бой/тревога/паника важнее). Шаг в самозарядную ловушку: у змеи любопытный станет одиночкой-добычей
-    public void HearRattle(Vector3 pos)
+    // (бой/тревога/паника важнее). Шаг в самозарядную ловушку: у змеи любопытный станет одиночкой-добычей.
+    // ВОРОНКА: сила зова убывает с расстоянием — слабый дальний манок НЕ перебивает сильный ближний;
+    // подходя, слышим тот же зов всё сильнее (самоподкрепление) → скатываемся к одной змее без пинг-понга.
+    // ПРОТО-ЗВУК: strength = воспринятая громкость. Ось звука (лось, срез B: SenseKind-слух + источники
+    // с затуханием) заменит этот частный канал общим — гремок станет обычным источником, слух приёмником
+    public void HearRattle(Vector3 pos, float strength)
     {
         if (Engaged || Alerted || Routing) return;
+        if (Time.time < curiosityUntil && strength < curiosityStrength) return; // уже идём на более сильный зов
         curiosityPos = pos;
+        curiosityStrength = strength;
         curiosityUntil = Time.time + curiosityMemory * (personality != null ? personality.Curiosity : 1f); // любопытные проверяют дольше (личность)
     }
 
@@ -329,6 +337,26 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
             activeAbility = null;
             if (st == AbilityRun.Done && wasLeap && TryFollowUpGrab()) return; // наскочил → сразу пробует вцепиться
             Disengage(st == AbilityRun.Done ? attackCooldown : 0.3f);
+            return;
+        }
+
+        // НАС СХВАТИЛИ (кольца змеи / хвост игрока): единый захват — с места не уйти, но на слабом хвате
+        // ДЕРЁМСЯ: кусаем схватившего (цель уже он: змея-обидчик = добыча через RetargetPrey, хвост = игрок).
+        // Защёлк (Locked) станит через Grabbed — стаггер-проверка глушит нас; паника из хвата не уносит.
+        if (grabbedStatus == null) TryGetComponent(out grabbedStatus);
+        if (grabbedStatus != null && grabbedStatus.IsHeld)
+        {
+            if (windingUp || grabbing || hasToken) Disengage(0f); // свои роли бросаем — заняты выживанием
+            var gb = grabbedStatus.Grabber;
+            if (gb != null && (stagger == null || !stagger.IsStaggered))
+            {
+                Vector3 gto = gb.transform.position - transform.position; gto.y = 0f;
+                if (gto.sqrMagnitude > 0.001f)
+                    transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(gto.normalized), rotationSpeed * Time.deltaTime);
+                if (Time.time >= nextAttackTime && ReferenceEquals(targetHealth, gb) && gto.magnitude <= bite.Range && bite.TryUse())
+                    activeAbility = bite;
+            }
+            Settle(Vector3.zero);
             return;
         }
 
