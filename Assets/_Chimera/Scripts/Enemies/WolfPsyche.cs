@@ -51,6 +51,12 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     [SerializeField] float rescueRadius = 12f;   // замечаем возню схваченного сородича (стан рядом) — воем и идём отбивать
     [SerializeField] float preyRange = 14f;      // РАСКРЫТАЯ змея (движется/бежит) в этом радиусе — добыча стаи (хищник стал жертвой)
 
+    [Header("Охота на лося (тень-загон, M3)")]
+    [SerializeField] float mooseSpotRange = 22f;  // видит тушу — интерес стаи (дальше мутного лосиного зрения!)
+    [SerializeField] float shadowRange = 12f;     // дистанция ТЕНИ: сразу ЗА границей лесенки лося (~10) — умно не провоцируем
+    [SerializeField] int shadowMinPack = 2;       // одиночка с тушей не связывается (обходит молча)
+    [SerializeField] float packCountRadius = 15f; // «стая рядом» для решения о тени
+
     [Header("Кулдаун")]
     [SerializeField] float attackCooldown = 1.4f;
 
@@ -99,6 +105,9 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     Personality personality;        // S1 срез 6: личность особи (храбрость/агрессия/любопытство) — разброс поведения
     Grabbed grabbedStatus;          // единый захват: НАС держат (кольца змеи / хвост игрока) — на слабом хвате кусаемся
     Noise noiseSrc;                 // источник звука (вешает тело): всплеск воя — мир слышит (ось Noise)
+    Health mooseTarget;             // ОХОТА НА ЛОСЯ (M3): туша в тени/навале
+    float nextMooseScan;
+    bool mooseHunting;              // грызли тушу — на потере вернуть доставки на игрока
 
     public bool Engaged { get; private set; } // игрок в поле зрения = волк агрессивен/нацелен (для «вне боя» игрока)
     bool Alerted => Time.time < alertUntil;   // услышал вой — знает, куда сбегаться (личная память)
@@ -117,7 +126,11 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     {
         if (Engaged || Alerted || Routing) return;
         if (!Noise.Hear(transform.position, senses.Range(SenseKind.Hearing), transform, out var pos, out var strength, out var src)) return;
-        if (src == null || src.GetComponentInParent<SnakePsyche>() == null) return; // странное = гремок; свои шумят привычно
+        // «странные» звуки: гремок змеи (ловушка!) и ТОПОТ ТУШИ (интерес к добыче — через сенсорику,
+        // не магией: лось шумный bulk×2.5, его шаг слышен издалека). Свои и игрок — не новость (пока)
+        if (src == null) return;
+        bool strange = src.GetComponentInParent<SnakePsyche>() != null || src.GetComponentInParent<MoosePsyche>() != null;
+        if (!strange) return;
         if (Time.time < curiosityUntil && strength < curiosityStrength) return;     // уже идём на более сильный зов
         curiosityPos = pos;
         curiosityStrength = strength;
@@ -178,7 +191,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     // −2 ронял стаю постоянно). Пороги 2..4 при −1: трус бежит от 2-3 смертей в окне, железный от 4-5
     public void AddFear()
     {
-        if (!Engaged) return; // смерти давят только в бою (наблюдатель издалека не ломается)
+        if (!Engaged && mooseTarget == null && !huntingPrey) return; // смерти давят только участников боя/охоты
         if (morale != null) morale.Add(-1f);
     }
 
@@ -273,7 +286,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     // В бою с видимой целью и в ярости не паникуем; из стана не убежать (гейт в Update)
     void OnHurt()
     {
-        if (Engaged) return; // враг ВИДЕН — не паникуем от удара
+        if (Engaged || mooseTarget != null) return; // враг ВИДЕН (игрок/туша в бою) — не паника, честная драка
         if (morale != null) morale.Add(-1f); // удар из невидимости — −вклад (единая арифметика)
     }
 
@@ -397,6 +410,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
             pack.LeaveRing(this); // потерял игрока — освобождаем слот кольца (занят бродит/тропит, не держит место)
             SenseGrabbedMate();   // заметить возню схваченного сородича (точка спасения)
             ListenForRattle();    // слух: странный звук (гремок) → любопытство (ось Noise)
+            if (TryMooseHunt()) return; // ОХОТА НА ЛОСЯ: тень-загон/навал (игрок не виден — туша интереснее брожения)
             Vector3 dest; bool active = true;
             if (Alerted && (alertPos + personalOffset - transform.position).sqrMagnitude > 9f)
                 dest = alertPos + personalOffset;                                  // услышал вой — на СВОЁ место у точки сбора
@@ -466,6 +480,74 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         // не мешая ровному преследованию — устойчивое направление сходится за ~jitterDamp секунд (кадронезависимо)
         smoothHoriz = Vector3.Lerp(smoothHoriz, horizontal, 1f - Mathf.Exp(-Time.deltaTime / Mathf.Max(jitterDamp, 0.001f)));
         Settle(smoothHoriz);
+    }
+
+    // сколько СВОИХ рядом (включая себя) — решение «связываться ли с тушей»
+    int PackNearCount(float radius)
+    {
+        int count = 1;
+        int n = Physics.OverlapSphereNonAlloc(transform.position, radius, neighbors, ~0, QueryTriggerInteraction.Ignore);
+        for (int i = 0; i < n; i++)
+        {
+            var w = neighbors[i] != null ? neighbors[i].GetComponentInParent<WolfPsyche>() : null;
+            if (w != null && w != this) count++;
+        }
+        return count;
+    }
+
+    // ОХОТА НА ЛОСЯ (M3, тень-загон — спека морали §4): стая ≥2 при виде туши берёт её В ТЕНЬ —
+    // кружим на границе его лесенки (умно НЕ провоцируем), ВОЕМ-сзываем (вой = +1 духа и точка сбора
+    // на тушу); дух пересёк КОММИТ («ярость победила страх») → НАВАЛ: грызём без жетонов, кровь
+    // стекается — даже массивный истечёт. Дух упал — назад в тень; сломлен — паника уже увела.
+    // Лось отвечает теллами/рёвом/копытами по нашей морали — перетягивание каната духа
+    bool TryMooseHunt()
+    {
+        if (Time.time >= nextMooseScan)
+        {
+            nextMooseScan = Time.time + 0.6f;
+            mooseTarget = null;
+            float best = mooseSpotRange * mooseSpotRange;
+            foreach (var col in Physics.OverlapSphere(transform.position, mooseSpotRange, ~0, QueryTriggerInteraction.Ignore))
+            {
+                var m = col.GetComponentInParent<MoosePsyche>();
+                if (m == null || !m.TryGetComponent<Health>(out var hp)) continue;
+                float d = (m.transform.position - transform.position).sqrMagnitude;
+                if (d < best) { best = d; mooseTarget = hp; }
+            }
+        }
+        if (mooseTarget == null)
+        {
+            if (mooseHunting) { mooseHunting = false; bite.SetTarget(playerHealth); leap.SetTarget(playerHealth); } // туша ушла/пала — доставки назад на игрока
+            return false;
+        }
+        if (PackNearCount(packCountRadius) < shadowMinPack) return false; // одиночка обходит тушу молча
+
+        Vector3 to = mooseTarget.transform.position - transform.position; to.y = 0f;
+        float dist = to.magnitude;
+        Vector3 dir = dist > 0.001f ? to / dist : transform.forward;
+        transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(dir), rotationSpeed * Time.deltaTime);
+        HuntHowl(mooseTarget.transform.position); // ЗАГОННЫЙ КЛИЧ: голоса наслаиваются — раскачка духа до навала
+
+        if (morale != null && morale.IsCommitted) // НАВАЛ
+        {
+            mooseHunting = true;
+            bite.SetTarget(mooseTarget); leap.SetTarget(mooseTarget);
+            if (Time.time >= nextAttackTime && Vector3.Angle(transform.forward, dir) <= bite.HalfAngle)
+            {
+                if (dist <= bite.Range) { if (bite.TryUse()) activeAbility = bite; Settle(Vector3.zero); return true; }
+                if (dist >= leap.MinRange && dist <= leap.MaxRange) { if (leap.TryUse()) activeAbility = leap; Settle(Vector3.zero); return true; }
+            }
+            Settle((dist > bite.Range ? nav.DirTo(mooseTarget.transform.position) * Speed : Vector3.zero) + Separation() * attackSeparation);
+            return true;
+        }
+
+        // ТЕНЬ: кружим на своём личном месте у границы лесенки, подгоняя тушу (arrive — без дрожи)
+        if (mooseHunting) { mooseHunting = false; bite.SetTarget(playerHealth); leap.SetTarget(playerHealth); } // дух упал — из навала в тень
+        Vector3 spot = mooseTarget.transform.position + personalOffset.normalized * shadowRange;
+        Vector3 flat = spot - transform.position; flat.y = 0f;
+        float arv = Speed * circleSpeed * Mathf.Clamp01(flat.magnitude / Mathf.Max(arriveRadius, 0.01f));
+        Settle(nav.DirTo(spot) * arv + Separation());
+        return true;
     }
 
     // приземлился прыжком у цели — шанс сразу вцепиться (с новым ритмом «кольцо → прыжок» мили-ветка
@@ -586,6 +668,19 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         if (noiseSrc == null) TryGetComponent(out noiseSrc);
         if (noiseSrc != null) noiseSrc.Spike(1f, 0.8f); // вой ЗВУЧИТ в мире
         FlashTelegraph(TelegraphColors.Howl, howlCueTime); // видимый сигнал: волк зовёт стаю
+    }
+
+    // ЗАГОННЫЙ КЛИЧ (тень у туши): БЕЗ гейта-хора — голоса стаи в загоне НАСЛАИВАЮТСЯ (сумма живых
+    // воёв ≈ размер стаи — «мелкая не докачивается, большая валит» выходит из арифметики); личный КД
+    // остаётся. Обычные вои (по игроку) гейтятся хором как прежде — фон морали там не растёт
+    void HuntHowl(Vector3 pos)
+    {
+        if (Time.time < nextHowlTime) return;
+        nextHowlTime = Time.time + howlCooldown;
+        pack.Howl(transform.position, howlRadius, pos); // Hear (сородичи сходятся к туше) + Cheer +1
+        if (noiseSrc == null) TryGetComponent(out noiseSrc);
+        if (noiseSrc != null) noiseSrc.Spike(1f, 0.8f); // клич звучит в мире (лоси слышат — настораживаются)
+        FlashTelegraph(TelegraphColors.Howl, howlCueTime);
     }
 
     // телеграф через таймер telegraphUntil: персистентный (до Disengage) / краткая вспышка / гашение

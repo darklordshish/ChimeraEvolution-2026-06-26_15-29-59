@@ -14,7 +14,7 @@ public class ScentTrail : MonoBehaviour
     [SerializeField] float auraSize = 1.6f;
     [SerializeField] bool isOwn;
 
-    [SerializeField, Range(0f, 1f)] float strength = 1f; // сила запаха: 1 = потеющий зверь; змея ~0.35 (не потеет, мало движется)
+    [SerializeField, Range(0f, 2f)] float strength = 1f; // сила запаха: 1 = потеющий зверь; змея ~0.35; ЛОСЬ ~1.6 (туша пахнет ЗА себя и за стадо)
 
     TrailRenderer trail;
     Renderer aura;
@@ -60,22 +60,23 @@ public class ScentTrail : MonoBehaviour
         ApplyColor();
     }
 
-    // сила запаха существа: короче/тоньше след, меньше/бледнее аура (змея не потеет и мало движется)
+    // сила запаха существа: короче/тоньше след и бледнее аура (змея ~0.35) … длиннее/шире (лось ~1.6:
+    // туша пахнет сильнее потеющего человека — шкала растянута за единицу, LerpUnclamped)
     public void SetStrength(float k)
     {
-        strength = Mathf.Clamp01(k);
+        strength = Mathf.Clamp(k, 0f, 2f);
         if (trail != null)
         {
-            trail.time = linger * Mathf.Lerp(0.4f, 1f, strength);
-            trail.startWidth = startWidth * Mathf.Lerp(0.45f, 1f, strength);
+            trail.time = linger * Mathf.LerpUnclamped(0.4f, 1f, strength);
+            trail.startWidth = startWidth * Mathf.LerpUnclamped(0.45f, 1f, strength);
         }
-        if (aura != null) aura.transform.localScale = Vector3.one * auraSize * Mathf.Lerp(0.55f, 1f, strength);
+        if (aura != null) aura.transform.localScale = Vector3.one * auraSize * Mathf.LerpUnclamped(0.55f, 1f, strength);
         ApplyColor();
     }
 
     void ApplyColor()
     {
-        float a = Mathf.Lerp(0.3f, 1f, strength); // слабый запах — бледнее
+        float a = Mathf.Min(1f, Mathf.Lerp(0.3f, 1f, strength)); // слабый запах — бледнее (ярче единицы не бывает)
         if (trail != null)
         {
             trail.startColor = new Color(tint.r, tint.g, tint.b, tint.a * a);

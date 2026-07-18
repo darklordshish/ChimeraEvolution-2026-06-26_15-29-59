@@ -416,7 +416,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 95a14990812752144a38f393fa1091eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Rage
-  permanent: 0
   damageMult: 1.25
   speedMult: 1.15
   incomingMult: 1.5
@@ -517,12 +516,15 @@ MonoBehaviour:
   disengageRange: 9
   howlRadius: 16
   howlCooldown: 10
-  howlRageDuration: 3
   howlCueTime: 0.4
   alertMemory: 8
   curiosityMemory: 5
   rescueRadius: 12
   preyRange: 14
+  mooseSpotRange: 22
+  shadowRange: 12
+  shadowMinPack: 2
+  packCountRadius: 15
   attackCooldown: 1.4
   separationRadius: 1.6
   separationStrength: 4

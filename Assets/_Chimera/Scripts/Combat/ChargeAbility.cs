@@ -10,9 +10,10 @@ public class ChargeAbility : WindupAbility
     [Header("Таран")]
     [SerializeField] float minRange = 4f;
     [SerializeField] float maxRange = 12f;
-    [SerializeField] float chargeSpeed = 16f;
-    [SerializeField] float duration = 0.7f;
-    [SerializeField] int damage = 20;
+    [SerializeField] float chargeSpeed = 22f;  // быстрее волчьего бега ×5 и чуть быстрее рывка игрока: от тарана НЕ УБЕЖАТЬ —
+    [SerializeField] float duration = 0.85f;   // только уворот ВБОК (направление фиксируется в последний кадр замаха); покрытие ~19м
+    [SerializeField] int damage = 20;            // база удара копытами (вплотную ≈ рога)
+    [SerializeField] float damagePerMeter = 1.5f; // ФИЗИКА РАЗГОНА: +урон за каждый метр разбега — длинная прямая сокрушает
     [SerializeField] float hitRadius = 1.8f;
     [SerializeField] float knockForce = 12f;   // отлёт цели (Knockback сам резистит Massive)
     [SerializeField] float staggerTime = 0.5f; // сбив цели при попадании
@@ -28,7 +29,7 @@ public class ChargeAbility : WindupAbility
 
     bool charging, hit;
     float chargeEnd;
-    Vector3 dir;
+    Vector3 dir, chargeStart; // старт разбега — от него меряем разгон (метры → бонус урона)
 
     protected override Color TelegraphColor => TelegraphColors.Charge;
 
@@ -41,6 +42,7 @@ public class ChargeAbility : WindupAbility
             telegraph.Clear();
             chargeEnd = Time.time + duration;
             dir = DirToTarget();               // направление берём в последний кадр замаха
+            chargeStart = transform.position;  // отсюда меряем разгон
         }
 
         controller.Move(dir * chargeSpeed * Time.deltaTime);                                // рывок вперёд
@@ -50,7 +52,8 @@ public class ChargeAbility : WindupAbility
         {
             hit = true;
             var h = new Hit(ownHealth, transform.position);
-            h.Apply(targetHealth, HitEffect.Damage(Mathf.RoundToInt(damage * DamageMult)));
+            float run = (transform.position - chargeStart).magnitude; // метры разбега = импульс туши
+            h.Apply(targetHealth, HitEffect.Damage(Mathf.RoundToInt((damage + damagePerMeter * run) * DamageMult)));
             if (targetHealth.TryGetComponent<Knockback>(out var kb)) kb.Push(dir * knockForce); // Massive-цель Push проигнорит
             if (targetHealth.TryGetComponent<Stagger>(out var st)) st.Hitstun(staggerTime);
         }

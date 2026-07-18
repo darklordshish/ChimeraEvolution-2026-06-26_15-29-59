@@ -191,7 +191,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 95a14990812752144a38f393fa1091eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Rage
-  permanent: 1
   damageMult: 1.25
   speedMult: 1.15
   incomingMult: 1.5
@@ -275,6 +274,7 @@ MonoBehaviour:
   rageDuration: 8
   howlWindup: 1.1
   howlCooldown: 9
+  howlReach: 40
   howlInitialDelay: 8
   attackCooldown: 1.2
   wanderRadius: 18

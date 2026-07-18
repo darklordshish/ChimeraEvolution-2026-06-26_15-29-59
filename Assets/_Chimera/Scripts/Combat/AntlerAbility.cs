@@ -9,7 +9,7 @@ public class AntlerAbility : WindupAbility
 {
     [Header("Рога")]
     [SerializeField] float range = 2.5f;
-    [SerializeField] int damage = 12;
+    [SerializeField] int damage = 20; // рога протыкают ощутимо (+ кровь стаками)
     [SerializeField] float knockForce = 9f;
     [SerializeField] int bleedStacks = 2;
 

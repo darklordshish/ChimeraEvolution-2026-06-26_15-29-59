@@ -707,6 +707,7 @@ MonoBehaviour:
   chargeSpeed: 16
   duration: 0.7
   damage: 22
+  damagePerMeter: 1.5
   hitRadius: 1.8
   knockForce: 12
   staggerTime: 0.5
@@ -793,7 +794,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 95a14990812752144a38f393fa1091eb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Rage
-  permanent: 0
   damageMult: 1.25
   speedMult: 1.15
   incomingMult: 1.5
@@ -844,7 +844,7 @@ MonoBehaviour:
   berserkDuration: 6
   calmDistance: 18
   calmDelay: 5
-  bellowRadius: 14
-  bellowChainRadius: 26
+  bellowRadius: 10
+  bellowChainRadius: 40
   bellowCooldown: 10
   bellowCueTime: 1.2

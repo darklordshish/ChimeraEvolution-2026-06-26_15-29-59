@@ -45,8 +45,8 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     [SerializeField] float calmDelay = 5f;
 
     [Header("Рёв — крик угрозы (срез D)")]
-    [SerializeField] float bellowRadius = 14f;      // удар по морали волков — ужас ВБЛИЗИ
-    [SerializeField] float bellowChainRadius = 26f; // цепная ярость сородичей — рёв слышен ДАЛЕКО (~ухо лося)
+    [SerializeField] float bellowRadius = 10f;      // ужас — ЛИЧНОЕ ПРОСТРАНСТВО (= граница лесенки): сунулся внутрь — получил по духу
+    [SerializeField] float bellowChainRadius = 40f; // цепная ярость сородичей — рёв туши слышен далеко
     [SerializeField] float bellowCooldown = 10f;
     [SerializeField] float bellowCueTime = 1.2f; // вспышка-сигнал рёва (Howl-цвет): длинная — рёв нельзя проморгать
 
@@ -72,7 +72,8 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     Noise noiseSrc;        // теллы-ступени СЛЫШНЫ: фырк/топот-демонстрация — всплески громкости
     Telegraph telegraph;   // вспышка-сигнал рёва (Howl-цвет)
     CameraFollow cam;      // рёв рядом с игроком встряхивает камеру (вес туши)
-    float nextAttackTime, verticalVel, nextBellow, bellowCueUntil;
+    Health playerHealth;   // игрок — фолбэк-угроза (кэш)
+    float nextAttackTime, verticalVel, nextBellow, bellowCueUntil, nextThreatScan;
     bool provoked;
     float irritation;      // ЛЕСЕНКА 0..1: копится от видимого провокатора, спадает без него
     float calmSince = -1f; // разъярён: с какого момента сцена «рассосалась» (не видит/далеко)
@@ -114,9 +115,15 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
         playerCtl = FindAnyObjectByType<PlayerController>();
         cam = FindAnyObjectByType<CameraFollow>();
         TryGetComponent(out telegraph);
-        if (playerCtl != null) { target = playerCtl.transform; targetHealth = playerCtl.GetComponent<Health>(); }
+        if (playerCtl != null) { playerHealth = playerCtl.GetComponent<Health>(); target = playerCtl.transform; targetHealth = playerHealth; }
         if (ownHealth != null) ownHealth.onDamaged.AddListener(Provoke); // удар = максимальная провокация (минуя лесенку)
         TryGetComponent(out personality); // личность вешает CreatureBody в своём Awake — читаем после
+
+        // ТУША ОБЪЯВЛЯЕТ СЕБЯ ТЕЛОМ (спека: «большой, тёплый, шумный, пахучий — без слепых зон»):
+        // габарит шума ×2.5 (даже шаг слышен волкам издалека) + жирный запаховый след 1.6
+        if (noiseSrc == null) TryGetComponent(out noiseSrc);
+        if (noiseSrc != null) noiseSrc.SetBulk(2.5f);
+        if (TryGetComponent<ScentTrail>(out var scent)) scent.SetStrength(1.6f);
     }
 
     // ПРОДАВИЛИ (вплотную / лесенка дозрела / загнан / урон / рёв сородича): боевой режим + ЛОКАЛЬНЫЙ
@@ -150,7 +157,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
             var morale = col.GetComponentInParent<Morale>();
             if (morale != null && morale.transform != transform && hit.Add(morale)
                 && (morale.transform.position - transform.position).sqrMagnitude <= bellowRadius * bellowRadius)
-                morale.Add(-1f); // ужас — только вблизи; единая арифметика шкалы (±1)
+                morale.Add(-2f); // РЁВ туши весит два воя (прецедент «большого голоса» — как вой игрока)
             var mate = col.GetComponentInParent<MoosePsyche>();
             if (mate != null && mate != this && hit.Add(mate)) mate.Provoke(); // цепь — на всю слышимость; яростный не ревёт заново
         }
@@ -167,7 +174,8 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
         emo.SetMood(TelegraphColors.RageTint, irritation * 0.85f);
     }
 
-    // теллы-ступени СЛЫШНЫ: 0.5 — ФЫРК (тихий всплеск), 0.75 — ТОПОТ-демонстрация (громкий). Раз на подъём
+    // теллы-ступени СЛЫШНЫ (0.5 ФЫРК тихий, 0.75 ТОПОТ громкий) и ДАВЯТ МОРАЛЬ волков рядом (−1 по
+    // шкале — теллы лося это его оружие в перетягивании духа со стаей). Раз на подъём ступени
     void TellSteps()
     {
         int step = irritation >= 0.75f ? 2 : irritation >= 0.5f ? 1 : 0;
@@ -175,13 +183,50 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
         {
             if (noiseSrc == null) TryGetComponent(out noiseSrc);
             if (noiseSrc != null) noiseSrc.Spike(step == 1 ? 0.45f : 0.8f, 0.4f);
+            ScareWolves(); // фырк/топот = −1 морали ближним волкам
             tellStep = step;
         }
         else if (irritation < 0.4f) tellStep = 0; // остыл ниже фырка — ступени можно озвучить заново
     }
 
+    // удар телла по морали стаи вокруг (радиус — как ужас рёва)
+    void ScareWolves()
+    {
+        var hit = new HashSet<Component>();
+        foreach (var col in Physics.OverlapSphere(transform.position, bellowRadius, ~0, QueryTriggerInteraction.Ignore))
+        {
+            var morale = col.GetComponentInParent<Morale>();
+            if (morale != null && morale.transform != transform && hit.Add(morale)) morale.Add(-1f);
+        }
+    }
+
+    // УГРОЗА = ближайший видимый хищник (M3): игрок ИЛИ волк — лесенка/таран/рога работают по любому.
+    // «Игрок стравливает лося со стаей» получается бесплатно: кто ближе, тот и раздражает
+    void PickThreat()
+    {
+        if (Time.time < nextThreatScan) return;
+        nextThreatScan = Time.time + 0.4f;
+
+        Health best = playerHealth;
+        float bestD = best != null ? (best.transform.position - transform.position).sqrMagnitude : float.MaxValue;
+        float sight = senses.Range(SenseKind.Sight);
+        foreach (var col in Physics.OverlapSphere(transform.position, sight, ~0, QueryTriggerInteraction.Ignore))
+        {
+            var w = col.GetComponentInParent<WolfPsyche>();
+            if (w == null || !w.TryGetComponent<Health>(out var hp)) continue;
+            float d = (w.transform.position - transform.position).sqrMagnitude;
+            if (d < bestD) { bestD = d; best = hp; }
+        }
+        if (best != null && !ReferenceEquals(targetHealth, best))
+        {
+            target = best.transform; targetHealth = best;
+            charge.SetTarget(best); antler.SetTarget(best); // доставки бьют новую угрозу
+        }
+    }
+
     void Update()
     {
+        PickThreat(); // цель — ближайший видимый хищник (игрок/волк)
         if (target == null) { Settle(Vector3.zero); return; }
 
         // погасить вспышку рёва (замах-телеграф активного приёма не трогаем — им рулит доставка)

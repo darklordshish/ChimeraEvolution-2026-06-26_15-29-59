@@ -13,6 +13,7 @@ public class Noise : MonoBehaviour
 {
     [SerializeField] float loudSpeed = 8f; // скорость «полной громкости» (бег/рывок); медленнее — тише линейно
     [SerializeField] float smoothing = 6f; // сглаживание громкости (шаги не мигают нулями между кадрами)
+    [SerializeField] float bulk = 1f;      // ГАБАРИТ: крупная туша шумит громче на той же скорости (лось ~2.5 — психика ставит)
 
     static readonly List<Noise> all = new();
 
@@ -25,6 +26,9 @@ public class Noise : MonoBehaviour
     void OnEnable() { all.Add(this); lastPos = transform.position; }
     void OnDisable() => all.Remove(this);
 
+    /// <summary>Габарит тела: множитель громкости движения (туша топает громче). Ставит психика/тело.</summary>
+    public void SetBulk(float k) => bulk = Mathf.Max(0.1f, k);
+
     /// <summary>Разовый всплеск шума (атака, приземление, гремок): громкость 0..1 на duration секунд.</summary>
     public void Spike(float strength, float duration)
     {
@@ -36,7 +40,7 @@ public class Noise : MonoBehaviour
     {
         Vector3 d = transform.position - lastPos; d.y = 0f; // вертикаль (гравитация/климб) не шумит
         lastPos = transform.position;
-        float target = Time.deltaTime > 0f ? Mathf.Clamp01(d.magnitude / Time.deltaTime / loudSpeed) : 0f;
+        float target = Time.deltaTime > 0f ? Mathf.Clamp01(d.magnitude / Time.deltaTime / loudSpeed * bulk) : 0f;
         loudness = Mathf.Lerp(loudness, target, 1f - Mathf.Exp(-smoothing * Time.deltaTime));
     }
 
