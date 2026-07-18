@@ -43,6 +43,9 @@ MonoBehaviour:
     camo: 0
     enablesThermal: 0
     enablesConstrict: 0
+    enablesBellow: 0
+    enablesAntler: 0
+    enablesCharge: 0
     chassisOnly: 0
     digestion: 0
   - organName: "\u0425\u043B\u0430\u0434\u043D\u043E\u043A\u0440\u043E\u0432\u043D\u043E\u0435
@@ -73,6 +76,9 @@ MonoBehaviour:
     camo: 0
     enablesThermal: 0
     enablesConstrict: 0
+    enablesBellow: 0
+    enablesAntler: 0
+    enablesCharge: 0
     chassisOnly: 0
     digestion: 0
   - organName: "\u0422\u0435\u043B\u043E-\u0445\u0432\u043E\u0441\u0442"
@@ -102,6 +108,9 @@ MonoBehaviour:
     camo: 0
     enablesThermal: 0
     enablesConstrict: 0
+    enablesBellow: 0
+    enablesAntler: 0
+    enablesCharge: 0
     chassisOnly: 1
     digestion: 1
   - organName: "\u0427\u0435\u0448\u0443\u044F"
@@ -118,7 +127,7 @@ MonoBehaviour:
     moveSpeed: 0
     dashSpeed: 0
     dashCooldown: 0
-    damageReduction: 0.4
+    damageReduction: 0.25
     regen: 0
     regenOOC: 0
     thermalRange: 0
@@ -131,6 +140,9 @@ MonoBehaviour:
     camo: 1
     enablesThermal: 0
     enablesConstrict: 0
+    enablesBellow: 0
+    enablesAntler: 0
+    enablesCharge: 0
     chassisOnly: 0
     digestion: 0
   - organName: "\u041F\u0438\u0442-\u043E\u0440\u0433\u0430\u043D"
@@ -160,6 +172,9 @@ MonoBehaviour:
     camo: 0
     enablesThermal: 1
     enablesConstrict: 0
+    enablesBellow: 0
+    enablesAntler: 0
+    enablesCharge: 0
     chassisOnly: 0
     digestion: 0
   - organName: "\u0417\u043C\u0435\u0438\u043D\u044B\u0439 \u0445\u0432\u043E\u0441\u0442"
@@ -189,5 +204,8 @@ MonoBehaviour:
     camo: 0
     enablesThermal: 0
     enablesConstrict: 1
+    enablesBellow: 0
+    enablesAntler: 0
+    enablesCharge: 0
     chassisOnly: 0
     digestion: 0

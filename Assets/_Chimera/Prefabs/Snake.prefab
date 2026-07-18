@@ -760,11 +760,16 @@ MonoBehaviour:
   bonusStartAffinity: 80
   bonusFullAffinity: 100
   maxBonusMult: 2
+  maxDamageReduction: 0.6
+  minAtkCooldown: 0.2
   chimeraSlots: 0
   chimeraSlotMult: 2
   installAllBeast: 0
   expression: 0.5
   applyVitals: 1
+  chassisIdentityWeight: 0.1
+  weakAt: 0.65
+  mediumAt: 0.85
 --- !u!114 &3897652831624358812
 MonoBehaviour:
   m_ObjectHideFlags: 0

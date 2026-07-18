@@ -751,11 +751,16 @@ MonoBehaviour:
   bonusStartAffinity: 80
   bonusFullAffinity: 100
   maxBonusMult: 2
+  maxDamageReduction: 0.6
+  minAtkCooldown: 0.2
   chimeraSlots: 0
   chimeraSlotMult: 2
   installAllBeast: 0
   expression: 0.5
   applyVitals: 1
+  chassisIdentityWeight: 0.1
+  weakAt: 0.65
+  mediumAt: 0.85
 --- !u!114 &887393739937710776
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -842,6 +847,7 @@ MonoBehaviour:
   irritationRise: 0.35
   irritationDecay: 0.2
   berserkDuration: 6
+  provokeMoraleStack: 5
   calmDistance: 18
   calmDelay: 5
   bellowRadius: 10
