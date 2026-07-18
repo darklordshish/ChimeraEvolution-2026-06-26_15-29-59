@@ -25,12 +25,15 @@ public static class SpeciesBootstrap
         human.mutagenPool = 16;
         human.organs = new[]
         {
-            new Organ { organName = "Кисть",  slot = "Руки",   hotkey = "1", cost = 2, damage = 10, range = 1.6f },
-            new Organ { organName = "Ноги",   slot = "Ноги",   hotkey = "2", cost = 2, moveSpeed = 6f, dashSpeed = 20f, enablesKick = true }, // пинок — фича человеческих ног
-            new Organ { organName = "Сердце", slot = "Сердце", hotkey = "3", cost = 2, atkCooldown = 0.45f, maxHp = 100, regen = 0f, regenOOC = 1f },
-            new Organ { organName = "Чутьё",  slot = "Чутьё",  hotkey = "4", cost = 2, dashCooldown = 0.7f },
-            new Organ { organName = "Рот",    slot = "Пасть",  hotkey = "5", cost = 2, enablesBite = false },
-            new Organ { organName = "Кожа",   slot = "Шкура",  hotkey = "6", cost = 2, damageReduction = 0f },
+            // Человек = ПОЛНОЦЕННЫЙ вид (просто стартовое шасси). Цены СЫРЫЕ, как у всех; дёшевы ДЛЯ ТЕБЯ
+            // потому что ты на 100 родства с Человеком (−80% скидка, честно через EffectiveCost). Мощь ×2 (100
+            // родства), база ×0.75 → нетто ≈ ×1.5. Кулдауны/дальность не масштабируются.
+            new Organ { organName = "Кисть",  slot = "Руки",   hotkey = "1", cost = 3, damage = 8, range = 1.6f },                          // ×2 ≈ 16 урона; платишь 1
+            new Organ { organName = "Ноги",   slot = "Ноги",   hotkey = "2", cost = 3, moveSpeed = 4.5f, dashSpeed = 15f, enablesKick = true }, // ×2 ≈ 9 ход / 30 рывок; пинок — фича человеческих ног
+            new Organ { organName = "Сердце", slot = "Сердце", hotkey = "3", cost = 6, atkCooldown = 0.45f, maxHp = 75, regen = 0f, regenOOC = 0.75f }, // ×2 ≈ 150 HP; платишь 2
+            new Organ { organName = "Чутьё",  slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.7f },
+            new Organ { organName = "Рот",    slot = "Пасть",  hotkey = "5", cost = 3, enablesBite = false },
+            new Organ { organName = "Кожа",   slot = "Шкура",  hotkey = "6", cost = 3, damageReduction = 0f },
         };
         EditorUtility.SetDirty(human);
 
@@ -60,7 +63,7 @@ public static class SpeciesBootstrap
             new Organ { organName = "Ядовитые клыки",       slot = "Пасть",  hotkey = "5", cost = 5, damage = 24, enablesBite = true, venomStacks = 1 }, // укус игрока травит
             new Organ { organName = "Хладнокровное сердце", slot = "Сердце", hotkey = "3", cost = 5, maxHp = 200, regen = 0f, regenOOC = 2f, atkCooldown = 0.5f, coldBlooded = true }, // ХОЛОДНЫЙ МЕТАБОЛИЗМ: в бою НЕ регенит (regen 0), вне боя восстанавливается ЛУЧШЕ человека (regenOOC 2 > 1). Кулдаун ОБЯЗАТЕЛЕН (0 в бленде = меч-пулемёт)
             new Organ { organName = "Тело-хвост",           slot = "Тело",   hotkey = "7", cost = 5, moveSpeed = 10f, dashSpeed = 20f, chassisOnly = true, digestion = true }, // ходовая часть ШАССИ змеи: аугументом не крадётся (локомоция = свойство шасси) + ПЕРЕВАРИВАНИЕ (глотание целиком = свойство змеиного тела)
-            new Organ { organName = "Чешуя",                slot = "Шкура",  hotkey = "6", cost = 4, damageReduction = 0.4f, camo = true }, // невидимость в неподвижности
+            new Organ { organName = "Чешуя",                slot = "Шкура",  hotkey = "6", cost = 4, damageReduction = 0.25f, camo = true }, // лёгкая броня: стелс+яд+одиночная охота компенсируют (D-тюнинг)
             new Organ { organName = "Пит-орган",            slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.7f, enablesThermal = true, thermalRange = 14f }, // тепло сквозь стены; dashCd обязателен (0 = спам рывка)
             new Organ { organName = "Змеиный хвост",        slot = "Хвост",  hotkey = "8", cost = 5, enablesConstrict = true }, // АУГУМЕНТ игроку (обхват); у человека слота «Хвост» нет → только химерный слот. «Тело-хвост» выше — ходовая часть ШАССИ змеи, не путать
         };
@@ -74,11 +77,12 @@ public static class SpeciesBootstrap
         moose.organs = new[]
         {
             new Organ { organName = "Копыто",         slot = "Руки",   hotkey = "1", cost = 5, damage = 22, range = 1.8f }, // удар копытом — оружие
-            new Organ { organName = "Лосиные ноги",   slot = "Ноги",   hotkey = "2", cost = 5, moveSpeed = 4.5f, dashSpeed = 16f }, // медленный, но таранит
-            new Organ { organName = "Глотка",         slot = "Пасть",  hotkey = "5", cost = 4 }, // рёв — срез D (enablesHowl не ставим сейчас)
+            new Organ { organName = "Лосиные ноги",   slot = "Ноги",   hotkey = "2", cost = 5, moveSpeed = 5f, dashSpeed = 22f, enablesCharge = true }, // длинные ноги: шаг ровный, а рывок = мощный ТАРАН (урон+откидывание по пути)
+            new Organ { organName = "Глотка",         slot = "Пасть",  hotkey = "5", cost = 4, enablesBellow = true }, // РЁВ (K2): кин-лоси в берсерк на месте, чужим страх
             new Organ { organName = "Слух",           slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.7f }, // слух/зрение — модуль слуха в срезе B
             new Organ { organName = "Лосиное сердце", slot = "Сердце", hotkey = "3", cost = 6, maxHp = 260, regen = 1f, regenOOC = 0f, atkCooldown = 0.5f }, // много HP
             new Organ { organName = "Толстая шкура",  slot = "Шкура",  hotkey = "6", cost = 5, damageReduction = 0.35f }, // броня против ПРЯМОГО урона (не крови)
+            new Organ { organName = "Рога",           slot = "Рога",   hotkey = "8", cost = 5, enablesAntler = true }, // ПРИДАТОК (химерный слот): удар рогами — откидывание + кровь
         };
         EditorUtility.SetDirty(moose);
 
@@ -93,9 +97,10 @@ public static class SpeciesBootstrap
             var so = new SerializedObject(body);
             so.FindProperty("chassis").objectReferenceValue = human;
             var donorsProp = so.FindProperty("donors");
-            donorsProp.arraySize = 2; // мультидонор: слот циклирует человек → волчий → змеиный
+            donorsProp.arraySize = 3; // мультидонор: слот циклирует человек → волчий → змеиный → ЛОСИНЫЙ
             donorsProp.GetArrayElementAtIndex(0).objectReferenceValue = wolf;
             donorsProp.GetArrayElementAtIndex(1).objectReferenceValue = snake;
+            donorsProp.GetArrayElementAtIndex(2).objectReferenceValue = moose; // донор-лось открыт (эксперимент идентичности)
             so.ApplyModifiedProperties();
             EditorUtility.SetDirty(body);
             EditorSceneManager.MarkSceneDirty(body.gameObject.scene);

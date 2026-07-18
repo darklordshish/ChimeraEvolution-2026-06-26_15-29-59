@@ -14,6 +14,8 @@ public class PlayerInputDriver : MonoBehaviour
     PlayerBite bite;
     PlayerKick kick;
     PlayerHowl howl;
+    PlayerBellow bellow;
+    PlayerAntler antler;
     PlayerConstrict constrict;
     CreatureBody body;
     InputAction attackAction, biteAction, kickAction, howlAction, constrictAction;
@@ -25,6 +27,8 @@ public class PlayerInputDriver : MonoBehaviour
         bite = GetComponent<PlayerBite>();
         kick = GetComponent<PlayerKick>();
         howl = GetComponent<PlayerHowl>();
+        bellow = GetComponent<PlayerBellow>();
+        antler = GetComponent<PlayerAntler>();
         // constrict берём в Start: его может до-создать CreatureBody.Awake (порядок Awake не гарантирован)
 
         // ЛКМ / X на геймпаде / J
@@ -105,8 +109,23 @@ public class PlayerInputDriver : MonoBehaviour
 
         if (attackAction.WasPressedThisFrame()) melee.TryUse();
         if (bite != null && biteAction.WasPressedThisFrame()) bite.TryUse();
-        if (kick != null && kickAction.WasPressedThisFrame()) kick.TryUse();
-        if (howl != null && howlAction.WasPressedThisFrame()) howl.TryUse();
+        // E = ОТКИДЫВАНИЕ: человечьи ноги — пинок, рога-придаток — удар рогами (спека: «пинок повесим на
+        // откидывание рогами»); есть оба — бьют оба. Каждый сам гейтит Enabled/кулдаун (диспатч как у голоса)
+        if (kickAction.WasPressedThisFrame())
+        {
+            if (antler == null) antler = GetComponent<PlayerAntler>(); // тело могло до-создать после Awake
+            kick?.TryUse();
+            antler?.TryUse();
+        }
+        // Alt = ГОЛОС: звучит ВСЁ, что тело умеет (правило дублей — объединение, не выбор): волчья Пасть —
+        // вой, лосиная Глотка — рёв, ОБЕ (Глотка в химерном слоте) — двухголосый аккорд химеры: кины
+        // сбегаются (вой-эскорт) уже ЗАРЯЖЕННЫЕ (рёв качает дух). Каждый голос сам гейтит Enabled/кулдаун
+        if (howlAction.WasPressedThisFrame())
+        {
+            if (bellow == null) bellow = GetComponent<PlayerBellow>(); // тело могло до-создать после нашего Awake
+            howl?.TryUse();
+            bellow?.TryUse();
+        }
         if (constrict != null && constrictAction.WasPressedThisFrame()) constrict.TryUse();
     }
 }

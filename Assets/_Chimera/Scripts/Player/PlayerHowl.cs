@@ -31,6 +31,7 @@ public class PlayerHowl : MonoBehaviour, IAbility
     CameraFollow cam;
     Health ownHealth;
     CreatureBody body; // бонус органов (родство) масштабирует вес воя по морали
+    PlayerBellow bellowMate; // вторая глотка (аккорд): стан расширяется до большего из радиусов голосов
     Noise noiseSrc; // источник звука (вешает тело): вой игрока звучит в мире (ось Noise) — лось услышит
     readonly HashSet<Health> hitThisHowl = new();
 
@@ -57,8 +58,11 @@ public class PlayerHowl : MonoBehaviour, IAbility
         hitThisHowl.Clear(); // призрака раскрывает ЗАДЕТЫЙ воем (стан через Hit.Apply / испуг ниже), не вой в пустоту
         var hit = new Hit(ownHealth, transform.position);
 
-        // радиусы уже ТЕЛЕСНЫЕ: тело отдало орган × мощь через SetReach (на сотке стан 7→14, страх 14→28)
+        // радиусы уже ТЕЛЕСНЫЕ: тело отдало орган × мощь через SetReach (на сотке стан 7→14, страх 14→28).
+        // АККОРД двух глоток (правило супремума): вторая глотка (рёв) расширяет стан до большего радиуса
+        if (bellowMate == null) TryGetComponent(out bellowMate);
         float stunR = radius, fearR = fearRadius;
+        if (bellowMate != null && bellowMate.BellowEnabled) stunR = Mathf.Max(stunR, bellowMate.FearRadius);
 
         Collider[] cols = Physics.OverlapSphere(transform.position, fearR, ~0, QueryTriggerInteraction.Ignore);
         foreach (var col in cols)
@@ -66,8 +70,23 @@ public class PlayerHowl : MonoBehaviour, IAbility
             var hp = col.GetComponentInParent<Health>();
             if (hp == null || hp.transform == transform || !hitThisHowl.Add(hp)) continue;
 
+            // K3: ПРИЗНАНИЕ ПЕРЕВОРАЧИВАЕТ ЗНАК ГОЛОСА (спека идентичности §3). Кин-цель (моя идентичность
+            // к ЕЁ виду ≥ слабого) вместо контроля получает RALLY: дух по градации признания (слабое +1,
+            // среднее +2 + стирание страхов, сильное +5 — голос вожака) и точку сбора. Чужим — как раньше
+            var kinTier = KinTier.None;
+            if (body != null && hp.TryGetComponent<CreatureBody>(out var targetBody) && targetBody.Chassis != null)
+                kinTier = body.Tier(targetBody.Chassis);
+
+            if (kinTier != KinTier.None)
+            {
+                // ЕДИНЫЙ кин-rally («эффект в органе, родство в комбинации»): волк — дух+эскорт,
+                // лось — детонация; вой при лосином ките сзывает ЛОСЕЙ — кросс-опыление спеки
+                KinVoice.RallyKin(hp, kinTier, transform.position);
+                continue; // своих не контролим; бесморальные — no-op эмерджентно (спека §4)
+            }
+
             float d = Vector3.Distance(hp.transform.position, transform.position);
-            if (d <= stunR) hit.Apply(hp, HitEffect.Stun(stunDuration)); // ближние ОГЛОХЛИ
+            if (d <= stunR) hit.Apply(hp, HitEffect.Stun(stunDuration)); // ближние ЧУЖИЕ оглохли
             else if (hp.TryGetComponent<WolfPsyche>(out var w))
             {
                 // удар по морали дальнего кольца: вес растёт с родством (бонус органов ×1..×2 → −2..−4)

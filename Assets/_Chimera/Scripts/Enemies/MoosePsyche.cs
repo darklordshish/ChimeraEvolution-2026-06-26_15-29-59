@@ -41,6 +41,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     [SerializeField] float irritationRise = 0.35f;   // рост раздражения/с у дальней границы (у provokeRadius ~вдвое быстрее)
     [SerializeField] float irritationDecay = 0.2f;   // спад/с, когда провокатор ушёл
     [SerializeField] float berserkDuration = 6f;     // локальный берсерк: ярость-хвост после потери цели (в бою поддерживается)
+    [SerializeField] float provokeMoraleStack = 5f;  // ЯРОСТЬ высокая: рёв/провокация вливают в шкалу духа (себе И сородичам через цепь)
     [SerializeField] float calmDistance = 18f;       // разъярённый остывает: цель дальше этого ИЛИ вне зрения дольше calmDelay
     [SerializeField] float calmDelay = 5f;
 
@@ -58,6 +59,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     ChargeAbility charge;
     AntlerAbility antler;
     Rage rage;
+    Morale morale;         // ШКАЛА духа (универсальная, от тела): рёв/провокация вливают ЯРОСТЬ высокую — морда красится градусником
     SpawnVariance variance;
     AlertState alert;
     Senses senses;
@@ -73,8 +75,9 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     Telegraph telegraph;   // вспышка-сигнал рёва (Howl-цвет)
     CameraFollow cam;      // рёв рядом с игроком встряхивает камеру (вес туши)
     Health playerHealth;   // игрок — фолбэк-угроза (кэш)
-    float nextAttackTime, verticalVel, nextBellow, bellowCueUntil, nextThreatScan;
-    bool provoked;
+    CreatureBody body;     // своё тело — кин-проверка (мой вид = шасси)
+    float nextAttackTime, verticalVel, nextBellow, bellowCueUntil, nextThreatScan, betrayedUntil;
+    bool provoked, playerKinNow; // кин-игрок: не провоцирует лесенку (даже когда других угроз нет и цель — он)
     float irritation;      // ЛЕСЕНКА 0..1: копится от видимого провокатора, спадает без него
     float calmSince = -1f; // разъярён: с какого момента сцена «рассосалась» (не видит/далеко)
     int tellStep;          // последняя озвученная ступень (фырк/топот не спамим)
@@ -117,7 +120,11 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
         TryGetComponent(out telegraph);
         if (playerCtl != null) { playerHealth = playerCtl.GetComponent<Health>(); target = playerCtl.transform; targetHealth = playerHealth; }
         if (ownHealth != null) ownHealth.onDamaged.AddListener(Provoke); // удар = максимальная провокация (минуя лесенку)
+        if (ownHealth != null) ownHealth.onDamaged.AddListener(NoteBetrayal); // удар от кин-игрока = предательство
+        TryGetComponent(out body);        // своё тело: кин-проверка идентичности игрока к Лосю
         TryGetComponent(out personality); // личность вешает CreatureBody в своём Awake — читаем после
+        if (morale == null) TryGetComponent(out morale); // шкала духа — от ТЕЛА (универсальная)
+        if (morale != null && personality != null) morale.SetThreshold(personality.Bravery);
 
         // ТУША ОБЪЯВЛЯЕТ СЕБЯ ТЕЛОМ (спека: «большой, тёплый, шумный, пахучий — без слепых зон»):
         // габарит шума ×2.5 (даже шаг слышен волкам издалека) + жирный запаховый след 1.6
@@ -133,6 +140,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     {
         bool fresh = !provoked;
         if (fresh && rage != null) rage.Enrage(berserkDuration);
+        if (morale != null) morale.Add(provokeMoraleStack); // ЯРОСТЬ высокая в шкалу духа — морда красится градусником (однородно с волком)
         provoked = true;
         irritation = 1f;
         if (fresh) TryBellow(); // вход в ярость — крик угрозы
@@ -155,7 +163,8 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
         foreach (var col in Physics.OverlapSphere(transform.position, maxR, ~0, QueryTriggerInteraction.Ignore))
         {
             var morale = col.GetComponentInParent<Morale>();
-            if (morale != null && morale.transform != transform && hit.Add(morale)
+            if (morale != null && morale.transform != transform && morale.GetComponentInParent<MoosePsyche>() == null // своих (лосей) не пугаем — им цепь-ярость
+                && hit.Add(morale)
                 && (morale.transform.position - transform.position).sqrMagnitude <= bellowRadius * bellowRadius)
                 morale.Add(-2f); // РЁВ туши весит два воя (прецедент «большого голоса» — как вой игрока)
             var mate = col.GetComponentInParent<MoosePsyche>();
@@ -196,18 +205,32 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
         foreach (var col in Physics.OverlapSphere(transform.position, bellowRadius, ~0, QueryTriggerInteraction.Ignore))
         {
             var morale = col.GetComponentInParent<Morale>();
-            if (morale != null && morale.transform != transform && hit.Add(morale)) morale.Add(-1f);
+            // теллы пугают ЧУЖИХ (у лося теперь тоже есть Morale — своих не стращаем, для них рёв = цепь-ярость)
+            if (morale != null && morale.transform != transform && morale.GetComponentInParent<MoosePsyche>() == null
+                && hit.Add(morale)) morale.Add(-1f);
         }
     }
 
     // УГРОЗА = ближайший видимый хищник (M3): игрок ИЛИ волк — лесенка/таран/рога работают по любому.
     // «Игрок стравливает лося со стаей» получается бесплатно: кто ближе, тот и раздражает
+    // удар от кин-игрока — ПРЕДАТЕЛЬСТВО: обида снимает видовой нейтралитет надолго
+    void NoteBetrayal()
+    {
+        if (ownHealth != null && playerHealth != null && ReferenceEquals(ownHealth.LastAttacker, playerHealth))
+            betrayedUntil = Time.time + 20f;
+    }
+
     void PickThreat()
     {
         if (Time.time < nextThreatScan) return;
         nextThreatScan = Time.time + 0.4f;
 
-        Health best = playerHealth;
+        // K3a: игрок-полулось (кин ≥ слабого) — НЕ угроза (свои не провоцируют); предательство снимает
+        playerKinNow = Time.time >= betrayedUntil
+            && body != null && body.Chassis != null && CreatureBody.PlayerBody != null
+            && CreatureBody.PlayerBody.Tier(body.Chassis) != KinTier.None;
+
+        Health best = playerKinNow ? null : playerHealth;
         float bestD = best != null ? (best.transform.position - transform.position).sqrMagnitude : float.MaxValue;
         float sight = senses.Range(SenseKind.Sight);
         foreach (var col in Physics.OverlapSphere(transform.position, sight, ~0, QueryTriggerInteraction.Ignore))
@@ -279,7 +302,8 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
 
         // ЛЕСЕНКА (срез C): видимый провокатор в warnRadius копит раздражение (ближе — быстрее), ушёл — спадает.
         // Вплотную на глазах — мгновенный максимум (вторжение в личное пространство)
-        if (!provoked)
+        bool targetIsKin = playerKinNow && ReferenceEquals(targetHealth, playerHealth); // кин рядом — не провокатор
+        if (!provoked && !targetIsKin)
         {
             if (sees && dist <= provokeRadius) Provoke();
             else

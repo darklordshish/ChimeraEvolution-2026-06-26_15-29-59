@@ -15,6 +15,7 @@ public class DebugHud : MonoBehaviour
     PlayerKick kick;
     PlayerHowl howl;
     PlayerConstrict constrict;
+    PlayerBellow bellow;
     GUIStyle style;
 
     void Start()
@@ -29,6 +30,7 @@ public class DebugHud : MonoBehaviour
             kick = pc.GetComponent<PlayerKick>();
             howl = pc.GetComponent<PlayerHowl>();
             constrict = pc.GetComponent<PlayerConstrict>();
+            bellow = pc.GetComponent<PlayerBellow>();
         }
     }
 
@@ -42,6 +44,9 @@ public class DebugHud : MonoBehaviour
 
         if (Keyboard.current != null && Keyboard.current.lKey.wasPressedThisFrame)
             CreatureBody.PlayerBody?.AddAffinity("Змея", 10); // L — +10 родства-змея
+
+        if (Keyboard.current != null && Keyboard.current.semicolonKey.wasPressedThisFrame)
+            CreatureBody.PlayerBody?.AddAffinity("Лось", 10); // ; — +10 родства-лось
 
         if (Keyboard.current != null && Keyboard.current.nKey.wasPressedThisFrame)
             Perception.ShowOwnScent = !Perception.ShowOwnScent; // N — показ своего запаха
@@ -149,8 +154,9 @@ public class DebugHud : MonoBehaviour
         if (CreatureBody.PlayerBody != null)
             foreach (var kv in CreatureBody.PlayerBody.AllAffinity) if (kv.Value != 0) affParts.Add($"{kv.Key} {kv.Value}");
         string aff = affParts.Count > 0 ? string.Join(" · ", affParts) : "—";
-        GUI.Label(new Rect(14, 34, 900, 26), $"Родство: {aff}   (бонус органов ×{(body != null ? body.BonusMult : 1f):0.00})   [K: Волк +10 · L: Змея +10]", style);
+        GUI.Label(new Rect(14, 34, 900, 26), $"Родство: {aff}   (бонус органов ×{(body != null ? body.BonusMult : 1f):0.00})   [K: Волк +10 · L: Змея +10 · ; : Лось +10]", style);
         GUI.Label(new Rect(14, 58, 600, 26), $"Шкала мозга: {(body != null ? body.BeastSlots : 0)}/{(body != null ? body.MaxSlots : 0)} звериных", style);
+        if (body != null) GUI.Label(new Rect(14, 210, 1100, 26), $"Идентичность: {body.IdentityInfo}", style); // K1: кем тебя считают ПО СОСТАВУ
         string enemyStatus = EnemyStatusStr(); // HP + кровь/яд ближайшего врага — видно эффекты
         if (enemyStatus != "") GUI.Label(new Rect(620, 58, 460, 26), enemyStatus, style);
         GUI.Label(new Rect(14, 82, 300, 26), $"Пул мутагена: {(body != null ? body.PoolUsed : 0)}/{(body != null ? body.Pool : 0)}", style);
@@ -176,6 +182,12 @@ public class DebugHud : MonoBehaviour
         if (bite != null && bite.BiteEnabled) abil.Add("укус Q");
         if (howl != null && howl.HowlEnabled) abil.Add("вой Alt");
         if (constrict != null && constrict.ConstrictEnabled) abil.Add("обхват F");
+        if (bellow == null && player != null) player.TryGetComponent(out bellow); // тело до-создаёт после нашего Start
+        if (bellow != null && bellow.BellowEnabled) abil.Add("РЁВ Alt");
+        var antler = player != null ? player.GetComponent<PlayerAntler>() : null;
+        if (antler != null && antler.AntlerEnabled) abil.Add("рога E");
+        var charge = player != null ? player.GetComponent<PlayerCharge>() : null;
+        if (charge != null && charge.ChargeEnabled) abil.Add("таран (рывок)");
         GUI.Label(new Rect(14, 154, 900, 26), $"Способности: {string.Join(" · ", abil)}", style);
 
         string action = "";
@@ -186,7 +198,7 @@ public class DebugHud : MonoBehaviour
             action = "➤ ТЫ СХВАЧЕН — рывок/пинок!";
         GUI.Label(new Rect(14, 178, 900, 26), action, style);
 
-        GUI.Label(new Rect(14, 210, 760, 200), body != null ? body.SlotsInfo : "", style);
+        GUI.Label(new Rect(14, 236, 760, 200), body != null ? body.SlotsInfo : "", style);
 
         // ЛЕГЕНДА ЦВЕТ-СИГНАЛОВ (правый край, F1): язык игры — приёмы (вспышка тела) / статусы / эмоции (морда)
         if (showLegend)

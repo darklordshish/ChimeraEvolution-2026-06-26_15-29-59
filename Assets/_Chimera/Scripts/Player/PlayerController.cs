@@ -43,6 +43,7 @@ public class PlayerController : MonoBehaviour
     // волк/змея уже проверяют GrabImmune в своих захватах — распускаются сами
     public bool GrabImmune { get => grabImmune || Perception.PlayerGhost; set => grabImmune = value; }
     public bool IsGrabbed => grabber != null; // тебя держат (гейт для своего обхвата и т.п.)
+    public bool IsDashing => dashTimer > 0f;  // ТАРАН лосиных ног ездит на рывке (PlayerCharge гейтит уроном)
 
     void Awake()
     {

@@ -35,6 +35,9 @@ public class Organ
     public float howlRadius;       // ГОЛОС Пасти: база радиуса воя (0 = не воет). Итог = база × мощь-превосходство
                                    // (тело считает: игрок BonusMult ×1..2, NPC max(1, Э) — норму вниз не штрафуем)
     public bool enablesBite, enablesScent, enablesKick, enablesHowl, coldBlooded, camo, enablesThermal, enablesConstrict;
+    public bool enablesBellow;     // РЁВ (Глотка лося): детонация ярости на месте — кин-лоси в берсерк, чужих пугает
+    public bool enablesAntler;     // РОГА (придаток лося, химерный слот): фронтальный удар — откидывание + кровотечение
+    public bool enablesCharge;     // ТАРАН (Лосиные ноги): рывок становится горящим — урон+откидывание по пути («основа боя — копыта»)
     public bool chassisOnly;       // ходовая часть/локомоция шасси: аугументом НЕ крадётся (закон: локомоция = свойство шасси)
     public bool digestion;         // переваривание (тело змеи): убил добычу → СЫТ, бонус-реген до полного HP (компонент Digestion)
 }

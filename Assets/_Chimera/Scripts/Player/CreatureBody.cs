@@ -26,6 +26,10 @@ public class CreatureBody : MonoBehaviour
     [SerializeField] float bonusFullAffinity = 100f;
     [SerializeField] float maxBonusMult = 2f;           // звериная часть органа ×2 на 100 родства
 
+    [Header("Капы овершута мощи (глушим 2з−ч на 100 родства)")]
+    [SerializeField] float maxDamageReduction = 0.6f;   // потолок брони (иначе Blend(0,0.4,2)=0.8 = 80% резист)
+    [SerializeField] float minAtkCooldown = 0.2f;       // пол скорострельности (иначе волчье сердце 0.30→0.15 = пулемёт)
+
     [Header("Химерные слоты (мета: награда суперхимеры)")]
     [SerializeField, Min(0)] int chimeraSlots;    // выданные универсальные слоты (dev-кнопка / SuperBossReward)
     [SerializeField] float chimeraSlotMult = 2f;  // множитель цены органа в химерном слоте (не-нативный «графт»)
@@ -64,6 +68,9 @@ public class CreatureBody : MonoBehaviour
     SpawnVariance variance; // разброс особи: HP учитываем при раздаче витальности (иначе гонка Start'ов)
     ColdBlooded cold;       // холоднокровность (Сердце змеи) — компонент-маркер, вешаем/снимаем по сборке
     Camouflage camoComp;    // камуфляж-в-неподвижности (Чешуя змеи) — вешаем/снимаем по сборке
+    PlayerBellow bellowAb;  // рёв (Глотка лося) — до-создаём игроку в Awake, включаем сборкой
+    PlayerAntler antlerAb;  // рога (придаток лося, химерный слот) — до-создаём игроку, включаем сборкой
+    PlayerCharge chargeAb;  // таран (Лосиные ноги) — до-создаём игроку, включаем сборкой
     Digestion digestComp;   // переваривание (Тело-хвост змеи, chassisOnly) — вешаем/снимаем по сборке
     Renderer[] renderers;
     MaterialPropertyBlock mpb;
@@ -91,7 +98,10 @@ public class CreatureBody : MonoBehaviour
     /// <summary>Расширить пул мутагена (награда суперхимеры). Живо в рантайме.</summary>
     public void ExpandPool(int n) { poolBonus += n; Recompute(); }
     public int PoolUsed { get { int s = 0; if (slots != null) foreach (var sl in slots) s += SlotCost(sl); return s; } }
-    int SlotCost(Slot sl) => sl.Installed ? CostOf(sl, sl.variants[sl.current]) : (sl.human != null ? sl.human.cost : 0); // каждый слот занимает пул (человеческий орган тоже; пустой химерный = 0)
+    // каждый слот занимает пул; ЧЕЛОВЕЧЕСКИЙ слот — тоже со скидкой родства с шасси (честно: человек — вид,
+    // просто ты на нём на 100 родства → −80%). Пустой химерный = 0.
+    int SlotCost(Slot sl) => sl.Installed ? CostOf(sl, sl.variants[sl.current])
+                                          : (sl.human != null ? EffectiveCost(sl.human, chassis != null ? chassis.speciesName : "") : 0);
     int CostOf(Slot sl, Variant v) => Mathf.CeilToInt(EffectiveCost(v.organ, v.species) * (sl.chimera ? chimeraSlotMult : 1f)); // химерный слот — дорогой «графт»
     public int MaxSlots => slots != null ? slots.Length : 0;
     public int BeastSlots { get { int n = 0; if (slots != null) foreach (var sl in slots) if (sl.Installed) n++; return n; } }
@@ -235,6 +245,9 @@ public class CreatureBody : MonoBehaviour
         // авто-РАЗБРОС ПОВЕДЕНИЯ: любой NPC-вид (не игрок) получает Личность от ТЕЛА — психики её только ЧИТАЮТ
         // (в Start, после этого Awake). Новый вид разбрасывается сам, без ручной проводки в каждой психике.
         if (move == null && !TryGetComponent<Personality>(out _)) gameObject.AddComponent<Personality>();
+        // МОРАЛЬ — УНИВЕРСАЛЬНАЯ механика (шкала страх↔ярость): тело даёт её любому NPC (волк/лось/будущие
+        // стадные). Холоднокровные (сердце змеи) имеют компонент, но ColdBlooded делает его инертным — вне морали
+        if (move == null && !TryGetComponent<Morale>(out _)) gameObject.AddComponent<Morale>();
         // ШУМ — физика любого тела (ось звука): движение слышно, сам меряет скорость. Уши — у кого есть канал Hearing
         if (!TryGetComponent<Noise>(out _)) gameObject.AddComponent<Noise>();
         // ЗАПАХ — тоже физика любого тела: след вешает ТЕЛО (не каждая психика поштучно — лось однажды остался
@@ -247,9 +260,15 @@ public class CreatureBody : MonoBehaviour
         TryGetComponent(out kick);
         TryGetComponent(out howl);
         TryGetComponent(out constrictAb);
-        // обхват — новая способность: достраиваем скелет сами (руками не повесить = F молча мёртв).
+        // обхват/рёв — новые способности: достраиваем скелет сами (руками не повесить = кнопка молча мертва).
         // Крутилки видны на добавленном компоненте в рантайме; для перманентного тюнинга добавь в редакторе.
         if (move != null && constrictAb == null) constrictAb = gameObject.AddComponent<PlayerConstrict>();
+        TryGetComponent(out bellowAb);
+        if (move != null && bellowAb == null) bellowAb = gameObject.AddComponent<PlayerBellow>();
+        TryGetComponent(out antlerAb);
+        if (move != null && antlerAb == null) antlerAb = gameObject.AddComponent<PlayerAntler>();
+        TryGetComponent(out chargeAb);
+        if (move != null && chargeAb == null) chargeAb = gameObject.AddComponent<PlayerCharge>();
         TryGetComponent(out variance);
         TryGetComponent(out cold);
         TryGetComponent(out camoComp);
@@ -351,7 +370,7 @@ public class CreatureBody : MonoBehaviour
     {
         public float dmg, maxHp, life, rng, atkCd, mv, dash, dashCd, reduce, regen, regenOOC, thermal, howlR;
         public int venom, bleed;
-        public bool bite, scent, kick, howl, cold, camo, thermalOn, constrict, digest;
+        public bool bite, scent, kick, howl, cold, camo, thermalOn, constrict, digest, bellow, antler, charge;
 
         // СУПРЕМУМ дублей одного типа слота: скаляры — max (кулдауны — min: меньше = лучше), флаги — OR.
         // Дубль оси силу НЕ растит (второе сердце ≠ ×2 регена) — окупается только НОВЫМ направлением.
@@ -367,7 +386,8 @@ public class CreatureBody : MonoBehaviour
             bite = a.bite || b.bite, scent = a.scent || b.scent, kick = a.kick || b.kick,
             howl = a.howl || b.howl, cold = a.cold || b.cold, camo = a.camo || b.camo,
             thermalOn = a.thermalOn || b.thermalOn, constrict = a.constrict || b.constrict,
-            digest = a.digest || b.digest,
+            digest = a.digest || b.digest, bellow = a.bellow || b.bellow, antler = a.antler || b.antler,
+            charge = a.charge || b.charge,
         };
     }
 
@@ -409,18 +429,19 @@ public class CreatureBody : MonoBehaviour
                     thermal = b.thermalRange,     // фикс-фича органа (как range) — не блендим
                     bite = b.enablesBite, scent = b.enablesScent, kick = b.enablesKick,
                     howl = b.enablesHowl, cold = b.coldBlooded, camo = b.camo, thermalOn = b.enablesThermal,
-                    constrict = b.enablesConstrict, digest = b.digestion,
+                    constrict = b.enablesConstrict, digest = b.digestion, bellow = b.enablesBellow, antler = b.enablesAntler,
+                    charge = b.enablesCharge,
                 };
                 key = b.slot; // дубль типа (второе Сердце) идёт в ту же группу — супремум
                 beast++;
             }
             else if (sl.human != null)
             {
-                // Природная особь (фикс. экспрессия): органы записаны в МУТАГЕННОЙ шкале — без сыворотки
-                // раскрыты лишь на Э (волк ~0.45). У игрока (Э авто) человеческая база идёт как есть (e=1).
-                // Времена (кулдауны) и дальность не скейлим — как и в химерном бленде.
+                // ЧИСТЫЙ слот шасси масштабируется ОДНОРОДНО со звериным — тем же BonusMultiplier по родству
+                // с ВИДОМ ШАССИ: природная особь — фикс. Э (волк ~0.45); ИГРОК на 100 Человек → ×2 (свой вид
+                // раскрыт полностью). Времена (кулдауны) и дальность не скейлим — как в зверином бленде.
                 Organ h = sl.human;
-                float e = expression > 0f ? expression : 1f;
+                float e = chassis != null ? BonusMultiplier(chassis.speciesName) : 1f; // NPC: вернёт фикс. expression; игрок: кривая родства
                 c = new Contribution
                 {
                     dmg = h.damage * e, maxHp = h.maxHp * e, life = h.lifeSteal * e,
@@ -430,7 +451,8 @@ public class CreatureBody : MonoBehaviour
                     regenOOC = h.regenOOC * e, thermal = h.thermalRange, howlR = h.howlRadius,
                     bite = h.enablesBite, scent = h.enablesScent, kick = h.enablesKick,
                     howl = h.enablesHowl, cold = h.coldBlooded, camo = h.camo, thermalOn = h.enablesThermal,
-                    constrict = h.enablesConstrict, digest = h.digestion,
+                    constrict = h.enablesConstrict, digest = h.digestion, bellow = h.enablesBellow, antler = h.enablesAntler,
+                    charge = h.enablesCharge,
                 };
                 key = h.slot;
             }
@@ -444,7 +466,7 @@ public class CreatureBody : MonoBehaviour
         float rng = 0f, atkCd = 0f, mv = 0f, dash = 0f, dashCd = 0f, reduce = 0f, regen = 0f, regenOOC = 0f, thermal = 0f, howlR = 0f;
         int venom = 0, bleed = 0;
         bool biteOn = false, scentOn = false, kickOn = false, howlOn = false, coldOn = false, camoOn = false,
-             thermalOn = false, constrictOn = false, digestOn = false;
+             thermalOn = false, constrictOn = false, digestOn = false, bellowOn = false, antlerOn = false, chargeOn = false;
         foreach (var kv in groups)
         {
             var c = kv.Value;
@@ -455,7 +477,7 @@ public class CreatureBody : MonoBehaviour
             howlR = Mathf.Max(howlR, c.howlR);
             biteOn |= c.bite; scentOn |= c.scent; kickOn |= c.kick; howlOn |= c.howl;
             coldOn |= c.cold; camoOn |= c.camo; thermalOn |= c.thermalOn; constrictOn |= c.constrict;
-            digestOn |= c.digest;
+            digestOn |= c.digest; bellowOn |= c.bellow; antlerOn |= c.antler; chargeOn |= c.charge;
         }
         int dmg = Mathf.RoundToInt(dmgF), dmgBite = Mathf.RoundToInt(dmgBiteF);
         int maxHp = Mathf.RoundToInt(maxHpF), life = Mathf.RoundToInt(lifeF);
@@ -474,6 +496,9 @@ public class CreatureBody : MonoBehaviour
         float howlReach = howlR * voiceMult;
         if (howl != null) { howl.HowlEnabled = howlOn; howl.SetReach(howlReach); } // вой-стан — фича волчьей Пасти
         if (constrictAb != null) constrictAb.ConstrictEnabled = constrictOn; // обхват — фича Удушающего хвоста (химерный слот)
+        if (bellowAb != null) bellowAb.BellowEnabled = bellowOn;             // РЁВ — фича Глотки лося (K2)
+        if (antlerAb != null) antlerAb.AntlerEnabled = antlerOn;             // РОГА — фича придатка «Рога» (химерный слот)
+        if (chargeAb != null) chargeAb.ChargeEnabled = chargeOn;             // ТАРАН — фича «Лосиных ног» (рывок горит)
         SetColdBlooded(coldOn); // холоднокровность (Сердце змеи): невидимость для термозрения врагов
         SetCamouflage(camoOn);  // камуфляж (Чешуя змеи): невидимость в неподвижности
         SetDigestion(digestOn); // переваривание (Тело-хвост змеи): убил → сыт, бонус-реген до полного HP
@@ -486,7 +511,7 @@ public class CreatureBody : MonoBehaviour
         if (attack != null)
         {
             attack.SetMelee(dmg, Mathf.Max(0.5f, rng));
-            attack.SetCooldown(Mathf.Max(0.05f, atkCd));
+            attack.SetCooldown(Mathf.Max(minAtkCooldown, atkCd)); // пол — глушим овершут скорострельности
             attack.SetLifeSteal(life);
         }
         if (move != null)
@@ -497,7 +522,7 @@ public class CreatureBody : MonoBehaviour
         if (health != null && applyVitals) // у босса витальность — «конституция» психики
         {
             health.SetMaxHealth(Mathf.Max(1, Mathf.RoundToInt(maxHp * (variance != null ? variance.HpMult : 1f))));
-            health.DamageReduction = Mathf.Clamp01(reduce);
+            health.DamageReduction = Mathf.Min(maxDamageReduction, Mathf.Clamp01(reduce)); // потолок — глушим овершут брони
             health.RegenPerSecond = regen;
             health.OutOfCombatRegen = regenOOC;
         } // maxHp здесь уже с разбросом особи (SpawnVariance.HpMult)
@@ -572,6 +597,105 @@ public class CreatureBody : MonoBehaviour
         return n > 0 ? new Color(r / n, g / n, b / n) : (chassis != null ? chassis.tint : Color.gray);
     }
 
+    // ───────── ВИДОВАЯ ИДЕНТИЧНОСТЬ (K1, спека 2026-07-15): кем тебя считают ПО СОСТАВУ тела ─────────
+
+    [SerializeField, Range(0f, 0.3f)] float chassisIdentityWeight = 0.1f; // вес шасси: чужое шасси капит признание
+                                                                          // на «среднем» — встроенная цена химеризации
+    [SerializeField] float weakAt = 0.65f;   // СЛАБОЕ признание = порог БЕЗОПАСНОСТИ («в основном свой», люфт на 1-2 примеси)
+    [SerializeField] float mediumAt = 0.85f; // СРЕДНЕЕ = порог ВЛАСТИ (безупречный облик — чистый моно-сет; примесь сбрасывает)
+
+    public SpeciesSO Chassis => chassis; // вид существа (для кин-проверок психик: «мой вид» = шасси)
+
+    /// <summary>Идентичность 0..1 к виду = ДОЛЯ его частей в МАССЕ тела (перенормировка по составу —
+    /// пользователь, 2026-07-18). Части весят в «юнитах» СВОЕГО вида: орган = 0.9/N (N — аугумент-пул
+    /// вида, равные доли; chassisOnly — плоть шасси, живёт в его весе), шасси = 0.1. Правила из построения:
+    /// «все аугументы вида = 90%» у любого вида (у змеи 5 органов по 18%, у волка 6 по 15%); ПРИМЕСЬ
+    /// в химерном слоте РАЗБАВЛЯЕТ чужую чистоту (моно-волк 90% → +пит-орган → 76%: признание падает);
+    /// Σ идентичностей = 100%. Родство НЕ входит (экономика ≠ удостоверение).</summary>
+    public float Identity(SpeciesSO species)
+    {
+        if (species == null || slots == null || slots.Length == 0) return 0f;
+
+        float mass = chassisIdentityWeight;                              // масса тела в юнитах (шасси всегда в ней)
+        float mine = chassis == species ? chassisIdentityWeight : 0f;    // юниты искомого вида
+        foreach (var sl in slots)
+        {
+            SpeciesSO owner;
+            if (sl.Installed) owner = FindSpecies(sl.DonorSpecies);
+            else if (sl.human != null && !sl.human.chassisOnly) owner = chassis; // родная часть шасси (не-chassisOnly)
+            else continue;
+            if (owner == null) continue;
+
+            float unit = (1f - chassisIdentityWeight) / AugPool(owner);
+            mass += unit;
+            if (owner == species) mine += unit;
+        }
+        return mass > 0f ? Mathf.Clamp01(mine / mass) : 0f;
+    }
+
+    // аугумент-пул вида: сколько его органов можно надеть (chassisOnly не в счёт)
+    static int AugPool(SpeciesSO s)
+    {
+        int n = 0;
+        if (s.organs != null) foreach (var o in s.organs) if (!o.chassisOnly) n++;
+        return Mathf.Max(1, n);
+    }
+
+    // вид по имени среди известных телу (шасси + доноры)
+    SpeciesSO FindSpecies(string name)
+    {
+        if (chassis != null && chassis.speciesName == name) return chassis;
+        if (donors != null)
+            foreach (var d in donors)
+                if (d != null && d.speciesName == name) return d;
+        return null;
+    }
+
+    /// <summary>Градация признания вида: нет / слабое (≥75%) / среднее (≥90%) / сильное (100%).</summary>
+    public KinTier Tier(SpeciesSO species)
+    {
+        float k = Identity(species);
+        return k >= 0.999f ? KinTier.Strong : k >= mediumAt ? KinTier.Medium : k >= weakAt ? KinTier.Weak : KinTier.None;
+    }
+
+    /// <summary>КИН-ЦЕЛЬ: самый близкий признанный вид (для rally носителей K2/K3). null = ХИМЕРА —
+    /// кин ни к кому: союзников нет, зато контроль вокализа ляжет на всех («монстр для всех»).</summary>
+    public SpeciesSO MostKin(out KinTier tier)
+    {
+        SpeciesSO best = null; float bestK = 0f;
+        void Consider(SpeciesSO s)
+        {
+            if (s == null) return;
+            float k = Identity(s);
+            if (k > bestK) { bestK = k; best = s; }
+        }
+        Consider(chassis);
+        if (donors != null) foreach (var d in donors) Consider(d);
+        tier = best != null ? Tier(best) : KinTier.None;
+        return tier == KinTier.None ? null : best;
+    }
+
+    /// <summary>Дебаг-строка идентичностей по известным видам (HUD): «Волк 62% · Человек 28% (кин: —)».</summary>
+    public string IdentityInfo
+    {
+        get
+        {
+            var sb = new System.Text.StringBuilder();
+            void Row(SpeciesSO s)
+            {
+                if (s == null) return;
+                if (sb.Length > 0) sb.Append(" · ");
+                sb.Append($"{s.speciesName} {Identity(s) * 100f:0}%");
+            }
+            Row(chassis);
+            if (donors != null) foreach (var d in donors) Row(d);
+            var kin = MostKin(out var tier);
+            string tierRu = tier == KinTier.Strong ? "сильное" : tier == KinTier.Medium ? "среднее" : tier == KinTier.Weak ? "слабое" : "—";
+            sb.Append($"   (кин: {(kin != null ? kin.speciesName : "ХИМЕРА")}, признание {tierRu})");
+            return sb.ToString();
+        }
+    }
+
     // тинт вида по имени (шасси или донор) — для смеси палитры
     Color SpeciesTint(string species)
     {
@@ -582,6 +706,9 @@ public class CreatureBody : MonoBehaviour
         return chassis != null ? chassis.tint : Color.gray;
     }
 }
+
+/// <summary>Градация ПРИЗНАНИЯ вида по идентичности состава (K1): пороги 75/90/100.</summary>
+public enum KinTier { None, Weak, Medium, Strong }
 
 /// <summary>
 /// НПС-потребитель статов тела: психика получает деривированное из органов (урон, скорость, эффекты

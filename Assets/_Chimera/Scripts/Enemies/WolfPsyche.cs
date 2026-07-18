@@ -108,6 +108,11 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     Health mooseTarget;             // ОХОТА НА ЛОСЯ (M3): туша в тени/навале
     float nextMooseScan;
     bool mooseHunting;              // грызли тушу — на потере вернуть доставки на игрока
+    CreatureBody body;              // своё тело — для кин-проверки (мой вид = шасси)
+    float nextKinCheck, betrayedUntil; // K3a: игрок-кин не цель; удар от «своего» = ПРЕДАТЕЛЬСТВО (обида)
+    bool playerIsKin;
+    [SerializeField] float followDuration = 30f; // ПРИЗЫВ: сколько идём ЗА кин-игроком после его воя (повторный вой продлевает)
+    float followUntil;
 
     public bool Engaged { get; private set; } // игрок в поле зрения = волк агрессивен/нацелен (для «вне боя» игрока)
     bool Alerted => Time.time < alertUntil;   // услышал вой — знает, куда сбегаться (личная память)
@@ -158,6 +163,10 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     public void CalmRout() { if (morale != null) morale.Calm(); }   // вой вожака стирает минус-вклады (бегство гаснет)
     public void Cheer(float value) { if (morale != null) morale.Add(value); } // +вклад духа (вой сородича +1, приказ вожака +5)
 
+    /// <summary>K3: вой кин-игрока — ПРИЗЫВ В ЭСКОРТ: идём ЗА НИМ (не к точке), пока зов свеж; охотничьи
+    /// ветки (лось/змея) срабатывают по дороге сами — подмогу можно ПРИВЕСТИ к добыче и натравить.</summary>
+    public void FollowKin() => followUntil = Time.time + followDuration;
+
     // ИСПУГ (страшный вой игрока, дальнее кольцо): −вклад шкалы. Вес — ТЕЛЕСНЫЙ у зовущего:
     // база −2, × бонус органов (родство) → до −4 на сотке — почти приказ вожака, только со знаком минус
     public void Frighten(float moraleHit)
@@ -171,7 +180,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         => Alerted
         || Time.time < curiosityUntil
         || Time.time < rescueUntil
-        || (ScentField.Instance != null && ScentField.Instance.TryFollow(transform.position, senses.Range(SenseKind.Scent), out _));
+        || (!playerIsKin && ScentField.Instance != null && ScentField.Instance.TryFollow(transform.position, senses.Range(SenseKind.Scent), out _)); // след кина — не зацепка
 
     float Speed => moveSpeed * (rage != null ? rage.SpeedMult : 1f)
                              * (variance != null ? variance.SpeedMult : 1f); // ярость ускоряет; разброс делает особей разными
@@ -209,7 +218,6 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         if (!TryGetComponent(out variance)) variance = gameObject.AddComponent<SpawnVariance>();
         if (!TryGetComponent(out alert)) alert = gameObject.AddComponent<AlertState>(); // общая машина восприятия (S1)
         if (!TryGetComponent(out senses)) senses = gameObject.AddComponent<Senses>(); // сенсорный профиль (S1)
-        if (!TryGetComponent(out morale)) morale = gameObject.AddComponent<Morale>(); // шкала морали (стайные; спека 2026-07-17)
         senses.Seed(SenseKind.Sight, sightRange);   // сид базовых дальностей из полей психики (если профиль не задан на префабе)
         senses.Seed(SenseKind.Scent, scentRange);
         senses.Seed(SenseKind.Hearing, hearRange);  // слух — круговой (приёмник гремка/воя; ось Noise)
@@ -232,7 +240,9 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
             ownHealth.onDeath.AddListener(OnKilled); // смерть бьёт по морали стаи
             ownHealth.onDamaged.AddListener(OnHurt); // боль от невидимого источника (змея!) — паника
         }
+        TryGetComponent(out body);        // своё тело: кин-проверка идентичности игрока к МОЕМУ виду (шасси)
         TryGetComponent(out personality); // личность вешает ТЕЛО (CreatureBody) в своём Awake — читаем здесь (после всех Awake)
+        if (morale == null) TryGetComponent(out morale); // шкала морали — от ТЕЛА (универсальная, вешает CreatureBody)
         if (morale != null && personality != null) morale.SetThreshold(personality.Bravery); // личный порог храбрости = ЛИЧНОСТЬ (срез 6)
 
         // личный угол особи (случайный на спавне) → у общих точек интереса (тревога/спасение/гремок)
@@ -286,6 +296,10 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     // В бою с видимой целью и в ярости не паникуем; из стана не убежать (гейт в Update)
     void OnHurt()
     {
+        // ПРЕДАТЕЛЬСТВО (K3a): удар от «своего» (кин-игрока) — обида снимает нейтралитет надолго
+        if (playerIsKin && ownHealth != null && ReferenceEquals(ownHealth.LastAttacker, playerHealth))
+        { betrayedUntil = Time.time + 20f; playerIsKin = false; nextKinCheck = 0f; }
+
         if (Engaged || mooseTarget != null) return; // враг ВИДЕН (игрок/туша в бою) — не паника, честная драка
         if (morale != null) morale.Add(-1f); // удар из невидимости — −вклад (единая арифметика)
     }
@@ -322,6 +336,16 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
 
         if (activeAbility == null && !grabbing && !windingUp) RetargetPrey(); // раскрытая змея рядом → добыча стаи
 
+        // K3a — ПОРОГ БЕЗОПАСНОСТИ идентичности: игрок-кин (состав ≥ слабого признания моего вида)
+        // НЕ ЦЕЛЬ — свои не добыча. Удар от «своего» = предательство: обида снимает нейтралитет
+        if (Time.time >= nextKinCheck)
+        {
+            nextKinCheck = Time.time + 0.5f;
+            playerIsKin = Time.time >= betrayedUntil
+                && body != null && body.Chassis != null && CreatureBody.PlayerBody != null
+                && CreatureBody.PlayerBody.Tier(body.Chassis) != KinTier.None;
+        }
+
         bool routing = Routing; // личная паника сломлена → бегство (в ярости от воя не бежим)
         float sight = senses.Range(SenseKind.Sight); // дальность зрения через профиль (пер-состоянчато)
         Vector3 toT = target.position - transform.position; toT.y = 0f;
@@ -330,8 +354,8 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         // «в упор» ловит цель вплотную вне конуса (шорох); once Engaged волк доворачивает мордой к цели → держит в конусе
         bool inView = distSq <= proximityRadius * proximityRadius
                       || Vector3.Angle(transform.forward, toT) <= senses.ViewHalfAngle(SenseKind.Sight);
-        Engaged = !routing && distSq <= sight * sight && inView
-                  && Perception.HasLineOfSight(transform.position, target);
+        Engaged = !routing && !playerIsKin && distSq <= sight * sight && inView
+                  && Perception.HasLineOfSight(transform.position, target); // кин-игрок не добыча (K3a)
         if (Engaged) TryHowl(target.position); // увидел игрока → взвыл, зову ближних в стаю
         alert.Observe(Engaged, HasCue());      // S1: кормим машину восприятия (зеркало — поведение ниже пока не трогаем)
 
@@ -416,8 +440,11 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
                 dest = alertPos + personalOffset;                                  // услышал вой — на СВОЁ место у точки сбора
             else if (Time.time < rescueUntil && (rescuePos + personalOffset - transform.position).sqrMagnitude > 4f)
                 { dest = rescuePos + personalOffset; TryHowl(rescuePos); }         // собрата схватили! вой — стая, отбивать
-            else if (ScentField.Instance.TryFollow(transform.position, senses.Range(SenseKind.Scent), out var scent))
-                { dest = scent; TryHowl(scent); }                                 // взял след — тропим и зовём ближних
+            else if (!playerIsKin && ScentField.Instance.TryFollow(transform.position, senses.Range(SenseKind.Scent), out var scent))
+                { dest = scent; TryHowl(scent); }                                 // взял след ДОБЫЧИ — тропим и зовём (след КИН-игрока не тропим: свои пахнут привычно)
+            else if (playerIsKin && Time.time < followUntil && playerCtl != null
+                     && (playerCtl.transform.position + personalOffset - transform.position).sqrMagnitude > 9f)
+                dest = playerCtl.transform.position + personalOffset;              // ЭСКОРТ: идём за кин-вожаком (своё место в кольце)
             else if (Time.time < curiosityUntil && (curiosityPos + personalOffset - transform.position).sqrMagnitude > 4f)
                 { dest = curiosityPos + personalOffset; active = false; }          // любопытство: ОСТОРОЖНО проверить гремок
             else { dest = nav.Wander(wanderRadius); active = false; }              // ничего — бродим

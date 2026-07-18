@@ -33,18 +33,21 @@ public class EmotionTint : MonoBehaviour
         if (fear == null) TryGetComponent(out fear);
         if (moraleRef == null) TryGetComponent(out moraleRef);
 
+        // морда = «настроение»: СИЛЬНЕЙШЕЕ из живого ГРАДУСНИКА ШКАЛЫ МОРАЛИ (−кап синяя … 0 натур … +кап
+        // бордовая) и MOOD-градиента психики (лесенка лося). Так у волка ведёт градусник, у лося (морали ~0)
+        // — лесенка; когда рёв/вой качнёт мораль лося, синева/бордо перебьёт mood, если сильнее.
+        float mn = moraleRef != null ? moraleRef.Normalized : 0f;
+        float moraleT = Mathf.Abs(mn) * statusStrength;
+
         Color c; float t;
-        if (moraleRef != null)
-        {
-            // СТАЙНЫЙ: морда = живой градусник ШКАЛЫ МОРАЛИ (идея пользователя): −кап чисто-синяя ↔
-            // 0 натуральная ↔ +кап чисто-бордовая. Статус-оверрайды не нужны — дух виден напрямую
-            float n = moraleRef.Normalized;
-            c = n >= 0f ? TelegraphColors.RageTint : TelegraphColors.FearTint;
-            t = Mathf.Abs(n) * statusStrength;
-        }
-        else if (rage != null && rage.IsEnraged) { c = TelegraphColors.RageTint; t = statusStrength; } // берсерк/вожак
-        else if (fear != null && fear.IsRouting) { c = TelegraphColors.FearTint; t = statusStrength; } // одиночки
-        else { c = moodColor; t = moodT; } // градиент-настроение психики (лесенка лося)
+        if (moraleT >= moodT) { c = mn >= 0f ? TelegraphColors.RageTint : TelegraphColors.FearTint; t = moraleT; }
+        else { c = moodColor; t = moodT; }
+
+        // БЕРСЕРК/вечная ярость → полный красный, но ТОЛЬКО когда своего градусника нет (лось-берсерк,
+        // вервольф): у волков шкала ведёт сама — не сбиваем плавность в полный
+        if (rage != null && rage.IsEnraged && moraleT < 0.05f) { c = TelegraphColors.RageTint; t = statusStrength; }
+        // одиночки БЕЗ шкалы морали (будущие) — словарный Fear
+        else if (moraleRef == null && fear != null && fear.IsRouting) { c = TelegraphColors.FearTint; t = statusStrength; }
 
         if (t == lastT && c == lastColor) return; // рест трогаем только на изменение
         lastColor = c; lastT = t;

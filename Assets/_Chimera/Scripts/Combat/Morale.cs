@@ -19,6 +19,7 @@ public class Morale : MonoBehaviour
     readonly List<Stack> stacks = new();
     float threshold = 3f; // личный порог (Bravery): паника ≤ −t, коммит ≥ +t
     bool routing, committed;
+    ColdBlooded cold;     // ХОЛОДНОКРОВНЫЙ ВНЕ МОРАЛИ (иммунитет от сердца змеи): вклады no-op, шкала мертва
 
     /// <summary>Текущая мораль = сумма живых вкладов (истёкшие выпалываются по дороге).</summary>
     public float Current
@@ -71,8 +72,14 @@ public class Morale : MonoBehaviour
 
     public void SetThreshold(float t) => threshold = Mathf.Max(0.01f, t); // личный порог храбрости (личность)
 
-    /// <summary>Вклад: обычно ±1 (единая арифметика), приказ вожака +5.</summary>
-    public void Add(float value) => stacks.Add(new Stack { value = value, until = Time.time + stackLife });
+    /// <summary>Вклад: обычно ±1 (единая арифметика), приказ вожака +5. Холоднокровный (сердце змеи) —
+    /// ИММУНЕН: и страх, и rally-ярость морале-эффекты, а он эмоционально неподвижен → вклад no-op.</summary>
+    public void Add(float value)
+    {
+        if (cold == null) TryGetComponent(out cold); // ленивая привязка (сердце вешает ColdBlooded в Recompute тела)
+        if (cold != null) return;                    // вне морали — шкала не двигается
+        stacks.Add(new Stack { value = value, until = Time.time + stackLife });
+    }
 
     /// <summary>Вожак гасит панику: все МИНУС-вклады стёрты (плюсы живут дальше).</summary>
     public void Calm()

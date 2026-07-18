@@ -8,7 +8,7 @@ using UnityEngine.AI;
 /// </summary>
 public class ChimeraDevWindow : EditorWindow
 {
-    static readonly string[] SpeciesList = { "Волк", "Змея", "Человек" }; // новые виды дописывать сюда
+    static readonly string[] SpeciesList = { "Волк", "Змея", "Лось", "Человек" }; // новые виды дописывать сюда
     int speciesIdx;
     int affinityField = 100;
 
@@ -34,7 +34,7 @@ public class ChimeraDevWindow : EditorWindow
         EditorGUILayout.Space();
         var pb = CreatureBody.PlayerBody;
         EditorGUILayout.LabelField(pb != null
-            ? $"Родство: Волк {pb.GetAffinity("Волк")} · Змея {pb.GetAffinity("Змея")} · Человек {pb.GetAffinity("Человек")}"
+            ? $"Родство: Волк {pb.GetAffinity("Волк")} · Змея {pb.GetAffinity("Змея")} · Лось {pb.GetAffinity("Лось")} · Человек {pb.GetAffinity("Человек")}"
             : "Родство: тело игрока не найдено", EditorStyles.boldLabel);
         speciesIdx = GUILayout.Toolbar(speciesIdx, SpeciesList);
         string sp = SpeciesList[speciesIdx];
@@ -161,7 +161,10 @@ public class ChimeraDevWindow : EditorWindow
         EditorGUILayout.LabelField($"Живых: {moose.Length}");
         using (new EditorGUILayout.HorizontalScope())
         {
-            if (GUILayout.Button("Спавн лося")) SpawnMoose();
+            if (GUILayout.Button("Спавн лося")) SpawnMoose(); // один, рядом с игроком (посмотреть вблизи)
+            var mooseSpawner = Object.FindAnyObjectByType<MooseSpawner>();
+            using (new EditorGUI.DisabledScope(mooseSpawner == null))
+                if (GUILayout.Button("+1 по карте")) mooseSpawner.SpawnBurst(1); // рандомно по арене (как у змей)
             if (GUILayout.Button("Убить всех лосей"))
                 foreach (var m in moose)
                     if (m.TryGetComponent<Health>(out var mh)) mh.TakeDamage(99999, true);
