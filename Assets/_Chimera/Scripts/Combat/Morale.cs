@@ -57,8 +57,17 @@ public class Morale : MonoBehaviour
         }
     }
 
+    [SerializeField, Range(0f, 1f)] float damageBonusAtCap = 0.25f; // M2: раскачанный дух бьёт больнее (на +капе)
+    [SerializeField, Range(0f, 1f)] float fleeBonusAtCap = 0.3f;    // M2: «страх окрыляет» — сломленный улепётывает быстрее
+
     /// <summary>Шкала −1..+1 (для индикации: морда — градиент страх↔натуральный↔ярость).</summary>
     public float Normalized => Current / clampAbs;
+
+    /// <summary>Бонус урона от положительного духа (плавный, не только за порогом).</summary>
+    public float DamageMult => 1f + Mathf.Max(0f, Normalized) * damageBonusAtCap;
+
+    /// <summary>Бонус скорости БЕГСТВА от отрицательного духа — паникёр добегает до змеи быстро.</summary>
+    public float FleeSpeedMult => 1f + Mathf.Max(0f, -Normalized) * fleeBonusAtCap;
 
     public void SetThreshold(float t) => threshold = Mathf.Max(0.01f, t); // личный порог храбрости (личность)
 

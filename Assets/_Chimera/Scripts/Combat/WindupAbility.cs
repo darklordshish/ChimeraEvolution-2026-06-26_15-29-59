@@ -35,8 +35,18 @@ public abstract class WindupAbility : MonoBehaviour, IAbility
         TryGetComponent(out variance);
     }
 
-    // ярость поднимает урон доставки; разброс особи делает волков разными
-    protected float DamageMult => (rage != null ? rage.DamageMult : 1f) * (variance != null ? variance.DamageMult : 1f);
+    Morale morale; // шкала духа стайных (вешает психика ПОСЛЕ нашего Awake — берём лениво)
+
+    // урон доставки: ярость × разброс особи × ДУХ (M2: раскачанная мораль бьёт больнее — плавно до +25%)
+    protected float DamageMult
+    {
+        get
+        {
+            if (morale == null) TryGetComponent(out morale);
+            return (rage != null ? rage.DamageMult : 1f) * (variance != null ? variance.DamageMult : 1f)
+                 * (morale != null ? morale.DamageMult : 1f);
+        }
+    }
 
     protected virtual void Start()
     {

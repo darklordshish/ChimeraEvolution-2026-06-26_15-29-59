@@ -19,6 +19,14 @@ public class PlayerHowl : MonoBehaviour, IAbility
 
     public bool HowlEnabled { get; set; } // включается волчьей Пастью (CreatureBody)
 
+    /// <summary>ГОЛОС — от данных: тело отдаёт радиус (органная база × мощь-превосходство). Стан = половина.</summary>
+    public void SetReach(float reach)
+    {
+        if (reach <= 0.01f) return; // Пасть без голоса — остаёмся на сериализованных дефолтах
+        fearRadius = reach;
+        radius = reach * 0.5f;
+    }
+
     float nextTime;
     CameraFollow cam;
     Health ownHealth;
@@ -48,14 +56,18 @@ public class PlayerHowl : MonoBehaviour, IAbility
         if (noiseSrc != null) noiseSrc.Spike(1f, 0.8f); // вой ЗВУЧИТ (Noise): в призраке Hear сам глушит (беззвучен)
         hitThisHowl.Clear(); // призрака раскрывает ЗАДЕТЫЙ воем (стан через Hit.Apply / испуг ниже), не вой в пустоту
         var hit = new Hit(ownHealth, transform.position);
-        Collider[] cols = Physics.OverlapSphere(transform.position, fearRadius, ~0, QueryTriggerInteraction.Ignore);
+
+        // радиусы уже ТЕЛЕСНЫЕ: тело отдало орган × мощь через SetReach (на сотке стан 7→14, страх 14→28)
+        float stunR = radius, fearR = fearRadius;
+
+        Collider[] cols = Physics.OverlapSphere(transform.position, fearR, ~0, QueryTriggerInteraction.Ignore);
         foreach (var col in cols)
         {
             var hp = col.GetComponentInParent<Health>();
             if (hp == null || hp.transform == transform || !hitThisHowl.Add(hp)) continue;
 
             float d = Vector3.Distance(hp.transform.position, transform.position);
-            if (d <= radius) hit.Apply(hp, HitEffect.Stun(stunDuration)); // ближние ОГЛОХЛИ
+            if (d <= stunR) hit.Apply(hp, HitEffect.Stun(stunDuration)); // ближние ОГЛОХЛИ
             else if (hp.TryGetComponent<WolfPsyche>(out var w))
             {
                 // удар по морали дальнего кольца: вес растёт с родством (бонус органов ×1..×2 → −2..−4)

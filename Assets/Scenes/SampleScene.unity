@@ -148,7 +148,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d1fc4a7ae8b17f0449cb4309ff5b6c8a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MooseSpawner
-  moosePrefab: {fileID: 0}
+  moosePrefab: {fileID: 8022075473016765431, guid: e9b5a03880277d0428c017ffaf6113f2, type: 3}
   maxAlive: 3
   mapHalfExtent: 95
   spawnInterval: 12
@@ -1275,7 +1275,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::WolfSpawner
   wolfPrefab: {fileID: 5391713426317768002, guid: 38b9c966be595924981a121a137db5b4, type: 3}
   maxAlive: 30
-  spawnRadius: 95
+  mapHalfExtent: 95
   spawnInterval: 3
   minDistanceFromPlayer: 10
 --- !u!4 &1225026046

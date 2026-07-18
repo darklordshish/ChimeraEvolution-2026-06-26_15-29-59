@@ -213,9 +213,9 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     float Speed => moveSpeed * (variance != null ? variance.SpeedMult : 1f);
 
     // тело-на-шасси Змея кормит деривированное (урон укуса, скорость); яд/обхват — фирменные, на компонентах/психике
-    public void OnBodyStats(int damage, float bodyMoveSpeed, int venom, int bleed)
+    public void OnBodyStats(int damage, float bodyMoveSpeed, int venom, int bleed, float howlRange)
     {
-        moveSpeed = bodyMoveSpeed;
+        moveSpeed = bodyMoveSpeed; // голос (howlRange) змее не нужен: её Пасть не воет (0 из данных)
         if (bite != null) { bite.SetDamage(damage); bite.SetVenom(venom); bite.SetBleed(bleed); } // яд/кровь — теперь из органа (data-driven)
     }
 

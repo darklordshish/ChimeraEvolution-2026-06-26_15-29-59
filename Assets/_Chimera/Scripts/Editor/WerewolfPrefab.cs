@@ -71,9 +71,8 @@ public static class WerewolfPrefab
         Configure(leap, ("windupTime", 0.5f), ("minRange", 6f), ("maxRange", 11f), ("speed", 16f), ("up", 6f),
                         ("duration", 0.55f), ("damage", 30), ("lifeSteal", 25), ("hitRadius", 2f));
 
-        // вервольф под ВЕЧНОЙ яростью: урон/скорость выше, входящий урон больше («быстрый убийца, не танк»)
-        var rage = go.AddComponent<Rage>();
-        Configure(rage, ("permanent", true));
+        // вервольф под ВЕЧНОЙ яростью — психика сама поддерживает её каждый кадр (флага permanent больше нет)
+        go.AddComponent<Rage>();
 
         // ШАССИ: человек + фулл волчьи аугументы ×2 (= потолок игрока на 100 родства); превосходство даёт ярость.
         // Витальность (HP/броня/реген) — конституция психики (applyVitals=false), тело кормит урон и скорость.

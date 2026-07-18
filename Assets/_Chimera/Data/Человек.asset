@@ -34,6 +34,7 @@ MonoBehaviour:
     regen: 0
     regenOOC: 0
     thermalRange: 0
+    howlRadius: 0
     enablesBite: 0
     enablesScent: 0
     enablesKick: 0
@@ -62,6 +63,7 @@ MonoBehaviour:
     regen: 0
     regenOOC: 0
     thermalRange: 0
+    howlRadius: 0
     enablesBite: 0
     enablesScent: 0
     enablesKick: 1
@@ -90,6 +92,7 @@ MonoBehaviour:
     regen: 0
     regenOOC: 1
     thermalRange: 0
+    howlRadius: 0
     enablesBite: 0
     enablesScent: 0
     enablesKick: 0
@@ -118,6 +121,7 @@ MonoBehaviour:
     regen: 0
     regenOOC: 0
     thermalRange: 0
+    howlRadius: 0
     enablesBite: 0
     enablesScent: 0
     enablesKick: 0
@@ -146,6 +150,7 @@ MonoBehaviour:
     regen: 0
     regenOOC: 0
     thermalRange: 0
+    howlRadius: 0
     enablesBite: 0
     enablesScent: 0
     enablesKick: 0
@@ -174,6 +179,7 @@ MonoBehaviour:
     regen: 0
     regenOOC: 0
     thermalRange: 0
+    howlRadius: 0
     enablesBite: 0
     enablesScent: 0
     enablesKick: 0

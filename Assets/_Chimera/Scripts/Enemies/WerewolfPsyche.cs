@@ -43,6 +43,7 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
     [SerializeField] float rageDuration = 8f;    // вой = приказ атаковать без страха: стая не бежит + наваливается вся
     [SerializeField] float howlWindup = 1.1f;
     [SerializeField] float howlCooldown = 9f; // < жизни стака морали (10с): окна приказа +5 ПЕРЕКРЫВАЮТСЯ — при вожаке стая не ломается
+    [SerializeField] float howlReach = 40f;   // охват воя вожака: приказ/сбор — ближним, не всей карте (лес не схлопывается в кучу)
     [SerializeField] float howlInitialDelay = 8f; // не воет сразу при появлении
 
     [Header("Кулдаун / навигация")]
@@ -103,6 +104,8 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
 
     void Update()
     {
+        if (rage != null) rage.Enrage(1f); // ВЕЧНАЯ ярость вожака = САМОПОДДЕРЖКА (обновляемый себе стак — M2)
+
         if (target == null) { Cancel(); Settle(Vector3.zero); return; }
 
         if (knockback != null && knockback.IsActive)
@@ -188,12 +191,13 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
 
     // тело-на-шасси (CreatureBody: человек + фулл волчьи органы ×2) кормит деривированное.
     // Конституция (HP/броня/реген/temp HP) остаётся фирменной — задаётся в Start этой психики.
-    public void OnBodyStats(int damage, float bodyMoveSpeed, int venom, int bleed)
+    public void OnBodyStats(int damage, float bodyMoveSpeed, int venom, int bleed, float howlRange)
     {
         moveSpeed = bodyMoveSpeed;
         bite.SetDamage(damage);
         bite.SetVenom(venom);
         bite.SetBleed(bleed); // вервольф несёт волчью Пасть → кровотечение приходит АВТОМАТИЧЕСКИ (боссовый вампиризм остаётся запечённым)
+        if (howlRange > 0.01f) howlReach = howlRange; // ГОЛОС вожака — тоже от данных: Пасть 14 × Э2 = 28 (решение пользователя)
     }
 
     void Face(Vector3 d) =>
@@ -218,9 +222,9 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
         if (noiseSrc != null) noiseSrc.Spike(1f, 1.2f); // вой альфы ЗВУЧИТ в мире (ось Noise): уши слышат
         var spawner = FindAnyObjectByType<WolfSpawner>();
         if (spawner != null && CountWolves() < howlWolfCap) spawner.SpawnAt(transform.position, summonCount); // призыв — только поредевшей стае
-        PackCoordinator.Instance.Rally(rageDuration); // ярость: перебить бегство, вся стая в атаку без страха
+        PackCoordinator.Instance.Rally(transform.position, howlReach, rageDuration); // приказ ближним: +5 духа, страхи стёрты
         if (target != null && !Perception.PlayerGhost) // dev-призрака вой не выцеливает (иначе стая вечно кластером на наблюдателе)
-            PackCoordinator.Instance.AlertAll(target.position); // вой альфы на всю карту — вся стая сходится на игрока
+            PackCoordinator.Instance.AlertAround(transform.position, howlReach, target.position); // сбор — ближним, не всей карте
         nextHowl = Time.time + howlCooldown;
     }
 

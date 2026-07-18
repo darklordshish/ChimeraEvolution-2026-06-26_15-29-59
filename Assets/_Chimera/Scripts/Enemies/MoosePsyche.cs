@@ -82,8 +82,9 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
 
     float Speed => moveSpeed * (rage != null ? rage.SpeedMult : 1f) * (variance != null ? variance.SpeedMult : 1f);
 
-    // тело-на-шасси кормит скорость; урон тарана остаётся на ChargeAbility (как урон прыжка у волка)
-    public void OnBodyStats(int damage, float bodyMoveSpeed, int venom, int bleed) => moveSpeed = bodyMoveSpeed;
+    // тело-на-шасси кормит скорость; урон тарана остаётся на ChargeAbility (как урон прыжка у волка);
+    // голос (howlRange) — задел: РЁВ пока фирменный (bellowRadius), переведём на данные Глотки при тюнинге
+    public void OnBodyStats(int damage, float bodyMoveSpeed, int venom, int bleed, float howlRange) => moveSpeed = bodyMoveSpeed;
 
     void Awake()
     {

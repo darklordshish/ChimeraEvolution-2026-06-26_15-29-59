@@ -32,6 +32,8 @@ public class Organ
     public int bleedStacks;        // кровотечение на укусе (волчьи клыки): стаков за попадание
     public float range, atkCooldown, moveSpeed, dashSpeed, dashCooldown, damageReduction, regen, regenOOC;
     public float thermalRange;     // радиус термозрения (Пит-орган); фикс-фича, как range — не блендится
+    public float howlRadius;       // ГОЛОС Пасти: база радиуса воя (0 = не воет). Итог = база × мощь-превосходство
+                                   // (тело считает: игрок BonusMult ×1..2, NPC max(1, Э) — норму вниз не штрафуем)
     public bool enablesBite, enablesScent, enablesKick, enablesHowl, coldBlooded, camo, enablesThermal, enablesConstrict;
     public bool chassisOnly;       // ходовая часть/локомоция шасси: аугументом НЕ крадётся (закон: локомоция = свойство шасси)
     public bool digestion;         // переваривание (тело змеи): убил добычу → СЫТ, бонус-реген до полного HP (компонент Digestion)

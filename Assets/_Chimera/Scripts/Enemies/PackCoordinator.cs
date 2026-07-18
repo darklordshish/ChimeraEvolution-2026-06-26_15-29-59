@@ -61,23 +61,24 @@ public class PackCoordinator : MonoBehaviour
         return true;
     }
 
-    public void Howl(Vector3 origin, float radius, Vector3 playerPos, float rageDuration)
+    public void Howl(Vector3 origin, float radius, Vector3 playerPos)
     {
         float r2 = radius * radius;
         foreach (var w in wolves)
             if (w != null && (w.transform.position - origin).sqrMagnitude <= r2)
             {
                 w.Hear(playerPos);
-                w.Cheer(1f); // вой сородича = +1 к шкале морали (стаки ±1×10с, спека 2026-07-17)
-                if (rageDuration > 0f) w.EnrageFor(rageDuration); // M1: прямая ярость пока остаётся (M2 переведёт на коммит)
+                w.Cheer(1f); // вой = +1 к шкале духа; ярость больше не дарится напрямую — придёт коммитом шкалы (M2)
             }
     }
 
-    // вой ВОЖАКА слышен по всей карте: ВСЕ волки узнают, где игрок, и сходятся (в отличие от локального Howl волка)
-    public void AlertAll(Vector3 playerPos)
+    // вой ВОЖАКА — тоже ЛОКАЛЕН (на арене 200 «вся карта» была мега-навалом всех 30+): ближние узнают
+    // точку сбора и сходятся, дальние живут своей жизнью — лес не схлопывается в одну кучу
+    public void AlertAround(Vector3 origin, float radius, Vector3 target)
     {
+        float r2 = radius * radius;
         foreach (var w in wolves)
-            if (w != null) w.Hear(playerPos);
+            if (w != null && (w.transform.position - origin).sqrMagnitude <= r2) w.Hear(target);
     }
 
     // мораль: страх/бегство — ЛИЧНОЕ у каждого волка (WolfPsyche). Пул задаёт лишь параметры; ярость вожака гасит страх.
@@ -100,12 +101,14 @@ public class PackCoordinator : MonoBehaviour
                 w.AddFear();
     }
 
-    // приказ вожака (вой): бесстрашие + ЯРОСТЬ всей стае на duration — гасит бегство, обнуляет страх, заводит
-    public void Rally(float duration)
+    // приказ вожака (вой): ЛОКАЛЬНО — +5 духа ближним (мораль над любым порогом → коммит → ярость сама)
+    // + стирает страхи; приказное окно (кап атакующих снят) остаётся глобальным флагом координатора
+    public void Rally(Vector3 origin, float radius, float duration)
     {
-        fearlessUntil = Time.time + duration; // приказное окно: кап атакующих снят (вся стая наваливается)
+        fearlessUntil = Time.time + duration;
+        float r2 = radius * radius;
         foreach (var w in wolves)
-            if (w != null) { w.CalmRout(); w.Cheer(5f); w.EnrageFor(duration); } // ПРИКАЗ = +5 (перекрывает любой порог) + стирает страхи
+            if (w != null && (w.transform.position - origin).sqrMagnitude <= r2) { w.CalmRout(); w.Cheer(5f); }
     }
 
     Transform Player

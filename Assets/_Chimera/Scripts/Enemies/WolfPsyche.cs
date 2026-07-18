@@ -45,7 +45,6 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     [Header("Вой (зов ближней стаи)")]
     [SerializeField] float howlRadius = 16f;    // на сколько разносится вой — сбегаются только ближние волки
     [SerializeField] float howlCooldown = 10f;  // личный КД воя (= жизни стака: один волк держит ~1 живой вклад)
-    [SerializeField] float howlRageDuration = 3f; // ярость ближним от воя (< кулдауна — пульс, не фон)
     [SerializeField] float howlCueTime = 0.4f;  // сколько держится вспышка-телеграф воя
     [SerializeField] float alertMemory = 8f;    // сколько волк держит тревогу, услышав вой
     [SerializeField] float curiosityMemory = 5f; // любопытство к странному звуку (гремок): сколько идём проверять
@@ -144,7 +143,6 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
 
     public bool Routing => morale != null && morale.IsRouting; // паника: мораль ниже −порога (приказ вожака +5 перевешивает сам)
     public void CalmRout() { if (morale != null) morale.Calm(); }   // вой вожака стирает минус-вклады (бегство гаснет)
-    public void EnrageFor(float duration) => rage.Enrage(duration); // вой сородича/вожака бесит (M2: перейдёт на коммит шкалы)
     public void Cheer(float value) { if (morale != null) morale.Add(value); } // +вклад духа (вой сородича +1, приказ вожака +5)
 
     // ИСПУГ (страшный вой игрока, дальнее кольцо): −вклад шкалы. Вес — ТЕЛЕСНЫЙ у зовущего:
@@ -167,12 +165,13 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
 
     // тело-на-шасси (CreatureBody: органы Волка × экспрессия ~0.45) кормит деривированное.
     // Урон прыжка и ритм атак остаются фирменными (сериализованы здесь/на LeapAbility).
-    public void OnBodyStats(int damage, float bodyMoveSpeed, int venom, int bleed)
+    public void OnBodyStats(int damage, float bodyMoveSpeed, int venom, int bleed, float howlRange)
     {
         moveSpeed = bodyMoveSpeed;
         bite.SetDamage(damage);
         bite.SetVenom(venom); // эффекты укуса из органа Пасти (data-driven): волчьи клыки → кровотечение
         bite.SetBleed(bleed);
+        if (howlRange > 0.01f) howlRadius = howlRange; // ГОЛОС — от данных Пасти (природная норма ×1)
     }
 
     // сородич погиб рядом (и я в бою) → −1 к морали (единая арифметика вернулась после качелей баланса:
@@ -322,6 +321,10 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
                   && Perception.HasLineOfSight(transform.position, target);
         if (Engaged) TryHowl(target.position); // увидел игрока → взвыл, зову ближних в стаю
         alert.Observe(Engaged, HasCue());      // S1: кормим машину восприятия (зеркало — поведение ниже пока не трогаем)
+
+        // M2: ярость — СЛЕДСТВИЕ раскачанного духа (коммит шкалы), а не прямой подарок воя:
+        // «когда ярость победит страх — нападают сами». Пока дух выше порога, бафф жив
+        if (morale != null && morale.IsCommitted && rage != null) rage.Enrage(0.6f);
 
         // пинок рвёт всё (включая захват и полёт прыжка): волк полностью теряет управление, пока летит
         if (knockback != null && knockback.IsActive)
@@ -567,7 +570,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         Vector3 away = transform.position - from; away.y = 0f;
         Vector3 dir = away.sqrMagnitude > 0.01f ? away.normalized : transform.forward;
         transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(dir), rotationSpeed * Time.deltaTime);
-        Settle(dir * Speed + Separation());
+        Settle(dir * Speed * (morale != null ? morale.FleeSpeedMult : 1f) + Separation()); // «страх окрыляет»: до +30% к бегству
     }
 
     // вой: зову ближних волков (в радиусе) на точку + бешу их — глобального алерта на всю карту больше нет.
@@ -579,7 +582,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         // вой — событие СТАИ, не хор: голос подаёт ОДИН (иначе фон морали = размер стаи и страх не пробивает)
         if (!pack.TryClaimHowl()) { nextHowlTime = Time.time + 1f; return; }
         nextHowlTime = Time.time + howlCooldown;
-        pack.Howl(transform.position, howlRadius, pos, howlRageDuration);
+        pack.Howl(transform.position, howlRadius, pos);
         if (noiseSrc == null) TryGetComponent(out noiseSrc);
         if (noiseSrc != null) noiseSrc.Spike(1f, 0.8f); // вой ЗВУЧИТ в мире
         FlashTelegraph(TelegraphColors.Howl, howlCueTime); // видимый сигнал: волк зовёт стаю

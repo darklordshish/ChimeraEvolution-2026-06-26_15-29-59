@@ -349,7 +349,7 @@ public class CreatureBody : MonoBehaviour
     // вклад одного надетого органа в статы тела (после бленда/экспрессии)
     struct Contribution
     {
-        public float dmg, maxHp, life, rng, atkCd, mv, dash, dashCd, reduce, regen, regenOOC, thermal;
+        public float dmg, maxHp, life, rng, atkCd, mv, dash, dashCd, reduce, regen, regenOOC, thermal, howlR;
         public int venom, bleed;
         public bool bite, scent, kick, howl, cold, camo, thermalOn, constrict, digest;
 
@@ -362,6 +362,7 @@ public class CreatureBody : MonoBehaviour
             mv = Mathf.Max(a.mv, b.mv), dash = Mathf.Max(a.dash, b.dash), dashCd = Mathf.Min(a.dashCd, b.dashCd),
             reduce = Mathf.Max(a.reduce, b.reduce), regen = Mathf.Max(a.regen, b.regen),
             regenOOC = Mathf.Max(a.regenOOC, b.regenOOC), thermal = Mathf.Max(a.thermal, b.thermal),
+            howlR = Mathf.Max(a.howlR, b.howlR),
             venom = Mathf.Max(a.venom, b.venom), bleed = Mathf.Max(a.bleed, b.bleed),
             bite = a.bite || b.bite, scent = a.scent || b.scent, kick = a.kick || b.kick,
             howl = a.howl || b.howl, cold = a.cold || b.cold, camo = a.camo || b.camo,
@@ -397,6 +398,7 @@ public class CreatureBody : MonoBehaviour
                     life = Blend(h.lifeSteal, b.lifeSteal, m),
                     venom = b.venomStacks, bleed = b.bleedStacks, // дискретные фичи органа (как флаги) — не блендим
                     rng = b.range,                // дальность не масштабируем — фикс. трейдофф
+                    howlR = b.howlRadius,         // голос-база органа (мощь домножит тело — эмиссия, не чувство)
                     atkCd = Blend(h.atkCooldown, b.atkCooldown, m),
                     mv = Blend(h.moveSpeed, b.moveSpeed, m),
                     dash = Blend(h.dashSpeed, b.dashSpeed, m),
@@ -425,7 +427,7 @@ public class CreatureBody : MonoBehaviour
                     venom = h.venomStacks, bleed = h.bleedStacks,
                     rng = h.range, atkCd = h.atkCooldown, mv = h.moveSpeed * e, dash = h.dashSpeed * e,
                     dashCd = h.dashCooldown, reduce = h.damageReduction * e, regen = h.regen * e,
-                    regenOOC = h.regenOOC * e, thermal = h.thermalRange,
+                    regenOOC = h.regenOOC * e, thermal = h.thermalRange, howlR = h.howlRadius,
                     bite = h.enablesBite, scent = h.enablesScent, kick = h.enablesKick,
                     howl = h.enablesHowl, cold = h.coldBlooded, camo = h.camo, thermalOn = h.enablesThermal,
                     constrict = h.enablesConstrict, digest = h.digestion,
@@ -439,7 +441,7 @@ public class CreatureBody : MonoBehaviour
 
         // суммирование групп; урон группы «Пасть» принадлежит УКУСУ, не мечу
         float dmgF = 0f, dmgBiteF = 0f, maxHpF = 0f, lifeF = 0f;
-        float rng = 0f, atkCd = 0f, mv = 0f, dash = 0f, dashCd = 0f, reduce = 0f, regen = 0f, regenOOC = 0f, thermal = 0f;
+        float rng = 0f, atkCd = 0f, mv = 0f, dash = 0f, dashCd = 0f, reduce = 0f, regen = 0f, regenOOC = 0f, thermal = 0f, howlR = 0f;
         int venom = 0, bleed = 0;
         bool biteOn = false, scentOn = false, kickOn = false, howlOn = false, coldOn = false, camoOn = false,
              thermalOn = false, constrictOn = false, digestOn = false;
@@ -450,6 +452,7 @@ public class CreatureBody : MonoBehaviour
             maxHpF += c.maxHp; lifeF += c.life; venom += c.venom; bleed += c.bleed;
             rng += c.rng; atkCd += c.atkCd; mv += c.mv; dash += c.dash; dashCd += c.dashCd;
             reduce += c.reduce; regen += c.regen; regenOOC += c.regenOOC; thermal += c.thermal;
+            howlR = Mathf.Max(howlR, c.howlR);
             biteOn |= c.bite; scentOn |= c.scent; kickOn |= c.kick; howlOn |= c.howl;
             coldOn |= c.cold; camoOn |= c.camo; thermalOn |= c.thermalOn; constrictOn |= c.constrict;
             digestOn |= c.digest;
@@ -465,7 +468,11 @@ public class CreatureBody : MonoBehaviour
             bite.SetBleed(bleed);    // кровотечение волчьих клыков на укусе игрока
         }
         if (kick != null) kick.KickEnabled = kickOn; // пинок — фича человеческих ног: с волчьими пропадает
-        if (howl != null) howl.HowlEnabled = howlOn; // вой-стан — фича волчьей Пасти
+        // ГОЛОС — от данных: радиус = органная база × МОЩЬ-превосходство (игрок BonusMult ×1..2;
+        // NPC max(1, Э) — норму вниз не штрафуем: взрослый волк воет как волк, вервольф Э2 — вдвое)
+        float voiceMult = Mathf.Max(1f, move != null ? BonusMult : expression);
+        float howlReach = howlR * voiceMult;
+        if (howl != null) { howl.HowlEnabled = howlOn; howl.SetReach(howlReach); } // вой-стан — фича волчьей Пасти
         if (constrictAb != null) constrictAb.ConstrictEnabled = constrictOn; // обхват — фича Удушающего хвоста (химерный слот)
         SetColdBlooded(coldOn); // холоднокровность (Сердце змеи): невидимость для термозрения врагов
         SetCamouflage(camoOn);  // камуфляж (Чешуя змеи): невидимость в неподвижности
@@ -495,9 +502,9 @@ public class CreatureBody : MonoBehaviour
             health.OutOfCombatRegen = regenOOC;
         } // maxHp здесь уже с разбросом особи (SpawnVariance.HpMult)
 
-        // НПС-потребители (психика): тело отдаёт деривированное — урон (суммарный: их мили и есть укус), скорость
-        // и ЭФФЕКТЫ УКУСА (яд/кровь из органа Пасти) — раньше баканы генератором, теперь текут data-driven как у игрока
-        foreach (var c in GetComponents<IBodyStatConsumer>()) c.OnBodyStats(dmg + dmgBite, mv, venom, bleed);
+        // НПС-потребители (психика): тело отдаёт деривированное — урон (суммарный: их мили и есть укус), скорость,
+        // ЭФФЕКТЫ УКУСА (яд/кровь из Пасти) и ГОЛОС (радиус воя, уже × мощь) — всё data-driven как у игрока
+        foreach (var c in GetComponents<IBodyStatConsumer>()) c.OnBodyStats(dmg + dmgBite, mv, venom, bleed, howlReach);
 
         if (move != null) UpdateTint(); // ТОЛЬКО игрок: тело = смесь тинтов видов надетых органов. NPC — запечённый материал (не драться с Telegraph)
 
@@ -577,10 +584,11 @@ public class CreatureBody : MonoBehaviour
 }
 
 /// <summary>
-/// НПС-потребитель статов тела: психика получает деривированное из органов (урон, скорость)
-/// и раздаёт своим доставкам. Витальность (HP/броня/реген) — отдельно («конституция», applyVitals).
+/// НПС-потребитель статов тела: психика получает деривированное из органов (урон, скорость, эффекты
+/// укуса, ГОЛОС — радиус воя × мощь; 0 = Пасть не воет) и раздаёт своим доставкам/приёмам.
+/// Витальность (HP/броня/реген) — отдельно («конституция», applyVitals).
 /// </summary>
 public interface IBodyStatConsumer
 {
-    void OnBodyStats(int damage, float moveSpeed, int venom, int bleed);
+    void OnBodyStats(int damage, float moveSpeed, int venom, int bleed, float howlRange);
 }
