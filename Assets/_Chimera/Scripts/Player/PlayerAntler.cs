@@ -23,12 +23,14 @@ public class PlayerAntler : MonoBehaviour, IAbility
     float nextTime;
     CameraFollow cam;
     Health ownHealth;
+    CreatureBody body; // своё тело — эрозия признания при ударе по кину (NoteHit)
     readonly HashSet<Health> hitThis = new();
 
     void Start()
     {
         cam = FindAnyObjectByType<CameraFollow>();
         ownHealth = GetComponent<Health>();
+        body = GetComponent<CreatureBody>();
     }
 
     public bool TryUse()
@@ -44,15 +46,16 @@ public class PlayerAntler : MonoBehaviour, IAbility
         hitThis.Clear();
         bool any = false;
         var hit = new Hit(ownHealth, transform.position);
+        // единый паёк рогов (см. MeleeBlow) — тот же удар льёт NPC-лось; мощь впечена в числа (mult 1)
+        var blow = new MeleeBlow { Damage = damage, KnockForce = force, BleedStacks = bleedStacks };
 
         foreach (var col in Physics.OverlapSphere(Center(), radius, ~0, QueryTriggerInteraction.Ignore))
         {
             var hp = col.GetComponentInParent<Health>();
             if (hp == null || hp.transform == transform || !hitThis.Add(hp)) continue;
 
-            hit.Apply(hp, HitEffect.Damage(damage));       // вспышка + стаггер через onDamaged
-            hit.Apply(hp, HitEffect.Knockback(force));     // откидывание (Massive резистит)
-            for (int i = 0; i < bleedStacks; i++) hit.Apply(hp, HitEffect.Bleed()); // протыкание — кровь
+            blow.Deliver(hit, hp); // вспышка + стаггер через onDamaged, откидывание, кровь
+            if (body != null) body.NoteHit(hp); // удар по кину подтачивает признание (эрозия)
             any = true;
         }
 

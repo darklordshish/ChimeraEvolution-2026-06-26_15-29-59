@@ -23,12 +23,14 @@ public class PlayerKick : MonoBehaviour, IAbility
     float nextTime;
     CameraFollow cam;
     Health ownHealth;
+    CreatureBody body; // своё тело — эрозия признания при пинке кина (NoteHit)
     readonly HashSet<Health> hitThisKick = new();
 
     void Start()
     {
         cam = FindAnyObjectByType<CameraFollow>();
         ownHealth = GetComponent<Health>();
+        body = GetComponent<CreatureBody>();
     }
 
     // водитель зовёт по вводу; активен только с человеческими ногами; кулдаун проверяем сами
@@ -45,6 +47,7 @@ public class PlayerKick : MonoBehaviour, IAbility
         hitThisKick.Clear();
         bool any = false;
         var hit = new Hit(ownHealth, transform.position); // источник нужен раскрытию призрака (вампиризма у пинка всё равно нет)
+        var blow = new MeleeBlow { Damage = damage, KnockForce = force }; // единый паёк (см. MeleeBlow)
 
         Collider[] cols = Physics.OverlapSphere(KickCenter(), radius, ~0, QueryTriggerInteraction.Ignore);
         foreach (var col in cols)
@@ -52,8 +55,8 @@ public class PlayerKick : MonoBehaviour, IAbility
             var hp = col.GetComponentInParent<Health>();
             if (hp == null || hp.transform == transform || !hitThisKick.Add(hp)) continue;
 
-            hit.Apply(hp, HitEffect.Damage(damage));   // вспышка + стаггер через onDamaged
-            hit.Apply(hp, HitEffect.Knockback(force)); // отталкивание от игрока
+            blow.Deliver(hit, hp); // лёгкий урон (вспышка+стаггер) + отталкивание от игрока
+            if (body != null) body.NoteHit(hp); // пинок по кину подтачивает признание (эрозия)
             any = true;
         }
 

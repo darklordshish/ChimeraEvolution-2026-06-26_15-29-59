@@ -31,12 +31,14 @@ public class PlayerBite : MonoBehaviour, IAbility
     float nextTime;
     CameraFollow cam;
     Health ownHealth;
+    CreatureBody body; // своё тело — эрозия признания при укусе кина (NoteHit)
     readonly HashSet<Health> hitThisBite = new();
 
     void Start()
     {
         cam = FindAnyObjectByType<CameraFollow>();
         ownHealth = GetComponent<Health>();
+        body = GetComponent<CreatureBody>();
     }
 
     // водитель зовёт по вводу; активен только с надетой Пастью; кулдаун проверяем сами
@@ -53,16 +55,20 @@ public class PlayerBite : MonoBehaviour, IAbility
         hitThisBite.Clear(); // призрака раскрывает попадание (Hit.Apply), не замах
         int hits = 0;
         var hit = new Hit(ownHealth, transform.position);
+        // единый паёк укуса (см. MeleeBlow): урон + сбив регена + вампиризм + яд/кровь по данным органа
+        var blow = new MeleeBlow
+        {
+            Damage = organDamage > 0 ? organDamage : damage,
+            LifeSteal = lifeSteal, VenomStacks = venomStacks, BleedStacks = bleedStacks,
+            RegenDebuffFactor = regenDebuff, RegenDebuffTime = regenDebuffTime,
+        };
         Collider[] cols = Physics.OverlapSphere(BiteCenter(), radius, ~0, QueryTriggerInteraction.Ignore);
         foreach (var col in cols)
         {
             var hp = col.GetComponentInParent<Health>();
             if (hp == null || hp.transform == transform || !hitThisBite.Add(hp)) continue;
-            hit.Apply(hp, HitEffect.Damage(organDamage > 0 ? organDamage : damage));
-            hit.Apply(hp, HitEffect.RegenDebuff(regenDebuff, regenDebuffTime)); // сбиваем реген цели (контр-сустейн против босса)
-            if (lifeSteal > 0) hit.Apply(hp, HitEffect.LifeSteal(lifeSteal)); // лечимся за укус
-            for (int i = 0; i < venomStacks; i++) hit.Apply(hp, HitEffect.Venom()); // яд змеиных клыков
-            for (int i = 0; i < bleedStacks; i++) hit.Apply(hp, HitEffect.Bleed()); // кровь волчьих клыков
+            blow.Deliver(hit, hp);
+            if (body != null) body.NoteHit(hp); // укус по кину подтачивает признание (эрозия)
             hits++;
         }
 

@@ -25,10 +25,9 @@ public class AntlerAbility : WindupAbility
         if (Time.time < windupEnd) { SettleInPlace(); return AbilityRun.Running; }
         if (targetHealth != null && DistToTarget() <= range)
         {
-            var h = new Hit(ownHealth, transform.position);
-            h.Apply(targetHealth, HitEffect.Damage(Mathf.RoundToInt(damage * DamageMult)));
-            h.Apply(targetHealth, HitEffect.Knockback(knockForce));           // резист Massive внутри Knockback.Push
-            for (int i = 0; i < bleedStacks; i++) h.Apply(targetHealth, HitEffect.Bleed()); // протыкание — кровь стаками
+            // единый паёк рогов (см. MeleeBlow) — тот же удар льёт и игрок; мощь NPC масштабирует урон
+            var blow = new MeleeBlow { Damage = damage, KnockForce = knockForce, BleedStacks = bleedStacks };
+            blow.Deliver(new Hit(ownHealth, transform.position), targetHealth, DamageMult);
         }
         return AbilityRun.Done;
     }

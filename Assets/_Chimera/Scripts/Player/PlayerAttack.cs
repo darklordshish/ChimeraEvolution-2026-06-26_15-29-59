@@ -23,12 +23,14 @@ public class PlayerAttack : MonoBehaviour, IAbility
     readonly HashSet<Health> hitThisSwing = new();
     CameraFollow cam;
     Health ownHealth;
+    CreatureBody body; // своё тело — эрозия признания при ударе по кину (NoteHit)
     int lifeSteal;
 
     void Start()
     {
         cam = FindAnyObjectByType<CameraFollow>();
         ownHealth = GetComponent<Health>();
+        body = GetComponent<CreatureBody>();
     }
 
     // водитель (PlayerInputDriver) зовёт по вводу; кулдаун проверяем сами
@@ -44,13 +46,14 @@ public class PlayerAttack : MonoBehaviour, IAbility
     {
         hitThisSwing.Clear(); // призрака раскрывает ПОПАДАНИЕ (Hit.Apply), не замах — холостой взмах безопасен
         var hit = new Hit(ownHealth, transform.position);
+        var blow = new MeleeBlow { Damage = damage, LifeSteal = lifeSteal }; // единый паёк удара (см. MeleeBlow)
         Collider[] hits = Physics.OverlapSphere(AttackCenter(), radius, hitMask, QueryTriggerInteraction.Ignore);
         foreach (var col in hits)
         {
             var hp = col.GetComponentInParent<Health>();
             if (hp == null || hp.transform == transform || !hitThisSwing.Add(hp)) continue;
-            hit.Apply(hp, HitEffect.Damage(damage));
-            if (lifeSteal > 0) hit.Apply(hp, HitEffect.LifeSteal(lifeSteal)); // вампиризм = сумма по целям (слот «Пасть»)
+            blow.Deliver(hit, hp); // урон + вампиризм (мощь впечена в числа)
+            if (body != null) body.NoteHit(hp); // удар по кину подтачивает признание (эрозия)
         }
 
         if (hitThisSwing.Count > 0) // попали хотя бы по одному — сочность раз за замах

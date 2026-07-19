@@ -38,12 +38,13 @@ public class BiteAbility : WindupAbility
 
         if (Time.time >= windupEnd)
         {
-            var hit = new Hit(ownHealth, transform.position);
-            hit.Apply(targetHealth, HitEffect.Damage(Mathf.RoundToInt(damage * DamageMult)));
-            if (lifeSteal > 0) hit.Apply(targetHealth, HitEffect.LifeSteal(lifeSteal));
-            if (regenDebuff < 1f) hit.Apply(targetHealth, HitEffect.RegenDebuff(regenDebuff, regenDebuffTime));
-            for (int i = 0; i < venomStacks; i++) hit.Apply(targetHealth, HitEffect.Venom());
-            for (int i = 0; i < bleedStacks; i++) hit.Apply(targetHealth, HitEffect.Bleed());
+            // единый паёк укуса (см. MeleeBlow) — тот же удар льёт игрок; мощь NPC масштабирует урон
+            var blow = new MeleeBlow
+            {
+                Damage = damage, LifeSteal = lifeSteal, VenomStacks = venomStacks, BleedStacks = bleedStacks,
+                RegenDebuffFactor = regenDebuff, RegenDebuffTime = regenDebuffTime,
+            };
+            blow.Deliver(new Hit(ownHealth, transform.position), targetHealth, DamageMult);
             return AbilityRun.Done;
         }
 
