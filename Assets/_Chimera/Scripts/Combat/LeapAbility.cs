@@ -47,9 +47,9 @@ public class LeapAbility : WindupAbility
         flying = false;
         if (targetHealth != null && DistToTarget() <= hitRadius) // приземлили наскок — кусаем
         {
-            var hit = new Hit(ownHealth, transform.position);
-            hit.Apply(targetHealth, HitEffect.Damage(Mathf.RoundToInt(damage * DamageMult)));
-            if (lifeSteal > 0) hit.Apply(targetHealth, HitEffect.LifeSteal(lifeSteal));
+            // единый паёк (см. MeleeBlow) — тот же укус на приземлении; мощь масштабирует урон
+            var blow = new MeleeBlow { Damage = damage, LifeSteal = lifeSteal };
+            blow.Deliver(new Hit(ownHealth, transform.position), targetHealth, DamageMult);
         }
         return AbilityRun.Done;
     }

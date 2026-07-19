@@ -51,11 +51,13 @@ public class ChargeAbility : WindupAbility
         if (!hit && targetHealth != null && DistToTarget() <= hitRadius)
         {
             hit = true;
-            var h = new Hit(ownHealth, transform.position);
             float run = (transform.position - chargeStart).magnitude; // метры разбега = импульс туши
-            h.Apply(targetHealth, HitEffect.Damage(Mathf.RoundToInt((damage + damagePerMeter * run) * DamageMult)));
+            // единый паёк (см. MeleeBlow): урон-с-разгоном (мощь уже учтена) + сбив. Откидывание ОСТАЁТСЯ
+            // направленным (импульс ВДОЛЬ линии тарана, не от центра) — фирменный снос, числа не трогаем
+            int dmg = Mathf.RoundToInt((damage + damagePerMeter * run) * DamageMult);
+            var blow = new MeleeBlow { Damage = dmg, StaggerTime = staggerTime };
+            blow.Deliver(new Hit(ownHealth, transform.position), targetHealth);
             if (targetHealth.TryGetComponent<Knockback>(out var kb)) kb.Push(dir * knockForce); // Massive-цель Push проигнорит
-            if (targetHealth.TryGetComponent<Stagger>(out var st)) st.Hitstun(staggerTime);
         }
         if (Time.time < chargeEnd) return AbilityRun.Running;
 
