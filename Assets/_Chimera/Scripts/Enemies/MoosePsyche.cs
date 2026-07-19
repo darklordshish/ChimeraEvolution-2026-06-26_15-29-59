@@ -76,7 +76,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     CameraFollow cam;      // рёв рядом с игроком встряхивает камеру (вес туши)
     Health playerHealth;   // игрок — фолбэк-угроза (кэш)
     CreatureBody body;     // своё тело — кин-проверка (мой вид = шасси)
-    float nextAttackTime, verticalVel, nextBellow, bellowCueUntil, nextThreatScan, betrayedUntil;
+    float nextAttackTime, verticalVel, nextBellow, bellowCueUntil, nextThreatScan;
     bool provoked, playerKinNow; // кин-игрок: не провоцирует лесенку (даже когда других угроз нет и цель — он)
     float irritation;      // ЛЕСЕНКА 0..1: копится от видимого провокатора, спадает без него
     float calmSince = -1f; // разъярён: с какого момента сцена «рассосалась» (не видит/далеко)
@@ -120,7 +120,6 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
         TryGetComponent(out telegraph);
         if (playerCtl != null) { playerHealth = playerCtl.GetComponent<Health>(); target = playerCtl.transform; targetHealth = playerHealth; }
         if (ownHealth != null) ownHealth.onDamaged.AddListener(Provoke); // удар = максимальная провокация (минуя лесенку)
-        if (ownHealth != null) ownHealth.onDamaged.AddListener(NoteBetrayal); // удар от кин-игрока = предательство
         TryGetComponent(out body);        // своё тело: кин-проверка идентичности игрока к Лосю
         TryGetComponent(out personality); // личность вешает CreatureBody в своём Awake — читаем после
         if (morale == null) TryGetComponent(out morale); // шкала духа — от ТЕЛА (универсальная)
@@ -213,22 +212,14 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
 
     // УГРОЗА = ближайший видимый хищник (M3): игрок ИЛИ волк — лесенка/таран/рога работают по любому.
     // «Игрок стравливает лося со стаей» получается бесплатно: кто ближе, тот и раздражает
-    // удар от кин-игрока — ПРЕДАТЕЛЬСТВО: обида снимает видовой нейтралитет надолго
-    void NoteBetrayal()
-    {
-        if (ownHealth != null && playerHealth != null && ReferenceEquals(ownHealth.LastAttacker, playerHealth))
-            betrayedUntil = Time.time + 20f;
-    }
-
     void PickThreat()
     {
         if (Time.time < nextThreatScan) return;
         nextThreatScan = Time.time + 0.4f;
 
         // K3a: игрок-полулось (кин ≥ слабого) — НЕ угроза (свои не провоцируют); предательство снимает
-        playerKinNow = Time.time >= betrayedUntil
-            && body != null && body.Chassis != null && CreatureBody.PlayerBody != null
-            && CreatureBody.PlayerBody.Tier(body.Chassis) != KinTier.None;
+        playerKinNow = body != null && body.Chassis != null && CreatureBody.PlayerBody != null
+            && CreatureBody.PlayerBody.Tier(body.Chassis) != KinTier.None; // Tier = эффективный (учёл эрозию)
 
         Health best = playerKinNow ? null : playerHealth;
         float bestD = best != null ? (best.transform.position - transform.position).sqrMagnitude : float.MaxValue;

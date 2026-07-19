@@ -71,6 +71,7 @@ public class CreatureBody : MonoBehaviour
     PlayerBellow bellowAb;  // рёв (Глотка лося) — до-создаём игроку в Awake, включаем сборкой
     PlayerAntler antlerAb;  // рога (придаток лося, химерный слот) — до-создаём игроку, включаем сборкой
     PlayerCharge chargeAb;  // таран (Лосиные ноги) — до-создаём игроку, включаем сборкой
+    Betrayal betrayal;      // подрыв признания: удар по кину копит эрозию (только у игрока)
     Digestion digestComp;   // переваривание (Тело-хвост змеи, chassisOnly) — вешаем/снимаем по сборке
     Renderer[] renderers;
     MaterialPropertyBlock mpb;
@@ -269,6 +270,8 @@ public class CreatureBody : MonoBehaviour
         if (move != null && antlerAb == null) antlerAb = gameObject.AddComponent<PlayerAntler>();
         TryGetComponent(out chargeAb);
         if (move != null && chargeAb == null) chargeAb = gameObject.AddComponent<PlayerCharge>();
+        TryGetComponent(out betrayal);
+        if (move != null && betrayal == null) betrayal = gameObject.AddComponent<Betrayal>(); // эрозия признания — только у игрока
         TryGetComponent(out variance);
         TryGetComponent(out cold);
         TryGetComponent(out camoComp);
@@ -368,7 +371,7 @@ public class CreatureBody : MonoBehaviour
     // вклад одного надетого органа в статы тела (после бленда/экспрессии)
     struct Contribution
     {
-        public float dmg, maxHp, life, rng, atkCd, mv, dash, dashCd, reduce, regen, regenOOC, thermal, howlR;
+        public float dmg, maxHp, life, rng, atkCd, mv, dash, dashDur, dashCd, reduce, regen, regenOOC, thermal, howlR;
         public int venom, bleed;
         public bool bite, scent, kick, howl, cold, camo, thermalOn, constrict, digest, bellow, antler, charge;
 
@@ -378,7 +381,7 @@ public class CreatureBody : MonoBehaviour
         {
             dmg = Mathf.Max(a.dmg, b.dmg), maxHp = Mathf.Max(a.maxHp, b.maxHp), life = Mathf.Max(a.life, b.life),
             rng = Mathf.Max(a.rng, b.rng), atkCd = Mathf.Min(a.atkCd, b.atkCd),
-            mv = Mathf.Max(a.mv, b.mv), dash = Mathf.Max(a.dash, b.dash), dashCd = Mathf.Min(a.dashCd, b.dashCd),
+            mv = Mathf.Max(a.mv, b.mv), dash = Mathf.Max(a.dash, b.dash), dashDur = Mathf.Max(a.dashDur, b.dashDur), dashCd = Mathf.Min(a.dashCd, b.dashCd),
             reduce = Mathf.Max(a.reduce, b.reduce), regen = Mathf.Max(a.regen, b.regen),
             regenOOC = Mathf.Max(a.regenOOC, b.regenOOC), thermal = Mathf.Max(a.thermal, b.thermal),
             howlR = Mathf.Max(a.howlR, b.howlR),
@@ -422,6 +425,7 @@ public class CreatureBody : MonoBehaviour
                     atkCd = Blend(h.atkCooldown, b.atkCooldown, m),
                     mv = Blend(h.moveSpeed, b.moveSpeed, m),
                     dash = Blend(h.dashSpeed, b.dashSpeed, m),
+                    dashDur = b.dashDuration,     // длина рывка — фикс-фича ног (не блендим: овершут не удлиняет рывок)
                     dashCd = Blend(h.dashCooldown, b.dashCooldown, m),
                     reduce = Blend(h.damageReduction, b.damageReduction, m),
                     regen = Blend(h.regen, b.regen, m),
@@ -446,7 +450,7 @@ public class CreatureBody : MonoBehaviour
                 {
                     dmg = h.damage * e, maxHp = h.maxHp * e, life = h.lifeSteal * e,
                     venom = h.venomStacks, bleed = h.bleedStacks,
-                    rng = h.range, atkCd = h.atkCooldown, mv = h.moveSpeed * e, dash = h.dashSpeed * e,
+                    rng = h.range, atkCd = h.atkCooldown, mv = h.moveSpeed * e, dash = h.dashSpeed * e, dashDur = h.dashDuration,
                     dashCd = h.dashCooldown, reduce = h.damageReduction * e, regen = h.regen * e,
                     regenOOC = h.regenOOC * e, thermal = h.thermalRange, howlR = h.howlRadius,
                     bite = h.enablesBite, scent = h.enablesScent, kick = h.enablesKick,
@@ -463,7 +467,7 @@ public class CreatureBody : MonoBehaviour
 
         // суммирование групп; урон группы «Пасть» принадлежит УКУСУ, не мечу
         float dmgF = 0f, dmgBiteF = 0f, maxHpF = 0f, lifeF = 0f;
-        float rng = 0f, atkCd = 0f, mv = 0f, dash = 0f, dashCd = 0f, reduce = 0f, regen = 0f, regenOOC = 0f, thermal = 0f, howlR = 0f;
+        float rng = 0f, atkCd = 0f, mv = 0f, dash = 0f, dashDur = 0f, dashCd = 0f, reduce = 0f, regen = 0f, regenOOC = 0f, thermal = 0f, howlR = 0f;
         int venom = 0, bleed = 0;
         bool biteOn = false, scentOn = false, kickOn = false, howlOn = false, coldOn = false, camoOn = false,
              thermalOn = false, constrictOn = false, digestOn = false, bellowOn = false, antlerOn = false, chargeOn = false;
@@ -472,7 +476,7 @@ public class CreatureBody : MonoBehaviour
             var c = kv.Value;
             if (kv.Key == "Пасть") dmgBiteF += c.dmg; else dmgF += c.dmg;
             maxHpF += c.maxHp; lifeF += c.life; venom += c.venom; bleed += c.bleed;
-            rng += c.rng; atkCd += c.atkCd; mv += c.mv; dash += c.dash; dashCd += c.dashCd;
+            rng += c.rng; atkCd += c.atkCd; mv += c.mv; dash += c.dash; dashDur += c.dashDur; dashCd += c.dashCd;
             reduce += c.reduce; regen += c.regen; regenOOC += c.regenOOC; thermal += c.thermal;
             howlR = Mathf.Max(howlR, c.howlR);
             biteOn |= c.bite; scentOn |= c.scent; kickOn |= c.kick; howlOn |= c.howl;
@@ -516,7 +520,7 @@ public class CreatureBody : MonoBehaviour
         }
         if (move != null)
         {
-            move.SetLegs(mv, dash);
+            move.SetLegs(mv, dash, dashDur);
             move.SetDashCooldown(Mathf.Max(0.05f, dashCd));
         }
         if (health != null && applyVitals) // у босса витальность — «конституция» психики
@@ -651,11 +655,25 @@ public class CreatureBody : MonoBehaviour
         return null;
     }
 
-    /// <summary>Градация признания вида: нет / слабое (≥75%) / среднее (≥90%) / сильное (100%).</summary>
+    /// <summary>Градация признания вида по ЭФФЕКТИВНОЙ идентичности (база − эрозия предательства): нет /
+    /// слабое (≥weakAt) / среднее (≥mediumAt) / сильное (≈1). Кины судят игрока именно так — эрозия от
+    /// ударов по своим просаживает признание, и «свой» становится чужим (Betrayal).</summary>
     public KinTier Tier(SpeciesSO species)
     {
-        float k = Identity(species);
+        float k = Identity(species) - (betrayal != null ? betrayal.Erosion(species) : 0f);
         return k >= 0.999f ? KinTier.Strong : k >= mediumAt ? KinTier.Medium : k >= weakAt ? KinTier.Weak : KinTier.None;
+    }
+
+    /// <summary>УДАР ПО ЦЕЛИ: если по составу это мой вид — подорвать признание своего вида в её глазах
+    /// (стак эрозии, см. Betrayal). Гейт по СЫРОЙ идентичности (не эффективной): пока ты их вида —
+    /// непрерывные удары держат признание просевшим; перестал бить — стаки гаснут, признание вернулось.
+    /// Химера (ни к кому не кин) не копит ничего — своих у неё нет.</summary>
+    public void NoteHit(Health other)
+    {
+        if (betrayal == null || other == null) return;
+        var ob = other.GetComponent<CreatureBody>();
+        var sp = ob != null ? ob.Chassis : null;
+        if (sp != null && Identity(sp) >= weakAt) betrayal.Hit(sp); // копим только против видов, что признают по составу
     }
 
     /// <summary>КИН-ЦЕЛЬ: самый близкий признанный вид (для rally носителей K2/K3). null = ХИМЕРА —

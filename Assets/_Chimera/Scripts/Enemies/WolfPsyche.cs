@@ -109,7 +109,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     float nextMooseScan;
     bool mooseHunting;              // грызли тушу — на потере вернуть доставки на игрока
     CreatureBody body;              // своё тело — для кин-проверки (мой вид = шасси)
-    float nextKinCheck, betrayedUntil; // K3a: игрок-кин не цель; удар от «своего» = ПРЕДАТЕЛЬСТВО (обида)
+    float nextKinCheck; // K3a: игрок-кин не цель (обида-эрозия признания живёт на теле игрока — Betrayal)
     bool playerIsKin;
     [SerializeField] float followDuration = 30f; // ПРИЗЫВ: сколько идём ЗА кин-игроком после его воя (повторный вой продлевает)
     float followUntil;
@@ -296,12 +296,14 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     // В бою с видимой целью и в ярости не паникуем; из стана не убежать (гейт в Update)
     void OnHurt()
     {
-        // ПРЕДАТЕЛЬСТВО (K3a): удар от «своего» (кин-игрока) — обида снимает нейтралитет надолго
+        // ПРЕДАТЕЛЬСТВО (K3a): удар от «своего» (кин-игрока) — это НЕ засада, а предательство. Пере-проверить
+        // признание (эрозия могла флипнуть в чужого) и НЕ паниковать: реакцию ведёт эрозия (кин→враг → драка),
+        // а не страх. Иначе кин-волк от открытого удара «друга» просто пугался и убегал, вместо того чтобы озлобиться.
         if (playerIsKin && ownHealth != null && ReferenceEquals(ownHealth.LastAttacker, playerHealth))
-        { betrayedUntil = Time.time + 20f; playerIsKin = false; nextKinCheck = 0f; }
+        { nextKinCheck = 0f; return; }
 
         if (Engaged || mooseTarget != null) return; // враг ВИДЕН (игрок/туша в бою) — не паника, честная драка
-        if (morale != null) morale.Add(-1f); // удар из невидимости — −вклад (единая арифметика)
+        if (morale != null) morale.Add(-1f); // удар из невидимости (змея из засады, в спину) — −вклад (единая арифметика)
     }
 
     void OnEnable()
@@ -341,9 +343,8 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         if (Time.time >= nextKinCheck)
         {
             nextKinCheck = Time.time + 0.5f;
-            playerIsKin = Time.time >= betrayedUntil
-                && body != null && body.Chassis != null && CreatureBody.PlayerBody != null
-                && CreatureBody.PlayerBody.Tier(body.Chassis) != KinTier.None;
+            playerIsKin = body != null && body.Chassis != null && CreatureBody.PlayerBody != null
+                && CreatureBody.PlayerBody.Tier(body.Chassis) != KinTier.None; // Tier = эффективный (учёл эрозию)
         }
 
         bool routing = Routing; // личная паника сломлена → бегство (в ярости от воя не бежим)
