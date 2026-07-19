@@ -185,7 +185,7 @@ public class DebugHud : MonoBehaviour
         if (bellow == null && player != null) player.TryGetComponent(out bellow); // тело до-создаёт после нашего Start
         if (bellow != null && bellow.BellowEnabled) abil.Add("РЁВ Alt");
         var antler = player != null ? player.GetComponent<PlayerAntler>() : null;
-        if (antler != null && antler.AntlerEnabled) abil.Add("рога E");
+        if (antler != null && antler.AntlerEnabled) abil.Add("рога R");
         var charge = player != null ? player.GetComponent<PlayerCharge>() : null;
         if (charge != null && charge.ChargeEnabled) abil.Add("таран (рывок)");
         GUI.Label(new Rect(14, 154, 900, 26), $"Способности: {string.Join(" · ", abil)}", style);

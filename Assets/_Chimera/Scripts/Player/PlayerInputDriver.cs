@@ -4,7 +4,7 @@ using UnityEngine.InputSystem;
 
 /// <summary>
 /// Водитель игрока: читает ввод и дёргает приёмы-способности (IAbility) на теле. Сами приёмы ввод
-/// больше не читают — активацию решает драйвер (симметрично будущей психике ИИ). ЛКМ→меч, Q→укус, E→пинок.
+/// больше не читают — активацию решает драйвер (симметрично будущей психике ИИ). ЛКМ→меч, Q→укус, E→пинок, R→рога.
 /// Плюс хоткеи химеризации (1–6) — по данным слотов тела (CreatureBody.ToggleSlot).
 /// </summary>
 [RequireComponent(typeof(PlayerAttack))]
@@ -18,7 +18,7 @@ public class PlayerInputDriver : MonoBehaviour
     PlayerAntler antler;
     PlayerConstrict constrict;
     CreatureBody body;
-    InputAction attackAction, biteAction, kickAction, howlAction, constrictAction;
+    InputAction attackAction, biteAction, kickAction, howlAction, constrictAction, antlerAction;
     readonly List<(InputAction action, int slot)> slotActions = new();
 
     void Awake()
@@ -46,6 +46,11 @@ public class PlayerInputDriver : MonoBehaviour
         kickAction = new InputAction("Kick", InputActionType.Button);
         kickAction.AddBinding("<Keyboard>/e");
         kickAction.AddBinding("<Gamepad>/buttonEast");
+
+        // R / Y (buttonNorth) на геймпаде (удар рогами — придаток лося в химерном слоте; вынесен с E, чтобы не делить с пинком)
+        antlerAction = new InputAction("Antler", InputActionType.Button);
+        antlerAction.AddBinding("<Keyboard>/r");
+        antlerAction.AddBinding("<Gamepad>/buttonNorth");
 
         // Alt / правый шифтер (вой-стан — фича волчьей Пасти)
         howlAction = new InputAction("Howl", InputActionType.Button);
@@ -87,13 +92,13 @@ public class PlayerInputDriver : MonoBehaviour
 
     void OnEnable()
     {
-        attackAction.Enable(); biteAction.Enable(); kickAction.Enable(); howlAction.Enable(); constrictAction.Enable();
+        attackAction.Enable(); biteAction.Enable(); kickAction.Enable(); howlAction.Enable(); constrictAction.Enable(); antlerAction.Enable();
         foreach (var (a, _) in slotActions) a.Enable();
     }
 
     void OnDisable()
     {
-        attackAction.Disable(); biteAction.Disable(); kickAction.Disable(); howlAction.Disable(); constrictAction.Disable();
+        attackAction.Disable(); biteAction.Disable(); kickAction.Disable(); howlAction.Disable(); constrictAction.Disable(); antlerAction.Disable();
         foreach (var (a, _) in slotActions) a.Disable();
     }
 
@@ -109,12 +114,12 @@ public class PlayerInputDriver : MonoBehaviour
 
         if (attackAction.WasPressedThisFrame()) melee.TryUse();
         if (bite != null && biteAction.WasPressedThisFrame()) bite.TryUse();
-        // E = ОТКИДЫВАНИЕ: человечьи ноги — пинок, рога-придаток — удар рогами (спека: «пинок повесим на
-        // откидывание рогами»); есть оба — бьют оба. Каждый сам гейтит Enabled/кулдаун (диспатч как у голоса)
-        if (kickAction.WasPressedThisFrame())
+        // E = ПИНОК (человечьи ноги). Рога вынесены на отдельную R (ниже) — чтобы не делить кнопку с пинком
+        if (kickAction.WasPressedThisFrame()) kick?.TryUse();
+        // R = УДАР РОГАМИ (придаток лося, химерный слот). Сам гейтит Enabled/кулдаун
+        if (antlerAction.WasPressedThisFrame())
         {
             if (antler == null) antler = GetComponent<PlayerAntler>(); // тело могло до-создать после Awake
-            kick?.TryUse();
             antler?.TryUse();
         }
         // Alt = ГОЛОС: звучит ВСЁ, что тело умеет (правило дублей — объединение, не выбор): волчья Пасть —
