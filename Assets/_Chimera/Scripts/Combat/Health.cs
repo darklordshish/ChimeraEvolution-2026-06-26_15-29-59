@@ -23,6 +23,8 @@ public class Health : MonoBehaviour
     public void MarkInCombat(float seconds = 1f) => combatUntil = Mathf.Max(combatUntil, Time.time + seconds);
     public int OverhealCap { get; set; }         // на сколько можно перелечиться свыше макс. (temp HP боссa; не регенится)
     public Health LastAttacker { get; set; }     // кто ударил последним: родство за смерть — УБИЙЦЕ (ставят Hit.Apply/яд/удушение)
+    public int LastRawDamage { get; private set; } // сила последнего удара ДО брони/множителей: правила «сбил ли меня удар»
+                                                   // (срыв захвата) не должны зависеть от МОЕЙ брони — иначе толстая шкура «помогает» держать
 
     public UnityEvent onDamaged = new(); // = new(), чтобы не были null при AddComponent в рантайме (босс)
     public UnityEvent onDeath = new();
@@ -85,6 +87,7 @@ public class Health : MonoBehaviour
     {
         if (dead || amount <= 0) return;
         if (Invulnerable && !ignoreInvuln) return;
+        LastRawDamage = amount; // до брони — по нему судят «это был УДАР» (укус 8) или «тик» (яд 3)
 
         if (rage == null) TryGetComponent(out rage);
         if (venom == null) TryGetComponent(out venom);

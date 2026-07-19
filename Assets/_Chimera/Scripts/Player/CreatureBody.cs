@@ -374,6 +374,7 @@ public class CreatureBody : MonoBehaviour
         public float dmg, maxHp, life, rng, atkCd, mv, dash, dashDur, dashCd, reduce, regen, regenOOC, thermal, howlR;
         public int venom, bleed;
         public bool bite, scent, kick, howl, cold, camo, thermalOn, constrict, digest, bellow, antler, charge;
+        public bool constrictNative; // хват на РОДНОМ шасси (nativeChassis == шасси тела) → открыта ст.3 удушения
 
         // СУПРЕМУМ дублей одного типа слота: скаляры — max (кулдауны — min: меньше = лучше), флаги — OR.
         // Дубль оси силу НЕ растит (второе сердце ≠ ×2 регена) — окупается только НОВЫМ направлением.
@@ -389,6 +390,7 @@ public class CreatureBody : MonoBehaviour
             bite = a.bite || b.bite, scent = a.scent || b.scent, kick = a.kick || b.kick,
             howl = a.howl || b.howl, cold = a.cold || b.cold, camo = a.camo || b.camo,
             thermalOn = a.thermalOn || b.thermalOn, constrict = a.constrict || b.constrict,
+            constrictNative = a.constrictNative || b.constrictNative,
             digest = a.digest || b.digest, bellow = a.bellow || b.bellow, antler = a.antler || b.antler,
             charge = a.charge || b.charge,
         };
@@ -435,6 +437,7 @@ public class CreatureBody : MonoBehaviour
                     howl = b.enablesHowl, cold = b.coldBlooded, camo = b.camo, thermalOn = b.enablesThermal,
                     constrict = b.enablesConstrict, digest = b.digestion, bellow = b.enablesBellow, antler = b.enablesAntler,
                     charge = b.enablesCharge,
+                    constrictNative = b.enablesConstrict && chassis != null && b.nativeChassis == chassis.speciesName,
                 };
                 key = b.slot; // дубль типа (второе Сердце) идёт в ту же группу — супремум
                 beast++;
@@ -457,6 +460,7 @@ public class CreatureBody : MonoBehaviour
                     howl = h.enablesHowl, cold = h.coldBlooded, camo = h.camo, thermalOn = h.enablesThermal,
                     constrict = h.enablesConstrict, digest = h.digestion, bellow = h.enablesBellow, antler = h.enablesAntler,
                     charge = h.enablesCharge,
+                    constrictNative = h.enablesConstrict && chassis != null && h.nativeChassis == chassis.speciesName,
                 };
                 key = h.slot;
             }
@@ -470,7 +474,8 @@ public class CreatureBody : MonoBehaviour
         float rng = 0f, atkCd = 0f, mv = 0f, dash = 0f, dashDur = 0f, dashCd = 0f, reduce = 0f, regen = 0f, regenOOC = 0f, thermal = 0f, howlR = 0f;
         int venom = 0, bleed = 0;
         bool biteOn = false, scentOn = false, kickOn = false, howlOn = false, coldOn = false, camoOn = false,
-             thermalOn = false, constrictOn = false, digestOn = false, bellowOn = false, antlerOn = false, chargeOn = false;
+             thermalOn = false, constrictOn = false, digestOn = false, bellowOn = false, antlerOn = false, chargeOn = false,
+             constrictNativeOn = false;
         foreach (var kv in groups)
         {
             var c = kv.Value;
@@ -482,6 +487,7 @@ public class CreatureBody : MonoBehaviour
             biteOn |= c.bite; scentOn |= c.scent; kickOn |= c.kick; howlOn |= c.howl;
             coldOn |= c.cold; camoOn |= c.camo; thermalOn |= c.thermalOn; constrictOn |= c.constrict;
             digestOn |= c.digest; bellowOn |= c.bellow; antlerOn |= c.antler; chargeOn |= c.charge;
+            constrictNativeOn |= c.constrictNative;
         }
         int dmg = Mathf.RoundToInt(dmgF), dmgBite = Mathf.RoundToInt(dmgBiteF);
         int maxHp = Mathf.RoundToInt(maxHpF), life = Mathf.RoundToInt(lifeF);
@@ -499,7 +505,11 @@ public class CreatureBody : MonoBehaviour
         float voiceMult = Mathf.Max(1f, move != null ? BonusMult : expression);
         float howlReach = howlR * voiceMult;
         if (howl != null) { howl.HowlEnabled = howlOn; howl.SetReach(howlReach); } // вой-стан — фича волчьей Пасти
-        if (constrictAb != null) constrictAb.ConstrictEnabled = constrictOn; // обхват — фича Удушающего хвоста (химерный слот)
+        if (constrictAb != null)
+        {
+            constrictAb.ConstrictEnabled = constrictOn;               // обхват — фича Хвоста (химерный слот)
+            constrictAb.SetMaxStage(constrictNativeOn ? 3 : 2);       // РОДНОЕ ШАССИ (nativeChassis): своё → ст.3 (партер+чок), чужое → кап ст.2
+        }
         if (bellowAb != null) bellowAb.BellowEnabled = bellowOn;             // РЁВ — фича Глотки лося (K2)
         if (antlerAb != null) antlerAb.AntlerEnabled = antlerOn;             // РОГА — фича придатка «Рога» (химерный слот)
         if (chargeAb != null) chargeAb.ChargeEnabled = chargeOn;             // ТАРАН — фича «Лосиных ног» (рывок горит)

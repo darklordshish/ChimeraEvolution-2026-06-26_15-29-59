@@ -57,7 +57,7 @@ public class PlayerInputDriver : MonoBehaviour
         howlAction.AddBinding("<Keyboard>/leftAlt");
         howlAction.AddBinding("<Gamepad>/rightShoulder");
 
-        // F / левый триггер (обхват — фича Удушающего хвоста; повторное F = отпустить)
+        // F / левый триггер (захват — фича органа «Хвост»; повторное F = отпустить)
         constrictAction = new InputAction("Constrict", InputActionType.Button);
         constrictAction.AddBinding("<Keyboard>/f");
         constrictAction.AddBinding("<Gamepad>/leftTrigger");

@@ -65,7 +65,7 @@ public static class SpeciesBootstrap
             new Organ { organName = "Тело-хвост",           slot = "Тело",   hotkey = "7", cost = 5, moveSpeed = 10f, dashSpeed = 20f, chassisOnly = true, digestion = true }, // ходовая часть ШАССИ змеи: аугументом не крадётся (локомоция = свойство шасси) + ПЕРЕВАРИВАНИЕ (глотание целиком = свойство змеиного тела)
             new Organ { organName = "Чешуя",                slot = "Шкура",  hotkey = "6", cost = 4, damageReduction = 0.25f, camo = true }, // лёгкая броня: стелс+яд+одиночная охота компенсируют (D-тюнинг)
             new Organ { organName = "Пит-орган",            slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.7f, enablesThermal = true, thermalRange = 14f }, // тепло сквозь стены; dashCd обязателен (0 = спам рывка)
-            new Organ { organName = "Змеиный хвост",        slot = "Хвост",  hotkey = "8", cost = 5, enablesConstrict = true }, // АУГУМЕНТ игроку (обхват); у человека слота «Хвост» нет → только химерный слот. «Тело-хвост» выше — ходовая часть ШАССИ змеи, не путать
+            new Organ { organName = "Хвост",                slot = "Хвост",  hotkey = "8", cost = 5, enablesConstrict = true, nativeChassis = "Змея" }, // АУГУМЕНТ игроку (обхват); nativeChassis=Змея → ст.3 удушения только на змеином шасси (у человека кап ст.2). «Тело-хвост» выше — ходовая часть ШАССИ змеи, не путать
         };
         EditorUtility.SetDirty(snake);
 
