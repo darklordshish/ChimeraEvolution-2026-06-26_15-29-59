@@ -33,6 +33,7 @@ MonoBehaviour:
     damageReduction: 0
     regen: 0
     regenOOC: 0
+    dashDuration: 0
     thermalRange: 0
     howlRadius: 0
     enablesBite: 0
@@ -65,6 +66,7 @@ MonoBehaviour:
     damageReduction: 0
     regen: 0
     regenOOC: 0
+    dashDuration: 0
     thermalRange: 0
     howlRadius: 0
     enablesBite: 0
@@ -97,6 +99,7 @@ MonoBehaviour:
     damageReduction: 0
     regen: 0
     regenOOC: 0.75
+    dashDuration: 0
     thermalRange: 0
     howlRadius: 0
     enablesBite: 0
@@ -129,6 +132,7 @@ MonoBehaviour:
     damageReduction: 0
     regen: 0
     regenOOC: 0
+    dashDuration: 0
     thermalRange: 0
     howlRadius: 0
     enablesBite: 0
@@ -161,6 +165,7 @@ MonoBehaviour:
     damageReduction: 0
     regen: 0
     regenOOC: 0
+    dashDuration: 0
     thermalRange: 0
     howlRadius: 0
     enablesBite: 0
@@ -193,6 +198,7 @@ MonoBehaviour:
     damageReduction: 0
     regen: 0
     regenOOC: 0
+    dashDuration: 0
     thermalRange: 0
     howlRadius: 0
     enablesBite: 0

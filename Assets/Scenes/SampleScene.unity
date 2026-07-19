@@ -998,16 +998,22 @@ MonoBehaviour:
   donors:
   - {fileID: 11400000, guid: 0c6b11574869a6b44a321162414452d6, type: 2}
   - {fileID: 11400000, guid: dab52963bf459da4b934b85751aeac96, type: 2}
+  - {fileID: 11400000, guid: 7da515edc0cffd54d8872e9a26ca33e1, type: 2}
   discountPerAffinity: 0.01
   maxDiscount: 0.8
   bonusStartAffinity: 80
   bonusFullAffinity: 100
   maxBonusMult: 2
+  maxDamageReduction: 0.6
+  minAtkCooldown: 0.2
   chimeraSlots: 0
   chimeraSlotMult: 2
   installAllBeast: 0
   expression: 0
   applyVitals: 1
+  chassisIdentityWeight: 0.1
+  weakAt: 0.65
+  mediumAt: 0.85
 --- !u!114 &1083135099
 MonoBehaviour:
   m_ObjectHideFlags: 0

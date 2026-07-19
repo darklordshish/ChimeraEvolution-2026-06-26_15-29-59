@@ -703,11 +703,11 @@ MonoBehaviour:
   windupTime: 0.5
   gravity: -20
   minRange: 4
-  maxRange: 12
-  chargeSpeed: 16
-  duration: 0.7
+  maxRange: 18
+  chargeSpeed: 35
+  duration: 1.1
   damage: 22
-  damagePerMeter: 1.5
+  damagePerMeter: 1
   hitRadius: 1.8
   knockForce: 12
   staggerTime: 0.5

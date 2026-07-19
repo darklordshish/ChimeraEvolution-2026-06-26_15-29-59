@@ -77,7 +77,7 @@ public static class SpeciesBootstrap
         moose.organs = new[]
         {
             new Organ { organName = "Копыто",         slot = "Руки",   hotkey = "1", cost = 5, damage = 22, range = 1.8f }, // удар копытом — оружие
-            new Organ { organName = "Лосиные ноги",   slot = "Ноги",   hotkey = "2", cost = 5, moveSpeed = 5f, dashSpeed = 22f, enablesCharge = true }, // длинные ноги: шаг ровный, а рывок = мощный ТАРАН (урон+откидывание по пути)
+            new Organ { organName = "Лосиные ноги",   slot = "Ноги",   hotkey = "2", cost = 5, moveSpeed = 5f, dashSpeed = 35f, dashDuration = 0.38f, enablesCharge = true }, // длинные ноги: шаг ровный, а рывок = ДЛИННЫЙ мощный ТАРАН (35 > волчьих 30 + вдвое дольше → прёт быстро и далеко)
             new Organ { organName = "Глотка",         slot = "Пасть",  hotkey = "5", cost = 4, enablesBellow = true }, // РЁВ (K2): кин-лоси в берсерк на месте, чужим страх
             new Organ { organName = "Слух",           slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.7f }, // слух/зрение — модуль слуха в срезе B
             new Organ { organName = "Лосиное сердце", slot = "Сердце", hotkey = "3", cost = 6, maxHp = 260, regen = 1f, regenOOC = 0f, atkCooldown = 0.5f }, // много HP

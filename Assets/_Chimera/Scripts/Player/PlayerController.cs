@@ -33,7 +33,7 @@ public class PlayerController : MonoBehaviour
     Health health;
     InputAction moveAction, lookAction, dashAction, toggleViewAction, sneakAction;
     Vector3 velocity;
-    float dashTimer, dashReadyAt, groundY;
+    float dashTimer, dashReadyAt, groundY, legDashOverride; // legDashOverride: длинный рывок лосиных ног (0 = дефолт dashDuration)
     Vector3 dashDir;
     IGrabber grabber;        // волк/змея, держащий игрока в захвате
     float grabSlow = 1f;     // множитель скорости И рывка, пока в захвате (1 = свободно; 0 = корень на 3-й стадии обхвата)
@@ -113,7 +113,7 @@ public class PlayerController : MonoBehaviour
         // рывок
         if (dashAction.WasPressedThisFrame() && Time.time >= dashReadyAt && dashTimer <= 0f)
         {
-            dashTimer = dashDuration;
+            dashTimer = legDashOverride > 0f ? legDashOverride : dashDuration; // лосиные ноги — длиннее (таран прёт дальше)
             dashReadyAt = Time.time + dashCooldown;
             dashDir = move.sqrMagnitude > 0.01f ? move.normalized : transform.forward;
             // срываемся рывком: держащий решает, отпустит ли (змея на поздних стадиях обхвата — нет). Иммун — всегда свободен.
@@ -159,10 +159,11 @@ public class PlayerController : MonoBehaviour
     }
 
     // конструктор меняет мобильность при смене органа в слоте «Ноги»
-    public void SetLegs(float newMoveSpeed, float newDashSpeed)
+    public void SetLegs(float newMoveSpeed, float newDashSpeed, float newDashDuration = 0f)
     {
         moveSpeed = newMoveSpeed;
         dashSpeed = newDashSpeed;
+        legDashOverride = newDashDuration; // 0 → рывок на дефолтной длине (короткий); >0 → длинный (лосиные)
     }
 
     // слот «Чутьё»: быстрее откат рывка
