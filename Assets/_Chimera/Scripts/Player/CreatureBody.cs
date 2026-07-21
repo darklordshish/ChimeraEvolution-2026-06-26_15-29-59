@@ -37,24 +37,39 @@ public class CreatureBody : MonoBehaviour
     [Header("NPC-режим (тело как данные)")]
     [SerializeField] bool installAllBeast;    // все звериные органы надеты с рождения (вервольф — застывшая химера)
     [FormerlySerializedAs("fixedBonusMult")]
+    [Header("Чувства игрока (профиль Senses; у NPC — на префабе)")]
+    [SerializeField] float sightRange = 30f;  // ЗРЕНИЕ игрока: глаза при нём всегда, органом не выдаётся
+    [SerializeField] float scentRange = 22f;  // дальность НЮХА, когда надето волчье Чутьё (тюнинг здесь, не в органе)
+
+    // UNITY-ГОЧА: НОВОЕ сериализованное поле у компонента, УЖЕ лежащего в сцене/префабе, приходит НУЛЁМ —
+    // инициализатор из кода применяется только к свежесозданным объектам. Поэтому 0 читаем как «не настроено»
+    // и подставляем дефолт, иначе чувство молча выключается (зрение 0 = слепой игрок без единой ошибки в консоли)
+    float SightRange => sightRange > 0f ? sightRange : 30f;
+    float ScentRange => scentRange > 0f ? scentRange : 22f;
+
     [SerializeField] float expression;        // ЭКСПРЕССИЯ: насколько раскрыты гены зверя. 0 = авто (кривая родства);
                                               // >0 фикс: вервольф 2 (= потолок игрока), природный волк ~0.45 (без сыворотки)
     [SerializeField] bool applyVitals = true; // false: HP/броня/реген — «конституция» психики, тело их не трогает
 
-    // вариант органа для слота: орган конкретного донора (мультидонор: волчий ИЛИ змеиный на один слот)
-    class Variant { public Organ organ; public string species; }
+    // вариант органа для слота: орган конкретного вида (мультидонор: волчий ИЛИ змеиный на один слот).
+    // native — орган ШАССИ («человеческий»): он и выбираемый вариант, и база экспрессии слота
+    class Variant { public Organ organ; public string species; public bool native; }
 
     class Slot
     {
         public string name, hotkey;                     // хоткей задаёт ШАССИ — раскладка стабильна при любых донорах
-        public Organ human;                             // орган шасси (дефолт слота); у ХИМЕРНОГО слота = null (пусто)
-        public bool chimera;                            // универсальный доп-слот: любой донорский орган, цена ×chimeraSlotMult
-        public readonly List<Variant> variants = new(); // звериные альтернативы по всем донорам
-        public int current = -1;                        // -1 = человеческий/пусто; иначе индекс в variants
+        public bool chimera;                            // универсальный доп-слот: любой орган, цена ×chimeraSlotMult
+        public readonly List<Variant> variants = new(); // ВСЕ варианты, включая человеческий (у не-химерного он индекс 0)
+        public int current = -1;                        // индекс варианта; -1 = ПУСТО (бывает только у химерного)
 
-        public bool Installed => current >= 0;
-        public Organ Beast => current >= 0 ? variants[current].organ : null;
-        public string DonorSpecies => current >= 0 ? variants[current].species : null;
+        public Variant Pick => current >= 0 ? variants[current] : null;
+        public Organ Worn => current >= 0 ? variants[current].organ : null;   // что реально надето (в т.ч. человеческое)
+        public bool Empty => current < 0;                                     // пустой химерный слот
+
+        // «Installed» = надет ЗВЕРИНЫЙ орган (человеческий не считается химеризацией — шкала мозга не дрейфует)
+        public bool Installed => current >= 0 && !variants[current].native;
+        public Organ Beast => Installed ? variants[current].organ : null;
+        public string DonorSpecies => Installed ? variants[current].species : null;
     }
 
     Slot[] slots;
@@ -72,6 +87,7 @@ public class CreatureBody : MonoBehaviour
     PlayerAntler antlerAb;  // рога (придаток лося, химерный слот) — до-создаём игроку, включаем сборкой
     PlayerCharge chargeAb;  // таран (Лосиные ноги) — до-создаём игроку, включаем сборкой
     Betrayal betrayal;      // подрыв признания: удар по кину копит эрозию (только у игрока)
+    Senses senses;          // профиль чувств ИГРОКА (каналы от сборки); у NPC он приходит с префаба
     Digestion digestComp;   // переваривание (Тело-хвост змеи, chassisOnly) — вешаем/снимаем по сборке
     Renderer[] renderers;
     MaterialPropertyBlock mpb;
@@ -107,10 +123,9 @@ public class CreatureBody : MonoBehaviour
     /// <summary>Расширить пул мутагена (награда суперхимеры). Живо в рантайме.</summary>
     public void ExpandPool(int n) { poolBonus += n; Recompute(); }
     public int PoolUsed { get { int s = 0; if (slots != null) foreach (var sl in slots) s += SlotCost(sl); return s; } }
-    // каждый слот занимает пул; ЧЕЛОВЕЧЕСКИЙ слот — тоже со скидкой родства с шасси (честно: человек — вид,
-    // просто ты на нём на 100 родства → −80%). Пустой химерный = 0.
-    int SlotCost(Slot sl) => sl.Installed ? CostOf(sl, sl.variants[sl.current])
-                                          : (sl.human != null ? EffectiveCost(sl.human, chassis != null ? chassis.speciesName : "") : 0);
+    // каждый слот занимает пул; РОДНОЙ орган — тоже со скидкой родства с шасси (честно: человек — вид,
+    // просто ты на нём на 100 родства → −80%). Пустой химерный = 0. Одна ветка: родной орган — обычный вариант
+    int SlotCost(Slot sl) => sl.Empty ? 0 : CostOf(sl, sl.variants[sl.current]);
     int CostOf(Slot sl, Variant v) => Mathf.CeilToInt(EffectiveCost(v.organ, v.species) * (sl.chimera ? chimeraSlotMult : 1f)); // химерный слот — дорогой «графт»
     public int MaxSlots => slots != null ? slots.Length : 0;
     public int BeastSlots { get { int n = 0; if (slots != null) foreach (var sl in slots) if (sl.Installed) n++; return n; } }
@@ -124,7 +139,7 @@ public class CreatureBody : MonoBehaviour
             var lines = new List<string>();
             foreach (var sl in slots)
             {
-                string cur = sl.Installed ? sl.Beast.organName : (sl.human != null ? sl.human.organName : "—"); // пустой химерный
+                string cur = sl.Empty ? "—" : sl.Worn.organName; // «—» = пустой химерный
                 lines.Add($"{sl.hotkey} {sl.name}: {cur} ({SlotCost(sl)}){(sl.Installed ? "  ✓" : "")}");
             }
             return string.Join("\n", lines);
@@ -156,14 +171,74 @@ public class CreatureBody : MonoBehaviour
             unaffordable = unaffordable,
             slot = sl.name,
             hotkey = sl.hotkey,
-            organName = sl.Installed ? sl.Beast.organName : (sl.human != null ? sl.human.organName : "—"), // пустой химерный слот
+            organName = sl.Empty ? "—" : sl.Worn.organName, // «—» = пустой химерный слот
             cost = SlotCost(sl),
             installed = sl.Installed,
-            hasBeast = sl.variants.Count > 0,
+            hasBeast = sl.variants.Count > 1,               // родной орган тоже вариант → «есть выбор» от двух
             canToggle = sl.variants.Count > 0 && next != sl.current,
-            nextName = next >= 0 ? sl.variants[next].organ.organName : (sl.human != null ? sl.human.organName : "—"),
-            nextCost = next >= 0 ? CostOf(sl, sl.variants[next]) : (sl.human != null ? sl.human.cost : 0),
+            nextName = next >= 0 ? sl.variants[next].organ.organName : "—",
+            nextCost = next >= 0 ? CostOf(sl, sl.variants[next]) : 0,
         };
+    }
+
+    /// <summary>Слепок ВАРИАНТА для UI — одна «звезда»: орган вида, цена со скидкой родства, доступность.</summary>
+    public struct VariantView
+    {
+        public string organName, species;
+        public int cost;
+        public bool native;     // родной орган шасси (звезда в созвездии человека)
+        public bool worn;       // сейчас надет в ЭТОМ слоте
+        public bool duplicate;  // этот же орган уже надет в ДРУГОМ слоте — повтор бессмыслен
+        public bool affordable; // влезает в пул с учётом возврата за снимаемый
+    }
+
+    /// <summary>Все варианты слота — для ПРЯМОГО выбора (клик/дроп по звезде) вместо цикла по кругу.
+    /// Цикл остаётся на хоткеях 1–6, но перестаёт быть единственным способом собрать тело.</summary>
+    public List<VariantView> GetVariants(int i)
+    {
+        var res = new List<VariantView>();
+        if (slots == null || i < 0 || i >= slots.Length) return res;
+        var sl = slots[i];
+        for (int v = 0; v < sl.variants.Count; v++)
+        {
+            var vr = sl.variants[v];
+            res.Add(new VariantView
+            {
+                organName = vr.organ.organName,
+                species = vr.species,
+                cost = CostOf(sl, vr),
+                native = vr.native,
+                worn = sl.current == v,
+                duplicate = WornElsewhere(sl, vr),
+                affordable = CanInstall(sl, v),
+            });
+        }
+        return res;
+    }
+
+    /// <summary>Поставить КОНКРЕТНЫЙ вариант в слот (звезда → гнездо). Не влезает в пул — отказ (гнездо краснеет).</summary>
+    public bool Install(int slot, int variant)
+    {
+        if (slots == null || slot < 0 || slot >= slots.Length) return false;
+        var sl = slots[slot];
+        if (variant < 0 || variant >= sl.variants.Count) return false;
+        if (sl.current == variant) return true;      // уже надет — жест не отказ, просто ничего не меняет
+        if (!Available(sl, variant)) return false;   // не по карману ИЛИ такой же орган уже носится
+        sl.current = variant;
+        Recompute();
+        return true;
+    }
+
+    /// <summary>Опустошить ХИМЕРНЫЙ слот (звезда обратно в небо). У обычного слота «снять» = надеть РОДНОЙ
+    /// орган — это `Install` его варианта, отдельной операции больше нет.</summary>
+    public bool Remove(int slot)
+    {
+        if (slots == null || slot < 0 || slot >= slots.Length) return false;
+        var sl = slots[slot];
+        if (!sl.chimera || sl.Empty) return false;
+        sl.current = -1;
+        Recompute();
+        return true;
     }
 
     /// <summary>Выдать универсальный ХИМЕРНЫЙ слот (награда суперхимеры / dev). Живо в рантайме.</summary>
@@ -189,18 +264,29 @@ public class CreatureBody : MonoBehaviour
         Recompute();
     }
 
-    // химерный слот: без человеческой базы, принимает ЛЮБОЙ орган ЛЮБОГО донора (в т.ч. дубль занятого слота)
+    // химерный слот: ДОП-орган сверх шасси — вытеснять нечего, поэтому базы экспрессии нет (раскрытие от нуля).
+    // Принимает ЛЮБОЙ орган ЛЮБОГО вида, ВКЛЮЧАЯ РОДНОЙ (второе человеческое сердце — валидный графт:
+    // «усилиться, не звереть», шкала мозга не дрейфует). Стартует пустым.
     Slot MakeChimeraSlot(int index)
     {
         var sl = new Slot { name = "Химерный", hotkey = (index + 1).ToString(), chimera = true };
+        AddVariants(sl, chassis, null, native: true);   // родные органы — такие же звёзды, как донорские
         if (donors != null)
-            foreach (var d in donors)
-            {
-                if (d == null || d.organs == null) continue;
-                foreach (var o in d.organs)
-                    if (!o.chassisOnly) sl.variants.Add(new Variant { organ = o, species = d.speciesName }); // локомоция шасси не аугумент
-            }
+            foreach (var d in donors) AddVariants(sl, d, null, native: false);
         return sl;
+    }
+
+    // варианты одного вида в слот: только органы нужного типа (slotFilter) или все (null — химерный слот).
+    // chassisOnly-органы (ходовая часть шасси) аугументом не крадутся никогда
+    void AddVariants(Slot sl, SpeciesSO species, string slotFilter, bool native)
+    {
+        if (species == null || species.organs == null) return;
+        foreach (var o in species.organs)
+        {
+            if (o.chassisOnly) continue;
+            if (slotFilter != null && o.slot != slotFilter) continue;
+            sl.variants.Add(new Variant { organ = o, species = species.speciesName, native = native });
+        }
     }
 
     public void ToggleSlot(int i)
@@ -214,6 +300,26 @@ public class CreatureBody : MonoBehaviour
         return PoolUsed - SlotCost(sl) + CostOf(sl, sl.variants[idx]) <= Pool;
     }
 
+    /// <summary>ОДИН ЭКЗЕМПЛЯР ОРГАНА НА ТЕЛО: тот же орган того же вида уже надет в другом слоте.
+    /// Повтор бессмыслен — величины схлопывает супремум, а фичи и так работают с одного экземпляра.
+    /// Дубль ДРУГОГО вида в тот же ТИП слота при этом разрешён и осмыслен: волчья Пасть (вой) в родном
+    /// слоте + змеиные клыки (яд) в химерном = обе фичи. Состав химерного слота из-за этого ДИНАМИЧЕН:
+    /// список вариантов стабилен (индексы не едут), но надетое где-то ещё выпадает из доступных.</summary>
+    bool WornElsewhere(Slot self, Variant v)
+    {
+        if (slots == null) return false;
+        foreach (var sl in slots)
+        {
+            if (sl == self || sl.Empty) continue;
+            var w = sl.Pick;
+            if (w.organ == v.organ && w.species == v.species) return true;
+        }
+        return false;
+    }
+
+    // доступен ли вариант СЕЙЧАС: влезает в пул И не носится в другом слоте
+    bool Available(Slot sl, int idx) => CanInstall(sl, idx) && !WornElsewhere(sl, sl.variants[idx]);
+
     // цена органа со скидкой от НАШЕГО родства с ЕГО видом (родство теперь локальное — у каждого тела своё)
     int EffectiveCost(Organ organ, string species)
     {
@@ -222,16 +328,19 @@ public class CreatureBody : MonoBehaviour
         return Mathf.Max(1, Mathf.CeilToInt(organ.cost * (1f - discount)));
     }
 
-    // следующий достижимый шаг цикла слота: человек → вариант0 → вариант1 → … → человек;
-    // не влезающие в пул варианты пропускаются (снятие в человеческий доступно всегда)
+    // следующий достижимый шаг цикла: по вариантам по кругу (родной орган — такой же шаг, как донорские).
+    // Химерный слот дополнительно можно ОПУСТОШИТЬ (-1); обычный пустым не бывает — без органа нет части тела.
+    // Не влезающие в пул варианты пропускаются молча (UI сообщает об этом через SlotView.unaffordable)
     int NextStep(Slot sl)
     {
         int n = sl.variants.Count;
+        if (n == 0) return sl.current;
+        int lo = sl.chimera ? -1 : 0;
         int idx = sl.current;
         for (int step = 0; step <= n; step++)
         {
-            idx = idx + 1 >= n ? -1 : idx + 1;
-            if (idx == -1 || CanInstall(sl, idx)) return idx;
+            idx = idx + 1 >= n ? lo : idx + 1;
+            if (idx == -1 || Available(sl, idx)) return idx; // надетое в другом слоте цикл пропускает
         }
         return sl.current;
     }
@@ -262,6 +371,13 @@ public class CreatureBody : MonoBehaviour
         // ЗАПАХ — тоже физика любого тела: след вешает ТЕЛО (не каждая психика поштучно — лось однажды остался
         // без запаха). Цвет = состав (Recompute), сила — тюнинг психики (змея приглушает SetStrength)
         if (!TryGetComponent<ScentTrail>(out _)) gameObject.AddComponent<ScentTrail>();
+        // ЧУВСТВА ИГРОКА: он такое же существо, как NPC — со своим профилем каналов, только дальности ему
+        // задаёт СБОРКА, а не вид. NPC получают профиль с префаба/психики, поэтому вешаем лишь игроку
+        if (move != null)
+        {
+            if (!TryGetComponent(out senses)) senses = gameObject.AddComponent<Senses>();
+            Perception.PlayerSenses = senses;
+        }
         // ЭМОЦ-ИНДИКАЦИЯ — тоже тело: ярость/страх подкрашивают (у холоднокровных эмоций нет — тинт молчит сам)
         if (!TryGetComponent<EmotionTint>(out _)) gameObject.AddComponent<EmotionTint>();
         TryGetComponent(out health);
@@ -313,14 +429,13 @@ public class CreatureBody : MonoBehaviour
         var list = new List<Slot>();
         foreach (var h in chassis.organs)
         {
-            var sl = new Slot { name = h.slot, human = h, hotkey = h.hotkey }; // раскладку задаёт шасси
+            var sl = new Slot { name = h.slot, hotkey = h.hotkey }; // раскладку задаёт шасси
+            // РОДНОЙ орган — вариант №0: «снять звериное» стало тем же жестом, что «надеть». chassisOnly
+            // (ходовая часть шасси) живёт в СВОЁМ слоте законно — красть её нельзя, а носить себе можно
+            sl.variants.Add(new Variant { organ = h, species = chassis.speciesName, native = true });
             if (donors != null)
-                foreach (var d in donors)
-                {
-                    if (d == null || d.organs == null) continue;
-                    foreach (var o in d.organs)
-                        if (o.slot == h.slot && !o.chassisOnly) sl.variants.Add(new Variant { organ = o, species = d.speciesName }); // все доноры; ходовые части шасси не крадутся
-                }
+                foreach (var d in donors) AddVariants(sl, d, h.slot, native: false);
+            sl.current = 0; // по умолчанию носим своё
             list.Add(sl);
         }
         for (int i = 0; i < chimeraSlots; i++) list.Add(MakeChimeraSlot(list.Count)); // выданные химерные слоты
@@ -328,7 +443,11 @@ public class CreatureBody : MonoBehaviour
 
         if (installAllBeast) // застывшая химера (вервольф): весь лоадаут ПЕРВОГО донора надет с рождения
             foreach (var sl in slots)
-                if (!sl.chimera) sl.current = sl.variants.Count > 0 ? 0 : -1;
+            {
+                if (sl.chimera) continue;
+                for (int i = 0; i < sl.variants.Count; i++)
+                    if (!sl.variants[i].native) { sl.current = i; break; } // первый ЗВЕРИНЫЙ вариант
+            }
     }
 
     void Start() => Recompute();
@@ -368,7 +487,8 @@ public class CreatureBody : MonoBehaviour
 
     void OnDestroy() { if (PlayerBody == this) PlayerBody = null; }
 
-    // цикл слота: человеческий → варианты доноров по кругу → человеческий (не по карману — пропускаются)
+    // цикл слота (хоткеи 1–6): родной → доноры по кругу → родной (не по карману — пропускаются).
+    // Прямой выбор живёт в Install/Remove; цикл удобен для двух вариантов и вязнет на многих
     void Toggle(Slot sl)
     {
         if (sl.variants.Count == 0) return;
@@ -407,7 +527,60 @@ public class CreatureBody : MonoBehaviour
         };
     }
 
-    static readonly Organ EmptyOrgan = new(); // «нет базы» для химерного слота: бленд от нуля = чистый орган × м
+    static readonly Organ EmptyOrgan = new(); // «нет базы»: бленд от нуля = чистый орган × мощь
+
+    // родной орган шасси для типа слота — ТО, ЧТО ДОНОРСКИЙ ВЫТЕСНЯЕТ (база экспрессии).
+    // Живёт в теле, а не полем слота: база — функция шасси, слот её только использует
+    Organ ChassisOrgan(string slotName)
+    {
+        if (chassis == null || chassis.organs == null) return null;
+        foreach (var o in chassis.organs) if (o.slot == slotName) return o;
+        return null;
+    }
+
+    /// <summary>ЕДИНОЕ ПРАВИЛО ЭКСПРЕССИИ для любого органа в любом слоте (было двумя копипаст-ветками).
+    /// База — то, что орган ВЫТЕСНИЛ:
+    ///  • РОДНОЙ орган шасси не вытесняет ничего (он и есть оригинал) → раскрывается ОТ СЕБЯ: величины ×мощь;
+    ///  • ДОНОРСКИЙ вытесняет родной орган этого слота → блендится ОТ НЕГО (низкое родство ≈ человек,
+    ///    высокое ≈ зверь, овершут — за зверя). В ХИМЕРНОМ слоте вытеснять нечего (орган ДОПОЛНИТЕЛЬНЫЙ) → от нуля.
+    /// Режим решает `native`, а НЕ «есть ли база»: иначе донорский орган в химерном слоте поменял бы
+    /// поведение времён и вне-боевого регена (там база пуста, но раскрытие всё равно «графтовое»).</summary>
+    Contribution Express(Slot sl)
+    {
+        var pick = sl.Pick;
+        Organ w = pick.organ;
+        bool own = pick.native;   // родной орган шасси — раскрывается от себя
+        Organ h = own || sl.chimera ? EmptyOrgan : ChassisOrgan(sl.name) ?? EmptyOrgan;
+        float m = BonusMultiplier(pick.species); // у родного варианта species = вид шасси → та же ручка
+
+        float Scaled(float hv, float wv) => own ? wv * m : Blend(hv, wv, m);
+        float Timed(float hv, float wv) => own ? wv : Blend(hv, wv, m); // СВОЁ время не растягиваем: ×2 на кулдаун = наказание за свой вид
+
+        return new Contribution
+        {
+            dmg = Scaled(h.damage, w.damage),
+            maxHp = Scaled(h.maxHp, w.maxHp),
+            life = Scaled(h.lifeSteal, w.lifeSteal),
+            atkCd = Timed(h.atkCooldown, w.atkCooldown),
+            mv = Scaled(h.moveSpeed, w.moveSpeed),
+            dash = Scaled(h.dashSpeed, w.dashSpeed),
+            dashCd = Timed(h.dashCooldown, w.dashCooldown),
+            reduce = Scaled(h.damageReduction, w.damageReduction),
+            regen = Scaled(h.regen, w.regen),
+            // вне-боя реген: у ДОНОРСКОГО как есть (бленд на мощи 2 уводит в минус), у РОДНОГО раскрываем —
+            // иначе человеческое сердце единственное не растёт с родством к своему виду
+            regenOOC = own ? w.regenOOC * m : w.regenOOC,
+            // ДИСКРЕТНОЕ — всегда у надетого как есть: фичи не «раскрываются», они либо есть, либо нет
+            venom = w.venomStacks, bleed = w.bleedStacks,
+            rng = w.range, dashDur = w.dashDuration, thermal = w.thermalRange,
+            howlR = w.howlRadius, howlStunAt = w.howlStunAt,
+            bite = w.enablesBite, scent = w.enablesScent, kick = w.enablesKick,
+            howl = w.enablesHowl, cold = w.coldBlooded, camo = w.camo, thermalOn = w.enablesThermal,
+            constrict = w.enablesConstrict, digest = w.digestion, bellow = w.enablesBellow,
+            antler = w.enablesAntler, charge = w.enablesCharge,
+            constrictNative = w.enablesConstrict && chassis != null && w.nativeChassis == chassis.speciesName,
+        };
+    }
 
     void Recompute()
     {
@@ -420,64 +593,10 @@ public class CreatureBody : MonoBehaviour
 
         foreach (var sl in slots)
         {
-            Contribution c;
-            string key;
-            if (sl.Installed)
-            {
-                Organ b = sl.Beast;
-                Organ h = sl.human ?? EmptyOrgan;
-                float m = BonusMultiplier(sl.DonorSpecies);
-                c = new Contribution
-                {
-                    dmg = Blend(h.damage, b.damage, m),
-                    maxHp = Blend(h.maxHp, b.maxHp, m),
-                    life = Blend(h.lifeSteal, b.lifeSteal, m),
-                    venom = b.venomStacks, bleed = b.bleedStacks, // дискретные фичи органа (как флаги) — не блендим
-                    rng = b.range,                // дальность не масштабируем — фикс. трейдофф
-                    howlR = b.howlRadius,         // голос-база органа (мощь домножит тело — эмиссия, не чувство)
-                    howlStunAt = b.howlStunAt,    // порог-фича: стан воя открывается мощью носителя
-                    atkCd = Blend(h.atkCooldown, b.atkCooldown, m),
-                    mv = Blend(h.moveSpeed, b.moveSpeed, m),
-                    dash = Blend(h.dashSpeed, b.dashSpeed, m),
-                    dashDur = b.dashDuration,     // длина рывка — фикс-фича ног (не блендим: овершут не удлиняет рывок)
-                    dashCd = Blend(h.dashCooldown, b.dashCooldown, m),
-                    reduce = Blend(h.damageReduction, b.damageReduction, m),
-                    regen = Blend(h.regen, b.regen, m),
-                    regenOOC = b.regenOOC,        // вне-боя реген не блендим — фича органа: иначе на Э=2 уходит в минус
-                    thermal = b.thermalRange,     // фикс-фича органа (как range) — не блендим
-                    bite = b.enablesBite, scent = b.enablesScent, kick = b.enablesKick,
-                    howl = b.enablesHowl, cold = b.coldBlooded, camo = b.camo, thermalOn = b.enablesThermal,
-                    constrict = b.enablesConstrict, digest = b.digestion, bellow = b.enablesBellow, antler = b.enablesAntler,
-                    charge = b.enablesCharge,
-                    constrictNative = b.enablesConstrict && chassis != null && b.nativeChassis == chassis.speciesName,
-                };
-                key = b.slot; // дубль типа (второе Сердце) идёт в ту же группу — супремум
-                beast++;
-            }
-            else if (sl.human != null)
-            {
-                // ЧИСТЫЙ слот шасси масштабируется ОДНОРОДНО со звериным — тем же BonusMultiplier по родству
-                // с ВИДОМ ШАССИ: природная особь — фикс. Э (волк ~0.45); ИГРОК на 100 Человек → ×2 (свой вид
-                // раскрыт полностью). Времена (кулдауны) и дальность не скейлим — как в зверином бленде.
-                Organ h = sl.human;
-                float e = chassis != null ? BonusMultiplier(chassis.speciesName) : 1f; // NPC: вернёт фикс. expression; игрок: кривая родства
-                c = new Contribution
-                {
-                    dmg = h.damage * e, maxHp = h.maxHp * e, life = h.lifeSteal * e,
-                    venom = h.venomStacks, bleed = h.bleedStacks,
-                    rng = h.range, atkCd = h.atkCooldown, mv = h.moveSpeed * e, dash = h.dashSpeed * e, dashDur = h.dashDuration,
-                    dashCd = h.dashCooldown, reduce = h.damageReduction * e, regen = h.regen * e,
-                    regenOOC = h.regenOOC * e, thermal = h.thermalRange, howlR = h.howlRadius, howlStunAt = h.howlStunAt,
-                    bite = h.enablesBite, scent = h.enablesScent, kick = h.enablesKick,
-                    howl = h.enablesHowl, cold = h.coldBlooded, camo = h.camo, thermalOn = h.enablesThermal,
-                    constrict = h.enablesConstrict, digest = h.digestion, bellow = h.enablesBellow, antler = h.enablesAntler,
-                    charge = h.enablesCharge,
-                    constrictNative = h.enablesConstrict && chassis != null && h.nativeChassis == chassis.speciesName,
-                };
-                key = h.slot;
-            }
-            else continue; // пустой химерный слот
-
+            if (sl.Empty) continue;      // пустой химерный слот — вклада нет
+            var c = Express(sl);         // ОДНО правило раскрытия на все случаи (см. Express)
+            if (sl.Installed) beast++;   // шкалу мозга двигает только ЗВЕРИНЫЙ орган: родной — не химеризация
+            string key = sl.Worn.slot;   // дубль типа (второе Сердце) идёт в ту же группу — супремум
             groups[key] = groups.TryGetValue(key, out var prev) ? Contribution.Sup(prev, c) : c;
         }
 
@@ -538,6 +657,15 @@ public class CreatureBody : MonoBehaviour
             Perception.WolfScent = scentOn;
             Perception.SnakeThermal = thermalOn; // термозрение (Пит-орган): тепло сквозь стены
             Perception.ThermalRange = thermal;
+
+            // ПРОФИЛЬ ЧУВСТВ ИГРОКА — от сборки, как у любого существа: зрение при тебе всегда (глаза),
+            // запах и тепло открывают органы слота Чутьё. Снял орган — канал закрылся, картина мира сузилась
+            if (senses != null)
+            {
+                senses.Set(SenseKind.Sight, SightRange);
+                senses.Set(SenseKind.Scent, scentOn ? ScentRange : 0f);
+                senses.Set(SenseKind.Thermal, thermalOn ? thermal : 0f);
+            }
         }
         if (attack != null)
         {
@@ -620,10 +748,10 @@ public class CreatureBody : MonoBehaviour
         float r = 0f, g = 0f, b = 0f; int n = 0;
         foreach (var sl in slots)
         {
-            Color? t = null;
-            if (sl.Installed) t = SpeciesTint(sl.DonorSpecies);                          // звериный орган → тинт его вида
-            else if (sl.human != null) t = chassis != null ? chassis.tint : Color.gray;  // человеческий → телесный
-            if (t.HasValue) { r += t.Value.r; g += t.Value.g; b += t.Value.b; n++; }      // пустой химерный слот не считаем
+            if (sl.Empty) continue;                                                  // пустой химерный слот не считаем
+            Color t = sl.Installed ? SpeciesTint(sl.DonorSpecies)                    // звериный орган → тинт его вида
+                                   : (chassis != null ? chassis.tint : Color.gray);  // родной → телесный
+            r += t.r; g += t.g; b += t.b; n++;
         }
         return n > 0 ? new Color(r / n, g / n, b / n) : (chassis != null ? chassis.tint : Color.gray);
     }
@@ -651,9 +779,10 @@ public class CreatureBody : MonoBehaviour
         float mine = chassis == species ? chassisIdentityWeight : 0f;    // юниты искомого вида
         foreach (var sl in slots)
         {
+            if (sl.Empty) continue;
             SpeciesSO owner;
             if (sl.Installed) owner = FindSpecies(sl.DonorSpecies);
-            else if (sl.human != null && !sl.human.chassisOnly) owner = chassis; // родная часть шасси (не-chassisOnly)
+            else if (!sl.Worn.chassisOnly) owner = chassis; // родная часть шасси (chassisOnly — плоть, живёт в весе шасси)
             else continue;
             if (owner == null) continue;
 
