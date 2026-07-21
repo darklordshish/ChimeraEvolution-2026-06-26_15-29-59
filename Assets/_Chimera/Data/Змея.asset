@@ -35,6 +35,7 @@ MonoBehaviour:
     regenOOC: 0
     dashDuration: 0
     thermalRange: 0
+    howlStunAt: 0
     howlRadius: 0
     enablesBite: 1
     enablesScent: 0
@@ -70,6 +71,7 @@ MonoBehaviour:
     regenOOC: 2
     dashDuration: 0
     thermalRange: 0
+    howlStunAt: 0
     howlRadius: 0
     enablesBite: 0
     enablesScent: 0
@@ -104,6 +106,7 @@ MonoBehaviour:
     regenOOC: 0
     dashDuration: 0
     thermalRange: 0
+    howlStunAt: 0
     howlRadius: 0
     enablesBite: 0
     enablesScent: 0
@@ -138,6 +141,7 @@ MonoBehaviour:
     regenOOC: 0
     dashDuration: 0
     thermalRange: 0
+    howlStunAt: 0
     howlRadius: 0
     enablesBite: 0
     enablesScent: 0
@@ -172,6 +176,7 @@ MonoBehaviour:
     regenOOC: 0
     dashDuration: 0
     thermalRange: 14
+    howlStunAt: 0
     howlRadius: 0
     enablesBite: 0
     enablesScent: 0
@@ -206,6 +211,7 @@ MonoBehaviour:
     regenOOC: 0
     dashDuration: 0
     thermalRange: 0
+    howlStunAt: 0
     howlRadius: 0
     enablesBite: 0
     enablesScent: 0
