@@ -53,7 +53,11 @@ public class ConstructorUI : MonoBehaviour
     static void Bootstrap()
     {
         if (FindAnyObjectByType<ConstructorUI>() != null) return;
-        new GameObject("ConstructorUI").AddComponent<ConstructorUI>();
+        var go = new GameObject("ConstructorUI");
+        go.AddComponent<ConstructorUI>();
+        // атрибут срабатывает ОДИН РАЗ за запуск игры, а смерть игрока перезагружает сцену (PlayerDeath) —
+        // без этого Tab переставал открывать конструктор после первой же смерти
+        DontDestroyOnLoad(go);
     }
 
     void Awake()
@@ -83,8 +87,9 @@ public class ConstructorUI : MonoBehaviour
         {
             // держим замедление насильно: хитстоп удара и прочие охотники за timeScale не должны его сбросить
             Time.timeScale = timeScaleWhenOpen;
-            if (!slotsBuilt) BuildSlotRows();
-            else if (body != null && rows.Count != body.SlotCount) RebuildRows(); // выдали химерный слот — дострой строку
+            // body == null → сцена перезагрузилась после смерти: тело игрока новое, строки смотрят в пустоту
+            if (!slotsBuilt || body == null) RebuildRows();
+            else if (rows.Count != body.SlotCount) RebuildRows(); // выдали химерный слот — дострой строку
             RefreshSlots();   // хоткеи 1–6 тоже переключают слоты — держим UI в синхроне
             RefreshMeters();
         }
