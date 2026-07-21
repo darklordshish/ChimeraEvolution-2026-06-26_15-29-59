@@ -62,7 +62,7 @@ public class PlayerAntler : MonoBehaviour, IAbility
         if (any && cam != null) cam.Shake(0.16f, shake);
     }
 
-    Vector3 Center() => transform.position + transform.forward * range + Vector3.up * 0.5f;
+    Vector3 Center() => transform.position + transform.forward * range + Vector3.up * 0.55f; // рога — уровень головы (корень — центр капсулы)
 
     void OnDrawGizmos()
     {

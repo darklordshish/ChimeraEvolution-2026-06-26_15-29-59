@@ -42,7 +42,7 @@ public class PlayerCharge : MonoBehaviour
         wasDashing = dashing;
         if (!dashing) return;
 
-        Vector3 center = transform.position + transform.forward * reach + Vector3.up * 0.5f;
+        Vector3 center = transform.position + transform.forward * reach + Vector3.up * 0.3f; // грудь — таран корпусом (корень — центр капсулы)
         var hit = new Hit(ownHealth, transform.position);
         var blow = new MeleeBlow { Damage = damage, KnockForce = force }; // единый паёк тарана (см. MeleeBlow)
         foreach (var col in Physics.OverlapSphere(center, radius, ~0, QueryTriggerInteraction.Ignore))
@@ -59,6 +59,6 @@ public class PlayerCharge : MonoBehaviour
     {
         if (!ChargeEnabled) return;
         Gizmos.color = TelegraphColors.Charge;
-        Gizmos.DrawWireSphere(transform.position + transform.forward * reach + Vector3.up * 0.5f, radius);
+        Gizmos.DrawWireSphere(transform.position + transform.forward * reach + Vector3.up * 0.3f, radius);
     }
 }

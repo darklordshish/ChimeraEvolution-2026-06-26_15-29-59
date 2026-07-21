@@ -76,7 +76,7 @@ public class PlayerAttack : MonoBehaviour, IAbility
     // слот «Пасть»: вампиризм (лечение при попадании)
     public void SetLifeSteal(int v) => lifeSteal = v;
 
-    Vector3 AttackCenter() => transform.position + transform.forward * range + Vector3.up * 0.5f;
+    Vector3 AttackCenter() => transform.position + transform.forward * range + Vector3.up * 0.3f; // грудь (корень игрока — ЦЕНТР капсулы CC)
 
     // красная сфера — зона удара. Всегда видна; включи тумблер Gizmos в Game view, чтобы видеть и в игре
     void OnDrawGizmos()

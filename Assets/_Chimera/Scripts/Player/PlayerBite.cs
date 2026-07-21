@@ -79,7 +79,7 @@ public class PlayerBite : MonoBehaviour, IAbility
         }
     }
 
-    Vector3 BiteCenter() => transform.position + transform.forward * range + Vector3.up * 0.5f;
+    Vector3 BiteCenter() => transform.position + transform.forward * range + Vector3.up * 0.3f; // пасть/грудь (корень игрока — центр капсулы)
 
     void OnDrawGizmos()
     {

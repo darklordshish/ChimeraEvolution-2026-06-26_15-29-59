@@ -104,10 +104,11 @@ public abstract class WindupAbility : MonoBehaviour, IAbility
     //    Наследник задаёт дальность/угол; в эдит-режиме читает сериализованные поля (Awake не нужен).
     protected virtual float GizmoRange => 2f;
     protected virtual float GizmoHalfAngle => 45f;
+    [SerializeField] float gizmoHeight = 0.5f; // высота отрисовки хитбокса: низким (волк/змея) 0.5, высоким (лось/вервольф) ставит префаб
 
     void OnDrawGizmos()
     {
-        Vector3 o = transform.position + Vector3.up * 0.5f;
+        Vector3 o = transform.position + Vector3.up * gizmoHeight;
         Vector3 f = transform.forward;
         Gizmos.color = TelegraphColor;
         Gizmos.DrawLine(o, o + f * GizmoRange);

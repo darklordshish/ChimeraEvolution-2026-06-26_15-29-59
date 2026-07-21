@@ -63,7 +63,7 @@ public class PlayerKick : MonoBehaviour, IAbility
         if (any && cam != null) cam.Shake(0.16f, shake);
     }
 
-    Vector3 KickCenter() => transform.position + transform.forward * range + Vector3.up * 0.5f;
+    Vector3 KickCenter() => transform.position + transform.forward * range + Vector3.up * -0.2f; // нога ниже пояса (корень — центр капсулы)
 
     void OnDrawGizmos()
     {
