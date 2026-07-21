@@ -40,6 +40,11 @@ public class Constrict : MonoBehaviour
     [SerializeField] float escapeMin = 2.6f;                  // ст.1: NPC-жертва вырывается через случайное время (окно ПОЗЖЕ защёлка)
     [SerializeField] float escapeMax = 4f;
 
+    [Header("Профиль носителя")]
+    [SerializeField] int breakRawThreshold = 0; // спасатели: внешний СЫРОЙ удар ≥ порога рвёт хват (сырой — броня держателя
+                                                // не «помогает держать»). 0 = рвёт любой (змея); хвост игрока ставит 5
+    [SerializeField] bool venomOnStage = true;  // яд с каждой новой стадии (змея); аугумент-хвост — без (яд — фича клыков, не хвата)
+
     int maxStageAllowed = 3; // кап от ТЕЛА (nativeChassis); дефолт 3 — родное шасси
 
     Health ownHealth;
@@ -61,6 +66,14 @@ public class Constrict : MonoBehaviour
 
     /// <summary>Кап стадий от ТЕЛА (ось nativeChassis): родное шасси → 3 (партер+чок), чужое → 2.</summary>
     public void SetMaxStage(int v) => maxStageAllowed = Mathf.Clamp(v, 1, 3);
+
+    /// <summary>Профиль носителя (зовёт драйвер в Awake): гонка вырывания NPC-жертвы, порог срыва спасателем,
+    /// яд со стадий. Змея живёт на дефолтах (2.6–4 / любой удар / яд), хвост игрока — мягче и без яда.</summary>
+    public void ConfigureHolder(float npcEscapeMin, float npcEscapeMax, int rawBreakThreshold, bool venomStages)
+    {
+        escapeMin = npcEscapeMin; escapeMax = npcEscapeMax;
+        breakRawThreshold = rawBreakThreshold; venomOnStage = venomStages;
+    }
 
     /// <summary>Взять жертву. owner нужен только для жертвы-игрока (ApplyGrab/ReleaseGrab).</summary>
     public bool Begin(Health victim, IGrabber grabOwner = null)
@@ -94,9 +107,11 @@ public class Constrict : MonoBehaviour
         int dmg = lastHp - ownHealth.Current;
         lastHp = ownHealth.Current;
 
-        // урон ИЗВНЕ рвёт хват (спасатели отбивают своего); урон от САМОЙ жертвы — только ослабляет сжатие.
-        // У жертвы-игрока «извне» не разбираем: его контр-игра — откат сжатия и рывок (BreakFree у драйвера)
-        if (!victimIsPlayer && dmg > 0 && !ReferenceEquals(ownHealth.LastAttacker, held)) return GrabTick.Broken;
+        // урон ИЗВНЕ рвёт хват (спасатели отбивают своего); порог — по СЫРОМУ удару (тик яда не рвёт у игрока);
+        // урон от САМОЙ жертвы — только ослабляет сжатие. У жертвы-игрока «извне» не разбираем: его контр-игра —
+        // откат сжатия и рывок (BreakFree у драйвера)
+        if (!victimIsPlayer && dmg > 0 && ownHealth.LastRawDamage >= breakRawThreshold
+            && !ReferenceEquals(ownHealth.LastAttacker, held)) return GrabTick.Broken;
 
         grip += tightenRate * Time.deltaTime;
         if (dmg > 0) grip -= dmg * (victimIsPlayer ? loosenPerDamage : npcLoosenPerDamage);
@@ -133,7 +148,7 @@ public class Constrict : MonoBehaviour
     {
         if (s > reached)
         {
-            InjectVenom();                                // туже сжатие → впрыск яда (раз на новую стадию)
+            if (venomOnStage) InjectVenom();              // туже сжатие → впрыск яда (раз на новую стадию; хвост игрока — без)
             reached = s;
             gripFloor = s >= 3 ? stage3At : stage2At;     // ратчет: защёлкнулись — назад за порог не пускаем
         }
