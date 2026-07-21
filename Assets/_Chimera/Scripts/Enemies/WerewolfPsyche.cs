@@ -159,7 +159,7 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
         if (Time.time >= nextHowl) { Face(dir); BeginAttack(Kind.Howl); Settle(Vector3.zero); return; }
 
         // не вижу игрока (далеко или за стеной): temp HP пропадают; тропим по ЗАПАХУ, иначе бродим
-        bool sees = dist <= sightRange && Perception.HasLineOfSight(transform.position, target);
+        bool sees = dist <= sightRange && Perception.HasLineOfSight(transform.position, target, transform);
         if (!sees)
         {
             ownHealth.ClearOverheal();
@@ -218,7 +218,7 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
     void DoHowl()
     {
         if (noiseSrc == null) TryGetComponent(out noiseSrc);
-        if (noiseSrc != null) noiseSrc.Spike(1f, 1.2f); // вой альфы ЗВУЧИТ в мире (ось Noise): уши слышат
+        if (noiseSrc != null) noiseSrc.Spike(1f, 1.2f, TelegraphColors.Howl); // вой альфы ЗВУЧИТ в мире (ось Noise): уши слышат
         var spawner = FindAnyObjectByType<WolfSpawner>();
         if (spawner != null && CountWolves() < howlWolfCap) spawner.SpawnAt(transform.position, summonCount); // призыв — только поредевшей стае
         PackCoordinator.Instance.Rally(transform.position, howlReach, rageDuration); // приказ ближним: +5 духа, страхи стёрты

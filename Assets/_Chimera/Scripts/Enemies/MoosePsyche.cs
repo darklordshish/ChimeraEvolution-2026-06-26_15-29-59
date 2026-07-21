@@ -151,7 +151,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
         nextBellow = Time.time + bellowCooldown;
 
         if (noiseSrc == null) TryGetComponent(out noiseSrc);
-        if (noiseSrc != null) noiseSrc.Spike(1f, 1f);
+        if (noiseSrc != null) noiseSrc.Spike(1f, 1f, TelegraphColors.Howl); // рёв — тон голоса
         if (telegraph != null) { telegraph.Set(true, TelegraphColors.Howl, intent: true); bellowCueUntil = Time.time + bellowCueTime; }
 
         var hit = new HashSet<Component>(); // дедуп коллайдеров одного существа
@@ -187,7 +187,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
         if (step > tellStep)
         {
             if (noiseSrc == null) TryGetComponent(out noiseSrc);
-            if (noiseSrc != null) noiseSrc.Spike(step == 1 ? 0.45f : 0.8f, 0.4f);
+            if (noiseSrc != null) noiseSrc.Spike(step == 1 ? 0.45f : 0.8f, 0.4f, TelegraphColors.Charge); // топот — тон тарана
             ScareWolves(); // фырк/топот = −1 морали ближним волкам
             tellStep = step;
         }
@@ -286,7 +286,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
         Vector3 toT = target.position - transform.position; toT.y = 0f;
         float dist = toT.magnitude;
         bool inView = dist <= proximityRadius || Vector3.Angle(transform.forward, toT) <= senses.ViewHalfAngle(SenseKind.Sight);
-        bool sees = dist <= senses.Range(SenseKind.Sight) && inView && Perception.HasLineOfSight(transform.position, target);
+        bool sees = dist <= senses.Range(SenseKind.Sight) && inView && Perception.HasLineOfSight(transform.position, target, transform);
 
         // ЛЕСЕНКА (срез C): видимый провокатор в warnRadius копит раздражение (ближе — быстрее), ушёл — спадает.
         // Вплотную на глазах — мгновенный максимум (вторжение в личное пространство)

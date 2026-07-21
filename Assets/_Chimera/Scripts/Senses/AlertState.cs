@@ -10,6 +10,13 @@ using UnityEngine;
 /// </summary>
 public enum Alert { Calm, Wary, Attack }
 
+/// <summary>Русское имя состояния — ОДНО на весь проект: и сводка игрока, и дев-панель говорят одинаково.
+/// Жило двумя копиями, пока их не стало две разных.</summary>
+public static class AlertNames
+{
+    public static string Ru(Alert s) => s == Alert.Attack ? "АТАКА" : s == Alert.Wary ? "настороже" : "спокоен";
+}
+
 public class AlertState : MonoBehaviour
 {
     [SerializeField] float waryMemory = 4f;    // держим Настороженность столько секунд после потери зацепки

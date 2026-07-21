@@ -360,7 +360,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         // гасил бой ВООБЩЕ (волк не трогал даже змею, которая жрёт кина) — стая обязана отбивать своего
         bool targetIsKinPlayer = playerIsKin && playerHealth != null && ReferenceEquals(targetHealth, playerHealth);
         Engaged = !routing && !targetIsKinPlayer && distSq <= sight * sight && inView
-                  && Perception.HasLineOfSight(transform.position, target);
+                  && Perception.HasLineOfSight(transform.position, target, transform);
         if (Engaged) TryHowl(target.position); // увидел игрока → взвыл, зову ближних в стаю
         alert.Observe(Engaged, HasCue());      // S1: кормим машину восприятия (зеркало — поведение ниже пока не трогаем)
 
@@ -726,7 +726,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         nextHowlTime = Time.time + howlCooldown;
         pack.Howl(transform.position, howlRadius, pos);
         if (noiseSrc == null) TryGetComponent(out noiseSrc);
-        if (noiseSrc != null) noiseSrc.Spike(1f, 0.8f); // вой ЗВУЧИТ в мире
+        if (noiseSrc != null) noiseSrc.Spike(1f, 0.8f, TelegraphColors.Howl); // вой ЗВУЧИТ в мире (тон = цвет голоса)
         FlashTelegraph(TelegraphColors.Howl, howlCueTime); // видимый сигнал: волк зовёт стаю
     }
 

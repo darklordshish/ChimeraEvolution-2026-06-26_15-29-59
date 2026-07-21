@@ -29,6 +29,10 @@ public class VitalsHud : MonoBehaviour
     [SerializeField] float ownBarWidth = 260f;
     [SerializeField] float ownBarHeight = 16f;
 
+    [Header("Сводка обстановки (фича Чутья, клавиша J)")]
+    [SerializeField] int summaryRows = 7;      // сколько ближайших держим в списке
+    [SerializeField] float summaryWidth = 330f;
+
     [Header("Обновление")]
     [SerializeField] float rescanInterval = 0.25f; // как часто пересобираем список существ (не каждый кадр)
 
@@ -42,9 +46,12 @@ public class VitalsHud : MonoBehaviour
     /// кто дерётся. Тумблер — клавиша H.</summary>
     public static bool ShowAll;
 
+    /// <summary>Показывать сводку обстановки (только с Чутьём). Тумблер — клавиша J.</summary>
+    public static bool ShowSummary = true;
+
     Canvas canvas;
     Font font;
-    InputAction toggleAll;
+    InputAction toggleAll, toggleSummary;
 
     PlayerController player;
     Health playerHealth;
@@ -54,9 +61,11 @@ public class VitalsHud : MonoBehaviour
     readonly List<Health> targets = new();
     float nextRescan;
 
-    // своя панель
+    // свои данные + сводка
     Image ownFill;
-    Text ownText, grabText;
+    Text ownText, grabText, summaryText;
+    RectTransform summaryPanel;
+    readonly List<(float dist, Health h, SenseKind by)> summary = new();
 
     class Bar
     {
@@ -83,14 +92,17 @@ public class VitalsHud : MonoBehaviour
         BuildCanvas();
         toggleAll = new InputAction("ToggleAllVitals", InputActionType.Button);
         toggleAll.AddBinding("<Keyboard>/h");
+        toggleSummary = new InputAction("ToggleSummary", InputActionType.Button);
+        toggleSummary.AddBinding("<Keyboard>/j");
     }
 
-    void OnEnable() => toggleAll.Enable();
-    void OnDisable() => toggleAll.Disable();
+    void OnEnable() { toggleAll.Enable(); toggleSummary.Enable(); }
+    void OnDisable() { toggleAll.Disable(); toggleSummary.Disable(); }
 
     void LateUpdate() // после движения камеры — иначе полоски дрожат на кадр позади
     {
         if (toggleAll.WasPressedThisFrame()) ShowAll = !ShowAll;
+        if (toggleSummary.WasPressedThisFrame()) ShowSummary = !ShowSummary;
 
         if (player == null)
         {
@@ -104,7 +116,60 @@ public class VitalsHud : MonoBehaviour
 
         DrawOwn();
         DrawWorld();
+        DrawSummary();
     }
+
+    /// <summary>СВОДКА ОБСТАНОВКИ — фича Чутья: «кто вокруг и каким чувством засечён». Здесь честно живут
+    /// косвенные каналы (запах, слух): полоску они не дают — состояния не выдают, — но присутствие
+    /// и направление показать обязаны. Учёный держит в голове карту происходящего, зверь только чует.</summary>
+    void DrawSummary()
+    {
+        bool on = ShowSummary && Perception.Insight && player != null;
+        summaryPanel.gameObject.SetActive(on);
+        if (!on) return;
+
+        Vector3 eye = player.transform.position;
+        summary.Clear();
+        foreach (var h in targets)
+        {
+            if (h == null) continue;
+            if (!Perception.PlayerPerceives(eye, h.transform, out var by)) continue;
+            summary.Add((Vector3.Distance(eye, h.transform.position), h, by));
+        }
+        summary.Sort((a, b) => a.dist.CompareTo(b.dist)); // ближние важнее — они и решают бой
+
+        var sb = new System.Text.StringBuilder();
+        sb.Append("<color=#C9C2AC>СВОДКА [J]</color>\n");
+        int n = Mathf.Min(summaryRows, summary.Count);
+        for (int i = 0; i < n; i++)
+        {
+            var (dist, h, by) = summary[i];
+            string name = h.TryGetComponent<CreatureBody>(out var b) && b.Chassis != null ? b.Chassis.speciesName : h.name;
+            // РАЗЛИЧЕНИЕ ВИДА НА СЛУХ — фича острого уха: без органа слышишь «кто-то», с ним узнаёшь, КТО
+            if (by == SenseKind.Hearing && !Perception.KeenHearing) name = "кто-то";
+            // КАНАЛ РЕШАЕТ, ЧТО ИМЕННО ЗНАЕШЬ: намерение читается по позе — значит только ГЛАЗАМИ.
+            // Запах говорит «кто и откуда», тепло — «жив и где», слух — «шумит». Дистанция по косвенным
+            // каналам приблизительна (~), точную даёт лишь взгляд
+            string what = by == SenseKind.Sight
+                ? (h.TryGetComponent<AlertState>(out var a) ? AlertNames.Ru(a.State) : "—")
+                : by == SenseKind.Thermal ? "тёплый"
+                : by == SenseKind.Scent ? "след" : "шум";
+            string range = by == SenseKind.Sight ? $"{dist:0} м" : $"~{dist:0} м";
+            sb.Append($"{name} · {ChannelRu(by)} · {what} · {range}\n");
+        }
+        if (summary.Count == 0) sb.Append("<color=#8C8778>никого не чувствую</color>");
+        else if (summary.Count > n) sb.Append($"<color=#8C8778>…и ещё {summary.Count - n}</color>");
+        summaryText.text = sb.ToString();
+    }
+
+    static string ChannelRu(SenseKind k) => k switch
+    {
+        SenseKind.Sight => "вижу",
+        SenseKind.Thermal => "тепло",
+        SenseKind.Scent => "запах",
+        _ => "слышу",
+    };
+
 
     // ── свои данные: HP и статусы видны ЧИСЛОМ всегда — своё тело учёный знает изнутри ──
     void DrawOwn()
@@ -253,6 +318,20 @@ public class VitalsHud : MonoBehaviour
         grabText.rectTransform.anchorMin = grabText.rectTransform.anchorMax = grabText.rectTransform.pivot = Vector2.zero;
         grabText.rectTransform.anchoredPosition = new Vector2(2f, ownBarHeight + 26f);
         grabText.rectTransform.sizeDelta = new Vector2(860f, 24f);
+
+        // СВОДКА — правый низ: список того, кого чувствуешь, с каналом засечки
+        var panel = NewImage("Summary", canvas.transform, BarBack);
+        summaryPanel = panel.rectTransform;
+        summaryPanel.anchorMin = summaryPanel.anchorMax = summaryPanel.pivot = new Vector2(1f, 0f);
+        summaryPanel.anchoredPosition = new Vector2(-24f, 24f);
+        summaryPanel.sizeDelta = new Vector2(summaryWidth, 24f + 20f * (summaryRows + 1));
+
+        summaryText = NewText("Text", panel.transform, 16, OwnText, TextAnchor.LowerLeft);
+        summaryText.rectTransform.anchorMin = Vector2.zero;
+        summaryText.rectTransform.anchorMax = Vector2.one;
+        summaryText.rectTransform.offsetMin = new Vector2(12f, 10f);
+        summaryText.rectTransform.offsetMax = new Vector2(-12f, -10f);
+        summaryText.verticalOverflow = VerticalWrapMode.Overflow;
     }
 
     Bar Bar_(int i)

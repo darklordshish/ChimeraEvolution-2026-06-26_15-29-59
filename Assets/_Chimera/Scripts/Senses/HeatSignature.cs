@@ -11,9 +11,19 @@ using UnityEngine;
 public class HeatSignature : MonoBehaviour
 {
     static Material sharedMat; // один материал на всех (общий цвет тепла)
+    static readonly int ColorId = Shader.PropertyToID("_Color");
+
+    // ЯРКОСТЬ ПАДАЕТ С РАССТОЯНИЕМ (идея пользователя): тепло — не выключатель «видно/не видно», а градиент.
+    // Вплотную силуэт горит, у границы радиуса едва тлеет — дальность чувства читается сама, без цифр
+    const float NearAlpha = 0.62f;  // вплотную
+    const float FarAlpha = 0.10f;   // на границе радиуса
 
     readonly List<Renderer> ghosts = new();
+    MaterialPropertyBlock mpb;
     Transform player;
+
+    /// <summary>Горит ли подпись сейчас — для диагностики в дев-панели (термо молчит без единой ошибки).</summary>
+    public bool IsGlowing { get; private set; }
 
     void Awake()
     {
@@ -44,12 +54,23 @@ public class HeatSignature : MonoBehaviour
 
     void Update()
     {
+        float r = Perception.ThermalRadius;
+        float d2 = player != null ? (transform.position - player.position).sqrMagnitude : float.MaxValue;
         bool show = Perception.ThermalOn
                     && player != null
-                    && (transform.position - player.position).sqrMagnitude <=
-                       Perception.ThermalRadius * Perception.ThermalRadius
+                    && d2 <= r * r
                     && GetComponent<ColdBlooded>() == null; // холоднокровный тепла не излучает
+        IsGlowing = show;
+
         foreach (var g in ghosts) if (g != null) g.enabled = show;
+        if (!show) return;
+
+        // ближе — ярче; квадрат делает спад «тепловым»: вплотную заметно, поодаль лишь угадывается
+        float t = 1f - Mathf.Clamp01(Mathf.Sqrt(d2) / Mathf.Max(0.01f, r));
+        float a = Mathf.Lerp(FarAlpha, NearAlpha, t * t);
+        mpb ??= new MaterialPropertyBlock();
+        mpb.SetColor(ColorId, new Color(1f, 0.45f, 0.12f, a));
+        foreach (var g in ghosts) if (g != null) g.SetPropertyBlock(mpb);
     }
 
     static Material Mat()
