@@ -33,6 +33,10 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     [Header("Захват (удержание)")]
     [SerializeField] float grabWindupTime = 0.35f;
     [SerializeField, Range(0f, 1f)] float grabChance = 0.5f;
+    [SerializeField] int grabMinPack = 3;        // ЗАХВАТ — СТАЙНЫЙ приём: держать имеет смысл, только когда есть кому грызть
+    [SerializeField] float grabPackRadius = 14f; // в каком радиусе вокруг себя считаем «навалились вместе»
+    [SerializeField] float grabGrit = 3f;        // насколько АГРЕССИЯ особи двигает порог «разжать хватку» (0 = все одинаковы)
+    [SerializeField] int grabBleedStacks = 1;    // клыки сомкнулись — разовая кровь за вцепление (удержание само урона не даёт)
     [SerializeField] float grabSlow = 0.35f;     // во сколько режется скорость игрока, пока висим (урона от удержания нет)
     [SerializeField] int ripSelfKnock = 6;       // отлёт волка, когда с него срываются рывком
 
@@ -473,7 +477,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         {
             if (dist <= bite.Range)
             {
-                if (!huntingPrey && pack.TryAcquireGrab(this) && Random.value < grabChance)
+                if (!huntingPrey && PackReadyForGrab() && pack.TryAcquireGrab(this) && Random.value < grabChance)
                 {
                     BeginGrabWindup();
                     pack.ReleaseAttack(this); hasToken = false; // захват — отдельная роль, освобождает слот атакующего
@@ -578,11 +582,27 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         return true;
     }
 
+    /// <summary>Хватать ли вообще: захват удерживает жертву, но САМ урона не наносит — держащий волк стоит
+    /// на месте и превращается в неподвижную мишень. В одиночку это самоубийство, в стае — роль: один держит,
+    /// остальные грызут. Поэтому вцепляемся, только когда рядом навалилось `grabMinPack` (по умолчанию 3+).</summary>
+    bool PackReadyForGrab() => pack.EngagedNear(transform.position, grabPackRadius) >= grabMinPack;
+
+    /// <summary>Сколько нас должно остаться рядом, чтобы ПРОДОЛЖАТЬ держать. Порог ниже, чем для входа в хват
+    /// (гистерезис: иначе на границе выйдет флип-флоп «разжал — вцепился»), и его двигает АГРЕССИЯ особи —
+    /// злая висит мёртвой хваткой до конца, осторожная разжимает, оставшись одна. Счёт включает самого
+    /// держащего, поэтому порог 1 означает «не отпускаю никогда».</summary>
+    int HoldThreshold()
+    {
+        float aggr = personality != null ? personality.Aggression : 1f; // 0.85…1.2, центр 1
+        return Mathf.Max(1, Mathf.RoundToInt(grabMinPack - 1 - (aggr - 1f) * grabGrit));
+    }
+
     // приземлился прыжком у цели — шанс сразу вцепиться (с новым ритмом «кольцо → прыжок» мили-ветка
     // захвата почти недостижима, поэтому захват заходит С ПРЫЖКА; урона не добавляет — только контроль)
     bool TryFollowUpGrab()
     {
         if (huntingPrey) return false; // захват завязан на игрока — змею только грызём
+        if (!PackReadyForGrab()) return false;
         Vector3 to = target.position - transform.position; to.y = 0f;
         if (to.magnitude > bite.Range) return false;
         if (!pack.TryAcquireGrab(this) || Random.value >= grabChance) { pack.ReleaseGrab(this); return false; }
@@ -613,12 +633,24 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         grabbing = true;
         activeTelegraph = TelegraphColors.Grab;
         ShowTelegraph(activeTelegraph);
-        if (playerCtl != null) playerCtl.ApplyGrab(this, grabSlow); // режем скорость игрока; урона от удержания нет
+        if (playerCtl == null) return;
+
+        playerCtl.ApplyGrab(this, grabSlow); // режем скорость игрока; само удержание урона не даёт
+        // ЗУБЫ СОМКНУЛИСЬ: вцепление — это клыки в теле, а не объятие. Разовая кровь за вход в хват;
+        // дальше удержание снова «чистый контроль» (тикающий урон превратил бы захват в казнь).
+        if (grabBleedStacks > 0 && playerCtl.TryGetComponent<Health>(out var ph))
+        {
+            var hit = new Hit(ownHealth, transform.position);
+            for (int i = 0; i < grabBleedStacks; i++) hit.Apply(ph, HitEffect.Bleed());
+        }
     }
 
     void UpdateGrab()
     {
         if (playerCtl != null && playerCtl.GrabImmune) { Disengage(attackCooldown); return; } // иммунитет к захвату — отпускаем
+
+        // ПОДМОГУ ПЕРЕБИЛИ: держать в одиночку = стоять неподвижной грушей, ради чего захват и гейтится стаей.
+        if (pack.EngagedNear(transform.position, grabPackRadius) < HoldThreshold()) { Disengage(attackCooldown); return; }
 
         Vector3 to = target.position - transform.position; to.y = 0f;
         float d = to.magnitude;

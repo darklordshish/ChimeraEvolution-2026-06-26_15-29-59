@@ -141,6 +141,16 @@ public class PackCoordinator : MonoBehaviour
         return false;
     }
 
+    /// <summary>Сколько волков НАВАЛИЛОСЬ на точку: агро на игрока И в радиусе. Не «сколько всего в стае» —
+    /// волки с другого конца арены жертве не угрожают.</summary>
+    public int EngagedNear(Vector3 point, float radius)
+    {
+        int n = 0; float r2 = radius * radius;
+        foreach (var w in wolves)
+            if (w != null && w.Engaged && (w.transform.position - point).sqrMagnitude <= r2) n++;
+        return n;
+    }
+
     public void Register(WolfPsyche w)
     {
         if (wolves.Contains(w)) return;
