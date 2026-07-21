@@ -1081,13 +1081,17 @@ MonoBehaviour:
   cooldown: 2.5
   tightenRate: 1
   stage2At: 1.5
+  stage3At: 3
   escapeMin: 1
   escapeMax: 2.5
   selfSlow1: 0.55
   selfSlow2: 0.3
   breakDamage: 5
   maxStage: 2
+  chokeInterval: 0.6
+  chokeDamage: 4
   escapeKnock: 6
+  dragOffset: 1.1
 --- !u!1 &1118199101
 GameObject:
   m_ObjectHideFlags: 0

@@ -71,23 +71,9 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     [Header("Обхват (удушающий захват)")]
     [SerializeField, Range(0f, 1f)] float grabChance = 0.5f; // шанс обвить вместо простого укуса (в упор)
     [SerializeField] float grabWindup = 0.35f;               // замах перед обхватом (телеграф — увернись)
-    [SerializeField] float tightenRate = 1f;                 // сжатие/сек: тянет к удушению (игрок)
-    [SerializeField] float stage2At = 1.5f;                  // сжатие ≥ этого → стадия 2 (рывок/пинок не пускают)
-    [SerializeField] float stage3At = 3.5f;                  // сжатие ≥ этого → стадия 3 (удушение-DoT)
-    [SerializeField] float loosenPerDamage = 0.12f;          // 1 HP урона по змее откатывает сжатие (игрок)
-    [SerializeField] float chokeDamage = 4f;                 // удушение игрока (ст.3): урон за тик
-    [SerializeField] float chokeInterval = 0.5f;
-    [SerializeField, Range(0f, 1f)] float grabSlow1 = 0.35f; // замедление игрока по стадиям (ход И рывок)
-    [SerializeField, Range(0f, 1f)] float grabSlow2 = 0.15f;
-    [SerializeField, Range(0f, 1f)] float grabSlow3 = 0f;    // ст.3 — полный корень
     [SerializeField] int ripSelfKnock = 5;                   // отлёт змеи, когда игрок сорвался рывком (ст.1)
-    [SerializeField] int npcChokeDamage = 6;                 // удушение NPC-жертвы: урон за тик (со ст.3, как у игрока)
-    [SerializeField] float npcChokeInterval = 0.6f;
-    [SerializeField] float escapeMin = 2.6f;                 // NPC-жертва на слабом хвате (ст.1) вырывается через случайное время.
-    [SerializeField] float escapeMax = 4f;                   // Окно ПОЗЖЕ защёлка (~1.8с): ОДИНОЧКА гонку не выигрывает — змея точно
-                                                             // душит волка; таймер спасает лишь сильно ослабившую хват жертву
-    [SerializeField] float npcLoosenPerDamage = 0.04f;       // укус ЖЕРТВЫ ослабляет хват, но не сбрасывает гонку (её спасение — СТАЯ:
-                                                             // внешний урон рвёт всегда); 0.12 игрока — его контр-игра, не трогать
+    // САМА МАШИНА хвата (сжатие/стадии/ратчет/чок/яд + тюнинг обеих жертв) — общий компонент Constrict
+    // (фича органа «Хвост», хвост-эталон 2026-07-19); здесь остались только решения ДРАЙВЕРА (когда/куда)
 
     CharacterController controller;
     Stagger stagger;
@@ -108,13 +94,9 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     Transform target;
     Health targetHealth;
 
-    // жертва ОБХВАТА фиксируется на входе (retarget её не трогает)
-    Health heldHealth;
-    Grabbed heldGrabbed;   // единый статус захвата на NPC-жертве (импульс-стагер, защёлк-стан — держит он)
+    // жертва ОБХВАТА живёт в машине (constrictM.Victim, фиксируется на входе — retarget её не трогает)
+    Constrict constrictM;  // ЕДИНАЯ машина захвата (общая с хвостом игрока): стадии/слоу/Grabbed/гонка — её дело
     Grabbed grabbedStatus; // а это НАС схватили (хвост игрока) — на слабом хвате кусаемся в ответ
-    bool heldIsPlayer;
-    int heldStageCap;      // Massive-жертва — на стадию слабее (универсальное правило хвата)
-    float escapeAt;        // NPC-жертва: момент вырывания со слабого хвата (гонка)
 
     float nextAttackTime, verticalVel, windupEnd, nextRattle, rattleBlinkUntil, nextScan, nextFleeCheck, groundY;
     bool fleeing;
@@ -144,8 +126,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         }
     }
     bool windingUp, constricting;                 // windingUp — только замах ОБХВАТА
-    float grip, gripFloor, chokeNext;             // игрок: «сжатие» + ратчет (ниже достигнутой стадии не откат)
-    int stage, maxStage, lastHp;                  // stage 1..3; maxStage — яд впрыскивается раз на новую стадию
+    int shownStage;                               // последняя показанная стадия хвата (градиент телеграфа — наш, драйверный)
     Renderer rattleRenderer;                      // жёлтая погремушка: гремок мигает ИМЕННО ей
 
     void Awake()
@@ -158,6 +139,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         if (!TryGetComponent(out nav)) nav = gameObject.AddComponent<NavLocomotion>();
         if (!TryGetComponent(out bite)) bite = gameObject.AddComponent<BiteAbility>();
         if (!TryGetComponent(out leap)) leap = gameObject.AddComponent<LeapAbility>();
+        if (!TryGetComponent(out constrictM)) constrictM = gameObject.AddComponent<Constrict>(); // единая машина хвата; дефолт капа = 3 (змея на РОДНОМ шасси — nativeChassis); чужеродным NPC-химерам кап скормит тело
         if (!TryGetComponent(out variance)) variance = gameObject.AddComponent<SpawnVariance>();
         if (!TryGetComponent(out alert)) alert = gameObject.AddComponent<AlertState>(); // общая машина восприятия (S1)
         if (!TryGetComponent(out senses)) senses = gameObject.AddComponent<Senses>(); // сенсорный профиль (S1)
@@ -183,7 +165,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
 
     void OnDisable()
     {
-        if (constricting) ReleaseHeld(); // убили на обхвате — отпустить жертву
+        if (constricting) { constrictM.End(); constricting = false; } // убили на обхвате — отпустить жертву
     }
 
     // холодный расчёт (НЕ паника): ударивший становится ДОБЫЧЕЙ, если он тёплый. Так удар по змее её натравливает —
@@ -369,7 +351,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
             foreach (var col in Physics.OverlapSphere(transform.position, fleeCheckRadius, ~0, QueryTriggerInteraction.Ignore))
             {
                 var hp = col.GetComponentInParent<Health>();
-                if (hp == null || hp.transform == transform || hp == heldHealth) continue;
+                if (hp == null || hp.transform == transform || hp == constrictM.Victim) continue;
                 if (!Perception.IsWarm(hp.transform)) continue;
                 centroid += hp.transform.position; warm++;
             }
@@ -390,7 +372,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         foreach (var col in Physics.OverlapSphere(transform.position, rescueThreatRadius, ~0, QueryTriggerInteraction.Ignore))
         {
             var hp = col.GetComponentInParent<Health>();
-            if (hp == null || hp.transform == transform || hp == heldHealth) continue;
+            if (hp == null || hp.transform == transform || hp == constrictM.Victim) continue;
             if (Perception.IsWarm(hp.transform)) return true;
         }
         return false;
@@ -403,7 +385,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         foreach (var col in Physics.OverlapSphere(transform.position, quietCrowdRadius, ~0, QueryTriggerInteraction.Ignore))
         {
             var hp = col.GetComponentInParent<Health>();
-            if (hp == null || hp.transform == transform || hp == heldHealth) continue;
+            if (hp == null || hp.transform == transform || hp == constrictM.Victim) continue;
             if (!Perception.IsWarm(hp.transform)) continue;
             if (++warm >= quietCrowdSize) return true;
         }
@@ -630,7 +612,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         foreach (var col in Physics.OverlapSphere(transform.position, radius, ~0, QueryTriggerInteraction.Ignore))
         {
             var hp = col.GetComponentInParent<Health>();
-            if (hp == null || hp.transform == transform || hp == heldHealth || hp == best) continue;
+            if (hp == null || hp.transform == transform || hp == constrictM.Victim || hp == best) continue;
             if (hp.GetComponent<Massive>() != null) continue;
             if (!Perception.IsWarm(hp.transform)) continue;
             float d = (hp.transform.position - transform.position).sqrMagnitude;
@@ -672,97 +654,42 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
 
     void StartConstrict()
     {
-        if (targetHealth == null) return;
-        constricting = true;
-        heldHealth = targetHealth;
-        heldIsPlayer = playerCtl != null && heldHealth.transform == playerCtl.transform;
-        heldStageCap = heldHealth.GetComponent<Massive>() != null ? 2 : 3; // массивная туша — на стадию слабее (единое правило)
-
-        grip = 0f; gripFloor = 0f; stage = 1; maxStage = 1;
-        lastHp = ownHealth != null ? ownHealth.Current : 0;
-        chokeNext = 0f;
+        // вся механика хвата (стадии/Massive-кап/слоу жертвы-игрока/Grabbed/гонка вырывания) — в машине
+        constricting = constrictM.Begin(targetHealth, this);
+        if (!constricting) return;
+        shownStage = 1;
         telegraph.Set(true, TelegraphColors.Grab);
-        if (heldIsPlayer) playerCtl.ApplyGrab(this, grabSlow1); // игрок: режем ход и рывок (усилится к ст.3)
-        else
-        {
-            heldGrabbed = Grabbed.Apply(heldHealth.gameObject, ownHealth, 1, false); // слабый хват: импульс-стагер, жертва дальше ДЕРЁТСЯ
-            escapeAt = Time.time + Random.Range(escapeMin, escapeMax);               // гонка: дожми до защёлка, пока не вырвалась
-        }
     }
 
     void UpdateConstrict()
     {
-        if (heldHealth == null) { EndConstrict(attackCooldown); return; } // жертва умерла — хвост свободен (переваривание запустила вахта OnPreyDeath)
         if (ownHealth == null) { EndConstrict(0.3f); return; }
+        bool victimIsPlayer = constrictM.VictimIsPlayer;
 
+        // ДРАЙВЕРНЫЕ срывы (решения психики — машина про них не знает):
         // чёрный ход/призрак: иммунитет игрока распускает хват НА ИГРОКЕ (жертву-NPC призрак не спасает)
-        if (heldIsPlayer && playerCtl != null && playerCtl.GrabImmune) { EndConstrict(attackCooldown); return; }
-
+        if (victimIsPlayer && playerCtl != null && playerCtl.GrabImmune) { EndConstrict(attackCooldown); return; }
         // СТАН (вой волчьей Пасти) рвёт обхват — но не мёртвую хватку 3-й стадии
-        if (stagger != null && stagger.IsStunned && stage < 3) { EndConstrict(attackCooldown); return; }
-
-        if (heldIsPlayer) UpdatePlayerConstrict();
-        else UpdateNpcConstrict();
-    }
-
-    // обхват ИГРОКА: стадийная машина с ратчетом (контр-игра расписана в спеке змеи)
-    void UpdatePlayerConstrict()
-    {
-        // пинок: в 1-й стадии срывает (окно), в 2+ сжатие держит — гасим отлёт
-        if (knockback != null && knockback.IsActive)
+        if (stagger != null && stagger.IsStunned && constrictM.Stage < 3) { EndConstrict(attackCooldown); return; }
+        // пинок жертвы-игрока: в 1-й стадии срывает (окно), в 2+ сжатие держит — гасим отлёт
+        if (victimIsPlayer && knockback != null && knockback.IsActive)
         {
-            if (stage <= 1) { EndConstrict(attackCooldown); return; }
+            if (constrictM.Stage <= 1) { EndConstrict(attackCooldown); return; }
             knockback.Cancel();
         }
 
-        heldHealth.MarkInCombat();
-
-        // сжатие тикает вверх (время); урон по змее откатывает вниз, но НЕ ниже пола достигнутой стадии (ратчет)
-        grip += tightenRate * Time.deltaTime;
-        int dmg = lastHp - ownHealth.Current;
-        if (dmg > 0) grip -= dmg * loosenPerDamage;
-        grip = Mathf.Max(gripFloor, grip);
-        lastHp = ownHealth.Current;
-
-        int newStage = Mathf.Min(grip >= stage3At ? 3 : grip >= stage2At ? 2 : 1, heldStageCap);
-        if (newStage != stage) SetStage(newStage);
-
-        // стадия 3 — удушение: DoT-гонка (минует i-frames — рывком из удушения не спрятаться)
-        if (stage >= 3 && Time.time >= chokeNext)
+        // тик МАШИНЫ (сжатие/ратчет/стадии/гонка/чок/яд — её дело; нам — исход).
+        // умерла/вырвалась/спасли — хвост свободен (переваривание запустит вахта OnPreyDeath)
+        if (constrictM.Tick() != GrabTick.Holding) { EndConstrict(attackCooldown); return; }
+        if (constrictM.Stage != shownStage)
         {
-            heldHealth.LastAttacker = ownHealth; // смерть от удушения — убийство змеи
-            heldHealth.TakeDamage(Mathf.RoundToInt(chokeDamage), true);
-            chokeNext = Time.time + chokeInterval;
+            shownStage = constrictM.Stage;
+            telegraph.SetGradient(TelegraphColors.Grab, constrictM.StageT); // стадии — градиент родной→фиолетовый по сжатию
         }
 
-        HoldNearVictim();
-    }
+        if (victimIsPlayer) { HoldNearVictim(); return; }
 
-    // обхват NPC-ЖЕРТВЫ — ТА ЖЕ стадийная машина, что у игрока (единый захват): ст.1 слабый хват (жертва
-    // ДЕРЁТСЯ — её укусы ослабляют grip; вырывается по таймеру — гонка «дожать до защёлка»), ст.2 защёлк
-    // (стан через Grabbed, StunTint), ст.3 удушение-DoT. Удар СПАСАТЕЛЯ извне рвёт хват в любой фазе (стая
-    // отбивает своего). Стратегия 3e-ii: защёлкнутую (ст.2+) тушу при толпе УТАЩИТЬ на стену-насест
-    // и додушить там, где наземные волки бессильны (фазы переиспользуют ClimbPhase).
-    void UpdateNpcConstrict()
-    {
-        // урон по змее: от САМОЙ жертвы — ослабляет хват (гонка), ИЗВНЕ — рвёт (спасатели)
-        int dmg = lastHp - ownHealth.Current;
-        if (dmg > 0 && !ReferenceEquals(ownHealth.LastAttacker, heldHealth)) { EndConstrict(attackCooldown); return; }
-        lastHp = ownHealth.Current;
-
-        // сжатие тикает вверх; укусы жертвы откатывают вниз (слабее игрока — соло-добыча гонку не выигрывает),
-        // но не ниже пола достигнутой стадии (ратчет)
-        grip += tightenRate * Time.deltaTime;
-        if (dmg > 0) grip -= dmg * npcLoosenPerDamage;
-        grip = Mathf.Max(gripFloor, grip);
-        int newStage = Mathf.Min(grip >= stage3At ? 3 : grip >= stage2At ? 2 : 1, heldStageCap);
-        if (newStage != stage) SetStage(newStage);
-
-        // слабый хват: жертва вырвалась по таймеру — не дожал (её укусы двигали гонку в её пользу)
-        if (stage < 2 && Time.time >= escapeAt) { EndConstrict(attackCooldown); return; }
-
-        if (stage >= 3) ChokeTick(); // удушение-DoT — только с полного защёлка (ст.3), как у игрока
-
+        // жертва-NPC: «КУДА тащить» — драйверное (машина только держит; право тащить даёт защёлк).
         // УЖЕ НЕСЁМ (тащим по земле / лезем): CrowdNear отключён — на стене волки не достают; рвёт только удар извне
         if (climb == ClimbPhase.Approach) { CarryApproach(); return; }
         if (climb == ClimbPhase.Rise || climb == ClimbPhase.Perch) { CarryRise(); return; }
@@ -771,7 +698,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         // тащим на стену: гонка по вертикали — успели укусить до высоты (внешний урон рвёт хват) → отбили,
         // не успели → стая воет внизу, а мы додушиваем на насесте. Поздний триггер (толпа в упор) гонку
         // всегда проигрывал — с ношей ползём медленно
-        if (stage >= 2 && RescuersIncoming() && Time.time >= nextWallSeek)
+        if (constrictM.Stage >= 2 && RescuersIncoming() && Time.time >= nextWallSeek)
         {
             nextWallSeek = Time.time + 0.5f; // сканы стены не каждый кадр (12 лучей)
             if (FindRefugeWall(out wallPoint, out wallNormal)) { climb = ClimbPhase.Approach; BeginCarry(); return; }
@@ -781,25 +708,17 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         if (CrowdNear()) { EndConstrict(attackCooldown); return; }
 
         // жертву оттолкнуло далеко — соскользнула
-        Vector3 to = heldHealth.transform.position - transform.position; to.y = 0f;
+        Vector3 to = constrictM.Victim.transform.position - transform.position; to.y = 0f;
         if (to.magnitude > bite.Range * 1.6f) { EndConstrict(0.5f); return; }
 
         HoldNearVictim();
     }
 
-    // тик удушения (ст.3): DoT до смерти — смерть жертвы отпустит хват сама (heldHealth → null)
-    void ChokeTick()
-    {
-        if (Time.time < chokeNext) return;
-        heldHealth.LastAttacker = ownHealth; // жертва «достаётся змее» (родство — убийце, задел эволюции)
-        heldHealth.TakeDamage(npcChokeDamage, true);
-        chokeNext = Time.time + npcChokeInterval;
-    }
-
     // взяли ношу: жертва становится куклой (глушит свою локомоцию/гравитацию — позицией владеем мы)
     void BeginCarry()
     {
-        if (heldHealth != null && heldHealth.TryGetComponent<ICarried>(out var carried)) carried.SetCarried(true);
+        var v = constrictM.Victim;
+        if (v != null && v.TryGetComponent<ICarried>(out var carried)) carried.SetCarried(true);
     }
 
     // тащим тушу по земле к основанию стены; спасатели-стая достают (гейт CrowdNear отработал выше)
@@ -826,17 +745,20 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     // позиционируем ношу: на земле — позади (в кольцах, морда змеи к стене свободна); на стене — висит ниже головы
     void CarryVictim()
     {
-        if (heldHealth == null) return;
+        var v = constrictM.Victim;
+        if (v == null) return;
         Vector3 pos = climb == ClimbPhase.Approach
             ? transform.position - transform.forward * (bite.Range * 0.5f)   // ПОЗАДИ — своя CC-морда к стене свободна (не упирается в ношу)
             : transform.position - Vector3.up * carryDrop + wallNormal * carryStandoff; // на стене — висит ниже головы, отжата от плоскости
-        heldHealth.transform.position = pos;
+        v.transform.position = pos;
     }
 
     // стоим у жертвы, морда к ней, мягко держим дистанцию удержания (не таскаем её за собой)
     void HoldNearVictim()
     {
-        Vector3 to = heldHealth.transform.position - transform.position; to.y = 0f;
+        var v = constrictM.Victim;
+        if (v == null) return;
+        Vector3 to = v.transform.position - transform.position; to.y = 0f;
         float d = to.magnitude;
         Vector3 dir = d > 0.001f ? to / d : transform.forward;
         Face(dir);
@@ -847,40 +769,12 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         Settle(Mathf.Abs(err) > 0.3f ? Vector3.ClampMagnitude(dir * err * 3f, moveSpeed) : Vector3.zero);
     }
 
-    void SetStage(int s)
-    {
-        if (s > maxStage)
-        {
-            InjectVenom();                                    // туже сжатие → впрыск яда (раз на каждую новую стадию)
-            maxStage = s;
-            gripFloor = s >= 3 ? stage3At : stage2At;         // ратчет: защёлкнулись — назад за порог стадии не пускаем
-        }
-        stage = s;
-        telegraph.SetGradient(TelegraphColors.Grab, s / 3f); // стадии обхвата — ГРАДИЕНТ родной→фиолетовый по сжатию
-        if (heldIsPlayer && playerCtl != null) playerCtl.ApplyGrab(this, SlowFor(s));
-        else if (heldHealth != null) heldGrabbed = Grabbed.Apply(heldHealth.gameObject, ownHealth, s, s >= 2); // укрепление: импульс-стагер; ст.2+ = защёлк-стан
-    }
-
-    // яд со стадий — С ИСТОЧНИКОМ: смерть от него атрибутируется змее (родство убийце + вахта переваривания)
-    void InjectVenom()
-    {
-        if (heldHealth != null) new Hit(ownHealth, transform.position).Apply(heldHealth, HitEffect.Venom());
-    }
-
-    void ReleaseHeld()
-    {
-        if (heldIsPlayer && playerCtl != null) playerCtl.ReleaseGrab(this);
-        else if (heldHealth != null && heldHealth.TryGetComponent<ICarried>(out var carried)) carried.SetCarried(false); // ноша отпущена — оживает и падает
-        if (heldGrabbed != null) heldGrabbed.Release(); // снять единый статус (мёртвая жертва — Unity-null пропустит)
-        heldHealth = null; heldGrabbed = null; heldIsPlayer = false;
-    }
-
     void EndConstrict(float cooldown)
     {
         constricting = false; windingUp = false;
         telegraph.Clear();
-        ReleaseHeld();
-        stage = 0; grip = 0f; gripFloor = 0f;
+        constrictM.End(); // машина сама снимет статус/слоу/ношу и обнулит сжатие
+        shownStage = 0;
         // конец переноски: были на стене (Rise/Perch) → сползаем вниз (не падаем); тащили по земле (Approach) → просто отпускаем.
         // У обхвата ИГРОКА climb всегда None — его концовки это не касается
         if (climb == ClimbPhase.Rise || climb == ClimbPhase.Perch) climb = ClimbPhase.Descend;
@@ -891,23 +785,22 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     // IGrabber: игрок рвётся рывком. Отпускаем ТОЛЬКО в 1-й стадии (урон + отлёт змеи); в 2+ сжатие держит.
     public bool BreakFree(int damage)
     {
-        if (!constricting || !heldIsPlayer) return true; // игрока не держим — считаем свободным
-        if (stage >= 2) return false;                    // сжатие: рывок бесполезен, не отпускаем
+        if (!constricting || !constrictM.VictimIsPlayer) return true; // игрока не держим — считаем свободным
+        if (constrictM.Stage >= 2) return false;                     // сжатие: рывок бесполезен, не отпускаем
+        var victim = constrictM.Victim;
         if (ownHealth != null && damage > 0)
         {
-            ownHealth.LastAttacker = heldHealth; // рывок-срыв ранит змею — это удар игрока
+            ownHealth.LastAttacker = victim; // рывок-срыв ранит змею — это удар игрока
             ownHealth.TakeDamage(damage);
         }
-        if (knockback != null && heldHealth != null)
+        if (knockback != null && victim != null)
         {
-            Vector3 away = transform.position - heldHealth.transform.position; away.y = 0f;
+            Vector3 away = transform.position - victim.transform.position; away.y = 0f;
             if (away.sqrMagnitude > 0.001f) knockback.Push(away.normalized * ripSelfKnock);
         }
         EndConstrict(attackCooldown);
         return true;
     }
-
-    float SlowFor(int s) => s >= 3 ? grabSlow3 : s == 2 ? grabSlow2 : grabSlow1;
 
     void Face(Vector3 d) =>
         transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(d), rotationSpeed * Time.deltaTime);
