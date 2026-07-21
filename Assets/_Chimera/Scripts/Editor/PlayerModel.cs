@@ -30,9 +30,11 @@ public static class PlayerModel
         var cc = pc.GetComponent<CharacterController>();
         float footY = cc != null ? cc.center.y - cc.height * 0.5f : 0f;
 
-        // старая модель: примитив-меш НА КОРНЕ (капсула первых дней) — глушим рендер, коллизией владеет CC
-        var rootRenderer = pc.GetComponent<MeshRenderer>();
-        if (rootRenderer != null) rootRenderer.enabled = false;
+        // старая модель: примитив-меш НА КОРНЕ (капсула первых дней) — СНОСИМ, а не гасим. Гасить мало:
+        // системы, что собирают рендеры оптом (Camouflage «прячу/показываю тело»), воскрешали её
+        // enabled=true и капсула накрывала модель. Коллизией владеет CharacterController
+        if (pc.TryGetComponent<MeshRenderer>(out var rootRenderer)) Object.DestroyImmediate(rootRenderer);
+        if (pc.TryGetComponent<MeshFilter>(out var rootFilter)) Object.DestroyImmediate(rootFilter);
 
         // снести известные детали (идемпотентность повторного запуска)
         for (int i = t.childCount - 1; i >= 0; i--)
