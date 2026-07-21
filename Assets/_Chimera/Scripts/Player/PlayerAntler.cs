@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -23,14 +22,11 @@ public class PlayerAntler : MonoBehaviour, IAbility
     float nextTime;
     CameraFollow cam;
     Health ownHealth;
-    CreatureBody body; // своё тело — эрозия признания при ударе по кину (NoteHit)
-    readonly HashSet<Health> hitThis = new();
 
     void Start()
     {
         cam = FindAnyObjectByType<CameraFollow>();
         ownHealth = GetComponent<Health>();
-        body = GetComponent<CreatureBody>();
     }
 
     public bool TryUse()
@@ -43,23 +39,13 @@ public class PlayerAntler : MonoBehaviour, IAbility
 
     void DoGore()
     {
-        hitThis.Clear();
-        bool any = false;
         var hit = new Hit(ownHealth, transform.position);
         // единый паёк рогов (см. MeleeBlow) — тот же удар льёт NPC-лось; мощь впечена в числа (mult 1)
         var blow = new MeleeBlow { Damage = damage, KnockForce = force, BleedStacks = bleedStacks };
+        var targets = TargetScan.Healths(Center(), radius, transform);
+        foreach (var hp in targets) blow.Deliver(hit, hp); // вспышка+стаггер, откидывание, кровь; эрозия — внутри Hit.Apply
 
-        foreach (var col in Physics.OverlapSphere(Center(), radius, ~0, QueryTriggerInteraction.Ignore))
-        {
-            var hp = col.GetComponentInParent<Health>();
-            if (hp == null || hp.transform == transform || !hitThis.Add(hp)) continue;
-
-            blow.Deliver(hit, hp); // вспышка + стаггер через onDamaged, откидывание, кровь
-            if (body != null) body.NoteHit(hp); // удар по кину подтачивает признание (эрозия)
-            any = true;
-        }
-
-        if (any && cam != null) cam.Shake(0.16f, shake);
+        if (targets.Count > 0 && cam != null) cam.Shake(0.16f, shake);
     }
 
     Vector3 Center() => transform.position + transform.forward * range + Vector3.up * 0.55f; // рога — уровень головы (корень — центр капсулы)

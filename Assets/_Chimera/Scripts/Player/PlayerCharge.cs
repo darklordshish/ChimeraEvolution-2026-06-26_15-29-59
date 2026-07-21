@@ -21,7 +21,6 @@ public class PlayerCharge : MonoBehaviour
     PlayerController move;
     Health ownHealth;
     CameraFollow cam;
-    CreatureBody body; // своё тело — эрозия признания при таране по кину (NoteHit)
     readonly HashSet<Health> goredThisDash = new();
     bool wasDashing;
 
@@ -30,7 +29,6 @@ public class PlayerCharge : MonoBehaviour
         move = GetComponent<PlayerController>();
         ownHealth = GetComponent<Health>();
         cam = FindAnyObjectByType<CameraFollow>();
-        body = GetComponent<CreatureBody>();
     }
 
     void Update()
@@ -45,12 +43,10 @@ public class PlayerCharge : MonoBehaviour
         Vector3 center = transform.position + transform.forward * reach + Vector3.up * 0.3f; // грудь — таран корпусом (корень — центр капсулы)
         var hit = new Hit(ownHealth, transform.position);
         var blow = new MeleeBlow { Damage = damage, KnockForce = force }; // единый паёк тарана (см. MeleeBlow)
-        foreach (var col in Physics.OverlapSphere(center, radius, ~0, QueryTriggerInteraction.Ignore))
+        foreach (var hp in TargetScan.Healths(center, radius, transform))
         {
-            var hp = col.GetComponentInParent<Health>();
-            if (hp == null || hp.transform == transform || !goredThisDash.Add(hp)) continue;
-            blow.Deliver(hit, hp);              // урон (вспышка+стаггер) + снос с дороги
-            if (body != null) body.NoteHit(hp); // таран по кину подтачивает признание — как остальные удары
+            if (!goredThisDash.Add(hp)) continue; // раз за рывок (память живёт весь дэш)
+            blow.Deliver(hit, hp); // урон (вспышка+стаггер) + снос с дороги; эрозия по кину — внутри Hit.Apply
             if (cam != null) cam.Shake(0.14f, shake);
         }
     }

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -31,14 +30,11 @@ public class PlayerBite : MonoBehaviour, IAbility
     float nextTime;
     CameraFollow cam;
     Health ownHealth;
-    CreatureBody body; // своё тело — эрозия признания при укусе кина (NoteHit)
-    readonly HashSet<Health> hitThisBite = new();
 
     void Start()
     {
         cam = FindAnyObjectByType<CameraFollow>();
         ownHealth = GetComponent<Health>();
-        body = GetComponent<CreatureBody>();
     }
 
     // водитель зовёт по вводу; активен только с надетой Пастью; кулдаун проверяем сами
@@ -52,8 +48,7 @@ public class PlayerBite : MonoBehaviour, IAbility
 
     void DoBite()
     {
-        hitThisBite.Clear(); // призрака раскрывает попадание (Hit.Apply), не замах
-        int hits = 0;
+        // призрака раскрывает попадание (Hit.Apply), не замах
         var hit = new Hit(ownHealth, transform.position);
         // единый паёк укуса (см. MeleeBlow): урон + сбив регена + вампиризм + яд/кровь по данным органа
         var blow = new MeleeBlow
@@ -62,17 +57,10 @@ public class PlayerBite : MonoBehaviour, IAbility
             LifeSteal = lifeSteal, VenomStacks = venomStacks, BleedStacks = bleedStacks,
             RegenDebuffFactor = regenDebuff, RegenDebuffTime = regenDebuffTime,
         };
-        Collider[] cols = Physics.OverlapSphere(BiteCenter(), radius, ~0, QueryTriggerInteraction.Ignore);
-        foreach (var col in cols)
-        {
-            var hp = col.GetComponentInParent<Health>();
-            if (hp == null || hp.transform == transform || !hitThisBite.Add(hp)) continue;
-            blow.Deliver(hit, hp);
-            if (body != null) body.NoteHit(hp); // укус по кину подтачивает признание (эрозия)
-            hits++;
-        }
+        var targets = TargetScan.Healths(BiteCenter(), radius, transform);
+        foreach (var hp in targets) blow.Deliver(hit, hp); // эрозия по кину — внутри Hit.Apply
 
-        if (hits > 0)
+        if (targets.Count > 0)
         {
             if (cam != null) cam.Shake(0.12f, shake);
             Hitstop.Do(0.05f);

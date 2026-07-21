@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -13,24 +12,20 @@ public class PlayerAttack : MonoBehaviour, IAbility
     [SerializeField] float range = 1.6f;   // как далеко вперёд центр хитбокса
     [SerializeField] float radius = 1.0f;  // радиус хитбокса
     [SerializeField] float cooldown = 0.45f;
-    [SerializeField] LayerMask hitMask = ~0; // пока бьём по всему
 
     [Header("Сочность")]
     [SerializeField] float hitstopDuration = 0.06f;
     [SerializeField] float shakeMagnitude = 0.25f;
 
     float nextTime;
-    readonly HashSet<Health> hitThisSwing = new();
     CameraFollow cam;
     Health ownHealth;
-    CreatureBody body; // своё тело — эрозия признания при ударе по кину (NoteHit)
     int lifeSteal;
 
     void Start()
     {
         cam = FindAnyObjectByType<CameraFollow>();
         ownHealth = GetComponent<Health>();
-        body = GetComponent<CreatureBody>();
     }
 
     // водитель (PlayerInputDriver) зовёт по вводу; кулдаун проверяем сами
@@ -44,19 +39,13 @@ public class PlayerAttack : MonoBehaviour, IAbility
 
     void DoAttack()
     {
-        hitThisSwing.Clear(); // призрака раскрывает ПОПАДАНИЕ (Hit.Apply), не замах — холостой взмах безопасен
+        // призрака раскрывает ПОПАДАНИЕ (Hit.Apply), не замах — холостой взмах безопасен
         var hit = new Hit(ownHealth, transform.position);
         var blow = new MeleeBlow { Damage = damage, LifeSteal = lifeSteal }; // единый паёк удара (см. MeleeBlow)
-        Collider[] hits = Physics.OverlapSphere(AttackCenter(), radius, hitMask, QueryTriggerInteraction.Ignore);
-        foreach (var col in hits)
-        {
-            var hp = col.GetComponentInParent<Health>();
-            if (hp == null || hp.transform == transform || !hitThisSwing.Add(hp)) continue;
-            blow.Deliver(hit, hp); // урон + вампиризм (мощь впечена в числа)
-            if (body != null) body.NoteHit(hp); // удар по кину подтачивает признание (эрозия)
-        }
+        var targets = TargetScan.Healths(AttackCenter(), radius, transform);
+        foreach (var hp in targets) blow.Deliver(hit, hp); // урон + вампиризм; эрозия по кину — внутри Hit.Apply
 
-        if (hitThisSwing.Count > 0) // попали хотя бы по одному — сочность раз за замах
+        if (targets.Count > 0) // попали хотя бы по одному — сочность раз за замах
         {
             if (hitstopDuration > 0f) Hitstop.Do(hitstopDuration); // 0 = выключить глобальный фриз
             if (cam != null) cam.Shake(0.12f, shakeMagnitude);

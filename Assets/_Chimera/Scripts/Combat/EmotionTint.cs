@@ -4,10 +4,10 @@ using UnityEngine;
 /// ЭМОЦ-ИНДИКАЦИЯ (лось, срез C; идеи пользователя): моральное состояние красит ГОЛОВУ существа, пока
 /// действует — через головной рест-слой Telegraph. Пространственное разделение каналов: ТЕЛО = приёмы
 /// (вспышки телеграфа), ГОЛОВА = эмоции — «морда налилась кровью / побелела» читается даже в гуще боя.
-/// ЯРОСТЬ (Rage.IsEnraged) — бордовая морда, ПАНИКА (Fear.IsRouting) — синяя.
+/// ЯРОСТЬ (Rage.IsEnraged) — бордовая морда, ПАНИКА (шкала морали в минусе) — синяя.
 /// SetMood — ручка психики для ГРАДИЕНТНЫХ состояний (лесенка предупреждений лося: натуральный→ярость
-/// по ступеням); статус-эмоции сильнее mood. Вешает ТЕЛО всем: у холоднокровных Rage/Fear не заводятся —
-/// эмоций нет, тинт молчит сам (та же фильтрация, что везде). Плейсхолдер под боди-ленгвидж (риги).
+/// по ступеням); статус-эмоции сильнее mood. Вешает ТЕЛО всем: у холоднокровных Rage не заводится, а
+/// мораль инертна — эмоций нет, тинт молчит сам (та же фильтрация, что везде). Плейсхолдер под боди-ленгвидж (риги).
 /// </summary>
 public class EmotionTint : MonoBehaviour
 {
@@ -15,8 +15,7 @@ public class EmotionTint : MonoBehaviour
 
     Telegraph telegraph;
     Rage rage;
-    Fear fear;
-    Morale moraleRef; // стайные: паника — по шкале морали
+    Morale moraleRef; // паника/дух — по шкале морали (универсальна: и стайным, и одиночкам — лось)
     Color moodColor;  // градиентное «настроение» от психики (лесенка лося)
     float moodT;
     Color lastColor;
@@ -27,10 +26,9 @@ public class EmotionTint : MonoBehaviour
 
     void Update()
     {
-        // статусы могут до-создаться позже (Fear — при первом источнике) — ленивая привязка
+        // статусы могут до-создаться позже — ленивая привязка
         if (telegraph == null && !TryGetComponent(out telegraph)) return;
         if (rage == null) TryGetComponent(out rage);
-        if (fear == null) TryGetComponent(out fear);
         if (moraleRef == null) TryGetComponent(out moraleRef);
 
         // морда = «настроение»: СИЛЬНЕЙШЕЕ из живого ГРАДУСНИКА ШКАЛЫ МОРАЛИ (−кап синяя … 0 натур … +кап
@@ -46,8 +44,6 @@ public class EmotionTint : MonoBehaviour
         // БЕРСЕРК/вечная ярость → полный красный, но ТОЛЬКО когда своего градусника нет (лось-берсерк,
         // вервольф): у волков шкала ведёт сама — не сбиваем плавность в полный
         if (rage != null && rage.IsEnraged && moraleT < 0.05f) { c = TelegraphColors.RageTint; t = statusStrength; }
-        // одиночки БЕЗ шкалы морали (будущие) — словарный Fear
-        else if (moraleRef == null && fear != null && fear.IsRouting) { c = TelegraphColors.FearTint; t = statusStrength; }
 
         if (t == lastT && c == lastColor) return; // рест трогаем только на изменение
         lastColor = c; lastT = t;
