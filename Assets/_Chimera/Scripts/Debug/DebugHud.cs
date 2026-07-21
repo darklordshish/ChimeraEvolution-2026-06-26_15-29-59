@@ -3,20 +3,25 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// Временный отладочный HUD через OnGUI: HP игрока и родство.
-/// Уберём, когда сделаем нормальный UI.
+/// Экранный HUD-МИНИМУМ на OnGUI: только то, без чего нельзя играть — своё состояние, что даёт сборка,
+/// что происходит в захвате. Читы и диагностика мира (родство, призрак, запах/термо, восприятие NPC,
+/// стая, состав тела) переехали в «Chimera → Dev-панель»: экран больше не каша.
+///
+/// Умрёт целиком, когда придёт мировой HUD (полоски над целями + значки статусов + сканер зон чувств).
+/// F1 — легенда цвет-сигналов: учебник языка игры, остаётся и после.
 /// </summary>
 public class DebugHud : MonoBehaviour
 {
     Health playerHealth;
-    CreatureBody body;
     PlayerController player;
     PlayerBite bite;
     PlayerKick kick;
     PlayerHowl howl;
     PlayerConstrict constrict;
     PlayerBellow bellow;
-    GUIStyle style;
+    GUIStyle style, smallStyle, legendStyle;
+
+    bool showLegend = true; // легенда видна по умолчанию — учебник языка сигналов; F1 прячет
 
     void Start()
     {
@@ -25,7 +30,6 @@ public class DebugHud : MonoBehaviour
         {
             player = pc;
             playerHealth = pc.GetComponent<Health>();
-            body = pc.GetComponent<CreatureBody>();
             bite = pc.GetComponent<PlayerBite>();
             kick = pc.GetComponent<PlayerKick>();
             howl = pc.GetComponent<PlayerHowl>();
@@ -36,147 +40,37 @@ public class DebugHud : MonoBehaviour
 
     void Update()
     {
-        if (playerHealth != null && Keyboard.current != null && Keyboard.current.gKey.wasPressedThisFrame)
-            playerHealth.GodMode = !playerHealth.GodMode; // G — режим бога (отладка)
-
-        if (Keyboard.current != null && Keyboard.current.kKey.wasPressedThisFrame)
-            CreatureBody.PlayerBody?.AddAffinity("Волк", 10); // K — +10 родства-волк (отладка: проверить скидку/бонусы)
-
-        if (Keyboard.current != null && Keyboard.current.lKey.wasPressedThisFrame)
-            CreatureBody.PlayerBody?.AddAffinity("Змея", 10); // L — +10 родства-змея
-
-        if (Keyboard.current != null && Keyboard.current.semicolonKey.wasPressedThisFrame)
-            CreatureBody.PlayerBody?.AddAffinity("Лось", 10); // ; — +10 родства-лось
-
-        if (Keyboard.current != null && Keyboard.current.nKey.wasPressedThisFrame)
-            Perception.ShowOwnScent = !Perception.ShowOwnScent; // N — показ своего запаха
-
-        if (Keyboard.current != null && Keyboard.current.tKey.wasPressedThisFrame)
-            Perception.DevThermal = !Perception.DevThermal; // T — форс термозрения без органа (отладка)
-
+        // читы (G/K/L/;/N/T) уехали кнопками в Dev-панель — на экране остался только учебник
         if (Keyboard.current != null && Keyboard.current.f1Key.wasPressedThisFrame)
-            showLegend = !showLegend; // F1 — легенда цвет-сигналов (правый край)
-    }
-
-    bool showLegend = true; // легенда видна по умолчанию — учебник языка сигналов; F1 прячет
-
-    // строка легенды: цветной квадратик + подпись (квадрат — белая текстура, тонированная GUI.color)
-    void LegendRow(ref float y, float x, Color c, string label)
-    {
-        var old = GUI.color;
-        GUI.color = c;
-        GUI.DrawTexture(new Rect(x, y + 4, 16, 16), Texture2D.whiteTexture);
-        GUI.color = old;
-        GUI.Label(new Rect(x + 22, y, 220, 24), label, legendStyle);
-        y += 22f;
-    }
-
-    void LegendHeader(ref float y, float x, string text)
-    {
-        GUI.Label(new Rect(x, y, 220, 24), text, legendStyle);
-        y += 24f;
-    }
-
-    GUIStyle legendStyle;
-
-    static string AlertRu(Alert s) => s == Alert.Attack ? "АТАКА" : s == Alert.Wary ? "настороже" : "спокоен"; // S1-отладка
-
-    // S1-отладка: восприятие ближайшего к игроку существа типа T (пусто, если таких нет)
-    string NearestAlertStr<T>(string label) where T : Component
-    {
-        if (player == null) return "";
-        T near = null; float best = float.MaxValue;
-        foreach (var c in FindObjectsByType<T>())
-        {
-            float d = (c.transform.position - player.transform.position).sqrMagnitude;
-            if (d < best) { best = d; near = c; }
-        }
-        if (near == null || !near.TryGetComponent<AlertState>(out var a)) return "";
-        string mor = near.TryGetComponent<Morale>(out var m) ? $" м:{m.Current:+0.#;-0.#;0}" : ""; // шкала морали (стайные)
-        return $"{label} {AlertRu(a.State)}{mor} [{Mathf.Sqrt(best):0}м]";
-    }
-
-    // отладка эффектов: HP + стаки крови/яда БЛИЖАЙШЕГО врага (видно, как цель истекает от твоего укуса)
-    string EnemyStatusStr()
-    {
-        if (player == null) return "";
-        Health near = null; float best = float.MaxValue;
-        foreach (var h in FindObjectsByType<Health>())
-        {
-            if (h == playerHealth || h.transform == player.transform) continue;
-            float d = (h.transform.position - player.transform.position).sqrMagnitude;
-            if (d < best) { best = d; near = h; }
-        }
-        return near != null ? $"Ближ.враг: HP {near.Current}/{near.Max}{EffectTags(near)} [{Mathf.Sqrt(best):0}м]" : "";
-    }
-
-    static string EffectTags(Health h)
-    {
-        string s = "";
-        if (h.TryGetComponent<Bleed>(out var b) && b.Stacks > 0) s += $"  кровь {b.Stacks}";
-        if (h.TryGetComponent<Venom>(out var v) && v.Stacks > 0) s += $"  ☠ яд {v.Stacks}";
-        return s;
-    }
-
-    // отладка разброса: личность + множители особи БЛИЖАЙШЕГО волка (get-only, в инспекторе не видны)
-    string NearestWolfTraits()
-    {
-        if (player == null) return "";
-        WolfPsyche near = null; float best = float.MaxValue;
-        foreach (var w in FindObjectsByType<WolfPsyche>())
-        {
-            float d = (w.transform.position - player.transform.position).sqrMagnitude;
-            if (d < best) { best = d; near = w; }
-        }
-        if (near == null) return "";
-        string s = "Ближ.волк особь:";
-        if (near.TryGetComponent<Personality>(out var p)) s += $"  храбр {p.Bravery:0.0} · агр {p.Aggression:0.00} · любоп {p.Curiosity:0.00}";
-        if (near.TryGetComponent<SpawnVariance>(out var v)) s += $"   |  hp×{v.HpMult:0.00} ск×{v.SpeedMult:0.00} ур×{v.DamageMult:0.00}";
-        return s;
+            showLegend = !showLegend;
     }
 
     void OnGUI()
     {
         style ??= new GUIStyle(GUI.skin.label) { fontSize = 18, normal = { textColor = Color.white } };
+        smallStyle ??= new GUIStyle(GUI.skin.label) { fontSize = 14, normal = { textColor = new Color(1f, 0.85f, 0.4f) } };
 
+        // ── СВОЁ СОСТОЯНИЕ ───────────────────────────────────────────────────
         string hp = playerHealth != null ? $"{playerHealth.Current}/{playerHealth.Max}" : "—";
         string combat = playerHealth != null && !playerHealth.InCombat
             ? (playerHealth.OutOfCombatRegen > 0f ? "  (вне боя — реген)" : "  (вне боя)") : "";
+        GUI.Label(new Rect(14, 10, 760, 26), $"HP: {hp}{combat}", style);
+
+        // статусы — ТОЛЬКО значок и число (цвета из общей легенды F1, слова не нужны).
+        // Глифы — из БАЗОВОЙ плоскости Unicode: встроенный шрифт OnGUI не знает эмодзи (🩸 и т.п. дадут
+        // пустой прямоугольник). Настоящие иконки придут в B1 вместе с переездом HUD на Canvas.
+        float sx = 14f;
         var venom = playerHealth != null ? playerHealth.GetComponent<Venom>() : null;
-        string poison = venom != null && venom.Stacks > 0 ? $"   ☠ яд {venom.Stacks}" : "";
+        if (venom != null && venom.Stacks > 0) StatusIcon(ref sx, 34f, TelegraphColors.Venom, "☠", venom.Stacks);
         var bleedC = playerHealth != null ? playerHealth.GetComponent<Bleed>() : null;
-        string bleeding = bleedC != null && bleedC.Stacks > 0 ? $"   кровь {bleedC.Stacks}" : "";
-        GUI.Label(new Rect(14, 10, 760, 26), $"HP: {hp}{combat}{poison}{bleeding}", style);
+        if (bleedC != null && bleedC.Stacks > 0) StatusIcon(ref sx, 34f, TelegraphColors.Bleed, "♦♦", bleedC.Stacks);
+
         var boss = FindAnyObjectByType<WerewolfPsyche>();
         if (boss != null && boss.TryGetComponent<Health>(out var bossHp))
-            GUI.Label(new Rect(540, 10, 460, 26), $"БОСС: {bossHp.Current}/{bossHp.Max}{(bossHp.Current > bossHp.Max ? $" (+{bossHp.Current - bossHp.Max} temp)" : "")}", style);
-        var affParts = new List<string>();
-        if (CreatureBody.PlayerBody != null)
-            foreach (var kv in CreatureBody.PlayerBody.AllAffinity) if (kv.Value != 0) affParts.Add($"{kv.Key} {kv.Value}");
-        string aff = affParts.Count > 0 ? string.Join(" · ", affParts) : "—";
-        GUI.Label(new Rect(14, 34, 900, 26), $"Родство: {aff}   (бонус органов ×{(body != null ? body.BonusMult : 1f):0.00})   [K: Волк +10 · L: Змея +10 · ; : Лось +10]", style);
-        GUI.Label(new Rect(14, 58, 600, 26), $"Шкала мозга: {(body != null ? body.BeastSlots : 0)}/{(body != null ? body.MaxSlots : 0)} звериных", style);
-        if (body != null) GUI.Label(new Rect(14, 210, 1100, 26), $"Идентичность: {body.IdentityInfo}", style); // K1: кем тебя считают ПО СОСТАВУ
-        string enemyStatus = EnemyStatusStr(); // HP + кровь/яд ближайшего врага — видно эффекты
-        if (enemyStatus != "") GUI.Label(new Rect(620, 58, 460, 26), enemyStatus, style);
-        GUI.Label(new Rect(14, 82, 300, 26), $"Пул мутагена: {(body != null ? body.PoolUsed : 0)}/{(body != null ? body.Pool : 0)}", style);
-        string traits = NearestWolfTraits(); // разброс особи (личность + множители) — get-only, в инспекторе не видны
-        if (traits != "") GUI.Label(new Rect(330, 82, 900, 26), traits, style);
-        // ШУМ игрока (дебаг-слушатель оси звука): 0 = беззвучен, 1 = полная громкость (бег/рывок)
-        var noise = playerHealth != null ? playerHealth.GetComponent<Noise>() : null;
-        string noiseStr = noise != null ? $"   Шум: {noise.Loudness:0.00}{(noise.Loudness < 0.15f ? " (тихо)" : noise.Loudness > 0.6f ? " (ГРОМКО)" : "")}" : "";
-        GUI.Label(new Rect(14, 106, 900, 26), $"БОГ [G]: {(playerHealth != null && playerHealth.GodMode ? "ВКЛ" : "выкл")}   Запах: чутьё {(Perception.WolfScent ? "да" : "нет")}, свой [N] {(Perception.ShowOwnScent ? "вкл" : "выкл")}   Термо [T]: {(Perception.ThermalOn ? (Perception.SnakeThermal ? "орган" : "дев") : "выкл")}{(Perception.PlayerGhost ? "   ПРИЗРАК" : "")}{noiseStr}", style);
-        var pack = PackCoordinator.Instance;
-        string morale = pack.AnyRouting() ? "БЕГСТВО" : pack.Fearless ? "ЯРОСТЬ" : "норма";
-        GUI.Label(new Rect(14, 130, 600, 26), $"Стая: атакуют {pack.AttackerCount}/{pack.MaxAttackers}, захват: {(pack.GrabActive ? "да" : "нет")}, мораль: {morale}", style);
+            GUI.Label(new Rect(540, 10, 460, 26),
+                $"БОСС: {bossHp.Current}/{bossHp.Max}{(bossHp.Current > bossHp.Max ? $" (+{bossHp.Current - bossHp.Max} temp)" : "")}", style);
 
-        // S1-отладка: восприятие БЛИЖАЙШИХ волка и змеи — видно, как машина Спок→Настор→Атака ходит у обоих видов
-        string wDbg = NearestAlertStr<WolfPsyche>("волк:");
-        string sDbg = NearestAlertStr<SnakePsyche>("змея:");
-        string percept = wDbg + (wDbg != "" && sDbg != "" ? "   " : "") + sDbg;
-        if (percept != "") GUI.Label(new Rect(620, 130, 460, 26), $"Восприятие — {percept}", style);
-
-        // какие способности сейчас активны (видно, что даёт сборка) + что происходит с тобой прямо сейчас
+        // ── ЧТО ДАЁТ СБОРКА: «пианино» растёт с химеризацией ─────────────────
         var abil = new List<string> { "меч ЛКМ" };
         if (kick != null && kick.KickEnabled) abil.Add("пинок E");
         if (bite != null && bite.BiteEnabled) abil.Add("укус Q");
@@ -188,8 +82,9 @@ public class DebugHud : MonoBehaviour
         if (antler != null && antler.AntlerEnabled) abil.Add("рога R");
         var charge = player != null ? player.GetComponent<PlayerCharge>() : null;
         if (charge != null && charge.ChargeEnabled) abil.Add("таран (рывок)");
-        GUI.Label(new Rect(14, 154, 900, 26), $"Способности: {string.Join(" · ", abil)}", style);
+        GUI.Label(new Rect(14, 58, 900, 26), $"Способности: {string.Join(" · ", abil)}   ·   Tab — конструктор", style);
 
+        // ── ЧТО ПРОИСХОДИТ ПРЯМО СЕЙЧАС: стадии захвата нечитаемы без строки ──
         string action = "";
         if (constrict != null && constrict.Holding)
             action = $"➤ ОБХВАТ ст.{constrict.Stage}{(constrict.Stage >= 2 ? (constrict.Presenting ? " — ПОД УДАРОМ" : " — ЗАЩЁЛКНУТО") : " — держи, вырывается!")}" +
@@ -197,11 +92,18 @@ public class DebugHud : MonoBehaviour
                      (constrict.Stage >= 2 ? "   [F — отпустить · C — подставить/за спину]" : "   [F — отпустить]");
         else if (player != null && player.IsGrabbed)
             action = "➤ ТЫ СХВАЧЕН — рывок/пинок!";
-        GUI.Label(new Rect(14, 178, 900, 26), action, style);
+        if (action != "") GUI.Label(new Rect(14, 82, 900, 26), action, style);
 
-        GUI.Label(new Rect(14, 236, 760, 200), body != null ? body.SlotsInfo : "", style);
+        // ── дев-режимы: молчат, пока выключены; включённый режим обязан быть виден ──
+        var modes = new List<string>();
+        if (playerHealth != null && playerHealth.GodMode) modes.Add("БОГ");
+        if (Perception.PlayerGhost) modes.Add("ПРИЗРАК");
+        if (Perception.DevThermal) modes.Add("ТЕРМО-форс");
+        if (Perception.ShowOwnScent) modes.Add("свой запах");
+        if (modes.Count > 0)
+            GUI.Label(new Rect(14, 108, 900, 22), $"дев: {string.Join(" · ", modes)}   [Dev-панель]", smallStyle);
 
-        // ЛЕГЕНДА ЦВЕТ-СИГНАЛОВ (правый край, F1): язык игры — приёмы (вспышка тела) / статусы / эмоции (морда)
+        // ── ЛЕГЕНДА ЦВЕТ-СИГНАЛОВ (правый край, F1) ──────────────────────────
         if (showLegend)
         {
             legendStyle ??= new GUIStyle(GUI.skin.label) { fontSize = 14, normal = { textColor = Color.white } };
@@ -218,12 +120,45 @@ public class DebugHud : MonoBehaviour
             LegendRow(ref y, x, TelegraphColors.Sword,  "меч");
             LegendRow(ref y, x, TelegraphColors.Kick,   "пинок");
 
-            LegendHeader(ref y, x, "— статусы (всё тело) —");
-            LegendRow(ref y, x, TelegraphColors.Stunned, "стан / схвачен");
+            LegendHeader(ref y, x, "— статусы —");
+            LegendRow(ref y, x, TelegraphColors.Stunned, "стан / схвачен (всё тело)");
+            LegendRow(ref y, x, TelegraphColors.Venom,   "яд (значок + стаки)");
+            LegendRow(ref y, x, TelegraphColors.Bleed,   "кровь (значок + стаки)");
 
             LegendHeader(ref y, x, "— эмоции (морда) —");
             LegendRow(ref y, x, TelegraphColors.RageTint, "ярость (лесенка — градиент)");
             LegendRow(ref y, x, TelegraphColors.FearTint, "паника/страх");
         }
+    }
+
+    /// <summary>Значок статуса: цветной глиф из легенды + число стаков. Слов нет — цвет и форма и есть имя.
+    /// Двигает x, чтобы значки выстраивались в ряд.
+    /// ГЛИФ ТОЛЬКО ИЗ БАЗОВОЙ ПЛОСКОСТИ Unicode (☠ ♦ ● ▲ ☺ ☹ ♥): встроенный шрифт OnGUI без эмодзи-атласа.</summary>
+    void StatusIcon(ref float x, float y, Color c, string glyph, int stacks)
+    {
+        var old = GUI.color;
+        GUI.color = c;
+        GUI.Label(new Rect(x, y, 46, 26), glyph, style);
+        GUI.color = old;
+        float w = glyph.Length > 1 ? 34f : 20f; // двойной глиф («♦♦» — капли) шире одиночного
+        GUI.Label(new Rect(x + w, y, 44, 26), stacks.ToString(), style);
+        x += w + 34f;
+    }
+
+    // строка легенды: цветной квадратик + подпись (квадрат — белая текстура, тонированная GUI.color)
+    void LegendRow(ref float y, float x, Color c, string label)
+    {
+        var old = GUI.color;
+        GUI.color = c;
+        GUI.DrawTexture(new Rect(x, y + 4, 16, 16), Texture2D.whiteTexture);
+        GUI.color = old;
+        GUI.Label(new Rect(x + 22, y, 220, 24), label, legendStyle);
+        y += 22f;
+    }
+
+    void LegendHeader(ref float y, float x, string text)
+    {
+        GUI.Label(new Rect(x, y, 220, 24), text, legendStyle);
+        y += 24f;
     }
 }

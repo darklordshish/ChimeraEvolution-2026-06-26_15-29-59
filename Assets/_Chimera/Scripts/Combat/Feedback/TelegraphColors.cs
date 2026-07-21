@@ -25,6 +25,9 @@ public static class TelegraphColors
 
     // статусы
     public static readonly Color Stunned = new(0.92f, 0.92f, 0.85f); // «выключен из боя» (стан/схвачен) — белёсый
+    public static readonly Color Venom   = new(0.45f, 0.85f, 0.20f); // яд — ядовито-зелёный
+    public static readonly Color Bleed   = new(0.72f, 0.04f, 0.12f); // кровотечение — тёмно-алый
+    // (Bleed соседствует с RageTint по тону, но живёт в ДРУГОМ канале: кровь — значок в HUD, ярость — тинт морды.)
 
     // эмоции (рест-тинт тела; ярость ≠ красный укуса — глубокий бордовый, страх — явный холодный синий)
     public static readonly Color RageTint = new(0.72f, 0.10f, 0.10f); // ярость: тело наливается бордовым
