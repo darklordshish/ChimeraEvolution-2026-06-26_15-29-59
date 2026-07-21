@@ -43,20 +43,68 @@ public static class MoosePrefab
         var cc = go.AddComponent<CharacterController>();
         cc.height = 2.2f; cc.radius = 0.9f; cc.center = new Vector3(0f, 1.1f, 0f); // крупная туша
 
-        // корпус — вытянутый бокс-плейсхолдер; морда-бокс спереди для читаемости направления
+        // корпус — вытянутый бокс-плейсхолдер; голова — сборная лосиная (AttachMooseHead ниже)
         var body = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        body.name = "Body";
+        body.name = "Body"; // ГРУДНАЯ половина — глубже и выше (к холке)
         body.transform.SetParent(go.transform, false);
-        body.transform.localPosition = new Vector3(0f, 1.1f, 0f);
-        body.transform.localScale = new Vector3(1.1f, 1.6f, 2.6f);
+        body.transform.localPosition = new Vector3(0f, 1.5f, 0.4f); // корпус ПОДНЯТ: лось — ходульный (низ туши ~0.95)
+        body.transform.localScale = new Vector3(1.1f, 1.05f, 1.6f);
         Object.DestroyImmediate(body.GetComponent<Collider>()); // коллизия — на CharacterController
 
-        var head = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        head.name = "Head";
-        head.transform.SetParent(go.transform, false);
-        head.transform.localPosition = new Vector3(0f, 1.5f, 1.4f);
-        head.transform.localScale = new Vector3(0.5f, 0.5f, 0.7f);
-        Object.DestroyImmediate(head.GetComponent<Collider>());
+        var rump = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        rump.name = "Rump"; // круп — ниже и уже: спина покато спадает от холки к заду
+        rump.transform.SetParent(go.transform, false);
+        rump.transform.localPosition = new Vector3(0f, 1.42f, -0.85f);
+        rump.transform.localScale = new Vector3(0.95f, 0.9f, 1.0f);
+        Object.DestroyImmediate(rump.GetComponent<Collider>());
+
+        var mooseTail = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        mooseTail.name = "Tail"; // хвостик-ОБРУБОК: в природе у лося ~10см, почти бесхвост — и у нас так
+        mooseTail.transform.SetParent(go.transform, false);
+        mooseTail.transform.localPosition = new Vector3(0f, 1.66f, -1.38f);
+        mooseTail.transform.localRotation = Quaternion.Euler(-25f, 0f, 0f);
+        mooseTail.transform.localScale = new Vector3(0.12f, 0.26f, 0.1f);
+        Object.DestroyImmediate(mooseTail.GetComponent<Collider>());
+
+        // НОГИ по-настоящему (половина роста лося — ноги): передние прямые с копытами; ЗАДНИЕ с изломом
+        // копытного — бедро вперёд-вниз, голень назад-вниз (скакательный сустав), копыто
+        void LegPart(string name, Vector3 pos, Vector3 euler, Vector3 scale)
+        {
+            var p = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            p.name = name;
+            p.transform.SetParent(go.transform, false);
+            p.transform.localPosition = pos;
+            p.transform.localRotation = Quaternion.Euler(euler);
+            p.transform.localScale = scale;
+            Object.DestroyImmediate(p.GetComponent<Collider>());
+        }
+        for (int side = -1; side <= 1; side += 2)
+        {
+            LegPart("LegFront",  new Vector3(0.35f * side, 0.55f, 0.85f),  Vector3.zero,              new Vector3(0.16f, 1.0f, 0.16f));
+            LegPart("HoofFront", new Vector3(0.35f * side, 0.06f, 0.87f),  Vector3.zero,              new Vector3(0.18f, 0.12f, 0.2f));
+            LegPart("Thigh",     new Vector3(0.35f * side, 0.75f, -0.88f), new Vector3(-18f, 0f, 0f), new Vector3(0.22f, 0.6f, 0.28f));
+            LegPart("Shin",      new Vector3(0.35f * side, 0.3f, -0.84f),  new Vector3(15f, 0f, 0f),  new Vector3(0.13f, 0.55f, 0.13f));
+            LegPart("HoofRear",  new Vector3(0.35f * side, 0.06f, -0.8f),  Vector3.zero,              new Vector3(0.16f, 0.12f, 0.18f));
+        }
+
+        // ШЕЯ — наклонный брус от загривка вверх-вперёд: поднимает голову НАД тушей (верх туши y=1.9)
+        var neck = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        neck.name = "Neck";
+        neck.transform.SetParent(go.transform, false);
+        neck.transform.localPosition = new Vector3(0f, 1.9f, 1.25f);
+        neck.transform.localRotation = Quaternion.Euler(-35f, 0f, 0f);
+        neck.transform.localScale = new Vector3(0.35f, 0.38f, 0.8f);
+        Object.DestroyImmediate(neck.GetComponent<Collider>());
+
+        AttachMooseHead(go.transform, new Vector3(0f, 2.15f, 1.55f), 1f); // сборная голова НА шее, выше туши (см. метод)
+
+        // ХОЛКА-ГОРБ над лопатками — фирменный силуэт лося (высшая точка туши, выше крупа)
+        var hump = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        hump.name = "Hump";
+        hump.transform.SetParent(go.transform, false);
+        hump.transform.localPosition = new Vector3(0f, 2.12f, 0.45f); // над поднятой грудью (верх 2.03)
+        hump.transform.localScale = new Vector3(0.85f, 0.35f, 0.9f);
+        Object.DestroyImmediate(hump.GetComponent<Collider>());
 
         // РОГА (плейсхолдер, по-лосиному): короткий столбик у МАКУШКИ + прямоугольная ЛОПАСТЬ большой стороной
         // ВДОЛЬ тела (ось z), сдвинутая НАЗАД — столбик подходит к её нижне-переднему углу. Лопасть выше корпуса
@@ -66,14 +114,14 @@ public static class MoosePrefab
             var stem = GameObject.CreatePrimitive(PrimitiveType.Cube); // столбик у макушки
             stem.name = side < 0 ? "AntlerStemL" : "AntlerStemR";
             stem.transform.SetParent(go.transform, false);
-            stem.transform.localPosition = new Vector3(0.15f * side, 1.95f, 1.4f); // ближе к центру-макушке; верх ≈ y2.15
+            stem.transform.localPosition = new Vector3(0.15f * side, 2.45f, 1.55f); // у макушки поднятой головы (череп до y≈2.36)
             stem.transform.localScale = new Vector3(0.08f, 0.4f, 0.08f);          // пеньки мельче
             Object.DestroyImmediate(stem.GetComponent<Collider>());
 
             var palm = GameObject.CreatePrimitive(PrimitiveType.Cube); // прямоугольная лопасть, длинной стороной вдоль тела
             palm.name = side < 0 ? "AntlerPalmL" : "AntlerPalmR";
             palm.transform.SetParent(go.transform, false);
-            palm.transform.localPosition = new Vector3(0.35f * side, 2.2f, 1.25f); // чуть ВПЕРЁД — столбик входит отступя от переднего края
+            palm.transform.localPosition = new Vector3(0.35f * side, 2.72f, 1.4f); // над поднятой головой; столбик входит отступя от переднего края
             palm.transform.localRotation = Quaternion.Euler(0f, 0f, 30f * side);   // круче вывернута вверх-наружу
             palm.transform.localScale = new Vector3(0.4f, 0.08f, 0.7f);            // большая сторона (0.7) — вдоль тела (z)
             Object.DestroyImmediate(palm.GetComponent<Collider>());
@@ -90,9 +138,9 @@ public static class MoosePrefab
         // догоняет убегающего волка по прямой; damagePerMeter скручен (1.0), чтобы длинный разбег не делал ваншотом
         WerewolfPrefab.Configure(charge, ("windupTime", 0.5f), ("minRange", 4f), ("maxRange", 18f),
                                           ("chargeSpeed", 35f), ("duration", 1.1f), ("damage", 22), ("damagePerMeter", 1.0f),
-                                          ("hitRadius", 1.8f), ("knockForce", 12f), ("staggerTime", 0.5f));
+                                          ("hitRadius", 1.8f), ("knockForce", 12f), ("staggerTime", 0.5f), ("gizmoHeight", 1.2f));
         var antler = go.AddComponent<AntlerAbility>(); // удар рогами по липнущим вплотную (урон+отлёт+кровь)
-        WerewolfPrefab.Configure(antler, ("windupTime", 0.35f), ("range", 2.5f), ("damage", 12), ("knockForce", 9f), ("bleedStacks", 2));
+        WerewolfPrefab.Configure(antler, ("windupTime", 0.35f), ("range", 2.5f), ("damage", 12), ("knockForce", 9f), ("bleedStacks", 2), ("gizmoHeight", 2.2f));
 
         // тело на шасси Лось (природная особь: экспрессия 0.5; витальность/скорость из органов)
         var cbody = go.AddComponent<CreatureBody>();
@@ -105,5 +153,34 @@ public static class MoosePrefab
 
         go.AddComponent<MoosePsyche>();
         return go;
+    }
+
+    /// <summary>
+    /// ЛОСИНАЯ ГОЛОВА (переиспользуемая, как AttachWolfHead): череп + длинная ГОРБАТАЯ морда, опущенная
+    /// вниз + нос-бульба шире морды (нависающая губа — фирменный профиль лося) + лопоухие уши врастопырку +
+    /// борода-серьга под подбородком. Имена частей — из белого списка Telegraph.IsHeadName
+    /// (Head/Muzzle/Nose/EarL/EarR): морда-градиент лесенки и эмоц-тинт красят ВСЮ голову; борода (Dewlap) —
+    /// шея, не красится. k — масштаб (задел химер-деталей: босс «наденет» лосиное той же функцией).
+    /// </summary>
+    public static void AttachMooseHead(Transform parent, Vector3 skullCenter, float k)
+    {
+        void Part(string name, Vector3 pos, Vector3 euler, Vector3 scale)
+        {
+            var p = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            p.name = name;
+            p.transform.SetParent(parent, false);
+            p.transform.localPosition = skullCenter + pos * k;
+            p.transform.localRotation = Quaternion.Euler(euler);
+            p.transform.localScale = scale * k;
+            Object.DestroyImmediate(p.GetComponent<Collider>());
+        }
+
+        Part("Head",   Vector3.zero,                   Vector3.zero,             new Vector3(0.42f, 0.42f, 0.5f));  // череп
+        Part("Muzzle", new Vector3(0f, -0.12f, 0.4f),  new Vector3(22f, 0f, 0f), new Vector3(0.3f, 0.32f, 0.62f));  // длинная морда с горбинкой, вперёд-вниз
+        Part("Nose",   new Vector3(0f, -0.3f, 0.68f),  Vector3.zero,             new Vector3(0.32f, 0.26f, 0.22f)); // бульба-нос ШИРЕ морды (нависающая губа)
+        Part("Dewlap", new Vector3(0f, -0.4f, 0.1f),   Vector3.zero,             new Vector3(0.1f, 0.28f, 0.16f));  // борода-серьга
+        for (int side = -1; side <= 1; side += 2)
+            Part(side < 0 ? "EarL" : "EarR",
+                 new Vector3(0.27f * side, 0.27f, -0.1f), new Vector3(0f, 0f, -40f * side), new Vector3(0.09f, 0.3f, 0.14f)); // лопоухие уши, развал наружу
     }
 }

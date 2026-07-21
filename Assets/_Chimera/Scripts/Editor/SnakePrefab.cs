@@ -36,7 +36,7 @@ public static class SnakePrefab
             AssetDatabase.CreateAsset(rattleMat, RattleMatPath);
         }
         foreach (var r in go.GetComponentsInChildren<Renderer>())
-            r.sharedMaterial = r.gameObject.name == "RattleMesh" ? rattleMat : mat;
+            r.sharedMaterial = r.gameObject.name == "RattleMesh" || r.gameObject.name == "Eye" ? rattleMat : mat; // глаза — жёлтые, как погремушка
 
         var prefab = PrefabUtility.SaveAsPrefabAsset(go, Path);
         Object.DestroyImmediate(go);
@@ -52,32 +52,67 @@ public static class SnakePrefab
         var cc = go.AddComponent<CharacterController>();
         cc.height = 0.8f; cc.radius = 0.5f; cc.center = new Vector3(0f, 0.4f, 0f); // низкий силуэт
 
-        // ГОЛОВА — капсула покрупнее, вдоль forward. Коллайдеры головы/сегментов ВКЛЮЧЕНЫ:
-        // тело плотное по всей длине (свой CC игнорирует их — SnakeBodyChain.Awake)
-        var head = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+        // ГОЛОВА-КЛИН гадюки: плоский череп-лопатка + скулы, сходящиеся к носу, + глаза-бусины (жёлтые,
+        // как погремушка). Коллайдер — только на черепе, ВКЛЮЧЁН: тело плотное по всей длине (свой CC
+        // игнорирует все дочерние — SnakeBodyChain.Awake)
+        var head = GameObject.CreatePrimitive(PrimitiveType.Cube);
         head.name = "Head";
         head.transform.SetParent(go.transform, false);
-        head.transform.localPosition = new Vector3(0f, 0.42f, 0.35f);
-        head.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-        head.transform.localScale = new Vector3(0.5f, 0.5f, 0.5f);
+        head.transform.localPosition = new Vector3(0f, 0.42f, 0.38f);
+        head.transform.localScale = new Vector3(0.34f, 0.2f, 0.62f); // плоская узкая основа клина
 
-        // ТЕЛО — 5 шариков-сегментов, тянутся за головой (SnakeBodyChain раскладывает по пути)
+        for (int side = -1; side <= 1; side += 2)
+        {
+            var cheek = GameObject.CreatePrimitive(PrimitiveType.Cube); // скула: широкий затылок → узкий нос
+            cheek.name = "Cheek";
+            Object.DestroyImmediate(cheek.GetComponent<Collider>());
+            cheek.transform.SetParent(go.transform, false);
+            cheek.transform.localPosition = new Vector3(0.14f * side, 0.42f, 0.28f);
+            cheek.transform.localRotation = Quaternion.Euler(0f, -18f * side, 0f); // развёрнута внутрь — треугольник сверху
+            cheek.transform.localScale = new Vector3(0.16f, 0.18f, 0.5f);
+
+            var eye = GameObject.CreatePrimitive(PrimitiveType.Sphere); // глаз-бусина сверху-спереди
+            eye.name = "Eye";
+            Object.DestroyImmediate(eye.GetComponent<Collider>());
+            eye.transform.SetParent(go.transform, false);
+            eye.transform.localPosition = new Vector3(0.12f * side, 0.53f, 0.45f);
+            eye.transform.localScale = Vector3.one * 0.1f;
+        }
+
+        // РАЗДВОЕННЫЙ ЯЗЫК — два тонких усика вперёд из морды: направление взгляда засады читается издалека
+        for (int side = -1; side <= 1; side += 2)
+        {
+            var fork = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            fork.name = "Tongue";
+            Object.DestroyImmediate(fork.GetComponent<Collider>());
+            fork.transform.SetParent(go.transform, false);
+            fork.transform.localPosition = new Vector3(0.04f * side, 0.42f, 0.8f);
+            fork.transform.localRotation = Quaternion.Euler(0f, 10f * side, 0f);
+            fork.transform.localScale = new Vector3(0.045f, 0.02f, 0.22f);
+        }
+
+        // ТЕЛО — 5 ГОРИЗОНТАЛЬНЫХ капсул-сегментов вдоль пути (цепочка вращает УЗЕЛ LookRotation'ом,
+        // капсула-меш внутри повёрнута длинной осью по z — паттерн погремушки). Сужение к хвосту
         float[] sizes = { 0.55f, 0.52f, 0.48f, 0.45f, 0.42f };
+        const float segSpacing = 0.62f; // длина капсулы ~0.68 → шаг больше шарикового 0.45, лёгкий нахлёст
         var segments = new Transform[sizes.Length + 1];
         for (int i = 0; i < sizes.Length; i++)
         {
-            var s = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            s.name = "Seg" + i;
+            var s = new GameObject("Seg" + i); // узел: его ориентирует цепочка
             s.transform.SetParent(go.transform, false);
-            s.transform.localPosition = new Vector3(0f, 0.3f, -0.35f - 0.45f * (i + 1)); // стартовая раскладка позади
-            s.transform.localScale = Vector3.one * sizes[i];
+            s.transform.localPosition = new Vector3(0f, 0.3f, -0.35f - segSpacing * (i + 1)); // стартовая раскладка позади
+            var mesh = GameObject.CreatePrimitive(PrimitiveType.Capsule); // коллайдер ВКЛЮЧЁН — тело плотное
+            mesh.name = "SegMesh";
+            mesh.transform.SetParent(s.transform, false);
+            mesh.transform.localRotation = Quaternion.Euler(90f, 0f, 0f); // длинная ось вдоль пути
+            mesh.transform.localScale = new Vector3(sizes[i], 0.34f, sizes[i]); // диаметр сужается, длина ~0.68
             segments[i] = s.transform;
         }
 
         // ПОГРЕМУШКА — маленькая ЖЁЛТАЯ капсула на кончике хвоста: гремок мигает именно ей
         var rattle = new GameObject("Rattle");
         rattle.transform.SetParent(go.transform, false);
-        rattle.transform.localPosition = new Vector3(0f, 0.3f, -0.35f - 0.45f * (sizes.Length + 1));
+        rattle.transform.localPosition = new Vector3(0f, 0.3f, -0.35f - segSpacing * (sizes.Length + 1));
         var rattleMesh = GameObject.CreatePrimitive(PrimitiveType.Capsule);
         rattleMesh.name = "RattleMesh";
         Object.DestroyImmediate(rattleMesh.GetComponent<Collider>()); // мелочь, коллайдер не нужен
@@ -92,6 +127,7 @@ public static class SnakePrefab
         var arr = chainSo.FindProperty("segments");
         arr.arraySize = segments.Length;
         for (int i = 0; i < segments.Length; i++) arr.GetArrayElementAtIndex(i).objectReferenceValue = segments[i];
+        chainSo.FindProperty("spacing").floatValue = segSpacing; // шаг цепочки под длину капсул
         chainSo.ApplyModifiedPropertiesWithoutUndo();
 
         go.AddComponent<Health>();

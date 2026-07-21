@@ -153,9 +153,11 @@ public class PlayerController : MonoBehaviour
         FirstPerson = on;
         Cursor.lockState = CursorLockMode.Locked; // мышь — руль тела в ОБОИХ видах, курсор не нужен (Esc отпускает)
         Cursor.visible = false;
-        // свою голову от ПЕРВОГО лица не рендерим (нос/куб лезут в камеру) — классика FPS; в 3-м лице возвращаем
+        // свою голову от ПЕРВОГО лица не рендерим (нос/куб лезут в камеру) — классика FPS; в 3-м лице возвращаем.
+        // Лицо (глаза/брови/борода из PlayerModel) прячется вместе с головой
         foreach (var r in GetComponentsInChildren<Renderer>())
-            if (r.name == "Head" || r.name == "Nose") r.enabled = !on;
+            if (r.name == "Head" || r.name == "Nose" || r.name == "EyeL" || r.name == "EyeR"
+                || r.name == "BrowL" || r.name == "BrowR" || r.name == "Beard") r.enabled = !on;
     }
 
     // конструктор меняет мобильность при смене органа в слоте «Ноги»

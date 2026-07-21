@@ -43,16 +43,53 @@ public static class WolfPrefab
         var cc = go.AddComponent<CharacterController>();
         cc.height = 1.6f; cc.radius = 0.5f; cc.center = new Vector3(0f, 0.8f, 0f);
 
-        // тело: капсула ВДОЛЬ forward (как у тебя было) + куб-морда спереди, где пасть — видно, куда смотрит
-        var body = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-        body.name = "Body";
+        // корпус ДВУМЯ блоками (вместо капсулы): ГРУДЬ выше и шире + КРУП ниже и уже — волчий силуэт
+        // с высокой холкой и покатой спиной
+        var body = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        body.name = "Body"; // грудная клетка
         body.GetComponent<Collider>().enabled = false; // коллайдер — у CharacterController
         body.transform.SetParent(go.transform, false);
-        body.transform.localPosition = new Vector3(0f, 0.7f, 0f);
-        body.transform.localRotation = Quaternion.Euler(90f, 0f, 0f); // длинная ось вдоль Z (вперёд)
-        body.transform.localScale = new Vector3(0.6f, 0.7f, 0.6f);
+        body.transform.localPosition = new Vector3(0f, 0.76f, 0.3f);
+        body.transform.localScale = new Vector3(0.54f, 0.6f, 0.82f);
 
-        AttachWolfHead(go.transform, new Vector3(0f, 0.85f, 0.65f), 1f); // голова над телом, мордой вперёд
+        var rump = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        rump.name = "Rump"; // круп — ниже и уже груди
+        rump.GetComponent<Collider>().enabled = false;
+        rump.transform.SetParent(go.transform, false);
+        rump.transform.localPosition = new Vector3(0f, 0.74f, -0.42f); // приподнят — ПОДТЯНУТЫЙ живот (просвет под брюхом)
+        rump.transform.localScale = new Vector3(0.42f, 0.45f, 0.62f);  // худой круп — заметно уже и мельче груди
+
+        AttachWolfHead(go.transform, new Vector3(0f, 1.08f, 0.9f), 1f); // голова ПЕРЕД грудью и выше холки — затылок лишь касается корпуса
+
+        // НОГИ по-настоящему: передние — прямые столбики с лапками; ЗАДНИЕ — «собачий» излом
+        // (бедро вперёд-вниз: колено спереди; голень назад-вниз: скакательный сустав; лапа вперёд)
+        void WolfPart(string name, Vector3 pos, Vector3 euler, Vector3 scale)
+        {
+            var p = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            p.name = name;
+            p.GetComponent<Collider>().enabled = false;
+            p.transform.SetParent(go.transform, false);
+            p.transform.localPosition = pos;
+            p.transform.localRotation = Quaternion.Euler(euler);
+            p.transform.localScale = scale;
+        }
+        for (int side = -1; side <= 1; side += 2)
+        {
+            WolfPart("LegFront", new Vector3(0.2f * side, 0.24f, 0.42f),   Vector3.zero,              new Vector3(0.13f, 0.44f, 0.13f));
+            WolfPart("PawFront", new Vector3(0.2f * side, 0.04f, 0.46f),   Vector3.zero,              new Vector3(0.12f, 0.08f, 0.2f));
+            WolfPart("Thigh",    new Vector3(0.19f * side, 0.44f, -0.48f), new Vector3(-25f, 0f, 0f), new Vector3(0.16f, 0.38f, 0.2f));
+            WolfPart("Shin",     new Vector3(0.19f * side, 0.18f, -0.44f), new Vector3(22f, 0f, 0f),  new Vector3(0.1f, 0.3f, 0.1f));
+            WolfPart("PawRear",  new Vector3(0.19f * side, 0.04f, -0.38f), Vector3.zero,              new Vector3(0.12f, 0.08f, 0.2f));
+        }
+
+        // ХВОСТ-ПОЛЕНО — назад-вверх (читаемость зада; поза «хвост вниз» — будущий боди-ленгвидж страха)
+        var tail = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        tail.name = "Tail";
+        tail.GetComponent<Collider>().enabled = false;
+        tail.transform.SetParent(go.transform, false);
+        tail.transform.localPosition = new Vector3(0f, 0.9f, -0.76f); // корень — в укороченном крупе
+        tail.transform.localRotation = Quaternion.Euler(30f, 0f, 0f); // задний конец задран вверх-назад
+        tail.transform.localScale = new Vector3(0.15f, 0.15f, 0.55f);
 
         go.AddComponent<Health>();
         go.AddComponent<Knockback>();

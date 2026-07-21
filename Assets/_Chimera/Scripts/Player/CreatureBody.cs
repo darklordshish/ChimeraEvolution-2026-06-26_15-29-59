@@ -286,7 +286,9 @@ public class CreatureBody : MonoBehaviour
         if (chassis != null) SetAffinity(chassis.speciesName, AffinityCap);
         if (move != null) PlayerBody = this;
 
-        renderers = GetComponentsInChildren<Renderer>();
+        // ЛИЦО игрока (глаза/брови/борода из PlayerModel) тинтом состава НЕ красим — черты остаются читаемыми
+        renderers = System.Array.FindAll(GetComponentsInChildren<Renderer>(), r =>
+            r.name != "EyeL" && r.name != "EyeR" && r.name != "BrowL" && r.name != "BrowR" && r.name != "Beard");
         mpb = new MaterialPropertyBlock();
     }
 
