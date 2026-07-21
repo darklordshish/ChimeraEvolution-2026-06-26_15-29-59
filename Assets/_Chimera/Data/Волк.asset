@@ -45,6 +45,8 @@ MonoBehaviour:
     camo: 0
     enablesThermal: 0
     enablesConstrict: 0
+    keenHearing: 0
+    hearingMult: 0
     insight: 0
     enablesBellow: 0
     enablesAntler: 0
@@ -81,6 +83,8 @@ MonoBehaviour:
     camo: 0
     enablesThermal: 0
     enablesConstrict: 0
+    keenHearing: 0
+    hearingMult: 0
     insight: 0
     enablesBellow: 0
     enablesAntler: 0
@@ -117,6 +121,8 @@ MonoBehaviour:
     camo: 0
     enablesThermal: 0
     enablesConstrict: 0
+    keenHearing: 0
+    hearingMult: 0
     insight: 0
     enablesBellow: 0
     enablesAntler: 0
@@ -153,6 +159,8 @@ MonoBehaviour:
     camo: 0
     enablesThermal: 0
     enablesConstrict: 0
+    keenHearing: 0
+    hearingMult: 0
     insight: 0
     enablesBellow: 0
     enablesAntler: 0
@@ -189,6 +197,8 @@ MonoBehaviour:
     camo: 0
     enablesThermal: 0
     enablesConstrict: 0
+    keenHearing: 0
+    hearingMult: 0
     insight: 0
     enablesBellow: 0
     enablesAntler: 0
@@ -225,6 +235,8 @@ MonoBehaviour:
     camo: 0
     enablesThermal: 0
     enablesConstrict: 0
+    keenHearing: 0
+    hearingMult: 0
     insight: 0
     enablesBellow: 0
     enablesAntler: 0

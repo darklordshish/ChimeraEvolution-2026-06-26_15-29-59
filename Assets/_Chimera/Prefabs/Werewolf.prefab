@@ -684,6 +684,7 @@ MonoBehaviour:
   chimeraSlotMult: 2
   installAllBeast: 1
   sightRange: 30
+  hearingRange: 20
   scentRange: 22
   expression: 2
   applyVitals: 0
