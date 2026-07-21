@@ -5,7 +5,8 @@ public enum GrabTick { Holding, Escaped, Broken, Gone }
 
 /// <summary>
 /// ЕДИНАЯ МАШИНА ЗАХВАТА (ядро) — фича органа «Хвост», а не психики. Держит ОДНО: сжатие → стадии →
-/// защёлк → удушение. Кто решает «когда хватать» и «куда тащить» — драйвер (ввод игрока / психика):
+/// защёлк → удушение. ЯДА ЗДЕСЬ НЕТ: яд — фича КЛЫКОВ (орган), в хвате его льют укусы драйвера.
+/// Кто решает «когда хватать» и «куда тащить» — драйвер (ввод игрока / психика):
 /// он зовёт Begin/Tick/End и читает Stage/Victim. Локомоция, carry-на-стену, телеграф и BreakFree —
 /// НЕ здесь (законно расходятся у носителей), как виндап и разбег в семье удара.
 ///
@@ -13,7 +14,9 @@ public enum GrabTick { Holding, Escaped, Broken, Gone }
 ///  ст.1 — слабый хват: жертва ДЕРЁТСЯ (её урон ослабляет сжатие) и вырывается по таймеру (гонка);
 ///  ст.2 — ЗАЩЁЛК: стан, сама не выйдет;
 ///  ст.3 — ПАРТЕР: сжатие то же, но хват до предела + чок-DoT; жертва только зовёт своих.
-/// РАТЧЕТ: достигнутая стадия — пол, ниже её порога сжатие не откатывается.
+/// РАТЧЕТ: достигнутая стадия — пол, ниже её порога сжатие не откатывается. СПАСАТЕЛИ: удар ИЗВНЕ сбивает
+/// на стадию (3→2→1→сорван), опуская и ратчет — отбить своего можно только НАСТОЙЧИВОСТЬЮ, зато один
+/// укус переживается (успеешь утащить добычу — додушишь там, куда стае не достать).
 /// КАП — ось экспрессии nativeChassis (тело зовёт SetMaxStage): РОДНОЕ шасси → 3, чужое → 2.
 /// Massive-жертва — на стадию слабее (единое правило хвата).
 /// Числа перенесены ДОСЛОВНО из проверенной машины змеи (в т.ч. баланс «одна змея душит волка»).
@@ -43,7 +46,6 @@ public class Constrict : MonoBehaviour
     [Header("Профиль носителя")]
     [SerializeField] int breakRawThreshold = 0; // спасатели: внешний СЫРОЙ удар ≥ порога рвёт хват (сырой — броня держателя
                                                 // не «помогает держать»). 0 = рвёт любой (змея); хвост игрока ставит 5
-    [SerializeField] bool venomOnStage = true;  // яд с каждой новой стадии (змея); аугумент-хвост — без (яд — фича клыков, не хвата)
 
     int maxStageAllowed = 3; // кап от ТЕЛА (nativeChassis); дефолт 3 — родное шасси
 
@@ -67,12 +69,12 @@ public class Constrict : MonoBehaviour
     /// <summary>Кап стадий от ТЕЛА (ось nativeChassis): родное шасси → 3 (партер+чок), чужое → 2.</summary>
     public void SetMaxStage(int v) => maxStageAllowed = Mathf.Clamp(v, 1, 3);
 
-    /// <summary>Профиль носителя (зовёт драйвер в Awake): гонка вырывания NPC-жертвы, порог срыва спасателем,
-    /// яд со стадий. Змея живёт на дефолтах (2.6–4 / любой удар / яд), хвост игрока — мягче и без яда.</summary>
-    public void ConfigureHolder(float npcEscapeMin, float npcEscapeMax, int rawBreakThreshold, bool venomStages)
+    /// <summary>Профиль носителя (зовёт драйвер): гонка вырывания NPC-жертвы + порог срыва спасателем.
+    /// Змея живёт на дефолтах (2.6–4 / рвёт любой внешний удар), хвост игрока — мягче и с порогом.</summary>
+    public void ConfigureHolder(float npcEscapeMin, float npcEscapeMax, int rawBreakThreshold)
     {
         escapeMin = npcEscapeMin; escapeMax = npcEscapeMax;
-        breakRawThreshold = rawBreakThreshold; venomOnStage = venomStages;
+        breakRawThreshold = rawBreakThreshold;
     }
 
     /// <summary>Взять жертву. owner нужен только для жертвы-игрока (ApplyGrab/ReleaseGrab).</summary>
@@ -107,11 +109,23 @@ public class Constrict : MonoBehaviour
         int dmg = lastHp - ownHealth.Current;
         lastHp = ownHealth.Current;
 
-        // урон ИЗВНЕ рвёт хват (спасатели отбивают своего); порог — по СЫРОМУ удару (тик яда не рвёт у игрока);
-        // урон от САМОЙ жертвы — только ослабляет сжатие. У жертвы-игрока «извне» не разбираем: его контр-игра —
-        // откат сжатия и рывок (BreakFree у драйвера)
-        if (!victimIsPlayer && dmg > 0 && ownHealth.LastRawDamage >= breakRawThreshold
-            && !ReferenceEquals(ownHealth.LastAttacker, held)) return GrabTick.Broken;
+        // СПАСАТЕЛИ отбивают своего: удар ИЗВНЕ не рвёт хват разом, а СБИВАЕТ НА СТАДИЮ — гонка на истощение
+        // хватки (ст.3→2→1→сорван). Один укус переживается: держащая на партере змея успеет уволочь добычу
+        // к стене, если стая не добавит. Работает для ЛЮБОЙ жертвы, включая игрока (у него теперь бывают
+        // кин-союзники, и один волк обязан выручить). Порог — по СЫРОМУ удару (броня держателя не «помогает
+        // держать»). Урон от САМОЙ жертвы срывом не считается — это её контр-игра: откат сжатия
+        // (loosenPerDamage) плюс рывок через BreakFree у драйвера
+        if (dmg > 0 && ownHealth.LastRawDamage >= breakRawThreshold
+            && !ReferenceEquals(ownHealth.LastAttacker, held))
+        {
+            if (stage <= 1) return GrabTick.Broken; // ниже некуда — отбили
+            int knocked = stage - 1;
+            reached = knocked;                                                  // РАТЧЕТ опускается вместе со стадией,
+            gripFloor = knocked >= 3 ? stage3At : knocked >= 2 ? stage2At : 0f; // иначе сжатие тут же вернёт сбитое
+            grip = gripFloor;
+            SetStage(knocked);
+            return GrabTick.Holding; // держим дальше, но слабее — удар «съел» тик сжатия
+        }
 
         grip += tightenRate * Time.deltaTime;
         if (dmg > 0) grip -= dmg * (victimIsPlayer ? loosenPerDamage : npcLoosenPerDamage);
@@ -148,19 +162,12 @@ public class Constrict : MonoBehaviour
     {
         if (s > reached)
         {
-            if (venomOnStage) InjectVenom();              // туже сжатие → впрыск яда (раз на новую стадию; хвост игрока — без)
             reached = s;
             gripFloor = s >= 3 ? stage3At : stage2At;     // ратчет: защёлкнулись — назад за порог не пускаем
         }
         stage = s;
         if (heldPlayer != null && owner != null) heldPlayer.ApplyGrab(owner, SlowFor(s));
         else if (held != null) heldGrabbed = Grabbed.Apply(held.gameObject, ownHealth, s, s >= 2); // ст.2+ = защёлк-стан
-    }
-
-    // яд со стадий — С ИСТОЧНИКОМ: смерть от него атрибутируется захватчику
-    void InjectVenom()
-    {
-        if (held != null) new Hit(ownHealth, transform.position).Apply(held, HitEffect.Venom());
     }
 
     float SlowFor(int s) => s >= 3 ? grabSlow3 : s == 2 ? grabSlow2 : grabSlow1;

@@ -38,17 +38,27 @@ public class BiteAbility : WindupAbility
 
         if (Time.time >= windupEnd)
         {
-            // единый паёк укуса (см. MeleeBlow) — тот же удар льёт игрок; мощь NPC масштабирует урон
-            var blow = new MeleeBlow
-            {
-                Damage = damage, LifeSteal = lifeSteal, VenomStacks = venomStacks, BleedStacks = bleedStacks,
-                RegenDebuffFactor = regenDebuff, RegenDebuffTime = regenDebuffTime,
-            };
-            blow.Deliver(new Hit(ownHealth, transform.position), targetHealth, DamageMult);
+            Payload().Deliver(new Hit(ownHealth, transform.position), targetHealth, DamageMult);
             return AbilityRun.Done;
         }
 
         SettleInPlace();
         return AbilityRun.Running;
+    }
+
+    /// <summary>Паёк укуса — ЧИСЛА ИЗ ОРГАНА (яд/кровь/вампиризм тело кормит через SetVenom/SetBleed/SetDamage).
+    /// Один источник правды: и замаховый укус, и укус без замаха (BiteNow) льют одно и то же.</summary>
+    public MeleeBlow Payload() => new()
+    {
+        Damage = damage, LifeSteal = lifeSteal, VenomStacks = venomStacks, BleedStacks = bleedStacks,
+        RegenDebuffFactor = regenDebuff, RegenDebuffTime = regenDebuffTime,
+    };
+
+    /// <summary>Укусить цель ПРЯМО СЕЙЧАС, без замаха и конуса: змея в хвате грызёт то, что держит
+    /// (реальные констрикторы держат зубами). Яд/кровь — из органа, как в обычном укусе.</summary>
+    public void BiteNow(Health victim)
+    {
+        if (victim == null) return;
+        Payload().Deliver(new Hit(ownHealth, transform.position), victim, DamageMult);
     }
 }

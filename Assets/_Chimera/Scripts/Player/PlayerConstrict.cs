@@ -48,8 +48,8 @@ public class PlayerConstrict : MonoBehaviour, IAbility
             if (machine == null)
             {
                 if (!TryGetComponent(out machine)) machine = gameObject.AddComponent<Constrict>();
-                // профиль НОСИТЕЛЯ-аугумента: мягкая гонка вырывания, порог спасателя, БЕЗ яда со стадий (яд — фича клыков)
-                machine.ConfigureHolder(escapeMin, escapeMax, breakDamage, venomStages: false);
+                // профиль НОСИТЕЛЯ-аугумента: мягкая гонка вырывания + порог срыва спасателем
+                machine.ConfigureHolder(escapeMin, escapeMax, breakDamage);
             }
             return machine;
         }
@@ -82,10 +82,8 @@ public class PlayerConstrict : MonoBehaviour, IAbility
     Health FindVictim()
     {
         Health best = null; float bestDist = float.MaxValue;
-        foreach (var col in Physics.OverlapSphere(transform.position, grabRange, ~0, QueryTriggerInteraction.Ignore))
+        foreach (var hp in TargetScan.Healths(transform.position, grabRange, transform))
         {
-            var hp = col.GetComponentInParent<Health>();
-            if (hp == null || hp.transform == transform) continue;
             if (hp.GetComponent<Stagger>() == null) continue; // обхват держит через стан — цель должна его уметь
             float d = (hp.transform.position - transform.position).sqrMagnitude;
             if (d < bestDist) { bestDist = d; best = hp; }

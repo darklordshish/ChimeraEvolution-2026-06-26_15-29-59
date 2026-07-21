@@ -72,6 +72,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     [SerializeField, Range(0f, 1f)] float grabChance = 0.5f; // шанс обвить вместо простого укуса (в упор)
     [SerializeField] float grabWindup = 0.35f;               // замах перед обхватом (телеграф — увернись)
     [SerializeField] int ripSelfKnock = 5;                   // отлёт змеи, когда игрок сорвался рывком (ст.1)
+    [SerializeField] float grabBiteInterval = 1.2f;          // как часто грызёт того, кого держит (яд/урон — ИЗ ОРГАНА клыков)
     // САМА МАШИНА хвата (сжатие/стадии/ратчет/чок/яд + тюнинг обеих жертв) — общий компонент Constrict
     // (фича органа «Хвост», хвост-эталон 2026-07-19); здесь остались только решения ДРАЙВЕРА (когда/куда)
 
@@ -127,6 +128,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     }
     bool windingUp, constricting;                 // windingUp — только замах ОБХВАТА
     int shownStage;                               // последняя показанная стадия хвата (градиент телеграфа — наш, драйверный)
+    float nextGrabBite;                           // ритм укусов в хвате (сам укус — органный, BiteAbility.BiteNow)
     Renderer rattleRenderer;                      // жёлтая погремушка: гремок мигает ИМЕННО ей
 
     void Awake()
@@ -340,7 +342,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     }
 
     // полная стая рядом → РАЦИОНАЛЬНОЕ отступление к стене (проверка раз в 0.3с). ХОЛОДНЫЙ РАСЧЁТ, НЕ Страх:
-    // змея не боится (холоднокровна → иммунна к эффекту Fear, S1 срез 5) — она сама РЕШАЕТ выйти из безнадёги
+    // змея не боится (холоднокровна → мораль инертна, S1 срез 5) — она сама РЕШАЕТ выйти из безнадёги
     bool CheckFlee()
     {
         if (Time.time >= nextFleeCheck)
@@ -519,7 +521,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         // появилась → бросаем ДО прыжка, не после (холодный расчёт передумывает мгновенно)
         if (!IsLonely(targetHealth)) { target = null; targetHealth = null; Prowl(); return; }
 
-        if (heldIsPlayerTarget()) targetHealth.MarkInCombat(); // охота на ИГРОКА → он в бою (чужая охота его реген не трогает)
+        if (targetIsPlayer()) targetHealth.MarkInCombat(); // охота на ИГРОКА → он в бою (чужая охота его реген не трогает)
 
         Vector3 to = target.position - transform.position; to.y = 0f;
         float dist = to.magnitude;
@@ -543,7 +545,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         Settle(dist > bite.Range ? nav.DirTo(target.position) * Speed * creepSpeed : Vector3.zero);
     }
 
-    bool heldIsPlayerTarget() => targetHealth != null && playerCtl != null && targetHealth.transform == playerCtl.transform;
+    bool targetIsPlayer() => targetHealth != null && playerCtl != null && targetHealth.transform == playerCtl.transform; // (бывш. heldIsPlayerTarget — имя стухло после H3)
 
     // S1: маппинг восприятия змеи на общую машину (зеркало). Атака = держит/бьёт/есть тёплая цель в термо;
     // Настороженность = реагирует (бежит/на стене) ЛИБО прокрадывается к почуянной тёплой жизни; иначе Спокойствие (засада)
@@ -658,6 +660,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         constricting = constrictM.Begin(targetHealth, this);
         if (!constricting) return;
         shownStage = 1;
+        nextGrabBite = Time.time + grabBiteInterval; // первый укус — не в тот же кадр, что захват
         telegraph.Set(true, TelegraphColors.Grab);
     }
 
@@ -685,6 +688,14 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         {
             shownStage = constrictM.Stage;
             telegraph.SetGradient(TelegraphColors.Grab, constrictM.StageT); // стадии — градиент родной→фиолетовый по сжатию
+        }
+
+        // ГРЫЗЁТ В ХВАТЕ: констриктор держит зубами. Укус — ОРГАННЫЙ (BiteAbility: урон/яд/кровь из данных
+        // клыков), поэтому яд копится стаками сам и к 3-му выходит на DoT — без хардкода в машине хвата
+        if (Time.time >= nextGrabBite)
+        {
+            nextGrabBite = Time.time + grabBiteInterval;
+            bite.BiteNow(constrictM.Victim);
         }
 
         if (victimIsPlayer) { HoldNearVictim(); return; }
