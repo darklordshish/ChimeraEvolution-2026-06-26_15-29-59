@@ -355,8 +355,11 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         // «в упор» ловит цель вплотную вне конуса (шорох); once Engaged волк доворачивает мордой к цели → держит в конусе
         bool inView = distSq <= proximityRadius * proximityRadius
                       || Vector3.Angle(transform.forward, toT) <= senses.ViewHalfAngle(SenseKind.Sight);
-        Engaged = !routing && !playerIsKin && distSq <= sight * sight && inView
-                  && Perception.HasLineOfSight(transform.position, target); // кин-игрок не добыча (K3a)
+        // K3a-гейт бьёт ТОЧЕЧНО: «свой не добыча» — только когда цель и есть кин-игрок. Иначе кин-статус
+        // гасил бой ВООБЩЕ (волк не трогал даже змею, которая жрёт кина) — стая обязана отбивать своего
+        bool targetIsKinPlayer = playerIsKin && playerHealth != null && ReferenceEquals(targetHealth, playerHealth);
+        Engaged = !routing && !targetIsKinPlayer && distSq <= sight * sight && inView
+                  && Perception.HasLineOfSight(transform.position, target);
         if (Engaged) TryHowl(target.position); // увидел игрока → взвыл, зову ближних в стаю
         alert.Observe(Engaged, HasCue());      // S1: кормим машину восприятия (зеркало — поведение ниже пока не трогаем)
 
