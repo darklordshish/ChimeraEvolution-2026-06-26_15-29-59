@@ -138,9 +138,9 @@ public static class SnakePrefab
 
         // укус с ЯДОМ; рывок — быстрый низкий страйк из засады
         var bite = go.AddComponent<BiteAbility>();
-        WerewolfPrefab.Configure(bite, ("windupTime", 0.4f), ("range", 2f), ("halfAngle", 55f), ("venomStacks", 1));
+        PrefabConfig.Set(bite, ("windupTime", 0.4f), ("range", 2f), ("halfAngle", 55f), ("venomStacks", 1));
         var leap = go.AddComponent<LeapAbility>();
-        WerewolfPrefab.Configure(leap, ("windupTime", 0.35f), ("minRange", 4f), ("maxRange", 9f), ("speed", 20f),
+        PrefabConfig.Set(leap, ("windupTime", 0.35f), ("minRange", 4f), ("maxRange", 9f), ("speed", 20f),
                                        ("up", 2.5f), ("duration", 0.35f), ("damage", 8), ("hitRadius", 1.5f));
 
         // тело на шасси Змея (природная особь: экспрессия 0.5; витальность из органов; холоднокровность от Сердца)

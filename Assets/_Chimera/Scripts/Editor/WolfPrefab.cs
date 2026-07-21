@@ -98,9 +98,9 @@ public static class WolfPrefab
 
         // укус и прыжок — общие доставки с числами волка (урон укуса приходит из органов через CreatureBody)
         var bite = go.AddComponent<BiteAbility>();
-        WerewolfPrefab.Configure(bite, ("windupTime", 0.45f), ("range", 2f), ("halfAngle", 55f));
+        PrefabConfig.Set(bite, ("windupTime", 0.45f), ("range", 2f), ("halfAngle", 55f));
         var leap = go.AddComponent<LeapAbility>();
-        WerewolfPrefab.Configure(leap, ("windupTime", 0.5f), ("minRange", 5f), ("maxRange", 6.5f), ("speed", 13f),
+        PrefabConfig.Set(leap, ("windupTime", 0.5f), ("minRange", 5f), ("maxRange", 6.5f), ("speed", 13f),
                                        ("up", 5f), ("duration", 0.5f), ("damage", 12), ("hitRadius", 1.3f));
         go.AddComponent<Rage>();          // может взбеситься от воя вожака
         go.AddComponent<SpawnVariance>(); // разброс особи

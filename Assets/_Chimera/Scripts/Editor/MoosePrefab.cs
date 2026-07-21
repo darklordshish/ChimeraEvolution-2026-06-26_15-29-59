@@ -136,11 +136,11 @@ public static class MoosePrefab
         var charge = go.AddComponent<ChargeAbility>();
         // ДЛИННЫЙ мощный таран: быстрее волчьего рывка (35 > 30) + долгий разбег (1.1c ≈ 38м) + дальний завод (18м) →
         // догоняет убегающего волка по прямой; damagePerMeter скручен (1.0), чтобы длинный разбег не делал ваншотом
-        WerewolfPrefab.Configure(charge, ("windupTime", 0.5f), ("minRange", 4f), ("maxRange", 18f),
+        PrefabConfig.Set(charge, ("windupTime", 0.5f), ("minRange", 4f), ("maxRange", 18f),
                                           ("chargeSpeed", 35f), ("duration", 1.1f), ("damage", 22), ("damagePerMeter", 1.0f),
                                           ("hitRadius", 1.8f), ("knockForce", 12f), ("staggerTime", 0.5f), ("gizmoHeight", 1.2f));
         var antler = go.AddComponent<AntlerAbility>(); // удар рогами по липнущим вплотную (урон+отлёт+кровь)
-        WerewolfPrefab.Configure(antler, ("windupTime", 0.35f), ("range", 2.5f), ("damage", 12), ("knockForce", 9f), ("bleedStacks", 2), ("gizmoHeight", 2.2f));
+        PrefabConfig.Set(antler, ("windupTime", 0.35f), ("range", 2.5f), ("damage", 12), ("knockForce", 9f), ("bleedStacks", 2), ("gizmoHeight", 2.2f));
 
         // тело на шасси Лось (природная особь: экспрессия 0.5; витальность/скорость из органов)
         var cbody = go.AddComponent<CreatureBody>();

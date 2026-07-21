@@ -108,9 +108,9 @@ public static class WerewolfPrefab
 
         // доставки босса: те же компоненты, что у волка, но с числами вервольфа (вампиризм)
         var bite = go.AddComponent<BiteAbility>();
-        Configure(bite, ("windupTime", 0.4f), ("range", 2.5f), ("halfAngle", 60f), ("damage", 28), ("lifeSteal", 25), ("gizmoHeight", 1.4f));
+        PrefabConfig.Set(bite, ("windupTime", 0.4f), ("range", 2.5f), ("halfAngle", 60f), ("damage", 28), ("lifeSteal", 25), ("gizmoHeight", 1.4f));
         var leap = go.AddComponent<LeapAbility>();
-        Configure(leap, ("windupTime", 0.5f), ("minRange", 6f), ("maxRange", 11f), ("speed", 16f), ("up", 6f),
+        PrefabConfig.Set(leap, ("windupTime", 0.5f), ("minRange", 6f), ("maxRange", 11f), ("speed", 16f), ("up", 6f),
                         ("duration", 0.55f), ("damage", 30), ("lifeSteal", 25), ("hitRadius", 2f), ("gizmoHeight", 1.4f));
 
         // вервольф под ВЕЧНОЙ яростью — психика сама поддерживает её каждый кадр (флага permanent больше нет)
@@ -139,20 +139,4 @@ public static class WerewolfPrefab
         return go;
     }
 
-    // выставить приватные [SerializeField]-поля компонента по именам (editor-only, через SerializedObject).
-    // public — переиспользует генератор змеи (SnakePrefab).
-    public static void Configure(Component c, params (string field, object value)[] values)
-    {
-        var so = new SerializedObject(c);
-        foreach (var (field, value) in values)
-        {
-            var p = so.FindProperty(field);
-            if (p == null) { Debug.LogWarning($"WerewolfPrefab: поле {field} не найдено на {c.GetType().Name}"); continue; }
-            if (value is float f) p.floatValue = f;
-            else if (value is int i) p.intValue = i;
-            else if (value is bool b) p.boolValue = b;
-            else if (value is string s) p.stringValue = s;
-        }
-        so.ApplyModifiedPropertiesWithoutUndo();
-    }
 }

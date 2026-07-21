@@ -32,6 +32,10 @@
 - Цвета NPC запечены в материалы (генераторами); рантайм-тинт (`MaterialPropertyBlock`) дерётся с `Telegraph` — он только у игрока.
 - Editor-код (`[MenuItem]`, `SerializedObject`) — в `Scripts/Editor/`.
 
+## Где что лежит (`Assets/_Chimera/Scripts/`)
+
+`Combat/` разложен по смыслу: **`Core/`** — фундамент (`Health`, `Hit`+`HitEffect`, `MeleeBlow`, `TargetScan`, интерфейсы, `Hitstop`); **`Deliveries/`** — доставки приёмов (`WindupAbility` и наследники, `KinVoice`); **`Machines/`** — стадийные машины (`Constrict`, `Grabbed`); **`Statuses/`** — статусы-компоненты (`Rage`, `Morale`, `Betrayal`, `Venom`, `Bleed`, `Stagger`, `Knockback`, `Massive`, `Digestion`, `SpawnVariance`); **`Feedback/`** — язык сигналов (`Telegraph`+цвета, `EmotionTint`, `HitFlash`, `StunTint`). Рядом: `Player/` (тело+драйверы игрока), `Enemies/` (психики+спавнеры), `Senses/` (восприятие), `Editor/` (генераторы префабов/видов), `Arena/`, `Progression/`, `UI/`, `Debug/`.
+
 ## Архитектурные якоря (детали — в CONSTRUCTOR_GUIDE)
 
 - **Тело = данные** (`CreatureBody` + `SpeciesSO`: шасси + доноры + экспрессия), **психика = тонкий код** (решения поверх общих «глаголов тела»), **способность = доставка + эффекты** (`WindupAbility`-доставки, `Hit`/`HitEffect`-словарь).
