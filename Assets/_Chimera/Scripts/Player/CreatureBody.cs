@@ -154,6 +154,7 @@ public class CreatureBody : MonoBehaviour
         public string slot, hotkey, organName, nextName; // nextName — куда приведёт следующий клик (цикл по донорам)
         public int cost, nextCost;
         public int unaffordable; // сколько вариантов скрыто по цене (цикл их пропускает МОЛЧА — UI должен сказать)
+        public bool chimera;    // универсальный слот (родного органа нет)
         public bool installed;  // надет звериный (не человеческий) орган
         public bool hasBeast;   // есть ли альтернативы (иначе слот фиксирован)
         public bool canToggle;  // есть ли достижимый следующий шаг цикла (иначе всё не по карману)
@@ -173,6 +174,7 @@ public class CreatureBody : MonoBehaviour
             unaffordable = unaffordable,
             slot = sl.name,
             hotkey = sl.hotkey,
+            chimera = sl.chimera, // универсальный слот: родного органа нет — UI не подписывает его «Кистью»
             organName = sl.Empty ? "—" : sl.Worn.organName, // «—» = пустой химерный слот
             cost = SlotCost(sl),
             installed = sl.Installed,
