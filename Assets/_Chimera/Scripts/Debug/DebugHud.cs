@@ -86,6 +86,8 @@ public class DebugHud : MonoBehaviour
             GUI.Label(new Rect(x, y, 220, 24), "ЛЕГЕНДА [F1]", style); y += 30f;
 
             LegendHeader(ref y, x, "— приёмы (вспышка тела) —");
+            LegendRow(ref y, x, TelegraphColors.Unknown,
+                      Perception.Insight ? "нераспознанное (светлеет)" : "ЧТО-ТО ГОТОВИТ — нужно Чутьё");
             LegendRow(ref y, x, TelegraphColors.Bite,   "укус");
             LegendRow(ref y, x, TelegraphColors.Leap,   "прыжок");
             LegendRow(ref y, x, TelegraphColors.Grab,   "захват/обхват (стадии — градиент)");

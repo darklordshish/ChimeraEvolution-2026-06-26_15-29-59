@@ -504,6 +504,7 @@ public class CreatureBody : MonoBehaviour
         public float dmg, maxHp, life, rng, atkCd, mv, dash, dashDur, dashCd, reduce, regen, regenOOC, thermal, howlR, howlStunAt;
         public int venom, bleed;
         public bool bite, scent, kick, howl, cold, camo, thermalOn, constrict, digest, bellow, antler, charge;
+        public bool insight; // ЧУТЬЁ УЧЁНОГО: распознавание намерений + числа состояний (человеческое Чутьё)
         public bool constrictNative; // хват на РОДНОМ шасси (nativeChassis == шасси тела) → открыта ст.3 удушения
 
         // СУПРЕМУМ дублей одного типа слота: скаляры — max (кулдауны — min: меньше = лучше), флаги — OR.
@@ -523,7 +524,7 @@ public class CreatureBody : MonoBehaviour
             thermalOn = a.thermalOn || b.thermalOn, constrict = a.constrict || b.constrict,
             constrictNative = a.constrictNative || b.constrictNative,
             digest = a.digest || b.digest, bellow = a.bellow || b.bellow, antler = a.antler || b.antler,
-            charge = a.charge || b.charge,
+            charge = a.charge || b.charge, insight = a.insight || b.insight,
         };
     }
 
@@ -577,7 +578,7 @@ public class CreatureBody : MonoBehaviour
             bite = w.enablesBite, scent = w.enablesScent, kick = w.enablesKick,
             howl = w.enablesHowl, cold = w.coldBlooded, camo = w.camo, thermalOn = w.enablesThermal,
             constrict = w.enablesConstrict, digest = w.digestion, bellow = w.enablesBellow,
-            antler = w.enablesAntler, charge = w.enablesCharge,
+            antler = w.enablesAntler, charge = w.enablesCharge, insight = w.insight,
             constrictNative = w.enablesConstrict && chassis != null && w.nativeChassis == chassis.speciesName,
         };
     }
@@ -606,7 +607,7 @@ public class CreatureBody : MonoBehaviour
         int venom = 0, bleed = 0;
         bool biteOn = false, scentOn = false, kickOn = false, howlOn = false, coldOn = false, camoOn = false,
              thermalOn = false, constrictOn = false, digestOn = false, bellowOn = false, antlerOn = false, chargeOn = false,
-             constrictNativeOn = false;
+             constrictNativeOn = false, insightOn = false;
         foreach (var kv in groups)
         {
             var c = kv.Value;
@@ -619,7 +620,7 @@ public class CreatureBody : MonoBehaviour
             biteOn |= c.bite; scentOn |= c.scent; kickOn |= c.kick; howlOn |= c.howl;
             coldOn |= c.cold; camoOn |= c.camo; thermalOn |= c.thermalOn; constrictOn |= c.constrict;
             digestOn |= c.digest; bellowOn |= c.bellow; antlerOn |= c.antler; chargeOn |= c.charge;
-            constrictNativeOn |= c.constrictNative;
+            constrictNativeOn |= c.constrictNative; insightOn |= c.insight;
         }
         int dmg = Mathf.RoundToInt(dmgF), dmgBite = Mathf.RoundToInt(dmgBiteF);
         int maxHp = Mathf.RoundToInt(maxHpF), life = Mathf.RoundToInt(lifeF);
@@ -657,6 +658,7 @@ public class CreatureBody : MonoBehaviour
             Perception.WolfScent = scentOn;
             Perception.SnakeThermal = thermalOn; // термозрение (Пит-орган): тепло сквозь стены
             Perception.ThermalRange = thermal;
+            Perception.Insight = insightOn;      // ЧУТЬЁ УЧЁНОГО: распознавание намерений + числа состояний
 
             // ПРОФИЛЬ ЧУВСТВ ИГРОКА — от сборки, как у любого существа: зрение при тебе всегда (глаза),
             // запах и тепло открывают органы слота Чутьё. Снял орган — канал закрылся, картина мира сузилась

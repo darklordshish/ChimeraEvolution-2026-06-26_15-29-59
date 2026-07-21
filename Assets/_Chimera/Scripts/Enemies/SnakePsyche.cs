@@ -648,7 +648,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     {
         windingUp = true;
         windupEnd = Time.time + grabWindup;
-        telegraph.Set(true, TelegraphColors.Grab);
+        telegraph.Set(true, TelegraphColors.Grab, intent: true); // ЗАМАХ броска: что именно готовит — читает Чутьё
     }
 
     void StartConstrict()
@@ -658,7 +658,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         if (!constricting) return;
         shownStage = 1;
         nextGrabBite = Time.time + grabBiteInterval; // первый укус — не в тот же кадр, что захват
-        telegraph.Set(true, TelegraphColors.Grab);
+        telegraph.Set(true, TelegraphColors.Grab, intent: true); // приём = намерение: без Чутья тело просто светлеет
     }
 
     void UpdateConstrict()

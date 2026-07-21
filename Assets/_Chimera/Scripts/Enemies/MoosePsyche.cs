@@ -152,7 +152,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
 
         if (noiseSrc == null) TryGetComponent(out noiseSrc);
         if (noiseSrc != null) noiseSrc.Spike(1f, 1f);
-        if (telegraph != null) { telegraph.Set(true, TelegraphColors.Howl); bellowCueUntil = Time.time + bellowCueTime; }
+        if (telegraph != null) { telegraph.Set(true, TelegraphColors.Howl, intent: true); bellowCueUntil = Time.time + bellowCueTime; }
 
         var hit = new HashSet<Component>(); // дедуп коллайдеров одного существа
         float maxR = Mathf.Max(bellowRadius, bellowChainRadius);

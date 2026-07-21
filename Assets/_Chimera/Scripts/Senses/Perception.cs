@@ -18,6 +18,11 @@ public static class Perception
     static bool GhostHides(Transform target) =>
         PlayerGhost && target != null && target.GetComponent<PlayerController>() != null;
 
+    /// <summary>ЧУТЬЁ УЧЁНОГО (человеческое Чутьё) — наблюдательность: игрок РАСПОЗНАЁТ намерение по замаху
+    /// (цвет приёма вместо безымянного «что-то готовит») и читает состояния ЧИСЛОМ. Ставит тело игрока.
+    /// Граница проекта: качественное видно всем безусловно, количественное — сила аналитика.</summary>
+    public static bool Insight;
+
     public static bool SnakeThermal;         // надет Пит-орган → термозрение игрока (тепло сквозь стены)
     public static float ThermalRange;        // радиус термо игрока (из органа)
     public static bool DevThermal;           // dev-тоггл T: форс термо без органа (леса до настоящего UI)

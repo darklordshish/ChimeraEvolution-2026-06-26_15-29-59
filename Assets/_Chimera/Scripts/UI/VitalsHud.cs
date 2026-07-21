@@ -117,7 +117,8 @@ public class VitalsHud : MonoBehaviour
 
         string combat = !playerHealth.InCombat
             ? (playerHealth.OutOfCombatRegen > 0f ? "   вне боя — реген" : "   вне боя") : "";
-        ownText.text = $"{playerHealth.Current}/{playerHealth.Max}{combat}{StatusText(playerHealth)}";
+        // СВОИ данные — числом ВСЕГДА: своё тело учёный знает изнутри, органом это не отнимается
+        ownText.text = $"{playerHealth.Current}/{playerHealth.Max}{combat}{StatusText(playerHealth, numbers: true)}";
 
         // ЗАХВАТ, двусторонне: что делают со мной и что делаю я
         string grab = "";
@@ -161,7 +162,9 @@ public class VitalsHud : MonoBehaviour
             float t = h.Max > 0 ? Mathf.Clamp01((float)h.Current / h.Max) : 0f;
             bar.fill.rectTransform.sizeDelta = new Vector2(barWidth * t, barHeight);
             bar.fill.color = Color.Lerp(HpLow, HpFull, t);
-            bar.status.text = StatusText(h);
+            // ЧУЖОЕ состояние: полоска — доля («ранен»), точные числа открывает Чутьё («47/150, яд 3»)
+            bar.status.text = (Perception.Insight ? $"<color=#E8E4D8>{h.Current}/{h.Max}</color>" : "")
+                            + StatusText(h, numbers: Perception.Insight);
         }
 
         HideFrom(used);
@@ -177,18 +180,24 @@ public class VitalsHud : MonoBehaviour
         return false;
     }
 
-    // строка статусов: глиф + число, цветов легенды. Глифы — из БАЗОВОЙ плоскости Unicode:
-    // встроенный шрифт эмодзи не знает, настоящие иконки придут вместе со спрайтовым атласом
-    static string StatusText(Health h)
+    /// <summary>Строка статусов: глиф из общей легенды + (с Чутьём) число. Граница проекта в одной строчке —
+    /// ЧТО с существом происходит видно всем, СКОЛЬКО именно измеряет только наблюдательность учёного.
+    /// Глифы из БАЗОВОЙ плоскости Unicode: встроенный шрифт эмодзи не знает (иконки придут с атласом).</summary>
+    static string StatusText(Health h, bool numbers)
     {
         string s = "";
-        if (h.TryGetComponent<Venom>(out var v) && v.Stacks > 0) s += $"  <color=#73D933>☠{v.Stacks}</color>";
-        if (h.TryGetComponent<Bleed>(out var b) && b.Stacks > 0) s += $"  <color=#B80A1F>♦♦{b.Stacks}</color>";
+        if (h.TryGetComponent<Venom>(out var v) && v.Stacks > 0) s += $"  <color=#73D933>☠{N(v.Stacks, numbers)}</color>";
+        if (h.TryGetComponent<Bleed>(out var b) && b.Stacks > 0) s += $"  <color=#B80A1F>♦♦{N(b.Stacks, numbers)}</color>";
         if (h.TryGetComponent<Stagger>(out var st) && st.IsStunned) s += "  <color=#EBEBD9>✱</color>";
         if (h.TryGetComponent<Morale>(out var m) && Mathf.Abs(m.Current) >= 0.5f)
-            s += m.Current > 0f ? $"  <color=#B81A1A>☺{m.Current:0}</color>" : $"  <color=#4069E6>☹{m.Current:0}</color>";
+        {
+            string val = numbers ? m.Current.ToString("0") : "";
+            s += m.Current > 0f ? $"  <color=#B81A1A>☺{val}</color>" : $"  <color=#4069E6>☹{val}</color>";
+        }
         return s;
     }
+
+    static string N(int stacks, bool numbers) => numbers ? stacks.ToString() : "";
 
     void HideFrom(int index)
     {

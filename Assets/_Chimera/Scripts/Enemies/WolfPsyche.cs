@@ -632,7 +632,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         windingUp = false;
         grabbing = true;
         activeTelegraph = TelegraphColors.Grab;
-        ShowTelegraph(activeTelegraph);
+        ShowTelegraph(activeTelegraph); // приём (как и все) — распознаётся Чутьём, иначе тело просто светлеет
         if (playerCtl == null) return;
 
         playerCtl.ApplyGrab(this, grabSlow); // режем скорость игрока; само удержание урона не даёт
@@ -744,11 +744,12 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     }
 
     // телеграф через таймер telegraphUntil: персистентный (до Disengage) / краткая вспышка / гашение
-    void ShowTelegraph(Color c) { telegraph.Set(true, c); telegraphUntil = 0f; }
+    // ПРИЁМ всегда намерение: цвет читает лишь Чутьё, иначе тело светлеет своим (единое правило для всех видов)
+    void ShowTelegraph(Color c) { telegraph.Set(true, c, intent: true); telegraphUntil = 0f; }
     void FlashTelegraph(Color c, float dur)
     {
         if (windingUp || grabbing) return; // не перебиваем телеграф приёма
-        telegraph.Set(true, c);
+        telegraph.Set(true, c, intent: true);
         telegraphUntil = Time.time + dur;
     }
     void HideTelegraph() { telegraph.Clear(); telegraphUntil = 0f; }

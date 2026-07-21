@@ -72,7 +72,7 @@ public abstract class WindupAbility : MonoBehaviour, IAbility
         if (Busy || target == null) return false;
         Busy = true;
         windupEnd = Time.time + windupTime;
-        telegraph.Set(true, TelegraphColor);
+        telegraph.Set(true, TelegraphColor, intent: true); // ЗАМАХ = намерение: цвет приёма читает лишь Чутьё
         OnBegin();
         return true;
     }

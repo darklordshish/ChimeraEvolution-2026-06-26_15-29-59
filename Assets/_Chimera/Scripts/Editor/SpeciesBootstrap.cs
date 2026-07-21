@@ -31,7 +31,7 @@ public static class SpeciesBootstrap
             new Organ { organName = "Кисть",  slot = "Руки",   hotkey = "1", cost = 3, damage = 8, range = 1.6f },                          // ×2 ≈ 16 урона; платишь 1
             new Organ { organName = "Ноги",   slot = "Ноги",   hotkey = "2", cost = 3, moveSpeed = 4.5f, dashSpeed = 15f, enablesKick = true }, // ×2 ≈ 9 ход / 30 рывок; пинок — фича человеческих ног
             new Organ { organName = "Сердце", slot = "Сердце", hotkey = "3", cost = 6, atkCooldown = 0.45f, maxHp = 75, regen = 0f, regenOOC = 0.75f }, // ×2 ≈ 150 HP; платишь 2
-            new Organ { organName = "Чутьё",  slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.7f },
+            new Organ { organName = "Чутьё",  slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.7f, insight = true }, // НАБЛЮДАТЕЛЬНОСТЬ учёного: распознаёт намерения и читает состояния числом (был пустым слотом — платил 3 ни за что)
             new Organ { organName = "Рот",    slot = "Пасть",  hotkey = "5", cost = 3, enablesBite = false },
             new Organ { organName = "Кожа",   slot = "Шкура",  hotkey = "6", cost = 3, damageReduction = 0f },
         };

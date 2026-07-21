@@ -246,7 +246,7 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
         pendingKind = kind;
         windupEnd = Time.time + (kind == Kind.Charge ? chargeWindup : howlWindup);
         activeTelegraph = kind == Kind.Charge ? TelegraphColors.Charge : TelegraphColors.Howl;
-        telegraph.Set(true, activeTelegraph);
+        telegraph.Set(true, activeTelegraph, intent: true); // приём: цвет читает лишь Чутьё
     }
 
     void Cancel() { windingUp = false; telegraph.Clear(); }
@@ -257,7 +257,7 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
         charging = true;
         chargeEnd = Time.time + chargeMaxDuration;
         activeTelegraph = TelegraphColors.Charge;
-        telegraph.Set(true, activeTelegraph); // телеграф держим — видно, что несётся на четвереньках
+        telegraph.Set(true, activeTelegraph, intent: true); // держим — видно, что несётся; чем именно, читает Чутьё
     }
 
     void UpdateCharge()

@@ -23,6 +23,12 @@ public static class TelegraphColors
     public static readonly Color Sword  = new(0.55f, 0.75f, 0.95f); // меч (человек) — стальной
     public static readonly Color Kick   = new(0.80f, 0.85f, 0.25f); // пинок (человек) — лаймовый
 
+    // НЕРАСПОЗНАННОЕ НАМЕРЕНИЕ: «что-то готовит», но что — не разобрать. Так замах выглядит БЕЗ человеческого
+    // Чутья: факт виден всем (окно реакции то же), смысл открывает наблюдательность.
+    // На телах это НЕ отдельный цвет, а ОСВЕТЛЕНИЕ собственного (`Telegraph.UnknownLift`) — зверь остаётся
+    // собой, просто «зажигается». Здесь — только образец для легенды F1
+    public static readonly Color Unknown = new(0.82f, 0.80f, 0.76f);
+
     // статусы
     public static readonly Color Stunned = new(0.92f, 0.92f, 0.85f); // «выключен из боя» (стан/схвачен) — белёсый
     public static readonly Color Venom   = new(0.45f, 0.85f, 0.20f); // яд — ядовито-зелёный

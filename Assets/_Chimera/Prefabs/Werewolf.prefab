@@ -683,6 +683,8 @@ MonoBehaviour:
   chimeraSlots: 0
   chimeraSlotMult: 2
   installAllBeast: 1
+  sightRange: 30
+  scentRange: 22
   expression: 2
   applyVitals: 0
   chassisIdentityWeight: 0.1
@@ -714,6 +716,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NavLocomotion
   pathInterval: 0.2
   pathDirectRange: 5
+  accel: 18
+  stopDeadzone: 0.35
+  gravity: -20
 --- !u!114 &1683690007009567405
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -732,7 +737,6 @@ MonoBehaviour:
   tempHpCap: 50
   moveSpeed: 12
   rotationSpeed: 300
-  gravity: -20
   sightRange: 55
   chargeSpeed: 20
   chargeWindup: 0.35
@@ -745,6 +749,7 @@ MonoBehaviour:
   howlCooldown: 9
   howlReach: 40
   howlInitialDelay: 8
+  howlStunDuration: 1
   attackCooldown: 1.2
   wanderRadius: 18
   wanderSpeed: 0.5

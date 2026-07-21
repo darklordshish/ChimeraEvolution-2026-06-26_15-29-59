@@ -134,6 +134,8 @@ public class ChimeraDevWindow : EditorWindow
             ? "Чувства: профиль не создан"
             : $"Чувства: зрение {ps.Range(SenseKind.Sight):0}   запах {ps.Range(SenseKind.Scent):0}   тепло {ps.Range(SenseKind.Thermal):0}",
             EditorStyles.wordWrappedLabel);
+        EditorGUILayout.LabelField($"Чутьё учёного: {(Perception.Insight ? "ЕСТЬ — намерения и числа читаются" : "нет — замах безымянный, числа скрыты")}",
+            EditorStyles.wordWrappedLabel);
     }
 
     // ── ВИДЫ: родство игрока + поголовье в одной строке (это про один и тот же вид) ──

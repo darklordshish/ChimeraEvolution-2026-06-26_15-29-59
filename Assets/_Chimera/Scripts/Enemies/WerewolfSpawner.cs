@@ -13,7 +13,9 @@ public class WerewolfSpawner : MonoBehaviour
     [SerializeField] int triggerAffinity = 80;
     [SerializeField] float spawnDistance = 16f;  // на каком расстоянии от игрока появляется
     [SerializeField] float respawnDelay = 5f;    // пауза после смерти босса до следующего
-    [SerializeField] bool autoSpawn = true;      // авто-призыв по родству; выключается в Dev-панели (тесты без босса)
+    [SerializeField] bool autoSpawn;             // авто-призыв по родству. ВЫКЛЮЧЕН по умолчанию: родство на отладке
+                                                 // крутят постоянно, а босс ломает естественный порядок сцены —
+                                                 // включать осознанно (тумблер в Dev-панели), а не ловить внезапно
 
     public bool AutoSpawn { get => autoSpawn; set => autoSpawn = value; }
 

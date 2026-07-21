@@ -16,6 +16,8 @@ public class Telegraph : MonoBehaviour
     bool[] headPart;     // ГОЛОВНЫЕ части (по конвенции имён): эмоц-рест красит ТОЛЬКО их — «лицо» существа
     MaterialPropertyBlock mpb;
     bool active;
+    bool activeIntent;   // текущая покраска = ЗАМАХ (намерение), а не статус → её распознаёт лишь Чутьё
+    bool isPlayer;       // свои приёмы носитель знает без всякого органа — телеграф игрока не обезличиваем
     Color activeColor;   // цель: плоский цвет ИЛИ target градиента
     float activeT = -1f; // ≥0 → градиент по t (рест→target); <0 → плоский цвет
     Color restColor;     // ЭМОЦ-РЕСТ-СЛОЙ (только голова): «морда налилась кровью / побелела от страха»;
@@ -26,6 +28,8 @@ public class Telegraph : MonoBehaviour
 
     void Awake()
     {
+        isPlayer = GetComponent<PlayerController>() != null;
+
         var list = new List<Renderer>();
         foreach (var r in GetComponentsInChildren<Renderer>())
             if (r is MeshRenderer || r is SkinnedMeshRenderer) list.Add(r); // не красим след/линии
@@ -42,18 +46,21 @@ public class Telegraph : MonoBehaviour
         }
     }
 
-    /// <summary>Плоский цвет телеграфа (вкл/выкл).</summary>
-    public void Set(bool on, Color color)
+    /// <summary>Плоский цвет телеграфа (вкл/выкл). `intent` — это ЗАМАХ ПРИЁМА, а не статус: такую покраску
+    /// игрок без человеческого Чутья видит нерасспознанной («что-то готовит»), см. `Apply`.
+    /// Статусы (стан, эмоции) метить намерением НЕ надо — они факты и видны всегда.</summary>
+    public void Set(bool on, Color color, bool intent = false)
     {
-        active = on; activeColor = color; activeT = -1f;
+        active = on; activeColor = color; activeT = -1f; activeIntent = intent;
         Apply();
     }
 
     /// <summary>Градиент телеграфа: каждый рендерер лерпит от СВОЕГО родного цвета к target по t (0=родной … 1=полный).
     /// Для СТАДИЙНЫХ приёмов (обхват): нарастание читается как переход родной→цвет-приёма, а не три разных цвета.</summary>
-    public void SetGradient(Color target, float t)
+    public void SetGradient(Color target, float t, bool intent = true)
     {
         active = true; activeColor = target; activeT = Mathf.Clamp01(t); // IsShowing=true — раскрытие для камуфляжа
+        activeIntent = intent;
         Apply();
     }
 
@@ -71,15 +78,26 @@ public class Telegraph : MonoBehaviour
 
     public void Clear() { active = false; Apply(); }
 
+    // насколько тело СВЕТЛЕЕТ, когда намерение не распознано. Не отдельный цвет (чужеродная метка поверх
+    // существа), а осветление ЕГО СОБСТВЕННОГО — «зверь подобрался», но чем именно замахнулся, не разобрать
+    const float UnknownLift = 0.45f;
+
     // применить текущее состояние: выкл → рест (эмоция НА ГОЛОВЕ, тело натуральное); градиент → лерп от реста; плоский → цвет
     void Apply()
     {
+        // РАСПОЗНАВАНИЕ НАМЕРЕНИЯ — фича человеческого Чутья: без него замах виден (окно реакции то же),
+        // но безымянным. С Чутьём проступает цвет приёма: укус, захват, таран, вой.
+        // Гейт только на НАМЕРЕНИИ: стан и эмоции — факты, у них свои каналы, их не обезличиваем
+        bool veiled = activeIntent && !Perception.Insight && !isPlayer;
+
         for (int i = 0; i < renderers.Length; i++)
         {
             if (renderers[i] == null) continue;
             renderers[i].GetPropertyBlock(mpb);
             Color rest = restT > 0f && headPart[i] ? Color.Lerp(baseColors[i], restColor, restT) : baseColors[i];
-            Color c = !active ? rest : activeT >= 0f ? Color.Lerp(rest, activeColor, activeT) : activeColor;
+            // нераспознанное — светлеем ОТ СВОЕГО цвета (per-renderer): волк остаётся волком, просто «зажёгся»
+            Color target = veiled ? Color.Lerp(rest, Color.white, UnknownLift) : activeColor;
+            Color c = !active ? rest : activeT >= 0f ? Color.Lerp(rest, target, activeT) : target;
             mpb.SetColor(BaseColor, c);
             renderers[i].SetPropertyBlock(mpb);
         }
