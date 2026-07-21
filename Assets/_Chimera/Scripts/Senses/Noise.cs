@@ -23,6 +23,21 @@ public class Noise : MonoBehaviour
 
     public float Loudness => Mathf.Max(loudness, Time.time < spikeUntil ? spike : 0f);
 
+    [SerializeField] float painLoud = 0.75f;     // ВОПЛЬ БОЛИ: раненый вскрикивает — драка слышна даже в тишине
+    [SerializeField] float painTime = 0.4f;
+
+    Health health;
+
+    void Awake()
+    {
+        // боль озвучивает САМ эмиттер, а не каждая психика поштучно: новый вид кричит без единой проводки
+        if (TryGetComponent(out health)) health.onDamaged.AddListener(OnPain);
+    }
+
+    void OnDestroy() { if (health != null) health.onDamaged.RemoveListener(OnPain); }
+
+    void OnPain() => Spike(painLoud, painTime);
+
     void OnEnable() { all.Add(this); lastPos = transform.position; }
     void OnDisable() => all.Remove(this);
 
@@ -30,11 +45,27 @@ public class Noise : MonoBehaviour
     public void SetBulk(float k) => bulk = Mathf.Max(0.1f, k);
 
     /// <summary>Разовый всплеск шума (атака, приземление, гремок): громкость 0..1 на duration секунд.</summary>
-    public void Spike(float strength, float duration)
+    public void Spike(float strength, float duration) => Spike(strength, duration, TelegraphColors.Unknown);
+
+    /// <summary>Всплеск С ТОНОМ события — цветом приёма из общей легенды. ВОЛНА ЕСТЬ ТЕЛЕГРАФ НА РАССТОЯНИИ
+    /// (идея пользователя): вой сиреневый, укус красный. Распознать тон, как и замах, даёт Чутьё —
+    /// без него волна безымянно-светлая.</summary>
+    public void Spike(float strength, float duration, Color tone)
     {
         spike = Mathf.Clamp01(strength);
         spikeUntil = Time.time + duration;
+        Tone = tone;
+        SpikeAt = Time.time;
     }
+
+    public Color Tone { get; private set; } = TelegraphColors.Unknown; // тон последнего события (задел: цвет приёма)
+
+    /// <summary>Когда случился последний ВСПЛЕСК. Визуализатор пускает волну ровно в этот момент —
+    /// иначе гремок мигает погремушкой, а волна ждёт своего такта, и звук с картинкой разъезжаются.</summary>
+    public float SpikeAt { get; private set; } = -999f;
+
+    /// <summary>Все живые источники — визуализатор волн обходит их сам (шуметь может ЛЮБОЕ тело, не только приёмом).</summary>
+    public static IReadOnlyList<Noise> All => all;
 
     void Update()
     {
@@ -53,7 +84,8 @@ public class Noise : MonoBehaviour
         foreach (var n in all)
         {
             if (n == null || n.transform == self) continue;
-            if (Perception.PlayerGhost && n.GetComponent<PlayerController>() != null) continue; // призрак не слышен (как и не виден)
+            // призрак не слышен (как и не виден); dev-тишина глушит игрока отдельно — для диагностики каналов
+            if ((Perception.PlayerGhost || Perception.DevSilent) && n.GetComponent<PlayerController>() != null) continue;
             float loud = n.Loudness;
             if (loud <= 0.01f) continue;
             float audible = loud * range;

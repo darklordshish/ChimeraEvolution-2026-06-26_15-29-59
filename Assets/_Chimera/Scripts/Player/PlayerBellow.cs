@@ -40,7 +40,7 @@ public class PlayerBellow : MonoBehaviour, IAbility
     void DoBellow()
     {
         if (noiseSrc == null) TryGetComponent(out noiseSrc);
-        if (noiseSrc != null) noiseSrc.Spike(1f, 1f); // рёв ЗВУЧИТ: уши слышат (лоси насторожатся и без кина)
+        if (noiseSrc != null) noiseSrc.Spike(1f, 1f, TelegraphColors.Howl); // рёв ЗВУЧИТ: уши слышат (лоси насторожатся и без кина)
         if (cam != null) cam.Shake(0.2f, shake);
 
         foreach (var hp in TargetScan.Healths(transform.position, rallyRadius, transform))

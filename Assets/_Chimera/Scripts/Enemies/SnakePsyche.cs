@@ -403,7 +403,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         // гремок тихий (~0.55 — прежние радиусы 15/28 переведены в громкость). Кто и как реагирует —
         // решают уши: волчье любопытство ловит гремок, лось ходит проверять любой шум
         if (noiseSrc == null) TryGetComponent(out noiseSrc);
-        if (noiseSrc != null) noiseSrc.Spike(hearRadius / lureHearRadius, rattleCue + 0.2f);
+        if (noiseSrc != null) noiseSrc.Spike(hearRadius / lureHearRadius, rattleCue + 0.2f, TelegraphColors.Grab); // гремок — тон броска
     }
 
     // видимость погремушки: вместе с телом (камуфляж её не трогает) ЛИБО мигание гремка

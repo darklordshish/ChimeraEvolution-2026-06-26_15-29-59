@@ -38,13 +38,15 @@ public class CreatureBody : MonoBehaviour
     [SerializeField] bool installAllBeast;    // все звериные органы надеты с рождения (вервольф — застывшая химера)
     [FormerlySerializedAs("fixedBonusMult")]
     [Header("Чувства игрока (профиль Senses; у NPC — на префабе)")]
-    [SerializeField] float sightRange = 30f;  // ЗРЕНИЕ игрока: глаза при нём всегда, органом не выдаётся
-    [SerializeField] float scentRange = 22f;  // дальность НЮХА, когда надето волчье Чутьё (тюнинг здесь, не в органе)
+    [SerializeField] float sightRange = 30f;   // ЗРЕНИЕ игрока: глаза при нём всегда, органом не выдаётся
+    [SerializeField] float hearingRange = 20f; // СЛУХ: уши тоже при нём всегда (лосиный орган позже расширит)
+    [SerializeField] float scentRange = 22f;   // дальность НЮХА, когда надето волчье Чутьё (тюнинг здесь, не в органе)
 
     // UNITY-ГОЧА: НОВОЕ сериализованное поле у компонента, УЖЕ лежащего в сцене/префабе, приходит НУЛЁМ —
     // инициализатор из кода применяется только к свежесозданным объектам. Поэтому 0 читаем как «не настроено»
     // и подставляем дефолт, иначе чувство молча выключается (зрение 0 = слепой игрок без единой ошибки в консоли)
     float SightRange => sightRange > 0f ? sightRange : 30f;
+    float HearingRange => hearingRange > 0f ? hearingRange : 20f;
     float ScentRange => scentRange > 0f ? scentRange : 22f;
 
     [SerializeField] float expression;        // ЭКСПРЕССИЯ: насколько раскрыты гены зверя. 0 = авто (кривая родства);
@@ -505,6 +507,8 @@ public class CreatureBody : MonoBehaviour
         public int venom, bleed;
         public bool bite, scent, kick, howl, cold, camo, thermalOn, constrict, digest, bellow, antler, charge;
         public bool insight; // ЧУТЬЁ УЧЁНОГО: распознавание намерений + числа состояний (человеческое Чутьё)
+        public bool keenEar;  // ОСТРЫЙ СЛУХ: различение вида источника + волны звука на экране
+        public float earMult; // множитель дальности слуха (супремум дублей)
         public bool constrictNative; // хват на РОДНОМ шасси (nativeChassis == шасси тела) → открыта ст.3 удушения
 
         // СУПРЕМУМ дублей одного типа слота: скаляры — max (кулдауны — min: меньше = лучше), флаги — OR.
@@ -525,6 +529,7 @@ public class CreatureBody : MonoBehaviour
             constrictNative = a.constrictNative || b.constrictNative,
             digest = a.digest || b.digest, bellow = a.bellow || b.bellow, antler = a.antler || b.antler,
             charge = a.charge || b.charge, insight = a.insight || b.insight,
+            keenEar = a.keenEar || b.keenEar, earMult = Mathf.Max(a.earMult, b.earMult),
         };
     }
 
@@ -579,6 +584,7 @@ public class CreatureBody : MonoBehaviour
             howl = w.enablesHowl, cold = w.coldBlooded, camo = w.camo, thermalOn = w.enablesThermal,
             constrict = w.enablesConstrict, digest = w.digestion, bellow = w.enablesBellow,
             antler = w.enablesAntler, charge = w.enablesCharge, insight = w.insight,
+            keenEar = w.keenHearing, earMult = w.hearingMult,
             constrictNative = w.enablesConstrict && chassis != null && w.nativeChassis == chassis.speciesName,
         };
     }
@@ -607,7 +613,8 @@ public class CreatureBody : MonoBehaviour
         int venom = 0, bleed = 0;
         bool biteOn = false, scentOn = false, kickOn = false, howlOn = false, coldOn = false, camoOn = false,
              thermalOn = false, constrictOn = false, digestOn = false, bellowOn = false, antlerOn = false, chargeOn = false,
-             constrictNativeOn = false, insightOn = false;
+             constrictNativeOn = false, insightOn = false, keenEarOn = false;
+        float earMult = 0f;
         foreach (var kv in groups)
         {
             var c = kv.Value;
@@ -621,6 +628,7 @@ public class CreatureBody : MonoBehaviour
             coldOn |= c.cold; camoOn |= c.camo; thermalOn |= c.thermalOn; constrictOn |= c.constrict;
             digestOn |= c.digest; bellowOn |= c.bellow; antlerOn |= c.antler; chargeOn |= c.charge;
             constrictNativeOn |= c.constrictNative; insightOn |= c.insight;
+            keenEarOn |= c.keenEar; earMult = Mathf.Max(earMult, c.earMult);
         }
         int dmg = Mathf.RoundToInt(dmgF), dmgBite = Mathf.RoundToInt(dmgBiteF);
         int maxHp = Mathf.RoundToInt(maxHpF), life = Mathf.RoundToInt(lifeF);
@@ -659,12 +667,15 @@ public class CreatureBody : MonoBehaviour
             Perception.SnakeThermal = thermalOn; // термозрение (Пит-орган): тепло сквозь стены
             Perception.ThermalRange = thermal;
             Perception.Insight = insightOn;      // ЧУТЬЁ УЧЁНОГО: распознавание намерений + числа состояний
+            Perception.KeenHearing = keenEarOn;  // ОСТРЫЙ СЛУХ: различение вида + ВОЛНЫ звука на экране
 
             // ПРОФИЛЬ ЧУВСТВ ИГРОКА — от сборки, как у любого существа: зрение при тебе всегда (глаза),
             // запах и тепло открывают органы слота Чутьё. Снял орган — канал закрылся, картина мира сузилась
             if (senses != null)
             {
                 senses.Set(SenseKind.Sight, SightRange);
+                // уши, как и глаза, при тебе всегда; лосиный орган их УСИЛИВАЕТ (×hearingMult), а не открывает
+                senses.Set(SenseKind.Hearing, HearingRange * (earMult > 0f ? earMult : 1f));
                 senses.Set(SenseKind.Scent, scentOn ? ScentRange : 0f);
                 senses.Set(SenseKind.Thermal, thermalOn ? thermal : 0f);
             }

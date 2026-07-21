@@ -73,6 +73,7 @@ public class DebugHud : MonoBehaviour
         if (playerHealth != null && playerHealth.GodMode) modes.Add("БОГ");
         if (Perception.PlayerGhost) modes.Add("ПРИЗРАК");
         if (Perception.DevThermal) modes.Add("ТЕРМО-форс");
+        if (Perception.DevSilent) modes.Add("ТИШИНА");
         if (Perception.ShowOwnScent) modes.Add("свой запах");
         if (VitalsHud.ShowAll) modes.Add("полоски: ВСЕ [H]");
         if (modes.Count > 0)

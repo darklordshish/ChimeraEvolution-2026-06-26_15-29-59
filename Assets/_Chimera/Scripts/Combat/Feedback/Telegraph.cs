@@ -104,4 +104,8 @@ public class Telegraph : MonoBehaviour
     }
 
     public bool IsShowing => active; // «существо сейчас что-то телеграфирует» = раскрыто (сигнал для камуфляжа)
+
+    /// <summary>Цвет текущего приёма — чтобы ЗВУК этого приёма нёс тот же тон (волна = телеграф на расстоянии).
+    /// Молчит (нейтральный) — значит приёма нет: удар без телеграфа звучит безымянно.</summary>
+    public Color CurrentTone => active ? activeColor : TelegraphColors.Unknown;
 }

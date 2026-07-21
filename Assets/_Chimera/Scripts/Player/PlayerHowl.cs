@@ -54,7 +54,7 @@ public class PlayerHowl : MonoBehaviour, IAbility
     void DoHowl()
     {
         if (noiseSrc == null) TryGetComponent(out noiseSrc);
-        if (noiseSrc != null) noiseSrc.Spike(1f, 0.8f); // вой ЗВУЧИТ (Noise): в призраке Hear сам глушит (беззвучен)
+        if (noiseSrc != null) noiseSrc.Spike(1f, 0.8f, TelegraphColors.Howl); // вой ЗВУЧИТ (Noise): в призраке Hear сам глушит (беззвучен)
         // призрака раскрывает ЗАДЕТЫЙ воем (стан через Hit.Apply / испуг ниже), не вой в пустоту
         var hit = new Hit(ownHealth, transform.position);
 

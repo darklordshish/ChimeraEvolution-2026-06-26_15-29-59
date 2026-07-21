@@ -20,10 +20,21 @@ public struct MeleeBlow
     public float RegenDebuffTime;    // на сколько держится сбив регена
     public float StaggerTime;        // явный сбив (0 = урон сам даст короткий стаггер через onDamaged)
 
+    // УДАР ЗВУЧИТ (ось Noise): драка слышна за стеной и притягивает третьих — волк идёт на шум,
+    // любопытный проверяет. Отсюда «дерёшься громко — сбегается стая, крадёшься — проходишь мимо»
+    const float HitLoud = 0.7f;      // громкость попадания: тише голоса (вой = 1), громче шага
+    const float HitLoudTime = 0.35f; // короткий всплеск — удар, а не сирена
+
     /// <summary>Применить удар к одной цели. damageMult — динамическая мощь NPC (1 у игрока).</summary>
     public void Deliver(in Hit ctx, Health target, float damageMult = 1f)
     {
         if (target == null) return;
+        if (ctx.Source != null && ctx.Source.TryGetComponent<Noise>(out var noise))
+        {
+            // тон удара = цвет его же телеграфа: услышанный за стеной укус звучит красным, как и выглядит
+            Color tone = ctx.Source.TryGetComponent<Telegraph>(out var tg) ? tg.CurrentTone : TelegraphColors.Unknown;
+            noise.Spike(HitLoud, HitLoudTime, tone);
+        }
         if (Damage > 0) ctx.Apply(target, HitEffect.Damage(Mathf.RoundToInt(Damage * damageMult)));
         if (LifeSteal > 0) ctx.Apply(target, HitEffect.LifeSteal(LifeSteal));
         if (RegenDebuffFactor > 0f && RegenDebuffFactor < 1f) ctx.Apply(target, HitEffect.RegenDebuff(RegenDebuffFactor, RegenDebuffTime));

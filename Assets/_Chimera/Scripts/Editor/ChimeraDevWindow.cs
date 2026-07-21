@@ -118,6 +118,9 @@ public class ChimeraDevWindow : EditorWindow
                 Perception.ShowOwnScent = !Perception.ShowOwnScent;
             if (GUILayout.Button($"Термо (форс): {(Perception.DevThermal ? "ВКЛ" : "выкл")}"))
                 Perception.DevThermal = !Perception.DevThermal;
+            // ТИШИНА отдельно от призрака: если зверь идёт на тебя и БЕЗ звука — дело не в слухе
+            if (GUILayout.Button($"Тишина: {(Perception.DevSilent ? "ВКЛ" : "выкл")}"))
+                Perception.DevSilent = !Perception.DevSilent;
         }
 
         var noise = health.GetComponent<Noise>(); // ось звука: 0 = беззвучен, 1 = бег/рывок (слышит лосиное ухо)
@@ -132,9 +135,19 @@ public class ChimeraDevWindow : EditorWindow
         var ps = Perception.PlayerSenses;
         EditorGUILayout.LabelField(ps == null
             ? "Чувства: профиль не создан"
-            : $"Чувства: зрение {ps.Range(SenseKind.Sight):0}   запах {ps.Range(SenseKind.Scent):0}   тепло {ps.Range(SenseKind.Thermal):0}",
+            : $"Чувства: зрение {ps.Range(SenseKind.Sight):0}   слух {ps.Range(SenseKind.Hearing):0}   " +
+              $"запах {ps.Range(SenseKind.Scent):0}   тепло {ps.Range(SenseKind.Thermal):0}",
             EditorStyles.wordWrappedLabel);
         EditorGUILayout.LabelField($"Чутьё учёного: {(Perception.Insight ? "ЕСТЬ — намерения и числа читаются" : "нет — замах безымянный, числа скрыты")}",
+            EditorStyles.wordWrappedLabel);
+        EditorGUILayout.LabelField($"Острый слух: {(Perception.KeenHearing ? "ЕСТЬ — волны видны, вид на слух различается" : "нет — звук только строкой в сводке")}",
+            EditorStyles.wordWrappedLabel);
+
+        // ТЕРМО-ПОДПИСИ: сколько силуэтов горит сейчас. Если тепло «есть» по радиусу, а горит 0 — дело
+        // не в дальности, а в рендере (шейдер Chimera/ThermalGlow); если горит, но не видно — в конвейере
+        int glowing = 0, signatures = 0;
+        foreach (var hs in Object.FindObjectsByType<HeatSignature>()) { signatures++; if (hs.IsGlowing) glowing++; }
+        EditorGUILayout.LabelField($"Термо-подписи: горит {glowing} из {signatures}   (радиус {Perception.ThermalRadius:0} м)",
             EditorStyles.wordWrappedLabel);
     }
 
@@ -311,7 +324,6 @@ public class ChimeraDevWindow : EditorWindow
     }
 
     // ── хелперы наблюдения (переехали с экранного HUD) ───────────────────────
-    static string AlertRu(Alert s) => s == Alert.Attack ? "АТАКА" : s == Alert.Wary ? "настороже" : "спокоен";
 
     /// <summary>Ближайшее к игроку существо типа T: состояние восприятия + мораль + дистанция.
     /// Никогда не молчит: нет вида в сцене — так и пишет, иначе пустота читается как сломанная диагностика.</summary>
@@ -327,7 +339,10 @@ public class ChimeraDevWindow : EditorWindow
         if (near == null) return $"{label}: — нет в сцене";
         if (!near.TryGetComponent<AlertState>(out var a)) return $"{label}: без AlertState";
         string mor = near.TryGetComponent<Morale>(out var m) ? $"  мораль {m.Current:+0.#;-0.#;0}" : "";
-        return $"{label}: {AlertRu(a.State)}{mor}  [{Mathf.Sqrt(best):0} м]";
+        // ЯРОСТЬ важна отдельно: берсерк ПРЕСЛЕДУЕТ цель, уже не видя её — со стороны выглядит
+        // как «учуял сквозь призрак», хотя он просто ещё не остыл
+        string rage = near.TryGetComponent<Rage>(out var r) && r.IsEnraged ? "  ЯРОСТЬ" : "";
+        return $"{label}: {AlertNames.Ru(a.State)}{mor}{rage}  [{Mathf.Sqrt(best):0} м]";
     }
 
     /// <summary>Ближайшее к игроку чужое тело (для показа HP и стаков эффектов).</summary>
