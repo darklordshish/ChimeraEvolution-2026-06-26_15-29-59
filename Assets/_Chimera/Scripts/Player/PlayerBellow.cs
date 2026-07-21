@@ -43,12 +43,8 @@ public class PlayerBellow : MonoBehaviour, IAbility
         if (noiseSrc != null) noiseSrc.Spike(1f, 1f); // рёв ЗВУЧИТ: уши слышат (лоси насторожатся и без кина)
         if (cam != null) cam.Shake(0.2f, shake);
 
-        var seen = new System.Collections.Generic.HashSet<Health>();
-        foreach (var col in Physics.OverlapSphere(transform.position, rallyRadius, ~0, QueryTriggerInteraction.Ignore))
+        foreach (var hp in TargetScan.Healths(transform.position, rallyRadius, transform))
         {
-            var hp = col.GetComponentInParent<Health>();
-            if (hp == null || hp.transform == transform || !seen.Add(hp)) continue;
-
             // признание вида цели решает знак голоса (как у воя): кинов не контролим
             var kinTier = KinTier.None;
             if (body != null && hp.TryGetComponent<CreatureBody>(out var targetBody) && targetBody.Chassis != null)

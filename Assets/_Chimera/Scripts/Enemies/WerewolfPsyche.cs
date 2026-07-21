@@ -44,6 +44,7 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
     [SerializeField] float howlCooldown = 9f; // < жизни стака морали (10с): окна приказа +5 ПЕРЕКРЫВАЮТСЯ — при вожаке стая не ломается
     [SerializeField] float howlReach = 40f;   // охват воя вожака: приказ/сбор — ближним, не всей карте (лес не схлопывается в кучу)
     [SerializeField] float howlInitialDelay = 8f; // не воет сразу при появлении
+    [SerializeField] float howlStunDuration = 1f; // длительность глушения (сам ФАКТ стана открывает порог Пасти)
 
     [Header("Кулдаун / навигация")]
     [SerializeField] float attackCooldown = 1.2f;
@@ -70,6 +71,7 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
     Color activeTelegraph;
     Grabbed grabbedStatus; // единый захват: НАС держат (хвост игрока) — массивного не защёлкнуть, кусаемся в ответ
     Noise noiseSrc;        // источник звука (вешает тело): всплеск воя (ось Noise)
+    CreatureBody body;     // своё тело: мощь решает, открыт ли стан воя (порог-фича Пасти)
 
     void Awake()
     {
@@ -222,6 +224,17 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
         PackCoordinator.Instance.Rally(transform.position, howlReach, rageDuration); // приказ ближним: +5 духа, страхи стёрты
         if (target != null && !Perception.PlayerGhost) // dev-призрака вой не выцеливает (иначе стая вечно кластером на наблюдателе)
             PackCoordinator.Instance.AlertAround(transform.position, howlReach, target.position); // сбор — ближним, не всей карте
+
+        // СТАН — та же ПОРОГ-ФИЧА Пасти, что у игрока: вожак дорос мощью (Э2 ≥ порог 2), рядовой волк нет.
+        // Не «боссу прописали глушение», а «вой один на всех, разница — в носителе» (3-я ось экспрессии)
+        if (body == null) TryGetComponent(out body);
+        if (body != null && body.HowlStuns)
+        {
+            var hit = new Hit(ownHealth, transform.position);
+            float stunR = howlReach * 0.5f; // ближнее кольцо глушит, дальнее — только дух (как у игроцкого воя)
+            foreach (var hp in TargetScan.Healths(transform.position, stunR, transform))
+                if (hp.GetComponent<WolfPsyche>() == null) hit.Apply(hp, HitEffect.Stun(howlStunDuration)); // своих не глушим
+        }
         nextHowl = Time.time + howlCooldown;
     }
 

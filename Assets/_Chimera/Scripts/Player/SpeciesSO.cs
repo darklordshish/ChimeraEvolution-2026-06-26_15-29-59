@@ -33,6 +33,9 @@ public class Organ
     public float range, atkCooldown, moveSpeed, dashSpeed, dashCooldown, damageReduction, regen, regenOOC;
     public float dashDuration;     // своя длина рывка ног (0 = дефолт контроллера): лосиные — длинный таран, волчьи — короткий
     public float thermalRange;     // радиус термозрения (Пит-орган); фикс-фича, как range — не блендится
+    public float howlStunAt;       // ПОРОГ-ФИЧА (3-я ось экспрессии): мощь носителя ≥ этого — вой ещё и СТАНИТ.
+                                   // 0 = стана нет вовсе. Не «сколько», а ЧТО ВООБЩЕ открывается: рядовой волк
+                                   // (Э 0.45) только зовёт стаю, вервольф (Э 2) и игрок на 100 родства — глушат
     public float howlRadius;       // ГОЛОС Пасти: база радиуса воя (0 = не воет). Итог = база × мощь-превосходство
                                    // (тело считает: игрок BonusMult ×1..2, NPC max(1, Э) — норму вниз не штрафуем)
     public bool enablesBite, enablesScent, enablesKick, enablesHowl, coldBlooded, camo, enablesThermal, enablesConstrict;

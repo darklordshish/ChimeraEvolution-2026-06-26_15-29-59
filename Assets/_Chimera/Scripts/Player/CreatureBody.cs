@@ -87,6 +87,14 @@ public class CreatureBody : MonoBehaviour
 
     public static CreatureBody PlayerBody { get; private set; } // тело ИГРОКА: HUD/dev/спавнеры читают его родство
 
+    /// <summary>МОЩЬ носителя — ось экспрессии как ЧИСЛО: у игрока множитель родства (1..2), у NPC —
+    /// фикс. экспрессия вида (волк 0.45, вервольф 2). Общая ручка: на неё вешаются и масштабы (радиус
+    /// голоса), и ПОРОГИ-ФИЧИ («что вообще открывается»). Переиспользуемо химерами и новыми видами.</summary>
+    public float Power => move != null ? BonusMult : expression;
+
+    /// <summary>Дорос ли носитель до СТАНА в вое (порог задан органом Пасти, см. Organ.howlStunAt).</summary>
+    public bool HowlStuns { get; private set; }
+
     public int GetAffinity(string species) { affinity.TryGetValue(species, out int v); return v; }
     public void AddAffinity(string species, int n) => affinity[species] = Mathf.Clamp(GetAffinity(species) + n, 0, AffinityCap);
     public void SetAffinity(string species, int v) => affinity[species] = Mathf.Clamp(v, 0, AffinityCap);
@@ -373,7 +381,7 @@ public class CreatureBody : MonoBehaviour
     // вклад одного надетого органа в статы тела (после бленда/экспрессии)
     struct Contribution
     {
-        public float dmg, maxHp, life, rng, atkCd, mv, dash, dashDur, dashCd, reduce, regen, regenOOC, thermal, howlR;
+        public float dmg, maxHp, life, rng, atkCd, mv, dash, dashDur, dashCd, reduce, regen, regenOOC, thermal, howlR, howlStunAt;
         public int venom, bleed;
         public bool bite, scent, kick, howl, cold, camo, thermalOn, constrict, digest, bellow, antler, charge;
         public bool constrictNative; // хват на РОДНОМ шасси (nativeChassis == шасси тела) → открыта ст.3 удушения
@@ -388,6 +396,7 @@ public class CreatureBody : MonoBehaviour
             reduce = Mathf.Max(a.reduce, b.reduce), regen = Mathf.Max(a.regen, b.regen),
             regenOOC = Mathf.Max(a.regenOOC, b.regenOOC), thermal = Mathf.Max(a.thermal, b.thermal),
             howlR = Mathf.Max(a.howlR, b.howlR),
+            howlStunAt = Mathf.Max(a.howlStunAt, b.howlStunAt),
             venom = Mathf.Max(a.venom, b.venom), bleed = Mathf.Max(a.bleed, b.bleed),
             bite = a.bite || b.bite, scent = a.scent || b.scent, kick = a.kick || b.kick,
             howl = a.howl || b.howl, cold = a.cold || b.cold, camo = a.camo || b.camo,
@@ -426,6 +435,7 @@ public class CreatureBody : MonoBehaviour
                     venom = b.venomStacks, bleed = b.bleedStacks, // дискретные фичи органа (как флаги) — не блендим
                     rng = b.range,                // дальность не масштабируем — фикс. трейдофф
                     howlR = b.howlRadius,         // голос-база органа (мощь домножит тело — эмиссия, не чувство)
+                    howlStunAt = b.howlStunAt,    // порог-фича: стан воя открывается мощью носителя
                     atkCd = Blend(h.atkCooldown, b.atkCooldown, m),
                     mv = Blend(h.moveSpeed, b.moveSpeed, m),
                     dash = Blend(h.dashSpeed, b.dashSpeed, m),
@@ -457,7 +467,7 @@ public class CreatureBody : MonoBehaviour
                     venom = h.venomStacks, bleed = h.bleedStacks,
                     rng = h.range, atkCd = h.atkCooldown, mv = h.moveSpeed * e, dash = h.dashSpeed * e, dashDur = h.dashDuration,
                     dashCd = h.dashCooldown, reduce = h.damageReduction * e, regen = h.regen * e,
-                    regenOOC = h.regenOOC * e, thermal = h.thermalRange, howlR = h.howlRadius,
+                    regenOOC = h.regenOOC * e, thermal = h.thermalRange, howlR = h.howlRadius, howlStunAt = h.howlStunAt,
                     bite = h.enablesBite, scent = h.enablesScent, kick = h.enablesKick,
                     howl = h.enablesHowl, cold = h.coldBlooded, camo = h.camo, thermalOn = h.enablesThermal,
                     constrict = h.enablesConstrict, digest = h.digestion, bellow = h.enablesBellow, antler = h.enablesAntler,
@@ -473,7 +483,7 @@ public class CreatureBody : MonoBehaviour
 
         // суммирование групп; урон группы «Пасть» принадлежит УКУСУ, не мечу
         float dmgF = 0f, dmgBiteF = 0f, maxHpF = 0f, lifeF = 0f;
-        float rng = 0f, atkCd = 0f, mv = 0f, dash = 0f, dashDur = 0f, dashCd = 0f, reduce = 0f, regen = 0f, regenOOC = 0f, thermal = 0f, howlR = 0f;
+        float rng = 0f, atkCd = 0f, mv = 0f, dash = 0f, dashDur = 0f, dashCd = 0f, reduce = 0f, regen = 0f, regenOOC = 0f, thermal = 0f, howlR = 0f, howlStunAt = 0f;
         int venom = 0, bleed = 0;
         bool biteOn = false, scentOn = false, kickOn = false, howlOn = false, coldOn = false, camoOn = false,
              thermalOn = false, constrictOn = false, digestOn = false, bellowOn = false, antlerOn = false, chargeOn = false,
@@ -486,6 +496,7 @@ public class CreatureBody : MonoBehaviour
             rng += c.rng; atkCd += c.atkCd; mv += c.mv; dash += c.dash; dashDur += c.dashDur; dashCd += c.dashCd;
             reduce += c.reduce; regen += c.regen; regenOOC += c.regenOOC; thermal += c.thermal;
             howlR = Mathf.Max(howlR, c.howlR);
+            howlStunAt = Mathf.Max(howlStunAt, c.howlStunAt);
             biteOn |= c.bite; scentOn |= c.scent; kickOn |= c.kick; howlOn |= c.howl;
             coldOn |= c.cold; camoOn |= c.camo; thermalOn |= c.thermalOn; constrictOn |= c.constrict;
             digestOn |= c.digest; bellowOn |= c.bellow; antlerOn |= c.antler; chargeOn |= c.charge;
@@ -504,9 +515,13 @@ public class CreatureBody : MonoBehaviour
         if (kick != null) kick.KickEnabled = kickOn; // пинок — фича человеческих ног: с волчьими пропадает
         // ГОЛОС — от данных: радиус = органная база × МОЩЬ-превосходство (игрок BonusMult ×1..2;
         // NPC max(1, Э) — норму вниз не штрафуем: взрослый волк воет как волк, вервольф Э2 — вдвое)
-        float voiceMult = Mathf.Max(1f, move != null ? BonusMult : expression);
+        float voiceMult = Mathf.Max(1f, Power); // радиус: норму вниз не штрафуем (взрослый волк воет как волк)
         float howlReach = howlR * voiceMult;
-        if (howl != null) { howl.HowlEnabled = howlOn; howl.SetReach(howlReach); } // вой-стан — фича волчьей Пасти
+        // ПОРОГ-ФИЧА (3-я ось экспрессии): стан открывается, только если МОЩЬ носителя доросла до порога органа.
+        // Рядовой волк (Э 0.45) лишь зовёт стаю; вервольф (Э 2) и игрок на 100 родства — глушат. Через данные,
+        // без флагов «это игрок»: один вой на всех, разница — в составе носителя
+        HowlStuns = howlStunAt > 0f && Power >= howlStunAt;
+        if (howl != null) { howl.HowlEnabled = howlOn; howl.SetReach(howlReach); howl.StunUnlocked = HowlStuns; }
         if (constrictAb != null)
         {
             constrictAb.ConstrictEnabled = constrictOn;               // обхват — фича Хвоста (химерный слот)

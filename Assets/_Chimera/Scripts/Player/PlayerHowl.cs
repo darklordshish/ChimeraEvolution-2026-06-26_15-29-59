@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -18,6 +17,8 @@ public class PlayerHowl : MonoBehaviour, IAbility
     [SerializeField] float shake = 0.3f;
 
     public bool HowlEnabled { get; set; } // включается волчьей Пастью (CreatureBody)
+    public bool StunUnlocked { get; set; } // ПОРОГ-ФИЧА: стан открыт, только если мощь доросла до порога Пасти
+                                           // (тело считает, см. CreatureBody.HowlStuns). Ниже порога — голос без глушения
 
     /// <summary>ГОЛОС — от данных: тело отдаёт радиус (органная база × мощь-превосходство). Стан = половина.</summary>
     public void SetReach(float reach)
@@ -33,7 +34,6 @@ public class PlayerHowl : MonoBehaviour, IAbility
     CreatureBody body; // бонус органов (родство) масштабирует вес воя по морали
     PlayerBellow bellowMate; // вторая глотка (аккорд): стан расширяется до большего из радиусов голосов
     Noise noiseSrc; // источник звука (вешает тело): вой игрока звучит в мире (ось Noise) — лось услышит
-    readonly HashSet<Health> hitThisHowl = new();
 
     void Start()
     {
@@ -55,7 +55,7 @@ public class PlayerHowl : MonoBehaviour, IAbility
     {
         if (noiseSrc == null) TryGetComponent(out noiseSrc);
         if (noiseSrc != null) noiseSrc.Spike(1f, 0.8f); // вой ЗВУЧИТ (Noise): в призраке Hear сам глушит (беззвучен)
-        hitThisHowl.Clear(); // призрака раскрывает ЗАДЕТЫЙ воем (стан через Hit.Apply / испуг ниже), не вой в пустоту
+        // призрака раскрывает ЗАДЕТЫЙ воем (стан через Hit.Apply / испуг ниже), не вой в пустоту
         var hit = new Hit(ownHealth, transform.position);
 
         // радиусы уже ТЕЛЕСНЫЕ: тело отдало орган × мощь через SetReach (на сотке стан 7→14, страх 14→28).
@@ -64,12 +64,8 @@ public class PlayerHowl : MonoBehaviour, IAbility
         float stunR = radius, fearR = fearRadius;
         if (bellowMate != null && bellowMate.BellowEnabled) stunR = Mathf.Max(stunR, bellowMate.FearRadius);
 
-        Collider[] cols = Physics.OverlapSphere(transform.position, fearR, ~0, QueryTriggerInteraction.Ignore);
-        foreach (var col in cols)
+        foreach (var hp in TargetScan.Healths(transform.position, fearR, transform))
         {
-            var hp = col.GetComponentInParent<Health>();
-            if (hp == null || hp.transform == transform || !hitThisHowl.Add(hp)) continue;
-
             // K3: ПРИЗНАНИЕ ПЕРЕВОРАЧИВАЕТ ЗНАК ГОЛОСА (спека идентичности §3). Кин-цель (моя идентичность
             // к ЕЁ виду ≥ слабого) вместо контроля получает RALLY: дух по градации признания (слабое +1,
             // среднее +2 + стирание страхов, сильное +5 — голос вожака) и точку сбора. Чужим — как раньше
@@ -86,7 +82,7 @@ public class PlayerHowl : MonoBehaviour, IAbility
             }
 
             float d = Vector3.Distance(hp.transform.position, transform.position);
-            if (d <= stunR) hit.Apply(hp, HitEffect.Stun(stunDuration)); // ближние ЧУЖИЕ оглохли
+            if (StunUnlocked && d <= stunR) hit.Apply(hp, HitEffect.Stun(stunDuration)); // ближние ЧУЖИЕ оглохли (если мощь доросла)
             else if (hp.TryGetComponent<WolfPsyche>(out var w))
             {
                 // удар по морали дальнего кольца: вес растёт с родством (бонус органов ×1..×2 → −2..−4)
