@@ -46,6 +46,34 @@ public static class Perception
         return true;
     }
 
+    /// <summary>ПРОФИЛЬ ЧУВСТВ ИГРОКА — ставит его собственное тело (`CreatureBody`), каналы задаёт сборка.
+    /// Раньше у игрока чувств не было вовсе, только статические флаги: теперь он такое же существо, как NPC.</summary>
+    public static Senses PlayerSenses;
+
+    /// <summary>ВОСПРИНИМАЕТ ЛИ ИГРОК цель — и каким каналом. Единственный источник правды для всего,
+    /// что показывает состояние мира: полоски, сканер, сводка. Кого не чувствуешь — того на экране нет,
+    /// поэтому засада остаётся засадой, а сборка меняет не только силу, но и картину мира.
+    /// Порядок проверки — от самого «прямого» канала к косвенным: увидел глазами / почуял тепло / унюхал.</summary>
+    public static bool PlayerPerceives(Vector3 from, Transform target, out SenseKind by)
+    {
+        by = SenseKind.Sight;
+        if (target == null || PlayerSenses == null) return false;
+
+        float distSq = (target.position - from).sqrMagnitude;
+
+        float sight = PlayerSenses.Range(SenseKind.Sight);
+        if (sight > 0f && distSq <= sight * sight && HasLineOfSight(from, target)) return true;
+
+        // термо берём через ThermalOn/ThermalRadius — там уже сведены орган и dev-тумблер T (один источник правды)
+        if (ThermalOn && SeesThermal(from, target, ThermalRadius)) { by = SenseKind.Thermal; return true; } // сквозь стены
+
+        // ЗАПАХ прямой видимости не требует (тем и ценен): за углом чуешь, глазами не видишь
+        float scent = PlayerSenses.Range(SenseKind.Scent);
+        if (scent > 0f && distSq <= scent * scent) { by = SenseKind.Scent; return true; }
+
+        return false;
+    }
+
     // термозрение (Пит-орган): видит ТЁПЛОГО в радиусе СКВОЗЬ укрытия — прямой видимости не требует,
     // этим и отличается от зрения. Холоднокровный не излучает тепло — невидим (см. IsWarm).
     public static bool SeesThermal(Vector3 from, Transform target, float range)

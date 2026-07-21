@@ -126,6 +126,14 @@ public class ChimeraDevWindow : EditorWindow
         EditorGUILayout.LabelField($"Запах-орган: {(Perception.WolfScent ? "есть" : "нет")}   " +
                                    $"Термо: {(Perception.ThermalOn ? (Perception.SnakeThermal ? "орган" : "дев") : "выкл")}{noiseStr}",
                                    EditorStyles.wordWrappedLabel);
+
+        // ПРОФИЛЬ ЧУВСТВ: дальности каналов (0 = чувства нет). Молчащее зрение не даёт ошибок в консоли —
+        // видно только здесь: полоски и сканер работают ровно по этим числам
+        var ps = Perception.PlayerSenses;
+        EditorGUILayout.LabelField(ps == null
+            ? "Чувства: профиль не создан"
+            : $"Чувства: зрение {ps.Range(SenseKind.Sight):0}   запах {ps.Range(SenseKind.Scent):0}   тепло {ps.Range(SenseKind.Thermal):0}",
+            EditorStyles.wordWrappedLabel);
     }
 
     // ── ВИДЫ: родство игрока + поголовье в одной строке (это про один и тот же вид) ──

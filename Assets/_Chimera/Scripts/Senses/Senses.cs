@@ -37,6 +37,11 @@ public class Senses : MonoBehaviour
         if (c.range <= 0f) c.range = range;
     }
 
+    /// <summary>ПЕРЕЗАПИСАТЬ дальность канала. Для ИГРОКА: его чувства не константа вида, а функция сборки —
+    /// сменил Чутьё на Пит-орган, и профиль обязан поехать следом (`Seed` бы промолчал: канал уже не пуст).
+    /// 0 — чувства нет: канал закрывается вместе со снятым органом.</summary>
+    public void Set(SenseKind k, float range) => Ch(k).range = Mathf.Max(0f, range);
+
     /// <summary>Сид сектора обзора из психики — только если канал ещё круговой по умолчанию (не задан на префабе).</summary>
     public void SeedViewAngle(SenseKind k, float halfAngle)
     {
