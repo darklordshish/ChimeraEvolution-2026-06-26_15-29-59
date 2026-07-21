@@ -19,7 +19,6 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     [Header("Погоня")]
     [SerializeField] float moveSpeed = 4f;
     [SerializeField] float rotationSpeed = 250f;
-    [SerializeField] float gravity = -20f;
     [SerializeField] float sightRange = 25f;
     [SerializeField] float sightHalfAngle = 60f;   // СЕКТОР ОБЗОРА зрения (полу-угол; 60 = конус 120°): вне конуса не видит (стелс со спины)
     [SerializeField] float proximityRadius = 2.5f; // «в упор»: вплотную чует и вне конуса (шорох/дыхание — не подкрасться впритык)
@@ -68,7 +67,6 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
 
     static readonly Collider[] neighbors = new Collider[16];
 
-    CharacterController controller;
     Stagger stagger;
     Knockback knockback;
     Health ownHealth;
@@ -86,7 +84,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     Transform target;
     Health targetHealth;
 
-    float nextAttackTime, verticalVel, windupEnd;
+    float nextAttackTime, windupEnd; // вертикаль/гравитация — в NavLocomotion (общий ход)
     Vector3 smoothHoriz;                 // анти-тремор: сглаженная горизонтальная скорость роя (низкочастотный фильтр)
     bool windingUp, hasToken, grabbing;  // windingUp — только замах ЗАХВАТА
     Color activeTelegraph;
@@ -206,7 +204,6 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
 
     void Awake()
     {
-        controller = GetComponent<CharacterController>();
         stagger = GetComponent<Stagger>();
         knockback = GetComponent<Knockback>();
         ownHealth = GetComponent<Health>();
@@ -258,7 +255,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     public void SetCarried(bool on)
     {
         carried = on;
-        if (!on) verticalVel = 0f; // сброс накопленной вертикали — падаем с места, а не рикошетом вниз
+        if (!on) nav.ResetMotion(); // сброс накопленной скорости/вертикали — падаем с места, а не рикошетом вниз
     }
 
     // «ХИЩНИК СТАЛ ЖЕРТВОЙ»: раскрытая змея рядом (движется/бежит — камуфляж её не прячет) становится
@@ -494,10 +491,12 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         if (huntingPrey)
         {
             Vector3 spot = (preyBody != null ? preyBody.BodyPoint(preyT) : target.position) + personalOffset * 0.35f;
-            horizontal = ((spot - transform.position).sqrMagnitude > 0.4f ? nav.DirTo(spot) * Speed : Vector3.zero) + Separation() * attackSeparation;
+            horizontal = nav.Arrive(spot, Speed) + Separation() * attackSeparation; // плавный подход вместо газ/стоп
         }
         else if (hasToken && Time.time >= nextAttackTime)
-            horizontal = (dist > bite.Range ? nav.DirTo(target.position) * Speed : Vector3.zero) + Separation() * attackSeparation;
+            // ПЛАВНО подъезжаем на дистанцию укуса: раньше на самой границе был полный газ/полный стоп
+            // каждый кадр — главный источник дрожи стаи вокруг жертвы
+            horizontal = nav.Arrive(target.position, Speed, stopAt: bite.Range * 0.85f) + Separation() * attackSeparation;
         else
         {
             // battle-circle: идём к своей точке (слот кольца / рыхлая стая) с ARRIVE — плавно тормозим у цели,
@@ -568,16 +567,14 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
                 if (dist <= bite.Range) { if (bite.TryUse()) activeAbility = bite; Settle(Vector3.zero); return true; }
                 if (dist >= leap.MinRange && dist <= leap.MaxRange) { if (leap.TryUse()) activeAbility = leap; Settle(Vector3.zero); return true; }
             }
-            Settle((dist > bite.Range ? nav.DirTo(mooseTarget.transform.position) * Speed : Vector3.zero) + Separation() * attackSeparation);
+            Settle(nav.Arrive(mooseTarget.transform.position, Speed, stopAt: bite.Range * 0.85f) + Separation() * attackSeparation);
             return true;
         }
 
         // ТЕНЬ: кружим на своём личном месте у границы лесенки, подгоняя тушу (arrive — без дрожи)
         if (mooseHunting) { mooseHunting = false; bite.SetTarget(playerHealth); leap.SetTarget(playerHealth); } // дух упал — из навала в тень
         Vector3 spot = mooseTarget.transform.position + personalOffset.normalized * shadowRange;
-        Vector3 flat = spot - transform.position; flat.y = 0f;
-        float arv = Speed * circleSpeed * Mathf.Clamp01(flat.magnitude / Mathf.Max(arriveRadius, 0.01f));
-        Settle(nav.DirTo(spot) * arv + Separation());
+        Settle(nav.Arrive(spot, Speed * circleSpeed, arriveRadius) + Separation()); // тот же arrive, теперь общий
         return true;
     }
 
@@ -741,12 +738,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         return Vector3.ClampMagnitude(push * separationStrength, moveSpeed); // кап силы — без радиальных рывков
     }
 
-    void Settle(Vector3 horizontal)
-    {
-        if (controller.isGrounded && verticalVel < 0f) verticalVel = -2f;
-        verticalVel += gravity * Time.deltaTime;
-        Vector3 motion = horizontal;
-        motion.y = verticalVel;
-        controller.Move(motion * Time.deltaTime);
-    }
+    // ход отдан общей локомоции (NavLocomotion.Move): гравитация + сглаживание скорости — анти-тряска
+    // живёт в одном месте на все виды
+    void Settle(Vector3 horizontal) => nav.Move(horizontal);
 }

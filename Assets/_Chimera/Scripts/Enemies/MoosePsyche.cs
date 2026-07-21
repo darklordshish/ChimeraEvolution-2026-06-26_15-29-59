@@ -30,7 +30,6 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     [Header("Поведение")]
     [SerializeField] float moveSpeed = 3f;
     [SerializeField] float rotationSpeed = 200f;
-    [SerializeField] float gravity = -20f;
     [SerializeField] float wanderRadius = 14f;
     [SerializeField, Range(0f, 1f)] float grazeSpeed = 0.5f;
     [SerializeField] float provokeRadius = 5f;   // вторжение ВПЛОТНУЮ на глазах — мгновенный максимум лесенки
@@ -51,7 +50,6 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     [SerializeField] float bellowCooldown = 10f;
     [SerializeField] float bellowCueTime = 1.2f; // вспышка-сигнал рёва (Howl-цвет): длинная — рёв нельзя проморгать
 
-    CharacterController controller;
     Stagger stagger;
     Knockback knockback;
     Health ownHealth;
@@ -76,7 +74,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     CameraFollow cam;      // рёв рядом с игроком встряхивает камеру (вес туши)
     Health playerHealth;   // игрок — фолбэк-угроза (кэш)
     CreatureBody body;     // своё тело — кин-проверка (мой вид = шасси)
-    float nextAttackTime, verticalVel, nextBellow, bellowCueUntil, nextThreatScan;
+    float nextAttackTime, nextBellow, bellowCueUntil, nextThreatScan; // вертикаль/гравитация — в NavLocomotion
     bool provoked, playerKinNow; // кин-игрок: не провоцирует лесенку (даже когда других угроз нет и цель — он)
     float irritation;      // ЛЕСЕНКА 0..1: копится от видимого провокатора, спадает без него
     float calmSince = -1f; // разъярён: с какого момента сцена «рассосалась» (не видит/далеко)
@@ -92,7 +90,6 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
 
     void Awake()
     {
-        controller = GetComponent<CharacterController>();
         stagger = GetComponent<Stagger>();
         knockback = GetComponent<Knockback>();
         ownHealth = GetComponent<Health>();
@@ -343,7 +340,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
                 if (dist >= charge.MinRange && dist <= charge.MaxRange)  // в окне — ТАРАН копытами (+топот на приземлении)
                 { if (charge.TryUse()) activeAbility = charge; Settle(Vector3.zero); return; }
             }
-            Settle(nav.DirTo(target.position) * Speed);                  // догоняет игрока
+            Settle(nav.Arrive(target.position, Speed, stopAt: antler.Range * 0.8f)); // догоняет, тормозя у рогов
             return;
         }
 
@@ -400,11 +397,5 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
         Settle(w * Speed * grazeSpeed);
     }
 
-    void Settle(Vector3 horizontal)
-    {
-        if (controller.isGrounded && verticalVel < 0f) verticalVel = -2f;
-        verticalVel += gravity * Time.deltaTime;
-        Vector3 m = horizontal; m.y = verticalVel;
-        controller.Move(m * Time.deltaTime);
-    }
+    void Settle(Vector3 horizontal) => nav.Move(horizontal); // ход — общая локомоция (сглаживание/гравитация там)
 }

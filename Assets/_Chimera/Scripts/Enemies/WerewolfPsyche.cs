@@ -26,7 +26,6 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
     [Header("Движение / чутьё")]
     [SerializeField] float moveSpeed = 12f;  // быстрый — не укайтишь налегке
     [SerializeField] float rotationSpeed = 300f;
-    [SerializeField] float gravity = -20f;
     [SerializeField] float sightRange = 55f; // чувствительное обнаружение
 
     // параметры укуса (вампиризм) и прыжка — на компонентах BiteAbility/LeapAbility (генерит префаб-меню)
@@ -54,7 +53,6 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
 
     enum Kind { Charge, Howl }   // укус/прыжок — доставки (activeAbility), здесь только спец-приёмы
 
-    CharacterController controller;
     Stagger stagger;
     Knockback knockback;
     Health ownHealth, targetHealth;
@@ -66,7 +64,7 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
     LeapAbility leap;
     WindupAbility activeAbility;   // укус/прыжок в процессе (замах/полёт) — психика его тикает
 
-    float nextAttackTime, verticalVel, windupEnd, chargeEnd, nextHowl;
+    float nextAttackTime, windupEnd, chargeEnd, nextHowl; // вертикаль/гравитация — в NavLocomotion
     bool windingUp, charging;
     Kind pendingKind;
     Color activeTelegraph;
@@ -75,7 +73,6 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
 
     void Awake()
     {
-        controller = GetComponent<CharacterController>();
         stagger = GetComponent<Stagger>();
         knockback = GetComponent<Knockback>();
         ownHealth = GetComponent<Health>();
@@ -184,7 +181,7 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
         }
 
         // погоня по NavMesh
-        Settle(dist > bite.Range ? nav.DirTo(target.position) * Speed : Vector3.zero);
+        Settle(nav.Arrive(target.position, Speed, stopAt: bite.Range * 0.85f)); // плавный подход (без газ/стоп на границе)
     }
 
     float Speed => moveSpeed * (rage != null ? rage.SpeedMult : 1f); // вечная ярость: быстрее (и уязвимее)
@@ -269,11 +266,5 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
         Settle(moveDir * chargeSpeed * (rage != null ? rage.SpeedMult : 1f));
     }
 
-    void Settle(Vector3 horizontal)
-    {
-        if (controller.isGrounded && verticalVel < 0f) verticalVel = -2f;
-        verticalVel += gravity * Time.deltaTime;
-        Vector3 motion = horizontal; motion.y = verticalVel;
-        controller.Move(motion * Time.deltaTime);
-    }
+    void Settle(Vector3 horizontal) => nav.Move(horizontal); // ход — общая локомоция (сглаживание/гравитация там)
 }

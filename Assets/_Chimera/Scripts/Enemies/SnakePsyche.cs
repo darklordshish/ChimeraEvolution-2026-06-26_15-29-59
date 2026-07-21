@@ -27,7 +27,6 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     [Header("Засада / термочутьё / выбор жертвы")]
     [SerializeField] float moveSpeed = 5f;
     [SerializeField] float rotationSpeed = 320f;
-    [SerializeField] float gravity = -20f;
     [SerializeField] float thermalRange = 14f;              // термозрение: видит тёплого сквозь укрытия
     [SerializeField, Range(0f, 1f)] float creepSpeed = 0.5f;
     [SerializeField] float roamSenseRadius = 22f;           // праздный поиск: чуем тёплую жизнь ЗА термо-радиусом — крадёмся к ней (не застываем точкой-приманкой)
@@ -76,7 +75,6 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     // САМА МАШИНА хвата (сжатие/стадии/ратчет/чок/яд + тюнинг обеих жертв) — общий компонент Constrict
     // (фича органа «Хвост», хвост-эталон 2026-07-19); здесь остались только решения ДРАЙВЕРА (когда/куда)
 
-    CharacterController controller;
     Stagger stagger;
     Knockback knockback;
     Health ownHealth;
@@ -99,7 +97,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     Constrict constrictM;  // ЕДИНАЯ машина захвата (общая с хвостом игрока): стадии/слоу/Grabbed/гонка — её дело
     Grabbed grabbedStatus; // а это НАС схватили (хвост игрока) — на слабом хвате кусаемся в ответ
 
-    float nextAttackTime, verticalVel, windupEnd, nextRattle, rattleBlinkUntil, nextScan, nextFleeCheck, groundY;
+    float nextAttackTime, windupEnd, nextRattle, rattleBlinkUntil, nextScan, nextFleeCheck, groundY; // вертикаль — в NavLocomotion
     bool fleeing;
     Vector3 fleeDir;
 
@@ -133,7 +131,6 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
 
     void Awake()
     {
-        controller = GetComponent<CharacterController>();
         stagger = GetComponent<Stagger>();
         knockback = GetComponent<Knockback>();
         ownHealth = GetComponent<Health>();
@@ -542,7 +539,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         // вне броска: ЗАМРИ И МАНИ — подкрадывание выдало бы засаду, пусть любопытная жертва подойдёт сама;
         // в зоне броска на откате — доползаем в упор
         if (dist > leap.MaxRange) { TryLure(); Settle(Vector3.zero); return; }
-        Settle(dist > bite.Range ? nav.DirTo(target.position) * Speed * creepSpeed : Vector3.zero);
+        Settle(nav.Arrive(target.position, Speed * creepSpeed, stopAt: bite.Range * 0.85f)); // плавный подползок (без дрожи на границе)
     }
 
     bool targetIsPlayer() => targetHealth != null && playerCtl != null && targetHealth.transform == playerCtl.transform; // (бывш. heldIsPlayerTarget — имя стухло после H3)
@@ -773,10 +770,9 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         float d = to.magnitude;
         Vector3 dir = d > 0.001f ? to / d : transform.forward;
         Face(dir);
-        float hold = bite.Range * 0.6f;
-        float err = d - hold;
-        // анти-тремор: дедзона у дистанции удержания + мягкий гейн (был ×8) — не долбим CC жертвы туда-сюда,
-        // особенно игрока (взаимный CC-push давал дрожь). В пределах ±0.3м просто стоим
+        float err = d - bite.Range * 0.6f; // держим дистанцию удержания
+        // анти-тремор: дедзона + мягкий гейн — не долбим CC жертвы туда-сюда (особенно игрока: взаимный
+        // CC-push давал дрожь). Сглаживание скорости добавит общая локомоция
         Settle(Mathf.Abs(err) > 0.3f ? Vector3.ClampMagnitude(dir * err * 3f, moveSpeed) : Vector3.zero);
     }
 
@@ -816,11 +812,5 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     void Face(Vector3 d) =>
         transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(d), rotationSpeed * Time.deltaTime);
 
-    void Settle(Vector3 horizontal)
-    {
-        if (controller.isGrounded && verticalVel < 0f) verticalVel = -2f;
-        verticalVel += gravity * Time.deltaTime;
-        Vector3 motion = horizontal; motion.y = verticalVel;
-        controller.Move(motion * Time.deltaTime);
-    }
+    void Settle(Vector3 horizontal) => nav.Move(horizontal); // ход — общая локомоция (сглаживание/гравитация там)
 }
