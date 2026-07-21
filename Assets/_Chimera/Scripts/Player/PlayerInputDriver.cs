@@ -18,7 +18,7 @@ public class PlayerInputDriver : MonoBehaviour
     PlayerAntler antler;
     PlayerConstrict constrict;
     CreatureBody body;
-    InputAction attackAction, biteAction, kickAction, howlAction, constrictAction, antlerAction;
+    InputAction attackAction, biteAction, kickAction, howlAction, constrictAction, antlerAction, presentAction;
     readonly List<(InputAction action, int slot)> slotActions = new();
 
     void Awake()
@@ -61,6 +61,11 @@ public class PlayerInputDriver : MonoBehaviour
         constrictAction = new InputAction("Constrict", InputActionType.Button);
         constrictAction.AddBinding("<Keyboard>/f");
         constrictAction.AddBinding("<Gamepad>/leftTrigger");
+
+        // C / левый бампер: тумблер позиции НОШИ (защёлкнутой жертвы хвата) — за спину ↔ подставить под свои удары
+        presentAction = new InputAction("PresentVictim", InputActionType.Button);
+        presentAction.AddBinding("<Keyboard>/c");
+        presentAction.AddBinding("<Gamepad>/leftShoulder");
     }
 
     int knownSlots; // пересобрать хоткеи, когда слотов стало больше (выдан химерный слот)
@@ -92,13 +97,13 @@ public class PlayerInputDriver : MonoBehaviour
 
     void OnEnable()
     {
-        attackAction.Enable(); biteAction.Enable(); kickAction.Enable(); howlAction.Enable(); constrictAction.Enable(); antlerAction.Enable();
+        attackAction.Enable(); biteAction.Enable(); kickAction.Enable(); howlAction.Enable(); constrictAction.Enable(); antlerAction.Enable(); presentAction.Enable();
         foreach (var (a, _) in slotActions) a.Enable();
     }
 
     void OnDisable()
     {
-        attackAction.Disable(); biteAction.Disable(); kickAction.Disable(); howlAction.Disable(); constrictAction.Disable(); antlerAction.Disable();
+        attackAction.Disable(); biteAction.Disable(); kickAction.Disable(); howlAction.Disable(); constrictAction.Disable(); antlerAction.Disable(); presentAction.Disable();
         foreach (var (a, _) in slotActions) a.Disable();
     }
 
@@ -132,5 +137,6 @@ public class PlayerInputDriver : MonoBehaviour
             bellow?.TryUse();
         }
         if (constrict != null && constrictAction.WasPressedThisFrame()) constrict.TryUse();
+        if (constrict != null && presentAction.WasPressedThisFrame()) constrict.TogglePresent(); // C: ноша за спину/под удар
     }
 }

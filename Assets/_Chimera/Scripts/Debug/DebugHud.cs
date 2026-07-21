@@ -192,8 +192,9 @@ public class DebugHud : MonoBehaviour
 
         string action = "";
         if (constrict != null && constrict.Holding)
-            action = $"➤ ОБХВАТ ст.{constrict.Stage}{(constrict.Stage >= 2 ? " — ЗАЩЁЛКНУТО" : " — держи, вырывается!")}" +
-                     (constrict.Victim != null ? $" · жертва {constrict.Victim.Current}/{constrict.Victim.Max}" : "") + "   [F — отпустить]";
+            action = $"➤ ОБХВАТ ст.{constrict.Stage}{(constrict.Stage >= 2 ? (constrict.Presenting ? " — ПОД УДАРОМ" : " — ЗАЩЁЛКНУТО") : " — держи, вырывается!")}" +
+                     (constrict.Victim != null ? $" · жертва {constrict.Victim.Current}/{constrict.Victim.Max}" : "") +
+                     (constrict.Stage >= 2 ? "   [F — отпустить · C — подставить/за спину]" : "   [F — отпустить]");
         else if (player != null && player.IsGrabbed)
             action = "➤ ТЫ СХВАЧЕН — рывок/пинок!";
         GUI.Label(new Rect(14, 178, 900, 26), action, style);

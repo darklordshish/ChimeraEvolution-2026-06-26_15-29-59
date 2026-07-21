@@ -1084,8 +1084,8 @@ MonoBehaviour:
   stage3At: 3
   escapeMin: 1
   escapeMax: 2.5
-  selfSlow1: 0.55
-  selfSlow2: 0.3
+  selfSlow1: 0.8
+  selfSlow2: 0.6
   breakDamage: 5
   maxStage: 2
   chokeInterval: 0.6
