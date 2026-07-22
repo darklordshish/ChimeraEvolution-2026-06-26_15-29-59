@@ -344,8 +344,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         if (Time.time >= nextKinCheck)
         {
             nextKinCheck = Time.time + 0.5f;
-            playerIsKin = body != null && body.Chassis != null && CreatureBody.PlayerBody != null
-                && CreatureBody.PlayerBody.Tier(body.Chassis) != KinTier.None; // Tier = эффективный (учёл эрозию)
+            playerIsKin = CreatureBody.Regard(CreatureBody.PlayerBody, body) != KinTier.None; // единый глагол (эрозию учёл)
         }
 
         bool routing = Routing; // личная паника сломлена → бегство (в ярости от воя не бежим)

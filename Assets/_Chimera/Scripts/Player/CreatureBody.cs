@@ -837,6 +837,13 @@ public class CreatureBody : MonoBehaviour
         return k >= 0.999f ? KinTier.Strong : k >= mediumAt ? KinTier.Medium : k >= weakAt ? KinTier.Weak : KinTier.None;
     }
 
+    /// <summary>ЕДИНЫЙ ГЛАГОЛ РОДСТВА: как `observer` признаёт вид (шасси) существа `target`. None, если один
+    /// из тел отсутствует или у цели нет шасси. Заменяет дословный повтор `PlayerBody.Tier(body.Chassis)`,
+    /// разбросанный по психикам (волк/лось) и голосам (вой/рёв) — теперь правило признания живёт ОДНИМ местом
+    /// (задел под термо-поправку змеи: у неё «свой/добыча» по теплу — ляжет сюда же).</summary>
+    public static KinTier Regard(CreatureBody observer, CreatureBody target) =>
+        observer != null && target != null && target.Chassis != null ? observer.Tier(target.Chassis) : KinTier.None;
+
     /// <summary>УДАР ПО ЦЕЛИ: если по составу это мой вид — подорвать признание своего вида в её глазах
     /// (стак эрозии, см. Betrayal). Гейт по СЫРОЙ идентичности (не эффективной): пока ты их вида —
     /// непрерывные удары держат признание просевшим; перестал бить — стаки гаснут, признание вернулось.

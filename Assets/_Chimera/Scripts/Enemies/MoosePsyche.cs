@@ -215,8 +215,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
         nextThreatScan = Time.time + 0.4f;
 
         // K3a: игрок-полулось (кин ≥ слабого) — НЕ угроза (свои не провоцируют); предательство снимает
-        playerKinNow = body != null && body.Chassis != null && CreatureBody.PlayerBody != null
-            && CreatureBody.PlayerBody.Tier(body.Chassis) != KinTier.None; // Tier = эффективный (учёл эрозию)
+        playerKinNow = CreatureBody.Regard(CreatureBody.PlayerBody, body) != KinTier.None; // единый глагол (эрозию учёл)
 
         Health best = playerKinNow ? null : playerHealth;
         float bestD = best != null ? (best.transform.position - transform.position).sqrMagnitude : float.MaxValue;

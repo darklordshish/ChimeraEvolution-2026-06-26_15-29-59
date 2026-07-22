@@ -45,18 +45,8 @@ public class PlayerBellow : MonoBehaviour, IAbility
 
         foreach (var hp in TargetScan.Healths(transform.position, rallyRadius, transform))
         {
-            // признание вида цели решает знак голоса (как у воя): кинов не контролим
-            var kinTier = KinTier.None;
-            if (body != null && hp.TryGetComponent<CreatureBody>(out var targetBody) && targetBody.Chassis != null)
-                kinTier = body.Tier(targetBody.Chassis);
-
-            if (kinTier != KinTier.None)
-            {
-                // ЕДИНЫЙ кин-rally («эффект в органе, родство в комбинации»): форма зова — у ВИДА цели
-                // (лось — детонация на месте, волк — дух+эскорт), голос-орган решает лишь контроль чужих
-                KinVoice.RallyKin(hp, kinTier, transform.position);
-                continue; // своих не пугаем
-            }
+            // признание вида цели решает знак голоса (как у воя): кинов не контролим, а созываем
+            if (KinVoice.TryRallyKin(body, hp, transform.position)) continue; // свой созван, не пугаем
 
             // ЧУЖИЕ в ближнем кольце: рёв туши давит дух (−2)
             if ((hp.transform.position - transform.position).sqrMagnitude <= fearRadius * fearRadius

@@ -12,6 +12,18 @@ using UnityEngine;
 /// </summary>
 public static class KinVoice
 {
+    /// <summary>Признать цель голосом `caster` и, если это кин (≥ слабого), СОЗВАТЬ её. Возвращает true =
+    /// цель своя (контроль по ней не применять). Схлопывает дословный блок «вычислить кин-тир → если кин,
+    /// RallyKin и continue», повторявшийся в КАЖДОМ голосе (вой/рёв).</summary>
+    public static bool TryRallyKin(CreatureBody caster, Health target, Vector3 casterPos)
+    {
+        if (target == null || !target.TryGetComponent<CreatureBody>(out var tb)) return false;
+        var tier = CreatureBody.Regard(caster, tb);
+        if (tier == KinTier.None) return false;
+        RallyKin(target, tier, casterPos);
+        return true;
+    }
+
     public static void RallyKin(Health target, KinTier tier, Vector3 casterPos)
     {
         if (target.TryGetComponent<WolfPsyche>(out var wolf))

@@ -66,20 +66,10 @@ public class PlayerHowl : MonoBehaviour, IAbility
 
         foreach (var hp in TargetScan.Healths(transform.position, fearR, transform))
         {
-            // K3: ПРИЗНАНИЕ ПЕРЕВОРАЧИВАЕТ ЗНАК ГОЛОСА (спека идентичности §3). Кин-цель (моя идентичность
-            // к ЕЁ виду ≥ слабого) вместо контроля получает RALLY: дух по градации признания (слабое +1,
-            // среднее +2 + стирание страхов, сильное +5 — голос вожака) и точку сбора. Чужим — как раньше
-            var kinTier = KinTier.None;
-            if (body != null && hp.TryGetComponent<CreatureBody>(out var targetBody) && targetBody.Chassis != null)
-                kinTier = body.Tier(targetBody.Chassis);
-
-            if (kinTier != KinTier.None)
-            {
-                // ЕДИНЫЙ кин-rally («эффект в органе, родство в комбинации»): волк — дух+эскорт,
-                // лось — детонация; вой при лосином ките сзывает ЛОСЕЙ — кросс-опыление спеки
-                KinVoice.RallyKin(hp, kinTier, transform.position);
-                continue; // своих не контролим; бесморальные — no-op эмерджентно (спека §4)
-            }
+            // K3: ПРИЗНАНИЕ ПЕРЕВОРАЧИВАЕТ ЗНАК ГОЛОСА (спека §3). Кин-цель (моя идентичность к её виду
+            // ≥ слабого) вместо контроля получает RALLY (волк — дух+эскорт, лось — детонация; вой при
+            // лосином ките сзывает ЛОСЕЙ). Чужим — стан/страх ниже
+            if (KinVoice.TryRallyKin(body, hp, transform.position)) continue; // свой созван, не контролим
 
             float d = Vector3.Distance(hp.transform.position, transform.position);
             if (StunUnlocked && d <= stunR) hit.Apply(hp, HitEffect.Stun(stunDuration)); // ближние ЧУЖИЕ оглохли (если мощь доросла)
