@@ -37,7 +37,7 @@ public class PlayerInputDriver : MonoBehaviour
         attackAction.AddBinding("<Gamepad>/buttonWest");
         attackAction.AddBinding("<Keyboard>/j");
 
-        // Q / правый триггер (Shift и левый шифтер отданы ТИХОМУ ШАГУ — ось звука)
+        // Q / правый триггер (Shift отдан СПРИНТУ, Ctrl и левый шифтер — ТИХОМУ ШАГУ)
         biteAction = new InputAction("Bite", InputActionType.Button);
         biteAction.AddBinding("<Keyboard>/q");
         biteAction.AddBinding("<Gamepad>/rightTrigger");

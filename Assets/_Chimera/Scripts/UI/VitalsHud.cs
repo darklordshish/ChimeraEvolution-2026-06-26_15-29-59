@@ -41,6 +41,9 @@ public class VitalsHud : MonoBehaviour
     static readonly Color HpLow = new(0.80f, 0.18f, 0.15f);
     static readonly Color BarBack = new(0.05f, 0.05f, 0.05f, 0.65f);
     static readonly Color OwnText = new(0.94f, 0.92f, 0.86f);
+    // СТАМИНА — своя пара цветов, НЕ из палитры HP: две зелёные полоски друг под другом читались бы как одна
+    static readonly Color StamFull = new(0.85f, 0.72f, 0.25f);   // тёплая охра — дыхание
+    static readonly Color StamWinded = new(0.55f, 0.25f, 0.55f); // отдышка: полоска пустая И цвет чужой
 
     /// <summary>Показывать полоски ВСЕМ воспринимаемым (наблюдение за сценами в призраке) или только тем,
     /// кто дерётся. Тумблер — клавиша H.</summary>
@@ -62,7 +65,8 @@ public class VitalsHud : MonoBehaviour
     float nextRescan;
 
     // свои данные + сводка
-    Image ownFill;
+    Image ownFill, stamFill;
+    Stamina playerStamina;
     Text ownText, grabText, summaryText;
     RectTransform summaryPanel;
     readonly List<(float dist, Health h, SenseKind by)> summary = new();
@@ -179,6 +183,15 @@ public class VitalsHud : MonoBehaviour
         float t = playerHealth.Max > 0 ? Mathf.Clamp01((float)playerHealth.Current / playerHealth.Max) : 0f;
         ownFill.rectTransform.sizeDelta = new Vector2(ownBarWidth * t, ownBarHeight);
         ownFill.color = Color.Lerp(HpLow, HpFull, t);
+
+        // ДЫХАЛКА: длина — запас, цвет — отдышка. Ползёшь и не понимаешь почему — полоска уже объяснила
+        if (playerStamina == null && player != null) player.TryGetComponent(out playerStamina);
+        if (stamFill != null && playerStamina != null)
+        {
+            float s = playerStamina.Normalized;
+            stamFill.rectTransform.sizeDelta = new Vector2(ownBarWidth * s, stamFill.rectTransform.sizeDelta.y);
+            stamFill.color = playerStamina.Exhausted ? StamWinded : StamFull;
+        }
 
         string combat = !playerHealth.InCombat
             ? (playerHealth.OutOfCombatRegen > 0f ? "   вне боя — реген" : "   вне боя") : "";
@@ -298,7 +311,7 @@ public class VitalsHud : MonoBehaviour
         ownRoot.transform.SetParent(canvas.transform, false);
         var rt = (RectTransform)ownRoot.transform;
         rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0f, 0f);
-        rt.anchoredPosition = new Vector2(28f, 28f);
+        rt.anchoredPosition = new Vector2(28f, 44f); // поднято: под HP встала полоска стамины
         rt.sizeDelta = new Vector2(ownBarWidth, ownBarHeight);
 
         var back = NewImage("Back", ownRoot.transform, BarBack);
@@ -308,6 +321,19 @@ public class VitalsHud : MonoBehaviour
         ownFill = NewImage("Fill", ownRoot.transform, HpFull);
         ownFill.rectTransform.anchorMin = ownFill.rectTransform.anchorMax = ownFill.rectTransform.pivot = Vector2.zero;
         ownFill.rectTransform.sizeDelta = new Vector2(ownBarWidth, ownBarHeight);
+
+        // СТАМИНА — тонкая полоска ПОД здоровьем: то же тело, тот же угол экрана. Тоньше HP намеренно —
+        // дыхалка важна, но не важнее жизни, и иерархия должна читаться без подписи
+        const float stamH = 9f;
+        var stamBack = NewImage("StamBack", ownRoot.transform, BarBack);
+        stamBack.rectTransform.anchorMin = stamBack.rectTransform.anchorMax = stamBack.rectTransform.pivot = Vector2.zero;
+        stamBack.rectTransform.sizeDelta = new Vector2(ownBarWidth, stamH);
+        stamBack.rectTransform.anchoredPosition = new Vector2(0f, -(stamH + 3f));
+
+        stamFill = NewImage("StamFill", ownRoot.transform, StamFull);
+        stamFill.rectTransform.anchorMin = stamFill.rectTransform.anchorMax = stamFill.rectTransform.pivot = Vector2.zero;
+        stamFill.rectTransform.sizeDelta = new Vector2(ownBarWidth, stamH);
+        stamFill.rectTransform.anchoredPosition = new Vector2(0f, -(stamH + 3f));
 
         ownText = NewText("Text", ownRoot.transform, 17, OwnText, TextAnchor.LowerLeft);
         ownText.rectTransform.anchorMin = ownText.rectTransform.anchorMax = ownText.rectTransform.pivot = Vector2.zero;

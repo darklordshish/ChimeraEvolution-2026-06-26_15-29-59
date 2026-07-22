@@ -13,12 +13,27 @@ public class PlayerController : MonoBehaviour
     [Header("Движение")]
     [SerializeField] float moveSpeed = 6f;
     [SerializeField] float gravity = -20f;
-    [SerializeField, Range(0.2f, 1f)] float sneakMult = 0.4f; // ТИХИЙ ШАГ (Shift): медленнее = тише (шум меряется скоростью — Noise)
+    [SerializeField, Range(0.2f, 1f)] float sneakMult = 0.4f; // ТИХИЙ ШАГ (Ctrl): медленнее = тише (шум меряется скоростью — Noise)
+
+    [Header("Спринт (стамина)")]
+    [SerializeField] float sprintMult = 1.6f;   // во сколько раз быстрее обычного хода
+    [SerializeField] float sprintDrain = 20f;   // расход бака в секунду, пока бежишь
+
+    // UNITY-ГОЧА (ловили дважды): НОВОЕ сериализованное поле у компонента, УЖЕ лежащего в сцене, приходит
+    // НУЛЁМ — инициализатор из кода к нему не применяется. Здесь молчание было бы особенно коварным:
+    // sprintMult 0 ОСТАНАВЛИВАЕТ игрока при беге, а dashCost 0 делает рывок бесплатным (фича «работает»,
+    // но ничего не стоит — и это не заметить). Читаем 0 как «не настроено»
+    float SprintMult => sprintMult > 0f ? sprintMult : 1.6f;
+    float SprintDrain => sprintDrain > 0f ? sprintDrain : 20f;
+    float DashCost => dashCost > 0f ? dashCost : 25f;
 
     [Header("Рывок")]
     [SerializeField] float dashSpeed = 20f;
     [SerializeField] float dashDuration = 0.18f;
-    [SerializeField] float dashCooldown = 0.7f;
+    // КУЛДАУН ЖИВЁТ РЯДОМ СО СТАМИНОЙ (решение ревью): он держит РИТМ (не два рывка подряд),
+    // бак держит ОБЩИЙ ЛИМИТ. Раз лимит появился, кулдаун укорочен — иначе душили бы вдвоём
+    [SerializeField] float dashCooldown = 0.45f;
+    [SerializeField] float dashCost = 25f;      // цена рывка из бака
     [SerializeField] int dashRipDamage = 6;       // урон волку, когда срываемся рывком с захвата
     [SerializeField] int dashRipSelfDamage = 5;   // и себе — вырываться из пасти больно (минует i-frames рывка)
 
@@ -31,7 +46,8 @@ public class PlayerController : MonoBehaviour
     CharacterController controller;
     Knockback knockback;
     Health health;
-    InputAction moveAction, lookAction, dashAction, toggleViewAction, sneakAction;
+    InputAction moveAction, lookAction, dashAction, toggleViewAction, sneakAction, sprintAction;
+    Stamina stamina;   // дыхалка: гейтит рывок и спринт, на нуле — отдышка (замедление)
     Vector3 velocity;
     float dashTimer, dashReadyAt, groundY, legDashOverride; // legDashOverride: длинный рывок лосиных ног (0 = дефолт dashDuration)
     Vector3 dashDir;
@@ -78,9 +94,15 @@ public class PlayerController : MonoBehaviour
         toggleViewAction.AddBinding("<Keyboard>/v");
         toggleViewAction.AddBinding("<Gamepad>/buttonNorth");
 
+        // ТИХИЙ ШАГ переехал с Shift на Ctrl: Shift занял спринт — «жму Shift = трачу» читается само,
+        // и это привычнее по другим играм
         sneakAction = new InputAction("Sneak", InputActionType.Button); // ТИХИЙ ШАГ: держать
-        sneakAction.AddBinding("<Keyboard>/leftShift");
+        sneakAction.AddBinding("<Keyboard>/leftCtrl");
         sneakAction.AddBinding("<Gamepad>/leftShoulder");
+
+        sprintAction = new InputAction("Sprint", InputActionType.Button); // СПРИНТ: держать, жжёт стамину
+        sprintAction.AddBinding("<Keyboard>/leftShift");
+        sprintAction.AddBinding("<Gamepad>/leftStickPress");
     }
 
     void Start()
@@ -90,8 +112,8 @@ public class PlayerController : MonoBehaviour
         if (constrict == null) TryGetComponent(out constrict); // мог до-создаться в CreatureBody.Awake
     }
 
-    void OnEnable() { moveAction.Enable(); lookAction.Enable(); dashAction.Enable(); toggleViewAction.Enable(); sneakAction.Enable(); }
-    void OnDisable() { moveAction.Disable(); lookAction.Disable(); dashAction.Disable(); toggleViewAction.Disable(); sneakAction.Disable(); }
+    void OnEnable() { moveAction.Enable(); lookAction.Enable(); dashAction.Enable(); toggleViewAction.Enable(); sneakAction.Enable(); sprintAction.Enable(); }
+    void OnDisable() { moveAction.Disable(); lookAction.Disable(); dashAction.Disable(); toggleViewAction.Disable(); sneakAction.Disable(); sprintAction.Disable(); }
 
     void Update()
     {
@@ -110,8 +132,11 @@ public class PlayerController : MonoBehaviour
         Vector3 r = transform.right;   r.y = 0f; r.Normalize();
         Vector3 move = f * mv.y + r * mv.x;
 
-        // рывок
-        if (dashAction.WasPressedThisFrame() && Time.time >= dashReadyAt && dashTimer <= 0f)
+        // рывок: кулдаун держит ритм, СТАМИНА — общий лимит. Порядок в условии важен — TrySpend не должен
+        // списывать бак, когда рывок и так не состоится по кулдауну
+        if (stamina == null) TryGetComponent(out stamina); // бак до-создаёт тело в Recompute → привязка ленивая
+        if (dashAction.WasPressedThisFrame() && Time.time >= dashReadyAt && dashTimer <= 0f
+            && (stamina == null || stamina.TrySpend(DashCost)))
         {
             dashTimer = legDashOverride > 0f ? legDashOverride : dashDuration; // лосиные ноги — длиннее (таран прёт дальше)
             dashReadyAt = Time.time + dashCooldown;
@@ -129,7 +154,15 @@ public class PlayerController : MonoBehaviour
         float grip = GrabImmune ? 1f : grabSlow;
         float hold = constrict != null ? constrict.SelfSlow : 1f;
         float sneak = sneakAction.IsPressed() ? sneakMult : 1f; // тихий шаг: скорость ↓ → шум ↓ (Noise сам заметит)
-        Vector3 horizontal = dashTimer > 0f ? dashDir * dashSpeed * grip : move * moveSpeed * grip * hold * sneak;
+        // СПРИНТ жжёт бак покадрово, пока держишь Shift и реально бежишь. Кончилось (или отдышка) — TrySpend
+        // вернёт false, и спринт просто не включится: кнопка «не срабатывает», а управление не отбирается
+        float sprint = 1f;
+        if (sprintAction.IsPressed() && sneak >= 1f && dashTimer <= 0f && move.sqrMagnitude > 0.01f
+            && stamina != null && stamina.TrySpend(SprintDrain * Time.deltaTime)) sprint = SprintMult;
+        // ОТДЫШКА: выжал бак досуха — ползёшь, пока не отдышался. Это и есть цена перерасхода —
+        // наказывает открытостью, а не запретом кнопки
+        float winded = stamina != null ? stamina.MoveMult : 1f;
+        Vector3 horizontal = dashTimer > 0f ? dashDir * dashSpeed * grip : move * moveSpeed * grip * hold * sneak * sprint * winded;
         if (knockback != null && knockback.IsActive) horizontal = Vector3.zero; // пока откидывает — не рулим (толкает Knockback)
         if (dashTimer > 0f) dashTimer -= Time.deltaTime;
         if (health != null) health.Invulnerable = dashTimer > 0f;
