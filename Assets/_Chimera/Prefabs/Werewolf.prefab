@@ -659,6 +659,7 @@ MonoBehaviour:
   damageMult: 1.25
   speedMult: 1.15
   incomingMult: 1.5
+  staminaRegenMult: 1.5
 --- !u!114 &3117727880458150513
 MonoBehaviour:
   m_ObjectHideFlags: 0

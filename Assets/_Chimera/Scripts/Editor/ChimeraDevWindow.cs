@@ -79,6 +79,23 @@ public class ChimeraDevWindow : EditorWindow
         }
 
         EditorGUILayout.LabelField($"HP {health.Current}/{health.Max}   God: {(health.GodMode ? "ВКЛ" : "выкл")}   В бою: {(health.InCombat ? "да" : "нет")}");
+        // СТАМИНА рядом с HP — та же витальность. Выводим ЧИСЛОМ по гоче «молчащая система не даёт ошибок»:
+        // бак 0 или реген 0 = виды не перегенерены, и это должно бросаться в глаза, а не проявляться
+        // загадочным «рывок почему-то не работает»
+        var stam = health.GetComponent<Stamina>();
+        if (stam != null)
+        {
+            EditorGUILayout.LabelField($"Стамина {stam.Current:0}/{stam.Max:0}   реген {stam.RegenPerSecond:0.#}/с" +
+                                       (stam.Exhausted ? "   ОТДЫШКА" : ""));
+            // ЯВНО СООБЩАЕМ О ПОДСТАВЛЕННОМ ДЕФОЛТЕ. Заглушка «0 = не настроено» спасает от мёртвой системы,
+            // но сама молчит — и выглядит как рабочее число, просто неправильное (симптом: смена Сердца
+            // ни на что не влияет, потому что и база, и бонусы нулевые). Пусть кричит
+            var ch = CreatureBody.PlayerBody != null ? CreatureBody.PlayerBody.Chassis : null;
+            if (ch == null || ch.baseStamina <= 0 || ch.baseStaminaRegen <= 0f || ch.baseHp <= 0)
+                EditorGUILayout.HelpBox("Витальность вида не задана — работают ДЕФОЛТЫ, смена Сердца ни на что не влияет.\n"
+                                      + "Прогони «Chimera → Создать дефолтные виды» и сохрани (Ctrl+S).", MessageType.Warning);
+        }
+        else EditorGUILayout.LabelField("Стамина: компонента нет (тело ещё не пересчиталось)");
         using (new EditorGUILayout.HorizontalScope())
         {
             if (GUILayout.Button(health.GodMode ? "God: выкл" : "God: вкл")) health.GodMode = !health.GodMode;
