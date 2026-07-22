@@ -151,7 +151,7 @@ public class CreatureBody : MonoBehaviour
     // ── публичный слепок слота для UI ─────────────────────────────────────────
     public struct SlotView
     {
-        public string slot, hotkey, organName, nextName; // nextName — куда приведёт следующий клик (цикл по донорам)
+        public string slot, hotkey, organName, nextName, species; // species — вид надетого органа (морф гнезда)
         public int cost, nextCost;
         public int unaffordable; // сколько вариантов скрыто по цене (цикл их пропускает МОЛЧА — UI должен сказать)
         public bool chimera;    // универсальный слот (родного органа нет)
@@ -175,6 +175,7 @@ public class CreatureBody : MonoBehaviour
             slot = sl.name,
             hotkey = sl.hotkey,
             chimera = sl.chimera, // универсальный слот: родного органа нет — UI не подписывает его «Кистью»
+            species = sl.Empty ? "" : (sl.Pick.native ? (chassis != null ? chassis.speciesName : "") : sl.DonorSpecies), // вид надетого — для морфа гнезда в UI
             organName = sl.Empty ? "—" : sl.Worn.organName, // «—» = пустой химерный слот
             cost = SlotCost(sl),
             installed = sl.Installed,
@@ -188,7 +189,7 @@ public class CreatureBody : MonoBehaviour
     /// <summary>Слепок ВАРИАНТА для UI — одна «звезда»: орган вида, цена со скидкой родства, доступность.</summary>
     public struct VariantView
     {
-        public string organName, species;
+        public string organName, species, slotType;
         public int cost;
         public bool native;     // родной орган шасси (звезда в созвездии человека)
         public bool worn;       // сейчас надет в ЭТОМ слоте
@@ -210,6 +211,7 @@ public class CreatureBody : MonoBehaviour
             {
                 organName = vr.organ.organName,
                 species = vr.species,
+                slotType = vr.organ.slot,   // РОДНОЙ тип слота органа — для группировки звёзд по строкам-слотам
                 cost = CostOf(sl, vr),
                 native = vr.native,
                 worn = sl.current == v,
@@ -883,6 +885,16 @@ public class CreatureBody : MonoBehaviour
             sb.Append($"   (кин: {(kin != null ? kin.speciesName : "ХИМЕРА")}, признание {tierRu})");
             return sb.ToString();
         }
+    }
+
+    /// <summary>Цвет вида по имени — для UI (морф гнезда в цвет донора). Публичная обёртка над тинтом.</summary>
+    public Color SpeciesColor(string species) => SpeciesTint(species);
+
+    /// <summary>Идентичность к виду по ИМЕНИ (0..1) — для UI: яркость морфа = насколько ты этот вид.</summary>
+    public float IdentityOf(string species)
+    {
+        var so = FindSpecies(species);
+        return so != null ? Identity(so) : 0f;
     }
 
     // тинт вида по имени (шасси или донор) — для смеси палитры

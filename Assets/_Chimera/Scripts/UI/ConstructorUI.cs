@@ -24,7 +24,7 @@ public class ConstructorUI : MonoBehaviour
     [SerializeField] float fadeSpeed = 8f; // скорость появления панели (в реальном времени)
 
     // da Vinci: пергамент + сепия
-    static readonly Color DimColor = new(0.05f, 0.04f, 0.03f, 0.62f);
+    static readonly Color DimColor = new(0.04f, 0.03f, 0.02f, 0.92f); // почти глухое — игровой HUD за панелью не просвечивает
     static readonly Color Parchment = new(0.86f, 0.79f, 0.64f, 1f);
     static readonly Color Border = new(0.42f, 0.33f, 0.20f, 1f);
     static readonly Color Sepia = new(0.24f, 0.17f, 0.10f, 1f);
@@ -33,10 +33,7 @@ public class ConstructorUI : MonoBehaviour
     static readonly Color SocketIdle = new(0.72f, 0.64f, 0.47f, 1f);  // гнездо в покое
     static readonly Color SocketOk = new(0.55f, 0.68f, 0.38f, 1f);    // подсвечено: сюда можно
     static readonly Color SocketNo = new(0.62f, 0.25f, 0.18f, 1f);    // отказ: не по карману / уже носишь
-    static readonly Color StarNative = new(0.80f, 0.73f, 0.56f, 1f);  // звезда человека
-    static readonly Color StarBeast = new(0.62f, 0.60f, 0.44f, 1f);   // звезда донора
-    static readonly Color StarWorn = new(0.58f, 0.66f, 0.40f, 1f);    // надета
-    static readonly Color StarDim = new(0.66f, 0.62f, 0.58f, 0.55f);  // недоступна (цена/дубль)
+    static readonly Color StarBeast = new(0.62f, 0.60f, 0.44f, 1f);   // стартовый цвет карточки (перекрасит Refresh)
 
     public static bool IsOpen { get; private set; }
 
@@ -48,7 +45,7 @@ public class ConstructorUI : MonoBehaviour
 
     CreatureBody body;
     RectTransform figure, skyLeft, skyRight;
-    Text metersText, hintText;
+    Text metersText, hintText, identityText;
 
     readonly List<Socket> sockets = new();
     readonly List<Star> stars = new();
@@ -68,10 +65,10 @@ public class ConstructorUI : MonoBehaviour
     /// поэтому хранит все свои посадочные места.</summary>
     class Star
     {
-        public string species, organ;
+        public string species, organ, slotType; // slotType — по нему звёзды выстраиваются В ОДНУ СТРОКУ у всех видов
         public bool native;
         public RectTransform rt;
-        public Image img;
+        public Image img, glyph;
         public Text label;
         public readonly List<(int slot, int variant)> fits = new();
     }
@@ -159,8 +156,10 @@ public class ConstructorUI : MonoBehaviour
         var dim = NewImage("Dim", canvasGo.transform, DimColor);
         Stretch(dim.rectTransform);
 
-        var panel = NewImage("Panel", canvasGo.transform, Parchment);
+        var panel = NewImage("Panel", canvasGo.transform, Color.white);
         Center(panel.rectTransform, 1500, 880);
+        panel.sprite = DaVinciTex.Sprite(DaVinciTex.Parchment(768, 448)); // состаренная бумага вместо плоской заливки
+        panel.type = Image.Type.Simple;
         var outline = panel.gameObject.AddComponent<Outline>();
         outline.effectColor = Border;
         outline.effectDistance = new Vector2(3, -3);
@@ -178,17 +177,24 @@ public class ConstructorUI : MonoBehaviour
                                20, SepiaFaint, TextAnchor.UpperCenter);
         Top(subtitle.rectTransform, 92, 30);
 
-        // ЦЕНТР — фигура (созвездие человека): гнёзда на анатомических местах, родные звёзды рядом
+        // ЦЕНТР — витрувианская фигура (тело химеры): круг+квадрат+человек, гнёзда на анатомических местах
         var fig = new GameObject("Figure", typeof(RectTransform));
         fig.transform.SetParent(panel.transform, false);
         figure = (RectTransform)fig.transform;
-        Center(figure, 420, 620);
-        figure.anchoredPosition = new Vector2(0, -20);
-        DrawBody(figure);
+        Center(figure, 620, 680);
+        figure.anchoredPosition = new Vector2(0, -14);
+
+        var vitr = NewImage("Vitruvian", figure, Color.white);
+        Stretch(vitr.rectTransform);
+        vitr.sprite = DaVinciTex.Sprite(DaVinciTex.Vitruvian(620, 680, Ink));
+        vitr.raycastTarget = false; // рисунок не перехватывает перетаскивание в гнёзда
 
         // НЕБО по сторонам — созвездия доноров
         skyLeft = NewPane("SkyLeft", panel.transform, new Vector2(-520, -20), new Vector2(420, 620));
         skyRight = NewPane("SkyRight", panel.transform, new Vector2(520, -20), new Vector2(420, 620));
+
+        identityText = NewText("Identity", panel.transform, "", 20, Sepia, TextAnchor.LowerCenter);
+        Bottom(identityText.rectTransform, 82, 28);
 
         metersText = NewText("Meters", panel.transform, "", 22, Sepia, TextAnchor.LowerCenter);
         Bottom(metersText.rectTransform, 54, 30);
@@ -197,45 +203,31 @@ public class ConstructorUI : MonoBehaviour
         Bottom(hintText.rectTransform, 26, 28);
     }
 
-    /// <summary>Черновой контур тела — палочный человек из примитивов. Это ЗАГЛУШКА под витрувианский
-    /// рисунок (C3): её задача — дать гнёздам анатомический смысл, а не быть красивой.</summary>
-    void DrawBody(RectTransform parent)
-    {
-        Line(parent, new Vector2(0, 250), new Vector2(78, 78));    // голова
-        Line(parent, new Vector2(0, 90), new Vector2(96, 210));    // торс
-        Line(parent, new Vector2(-104, 96), new Vector2(38, 170)); // руки
-        Line(parent, new Vector2(104, 96), new Vector2(38, 170));
-        Line(parent, new Vector2(-40, -130), new Vector2(38, 200)); // ноги
-        Line(parent, new Vector2(40, -130), new Vector2(38, 200));
-    }
-
-    void Line(RectTransform parent, Vector2 pos, Vector2 size)
-    {
-        var img = NewImage("Part", parent, new Color(0, 0, 0, 0));
-        Center(img.rectTransform, size.x, size.y);
-        img.rectTransform.anchoredPosition = pos;
-        var o = img.gameObject.AddComponent<Outline>();
-        o.effectColor = Ink;
-        o.effectDistance = new Vector2(2, -2);
-    }
-
-    // анатомические места гнёзд по ТИПУ слота. Нет в словаре → химерный/будущий слот, уходит столбцом сбоку
-    // (новый вид не требует правки раскладки)
+    // анатомические места гнёзд — совмещены с нарисованной витрувианской фигурой (голова ~+200, грудь ~+80,
+    // ноги ~−160). Нет в словаре → химерный/будущий слот, уходит столбцом сбоку (новый вид не правит раскладку)
     static readonly Dictionary<string, Vector2> SlotPlaces = new()
     {
-        ["Пасть"] = new Vector2(0, 292),
-        ["Чутьё"] = new Vector2(-86, 262),
-        ["Рога"] = new Vector2(86, 330),
-        ["Руки"] = new Vector2(-150, 150),
-        ["Сердце"] = new Vector2(0, 140),
-        ["Шкура"] = new Vector2(0, 40),
-        ["Тело"] = new Vector2(120, 40),
-        ["Ноги"] = new Vector2(0, -190),
-        ["Хвост"] = new Vector2(150, -120),
+        ["Пасть"] = new Vector2(0, 202),    // рот — голова
+        ["Чутьё"] = new Vector2(-98, 210),  // чувства — сбоку головы
+        ["Рога"] = new Vector2(104, 250),   // придаток — над головой
+        ["Руки"] = new Vector2(-152, 128),  // рука
+        ["Сердце"] = new Vector2(0, 82),    // грудь
+        ["Шкура"] = new Vector2(0, 2),      // торс
+        ["Тело"] = new Vector2(142, 2),     // тело-хвост змеи — сбоку торса
+        ["Ноги"] = new Vector2(0, -160),    // ноги
+        ["Хвост"] = new Vector2(150, -74),  // хвост — поясница
     };
 
     static Vector2 SocketPos(string slot, int chimeraOrder) =>
-        SlotPlaces.TryGetValue(slot, out var p) ? p : new Vector2(178, 250 - chimeraOrder * 74);
+        SlotPlaces.TryGetValue(slot, out var p) ? p : new Vector2(240, 250 - chimeraOrder * 74);
+
+    // порядок строк-слотов в небе — сверху вниз, как гнёзда на фигуре (голова → ноги). Незнакомый тип — в конец
+    static readonly string[] RowOrder = { "Пасть", "Чутьё", "Рога", "Руки", "Сердце", "Шкура", "Тело", "Ноги", "Хвост" };
+    static int RowRank(string slotType)
+    {
+        int i = System.Array.IndexOf(RowOrder, slotType);
+        return i >= 0 ? i : RowOrder.Length;
+    }
 
     // ── сборка гнёзд и созвездий из данных тела ─────────────────────────────
     void Rebuild()
@@ -287,7 +279,7 @@ public class ConstructorUI : MonoBehaviour
                 string key = vv.species + "|" + vv.organName;
                 if (!byKey.TryGetValue(key, out var star))
                 {
-                    star = new Star { species = vv.species, organ = vv.organName, native = vv.native };
+                    star = new Star { species = vv.species, organ = vv.organName, native = vv.native, slotType = vv.slotType };
                     byKey[key] = star;
                     stars.Add(star);
                 }
@@ -295,30 +287,44 @@ public class ConstructorUI : MonoBehaviour
             }
         }
 
-        // РАЗМЕЩЕНИЕ: созвездия по левому и правому небу, каждый вид своей колонкой. Человек первым (его
-        // органы встречаются в слоте 0) — он и его созвездие узнаются, донорские следом
+        // СТРОКИ = ТИПЫ СЛОТОВ (одинаковый слот на одном уровне у всех видов — сравнивать органы взглядом
+        // по горизонтали), СТОЛБЦЫ = ВИДЫ. Порядок строк — анатомический (как гнёзда на фигуре, сверху вниз)
+        var rowTypes = new List<string>();
+        foreach (var s in stars) if (!rowTypes.Contains(s.slotType)) rowTypes.Add(s.slotType);
+        rowTypes.Sort((a, b) => RowRank(a).CompareTo(RowRank(b)));
+
         var donors = new List<string>();
         foreach (var s in stars) if (!donors.Contains(s.species)) donors.Add(s.species);
 
-        var perSpecies = new Dictionary<string, int>();
+        var chains = new Dictionary<string, List<(RectTransform host, Vector2 pos)>>(); // узлы созвездия для линий
         foreach (var s in stars)
         {
             int di = donors.IndexOf(s.species);
             RectTransform host = (di % 2 == 0) ? skyLeft : skyRight;
-            perSpecies.TryGetValue(s.species, out int n);
-            perSpecies[s.species] = n + 1;
-            int col = di / 2;                       // вид занимает свою колонку на своём небе
-            Vector2 pos = new Vector2(-100 + col * 200, 250 - n * 62);
+            int col = di / 2;                       // вид — своя колонка на своём небе
+            int row = rowTypes.IndexOf(s.slotType); // слот — своя строка (общая для всех видов)
+            Vector2 pos = new Vector2(-100 + col * 200, 250 - row * 60);
+
+            if (!chains.TryGetValue(s.species, out var list)) chains[s.species] = list = new();
+            list.Add((host, pos));
 
             var img = NewImage("Star", host, StarBeast);
-            Center(img.rectTransform, 176, 52);
+            Center(img.rectTransform, 172, 46);
             img.rectTransform.anchoredPosition = pos;
             var o = img.gameObject.AddComponent<Outline>();
             o.effectColor = Border;
             o.effectDistance = new Vector2(1.5f, -1.5f);
 
+            // ГЛИФ-ЗВЕЗДА — маркер узла (слот читается по СТРОКЕ, вид — по цвету карточки)
+            var glyph = NewImage("Glyph", img.transform, Color.white);
+            glyph.sprite = StarGlyph();
+            glyph.raycastTarget = false;
+            Center(glyph.rectTransform, 26, 26);
+            glyph.rectTransform.anchoredPosition = new Vector2(-74, 0);
+
             var label = NewText("Label", img.transform, "", 15, Sepia, TextAnchor.MiddleCenter);
             Stretch(label.rectTransform, 4);
+            label.rectTransform.offsetMin = new Vector2(18, 4);
 
             var drag = img.gameObject.AddComponent<StarDrag>();
             drag.Init(this, s);
@@ -326,16 +332,22 @@ public class ConstructorUI : MonoBehaviour
             s.rt = img.rectTransform;
             s.img = img;
             s.label = label;
+            s.glyph = glyph;
         }
+
+        // ЛИНИИ СОЗВЕЗДИЙ: соединяем звёзды вида по строкам — вертикальная цепочка светил своего неба
+        foreach (var kv in chains)
+            for (int i = 1; i < kv.Value.Count; i++)
+                ConstellationLine(kv.Value[i - 1].host, kv.Value[i - 1].pos, kv.Value[i].pos);
 
         // подписи созвездий
         foreach (var sp in donors)
         {
             int di = donors.IndexOf(sp);
             var host = (di % 2 == 0) ? skyLeft : skyRight;
-            var cap = NewText("Cap_" + sp, host, "— созвездие: " + sp + " —", 19, SepiaFaint, TextAnchor.UpperCenter);
+            var cap = NewText("Cap_" + sp, host, "◈ " + sp + " ◈", 20, SepiaFaint, TextAnchor.UpperCenter);
             Center(cap.rectTransform, 260, 26);
-            cap.rectTransform.anchoredPosition = new Vector2(-100 + (di / 2) * 200, 296);
+            cap.rectTransform.anchoredPosition = new Vector2(-100 + (di / 2) * 200, 300);
         }
         // фигура — не созвездие, а собранное ТЕЛО (созвездие Человека теперь в небе наравне с донорами)
         var figCap = NewText("FigCap", figure, "— тело химеры —", 19, SepiaFaint, TextAnchor.UpperCenter);
@@ -351,6 +363,22 @@ public class ConstructorUI : MonoBehaviour
     {
         foreach (var vv in body.GetVariants(slot)) if (vv.native) return vv.organName;
         return null;
+    }
+
+    Sprite starGlyph;
+    Sprite StarGlyph() => starGlyph ??= DaVinciTex.Sprite(DaVinciTex.Star(48, Color.white));
+
+    /// <summary>Тонкая линия созвездия между двумя узлами в одной панели неба (повёрнутый прямоугольник).</summary>
+    void ConstellationLine(RectTransform host, Vector2 a, Vector2 b)
+    {
+        var img = NewImage("Cline", host, new Color(Sepia.r, Sepia.g, Sepia.b, 0.55f));
+        img.raycastTarget = false;
+        var rt = img.rectTransform;
+        rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.sizeDelta = new Vector2(Vector2.Distance(a, b), 2.6f);
+        rt.anchoredPosition = (a + b) * 0.5f;
+        rt.localRotation = Quaternion.Euler(0, 0, Mathf.Atan2(b.y - a.y, b.x - a.x) * Mathf.Rad2Deg);
+        rt.SetAsFirstSibling(); // под звёздами
     }
 
     /// <summary>Правый клик по гнезду — напрямую через Mouse (надёжнее IPointerClickHandler, см. Socket).</summary>
@@ -372,10 +400,17 @@ public class ConstructorUI : MonoBehaviour
     /// «Снять» и «надеть родное» — один жест, как решено в C1.</summary>
     void RevertOrEmpty(int slot)
     {
-        if (body.GetSlot(slot).chimera) { body.Remove(slot); Refresh(); return; }
+        var v = body.GetSlot(slot);
+        if (v.chimera) { Toast(body.Remove(slot) ? "слот опустошён" : "слот уже пуст"); Refresh(); return; }
+
         var vars = body.GetVariants(slot);
-        int nat = vars.FindIndex(v => v.native);
-        if (nat >= 0) body.Install(slot, nat);
+        int nat = vars.FindIndex(x => x.native);
+        if (nat < 0) { Refresh(); return; }
+        if (vars[nat].worn) { Toast("родной орган уже на месте"); Refresh(); return; }
+
+        if (body.Install(slot, nat)) Toast($"снято → {vars[nat].organName}");
+        else Toast(vars[nat].duplicate ? $"{vars[nat].organName} занят в другом слоте — сними его там"
+                 : !vars[nat].affordable ? "не хватает пула вернуть родной" : "не удалось снять");
         Refresh();
     }
 
@@ -390,14 +425,30 @@ public class ConstructorUI : MonoBehaviour
             var s = sockets[i];
             string key = string.IsNullOrEmpty(v.hotkey) ? "" : $"[{v.hotkey}] ";
             // ГНЕЗДО НАЗЫВАЕТСЯ ПО РОДНОМУ ОРГАНУ (идентичность части тела: «Рот», «Кисть»); химерный слот
-            // родного не имеет — он «Химерный». Звериный графт показываем стрелкой к текущему органу
+            // родного не имеет — он «Химерный». Имя надетого показываем стрелкой.
             string head = key + (v.chimera ? "Химерный" : NativeName(i) ?? v.slot);
-            string content = v.installed ? $"↳ {v.organName} ({v.cost})"
-                           : v.organName == "—" ? "— пусто —" : $"({v.cost})";
+            string content;
+            if (v.organName == "—") content = "— пусто —";                     // пустой химерный
+            else if (v.chimera || v.installed) content = $"↳ {v.organName} ({v.cost})"; // химерный (в т.ч. родной графт) ИЛИ звериный графт — показываем ЧТО надето
+            else content = $"({v.cost})";                                       // регулярный + родной орган: имя уже в head
             s.label.text = $"{head}\n{content}";
+
+            // МОРФ ГНЕЗДА: надет звериный орган → гнездо цвета ДОНОРА, а ЯРКОСТЬ = ИДЕНТИЧНОСТЬ к нему
+            // (идея пользователя: чем больше в тебе вида, тем сочнее горят его части — идентичность НА ТЕЛЕ).
+            // Родной орган — телесный. Даёт читать сборку и «кем становишься» одним взглядом
+            Color rest;
+            if (v.installed)
+            {
+                Color sp = body.SpeciesColor(v.species);
+                float id = body.IdentityOf(v.species);                     // 0..1: доля вида в теле
+                Color faint = Color.Lerp(SocketIdle, sp, 0.5f);            // еле тронуто видом (мало идентичности)
+                Color vivid = Color.Lerp(sp, Color.white, 0.22f);         // сочный вид (много идентичности)
+                rest = Color.Lerp(faint, vivid, id);
+            }
+            else rest = SocketIdle;
             s.img.color = dragging == null
-                ? (v.installed ? SocketOk : SocketIdle)
-                : (FitsDragged(i, out bool ok) ? (ok ? SocketOk : SocketNo) : SocketIdle);
+                ? rest
+                : (FitsDragged(i, out bool ok) ? (ok ? SocketOk : SocketNo) : rest);
         }
 
         foreach (var star in stars)
@@ -413,13 +464,24 @@ public class ConstructorUI : MonoBehaviour
                 if (vv.affordable && !vv.duplicate) available = true;
             }
             star.label.text = $"{star.organ}\n{cost}";
-            star.img.color = worn ? StarWorn : !available ? StarDim : star.native ? StarNative : StarBeast;
+            // ВСЯ КАРТОЧКА — цвета ВИДА (крупное пятно видно, в отличие от крохотного глифа): надет ярко,
+            // доступен приглушённо, недоступен тускло-серо. Так лосиный бурый и змеиный зелёный не теряются
+            Color sp = body.SpeciesColor(star.species);
+            star.img.color = worn ? Color.Lerp(sp, Color.white, 0.28f)
+                           : !available ? Color.Lerp(sp, new Color(0.5f, 0.47f, 0.42f), 0.62f)
+                           : Color.Lerp(sp, Parchment, 0.35f);
+            // глиф — светлый маркер узла (слот читается по строке); гаснет у недоступной
+            if (star.glyph != null)
+                star.glyph.color = new Color(1f, 0.96f, 0.85f, available || worn ? 1f : 0.4f);
         }
 
         metersText.text = $"Пул мутагена: {body.PoolUsed}/{body.Pool}        " +
                           $"Звериных слотов: {body.BeastSlots}/{body.MaxSlots}        " +
                           $"Бонус органов ×{body.BonusMult:0.00}";
-        hintText.text = dragging != null ? "отпусти над гнездом" : "";
+        // ИДЕНТИЧНОСТЬ — кем тебя считают ПО СОСТАВУ (та же строка, что в дев-панели): здесь ей место
+        identityText.text = "Признание: " + body.IdentityInfo;
+        hintText.text = Time.unscaledTime < toastUntil ? toast
+                      : dragging != null ? "отпусти над гнездом" : "";
     }
 
     // ── перетаскивание ──────────────────────────────────────────────────────
@@ -446,19 +508,34 @@ public class ConstructorUI : MonoBehaviour
         if (dragging == null) return;
 
         // ищем гнездо под курсором среди ПОДХОДЯЩИХ этой звезде
+        bool droppedOnSocket = false;
         foreach (var (slot, variant) in dragging.fits)
         {
             var sock = sockets.Find(x => x.index == slot);
             if (sock == null) continue;
             if (!RectTransformUtility.RectangleContainsScreenPoint(sock.rt, screenPos, canvas.worldCamera)) continue;
-            body.Install(slot, variant); // не влезло/дубль — Install откажет сам, звезда просто вернётся
+            droppedOnSocket = true;
+
+            // ГОВОРИМ, ПОЧЕМУ отказ (раньше молчал): пул / дубль / уже надет
+            var vv = body.GetVariants(slot)[variant];
+            if (vv.worn) Toast($"{dragging.organ} уже здесь");
+            else if (vv.duplicate) Toast($"{dragging.organ} уже надет в другом слоте — сними его там");
+            else if (!vv.affordable) Toast("не хватает пула мутагена");
+            else if (body.Install(slot, variant)) Toast($"надет: {dragging.organ}");
+            else Toast("не удалось надеть");
             break;
         }
+        if (!droppedOnSocket && dragging != null) Toast("мимо гнезда");
 
-        dragging.rt.anchoredPosition = dragHome; // звезда всегда возвращается на небо: она не «уходит» в тело
+        if (dragging != null) dragging.rt.anchoredPosition = dragHome; // звезда возвращается на небо
         dragging = null;
         Refresh();
     }
+
+    // короткое сообщение внизу панели: почему приём/отказ. Живёт на unscaledTime (пауза не мешает)
+    string toast;
+    float toastUntil;
+    void Toast(string m) { toast = m; toastUntil = Time.unscaledTime + 3.5f; }
 
     bool FitsDragged(int slotIndex, out bool ok)
     {
