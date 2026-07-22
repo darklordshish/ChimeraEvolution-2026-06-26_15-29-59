@@ -37,8 +37,8 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     [SerializeField] float grabPackRadius = 14f; // в каком радиусе вокруг себя считаем «навалились вместе»
     [SerializeField] float grabGrit = 3f;        // насколько АГРЕССИЯ особи двигает порог «разжать хватку» (0 = все одинаковы)
     [SerializeField] int grabBleedStacks = 1;    // клыки сомкнулись — разовая кровь за вцепление (удержание само урона не даёт)
-    [SerializeField] float grabSlow = 0.35f;     // во сколько режется скорость игрока, пока висим (урона от удержания нет)
     [SerializeField] int ripSelfKnock = 6;       // отлёт волка, когда с него срываются рывком
+    // замедление жертвы-игрока — теперь у ОБЩЕЙ машины (Constrict.grabSlow1 0.35); волк — держатель ст.1
 
     [Header("Окружение (стая)")]
     [SerializeField] float circleSpeed = 0.85f;  // доля скорости при кружении в слоте
@@ -285,7 +285,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         Health newHealth = prey != null ? prey : playerHealth;
         if (ReferenceEquals(newTarget, target)) return;
 
-        if (grabbing && playerCtl != null) playerCtl.ReleaseGrab(this);
+        if (grabbing && grabMachine != null) grabMachine.End();
         grabbing = false; windingUp = false; HideTelegraph(); ReleaseToken();
         target = newTarget; targetHealth = newHealth; huntingPrey = prey != null;
         preyBody = prey != null ? prey.GetComponent<SnakeBodyChain>() : null; // тело добычи — рвём по длине
@@ -315,7 +315,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
 
     void OnDisable()
     {
-        if (grabbing && playerCtl != null) playerCtl.ReleaseGrab(this);
+        if (grabbing && grabMachine != null) grabMachine.End();
         if (pack != null) pack.Unregister(this);
     }
 
@@ -581,6 +581,25 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         return true;
     }
 
+    // ЕДИНАЯ МАШИНА ЗАХВАТА (общая со змеёй и хвостом игрока): волк — держатель СТ.1 (плоский пин для стаи).
+    // Механику удержания (ApplyGrab/слоу/статус) ведёт она; РЕШЕНИЯ (когда/кого/релиз/кровь/подтягивание) —
+    // драйвер. Порог срыва-по-удару высок: волк отпускает по НОКБЕКУ/рывку/прорежению стаи (логика драйвера),
+    // а не по одиночному удару — поведение как было, спасение по-прежнему = таран лося (нокбек)
+    Constrict grabMachine;
+    Constrict GrabMachine
+    {
+        get
+        {
+            if (grabMachine == null)
+            {
+                if (!TryGetComponent(out grabMachine)) grabMachine = gameObject.AddComponent<Constrict>();
+                grabMachine.SetMaxStage(1);                 // слабейший держатель: хват не давит, стая грызёт
+                grabMachine.ConfigureHolder(99f, 99f, 9999); // жертва-игрок (escape N/A); срыв-по-удару отключён — релиз у драйвера
+            }
+            return grabMachine;
+        }
+    }
+
     /// <summary>Хватать ли вообще: захват удерживает жертву, но САМ урона не наносит — держащий волк стоит
     /// на месте и превращается в неподвижную мишень. В одиночку это самоубийство, в стае — роль: один держит,
     /// остальные грызут. Поэтому вцепляемся, только когда рядом навалилось `grabMinPack` (по умолчанию 3+).</summary>
@@ -629,15 +648,18 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     void StartGrab()
     {
         windingUp = false;
-        grabbing = true;
         activeTelegraph = TelegraphColors.Grab;
         ShowTelegraph(activeTelegraph); // приём (как и все) — распознаётся Чутьём, иначе тело просто светлеет
         if (playerCtl == null) return;
 
-        playerCtl.ApplyGrab(this, grabSlow); // режем скорость игрока; само удержание урона не даёт
+        // МАШИНА берёт игрока (ApplyGrab + слоу ст.1); this — IGrabber для срыва рывком
+        var ph = playerHealth != null ? playerHealth : playerCtl.GetComponent<Health>();
+        if (ph == null || !GrabMachine.Begin(ph, this)) { Disengage(attackCooldown); return; }
+        grabbing = true;
+
         // ЗУБЫ СОМКНУЛИСЬ: вцепление — это клыки в теле, а не объятие. Разовая кровь за вход в хват;
         // дальше удержание снова «чистый контроль» (тикающий урон превратил бы захват в казнь).
-        if (grabBleedStacks > 0 && playerCtl.TryGetComponent<Health>(out var ph))
+        if (grabBleedStacks > 0)
         {
             var hit = new Hit(ownHealth, transform.position);
             for (int i = 0; i < grabBleedStacks; i++) hit.Apply(ph, HitEffect.Bleed());
@@ -650,6 +672,9 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
 
         // ПОДМОГУ ПЕРЕБИЛИ: держать в одиночку = стоять неподвижной грушей, ради чего захват и гейтится стаей.
         if (pack.EngagedNear(transform.position, grabPackRadius) < HoldThreshold()) { Disengage(attackCooldown); return; }
+
+        // ТИК МАШИНЫ: слоу/статус — её дело. Для жертвы-игрока вернёт Holding (или Gone, если игрок умер)
+        if (grabMachine.Tick() != GrabTick.Holding) { Disengage(attackCooldown); return; }
 
         Vector3 to = target.position - transform.position; to.y = 0f;
         float d = to.magnitude;
@@ -692,7 +717,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     // снять текущий приём, вернуть жетоны и (опц.) уйти в кулдаун
     void Disengage(float cooldown)
     {
-        if (grabbing && playerCtl != null) playerCtl.ReleaseGrab(this);
+        if (grabbing && grabMachine != null) grabMachine.End(); // машина снимет ReleaseGrab у игрока
         grabbing = false;
         windingUp = false;
         HideTelegraph();
