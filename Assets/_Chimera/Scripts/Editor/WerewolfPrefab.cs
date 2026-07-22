@@ -90,6 +90,7 @@ public static class WerewolfPrefab
         }
         Bulk("Hump",      new Vector3(0f, 2.7f, -0.2f),  new Vector3(15f, 0f, 0f),  new Vector3(0.95f, 0.5f, 0.75f));  // горб-загривок ВЫШЕ макушки — сутулость читается в профиль
         Bulk("Shoulders", new Vector3(0f, 2.32f, 0.12f), Vector3.zero,              new Vector3(1.8f, 0.35f, 0.55f));  // плечевой пояс шире туши
+        Bulk("Neck",      new Vector3(0f, 2.46f, 0.4f),  new Vector3(-45f, 0f, 0f), new Vector3(0.5f, 0.42f, 0.55f));  // сутулая шея от плеч вперёд-вверх к голове (была голова на плечах)
         for (int side = -1; side <= 1; side += 2)
         {
             Bulk(side < 0 ? "ArmL" : "ArmR",   new Vector3(0.95f * side, 1.65f, 0.15f), new Vector3(12f, 0f, 0f),  new Vector3(0.3f, 1.35f, 0.3f));   // рука-лапа вниз-чуть-вперёд

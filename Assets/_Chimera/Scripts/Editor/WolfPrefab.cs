@@ -59,7 +59,16 @@ public static class WolfPrefab
         rump.transform.localPosition = new Vector3(0f, 0.74f, -0.42f); // приподнят — ПОДТЯНУТЫЙ живот (просвет под брюхом)
         rump.transform.localScale = new Vector3(0.42f, 0.45f, 0.62f);  // худой круп — заметно уже и мельче груди
 
-        AttachWolfHead(go.transform, new Vector3(0f, 1.08f, 0.9f), 1f); // голова ПЕРЕД грудью и выше холки — затылок лишь касается корпуса
+        // ШЕЯ — брус от груди вперёд-вверх к голове (волк несёт голову низко-вперёд); раньше голова сидела на груди
+        var neck = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        neck.name = "Neck";
+        neck.GetComponent<Collider>().enabled = false;
+        neck.transform.SetParent(go.transform, false);
+        neck.transform.localPosition = new Vector3(0f, 0.98f, 0.63f);
+        neck.transform.localRotation = Quaternion.Euler(-40f, 0f, 0f);
+        neck.transform.localScale = new Vector3(0.32f, 0.32f, 0.42f); // короткая: перекрывает грудь и затылок без вытягивания
+
+        AttachWolfHead(go.transform, new Vector3(0f, 1.15f, 0.9f), 1f); // голова на верху шеи (низ черепа садится на её конец)
 
         // НОГИ по-настоящему: передние — прямые столбики с лапками; ЗАДНИЕ — «собачий» излом
         // (бедро вперёд-вниз: колено спереди; голень назад-вниз: скакательный сустав; лапа вперёд)

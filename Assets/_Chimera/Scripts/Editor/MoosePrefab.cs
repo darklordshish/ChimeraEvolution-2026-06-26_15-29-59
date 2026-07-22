@@ -41,33 +41,38 @@ public static class MoosePrefab
     {
         var go = new GameObject("Moose");
         var cc = go.AddComponent<CharacterController>();
-        cc.height = 2.2f; cc.radius = 0.9f; cc.center = new Vector3(0f, 1.1f, 0f); // крупная туша
+        cc.height = 2.7f; cc.radius = 0.9f; cc.center = new Vector3(0f, 1.35f, 0f); // ходульная туша: ноги ≈ полроста
+
+        // ХОДУЛЬНОСТЬ ЛОСЯ: `lift` поднимает всю тушу над землёй, ноги удлинены на ту же высоту (стопы на 0).
+        // Одна ручка силуэта — крути её, чтобы сделать длинноногее/приземистее (остальное едет следом)
+        const float lift = 0.5f;
 
         // корпус — вытянутый бокс-плейсхолдер; голова — сборная лосиная (AttachMooseHead ниже)
         var body = GameObject.CreatePrimitive(PrimitiveType.Cube);
         body.name = "Body"; // ГРУДНАЯ половина — глубже и выше (к холке)
         body.transform.SetParent(go.transform, false);
-        body.transform.localPosition = new Vector3(0f, 1.5f, 0.4f); // корпус ПОДНЯТ: лось — ходульный (низ туши ~0.95)
+        body.transform.localPosition = new Vector3(0f, 1.5f + lift, 0.4f); // корпус ПОДНЯТ на длину ног (низ туши ~1.45)
         body.transform.localScale = new Vector3(1.1f, 1.05f, 1.6f);
         Object.DestroyImmediate(body.GetComponent<Collider>()); // коллизия — на CharacterController
 
         var rump = GameObject.CreatePrimitive(PrimitiveType.Cube);
         rump.name = "Rump"; // круп — ниже и уже: спина покато спадает от холки к заду
         rump.transform.SetParent(go.transform, false);
-        rump.transform.localPosition = new Vector3(0f, 1.42f, -0.85f);
+        rump.transform.localPosition = new Vector3(0f, 1.42f + lift, -0.85f);
         rump.transform.localScale = new Vector3(0.95f, 0.9f, 1.0f);
         Object.DestroyImmediate(rump.GetComponent<Collider>());
 
         var mooseTail = GameObject.CreatePrimitive(PrimitiveType.Cube);
         mooseTail.name = "Tail"; // хвостик-ОБРУБОК: в природе у лося ~10см, почти бесхвост — и у нас так
         mooseTail.transform.SetParent(go.transform, false);
-        mooseTail.transform.localPosition = new Vector3(0f, 1.66f, -1.38f);
+        mooseTail.transform.localPosition = new Vector3(0f, 1.66f + lift, -1.38f);
         mooseTail.transform.localRotation = Quaternion.Euler(-25f, 0f, 0f);
         mooseTail.transform.localScale = new Vector3(0.12f, 0.26f, 0.1f);
         Object.DestroyImmediate(mooseTail.GetComponent<Collider>());
 
-        // НОГИ по-настоящему (половина роста лося — ноги): передние прямые с копытами; ЗАДНИЕ с изломом
-        // копытного — бедро вперёд-вниз, голень назад-вниз (скакательный сустав), копыто
+        // НОГИ по-настоящему длинные (полроста лося — ноги): передние прямые с копытами; ЗАДНИЕ с изломом
+        // копытного — бедро вперёд-вниз, голень назад-вниз (скакательный сустав), копыто. Удлинены на `lift`,
+        // СТОПЫ остаются на земле (y≈0.06): нога тянется вверх к поднятой туше
         void LegPart(string name, Vector3 pos, Vector3 euler, Vector3 scale)
         {
             var p = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -80,29 +85,29 @@ public static class MoosePrefab
         }
         for (int side = -1; side <= 1; side += 2)
         {
-            LegPart("LegFront",  new Vector3(0.35f * side, 0.55f, 0.85f),  Vector3.zero,              new Vector3(0.16f, 1.0f, 0.16f));
-            LegPart("HoofFront", new Vector3(0.35f * side, 0.06f, 0.87f),  Vector3.zero,              new Vector3(0.18f, 0.12f, 0.2f));
-            LegPart("Thigh",     new Vector3(0.35f * side, 0.75f, -0.88f), new Vector3(-18f, 0f, 0f), new Vector3(0.22f, 0.6f, 0.28f));
-            LegPart("Shin",      new Vector3(0.35f * side, 0.3f, -0.84f),  new Vector3(15f, 0f, 0f),  new Vector3(0.13f, 0.55f, 0.13f));
-            LegPart("HoofRear",  new Vector3(0.35f * side, 0.06f, -0.8f),  Vector3.zero,              new Vector3(0.16f, 0.12f, 0.18f));
+            LegPart("LegFront",  new Vector3(0.35f * side, 0.55f + lift * 0.5f, 0.85f), Vector3.zero,              new Vector3(0.16f, 1.0f + lift, 0.16f));
+            LegPart("HoofFront", new Vector3(0.35f * side, 0.06f, 0.87f),               Vector3.zero,              new Vector3(0.18f, 0.12f, 0.2f));
+            LegPart("Thigh",     new Vector3(0.35f * side, 0.75f + lift * 0.6f, -0.88f), new Vector3(-18f, 0f, 0f), new Vector3(0.22f, 0.6f + lift * 0.5f, 0.28f));
+            LegPart("Shin",      new Vector3(0.35f * side, 0.3f + lift * 0.3f, -0.84f),  new Vector3(15f, 0f, 0f),  new Vector3(0.13f, 0.55f + lift * 0.5f, 0.13f));
+            LegPart("HoofRear",  new Vector3(0.35f * side, 0.06f, -0.8f),                Vector3.zero,              new Vector3(0.16f, 0.12f, 0.18f));
         }
 
-        // ШЕЯ — наклонный брус от загривка вверх-вперёд: поднимает голову НАД тушей (верх туши y=1.9)
+        // ШЕЯ — наклонный брус от загривка вверх-вперёд: поднимает голову НАД тушей
         var neck = GameObject.CreatePrimitive(PrimitiveType.Cube);
         neck.name = "Neck";
         neck.transform.SetParent(go.transform, false);
-        neck.transform.localPosition = new Vector3(0f, 1.9f, 1.25f);
+        neck.transform.localPosition = new Vector3(0f, 1.9f + lift, 1.25f);
         neck.transform.localRotation = Quaternion.Euler(-35f, 0f, 0f);
         neck.transform.localScale = new Vector3(0.35f, 0.38f, 0.8f);
         Object.DestroyImmediate(neck.GetComponent<Collider>());
 
-        AttachMooseHead(go.transform, new Vector3(0f, 2.15f, 1.55f), 1f); // сборная голова НА шее, выше туши (см. метод)
+        AttachMooseHead(go.transform, new Vector3(0f, 2.15f + lift, 1.55f), 1f); // сборная голова НА шее, выше туши (см. метод)
 
         // ХОЛКА-ГОРБ над лопатками — фирменный силуэт лося (высшая точка туши, выше крупа)
         var hump = GameObject.CreatePrimitive(PrimitiveType.Cube);
         hump.name = "Hump";
         hump.transform.SetParent(go.transform, false);
-        hump.transform.localPosition = new Vector3(0f, 2.12f, 0.45f); // над поднятой грудью (верх 2.03)
+        hump.transform.localPosition = new Vector3(0f, 2.12f + lift, 0.45f); // над поднятой грудью
         hump.transform.localScale = new Vector3(0.85f, 0.35f, 0.9f);
         Object.DestroyImmediate(hump.GetComponent<Collider>());
 
@@ -114,14 +119,14 @@ public static class MoosePrefab
             var stem = GameObject.CreatePrimitive(PrimitiveType.Cube); // столбик у макушки
             stem.name = side < 0 ? "AntlerStemL" : "AntlerStemR";
             stem.transform.SetParent(go.transform, false);
-            stem.transform.localPosition = new Vector3(0.15f * side, 2.45f, 1.55f); // у макушки поднятой головы (череп до y≈2.36)
+            stem.transform.localPosition = new Vector3(0.15f * side, 2.45f + lift, 1.55f); // у макушки поднятой головы
             stem.transform.localScale = new Vector3(0.08f, 0.4f, 0.08f);          // пеньки мельче
             Object.DestroyImmediate(stem.GetComponent<Collider>());
 
             var palm = GameObject.CreatePrimitive(PrimitiveType.Cube); // прямоугольная лопасть, длинной стороной вдоль тела
             palm.name = side < 0 ? "AntlerPalmL" : "AntlerPalmR";
             palm.transform.SetParent(go.transform, false);
-            palm.transform.localPosition = new Vector3(0.35f * side, 2.72f, 1.4f); // над поднятой головой; столбик входит отступя от переднего края
+            palm.transform.localPosition = new Vector3(0.35f * side, 2.72f + lift, 1.4f); // над поднятой головой; столбик входит отступя от переднего края
             palm.transform.localRotation = Quaternion.Euler(0f, 0f, 30f * side);   // круче вывернута вверх-наружу
             palm.transform.localScale = new Vector3(0.4f, 0.08f, 0.7f);            // большая сторона (0.7) — вдоль тела (z)
             Object.DestroyImmediate(palm.GetComponent<Collider>());

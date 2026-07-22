@@ -13,7 +13,7 @@ public static class PlayerModel
 {
     // все имена деталей, которые генератор считает СВОИМИ (сносит перед пересборкой)
     static readonly string[] Known =
-        { "Capsule", "Body", "Chest", "Pelvis", "Head", "Nose", "ArmL", "ArmR", "HandL", "HandR", "LegL", "LegR",
+        { "Capsule", "Body", "Chest", "Neck", "Pelvis", "Head", "Nose", "ArmL", "ArmR", "HandL", "HandR", "LegL", "LegR",
           "EyeL", "EyeR", "BrowL", "BrowR", "Beard" };
 
     const string EyeMatPath = "Assets/_Chimera/Materials/PlayerEyes.mat";
@@ -55,10 +55,11 @@ public static class PlayerModel
             return p;
         }
 
-        Part("Chest",  new Vector3(0f, 1.32f, 0f),     new Vector3(0.44f, 0.52f, 0.26f)); // грудная клетка
+        Part("Chest",  new Vector3(0f, 1.32f, 0f),     new Vector3(0.44f, 0.52f, 0.26f)); // грудная клетка (верх ~1.58)
+        Part("Neck",   new Vector3(0f, 1.66f, 0f),     new Vector3(0.15f, 0.22f, 0.15f)); // шея в зазоре грудь(1.58)→голова(1.71): видна ~0.13
         Part("Pelvis", new Vector3(0f, 0.95f, 0f),     new Vector3(0.38f, 0.26f, 0.24f)); // таз — уже груди
-        Part("Head",   new Vector3(0f, 1.75f, 0f),     new Vector3(0.3f, 0.32f, 0.3f));   // имя ЖЁСТКОЕ: FPS-скрытие
-        Part("Nose",   new Vector3(0f, 1.74f, 0.18f),  new Vector3(0.045f, 0.11f, 0.08f)); // тонкий изящный нос; имя ЖЁСТКОЕ: FPS-скрытие
+        Part("Head",   new Vector3(0f, 1.87f, 0f),     new Vector3(0.3f, 0.32f, 0.3f));   // ПРИПОДНЯТА на шею; имя ЖЁСТКОЕ: FPS-скрытие
+        Part("Nose",   new Vector3(0f, 1.86f, 0.18f),  new Vector3(0.045f, 0.11f, 0.08f)); // тонкий изящный нос; имя ЖЁСТКОЕ: FPS-скрытие
         for (int side = -1; side <= 1; side += 2)
         {
             Part(side < 0 ? "ArmL" : "ArmR",   new Vector3(0.29f * side, 1.22f, 0f),    new Vector3(0.11f, 0.58f, 0.11f)); // рука вдоль торса
@@ -72,12 +73,12 @@ public static class PlayerModel
         var beardMat = GetOrCreateMat(BeardMatPath, new Color(0.38f, 0.33f, 0.27f)); // седеющая борода
         for (int side = -1; side <= 1; side += 2)
         {
-            Part(side < 0 ? "EyeL" : "EyeR",   new Vector3(0.07f * side, 1.8f, 0.155f),  new Vector3(0.055f, 0.05f, 0.02f))
+            Part(side < 0 ? "EyeL" : "EyeR",   new Vector3(0.07f * side, 1.92f, 0.155f),  new Vector3(0.055f, 0.05f, 0.02f))
                 .GetComponent<Renderer>().sharedMaterial = eyeMat;
-            Part(side < 0 ? "BrowL" : "BrowR", new Vector3(0.07f * side, 1.86f, 0.155f), new Vector3(0.09f, 0.025f, 0.02f))
+            Part(side < 0 ? "BrowL" : "BrowR", new Vector3(0.07f * side, 1.98f, 0.155f), new Vector3(0.09f, 0.025f, 0.02f))
                 .GetComponent<Renderer>().sharedMaterial = beardMat; // брови — того же волоса, что борода
         }
-        Part("Beard", new Vector3(0f, 1.62f, 0.13f), new Vector3(0.24f, 0.18f, 0.14f))
+        Part("Beard", new Vector3(0f, 1.74f, 0.13f), new Vector3(0.24f, 0.18f, 0.14f))
             .GetComponent<Renderer>().sharedMaterial = beardMat; // борода-лопата: подбородок и ниже головы
 
         // неизвестные визуальные дети (ручные украшения?) не трогаем — но покажем, чтобы решить их судьбу
