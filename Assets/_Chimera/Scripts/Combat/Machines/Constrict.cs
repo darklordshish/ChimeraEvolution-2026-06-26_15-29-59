@@ -47,7 +47,23 @@ public class Constrict : MonoBehaviour
     [SerializeField] int breakRawThreshold = 0; // спасатели: внешний СЫРОЙ удар ≥ порога рвёт хват (сырой — броня держателя
                                                 // не «помогает держать»). 0 = рвёт любой (змея); хвост игрока ставит 5
 
+    [Header("Дыхалка")]
+    // ДЕРЖАТЬ — РАБОТА, и она конечна. Слив намеренно СКРОМНЫЙ и БЕЗ надбавки за стадию: балансное
+    // требование — змея на партере обязана успеть додушить волка, уволочь и остаться с запасом на
+    // переваривание. Надбавка за стадию (×3 на партере) это требование ломала, поэтому её нет
+    [SerializeField] float holdDrain = 3f;       // расход бака в секунду, пока держим (1.2 не читалось)
+    [SerializeField] float wearInterval = 1.5f;  // как часто выдохшийся теряет стадию (иначе спад за один кадр)
+    // ГОЧА: поля новые, а Constrict уже лежит в префабах — там они придут НУЛЁМ. Ноль здесь особенно
+    // коварен: слив просто выключается, и захват ведёт себя ровно как до фичи — по игре не отличить
+    float HoldDrain => holdDrain > 0f ? holdDrain : 3f;
+    float WearInterval => wearInterval > 0f ? wearInterval : 1.5f;
+
     int maxStageAllowed = 3; // кап от ТЕЛА (nativeChassis); дефолт 3 — родное шасси
+
+    float wearNext;
+    Stamina breath;
+    // ленивая привязка: бак до-создаёт тело в Recompute — он бывает позже нашего Awake
+    Stamina Breath { get { if (breath == null) TryGetComponent(out breath); return breath; } }
 
     Health ownHealth;
     Health held;
@@ -125,6 +141,21 @@ public class Constrict : MonoBehaviour
             grip = gripFloor;
             SetStage(knocked);
             return GrabTick.Holding; // держим дальше, но слабее — удар «съел» тик сжатия
+        }
+
+        // ВЫДОХСЯ — ХВАТ СЛАБЕЕТ (не рвётся): тот же механизм, что удар спасателя, только источник другой.
+        // Не роняет добычу разом — перестаёт дожимать, и стадии осыпаются по одной. Жертве это даёт честный
+        // выход «на измор»: не бей, а тяни время
+        if (Breath != null && !Breath.TrySpend(HoldDrain * Time.deltaTime) && Time.time >= wearNext)
+        {
+            wearNext = Time.time + WearInterval;
+            if (stage <= 1) return GrabTick.Broken; // выдохся вчистую — разжал
+            int worn = stage - 1;
+            reached = worn;
+            gripFloor = worn >= 3 ? stage3At : worn >= 2 ? stage2At : 0f; // ратчет вниз, иначе сжатие вернёт сбитое
+            grip = gripFloor;
+            SetStage(worn);
+            return GrabTick.Holding;
         }
 
         grip += tightenRate * Time.deltaTime;

@@ -82,7 +82,28 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     Vector3 noisePos;      // слух: последний услышанный шум — следим/отходим
     float noiseUntil;
 
-    float Speed => moveSpeed * (rage != null ? rage.SpeedMult : 1f) * (variance != null ? variance.SpeedMult : 1f);
+    // ОТДЫШКА режет ход и лосю: выдохшийся зверь не только не таранит, но и бредёт (Stamina.MoveMult)
+    float Speed => moveSpeed * (rage != null ? rage.SpeedMult : 1f) * (variance != null ? variance.SpeedMult : 1f)
+                             * (Breath != null ? Breath.MoveMult : 1f);
+
+    // ДЫХАЛКА ЛОСЯ: бак огромный, реген худший в лесу (данные вида) — поэтому «загнанный зверь» становится
+    // буквальным: четыре тарана подряд, и дальше он может только переть шагом, пока не отдышится
+    [SerializeField] float chargeCost = 70f; // 45 не читалось: реген успевал вернуть между таранами
+    // ПОГОНЯ ЖЖЁТ ДЫХАЛКУ — главный расход, а не приёмы. Пока трата шла только на редкий таран, полоска
+    // «телепалась у полной»: реген всё возвращал между ударами. Непрерывный слив делает состояние зверя
+    // читаемым — и превращает «загнать лося» из фигуры речи в тактику
+    // Слив РАВЕН его регену — погоня не опустошает бак, а НЕ ДАЁТ ЕМУ ВОССТАНАВЛИВАТЬСЯ. Отсюда рисунок:
+    // на погоне лось «стоит» на текущем запасе, и каждый таран из него вычитается безвозвратно, пока
+    // не оторвёшься. Два тарана — и он пуст, дальше только копытами
+    [SerializeField] float chaseDrain = 5f;  // расход бака в секунду, пока реально бежит за целью
+    float ChaseDrain => chaseDrain > 0f ? chaseDrain : 5f;
+    // ГОЧА: поле новое, психика уже лежит в префабе → придёт НУЛЁМ, и таран станет бесплатным, ничем
+    // себя не выдав (лось просто продолжит таранить, как раньше). Читаем 0 как «не настроено»
+    float ChargeCost => chargeCost > 0f ? chargeCost : 70f;
+    Stamina stamina;
+    // ЛЕНИВАЯ привязка: бак до-создаёт тело в Recompute, а он бывает ПОЗЖЕ нашего Awake. Схватить один раз
+    // на старте нельзя — остались бы с null навсегда, и лось таранил бы даром, ничем себя не выдав
+    Stamina Breath { get { if (stamina == null) TryGetComponent(out stamina); return stamina; } }
 
     // тело-на-шасси кормит скорость; урон тарана остаётся на ChargeAbility (как урон прыжка у волка);
     // голос (howlRange) — задел: РЁВ пока фирменный (bellowRadius), переведём на данные Глотки при тюнинге
@@ -337,9 +358,13 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
             {
                 if (dist <= antler.Range)                                // вплотную — не разогнаться, бьём РОГАМИ (урон+кровь+отлёт)
                 { if (antler.TryUse()) activeAbility = antler; Settle(Vector3.zero); return; }
-                if (dist >= charge.MinRange && dist <= charge.MaxRange)  // в окне — ТАРАН копытами (+топот на приземлении)
-                { if (charge.TryUse()) activeAbility = charge; Settle(Vector3.zero); return; }
+                // ТАРАН копытами (+топот на приземлении) — в окне дистанции И при дыхалке. Выдохся —
+                // условие не выполнится, и он просто пойдёт догонять шагом: угроза осталась, разгон кончился
+                if (dist >= charge.MinRange && dist <= charge.MaxRange && (Breath == null || Breath.Has(ChargeCost)))
+                { if (charge.TryUse()) { Breath?.TrySpend(ChargeCost); activeAbility = charge; } Settle(Vector3.zero); return; }
             }
+            // жжём бак, только пока РЕАЛЬНО бежим: вплотную он топчется у рогов, а не преследует
+            if (dist > antler.Range) Breath?.Drain(ChaseDrain * Time.deltaTime);
             Settle(nav.Arrive(target.position, Speed, stopAt: antler.Range * 0.8f)); // догоняет, тормозя у рогов
             return;
         }

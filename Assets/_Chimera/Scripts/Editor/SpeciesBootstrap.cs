@@ -66,7 +66,7 @@ public static class SpeciesBootstrap
         snake.tint = new Color(0.35f, 0.5f, 0.3f);
         snake.mutagenPool = 20;
         snake.baseHp = 60;  // длинное тело, но лёгкое
-        snake.baseStamina = 55;      // засадник, а не бегун: рывок один и мощный, дыхалки мало
+        snake.baseStamina = 55;      // засадник: удушение оказалось коротким, прибавка бака не понадобилась
         snake.baseStaminaRegen = 7f;
         snake.organs = new[]
         {

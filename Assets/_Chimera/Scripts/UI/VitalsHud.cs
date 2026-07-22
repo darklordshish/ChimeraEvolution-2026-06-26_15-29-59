@@ -75,6 +75,7 @@ public class VitalsHud : MonoBehaviour
     {
         public RectTransform root;
         public Image bg, fill;
+        public Image stamBg, stamFill; // ДЫХАЛКА — только под Чутьём: измерение, а не то, что видит зверь
         public Text status;   // значки статусов + стаки одной строкой (глифы из легенды)
     }
 
@@ -240,6 +241,19 @@ public class VitalsHud : MonoBehaviour
             float t = h.Max > 0 ? Mathf.Clamp01((float)h.Current / h.Max) : 0f;
             bar.fill.rectTransform.sizeDelta = new Vector2(barWidth * t, barHeight);
             bar.fill.color = Color.Lerp(HpLow, HpFull, t);
+
+            // ДЫХАЛКА ЧУЖОГО — фича Чутья («зверь чувствует — учёный измеряет»): без органа полоски нет,
+            // и выдохшегося врага читаешь по поведению — реже таранит, перестал дожимать хват
+            Stamina breath = null;
+            bool showStam = Perception.Insight && h.TryGetComponent(out breath) && breath.Max > 0f;
+            bar.stamBg.enabled = showStam;
+            bar.stamFill.enabled = showStam;
+            if (showStam)
+            {
+                bar.stamFill.rectTransform.sizeDelta =
+                    new Vector2(barWidth * breath.Normalized, bar.stamFill.rectTransform.sizeDelta.y);
+                bar.stamFill.color = breath.Exhausted ? StamWinded : StamFull;
+            }
             // ЧУЖОЕ состояние: полоска — доля («ранен»), точные числа открывает Чутьё («47/150, яд 3»)
             bar.status.text = (Perception.Insight ? $"<color=#E8E4D8>{h.Current}/{h.Max}</color>" : "")
                             + StatusText(h, numbers: Perception.Insight);
@@ -380,13 +394,27 @@ public class VitalsHud : MonoBehaviour
             fill.rectTransform.anchoredPosition = new Vector2(-barWidth * 0.5f, 0f);
             fill.rectTransform.sizeDelta = new Vector2(barWidth, barHeight);
 
+            // полоска дыхалки — ПОД здоровьем и тоньше него, как и у себя в углу экрана: один язык
+            float stamH = Mathf.Max(3f, barHeight * 0.45f);
+            float stamY = -(barHeight * 0.5f + stamH * 0.5f + 1f);
+
+            var sbg = NewImage("StamBack", root.transform, BarBack);
+            sbg.rectTransform.anchorMin = sbg.rectTransform.anchorMax = sbg.rectTransform.pivot = new Vector2(0f, 0.5f);
+            sbg.rectTransform.anchoredPosition = new Vector2(-barWidth * 0.5f, stamY);
+            sbg.rectTransform.sizeDelta = new Vector2(barWidth, stamH);
+
+            var sfill = NewImage("StamFill", root.transform, StamFull);
+            sfill.rectTransform.anchorMin = sfill.rectTransform.anchorMax = sfill.rectTransform.pivot = new Vector2(0f, 0.5f);
+            sfill.rectTransform.anchoredPosition = new Vector2(-barWidth * 0.5f, stamY);
+            sfill.rectTransform.sizeDelta = new Vector2(barWidth, stamH);
+
             var st = NewText("Status", root.transform, 15, Color.white, TextAnchor.MiddleCenter);
             st.rectTransform.anchorMin = st.rectTransform.anchorMax = st.rectTransform.pivot = new Vector2(0.5f, 0f);
             st.rectTransform.anchoredPosition = new Vector2(0f, barHeight * 0.5f + 2f);
             st.rectTransform.sizeDelta = new Vector2(220f, 20f);
             st.supportRichText = true;
 
-            pool.Add(new Bar { root = rt, bg = bg, fill = fill, status = st });
+            pool.Add(new Bar { root = rt, bg = bg, fill = fill, stamBg = sbg, stamFill = sfill, status = st });
         }
         return pool[i];
     }
