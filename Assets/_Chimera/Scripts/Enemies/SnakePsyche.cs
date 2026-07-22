@@ -533,7 +533,11 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
                 if (bite.TryUse()) activeAbility = bite;
                 Settle(Vector3.zero); return;
             }
-            if (dist >= leap.MinRange && dist <= leap.MaxRange) { if (leap.TryUse()) activeAbility = leap; Settle(Vector3.zero); return; }
+            // БРОСОК — рывок усилия. Погони у змеи нет и расхода на неё тоже: она засадник, её дыхалка
+            // уходит на два дела — метнуться и душить (второе тратит общая машина захвата). Отсюда цена
+            // промаха: не попал — жди, пока отдышишься, а добыча тем временем ушла
+            if (dist >= leap.MinRange && dist <= leap.MaxRange && (Breath == null || Breath.Has(LungeCost)))
+            { if (leap.TryUse()) { Breath?.TrySpend(LungeCost); activeAbility = leap; } Settle(Vector3.zero); return; }
         }
 
         // вне броска: ЗАМРИ И МАНИ — подкрадывание выдало бы засаду, пусть любопытная жертва подойдёт сама;
@@ -813,4 +817,12 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(d), rotationSpeed * Time.deltaTime);
 
     void Settle(Vector3 horizontal) => nav.Move(horizontal); // ход — общая локомоция (сглаживание/гравитация там)
+
+    // ДЫХАЛКА ЗМЕИ: бак 55, бросок 20 — два броска подряд, дальше засада поневоле. Ползание бесплатно:
+    // крадущийся охотник не «устаёт», он именно этим и занимается
+    [SerializeField] float lungeCost = 20f;
+    float LungeCost => lungeCost > 0f ? lungeCost : 20f;
+    Stamina breath;
+    // ленивая привязка: бак до-создаёт тело в Recompute, он бывает позже нашего Awake
+    Stamina Breath { get { if (breath == null) TryGetComponent(out breath); return breath; } }
 }
