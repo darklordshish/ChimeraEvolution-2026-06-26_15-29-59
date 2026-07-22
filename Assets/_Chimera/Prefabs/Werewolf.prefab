@@ -679,7 +679,7 @@ MonoBehaviour:
   bonusStartAffinity: 80
   bonusFullAffinity: 100
   maxBonusMult: 2
-  maxDamageReduction: 0.6
+  maxDamageReduction: 0.15
   minAtkCooldown: 0.2
   chimeraSlots: 0
   chimeraSlotMult: 2
@@ -688,7 +688,7 @@ MonoBehaviour:
   hearingRange: 20
   scentRange: 22
   expression: 2
-  applyVitals: 0
+  applyVitals: 1
   chassisIdentityWeight: 0.1
   weakAt: 0.65
   mediumAt: 0.85
@@ -733,9 +733,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 45fe65a21b0772746a8abc9d821bb66e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WerewolfPsyche
-  maxHp: 300
-  regenPerSec: 6
-  damageReduction: 0.15
   tempHpCap: 50
   moveSpeed: 12
   rotationSpeed: 300

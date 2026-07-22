@@ -23,6 +23,8 @@ public static class SpeciesBootstrap
         human.speciesName = "Человек";
         human.tint = new Color(0.9f, 0.72f, 0.62f); // телесный — база палитры (все органы человечьи → этот цвет)
         human.mutagenPool = 16;
+        human.baseHp = 75;  // БАЗА ТЕЛА (см. CreatureBody: итог = база × (1 + бонусы × экспрессия)).
+                            // Человек — эталон калибра: остальные базы читаются относительно него
         human.organs = new[]
         {
             // Человек = ПОЛНОЦЕННЫЙ вид (просто стартовое шасси). Цены СЫРЫЕ, как у всех; дёшевы ДЛЯ ТЕБЯ
@@ -30,7 +32,7 @@ public static class SpeciesBootstrap
             // родства), база ×0.75 → нетто ≈ ×1.5. Кулдауны/дальность не масштабируются.
             new Organ { organName = "Кисть",  slot = "Руки",   hotkey = "1", cost = 3, damage = 8, range = 1.6f },                          // ×2 ≈ 16 урона; платишь 1
             new Organ { organName = "Ноги",   slot = "Ноги",   hotkey = "2", cost = 3, moveSpeed = 4.5f, dashSpeed = 15f, enablesKick = true }, // ×2 ≈ 9 ход / 30 рывок; пинок — фича человеческих ног
-            new Organ { organName = "Сердце", slot = "Сердце", hotkey = "3", cost = 6, atkCooldown = 0.45f, maxHp = 75, regen = 0f, regenOOC = 0.75f }, // ×2 ≈ 150 HP; платишь 2
+            new Organ { organName = "Сердце", slot = "Сердце", hotkey = "3", cost = 6, atkCooldown = 0.45f, hpBonus = 0.5f, regen = 0f, regenOOC = 0.75f }, // +50% базы: 112 HP на старте, 150 на сотке родства; платишь 2
             new Organ { organName = "Чутьё",  slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.7f, insight = true }, // НАБЛЮДАТЕЛЬНОСТЬ учёного: распознаёт намерения и читает состояния числом (был пустым слотом — платил 3 ни за что)
             new Organ { organName = "Рот",    slot = "Пасть",  hotkey = "5", cost = 3, enablesBite = false },
             new Organ { organName = "Кожа",   slot = "Шкура",  hotkey = "6", cost = 3, damageReduction = 0f },
@@ -42,11 +44,12 @@ public static class SpeciesBootstrap
         wolf.speciesName = "Волк";
         wolf.tint = new Color(0.5f, 0.5f, 0.52f);   // серый — по-волчьи и отличимо от бурого лося
         wolf.mutagenPool = 16;
+        wolf.baseHp = 38;   // тело волка вдвое легче человеческого (~40 кг против ~75) — зато сердце зверское
         wolf.organs = new[]
         {
             new Organ { organName = "Коготь",        slot = "Руки",   hotkey = "1", cost = 4, damage = 18, range = 1.5f },
             new Organ { organName = "Волчьи ноги",   slot = "Ноги",   hotkey = "2", cost = 4, moveSpeed = 9f, dashSpeed = 30f },
-            new Organ { organName = "Волчье сердце", slot = "Сердце", hotkey = "3", cost = 6, atkCooldown = 0.30f, maxHp = 150, regen = 2f, regenOOC = 0f }, // постоянный реген ВМЕСТО тихого в покое (вне-боя — фича человеческого сердца)
+            new Organ { organName = "Волчье сердце", slot = "Сердце", hotkey = "3", cost = 6, atkCooldown = 0.30f, hpBonus = 1.75f, regen = 2f, regenOOC = 0f }, // +175%: лёгкое тело, огромный мотор → волк-NPC 68 HP, вервольф ровно 300. Постоянный реген ВМЕСТО тихого в покое (вне-боя — фича человеческого сердца)
             new Organ { organName = "Нюх",           slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.45f, enablesScent = true },
             new Organ { organName = "Пасть",         slot = "Пасть",  hotkey = "5", cost = 5, enablesBite = true, enablesHowl = true, bleedStacks = 2, howlRadius = 14f, howlStunAt = 2f }, // укус + кровь + ГОЛОС; СТАН — за порогом мощи 2 (сотка родства / вервольф), рядовому волку недоступен
             new Organ { organName = "Шкура",         slot = "Шкура",  hotkey = "6", cost = 4, damageReduction = 0.3f },
@@ -58,10 +61,11 @@ public static class SpeciesBootstrap
         snake.speciesName = "Змея";
         snake.tint = new Color(0.35f, 0.5f, 0.3f);
         snake.mutagenPool = 20;
+        snake.baseHp = 60;  // длинное тело, но лёгкое
         snake.organs = new[]
         {
             new Organ { organName = "Ядовитые клыки",       slot = "Пасть",  hotkey = "5", cost = 5, damage = 24, enablesBite = true, venomStacks = 1 }, // укус игрока травит
-            new Organ { organName = "Хладнокровное сердце", slot = "Сердце", hotkey = "3", cost = 5, maxHp = 200, regen = 0f, regenOOC = 2f, atkCooldown = 0.5f, coldBlooded = true }, // ХОЛОДНЫЙ МЕТАБОЛИЗМ: в бою НЕ регенит (regen 0), вне боя восстанавливается ЛУЧШЕ человека (regenOOC 2 > 1). Кулдаун ОБЯЗАТЕЛЕН (0 в бленде = меч-пулемёт)
+            new Organ { organName = "Хладнокровное сердце", slot = "Сердце", hotkey = "3", cost = 5, hpBonus = 1.35f, regen = 0f, regenOOC = 2f, atkCooldown = 0.5f, coldBlooded = true }, // ХОЛОДНЫЙ МЕТАБОЛИЗМ: в бою НЕ регенит (regen 0), вне боя восстанавливается ЛУЧШЕ человека (regenOOC 2 > 1). Кулдаун ОБЯЗАТЕЛЕН (0 в бленде = меч-пулемёт)
             new Organ { organName = "Тело-хвост",           slot = "Тело",   hotkey = "7", cost = 5, moveSpeed = 10f, dashSpeed = 20f, chassisOnly = true, digestion = true }, // ходовая часть ШАССИ змеи: аугументом не крадётся (локомоция = свойство шасси) + ПЕРЕВАРИВАНИЕ (глотание целиком = свойство змеиного тела)
             new Organ { organName = "Чешуя",                slot = "Шкура",  hotkey = "6", cost = 4, damageReduction = 0.25f, camo = true }, // лёгкая броня: стелс+яд+одиночная охота компенсируют (D-тюнинг)
             new Organ { organName = "Пит-орган",            slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.7f, enablesThermal = true, thermalRange = 14f }, // тепло сквозь стены; dashCd обязателен (0 = спам рывка)
@@ -74,13 +78,14 @@ public static class SpeciesBootstrap
         moose.speciesName = "Лось";
         moose.tint = new Color(0.42f, 0.32f, 0.22f); // тёмно-бурый
         moose.mutagenPool = 24;
+        moose.baseHp = 70;  // туша, но витальность лося больше в сердце, чем в самом теле
         moose.organs = new[]
         {
             new Organ { organName = "Копыто",         slot = "Руки",   hotkey = "1", cost = 5, damage = 22, range = 1.8f }, // удар копытом — оружие
             new Organ { organName = "Лосиные ноги",   slot = "Ноги",   hotkey = "2", cost = 5, moveSpeed = 5f, dashSpeed = 35f, dashDuration = 0.38f, enablesCharge = true }, // длинные ноги: шаг ровный, а рывок = ДЛИННЫЙ мощный ТАРАН (35 > волчьих 30 + вдвое дольше → прёт быстро и далеко)
             new Organ { organName = "Глотка",         slot = "Пасть",  hotkey = "5", cost = 4, enablesBellow = true }, // РЁВ (K2): кин-лоси в берсерк на месте, чужим страх
             new Organ { organName = "Слух",           slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.7f, keenHearing = true, hearingMult = 2f }, // ОСТРЫЙ СЛУХ: вдвое дальше + различение вида + волны звука на экране (лось — слухач при слабом зрении)
-            new Organ { organName = "Лосиное сердце", slot = "Сердце", hotkey = "3", cost = 6, maxHp = 260, regen = 1f, regenOOC = 0f, atkCooldown = 0.5f }, // много HP
+            new Organ { organName = "Лосиное сердце", slot = "Сердце", hotkey = "3", cost = 6, hpBonus = 1.7f, regen = 1f, regenOOC = 0f, atkCooldown = 0.5f }, // +170%: много HP
             new Organ { organName = "Толстая шкура",  slot = "Шкура",  hotkey = "6", cost = 5, damageReduction = 0.35f }, // броня против ПРЯМОГО урона (не крови)
             new Organ { organName = "Рога",           slot = "Рога",   hotkey = "8", cost = 5, enablesAntler = true }, // ПРИДАТОК (химерный слот): удар рогами — откидывание + кровь
         };

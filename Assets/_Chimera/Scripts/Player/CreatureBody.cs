@@ -49,6 +49,11 @@ public class CreatureBody : MonoBehaviour
     float HearingRange => hearingRange > 0f ? hearingRange : 20f;
     float ScentRange => scentRange > 0f ? scentRange : 22f;
 
+    // ТА ЖЕ ГОЧА У АССЕТА ВИДА: `baseHp` появился позже — в неперегенерённом ассете он 0, и существо
+    // осталось бы с 1 HP. Читаем 0 как «бутстрап не прогнан» и подставляем человеческую норму:
+    // ошибка становится видна как странное число в дев-панели, а не как мгновенная смерть от щелчка
+    float BaseHp => chassis != null && chassis.baseHp > 0 ? chassis.baseHp : 75f;
+
     [SerializeField] float expression;        // ЭКСПРЕССИЯ: насколько раскрыты гены зверя. 0 = авто (кривая родства);
                                               // >0 фикс: вервольф 2 (= потолок игрока), природный волк ~0.45 (без сыворотки)
     [SerializeField] bool applyVitals = true; // false: HP/броня/реген — «конституция» психики, тело их не трогает
@@ -507,7 +512,7 @@ public class CreatureBody : MonoBehaviour
     // вклад одного надетого органа в статы тела (после бленда/экспрессии)
     struct Contribution
     {
-        public float dmg, maxHp, life, rng, atkCd, mv, dash, dashDur, dashCd, reduce, regen, regenOOC, thermal, howlR, howlStunAt;
+        public float dmg, hpBonus, life, rng, atkCd, mv, dash, dashDur, dashCd, reduce, regen, regenOOC, thermal, howlR, howlStunAt;
         public int venom, bleed;
         public bool bite, scent, kick, howl, cold, camo, thermalOn, constrict, digest, bellow, antler, charge;
         public bool insight; // ЧУТЬЁ УЧЁНОГО: распознавание намерений + числа состояний (человеческое Чутьё)
@@ -519,7 +524,7 @@ public class CreatureBody : MonoBehaviour
         // Дубль оси силу НЕ растит (второе сердце ≠ ×2 регена) — окупается только НОВЫМ направлением.
         public static Contribution Sup(Contribution a, Contribution b) => new()
         {
-            dmg = Mathf.Max(a.dmg, b.dmg), maxHp = Mathf.Max(a.maxHp, b.maxHp), life = Mathf.Max(a.life, b.life),
+            dmg = Mathf.Max(a.dmg, b.dmg), hpBonus = Mathf.Max(a.hpBonus, b.hpBonus), life = Mathf.Max(a.life, b.life),
             rng = Mathf.Max(a.rng, b.rng), atkCd = Mathf.Min(a.atkCd, b.atkCd),
             mv = Mathf.Max(a.mv, b.mv), dash = Mathf.Max(a.dash, b.dash), dashDur = Mathf.Max(a.dashDur, b.dashDur), dashCd = Mathf.Min(a.dashCd, b.dashCd),
             reduce = Mathf.Max(a.reduce, b.reduce), regen = Mathf.Max(a.regen, b.regen),
@@ -569,7 +574,7 @@ public class CreatureBody : MonoBehaviour
         return new Contribution
         {
             dmg = Scaled(h.damage, w.damage),
-            maxHp = Scaled(h.maxHp, w.maxHp),
+            hpBonus = Scaled(h.hpBonus, w.hpBonus), // ДОЛЯ базы шасси — экспрессия раскрывает бонус, не тело
             life = Scaled(h.lifeSteal, w.lifeSteal),
             atkCd = Timed(h.atkCooldown, w.atkCooldown),
             mv = Scaled(h.moveSpeed, w.moveSpeed),
@@ -612,7 +617,7 @@ public class CreatureBody : MonoBehaviour
         }
 
         // суммирование групп; урон группы «Пасть» принадлежит УКУСУ, не мечу
-        float dmgF = 0f, dmgBiteF = 0f, maxHpF = 0f, lifeF = 0f;
+        float dmgF = 0f, dmgBiteF = 0f, hpBonusF = 0f, lifeF = 0f;
         float rng = 0f, atkCd = 0f, mv = 0f, dash = 0f, dashDur = 0f, dashCd = 0f, reduce = 0f, regen = 0f, regenOOC = 0f, thermal = 0f, howlR = 0f, howlStunAt = 0f;
         int venom = 0, bleed = 0;
         bool biteOn = false, scentOn = false, kickOn = false, howlOn = false, coldOn = false, camoOn = false,
@@ -623,7 +628,7 @@ public class CreatureBody : MonoBehaviour
         {
             var c = kv.Value;
             if (kv.Key == "Пасть") dmgBiteF += c.dmg; else dmgF += c.dmg;
-            maxHpF += c.maxHp; lifeF += c.life; venom += c.venom; bleed += c.bleed;
+            hpBonusF += c.hpBonus; lifeF += c.life; venom += c.venom; bleed += c.bleed;
             rng += c.rng; atkCd += c.atkCd; mv += c.mv; dash += c.dash; dashDur += c.dashDur; dashCd += c.dashCd;
             reduce += c.reduce; regen += c.regen; regenOOC += c.regenOOC; thermal += c.thermal;
             howlR = Mathf.Max(howlR, c.howlR);
@@ -635,7 +640,7 @@ public class CreatureBody : MonoBehaviour
             keenEarOn |= c.keenEar; earMult = Mathf.Max(earMult, c.earMult);
         }
         int dmg = Mathf.RoundToInt(dmgF), dmgBite = Mathf.RoundToInt(dmgBiteF);
-        int maxHp = Mathf.RoundToInt(maxHpF), life = Mathf.RoundToInt(lifeF);
+        int life = Mathf.RoundToInt(lifeF);
 
         if (bite != null)
         {
@@ -695,13 +700,18 @@ public class CreatureBody : MonoBehaviour
             move.SetLegs(mv, dash, dashDur);
             move.SetDashCooldown(Mathf.Max(0.05f, dashCd));
         }
-        if (health != null && applyVitals) // у босса витальность — «конституция» психики
+        if (health != null && applyVitals)
         {
-            health.SetMaxHealth(Mathf.Max(1, Mathf.RoundToInt(maxHp * (variance != null ? variance.HpMult : 1f))));
+            // ВИТАЛЬНОСТЬ = БАЗА ШАССИ × (1 + бонусы органов × экспрессия) × разброс особи.
+            // База — «тело как таковое», её экспрессия НЕ трогает: раньше всё было абсолютами и
+            // масштабировалось целиком, отчего «Э 0.45» значило «волк на 45% статов» (полудохлый),
+            // а числа органов подбирались, лишь бы это скомпенсировать. Теперь Э честно раскрывает БОНУС
+            int hp = Mathf.RoundToInt(BaseHp * (1f + hpBonusF) * (variance != null ? variance.HpMult : 1f));
+            health.SetMaxHealth(Mathf.Max(1, hp));
             health.DamageReduction = Mathf.Min(maxDamageReduction, Mathf.Clamp01(reduce)); // потолок — глушим овершут брони
             health.RegenPerSecond = regen;
             health.OutOfCombatRegen = regenOOC;
-        } // maxHp здесь уже с разбросом особи (SpawnVariance.HpMult)
+        }
 
         // НПС-потребители (психика): тело отдаёт деривированное — урон (суммарный: их мили и есть укус), скорость,
         // ЭФФЕКТЫ УКУСА (яд/кровь из Пасти) и ГОЛОС (радиус воя, уже × мощь) — всё data-driven как у игрока

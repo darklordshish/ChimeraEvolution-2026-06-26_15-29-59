@@ -131,7 +131,12 @@ public static class WerewolfPrefab
         donorsProp.GetArrayElementAtIndex(0).objectReferenceValue = wolfSpecies;
         bodySo.FindProperty("installAllBeast").boolValue = true;
         bodySo.FindProperty("expression").floatValue = 2f; // экспрессия = потолок игрока; превосходство даёт ярость
-        bodySo.FindProperty("applyVitals").boolValue = false;
+        // ВИТАЛЬНОСТЬ — ИЗ ТЕЛА (костыль откручен): человеческая база × максимум волчьих процентов = 300 HP,
+        // ровно столько же, сколько психика ставила руками. Но броня по формуле вышла бы 0.6 (волчья шкура
+        // на Э=2), а босс задуман «быстрым убийцей, не танком» — поэтому ему свой ПОТОЛОК брони 0.15.
+        // Намерение осталось прежним, только выражено данными тела, а не числом в психике
+        bodySo.FindProperty("applyVitals").boolValue = true;
+        bodySo.FindProperty("maxDamageReduction").floatValue = 0.15f;
         bodySo.ApplyModifiedPropertiesWithoutUndo();
 
         go.AddComponent<WerewolfPsyche>();

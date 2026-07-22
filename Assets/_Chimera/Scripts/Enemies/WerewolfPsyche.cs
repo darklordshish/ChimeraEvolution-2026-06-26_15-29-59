@@ -18,9 +18,10 @@ using UnityEngine;
 public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
 {
     [Header("Тело — быстрый убийца, НЕ танк")]
-    [SerializeField] int maxHp = 300;
-    [SerializeField] float regenPerSec = 6f;
-    [SerializeField, Range(0f, 1f)] float damageReduction = 0.15f; // не вербеар — брони мало
+    // ВИТАЛЬНОСТЬ БОЛЬШЕ НЕ ЗАДАЁТСЯ ЗДЕСЬ: HP/броня/реген приходят из тела (`applyVitals` включён).
+    // Костыль стоял потому, что абсолютные HP органов не складывались в осмысленное число для босса;
+    // с процентной моделью формула сама даёт «человеческая база × максимум волчьих процентов» = 300.
+    // «Не танк» тоже осталось ДАННЫМИ, а не хардкодом: у тела босса свой низкий потолок брони
     [SerializeField] int tempHpCap = 50;     // потолок временного HP свыше макс. (копится вампиризмом)
 
     [Header("Движение / чутьё")]
@@ -94,10 +95,7 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
         var pc = FindAnyObjectByType<PlayerController>();
         if (pc != null) { target = pc.transform; targetHealth = pc.GetComponent<Health>(); }
 
-        ownHealth.SetMaxHealth(maxHp);
-        ownHealth.DamageReduction = damageReduction;
-        ownHealth.RegenPerSecond = regenPerSec;
-        ownHealth.OverhealCap = tempHpCap; // вампиризм может уходить свыше макс.
+        ownHealth.OverhealCap = tempHpCap; // вампиризм может уходить свыше макс. (HP/броня/реген — из тела)
         nextHowl = Time.time + howlInitialDelay;
     }
 

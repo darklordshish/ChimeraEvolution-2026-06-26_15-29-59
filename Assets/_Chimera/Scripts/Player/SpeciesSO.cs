@@ -13,6 +13,12 @@ public class SpeciesSO : ScriptableObject
     public Color tint = Color.gray;   // цвет тела при озверении этим видом (лерп шкалы мозга)
     public int mutagenPool = 10;      // ёмкость пула, когда вид = шасси
     public Organ[] organs;            // органы вида (по одному на покрываемый слот)
+
+    // ВИТАЛЬНОСТЬ ШАССИ: сколько даёт ТЕЛО КАК ТАКОВОЕ, до всяких органов. Волк остаётся полноценным
+    // волком и без выдающегося сердца; органы дают ПРОЦЕНТ сверху (Organ.hpBonus), а экспрессия
+    // раскрывает бонус — но НЕ трогает базу. Иначе «Э 0.45» означало бы «полудохлый волк» (так и было).
+    // 0 = не настроено → тело подставит дефолт (гоча нового поля в старом ассете; прогони бутстрап)
+    public int baseHp = 0;
 }
 
 /// <summary>
@@ -27,7 +33,10 @@ public class Organ
     public string hotkey = "1";    // временный бинд клавиши (MVP-конструктор)
     public int cost;               // цена в пуле
 
-    public int damage, maxHp, lifeSteal;
+    public int damage, lifeSteal;
+    public float hpBonus;          // ПРИБАВКА К ВИТАЛЬНОСТИ ДОЛЕЙ базы шасси (0.5 = +50%), не абсолют.
+                                   // Раньше было абсолютное `maxHp` — и оно не переносилось между телами
+                                   // разного калибра: человеческое сердце в лосином шасси делало лося хилым
     public int venomStacks;        // яд на укусе (змеиные клыки): стаков за попадание
     public int bleedStacks;        // кровотечение на укусе (волчьи клыки): стаков за попадание
     public float range, atkCooldown, moveSpeed, dashSpeed, dashCooldown, damageReduction, regen, regenOOC;
