@@ -480,7 +480,9 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
                 Settle(Vector3.zero);
                 return;
             }
-            if (dist >= leap.MinRange && dist <= leap.MaxRange) { if (leap.TryUse()) activeAbility = leap; Settle(Vector3.zero); return; }
+            // ПРЫЖОК — рывок усилия: без дыхалки волк остаётся грызть вблизи (отсюда «волны» стаи)
+            if (dist >= leap.MinRange && dist <= leap.MaxRange && (Breath == null || Breath.Has(LeapCost)))
+            { if (leap.TryUse()) { Breath?.TrySpend(LeapCost); activeAbility = leap; } Settle(Vector3.zero); return; }
         }
 
         // движение: по ЗМЕЕ окружаем КОЛЬЦОМ (личный угол вокруг добычи); против игрока — с жетоном рвёмся в упор,
@@ -563,7 +565,8 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
             if (Time.time >= nextAttackTime && Vector3.Angle(transform.forward, dir) <= bite.HalfAngle)
             {
                 if (dist <= bite.Range) { if (bite.TryUse()) activeAbility = bite; Settle(Vector3.zero); return true; }
-                if (dist >= leap.MinRange && dist <= leap.MaxRange) { if (leap.TryUse()) activeAbility = leap; Settle(Vector3.zero); return true; }
+                if (dist >= leap.MinRange && dist <= leap.MaxRange && (Breath == null || Breath.Has(LeapCost)))
+                { if (leap.TryUse()) { Breath?.TrySpend(LeapCost); activeAbility = leap; } Settle(Vector3.zero); return true; }
             }
             Settle(nav.Arrive(mooseTarget.transform.position, Speed, stopAt: bite.Range * 0.85f) + Separation() * attackSeparation);
             return true;
@@ -580,6 +583,16 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     // Механику удержания (ApplyGrab/слоу/статус) ведёт она; РЕШЕНИЯ (когда/кого/релиз/кровь/подтягивание) —
     // драйвер. Порог срыва-по-удару высок: волк отпускает по НОКБЕКУ/рывку/прорежению стаи (логика драйвера),
     // а не по одиночному удару — поведение как было, спасение по-прежнему = таран лося (нокбек)
+    // ДЫХАЛКА ВОЛКА: погоня замораживает бак (слив = его реген), прыжок из него вычитает. Отсюда «волны»:
+    // прыгнул дважды — дальше грызи вблизи или отвались отдышаться. Стая перестаёт быть монолитом
+    [SerializeField] float chaseDrain = 10f; // расход в секунду, пока гонится (= реген волка)
+    [SerializeField] float leapCost = 30f;   // прыжок — рывок усилия (из бака 86 это два прыжка)
+    float ChaseDrain => chaseDrain > 0f ? chaseDrain : 10f;
+    float LeapCost => leapCost > 0f ? leapCost : 30f;
+    Stamina breath;
+    // ленивая привязка: бак до-создаёт тело в Recompute, он бывает позже нашего Awake
+    Stamina Breath { get { if (breath == null) TryGetComponent(out breath); return breath; } }
+
     Constrict grabMachine;
     Constrict GrabMachine
     {
@@ -792,5 +805,12 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
 
     // ход отдан общей локомоции (NavLocomotion.Move): гравитация + сглаживание скорости — анти-тряска
     // живёт в одном месте на все виды
-    void Settle(Vector3 horizontal) => nav.Move(horizontal);
+    // ЕДИНАЯ ТОЧКА ДВИЖЕНИЯ — сюда и вешаем дыхалку погони. Нагрузка (`Drain`), а не усилие: на бегу бак
+    // не восстанавливается, но сам по себе и не пустеет — пустеют ПРЫЖКИ. Гейт по `Engaged` обязателен,
+    // иначе бродящий без дела волк тоже «уставал» бы и никогда не отдыхал
+    void Settle(Vector3 horizontal)
+    {
+        if (Engaged && horizontal.sqrMagnitude > 0.5f) Breath?.Drain(ChaseDrain * Time.deltaTime);
+        nav.Move(horizontal);
+    }
 }
