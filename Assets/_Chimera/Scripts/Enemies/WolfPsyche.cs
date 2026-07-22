@@ -348,18 +348,13 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         }
 
         bool routing = Routing; // личная паника сломлена → бегство (в ярости от воя не бежим)
-        float sight = senses.Range(SenseKind.Sight); // дальность зрения через профиль (пер-состоянчато)
-        Vector3 toT = target.position - transform.position; toT.y = 0f;
-        float distSq = toT.sqrMagnitude;
-        // зрение = дальность + КОНУС (вне сектора обзора не видим — стелс со спины/сбоку) ИЛИ «в упор» + прямая видимость.
-        // «в упор» ловит цель вплотную вне конуса (шорох); once Engaged волк доворачивает мордой к цели → держит в конусе
-        bool inView = distSq <= proximityRadius * proximityRadius
-                      || Vector3.Angle(transform.forward, toT) <= senses.ViewHalfAngle(SenseKind.Sight);
+        // ЗРЕНИЕ — ОБЩЕЕ правило на всех зрячих (`Perception.Sees`): дальность профиля (пер-состоянчато) +
+        // конус обзора или «в упор» + затаившуюся не видим + стена рвёт. «В упор» ловит цель вплотную вне
+        // конуса (шорох); once Engaged волк доворачивает мордой к цели → держит её в конусе сам
         // K3a-гейт бьёт ТОЧЕЧНО: «свой не добыча» — только когда цель и есть кин-игрок. Иначе кин-статус
         // гасил бой ВООБЩЕ (волк не трогал даже змею, которая жрёт кина) — стая обязана отбивать своего
         bool targetIsKinPlayer = playerIsKin && playerHealth != null && ReferenceEquals(targetHealth, playerHealth);
-        Engaged = !routing && !targetIsKinPlayer && distSq <= sight * sight && inView
-                  && Perception.HasLineOfSight(transform.position, target, transform);
+        Engaged = !routing && !targetIsKinPlayer && Perception.Sees(transform, target, senses, proximityRadius);
         if (Engaged) TryHowl(target.position); // увидел игрока → взвыл, зову ближних в стаю
         alert.Observe(Engaged, HasCue());      // S1: кормим машину восприятия (зеркало — поведение ниже пока не трогаем)
 

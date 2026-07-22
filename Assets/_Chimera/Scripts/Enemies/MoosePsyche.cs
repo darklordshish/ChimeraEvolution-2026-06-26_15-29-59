@@ -284,8 +284,9 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
 
         Vector3 toT = target.position - transform.position; toT.y = 0f;
         float dist = toT.magnitude;
-        bool inView = dist <= proximityRadius || Vector3.Angle(transform.forward, toT) <= senses.ViewHalfAngle(SenseKind.Sight);
-        bool sees = dist <= senses.Range(SenseKind.Sight) && inView && Perception.HasLineOfSight(transform.position, target, transform);
+        // ЗРЕНИЕ — ОБЩЕЕ правило (`Perception.Sees`): дальность профиля + конус/«в упор» + камуфляж + стена.
+        // Было своей копией правила, в которой ЗАБЫЛСЯ камуфляж — затаившуюся змею лось видел глазами
+        bool sees = Perception.Sees(transform, target, senses, proximityRadius);
 
         // ЛЕСЕНКА (срез C): видимый провокатор в warnRadius копит раздражение (ближе — быстрее), ушёл — спадает.
         // Вплотную на глазах — мгновенный максимум (вторжение в личное пространство)

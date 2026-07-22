@@ -130,6 +130,32 @@ public static class Perception
         return v.z > 0f && v.x >= -edge && v.x <= 1f + edge && v.y >= -edge && v.y <= 1f + edge;
     }
 
+    /// <summary>ЗРЕНИЕ NPC — ОДНО правило на всех носителей: дальность профиля (пер-состоянчато, через
+    /// `Senses`) + КОНУС обзора (или «в упор»: цель вплотную замечают и вне сектора — шорох) + цель не
+    /// затаилась + прямая видимость. `proximity` — радиус «в упор», свойство вида (поле психики).
+    /// БЫЛО тремя описаниями одного правила по психикам, и они уже разошлись: волк проверял камуфляж
+    /// только в отдельном поиске змей, лось не проверял вовсе — затаившуюся змею он видел глазами.
+    /// Теперь стелс змеи (и краденая игроком Чешуя) работает против ВСЕХ зрячих одинаково.</summary>
+    public static bool Sees(Transform observer, Transform target, Senses senses, float proximity = 0f)
+    {
+        if (observer == null || target == null || senses == null) return false;
+
+        float range = senses.Range(SenseKind.Sight);
+        if (range <= 0f) return false; // слепой вид (0 = канала нет) — зрением не берёт никого
+
+        Vector3 to = target.position - observer.position; to.y = 0f;
+        float dist = to.magnitude;
+        if (dist > range) return false;
+
+        if (dist > proximity && Vector3.Angle(observer.forward, to) > senses.ViewHalfAngle(SenseKind.Sight))
+            return false; // вне сектора обзора и не вплотную — стелс со спины/сбоку
+
+        // затаившуюся глазами не взять — там работает нюх (RPS-зацепка камуфляжа)
+        if (target.TryGetComponent<Camouflage>(out var camo) && camo.Hidden) return false;
+
+        return HasLineOfSight(observer.position, target, observer); // стена рвёт — тропят по запаху/слуху
+    }
+
     // термозрение (Пит-орган): видит ТЁПЛОГО в радиусе СКВОЗЬ укрытия — прямой видимости не требует,
     // этим и отличается от зрения. Холоднокровный не излучает тепло — невидим (см. IsWarm).
     public static bool SeesThermal(Vector3 from, Transform target, float range)
