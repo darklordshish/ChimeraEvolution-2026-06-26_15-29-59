@@ -17,14 +17,18 @@ public class PlayerController : MonoBehaviour
 
     [Header("Спринт (стамина)")]
     [SerializeField] float sprintMult = 1.6f;   // во сколько раз быстрее обычного хода
-    [SerializeField] float sprintDrain = 20f;   // расход бака в секунду, пока бежишь
+    // СПРИНТ — НАГРУЗКА, а не рывок усилия (то же различие, что у погони NPC). Через TrySpend он
+    // откладывал реген каждый кадр: бак пустел за считаные секунды, и РЫВОК ПЕРЕСТАВАЛ РАБОТАТЬ НА БЕГУ —
+    // выглядело как баг. Теперь слив идёт параллельно регену и лишь превышает его: бежать дорого, но
+    // предсказуемо, и запас на рывок остаётся
+    [SerializeField] float sprintDrain = 30f;   // расход бака в секунду, пока бежишь (реген игрока 21/с)
 
     // UNITY-ГОЧА (ловили дважды): НОВОЕ сериализованное поле у компонента, УЖЕ лежащего в сцене, приходит
     // НУЛЁМ — инициализатор из кода к нему не применяется. Здесь молчание было бы особенно коварным:
     // sprintMult 0 ОСТАНАВЛИВАЕТ игрока при беге, а dashCost 0 делает рывок бесплатным (фича «работает»,
     // но ничего не стоит — и это не заметить). Читаем 0 как «не настроено»
     float SprintMult => sprintMult > 0f ? sprintMult : 1.6f;
-    float SprintDrain => sprintDrain > 0f ? sprintDrain : 20f;
+    float SprintDrain => sprintDrain > 0f ? sprintDrain : 30f;
     float DashCost => dashCost > 0f ? dashCost : 25f;
 
     [Header("Рывок")]
@@ -154,11 +158,15 @@ public class PlayerController : MonoBehaviour
         float grip = GrabImmune ? 1f : grabSlow;
         float hold = constrict != null ? constrict.SelfSlow : 1f;
         float sneak = sneakAction.IsPressed() ? sneakMult : 1f; // тихий шаг: скорость ↓ → шум ↓ (Noise сам заметит)
-        // СПРИНТ жжёт бак покадрово, пока держишь Shift и реально бежишь. Кончилось (или отдышка) — TrySpend
-        // вернёт false, и спринт просто не включится: кнопка «не срабатывает», а управление не отбирается
+        // СПРИНТ жжёт бак, пока держишь Shift и реально бежишь. На отдышке не включается — там своё
+        // замедление, и бежать быстрее выдохшийся просто не может
         float sprint = 1f;
         if (sprintAction.IsPressed() && sneak >= 1f && dashTimer <= 0f && move.sqrMagnitude > 0.01f
-            && stamina != null && stamina.TrySpend(SprintDrain * Time.deltaTime)) sprint = SprintMult;
+            && stamina != null && !stamina.Exhausted)
+        {
+            stamina.Drain(SprintDrain * Time.deltaTime);
+            sprint = SprintMult;
+        }
         // ОТДЫШКА: выжал бак досуха — ползёшь, пока не отдышался. Это и есть цена перерасхода —
         // наказывает открытостью, а не запретом кнопки
         float winded = stamina != null ? stamina.MoveMult : 1f;
