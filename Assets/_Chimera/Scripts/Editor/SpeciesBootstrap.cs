@@ -11,7 +11,7 @@ public static class SpeciesBootstrap
 {
     const string Dir = "Assets/_Chimera/Data";
 
-    [MenuItem("Chimera/Создать дефолтные виды (Человек, Волк, Змея, Лось)")]
+    [MenuItem("Chimera/Создать дефолтные виды (Человек, Волк, Змея, Лось, Ёж)")]
     public static void CreateDefaults()
     {
         if (!AssetDatabase.IsValidFolder(Dir))
@@ -99,6 +99,32 @@ public static class SpeciesBootstrap
         };
         EditorUtility.SetDirty(moose);
 
+        // ── Ёж «Хеджхалк»: колючий анти-контроль и будущий стрелок (спека 2026-07-22). Лабораторный
+        //    мутант — крупнее и агрессивнее природного, лор-ковер оправдывает фантазию ──
+        var hog = GetOrCreate("Ёж");
+        hog.speciesName = "Ёж";
+        hog.tint = new Color(0.58f, 0.33f, 0.28f);  // ржаво-кирпичный: тёмный и красный, не спутать с телесным
+                                                    // человеком (был песочный — сливались) и бурым лосём
+        hog.mutagenPool = 18;
+        hog.baseHp = 52;             // 45 было мало: ёж трейдит в захвате и должен ВЫИГРЫВАТЬ у змеи (он её хищник).
+                                     // 52 × сердце 1.2 на Э 0.5 ≈ 83 HP — переживает размен, с ответкой 0.55 берёт верх
+        hog.baseStamina = 60;        // СПРИНТЕР, НЕ МАРАФОНЕЦ (биология): бак мал, зато отходит быстро
+        hog.baseStaminaRegen = 8f;
+        hog.organs = new[]
+        {
+            // СЛОТ «РУКИ» НАМЕРЕННО ПУСТ: у ежа нет ни сильного удара лапами, ни хватки — 5 коротких
+            // когтей для ходьбы и рытья, противопоставленных пальцев нет (мелкая моторика — это тенрек,
+            // которого с ежом путают). Вид не обязан закрывать все слоты — так сеты получаются разными
+            // ИМЕНА ОРГАНОВ УНИКАЛЬНЫ ПО ВСЕМ ВИДАМ: в конструкторе они стоят рядом в одном списке, и два
+            // «Чутья» или две «Пасти» там неразличимы — непонятно, чей орган держишь в руках
+            new Organ { organName = "Иглы",              slot = "Шкура",  hotkey = "6", cost = 5, damageReduction = 0.2f, thorns = true }, // ОТВЕТКА: броня умеренная — иглы это ответ, а не панцирь
+            new Organ { organName = "Ежиные ноги",       slot = "Ноги",   hotkey = "2", cost = 4, moveSpeed = 6f, dashSpeed = 18f, dashDuration = 0.14f, dashCooldown = 0.35f }, // ёж НЕ догоняла, а ПИННЕР: на Э 0.5 = 3.0 — медленнее уползающей змеи (3.75), сам не догонит. Ловит КИТОМ: залп замедляет → подошёл → схватил. Финальная подгонка — на полном цикле
+            new Organ { organName = "Цепкая пасть",      slot = "Пасть",  hotkey = "5", cost = 4, damage = 22, enablesBite = true }, // ДОБИВАНИЕ: 14 (на Э 0.5 ≈ 7) не дожимало змею — размен был почти равный. 22 (≈11) даёт ежу грабнуть-и-добить, как задумано. Кусает в основном схваченную добычу, не игрока
+            new Organ { organName = "Ядоупорное сердце", slot = "Сердце", hotkey = "3", cost = 6, hpBonus = 1.2f, staminaBonus = 0.4f, staminaRegenBonus = 0.3f, regen = 0.5f, atkCooldown = 0.5f, venomResist = true }, // РЕЗИСТ ЯДА (медоед-конституция) — делает ежа контр-видом змеи
+            new Organ { organName = "Пятак",             slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.5f, enablesScent = true, keenHearing = true, hearingMult = 1.6f }, // НОЧНОЙ ЗВЕРЬ: подвижный нос и большие уши — нюх и слух остры (цена в зрении придёт со слайсом сенсорики)
+        };
+        EditorUtility.SetDirty(hog);
+
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
@@ -110,10 +136,11 @@ public static class SpeciesBootstrap
             var so = new SerializedObject(body);
             so.FindProperty("chassis").objectReferenceValue = human;
             var donorsProp = so.FindProperty("donors");
-            donorsProp.arraySize = 3; // мультидонор: слот циклирует человек → волчий → змеиный → ЛОСИНЫЙ
+            donorsProp.arraySize = 4; // мультидонор: человек → волчий → змеиный → лосиный → ЕЖОВЫЙ
             donorsProp.GetArrayElementAtIndex(0).objectReferenceValue = wolf;
             donorsProp.GetArrayElementAtIndex(1).objectReferenceValue = snake;
             donorsProp.GetArrayElementAtIndex(2).objectReferenceValue = moose; // донор-лось открыт (эксперимент идентичности)
+            donorsProp.GetArrayElementAtIndex(3).objectReferenceValue = hog;   // ёж: иглы-ответка и ядоупорное сердце
             so.ApplyModifiedProperties();
             EditorUtility.SetDirty(body);
             EditorSceneManager.MarkSceneDirty(body.gameObject.scene);

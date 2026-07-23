@@ -56,6 +56,8 @@ public class Organ
     public float howlRadius;       // ГОЛОС Пасти: база радиуса воя (0 = не воет). Итог = база × мощь-превосходство
                                    // (тело считает: игрок BonusMult ×1..2, NPC max(1, Э) — норму вниз не штрафуем)
     public bool enablesBite, enablesScent, enablesKick, enablesHowl, coldBlooded, camo, enablesThermal, enablesConstrict;
+    public bool thorns;            // ИГЛЫ (Шкура ежа): ответка на удар в упор + кровотечение обидчику
+    public bool venomResist;       // ЯДОУПОРНОСТЬ (Сердце ежа): яд не накапливается — стак разлагается почти сразу
     public bool keenHearing;       // ОСТРЫЙ СЛУХ (лосиное Ухо): вдвое дальше + различение ВИДА источника
                                    // («Волк», а не «шум») + ВОЛНЫ ЗВУКА на экране. Слух отвечает «КТО шумит»,
                                    // Чутьё — «ЧТО происходит»: органы не пересекаются, вместе дают полную картину

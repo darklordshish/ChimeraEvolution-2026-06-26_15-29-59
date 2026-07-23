@@ -24,10 +24,15 @@ public class Venom : MonoBehaviour
 
     void Awake() => TryGetComponent(out health);
 
+    VenomResist resist; // ЯДОУПОРНОСТЬ (сердце ежа): не блокирует стак, а укорачивает его жизнь
+
     public void AddStack()
     {
+        if (resist == null) TryGetComponent(out resist); // ленивая привязка: маркер вешает тело в Recompute
         stacks = Mathf.Min(maxStacks, Stacks + 1);
-        expireAt = Time.time + stackDuration;
+        // у ядоупорного токсин разлагается почти сразу: укус проходит, но яд НЕ НАКАПЛИВАЕТСЯ —
+        // до уязвимости и DoT нужно попасть несколько раз за доли секунды
+        expireAt = Time.time + stackDuration * (resist != null ? resist.DurationMult : 1f);
     }
 
     public void SetSource(Health s) => source = s;

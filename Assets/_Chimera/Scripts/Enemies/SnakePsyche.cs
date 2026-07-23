@@ -38,6 +38,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     [SerializeField] int quietCrowdSize = 2;
     [SerializeField] int fleeCrowdSize = 5;                 // ПОЛНАЯ СТАЯ: столько тёплых рядом — хищник стал жертвой, бежим
     [SerializeField] float fleeCheckRadius = 12f;
+    [SerializeField] float hogFearRadius = 10f;             // ЁЖ: уходим от ОДНОГО (см. CheckFlee) — против него приёмов нет
     [SerializeField] float rescueThreatRadius = 13f;        // спасатели НА ПОДХОДЕ: тёплый в этом радиусе во время удушения →
                                                             // защёлкнутую тушу заранее тащим на стену (гонка по вертикали)
     [SerializeField, Range(0.3f, 1f)] float fleeSpeedMult = 0.75f; // бежит чуть медленнее волков — настигаема (спасение = стена)
@@ -347,17 +348,32 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
             nextFleeCheck = Time.time + 0.3f;
             Vector3 centroid = Vector3.zero;
             int warm = 0;
+            Transform hog = null; float hogBest = hogFearRadius * hogFearRadius;
             foreach (var col in Physics.OverlapSphere(transform.position, fleeCheckRadius, ~0, QueryTriggerInteraction.Ignore))
             {
                 var hp = col.GetComponentInParent<Health>();
                 if (hp == null || hp.transform == transform || hp == constrictM.Victim) continue;
+
+                // ЁЖ — ЛИЧНЫЙ СТРАХ ЗМЕИ (экосистемный круг): против него у неё нет ни одного приёма —
+                // яд не берёт, бросок налетает на иглы, обхват срывается об них же. Поэтому уходит от
+                // ОДНОГО ежа, не дожидаясь толпы: это не паника, а трезвый расчёт холодной головы
+                if (hp.GetComponent<HedgehogPsyche>() != null)
+                {
+                    float dh = (hp.transform.position - transform.position).sqrMagnitude;
+                    if (dh < hogBest) { hogBest = dh; hog = hp.transform; }
+                    continue; // в «толпу» ежа не засчитываем — он считается отдельно и весомее
+                }
+
                 if (!Perception.IsWarm(hp.transform)) continue;
                 centroid += hp.transform.position; warm++;
             }
-            fleeing = warm >= fleeCrowdSize;
+
+            fleeing = hog != null || warm >= fleeCrowdSize;
             if (fleeing)
             {
-                Vector3 away = transform.position - centroid / warm; away.y = 0f;
+                Vector3 away = hog != null ? transform.position - hog.position
+                                           : transform.position - centroid / Mathf.Max(1, warm);
+                away.y = 0f;
                 fleeDir = away.sqrMagnitude > 0.01f ? away.normalized : -transform.forward;
             }
         }

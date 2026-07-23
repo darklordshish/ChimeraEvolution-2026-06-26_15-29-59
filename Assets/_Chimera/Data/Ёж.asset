@@ -10,223 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a1288631caffdf14aa2507535465cb11, type: 3}
-  m_Name: "\u041B\u043E\u0441\u044C"
+  m_Name: "\u0401\u0436"
   m_EditorClassIdentifier: Assembly-CSharp::SpeciesSO
-  speciesName: "\u041B\u043E\u0441\u044C"
-  tint: {r: 0.42, g: 0.32, b: 0.22, a: 1}
-  mutagenPool: 24
+  speciesName: "\u0401\u0436"
+  tint: {r: 0.58, g: 0.33, b: 0.28, a: 1}
+  mutagenPool: 18
   organs:
-  - organName: "\u041A\u043E\u043F\u044B\u0442\u043E"
-    slot: "\u0420\u0443\u043A\u0438"
-    hotkey: 1
-    cost: 5
-    damage: 22
-    lifeSteal: 0
-    staminaBonus: 0
-    staminaRegenBonus: 0
-    hpBonus: 0
-    venomStacks: 0
-    bleedStacks: 0
-    range: 1.8
-    atkCooldown: 0
-    moveSpeed: 0
-    dashSpeed: 0
-    dashCooldown: 0
-    damageReduction: 0
-    regen: 0
-    regenOOC: 0
-    dashDuration: 0
-    thermalRange: 0
-    howlStunAt: 0
-    howlRadius: 0
-    enablesBite: 0
-    enablesScent: 0
-    enablesKick: 0
-    enablesHowl: 0
-    coldBlooded: 0
-    camo: 0
-    enablesThermal: 0
-    enablesConstrict: 0
-    thorns: 0
-    venomResist: 0
-    keenHearing: 0
-    hearingMult: 0
-    insight: 0
-    enablesBellow: 0
-    enablesAntler: 0
-    enablesCharge: 0
-    chassisOnly: 0
-    digestion: 0
-    nativeChassis: 
-  - organName: "\u041B\u043E\u0441\u0438\u043D\u044B\u0435 \u043D\u043E\u0433\u0438"
-    slot: "\u041D\u043E\u0433\u0438"
-    hotkey: 2
-    cost: 5
-    damage: 0
-    lifeSteal: 0
-    staminaBonus: 0
-    staminaRegenBonus: 0
-    hpBonus: 0
-    venomStacks: 0
-    bleedStacks: 0
-    range: 0
-    atkCooldown: 0
-    moveSpeed: 5
-    dashSpeed: 35
-    dashCooldown: 0
-    damageReduction: 0
-    regen: 0
-    regenOOC: 0
-    dashDuration: 0.38
-    thermalRange: 0
-    howlStunAt: 0
-    howlRadius: 0
-    enablesBite: 0
-    enablesScent: 0
-    enablesKick: 0
-    enablesHowl: 0
-    coldBlooded: 0
-    camo: 0
-    enablesThermal: 0
-    enablesConstrict: 0
-    thorns: 0
-    venomResist: 0
-    keenHearing: 0
-    hearingMult: 0
-    insight: 0
-    enablesBellow: 0
-    enablesAntler: 0
-    enablesCharge: 1
-    chassisOnly: 0
-    digestion: 0
-    nativeChassis: 
-  - organName: "\u0413\u043B\u043E\u0442\u043A\u0430"
-    slot: "\u041F\u0430\u0441\u0442\u044C"
-    hotkey: 5
-    cost: 4
-    damage: 0
-    lifeSteal: 0
-    staminaBonus: 0
-    staminaRegenBonus: 0
-    hpBonus: 0
-    venomStacks: 0
-    bleedStacks: 0
-    range: 0
-    atkCooldown: 0
-    moveSpeed: 0
-    dashSpeed: 0
-    dashCooldown: 0
-    damageReduction: 0
-    regen: 0
-    regenOOC: 0
-    dashDuration: 0
-    thermalRange: 0
-    howlStunAt: 0
-    howlRadius: 0
-    enablesBite: 0
-    enablesScent: 0
-    enablesKick: 0
-    enablesHowl: 0
-    coldBlooded: 0
-    camo: 0
-    enablesThermal: 0
-    enablesConstrict: 0
-    thorns: 0
-    venomResist: 0
-    keenHearing: 0
-    hearingMult: 0
-    insight: 0
-    enablesBellow: 1
-    enablesAntler: 0
-    enablesCharge: 0
-    chassisOnly: 0
-    digestion: 0
-    nativeChassis: 
-  - organName: "\u0421\u043B\u0443\u0445"
-    slot: "\u0427\u0443\u0442\u044C\u0451"
-    hotkey: 4
-    cost: 3
-    damage: 0
-    lifeSteal: 0
-    staminaBonus: 0
-    staminaRegenBonus: 0
-    hpBonus: 0
-    venomStacks: 0
-    bleedStacks: 0
-    range: 0
-    atkCooldown: 0
-    moveSpeed: 0
-    dashSpeed: 0
-    dashCooldown: 0.7
-    damageReduction: 0
-    regen: 0
-    regenOOC: 0
-    dashDuration: 0
-    thermalRange: 0
-    howlStunAt: 0
-    howlRadius: 0
-    enablesBite: 0
-    enablesScent: 0
-    enablesKick: 0
-    enablesHowl: 0
-    coldBlooded: 0
-    camo: 0
-    enablesThermal: 0
-    enablesConstrict: 0
-    thorns: 0
-    venomResist: 0
-    keenHearing: 1
-    hearingMult: 2
-    insight: 0
-    enablesBellow: 0
-    enablesAntler: 0
-    enablesCharge: 0
-    chassisOnly: 0
-    digestion: 0
-    nativeChassis: 
-  - organName: "\u041B\u043E\u0441\u0438\u043D\u043E\u0435 \u0441\u0435\u0440\u0434\u0446\u0435"
-    slot: "\u0421\u0435\u0440\u0434\u0446\u0435"
-    hotkey: 3
-    cost: 6
-    damage: 0
-    lifeSteal: 0
-    staminaBonus: 0.6
-    staminaRegenBonus: 0
-    hpBonus: 1.7
-    venomStacks: 0
-    bleedStacks: 0
-    range: 0
-    atkCooldown: 0.5
-    moveSpeed: 0
-    dashSpeed: 0
-    dashCooldown: 0
-    damageReduction: 0
-    regen: 1
-    regenOOC: 0
-    dashDuration: 0
-    thermalRange: 0
-    howlStunAt: 0
-    howlRadius: 0
-    enablesBite: 0
-    enablesScent: 0
-    enablesKick: 0
-    enablesHowl: 0
-    coldBlooded: 0
-    camo: 0
-    enablesThermal: 0
-    enablesConstrict: 0
-    thorns: 0
-    venomResist: 0
-    keenHearing: 0
-    hearingMult: 0
-    insight: 0
-    enablesBellow: 0
-    enablesAntler: 0
-    enablesCharge: 0
-    chassisOnly: 0
-    digestion: 0
-    nativeChassis: 
-  - organName: "\u0422\u043E\u043B\u0441\u0442\u0430\u044F \u0448\u043A\u0443\u0440\u0430"
+  - organName: "\u0418\u0433\u043B\u044B"
     slot: "\u0428\u043A\u0443\u0440\u0430"
     hotkey: 6
     cost: 5
@@ -242,10 +32,52 @@ MonoBehaviour:
     moveSpeed: 0
     dashSpeed: 0
     dashCooldown: 0
-    damageReduction: 0.35
+    damageReduction: 0.2
     regen: 0
     regenOOC: 0
     dashDuration: 0
+    thermalRange: 0
+    howlStunAt: 0
+    howlRadius: 0
+    enablesBite: 0
+    enablesScent: 0
+    enablesKick: 0
+    enablesHowl: 0
+    coldBlooded: 0
+    camo: 0
+    enablesThermal: 0
+    enablesConstrict: 0
+    thorns: 1
+    venomResist: 0
+    keenHearing: 0
+    hearingMult: 0
+    insight: 0
+    enablesBellow: 0
+    enablesAntler: 0
+    enablesCharge: 0
+    chassisOnly: 0
+    digestion: 0
+    nativeChassis: 
+  - organName: "\u0415\u0436\u0438\u043D\u044B\u0435 \u043D\u043E\u0433\u0438"
+    slot: "\u041D\u043E\u0433\u0438"
+    hotkey: 2
+    cost: 4
+    damage: 0
+    lifeSteal: 0
+    staminaBonus: 0
+    staminaRegenBonus: 0
+    hpBonus: 0
+    venomStacks: 0
+    bleedStacks: 0
+    range: 0
+    atkCooldown: 0
+    moveSpeed: 6
+    dashSpeed: 18
+    dashCooldown: 0.35
+    damageReduction: 0
+    regen: 0
+    regenOOC: 0
+    dashDuration: 0.14
     thermalRange: 0
     howlStunAt: 0
     howlRadius: 0
@@ -268,11 +100,11 @@ MonoBehaviour:
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
-  - organName: "\u0420\u043E\u0433\u0430"
-    slot: "\u0420\u043E\u0433\u0430"
-    hotkey: 8
-    cost: 5
-    damage: 0
+  - organName: "\u0426\u0435\u043F\u043A\u0430\u044F \u043F\u0430\u0441\u0442\u044C"
+    slot: "\u041F\u0430\u0441\u0442\u044C"
+    hotkey: 5
+    cost: 4
+    damage: 22
     lifeSteal: 0
     staminaBonus: 0
     staminaRegenBonus: 0
@@ -291,7 +123,7 @@ MonoBehaviour:
     thermalRange: 0
     howlStunAt: 0
     howlRadius: 0
-    enablesBite: 0
+    enablesBite: 1
     enablesScent: 0
     enablesKick: 0
     enablesHowl: 0
@@ -305,11 +137,95 @@ MonoBehaviour:
     hearingMult: 0
     insight: 0
     enablesBellow: 0
-    enablesAntler: 1
+    enablesAntler: 0
     enablesCharge: 0
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
-  baseHp: 70
-  baseStamina: 140
-  baseStaminaRegen: 5
+  - organName: "\u042F\u0434\u043E\u0443\u043F\u043E\u0440\u043D\u043E\u0435 \u0441\u0435\u0440\u0434\u0446\u0435"
+    slot: "\u0421\u0435\u0440\u0434\u0446\u0435"
+    hotkey: 3
+    cost: 6
+    damage: 0
+    lifeSteal: 0
+    staminaBonus: 0.4
+    staminaRegenBonus: 0.3
+    hpBonus: 1.2
+    venomStacks: 0
+    bleedStacks: 0
+    range: 0
+    atkCooldown: 0.5
+    moveSpeed: 0
+    dashSpeed: 0
+    dashCooldown: 0
+    damageReduction: 0
+    regen: 0.5
+    regenOOC: 0
+    dashDuration: 0
+    thermalRange: 0
+    howlStunAt: 0
+    howlRadius: 0
+    enablesBite: 0
+    enablesScent: 0
+    enablesKick: 0
+    enablesHowl: 0
+    coldBlooded: 0
+    camo: 0
+    enablesThermal: 0
+    enablesConstrict: 0
+    thorns: 0
+    venomResist: 1
+    keenHearing: 0
+    hearingMult: 0
+    insight: 0
+    enablesBellow: 0
+    enablesAntler: 0
+    enablesCharge: 0
+    chassisOnly: 0
+    digestion: 0
+    nativeChassis: 
+  - organName: "\u041F\u044F\u0442\u0430\u043A"
+    slot: "\u0427\u0443\u0442\u044C\u0451"
+    hotkey: 4
+    cost: 3
+    damage: 0
+    lifeSteal: 0
+    staminaBonus: 0
+    staminaRegenBonus: 0
+    hpBonus: 0
+    venomStacks: 0
+    bleedStacks: 0
+    range: 0
+    atkCooldown: 0
+    moveSpeed: 0
+    dashSpeed: 0
+    dashCooldown: 0.5
+    damageReduction: 0
+    regen: 0
+    regenOOC: 0
+    dashDuration: 0
+    thermalRange: 0
+    howlStunAt: 0
+    howlRadius: 0
+    enablesBite: 0
+    enablesScent: 1
+    enablesKick: 0
+    enablesHowl: 0
+    coldBlooded: 0
+    camo: 0
+    enablesThermal: 0
+    enablesConstrict: 0
+    thorns: 0
+    venomResist: 0
+    keenHearing: 1
+    hearingMult: 1.6
+    insight: 0
+    enablesBellow: 0
+    enablesAntler: 0
+    enablesCharge: 0
+    chassisOnly: 0
+    digestion: 0
+    nativeChassis: 
+  baseHp: 52
+  baseStamina: 60
+  baseStaminaRegen: 8

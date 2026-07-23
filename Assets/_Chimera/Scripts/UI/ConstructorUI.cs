@@ -35,6 +35,9 @@ public class ConstructorUI : MonoBehaviour
     static readonly Color SocketNo = new(0.62f, 0.25f, 0.18f, 1f);    // отказ: не по карману / уже носишь
     static readonly Color StarBeast = new(0.62f, 0.60f, 0.44f, 1f);   // стартовый цвет карточки (перекрасит Refresh)
 
+    // ширина каждого «неба»: под ней делятся колонки видов (см. Rebuild — раскладка считается, не задана)
+    const float SkyWidth = 560f;
+
     public static bool IsOpen { get; private set; }
 
     InputAction toggleAction;
@@ -190,8 +193,10 @@ public class ConstructorUI : MonoBehaviour
         vitr.raycastTarget = false; // рисунок не перехватывает перетаскивание в гнёзда
 
         // НЕБО по сторонам — созвездия доноров
-        skyLeft = NewPane("SkyLeft", panel.transform, new Vector2(-520, -20), new Vector2(420, 620));
-        skyRight = NewPane("SkyRight", panel.transform, new Vector2(520, -20), new Vector2(420, 620));
+        // Небо ШИРЕ фигуры и отодвинуто от неё: колонок в нём столько, сколько видов, и при пятом
+        // (ёж) прежние 420 переставали вмещать третью — созвездие наезжало на витрувианскую фигуру
+        skyLeft = NewPane("SkyLeft", panel.transform, new Vector2(-600, -20), new Vector2(SkyWidth, 620));
+        skyRight = NewPane("SkyRight", panel.transform, new Vector2(600, -20), new Vector2(SkyWidth, 620));
 
         identityText = NewText("Identity", panel.transform, "", 20, Sepia, TextAnchor.LowerCenter);
         Bottom(identityText.rectTransform, 82, 28);
@@ -296,6 +301,13 @@ public class ConstructorUI : MonoBehaviour
         var donors = new List<string>();
         foreach (var s in stars) if (!donors.Contains(s.species)) donors.Add(s.species);
 
+        // РАСКЛАДКА КОЛОНОК СЧИТАЕТСЯ ОТ ЧИСЛА ВИДОВ, а не задана константами: виды прибавляются
+        // (ёж стал пятым, впереди сова), и жёсткий шаг «-100 + col*200» уводил третью колонку на фигуру
+        int perSide = Mathf.Max(1, Mathf.CeilToInt(donors.Count / 2f)); // колонок на каждом небе
+        float colW = SkyWidth / perSide;
+        float colX0 = -SkyWidth * 0.5f + colW * 0.5f;                  // центр первой колонки
+        float starW = Mathf.Min(172f, colW - 12f);                     // звезда не шире своей колонки
+
         var chains = new Dictionary<string, List<(RectTransform host, Vector2 pos)>>(); // узлы созвездия для линий
         foreach (var s in stars)
         {
@@ -303,13 +315,13 @@ public class ConstructorUI : MonoBehaviour
             RectTransform host = (di % 2 == 0) ? skyLeft : skyRight;
             int col = di / 2;                       // вид — своя колонка на своём небе
             int row = rowTypes.IndexOf(s.slotType); // слот — своя строка (общая для всех видов)
-            Vector2 pos = new Vector2(-100 + col * 200, 250 - row * 60);
+            Vector2 pos = new Vector2(colX0 + col * colW, 250 - row * 60);
 
             if (!chains.TryGetValue(s.species, out var list)) chains[s.species] = list = new();
             list.Add((host, pos));
 
             var img = NewImage("Star", host, StarBeast);
-            Center(img.rectTransform, 172, 46);
+            Center(img.rectTransform, starW, 46);
             img.rectTransform.anchoredPosition = pos;
             var o = img.gameObject.AddComponent<Outline>();
             o.effectColor = Border;
@@ -346,8 +358,8 @@ public class ConstructorUI : MonoBehaviour
             int di = donors.IndexOf(sp);
             var host = (di % 2 == 0) ? skyLeft : skyRight;
             var cap = NewText("Cap_" + sp, host, "◈ " + sp + " ◈", 20, SepiaFaint, TextAnchor.UpperCenter);
-            Center(cap.rectTransform, 260, 26);
-            cap.rectTransform.anchoredPosition = new Vector2(-100 + (di / 2) * 200, 300);
+            Center(cap.rectTransform, colW - 6f, 26);
+            cap.rectTransform.anchoredPosition = new Vector2(colX0 + (di / 2) * colW, 300);
         }
         // фигура — не созвездие, а собранное ТЕЛО (созвездие Человека теперь в небе наравне с донорами)
         var figCap = NewText("FigCap", figure, "— тело химеры —", 19, SepiaFaint, TextAnchor.UpperCenter);

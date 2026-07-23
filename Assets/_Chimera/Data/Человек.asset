@@ -47,6 +47,8 @@ MonoBehaviour:
     camo: 0
     enablesThermal: 0
     enablesConstrict: 0
+    thorns: 0
+    venomResist: 0
     keenHearing: 0
     hearingMult: 0
     insight: 0
@@ -87,6 +89,8 @@ MonoBehaviour:
     camo: 0
     enablesThermal: 0
     enablesConstrict: 0
+    thorns: 0
+    venomResist: 0
     keenHearing: 0
     hearingMult: 0
     insight: 0
@@ -127,6 +131,8 @@ MonoBehaviour:
     camo: 0
     enablesThermal: 0
     enablesConstrict: 0
+    thorns: 0
+    venomResist: 0
     keenHearing: 0
     hearingMult: 0
     insight: 0
@@ -167,6 +173,8 @@ MonoBehaviour:
     camo: 0
     enablesThermal: 0
     enablesConstrict: 0
+    thorns: 0
+    venomResist: 0
     keenHearing: 0
     hearingMult: 0
     insight: 1
@@ -207,6 +215,8 @@ MonoBehaviour:
     camo: 0
     enablesThermal: 0
     enablesConstrict: 0
+    thorns: 0
+    venomResist: 0
     keenHearing: 0
     hearingMult: 0
     insight: 0
@@ -247,6 +257,8 @@ MonoBehaviour:
     camo: 0
     enablesThermal: 0
     enablesConstrict: 0
+    thorns: 0
+    venomResist: 0
     keenHearing: 0
     hearingMult: 0
     insight: 0

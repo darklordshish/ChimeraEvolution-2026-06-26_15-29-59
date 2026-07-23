@@ -93,6 +93,8 @@ public class CreatureBody : MonoBehaviour
     SpawnVariance variance; // разброс особи: HP учитываем при раздаче витальности (иначе гонка Start'ов)
     ColdBlooded cold;       // холоднокровность (Сердце змеи) — компонент-маркер, вешаем/снимаем по сборке
     Camouflage camoComp;    // камуфляж-в-неподвижности (Чешуя змеи) — вешаем/снимаем по сборке
+    Thorns thornsComp;      // иглы-ответка (Шкура ежа) — тем же паттерном
+    VenomResist venomResistComp; // ядоупорность (Сердце ежа)
     PlayerBellow bellowAb;  // рёв (Глотка лося) — до-создаём игроку в Awake, включаем сборкой
     PlayerAntler antlerAb;  // рога (придаток лося, химерный слот) — до-создаём игроку, включаем сборкой
     PlayerCharge chargeAb;  // таран (Лосиные ноги) — до-создаём игроку, включаем сборкой
@@ -105,6 +107,8 @@ public class CreatureBody : MonoBehaviour
     static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
 
     public const int AffinityCap = 100; // потолок родства на вид (дальше некуда: скидка и мощь на полке)
+
+    [SerializeField] float assistFeedRadius = 14f; // сытость помощникам: тела своего вида в этом радиусе от убийцы делят добычу (радиус стаи)
 
     // РОДСТВО — ЛОКАЛЬНОЕ, в теле КАЖДОГО существа (не в глобальном трекере: «ЦНС» игры не грузим).
     // Все звери мира — эксперименты с сывороткой (или съевшие их) → родство = база любого тела.
@@ -425,8 +429,11 @@ public class CreatureBody : MonoBehaviour
         if (move != null) PlayerBody = this;
 
         // ЛИЦО игрока (глаза/брови/борода из PlayerModel) тинтом состава НЕ красим — черты остаются читаемыми
+        // ЗУБЫ тоже вне тинта: у модели игрока они отдельной деталью со своим костяным материалом, и
+        // без исключения зеленели бы вместе с телом — оскал должен читаться на любом составе
         renderers = System.Array.FindAll(GetComponentsInChildren<Renderer>(), r =>
-            r.name != "EyeL" && r.name != "EyeR" && r.name != "BrowL" && r.name != "BrowR" && r.name != "Beard");
+            r.name != "EyeL" && r.name != "EyeR" && r.name != "BrowL" && r.name != "BrowR"
+            && r.name != "Beard" && r.name != "Teeth");
         mpb = new MaterialPropertyBlock();
     }
 
@@ -488,8 +495,21 @@ public class CreatureBody : MonoBehaviour
             ? health.LastAttacker.GetComponent<CreatureBody>() : null;
         if (killer == null || killer == this) return;
 
-        // ПЕРЕВАРИВАНИЕ: убийца с телом-глотателем (шасси змеи) съедает добычу — тот же канал, что родство
+        // СЫТОСТЬ — хищник наелся: временный бонус-реген (экосистема самоподдерживается, победитель не
+        // остаётся сразу добычей). У змеи своё ПЕРЕВАРИВАНИЕ (прерывается уроном) — ей сытость не даём,
+        // чтобы не лечить дважды. Убийце — полный бонус, стае рядом (делили тушу) — половина
         if (killer.TryGetComponent<Digestion>(out var dig)) dig.OnAte();
+        else (killer.GetComponent<Satiety>() ?? killer.gameObject.AddComponent<Satiety>()).Feed(1f);
+
+        // помощники: тела ТОГО ЖЕ вида рядом с убийцей делят трапезу (стая волков) — половина бонуса
+        if (killer.chassis != null)
+            foreach (var col in Physics.OverlapSphere(killer.transform.position, assistFeedRadius, ~0, QueryTriggerInteraction.Ignore))
+            {
+                var ally = col.GetComponentInParent<CreatureBody>();
+                if (ally == null || ally == killer || ally == this || ally.chassis != killer.chassis) continue;
+                if (ally.TryGetComponent<Digestion>(out _)) continue; // у своего переваривания — не удваиваем
+                (ally.GetComponent<Satiety>() ?? ally.gameObject.AddComponent<Satiety>()).Feed(0.5f);
+            }
 
         var present = new HashSet<string>();
         if (chassis != null) present.Add(chassis.speciesName);
@@ -518,6 +538,7 @@ public class CreatureBody : MonoBehaviour
         public float dmg, hpBonus, stam, stamRegen, life, rng, atkCd, mv, dash, dashDur, dashCd, reduce, regen, regenOOC, thermal, howlR, howlStunAt;
         public int venom, bleed;
         public bool bite, scent, kick, howl, cold, camo, thermalOn, constrict, digest, bellow, antler, charge;
+        public bool thorns, venomResist; // иглы-ответка и ядоупорность (ёж)
         public bool insight; // ЧУТЬЁ УЧЁНОГО: распознавание намерений + числа состояний (человеческое Чутьё)
         public bool keenEar;  // ОСТРЫЙ СЛУХ: различение вида источника + волны звука на экране
         public float earMult; // множитель дальности слуха (супремум дублей)
@@ -543,6 +564,7 @@ public class CreatureBody : MonoBehaviour
             digest = a.digest || b.digest, bellow = a.bellow || b.bellow, antler = a.antler || b.antler,
             charge = a.charge || b.charge, insight = a.insight || b.insight,
             keenEar = a.keenEar || b.keenEar, earMult = Mathf.Max(a.earMult, b.earMult),
+            thorns = a.thorns || b.thorns, venomResist = a.venomResist || b.venomResist,
         };
     }
 
@@ -600,6 +622,7 @@ public class CreatureBody : MonoBehaviour
             constrict = w.enablesConstrict, digest = w.digestion, bellow = w.enablesBellow,
             antler = w.enablesAntler, charge = w.enablesCharge, insight = w.insight,
             keenEar = w.keenHearing, earMult = w.hearingMult,
+            thorns = w.thorns, venomResist = w.venomResist,
             constrictNative = w.enablesConstrict && chassis != null && w.nativeChassis == chassis.speciesName,
         };
     }
@@ -628,7 +651,8 @@ public class CreatureBody : MonoBehaviour
         int venom = 0, bleed = 0;
         bool biteOn = false, scentOn = false, kickOn = false, howlOn = false, coldOn = false, camoOn = false,
              thermalOn = false, constrictOn = false, digestOn = false, bellowOn = false, antlerOn = false, chargeOn = false,
-             constrictNativeOn = false, insightOn = false, keenEarOn = false;
+             constrictNativeOn = false, insightOn = false, keenEarOn = false,
+             thornsOn = false, venomResistOn = false;
         float earMult = 0f;
         foreach (var kv in groups)
         {
@@ -644,6 +668,7 @@ public class CreatureBody : MonoBehaviour
             digestOn |= c.digest; bellowOn |= c.bellow; antlerOn |= c.antler; chargeOn |= c.charge;
             constrictNativeOn |= c.constrictNative; insightOn |= c.insight;
             keenEarOn |= c.keenEar; earMult = Mathf.Max(earMult, c.earMult);
+            thornsOn |= c.thorns; venomResistOn |= c.venomResist;
         }
         int dmg = Mathf.RoundToInt(dmgF), dmgBite = Mathf.RoundToInt(dmgBiteF);
         int life = Mathf.RoundToInt(lifeF);
@@ -676,6 +701,8 @@ public class CreatureBody : MonoBehaviour
         SetColdBlooded(coldOn); // холоднокровность (Сердце змеи): невидимость для термозрения врагов
         SetCamouflage(camoOn);  // камуфляж (Чешуя змеи): невидимость в неподвижности
         SetDigestion(digestOn); // переваривание (Тело-хвост змеи): убил → сыт, бонус-реген до полного HP
+        SetThorns(thornsOn);          // иглы (Шкура ежа): ударил в упор — порезался
+        SetVenomResist(venomResistOn); // ядоупорность (Сердце ежа): яд не накапливается
         if (move != null) // чувства игрока меняет ТОЛЬКО тело игрока (NPC-тело не должно включать их игроку)
         {
             Perception.WolfScent = scentOn;
@@ -750,6 +777,20 @@ public class CreatureBody : MonoBehaviour
     {
         if (on && cold == null) cold = gameObject.AddComponent<ColdBlooded>();
         else if (!on && cold != null) { Destroy(cold); cold = null; }
+    }
+
+    // ИГЛЫ как компонент: тем же паттерном — снял Шкуру ежа, и ответка исчезла вместе с ней
+    void SetThorns(bool on)
+    {
+        if (on && thornsComp == null) thornsComp = gameObject.AddComponent<Thorns>();
+        else if (!on && thornsComp != null) { Destroy(thornsComp); thornsComp = null; }
+    }
+
+    // ЯДОУПОРНОСТЬ как маркер: опрашивается ядом при добавлении стака (по образцу ColdBlooded)
+    void SetVenomResist(bool on)
+    {
+        if (on && venomResistComp == null) venomResistComp = gameObject.AddComponent<VenomResist>();
+        else if (!on && venomResistComp != null) { Destroy(venomResistComp); venomResistComp = null; }
     }
 
     // камуфляж-в-неподвижности как компонент: вешаем/снимаем по итогу сборки (живо на смене Шкуры у игрока)

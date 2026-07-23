@@ -59,8 +59,9 @@
 - **Для игрока**: `MonoBehaviour + IAbility.TryUse()` (кулдаун внутри), бинд в `PlayerInputDriver`, при органной привязке — флаг `enablesX` (образец: `PlayerHowl`).
 
 ### Добавить эффект удара
-Одна ветка: значение в `EffectKind`, фабрика в `HitEffect`, `case` в `Hit.Apply`. Проверено на `Stun` и `Venom`.
-Кандидаты в очереди (ждут носителей): кровотечение (DoT-вариант яда), страх (дёрнет `WolfPsyche.AddFear`).
+Одна ветка: значение в `EffectKind`, фабрика в `HitEffect`, `case` в `Hit.Apply`. Проверено на `Stun`, `Venom`, `Bleed`, `Slow`.
+`Slow` (иглы ежа) — накопительное замедление: стаки тают, читаются ЕДИНОЙ точкой хода (`NavLocomotion.Move` у NPC, `PlayerController` у игрока), глубина = число попавших снарядов.
+Кандидаты в очереди (ждут носителей): страх (дёрнет `WolfPsyche.AddFear`).
 
 ### Добавить новую сенсорику (ось восприятия)
 

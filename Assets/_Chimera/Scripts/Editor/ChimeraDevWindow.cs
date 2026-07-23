@@ -196,6 +196,13 @@ public class ChimeraDevWindow : EditorWindow
             "+1", mooseSpawner != null ? () => mooseSpawner.SpawnBurst(1) : null,
             () => KillAll(moose));
 
+        var hogs = Object.FindObjectsByType<HedgehogPsyche>();
+        var hogSpawner = Object.FindAnyObjectByType<HedgehogSpawner>();
+        SpeciesRow(pb, "Ёж", hogs.Length,
+            "рядом", SpawnHedgehog,
+            "+3", hogSpawner != null ? () => hogSpawner.SpawnBurst(3) : null,
+            () => KillAll(hogs));
+
         // Человек — полноценный вид со своим родством, но в сцене не водится: только левая половина строки
         SpeciesRow(pb, "Человек", -1, null, null, null, null, null);
 
@@ -318,6 +325,7 @@ public class ChimeraDevWindow : EditorWindow
         EditorGUILayout.LabelField(NearestAlert<WolfPsyche>(pc, "Волк"));
         EditorGUILayout.LabelField(NearestAlert<SnakePsyche>(pc, "Змея"));
         EditorGUILayout.LabelField(NearestAlert<MoosePsyche>(pc, "Лось"));
+        EditorGUILayout.LabelField(NearestAlert<HedgehogPsyche>(pc, "Ёж"));
     }
 
     // ── СОСТАВ ТЕЛА: кем тебя считают и во что обошлась сборка (дубль конструктора — но без Tab) ──
@@ -419,6 +427,16 @@ public class ChimeraDevWindow : EditorWindow
         if (NavMesh.SamplePosition(pos, out var hit, 10f, NavMesh.AllAreas)) pos = hit.position;
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(MoosePrefab.Path);
         var go = prefab != null ? Object.Instantiate(prefab) : MoosePrefab.BuildMoose();
+        go.transform.position = pos;
+    }
+
+    static void SpawnHedgehog()
+    {
+        var pc = Object.FindAnyObjectByType<PlayerController>();
+        Vector3 pos = (pc != null ? pc.transform.position : Vector3.zero) + new Vector3(8f, 0f, 6f);
+        if (NavMesh.SamplePosition(pos, out var hit, 10f, NavMesh.AllAreas)) pos = hit.position;
+        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(HedgehogPrefab.Path);
+        var go = prefab != null ? Object.Instantiate(prefab) : HedgehogPrefab.BuildHedgehog();
         go.transform.position = pos;
     }
 

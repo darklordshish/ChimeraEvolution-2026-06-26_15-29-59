@@ -280,6 +280,8 @@ public class VitalsHud : MonoBehaviour
         string s = "";
         if (h.TryGetComponent<Venom>(out var v) && v.Stacks > 0) s += $"  <color=#73D933>☠{N(v.Stacks, numbers)}</color>";
         if (h.TryGetComponent<Bleed>(out var b) && b.Stacks > 0) s += $"  <color=#B80A1F>♦♦{N(b.Stacks, numbers)}</color>";
+        if (h.TryGetComponent<Slow>(out var sl) && sl.Stacks > 0) s += $"  <color=#73B3F2>❄{N(sl.Stacks, numbers)}</color>"; // замедление — стылый голубой
+        if (h.TryGetComponent<Satiety>(out var sat) && sat.IsSated) s += "  <color=#7BE0A0>✚</color>"; // сыт — восстанавливается (зелёный крест)
         if (h.TryGetComponent<Stagger>(out var st) && st.IsStunned) s += "  <color=#EBEBD9>✱</color>";
         if (h.TryGetComponent<Morale>(out var m) && Mathf.Abs(m.Current) >= 0.5f)
         {
