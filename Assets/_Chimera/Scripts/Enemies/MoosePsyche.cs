@@ -43,6 +43,11 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     [SerializeField] float provokeMoraleStack = 5f;  // ЯРОСТЬ высокая: рёв/провокация вливают в шкалу духа (себе И сородичам через цепь)
     [SerializeField] float calmDistance = 18f;       // разъярённый остывает: цель дальше этого ИЛИ вне зрения дольше calmDelay
     [SerializeField] float calmDelay = 5f;
+    [SerializeField] float leashRange = 20f;         // ПОВОДОК: отошёл дальше этого от места, где разъярился — ВКОПАЛСЯ.
+                                                     // Территориальный зверь бьёт что подойдёт, но за ускользающей целью
+                                                     // через всю арену не идёт: иначе стая-«тень» водит его связкой вдоль
+                                                     // стены. НЕ гасит ярость (в отличие от прежнего тайм-аута, который в
+                                                     // окружении вырубал лося каждые пару секунд — «бьёт, но подтупливает»)
 
     [Header("Рёв — крик угрозы (срез D)")]
     [SerializeField] float bellowRadius = 10f;      // ужас — ЛИЧНОЕ ПРОСТРАНСТВО (= граница лесенки): сунулся внутрь — получил по духу
@@ -77,7 +82,8 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     float nextAttackTime, nextBellow, bellowCueUntil, nextThreatScan; // вертикаль/гравитация — в NavLocomotion
     bool provoked, playerKinNow; // кин-игрок: не провоцирует лесенку (даже когда других угроз нет и цель — он)
     float irritation;      // ЛЕСЕНКА 0..1: копится от видимого провокатора, спадает без него
-    float calmSince = -1f; // разъярён: с какого момента сцена «рассосалась» (не видит/далеко)
+    float calmSince = -1f;    // разъярён: с какого момента сцена «рассосалась» (не видит/далеко)
+    Vector3 provokeOrigin;    // место, где разъярился — центр поводка (см. leashRange)
     int tellStep;          // последняя озвученная ступень (фырк/топот не спамим)
     Vector3 noisePos;      // слух: последний услышанный шум — следим/отходим
     float noiseUntil;
@@ -158,6 +164,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
         bool fresh = !provoked;
         if (fresh && rage != null) rage.Enrage(berserkDuration);
         if (morale != null) morale.Add(provokeMoraleStack); // ЯРОСТЬ высокая в шкалу духа — морда красится градусником (однородно с волком)
+        if (fresh) provokeOrigin = transform.position; // центр поводка = место вспышки ярости
         provoked = true;
         irritation = 1f;
         if (fresh) TryBellow(); // вход в ярость — крик угрозы
@@ -363,6 +370,11 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
                 if (dist >= charge.MinRange && dist <= charge.MaxRange && (Breath == null || Breath.Has(ChargeCost)))
                 { if (charge.TryUse()) { Breath?.TrySpend(ChargeCost); activeAbility = charge; } Settle(Vector3.zero); return; }
             }
+            // ПОВОДОК: ушёл от места вспышки дальше leashRange — ВКОПАЛСЯ. Мордой к цели, бью что подойдёт
+            // (проверка приёмов выше уже отработала), но дальше за ускользающей целью не иду — иначе стая-«тень»
+            // уводит связкой вдоль стены. Ярость при этом ЖИВА (лось не вянет, просто держит землю)
+            if ((transform.position - provokeOrigin).sqrMagnitude > leashRange * leashRange) { Settle(Vector3.zero); return; }
+
             // жжём бак, только пока РЕАЛЬНО бежим: вплотную он топчется у рогов, а не преследует
             if (dist > antler.Range) Breath?.Drain(ChaseDrain * Time.deltaTime);
             Settle(nav.Arrive(target.position, Speed, stopAt: antler.Range * 0.8f)); // догоняет, тормозя у рогов
