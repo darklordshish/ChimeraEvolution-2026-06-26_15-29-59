@@ -197,9 +197,15 @@ public class PlayerController : MonoBehaviour
         // свою голову от ПЕРВОГО лица не рендерим (нос/куб лезут в камеру) — классика FPS; в 3-м лице возвращаем.
         // Лицо (глаза/брови/борода из PlayerModel) прячется вместе с головой
         foreach (var r in GetComponentsInChildren<Renderer>())
-            if (r.name == "Head" || r.name == "Nose" || r.name == "EyeL" || r.name == "EyeR"
-                || r.name == "BrowL" || r.name == "BrowR" || r.name == "Beard") r.enabled = !on;
+            if (IsOwnFace(r.name)) r.enabled = !on;
     }
+
+    // ЧТО ПРЯЧЕМ ОТ ПЕРВОГО ЛИЦА: всю голову целиком. Список синхронизирован с моделью игрока — у неё
+    // голова нарезана по слотам органов, и без челюсти с ушами они висели бы в камере отдельно от лица
+    static bool IsOwnFace(string n) =>
+        n == "Head" || n == "Nose" || n == "Jaw" || n == "Teeth"
+        || n == "EyeL" || n == "EyeR" || n == "EarL" || n == "EarR"
+        || n == "BrowL" || n == "BrowR" || n == "Beard";
 
     // конструктор меняет мобильность при смене органа в слоте «Ноги»
     public void SetLegs(float newMoveSpeed, float newDashSpeed, float newDashDuration = 0f)

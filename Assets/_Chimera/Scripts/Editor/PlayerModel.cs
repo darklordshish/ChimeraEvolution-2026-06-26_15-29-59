@@ -14,10 +14,13 @@ public static class PlayerModel
     // все имена деталей, которые генератор считает СВОИМИ (сносит перед пересборкой)
     static readonly string[] Known =
         { "Capsule", "Body", "Chest", "Neck", "Pelvis", "Head", "Nose", "ArmL", "ArmR", "HandL", "HandR", "LegL", "LegR",
-          "EyeL", "EyeR", "BrowL", "BrowR", "Beard" };
+          "EyeL", "EyeR", "BrowL", "BrowR", "Beard", "Model" };
 
+    const string ModelPath = "Assets/_Chimera/Models/Player.fbx";
     const string EyeMatPath = "Assets/_Chimera/Materials/PlayerEyes.mat";
     const string BeardMatPath = "Assets/_Chimera/Materials/PlayerBeard.mat";
+    const string TeethMatPath = "Assets/_Chimera/Materials/PlayerTeeth.mat";
+    const string SkinMatPath = "Assets/_Chimera/Materials/PlayerSkin.mat";
 
     [MenuItem("Chimera/Собрать модель игрока")]
     public static void Rebuild()
@@ -41,6 +44,15 @@ public static class PlayerModel
         {
             var c = t.GetChild(i);
             if (System.Array.IndexOf(Known, c.name) >= 0) Object.DestroyImmediate(c.gameObject);
+        }
+
+        // МОДЕЛЬ из Blender, если она есть; кубы остаются запасным визуалом (и историей проекта)
+        if (TryAttachModel(t, footY))
+        {
+            EditorSceneManager.MarkSceneDirty(t.gameObject.scene);
+            Debug.Log("Модель игрока подключена из " + ModelPath + ". Сохрани сцену (Ctrl+S). "
+                    + "Тинт состава и FPS-скрытие работают по именам деталей — они совпадают с контрактом.");
+            return;
         }
 
         // ── человек-учёный из кубов (рост ~1.9; худой — «до озверения») ──
@@ -90,8 +102,44 @@ public static class PlayerModel
         Debug.Log("Модель игрока пересобрана (человек из кубов, с лицом). Сохрани сцену (Ctrl+S). Тинт состава/FPS-скрытие подхватятся сами.");
     }
 
+    /// <summary>Модель из Blender: вставляем ВЛОЖЕННЫМ префабом (`InstantiatePrefab`, не `Instantiate`) —
+    /// связь с FBX живая, и перегенерация модели в соседней линии работ подхватится сама.
+    ///
+    /// ПОВОРОТ КОРНЯ, приходящий из файла, НЕ ТРОГАЕМ (README моделей: обнуление кладёт фигуру на нос).
+    /// Двигаем только по вертикали: модель построена от нуля, а корень игрока — ЦЕНТР капсулы
+    /// контроллера, поэтому её надо опустить к подошвам.
+    ///
+    /// Материалы красим ПО ИМЕНАМ: кожа отдельно от лица не случайно — тинт состава (`CreatureBody`)
+    /// перекрашивает тело по мере озверения, но обходит глаза, брови, бороду и зубы. Борода учёного на
+    /// озверевшем теле — намеренный образ, а не недосмотр.</summary>
+    static bool TryAttachModel(Transform parent, float footY)
+    {
+        var fbx = AssetDatabase.LoadAssetAtPath<GameObject>(ModelPath);
+        if (fbx == null) return false;
+
+        var inst = (GameObject)PrefabUtility.InstantiatePrefab(fbx);
+        inst.name = "Model";
+        inst.transform.SetParent(parent, false);
+        inst.transform.localPosition = new Vector3(0f, footY, 0f);
+
+        var skin = GetOrCreateMat(SkinMatPath, new Color(0.70f, 0.56f, 0.46f), 0.75f);
+        var eyes = GetOrCreateMat(EyeMatPath, new Color(0.10f, 0.10f, 0.12f), 0.25f);
+        var hair = GetOrCreateMat(BeardMatPath, new Color(0.38f, 0.33f, 0.27f), 0.85f);
+        var teeth = GetOrCreateMat(TeethMatPath, new Color(0.88f, 0.86f, 0.79f), 0.45f);
+
+        foreach (var r in inst.GetComponentsInChildren<Renderer>())
+        {
+            string n = r.gameObject.name;
+            r.sharedMaterial = n == "EyeL" || n == "EyeR" ? eyes
+                             : n == "BrowL" || n == "BrowR" || n == "Beard" ? hair
+                             : n == "Teeth" ? teeth
+                             : skin;
+        }
+        return true;
+    }
+
     // материал по пути: загрузить или создать с цветом (идемпотентно, как у других генераторов)
-    static Material GetOrCreateMat(string path, Color color)
+    static Material GetOrCreateMat(string path, Color color, float smoothness = -1f)
     {
         var mat = AssetDatabase.LoadAssetAtPath<Material>(path);
         if (mat == null)
@@ -99,9 +147,13 @@ public static class PlayerModel
             var probe = GameObject.CreatePrimitive(PrimitiveType.Cube); // взять дефолтный шейдер пайплайна
             mat = new Material(probe.GetComponent<Renderer>().sharedMaterial);
             Object.DestroyImmediate(probe);
-            mat.SetColor("_BaseColor", color);
             AssetDatabase.CreateAsset(mat, path);
         }
+        // цвет и блеск обновляем ВСЕГДА, а не только при создании: иначе правка палитры в коде молча
+        // не доезжала бы до уже существующего ассета
+        mat.SetColor("_BaseColor", color);
+        if (smoothness >= 0f && mat.HasProperty("_Smoothness")) mat.SetFloat("_Smoothness", smoothness);
+        EditorUtility.SetDirty(mat);
         return mat;
     }
 }
