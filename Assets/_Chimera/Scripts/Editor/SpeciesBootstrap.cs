@@ -84,6 +84,7 @@ public static class SpeciesBootstrap
         moose.speciesName = "Лось";
         moose.tint = new Color(0.42f, 0.32f, 0.22f); // тёмно-бурый
         moose.mutagenPool = 24;
+        moose.eatsMeat = false; // ТРАВОЯДНЫЙ: волков не ест, добычей не восстанавливается (его еда — кормёжка по карте, будущий слайс)
         moose.baseHp = 70;  // туша, но витальность лося больше в сердце, чем в самом теле
         moose.baseStamina = 140;     // ОГРОМНЫЙ бак при СЛАБОМ регене: прёт долго, а отходит медленно —
         moose.baseStaminaRegen = 5f; // загнанный лось потому и страшен, что запас у него кончается не сразу

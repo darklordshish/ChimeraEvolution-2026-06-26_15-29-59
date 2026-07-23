@@ -35,7 +35,7 @@
 
 ## Где что лежит (`Assets/_Chimera/Scripts/`)
 
-`Combat/` разложен по смыслу: **`Core/`** — фундамент (`Health`, `Hit`+`HitEffect`, `MeleeBlow`, `TargetScan`, интерфейсы, `Hitstop`); **`Deliveries/`** — доставки приёмов (`WindupAbility` и наследники, `KinVoice`); **`Machines/`** — стадийные машины (`Constrict`, `Grabbed`); **`Statuses/`** — статусы-компоненты (`Rage`, `Morale`, `Betrayal`, `Venom`, `Bleed`, `Stagger`, `Knockback`, `Massive`, `Digestion`, `SpawnVariance`); **`Feedback/`** — язык сигналов (`Telegraph`+цвета, `EmotionTint`, `HitFlash`, `StunTint`). Рядом: `Player/` (тело+драйверы игрока), `Enemies/` (психики+спавнеры), `Senses/` (восприятие), `Editor/` (генераторы префабов/видов), `Arena/`, `Progression/`, `UI/`, `Debug/`.
+`Combat/` разложен по смыслу: **`Core/`** — фундамент (`Health`, `Hit`+`HitEffect`, `MeleeBlow`, `TargetScan`, интерфейсы, `Hitstop`); **`Deliveries/`** — доставки приёмов (`WindupAbility` и наследники, `KinVoice`); **`Machines/`** — стадийные машины (`Constrict`, `Grabbed`); **`Statuses/`** — статусы-компоненты (`Rage`, `Morale`, `Betrayal`, `Venom`, `Bleed`, `Slow`, `Stagger`, `Knockback`, `Massive`, `Satiety`, `Thorns`, `VenomResist`, `SpawnVariance`); **`Feedback/`** — язык сигналов (`Telegraph`+цвета, `EmotionTint`, `HitFlash`, `StunTint`). Рядом: `Player/` (тело+драйверы игрока), `Enemies/` (психики+спавнеры), `Senses/` (восприятие), `Editor/` (генераторы префабов/видов), `Arena/`, `Progression/`, `UI/`, `Debug/`.
 
 ## Архитектурные якоря (детали — в CONSTRUCTOR_GUIDE)
 

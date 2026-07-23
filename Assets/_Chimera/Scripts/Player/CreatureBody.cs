@@ -100,7 +100,10 @@ public class CreatureBody : MonoBehaviour
     PlayerCharge chargeAb;  // таран (Лосиные ноги) — до-создаём игроку, включаем сборкой
     Betrayal betrayal;      // подрыв признания: удар по кину копит эрозию (только у игрока)
     Senses senses;          // профиль чувств ИГРОКА (каналы от сборки); у NPC он приходит с префаба
-    Digestion digestComp;   // переваривание (Тело-хвост змеи, chassisOnly) — вешаем/снимаем по сборке
+    // ГЛОТАЕТ ЦЕЛИКОМ (Тело-хвост змеи, chassisOnly): убитая добыча даёт ПОЛНУЮ сытость (крупная трапеза),
+    // а не долю. Само лечение — общий `Satiety` (переваривание больше не отдельный компонент); поведение
+    // «прячусь переваривать на насест» — на психике змеи (читает Satiety.IsSated)
+    public bool DigestsWhole { get; private set; }
     Renderer[] renderers;
     MaterialPropertyBlock mpb;
     int lastAffinitySum = -1;
@@ -109,6 +112,7 @@ public class CreatureBody : MonoBehaviour
     public const int AffinityCap = 100; // потолок родства на вид (дальше некуда: скидка и мощь на полке)
 
     [SerializeField] float assistFeedRadius = 14f; // сытость помощникам: тела своего вида в этом радиусе от убийцы делят добычу (радиус стаи)
+    [SerializeField] float wholePreyMeal = 2f;     // множитель сытости у глотающего целиком (змея): полная трапеза vs доля
 
     // РОДСТВО — ЛОКАЛЬНОЕ, в теле КАЖДОГО существа (не в глобальном трекере: «ЦНС» игры не грузим).
     // Все звери мира — эксперименты с сывороткой (или съевшие их) → родство = база любого тела.
@@ -495,21 +499,21 @@ public class CreatureBody : MonoBehaviour
             ? health.LastAttacker.GetComponent<CreatureBody>() : null;
         if (killer == null || killer == this) return;
 
-        // СЫТОСТЬ — хищник наелся: временный бонус-реген (экосистема самоподдерживается, победитель не
-        // остаётся сразу добычей). У змеи своё ПЕРЕВАРИВАНИЕ (прерывается уроном) — ей сытость не даём,
-        // чтобы не лечить дважды. Убийце — полный бонус, стае рядом (делили тушу) — половина
-        if (killer.TryGetComponent<Digestion>(out var dig)) dig.OnAte();
-        else (killer.GetComponent<Satiety>() ?? killer.gameObject.AddComponent<Satiety>()).Feed(1f);
-
-        // помощники: тела ТОГО ЖЕ вида рядом с убийцей делят трапезу (стая волков) — половина бонуса
-        if (killer.chassis != null)
+        // СЫТОСТЬ — ЕДИНАЯ механика «поел → бонус-реген» (экосистема самоподдерживается, победитель не
+        // остаётся сразу добычей). Только ХИЩНИКУ (лось-травоядное добычей не восстанавливается). Змея
+        // ГЛОТАЕТ ЦЕЛИКОМ → полная трапеза (сильнее); убийце полный бонус, стае рядом (делили тушу) —
+        // половина. Поведение сытого (змея прячется на насест) — на психике, читает Satiety.IsSated
+        if (killer.chassis != null && killer.chassis.eatsMeat)
+        {
+            Feed(killer, killer.DigestsWhole ? wholePreyMeal : 1f);
             foreach (var col in Physics.OverlapSphere(killer.transform.position, assistFeedRadius, ~0, QueryTriggerInteraction.Ignore))
             {
                 var ally = col.GetComponentInParent<CreatureBody>();
-                if (ally == null || ally == killer || ally == this || ally.chassis != killer.chassis) continue;
-                if (ally.TryGetComponent<Digestion>(out _)) continue; // у своего переваривания — не удваиваем
-                (ally.GetComponent<Satiety>() ?? ally.gameObject.AddComponent<Satiety>()).Feed(0.5f);
+                if (ally == null || ally == killer || ally == this) continue;
+                if (ally.chassis != killer.chassis || !ally.chassis.eatsMeat) continue;
+                Feed(ally, 0.5f);
             }
+        }
 
         var present = new HashSet<string>();
         if (chassis != null) present.Add(chassis.speciesName);
@@ -700,7 +704,7 @@ public class CreatureBody : MonoBehaviour
         if (chargeAb != null) chargeAb.ChargeEnabled = chargeOn;             // ТАРАН — фича «Лосиных ног» (рывок горит)
         SetColdBlooded(coldOn); // холоднокровность (Сердце змеи): невидимость для термозрения врагов
         SetCamouflage(camoOn);  // камуфляж (Чешуя змеи): невидимость в неподвижности
-        SetDigestion(digestOn); // переваривание (Тело-хвост змеи): убил → сыт, бонус-реген до полного HP
+        DigestsWhole = digestOn; // «глотает целиком» (Тело-хвост змеи): убил → ПОЛНАЯ сытость (см. CreditKiller)
         SetThorns(thornsOn);          // иглы (Шкура ежа): ударил в упор — порезался
         SetVenomResist(venomResistOn); // ядоупорность (Сердце ежа): яд не накапливается
         if (move != null) // чувства игрока меняет ТОЛЬКО тело игрока (NPC-тело не должно включать их игроку)
@@ -801,11 +805,10 @@ public class CreatureBody : MonoBehaviour
     }
 
     // переваривание как компонент-маркер: физиология змеиного шасси (chassisOnly — аугументом не крадётся)
-    void SetDigestion(bool on)
-    {
-        if (on && digestComp == null) digestComp = gameObject.AddComponent<Digestion>();
-        else if (!on && digestComp != null) { Destroy(digestComp); digestComp = null; }
-    }
+    // единый вход сытости: до-создаёт Satiety на теле и кормит с масштабом (1 убийца / 0.5 помощник /
+    // wholePreyMeal — змея глотает целиком). Одна механика лечения на всех хищников
+    static void Feed(CreatureBody body, float scale) =>
+        (body.GetComponent<Satiety>() ?? body.gameObject.AddComponent<Satiety>()).Feed(scale);
 
     // человеч.значение + (звериное − человеч.) × множитель: на ×1 = звериное, на ×2 = вдвое дальше от человека
     static float Blend(float human, float beast, float mult) => human + (beast - human) * mult;

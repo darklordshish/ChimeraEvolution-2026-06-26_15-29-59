@@ -269,6 +269,7 @@ MonoBehaviour:
     chassisOnly: 0
     digestion: 0
     nativeChassis: "\u0417\u043C\u0435\u044F"
+  eatsMeat: 1
   baseHp: 60
   baseStamina: 55
   baseStaminaRegen: 7

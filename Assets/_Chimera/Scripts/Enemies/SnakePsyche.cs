@@ -10,10 +10,10 @@ using UnityEngine;
 /// NPC-жертва ДЕРЁТСЯ и вырывается по таймеру; урон от жертвы ослабляет хват) → ст.2 защёлк (стан) →
 /// ст.3 удушение-DoT. Удар СПАСАТЕЛЯ извне рвёт хват (стая отбивает своего); вой-стан рвёт ст.1–2.
 /// Впрыск яда на каждую новую стадию — обеим жертвам. Гремок мигает жёлтой погремушкой.
-/// СЫТАЯ ОСТОРОЖНОСТЬ: убив добычу любым своим оружием (кольца/клыки/яд), тело СЫТО — переваривание
-/// это ФИЗИОЛОГИЯ ШАССИ (компонент Digestion: бонус-реген до полного HP, урон будит; кормит канал
-/// «родство — убийце»), психика лишь ведёт себя сыто: прячется переваривать на стену-насест
-/// (полная невидимость) — охота на паузе, экосистема дышит.
+/// СЫТАЯ ОСТОРОЖНОСТЬ: убив добычу любым своим оружием (кольца/клыки/яд), тело СЫТО — лечение это общая
+/// механика `Satiety` (бонус-реген; змея глотает целиком → полная трапеза, CreatureBody.DigestsWhole),
+/// психика лишь ведёт себя сыто: прячется переваривать на стену-насест (полная невидимость) — охота на
+/// паузе, экосистема дышит.
 /// Числа тела (урон/скорость) приходят из органов через IBodyStatConsumer.
 /// </summary>
 [RequireComponent(typeof(CharacterController))]
@@ -111,18 +111,19 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     float waryUntil, traverseUntil;
 
     float Caution => personality != null ? personality.Caution : 1f;
-    Digestion digestion; // ПЕРЕВАРИВАНИЕ — физиология ТЕЛА (шасси змеи, вешает CreatureBody после нашего Awake — лениво).
-                         // Сытость/бонус-реген/пробуждение уроном — там; наша СЫТАЯ ОСТОРОЖНОСТЬ (насест, невидимость) — здесь
-    float nextWallSeek;  // ретрай поиска стены при переваривании на земле
+    Satiety satiety;     // СЫТОСТЬ — общая механика лечения (тело кормит её на смерть добычи, лениво).
+                         // Бонус-реген — там; наша СЫТАЯ ОСТОРОЖНОСТЬ (насест, невидимость) — здесь. Переваривание
+                         // больше не отдельный компонент: змея глотает целиком → полная сытость (CreatureBody.DigestsWhole)
+    float nextWallSeek;  // ретрай поиска стены при сытой осторожности на земле
     Vector3 wallPoint, wallNormal;
 
-    // сыты? (тело решает; нет компонента переваривания — вечно голодная охотница)
-    bool Digesting
+    // сыты? (тело решает; нет сытости — вечно голодная охотница)
+    bool Sated
     {
         get
         {
-            if (digestion == null) TryGetComponent(out digestion);
-            return digestion != null && digestion.IsDigesting;
+            if (satiety == null) TryGetComponent(out satiety);
+            return satiety != null && satiety.IsSated;
         }
     }
     bool windingUp, constricting;                 // windingUp — только замах ОБХВАТА
@@ -172,7 +173,8 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     // в т.ч. когда призрак только что раскрылся атакой (боец стал тёплым к моменту onDamaged: BreakGhost в Hit.Apply идёт до урона).
     void OnHurt()
     {
-        // разбуженное перевариванием тело займётся само (Digestion слушает onDamaged) — тут решение психики
+        // удар по сытой змее — психика реагирует (нацеливается на обидчика ниже); сытость-реген при этом
+        // НЕ прерывается (в отличие от старого переваривания): восстановление устойчиво, будит поведение, не лечение
         var attacker = ownHealth != null ? ownHealth.LastAttacker : null;
         if (constricting || attacker == null || !Perception.IsWarm(attacker.transform)) return; // держим кого-то / нет источника / холодный-призрак
 
@@ -249,11 +251,15 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
 
         Vector3 tangent = Vector3.Cross(Vector3.up, wallNormal).normalized * traverseSign;
         Vector3 probe = transform.position + tangent * 1.2f + wallNormal * 1.5f;
+        // СТРАЖ УГЛА: климб двигает змею прямым transform.position (без коллизий), поэтому за угол её пускать
+        // нельзя — MoveTowards срежет по диагонали СКВОЗЬ угловую геометрию. Принимаем новую точку стены, только
+        // если её нормаль близка к текущей (та же плоскость); резкая смена нормали = угол → стоп, ждём тут
         if (Physics.Raycast(probe, -wallNormal, out var hit, 3f, ~0, QueryTriggerInteraction.Ignore)
             && Mathf.Abs(hit.normal.y) < 0.3f
-            && hit.collider.GetComponentInParent<Health>() == null)
+            && hit.collider.GetComponentInParent<Health>() == null
+            && Vector3.Dot(hit.normal, wallNormal) > 0.7f) // ~<45°: та же стена, не завернувший угол
         { wallPoint = hit.point; wallNormal = hit.normal; }
-        else traversing = false;
+        else traversing = false; // угол / проём / добежал — останавливаемся, а не режем сквозь стык
     }
 
     // ищем ближайшую ВЕРТИКАЛЬНУЮ стену без Health (стена лабиринта) кольцом лучей — убежище от стаи
@@ -279,7 +285,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     // При ПЕРЕВАРИВАНИИ те же фазы, но осторожные: ползём/сидим невидимкой, НЕ маним, вниз — только переварив
     void UpdateClimb()
     {
-        bool sated = Digesting;                // сытость — у тела (Digestion); поведение сытой — наше
+        bool sated = Sated;                    // сытость — у тела (Satiety); поведение сытой — наше
         bool safe = !sated && !CheckFlee();    // сытая не спускается (голод снимет сытость сам); охотница — когда стая разошлась
 
         switch (climb)
@@ -479,9 +485,9 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
 
         if (stagger != null && stagger.IsStaggered) { Settle(Vector3.zero); return; }
 
-        // СЫТАЯ ОСТОРОЖНОСТЬ: тело переваривает (Digestion: сытость/бонус-реген/пробуждение уроном — его дело) —
-        // наше дело ПОВЕДЕНИЕ: бросить охоту, спрятаться на стене (ветка climb ниже) или замереть невидимкой
-        if (Digesting)
+        // СЫТАЯ ОСТОРОЖНОСТЬ: тело сыто (Satiety: бонус-реген — его дело) — наше дело ПОВЕДЕНИЕ: бросить
+        // охоту, спрятаться на стене (ветка climb ниже) или замереть невидимкой
+        if (Sated)
         {
             target = null; targetHealth = null; // сытой добыча не интересна
             if (climb == ClimbPhase.Descend) climb = ClimbPhase.Rise; // концовка обхвата отправила вниз — сытой лучше наверх

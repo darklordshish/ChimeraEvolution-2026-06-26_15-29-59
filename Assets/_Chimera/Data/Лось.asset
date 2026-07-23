@@ -310,6 +310,7 @@ MonoBehaviour:
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
+  eatsMeat: 0
   baseHp: 70
   baseStamina: 140
   baseStaminaRegen: 5
