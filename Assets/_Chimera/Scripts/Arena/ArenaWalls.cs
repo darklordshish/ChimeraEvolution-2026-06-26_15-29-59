@@ -39,9 +39,16 @@ public class ArenaWalls : MonoBehaviour
         BuildPerimeter();
         BuildMaze();
 
-        // рантайм-бейк навмеша по всей собранной геометрии
+        // РАНТАЙМ-БЕЙК НАВМЕША — ТОЛЬКО ПО ГЕОМЕТРИИ АРЕНЫ (пол, периметр, лабиринт — все они наши дети).
+        // Было `CollectObjects.All`, то есть вся сцена: пока существа были кубами-примитивами, это сходило
+        // с рук, но с приходом моделей из Blender посыпалось «Source mesh Pelvis does not allow read
+        // access» — импортированные меши без Read/Write не читаются билдером.
+        //
+        // Включать им чтение было бы лечением симптома: ТЕЛА ВООБЩЕ НЕ ДОЛЖНЫ ПОПАДАТЬ В НАВМЕШ.
+        // Навмеш — это проходимость арены; существа по нему ходят, а не образуют его. Заодно уходит
+        // старая тихая беда: стоящие при бейке NPC продавливали в навмеше дырки под собой
         var surface = GetComponent<NavMeshSurface>();
-        surface.collectObjects = CollectObjects.All;
+        surface.collectObjects = CollectObjects.Children;
         surface.BuildNavMesh();
     }
 
