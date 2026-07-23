@@ -52,6 +52,7 @@ public class PlayerController : MonoBehaviour
     Health health;
     InputAction moveAction, lookAction, dashAction, toggleViewAction, sneakAction, sprintAction;
     Stamina stamina;   // дыхалка: гейтит рывок и спринт, на нуле — отдышка (замедление)
+    Slow slow;         // замедление от игл ежа (до-создаётся эффектом): режет ход, не рывок
     Vector3 velocity;
     float dashTimer, dashReadyAt, groundY, legDashOverride; // legDashOverride: длинный рывок лосиных ног (0 = дефолт dashDuration)
     Vector3 dashDir;
@@ -170,7 +171,11 @@ public class PlayerController : MonoBehaviour
         // ОТДЫШКА: выжал бак досуха — ползёшь, пока не отдышался. Это и есть цена перерасхода —
         // наказывает открытостью, а не запретом кнопки
         float winded = stamina != null ? stamina.MoveMult : 1f;
-        Vector3 horizontal = dashTimer > 0f ? dashDir * dashSpeed * grip : move * moveSpeed * grip * hold * sneak * sprint * winded;
+        // ЗАМЕДЛЕНИЕ (иглы ежа) — тот же множитель, что у NPC (там в NavLocomotion): режет ХОД, но не рывок —
+        // увяз в булавках, зато рвануть ещё можешь (окно на разрыв дистанции честно оставлено)
+        if (slow == null) TryGetComponent(out slow); // до-создаётся эффектом при первом попадании
+        float mired = slow != null ? slow.MoveMult : 1f;
+        Vector3 horizontal = dashTimer > 0f ? dashDir * dashSpeed * grip : move * moveSpeed * grip * hold * sneak * sprint * winded * mired;
         if (knockback != null && knockback.IsActive) horizontal = Vector3.zero; // пока откидывает — не рулим (толкает Knockback)
         if (dashTimer > 0f) dashTimer -= Time.deltaTime;
         if (health != null) health.Invulnerable = dashTimer > 0f;

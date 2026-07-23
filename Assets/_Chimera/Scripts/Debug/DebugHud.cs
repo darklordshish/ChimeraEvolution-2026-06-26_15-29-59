@@ -97,11 +97,13 @@ public class DebugHud : MonoBehaviour
             LegendRow(ref y, x, TelegraphColors.Antler, "рога");
             LegendRow(ref y, x, TelegraphColors.Sword,  "меч");
             LegendRow(ref y, x, TelegraphColors.Kick,   "пинок");
+            LegendRow(ref y, x, TelegraphColors.Volley, "залп игл (дальний)");
 
             LegendHeader(ref y, x, "— статусы —");
             LegendRow(ref y, x, TelegraphColors.Stunned, "стан / схвачен (всё тело)");
             LegendRow(ref y, x, TelegraphColors.Venom,   "яд (значок + стаки)");
             LegendRow(ref y, x, TelegraphColors.Bleed,   "кровь (значок + стаки)");
+            LegendRow(ref y, x, TelegraphColors.Slow,    "замедление (иглы — значок + стаки)");
 
             LegendHeader(ref y, x, "— эмоции (морда) —");
             LegendRow(ref y, x, TelegraphColors.RageTint, "ярость (лесенка — градиент)");

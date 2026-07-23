@@ -4,7 +4,7 @@ using UnityEngine;
 /// Тип эффекта удара. Маленький закрытый набор — то, что УЖЕ есть в бою.
 /// Новый (яд/DoT) добавляется одной веткой в Hit.Apply — лакмус здоровья абстракции.
 /// </summary>
-public enum EffectKind { Damage, LifeSteal, Knockback, RegenDebuff, Stun, Venom, Rage, Bleed }
+public enum EffectKind { Damage, LifeSteal, Knockback, RegenDebuff, Stun, Venom, Rage, Bleed, Slow }
 
 /// <summary>
 /// Эффект удара как value-тип (ноль аллокаций на удар). Собирается фабриками, применяется через Hit.
@@ -28,6 +28,7 @@ public readonly struct HitEffect
     public static HitEffect Venom() => new(EffectKind.Venom, 0, 0f, 0f, 0f); // добавляет стак яда цели
     public static HitEffect Rage(float duration) => new(EffectKind.Rage, 0, 0f, 0f, duration); // взбесить извне (холоднокровный иммунен)
     public static HitEffect Bleed() => new(EffectKind.Bleed, 0, 0f, 0f, 0f);                   // добавляет стак кровотечения (клыки)
+    public static HitEffect Slow() => new(EffectKind.Slow, 0, 0f, 0f, 0f);                     // добавляет стак замедления (иглы ежа)
 }
 
 /// <summary>
@@ -86,6 +87,9 @@ public readonly struct Hit
                 var bleed = target.GetComponent<Bleed>() ?? target.gameObject.AddComponent<Bleed>();
                 bleed.AddStack();
                 if (Source != null) bleed.SetSource(Source); // смерть от кровопотери — на счету источника
+                break;
+            case EffectKind.Slow: // ЗАМЕДЛЕНИЕ — накопительный статус (иглы ежа тянут вниз); компонент до-создаётся
+                (target.GetComponent<Slow>() ?? target.gameObject.AddComponent<Slow>()).AddStack();
                 break;
         }
     }

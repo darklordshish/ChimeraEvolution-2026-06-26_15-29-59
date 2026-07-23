@@ -22,6 +22,7 @@ public static class TelegraphColors
     public static readonly Color Antler = new(0.20f, 0.85f, 0.60f); // рога — зелёно-бирюзовый (протыкание, не таран)
     public static readonly Color Sword  = new(0.55f, 0.75f, 0.95f); // меч (человек) — стальной
     public static readonly Color Kick   = new(0.80f, 0.85f, 0.25f); // пинок (человек) — лаймовый
+    public static readonly Color Volley = new(0.95f, 0.80f, 0.30f); // залп игл (ёж) — янтарный: ПЕРВЫЙ дальний приём
 
     // НЕРАСПОЗНАННОЕ НАМЕРЕНИЕ: «что-то готовит», но что — не разобрать. Так замах выглядит БЕЗ человеческого
     // Чутья: факт виден всем (окно реакции то же), смысл открывает наблюдательность.
@@ -33,6 +34,7 @@ public static class TelegraphColors
     public static readonly Color Stunned = new(0.92f, 0.92f, 0.85f); // «выключен из боя» (стан/схвачен) — белёсый
     public static readonly Color Venom   = new(0.45f, 0.85f, 0.20f); // яд — ядовито-зелёный
     public static readonly Color Bleed   = new(0.72f, 0.04f, 0.12f); // кровотечение — тёмно-алый
+    public static readonly Color Slow    = new(0.45f, 0.70f, 0.95f); // замедление (иглы в теле тянут вниз) — стылый голубой
     // (Bleed соседствует с RageTint по тону, но живёт в ДРУГОМ канале: кровь — значок в HUD, ярость — тинт морды.)
 
     // эмоции (рест-тинт тела; ярость ≠ красный укуса — глубокий бордовый, страх — явный холодный синий)

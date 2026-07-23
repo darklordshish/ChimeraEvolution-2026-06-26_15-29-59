@@ -15,6 +15,7 @@ public struct MeleeBlow
     public float KnockForce;         // 0 = без откидывания (Massive резистит внутри Knockback.Push)
     public int BleedStacks;          // протыкание — кровь стаками (рога/клыки)
     public int VenomStacks;          // яд стаками (клыки змеи)
+    public int SlowStacks;           // замедление стаками (иглы ежа — снаряд тянет цель вниз)
     public int LifeSteal;            // вампиризм при попадании (слот «Пасть»)
     public float RegenDebuffFactor;  // в (0;1) — сбить реген цели (укус против сустейна босса); 0 = не трогать
     public float RegenDebuffTime;    // на сколько держится сбив регена
@@ -41,6 +42,7 @@ public struct MeleeBlow
         if (KnockForce > 0f) ctx.Apply(target, HitEffect.Knockback(KnockForce));
         for (int i = 0; i < BleedStacks; i++) ctx.Apply(target, HitEffect.Bleed());
         for (int i = 0; i < VenomStacks; i++) ctx.Apply(target, HitEffect.Venom());
+        for (int i = 0; i < SlowStacks; i++) ctx.Apply(target, HitEffect.Slow());
         if (StaggerTime > 0f && target.TryGetComponent<Stagger>(out var st)) st.Hitstun(StaggerTime);
     }
 }
