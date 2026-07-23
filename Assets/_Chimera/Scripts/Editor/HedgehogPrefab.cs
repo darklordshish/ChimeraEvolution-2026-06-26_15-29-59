@@ -100,7 +100,7 @@ public static class HedgehogPrefab
         // стреляет; нет его — ёж чисто ближний. gizmoHeight низкий (ёж приземист)
         var volley = go.AddComponent<QuillVolley>();
         PrefabConfig.Set(volley, ("windupTime", 0.5f), ("minRange", 6f), ("maxRange", 15f),
-                                 ("quills", 5), ("spreadAngle", 20f), ("speed", 22f), ("gizmoHeight", 0.5f));
+                                 ("quills", 6), ("spreadAngle", 9f), ("speed", 22f), ("gizmoHeight", 0.5f)); // ПУЧОК (дробовик): узкий разлёт — иглы летят кучно, вблизи все в цель, вдаль расходятся сами
 
         go.AddComponent<Rage>();          // теплокровный: ПРЕДЕЛ (страх → ярость) придёт слайсом D
         go.AddComponent<SpawnVariance>(); // разброс особи

@@ -66,6 +66,7 @@ public class VitalsHud : MonoBehaviour
 
     // свои данные + сводка
     Image ownFill, stamFill;
+    GameObject crosshair;   // прицел залпа — центр экрана, включает Чутьё (аналитика = прицельность)
     Stamina playerStamina;
     Text ownText, grabText, summaryText;
     RectTransform summaryPanel;
@@ -118,6 +119,8 @@ public class VitalsHud : MonoBehaviour
                 player.TryGetComponent(out constrict);
             }
         }
+
+        if (crosshair != null) crosshair.SetActive(Perception.Insight); // прицел — фича Чутья
 
         DrawOwn();
         DrawWorld();
@@ -321,6 +324,18 @@ public class VitalsHud : MonoBehaviour
         scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         scaler.referenceResolution = new Vector2(1920, 1080);
         scaler.matchWidthOrHeight = 0.5f;
+
+        // ПЕРЕКРЕСТЬЕ — центр экрана, две тонкие планки крестом. Метит, куда уйдёт залп (= центр камеры).
+        // Видно только с Чутьём: прицельная стрельба — аналитика, сила учёного (без органа иглы летят навскидку)
+        crosshair = new GameObject("Crosshair", typeof(RectTransform));
+        crosshair.transform.SetParent(canvas.transform, false);
+        var chRt = (RectTransform)crosshair.transform;
+        chRt.anchorMin = chRt.anchorMax = chRt.pivot = new Vector2(0.5f, 0.5f);
+        chRt.anchoredPosition = Vector2.zero;
+        var chColor = new Color(0.94f, 0.92f, 0.86f, 0.65f);
+        var chH = NewImage("H", crosshair.transform, chColor); chH.rectTransform.sizeDelta = new Vector2(18f, 2f);
+        var chV = NewImage("V", crosshair.transform, chColor); chV.rectTransform.sizeDelta = new Vector2(2f, 18f);
+        crosshair.SetActive(false);
 
         // своя полоса — левый низ
         var ownRoot = new GameObject("Own", typeof(RectTransform));

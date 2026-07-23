@@ -13,8 +13,8 @@ public class QuillVolley : WindupAbility
     [Header("Залп")]
     [SerializeField] float minRange = 6f;      // ближе — не стреляет (переходит в ближний бой)
     [SerializeField] float maxRange = 16f;     // дальше — не достаёт
-    [SerializeField] int quills = 5;           // игл в веере
-    [SerializeField] float spreadAngle = 22f;  // полу-угол разлёта веера
+    [SerializeField] int quills = 6;           // игл в пучке
+    [SerializeField] float spreadAngle = 9f;   // полу-угол разлёта — УЗКИЙ (дробовик-пучок): вблизи все в цель, вдаль расходятся
     [SerializeField] float speed = 22f;
     [SerializeField] float hitRadius = 0.35f;  // толщина иглы (SphereCast)
 
@@ -44,11 +44,13 @@ public class QuillVolley : WindupAbility
         Vector3 baseDir = (aim - origin).sqrMagnitude > 0.001f ? (aim - origin).normalized : flatFwd;
         var blow = new MeleeBlow { Damage = damagePerQuill, BleedStacks = bleedPerQuill, SlowStacks = slowPerQuill };
 
+        Quaternion aimRot = Quaternion.LookRotation(baseDir);
+        float coneR = Mathf.Tan(spreadAngle * Mathf.Deg2Rad); // радиус конуса на единичной дальности
         for (int i = 0; i < quills; i++)
         {
-            float t = quills == 1 ? 0f : (i / (float)(quills - 1)) * 2f - 1f; // −1..+1 по вееру
-            // веер вокруг ВЕРТИКАЛИ: разлёт влево-вправо, наклон на цель по высоте сохраняется
-            Vector3 dir = Quaternion.AngleAxis(t * spreadAngle, Vector3.up) * baseDir;
+            // КОНУС (дробовик): случайная точка в диске вокруг прицела → иглы кучно в 3D, а не плоским веером
+            Vector2 d = Random.insideUnitCircle * coneR;
+            Vector3 dir = aimRot * new Vector3(d.x, d.y, 1f).normalized;
             Quill.Spawn(origin, dir, speed, maxRange, hitRadius, ownHealth, blow, DamageMult);
         }
         return AbilityRun.Done;

@@ -17,8 +17,9 @@ public class PlayerInputDriver : MonoBehaviour
     PlayerBellow bellow;
     PlayerAntler antler;
     PlayerConstrict constrict;
+    PlayerQuillVolley volley;
     CreatureBody body;
-    InputAction attackAction, biteAction, kickAction, howlAction, constrictAction, antlerAction, presentAction;
+    InputAction attackAction, biteAction, kickAction, howlAction, constrictAction, antlerAction, presentAction, volleyAction;
     readonly List<(InputAction action, int slot)> slotActions = new();
 
     void Awake()
@@ -66,6 +67,12 @@ public class PlayerInputDriver : MonoBehaviour
         presentAction = new InputAction("PresentVictim", InputActionType.Button);
         presentAction.AddBinding("<Keyboard>/c");
         presentAction.AddBinding("<Gamepad>/leftShoulder");
+
+        // СРЕДНЯЯ КНОПКА МЫШИ — ЗАЛП ИГЛАМИ (орган «Иглы-руки», дальний бой). Отдельная кнопка (решение
+        // пользователя); альтернатива — ЛКМ как оружие слота Рук (коготь↔иглы), тогда убрать этот бинд
+        volleyAction = new InputAction("QuillVolley", InputActionType.Button);
+        volleyAction.AddBinding("<Mouse>/middleButton");
+        volleyAction.AddBinding("<Gamepad>/rightShoulder");
     }
 
     int knownSlots; // пересобрать хоткеи, когда слотов стало больше (выдан химерный слот)
@@ -75,6 +82,7 @@ public class PlayerInputDriver : MonoBehaviour
     {
         body = GetComponent<CreatureBody>();
         constrict = GetComponent<PlayerConstrict>(); // после всех Awake — увидит и до-созданный телом
+        volley = GetComponent<PlayerQuillVolley>();  // до-создаёт тело в Awake
         BuildSlotHotkeys();
     }
 
@@ -97,13 +105,13 @@ public class PlayerInputDriver : MonoBehaviour
 
     void OnEnable()
     {
-        attackAction.Enable(); biteAction.Enable(); kickAction.Enable(); howlAction.Enable(); constrictAction.Enable(); antlerAction.Enable(); presentAction.Enable();
+        attackAction.Enable(); biteAction.Enable(); kickAction.Enable(); howlAction.Enable(); constrictAction.Enable(); antlerAction.Enable(); presentAction.Enable(); volleyAction.Enable();
         foreach (var (a, _) in slotActions) a.Enable();
     }
 
     void OnDisable()
     {
-        attackAction.Disable(); biteAction.Disable(); kickAction.Disable(); howlAction.Disable(); constrictAction.Disable(); antlerAction.Disable(); presentAction.Disable();
+        attackAction.Disable(); biteAction.Disable(); kickAction.Disable(); howlAction.Disable(); constrictAction.Disable(); antlerAction.Disable(); presentAction.Disable(); volleyAction.Disable();
         foreach (var (a, _) in slotActions) a.Disable();
     }
 
@@ -138,5 +146,7 @@ public class PlayerInputDriver : MonoBehaviour
         }
         if (constrict != null && constrictAction.WasPressedThisFrame()) constrict.TryUse();
         if (constrict != null && presentAction.WasPressedThisFrame()) constrict.TogglePresent(); // C: ноша за спину/под удар
+        // ЗАЛП ИГЛАМИ (средняя кнопка) — сам гейтит VolleyEnabled/кулдаун
+        if (volley != null && volleyAction.WasPressedThisFrame()) volley.TryUse();
     }
 }

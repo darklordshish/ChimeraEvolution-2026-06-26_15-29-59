@@ -17,14 +17,15 @@ public class CreatureBody : MonoBehaviour
     [SerializeField] SpeciesSO chassis;    // базовое тело (MVP: Человек) — слоты, пул, дефолт-органы
     [SerializeField] SpeciesSO[] donors;   // доноры органов (MVP: [Волк])
 
-    [Header("Родство — фаза 1: скидка (0…80)")]
-    [SerializeField] float discountPerAffinity = 0.01f; // −1% к цене за единицу родства
-    [SerializeField] float maxDiscount = 0.8f;          // потолок скидки на ~80 родства
-
-    [Header("Родство — фаза 2: мощь (80…100)")]
-    [SerializeField] float bonusStartAffinity = 80f;
+    // РОДСТВО — ЕДИНАЯ РАВНОМЕРНАЯ КРИВАЯ 0→100 (решение пользователя): и скидка, и мощь растут ЛИНЕЙНО
+    // на всём диапазоне. Прежде было ступенчато (скидка 0–80, мощь только 80–100) — и грайнд 0–80 не давал
+    // силы вовсе, лишь дешевизну. Теперь КАЖДОЕ убийство делает орган и дешевле, И сильнее — прогресс ровный.
+    // Концы те же: 0 родства = полная цена ×1 мощь, 100 = −80% цена ×2 мощь
+    [SerializeField] float discountPerAffinity = 0.008f; // −0.8% за единицу → −80% на 100 родства
+    [SerializeField] float maxDiscount = 0.8f;
+    [SerializeField] float bonusStartAffinity = 0f;      // мощь копится С НУЛЯ (было 80 — «мёртвая зона» силы)
     [SerializeField] float bonusFullAffinity = 100f;
-    [SerializeField] float maxBonusMult = 2f;           // звериная часть органа ×2 на 100 родства
+    [SerializeField] float maxBonusMult = 2f;            // звериная часть органа ×2 на 100 родства
 
     [Header("Капы овершута мощи (глушим 2з−ч на 100 родства)")]
     [SerializeField] float maxDamageReduction = 0.6f;   // потолок брони (иначе Blend(0,0.4,2)=0.8 = 80% резист)
@@ -98,6 +99,7 @@ public class CreatureBody : MonoBehaviour
     PlayerBellow bellowAb;  // рёв (Глотка лося) — до-создаём игроку в Awake, включаем сборкой
     PlayerAntler antlerAb;  // рога (придаток лося, химерный слот) — до-создаём игроку, включаем сборкой
     PlayerCharge chargeAb;  // таран (Лосиные ноги) — до-создаём игроку, включаем сборкой
+    PlayerQuillVolley volleyAb; // залп игл (придаток «Игломёт» ежа, химерный слот) — до-создаём игроку, включаем сборкой
     Betrayal betrayal;      // подрыв признания: удар по кину копит эрозию (только у игрока)
     Senses senses;          // профиль чувств ИГРОКА (каналы от сборки); у NPC он приходит с префаба
     // ГЛОТАЕТ ЦЕЛИКОМ (Тело-хвост змеи, chassisOnly): убитая добыча даёт ПОЛНУЮ сытость (крупная трапеза),
@@ -367,8 +369,8 @@ public class CreatureBody : MonoBehaviour
         return sl.current;
     }
 
-    // ЭКСПРЕССИЯ звериной части: у игрока авто — ×1 до bonusStartAffinity, линейно до maxBonusMult
-    // к bonusFullAffinity (мутаген раскрывает гены с родством). У NPC — фиксированная.
+    // ЭКСПРЕССИЯ звериной части: у игрока РАВНОМЕРНО ×1 (родство 0) → maxBonusMult (родство 100), линейно
+    // на всём диапазоне (мутаген раскрывает гены с каждым убийством). У NPC — фиксированная (поле expression).
     float BonusMultiplier(string species)
     {
         if (expression > 0f) return expression;
@@ -416,6 +418,8 @@ public class CreatureBody : MonoBehaviour
         if (move != null && antlerAb == null) antlerAb = gameObject.AddComponent<PlayerAntler>();
         TryGetComponent(out chargeAb);
         if (move != null && chargeAb == null) chargeAb = gameObject.AddComponent<PlayerCharge>();
+        TryGetComponent(out volleyAb);
+        if (move != null && volleyAb == null) volleyAb = gameObject.AddComponent<PlayerQuillVolley>();
         TryGetComponent(out betrayal);
         if (move != null && betrayal == null) betrayal = gameObject.AddComponent<Betrayal>(); // эрозия признания — только у игрока
         TryGetComponent(out variance);
@@ -542,7 +546,8 @@ public class CreatureBody : MonoBehaviour
         public float dmg, hpBonus, stam, stamRegen, life, rng, atkCd, mv, dash, dashDur, dashCd, reduce, regen, regenOOC, thermal, howlR, howlStunAt;
         public int venom, bleed;
         public bool bite, scent, kick, howl, cold, camo, thermalOn, constrict, digest, bellow, antler, charge;
-        public bool thorns, venomResist; // иглы-ответка и ядоупорность (ёж)
+        public bool thorns, venomResist, quillVolley; // иглы-ответка, ядоупорность, залп (ёж)
+        public float volleyMult; // мощь залпа от родства с ежом (0 = залпа нет)
         public bool insight; // ЧУТЬЁ УЧЁНОГО: распознавание намерений + числа состояний (человеческое Чутьё)
         public bool keenEar;  // ОСТРЫЙ СЛУХ: различение вида источника + волны звука на экране
         public float earMult; // множитель дальности слуха (супремум дублей)
@@ -569,6 +574,7 @@ public class CreatureBody : MonoBehaviour
             charge = a.charge || b.charge, insight = a.insight || b.insight,
             keenEar = a.keenEar || b.keenEar, earMult = Mathf.Max(a.earMult, b.earMult),
             thorns = a.thorns || b.thorns, venomResist = a.venomResist || b.venomResist,
+            quillVolley = a.quillVolley || b.quillVolley, volleyMult = Mathf.Max(a.volleyMult, b.volleyMult),
         };
     }
 
@@ -626,7 +632,8 @@ public class CreatureBody : MonoBehaviour
             constrict = w.enablesConstrict, digest = w.digestion, bellow = w.enablesBellow,
             antler = w.enablesAntler, charge = w.enablesCharge, insight = w.insight,
             keenEar = w.keenHearing, earMult = w.hearingMult,
-            thorns = w.thorns, venomResist = w.venomResist,
+            thorns = w.thorns, venomResist = w.venomResist, quillVolley = w.enablesQuillVolley,
+            volleyMult = w.enablesQuillVolley ? m : 0f, // мощь залпа = экспрессия органа-придатка (родство с ежом)
             constrictNative = w.enablesConstrict && chassis != null && w.nativeChassis == chassis.speciesName,
         };
     }
@@ -656,7 +663,8 @@ public class CreatureBody : MonoBehaviour
         bool biteOn = false, scentOn = false, kickOn = false, howlOn = false, coldOn = false, camoOn = false,
              thermalOn = false, constrictOn = false, digestOn = false, bellowOn = false, antlerOn = false, chargeOn = false,
              constrictNativeOn = false, insightOn = false, keenEarOn = false,
-             thornsOn = false, venomResistOn = false;
+             thornsOn = false, venomResistOn = false, quillVolleyOn = false;
+        float volleyMult = 0f;
         float earMult = 0f;
         foreach (var kv in groups)
         {
@@ -672,7 +680,8 @@ public class CreatureBody : MonoBehaviour
             digestOn |= c.digest; bellowOn |= c.bellow; antlerOn |= c.antler; chargeOn |= c.charge;
             constrictNativeOn |= c.constrictNative; insightOn |= c.insight;
             keenEarOn |= c.keenEar; earMult = Mathf.Max(earMult, c.earMult);
-            thornsOn |= c.thorns; venomResistOn |= c.venomResist;
+            thornsOn |= c.thorns; venomResistOn |= c.venomResist; quillVolleyOn |= c.quillVolley;
+            volleyMult = Mathf.Max(volleyMult, c.volleyMult);
         }
         int dmg = Mathf.RoundToInt(dmgF), dmgBite = Mathf.RoundToInt(dmgBiteF);
         int life = Mathf.RoundToInt(lifeF);
@@ -702,6 +711,7 @@ public class CreatureBody : MonoBehaviour
         if (bellowAb != null) bellowAb.BellowEnabled = bellowOn;             // РЁВ — фича Глотки лося (K2)
         if (antlerAb != null) antlerAb.AntlerEnabled = antlerOn;             // РОГА — фича придатка «Рога» (химерный слот)
         if (chargeAb != null) chargeAb.ChargeEnabled = chargeOn;             // ТАРАН — фича «Лосиных ног» (рывок горит)
+        if (volleyAb != null) { volleyAb.VolleyEnabled = quillVolleyOn; volleyAb.SetPower(volleyMult); } // ЗАЛП — фича придатка «Игломёт»; мощь растёт с родством к ежу
         SetColdBlooded(coldOn); // холоднокровность (Сердце змеи): невидимость для термозрения врагов
         SetCamouflage(camoOn);  // камуфляж (Чешуя змеи): невидимость в неподвижности
         DigestsWhole = digestOn; // «глотает целиком» (Тело-хвост змеи): убил → ПОЛНАЯ сытость (см. CreditKiller)

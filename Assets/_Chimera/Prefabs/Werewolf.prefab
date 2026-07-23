@@ -691,6 +691,7 @@ MonoBehaviour:
   expression: 2
   applyVitals: 1
   assistFeedRadius: 14
+  wholePreyMeal: 2
   chassisIdentityWeight: 0.1
   weakAt: 0.65
   mediumAt: 0.85
