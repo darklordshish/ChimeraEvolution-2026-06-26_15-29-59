@@ -94,6 +94,16 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
 
     // ДЫХАЛКА ЛОСЯ: бак огромный, реген худший в лесу (данные вида) — поэтому «загнанный зверь» становится
     // буквальным: четыре тарана подряд, и дальше он может только переть шагом, пока не отдышится
+    [Header("Кормёжка (M2): голодный идёт к кустам)")]
+    [SerializeField] float forageScanRange = 45f; // в каком радиусе ищет куст
+    [SerializeField] float grazeRange = 2.6f;     // насколько близко к кусту, чтобы щипать
+    [SerializeField] float grazeBite = 0.4f;      // объёма куста съедает в секунду
+    [SerializeField] float grazeMeal = 0.7f;      // во сколько СЫТОСТИ конвертируется съеденный объём куста
+    float nextForageScan;
+    Forage currentBush;
+    Satiety satiety;
+    Satiety Belly { get { if (satiety == null) TryGetComponent(out satiety); return satiety; } } // тело заводит в Awake
+
     [SerializeField] float chargeCost = 70f; // 45 не читалось: реген успевал вернуть между таранами
     // ПОГОНЯ ЖЖЁТ ДЫХАЛКУ — главный расход, а не приёмы. Пока трата шла только на редкий таран, полоска
     // «телепалась у полной»: реген всё возвращал между ударами. Непрерывный слив делает состояние зверя
@@ -427,12 +437,61 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
             return;
         }
 
-        // спокоен: пасётся/бродит
+        // спокоен: ГОЛОДЕН → идёт к кусту и пасётся (живёт «от еды до еды», волки перехватят на тропе);
+        // СЫТ → лениво бродит. Так лось перестаёт быть мишенью в поле и обретает маршрут
+        if (Belly != null && !Belly.IsSated && TryGraze()) return;
+        Wander();
+    }
+
+    // ищет ближайший съедобный куст, идёт к нему, щиплет (наполняет сытость). false — кустов нет (тогда бродит)
+    bool TryGraze()
+    {
+        if (currentBush == null || !currentBush.IsEdible || Time.time >= nextForageScan)
+        {
+            nextForageScan = Time.time + 1f;
+            currentBush = NearestBush();
+        }
+        if (currentBush == null) return false;
+
+        Vector3 to = currentBush.transform.position - transform.position; to.y = 0f;
+        float d = to.magnitude;
+        if (d <= grazeRange)
+        {
+            float got = currentBush.Graze(grazeBite * Time.deltaTime); // куст отдаёт корм → сытость
+            Belly.Feed(got * grazeMeal);
+            if (to.sqrMagnitude > 0.001f) Face(to.normalized); // морда в куст, стоим щиплем
+            Settle(Vector3.zero);
+        }
+        else
+        {
+            Vector3 dir = nav.DirTo(currentBush.transform.position);
+            if (dir.sqrMagnitude > 0.001f) Face(dir);
+            Settle(dir * Speed * grazeSpeed);
+        }
+        return true;
+    }
+
+    Forage NearestBush()
+    {
+        Forage best = null; float bd = forageScanRange * forageScanRange;
+        foreach (var f in FindObjectsByType<Forage>())
+        {
+            if (!f.IsEdible) continue;
+            float d = (f.transform.position - transform.position).sqrMagnitude;
+            if (d < bd) { bd = d; best = f; }
+        }
+        return best;
+    }
+
+    void Wander()
+    {
         Vector3 w = nav.DirTo(nav.Wander(wanderRadius));
-        if (w.sqrMagnitude > 0.001f)
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(w), rotationSpeed * Time.deltaTime);
+        if (w.sqrMagnitude > 0.001f) Face(w);
         Settle(w * Speed * grazeSpeed);
     }
+
+    void Face(Vector3 dir) =>
+        transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(dir), rotationSpeed * Time.deltaTime);
 
     void Settle(Vector3 horizontal) => nav.Move(horizontal); // ход — общая локомоция (сглаживание/гравитация там)
 }
