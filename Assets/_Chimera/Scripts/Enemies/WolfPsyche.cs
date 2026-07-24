@@ -104,6 +104,8 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     SnakeBodyChain preyBody;       // тело добычи-змеи — рвём по ДЛИНЕ, каждый за свой участок
     float preyT;                   // личный участок вдоль тела змеи (0 голова … 1 хвост)
     Morale morale;                  // ШКАЛА МОРАЛИ (страх↔ярость, стаки ±1×10с); порог храбрости — личность
+    Satiety satiety;                // ШКАЛА СЫТОСТИ-ГОЛОДА (M3): сытый не зовёт стаю и расходится → одиночка змее
+    Satiety Belly { get { if (satiety == null) TryGetComponent(out satiety); return satiety; } } // тело заводит в Awake
     Personality personality;        // S1 срез 6: личность особи (храбрость/агрессия/любопытство) — разброс поведения
     Grabbed grabbedStatus;          // единый захват: НАС держат (кольца змеи / хвост игрока) — на слабом хвате кусаемся
     Noise noiseSrc;                 // источник звука (вешает тело): всплеск воя — мир слышит (ось Noise)
@@ -433,6 +435,18 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
             pack.LeaveRing(this); // потерял игрока — освобождаем слот кольца (занят бродит/тропит, не держит место)
             SenseGrabbedMate();   // заметить возню схваченного сородича (точка спасения)
             ListenForRattle();    // слух: странный звук (гремок) → любопытство (ось Noise)
+            // СЫТ (M3): не до охоты — игнорируем зовы стаи (вой/след/спасение/лося) и РАСХОДИМСЯ ВРОЗЬ
+            // усиленной сепарацией. Одинокий сытый волк дрейфует в угол → добыча змее (её IsLonely ловит
+            // одиночек). Твой эмерджент круга биома: сытые разбредаются, голодные сбиваются в рать
+            if (Belly != null && Belly.IsSated)
+            {
+                Vector3 wd = nav.DirTo(nav.Wander(wanderRadius));
+                if (wd.sqrMagnitude > 0.001f)
+                    transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(wd), rotationSpeed * Time.deltaTime);
+                Settle(wd * Speed * wanderSpeed + Separation() * 1.6f); // расползаемся: разброс сильнее обычного
+                return;
+            }
+
             if (TryMooseHunt()) return; // ОХОТА НА ЛОСЯ: тень-загон/навал (игрок не виден — туша интереснее брожения)
             Vector3 dest; bool active = true;
             if (Alerted && (alertPos + personalOffset - transform.position).sqrMagnitude > 9f)
@@ -753,6 +767,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     void TryHowl(Vector3 pos)
     {
         if (Time.time < nextHowlTime) return;
+        if (Belly != null && Belly.IsSated) return; // СЫТ — не до охоты: не зовёт стаю; рать собирают ГОЛОДНЫЕ
         // вой — событие СТАИ, не хор: голос подаёт ОДИН (иначе фон морали = размер стаи и страх не пробивает)
         if (!pack.TryClaimHowl()) { nextHowlTime = Time.time + 1f; return; }
         nextHowlTime = Time.time + howlCooldown;
