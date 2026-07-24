@@ -123,6 +123,11 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
+        // КОНСТРУКТОР ОТКРЫТ (пауза сборки) — игрок не управляется: мышь принадлежит UI. Без этого тело
+        // крутится от Mouse.delta прямо под открытым меню (единое управление рулит телом в обоих видах),
+        // а перетаскивание звёзд молчит — указатель «прилип» к персонажу. Владение курсором — у конструктора
+        if (ConstructorUI.IsOpen) return;
+
         if (toggleViewAction.WasPressedThisFrame()) SetFirstPerson(!FirstPerson);
 
         Vector2 mv = moveAction.ReadValue<Vector2>();

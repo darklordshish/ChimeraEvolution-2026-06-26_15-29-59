@@ -53,6 +53,7 @@ public class CameraFollow : MonoBehaviour
     void LateUpdate()
     {
         if (target == null) return;
+        if (ConstructorUI.IsOpen) return; // конструктор открыт (пауза): камера замирает, не берёт pitch с мыши — ввод у UI
 
         Vector3 shake = ShakeOffset();
 

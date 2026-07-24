@@ -110,6 +110,9 @@ public class ConstructorUI : MonoBehaviour
         if (open)
         {
             Time.timeScale = 0f; // держим паузу насильно: хитстоп и прочие охотники за timeScale её не собьют
+            // ДЕРЖИМ КУРСОР СВОБОДНЫМ КАЖДЫЙ КАДР: игрок лочит его под своё управление, однократной установки
+            // в SetOpen мало (стоит потерять/вернуть фокус окна — и указатель снова «прилипает» к персонажу)
+            Cursor.lockState = CursorLockMode.None; Cursor.visible = true;
             if (!built || body == null) Rebuild();
             else if (sockets.Count != body.SlotCount) Rebuild(); // выдали химерный слот — дострой гнездо
             HandleRightClick();
