@@ -57,6 +57,7 @@ MonoBehaviour:
     enablesBellow: 0
     enablesAntler: 0
     enablesCharge: 0
+    enablesRoll: 0
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
@@ -102,6 +103,7 @@ MonoBehaviour:
     enablesBellow: 0
     enablesAntler: 0
     enablesCharge: 0
+    enablesRoll: 0
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
@@ -146,6 +148,7 @@ MonoBehaviour:
     enablesBellow: 0
     enablesAntler: 0
     enablesCharge: 0
+    enablesRoll: 0
     chassisOnly: 1
     digestion: 1
     nativeChassis: 
@@ -190,6 +193,7 @@ MonoBehaviour:
     enablesBellow: 0
     enablesAntler: 0
     enablesCharge: 0
+    enablesRoll: 0
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
@@ -234,6 +238,7 @@ MonoBehaviour:
     enablesBellow: 0
     enablesAntler: 0
     enablesCharge: 0
+    enablesRoll: 0
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
@@ -278,6 +283,7 @@ MonoBehaviour:
     enablesBellow: 0
     enablesAntler: 0
     enablesCharge: 0
+    enablesRoll: 0
     chassisOnly: 0
     digestion: 0
     nativeChassis: "\u0417\u043C\u0435\u044F"

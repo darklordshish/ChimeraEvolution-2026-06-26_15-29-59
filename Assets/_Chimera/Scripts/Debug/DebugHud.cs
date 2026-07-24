@@ -66,6 +66,8 @@ public class DebugHud : MonoBehaviour
         if (antler != null && antler.AntlerEnabled) abil.Add("рога R");
         var charge = player != null ? player.GetComponent<PlayerCharge>() : null;
         if (charge != null && charge.ChargeEnabled) abil.Add("таран (рывок)");
+        var roll = player != null ? player.GetComponent<PlayerRoll>() : null;
+        if (roll != null && roll.RollEnabled) abil.Add("перекат (рывок)");
         GUI.Label(new Rect(14, 10, 900, 26), $"Способности: {string.Join(" · ", abil)}   ·   Tab — конструктор", style);
 
         // ── дев-режимы: молчат, пока выключены; включённый режим обязан быть виден ──

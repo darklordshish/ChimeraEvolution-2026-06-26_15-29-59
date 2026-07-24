@@ -101,6 +101,7 @@ public class CreatureBody : MonoBehaviour
     PlayerBellow bellowAb;  // рёв (Глотка лося) — до-создаём игроку в Awake, включаем сборкой
     PlayerAntler antlerAb;  // рога (придаток лося, химерный слот) — до-создаём игроку, включаем сборкой
     PlayerCharge chargeAb;  // таран (Лосиные ноги) — до-создаём игроку, включаем сборкой
+    PlayerRoll rollAb;      // перекат (Ежиные ноги) — до-создаём игроку, включаем сборкой
     PlayerQuillVolley volleyAb; // залп игл (придаток «Игломёт» ежа, химерный слот) — до-создаём игроку, включаем сборкой
     Betrayal betrayal;      // подрыв признания: удар по кину копит эрозию (только у игрока)
     Senses senses;          // профиль чувств ИГРОКА (каналы от сборки); у NPC он приходит с префаба
@@ -423,6 +424,8 @@ public class CreatureBody : MonoBehaviour
         if (move != null && antlerAb == null) antlerAb = gameObject.AddComponent<PlayerAntler>();
         TryGetComponent(out chargeAb);
         if (move != null && chargeAb == null) chargeAb = gameObject.AddComponent<PlayerCharge>();
+        TryGetComponent(out rollAb);
+        if (move != null && rollAb == null) rollAb = gameObject.AddComponent<PlayerRoll>();
         TryGetComponent(out volleyAb);
         if (move != null && volleyAb == null) volleyAb = gameObject.AddComponent<PlayerQuillVolley>();
         TryGetComponent(out betrayal);
@@ -554,7 +557,7 @@ public class CreatureBody : MonoBehaviour
     {
         public float dmg, hpBonus, stam, stamRegen, life, rng, atkCd, mv, dash, dashDur, dashCd, reduce, regen, regenOOC, thermal, howlR, howlStunAt;
         public int venom, bleed;
-        public bool bite, scent, kick, howl, cold, camo, thermalOn, constrict, digest, bellow, antler, charge;
+        public bool bite, scent, kick, howl, cold, camo, thermalOn, constrict, digest, bellow, antler, charge, roll;
         public bool thorns, venomResist, quillVolley; // иглы-ответка, ядоупорность, залп (ёж)
         public bool bleedResist;  // кровеупорность (лосиное сердце)
         public float volleyMult; // мощь залпа от родства с ежом (0 = залпа нет)
@@ -581,7 +584,7 @@ public class CreatureBody : MonoBehaviour
             thermalOn = a.thermalOn || b.thermalOn, constrict = a.constrict || b.constrict,
             constrictNative = a.constrictNative || b.constrictNative,
             digest = a.digest || b.digest, bellow = a.bellow || b.bellow, antler = a.antler || b.antler,
-            charge = a.charge || b.charge, insight = a.insight || b.insight,
+            charge = a.charge || b.charge, roll = a.roll || b.roll, insight = a.insight || b.insight,
             keenEar = a.keenEar || b.keenEar, earMult = Mathf.Max(a.earMult, b.earMult),
             thorns = a.thorns || b.thorns, venomResist = a.venomResist || b.venomResist,
             quillVolley = a.quillVolley || b.quillVolley, volleyMult = Mathf.Max(a.volleyMult, b.volleyMult),
@@ -641,7 +644,7 @@ public class CreatureBody : MonoBehaviour
             bite = w.enablesBite, scent = w.enablesScent, kick = w.enablesKick,
             howl = w.enablesHowl, cold = w.coldBlooded, camo = w.camo, thermalOn = w.enablesThermal,
             constrict = w.enablesConstrict, digest = w.digestion, bellow = w.enablesBellow,
-            antler = w.enablesAntler, charge = w.enablesCharge, insight = w.insight,
+            antler = w.enablesAntler, charge = w.enablesCharge, roll = w.enablesRoll, insight = w.insight,
             keenEar = w.keenHearing, earMult = w.hearingMult,
             thorns = w.thorns, venomResist = w.venomResist, quillVolley = w.enablesQuillVolley,
             volleyMult = w.enablesQuillVolley ? m : 0f, // мощь залпа = экспрессия органа-придатка (родство с ежом)
@@ -673,7 +676,7 @@ public class CreatureBody : MonoBehaviour
         float rng = 0f, atkCd = 0f, mv = 0f, dash = 0f, dashDur = 0f, dashCd = 0f, reduce = 0f, regen = 0f, regenOOC = 0f, thermal = 0f, howlR = 0f, howlStunAt = 0f;
         int venom = 0, bleed = 0;
         bool biteOn = false, scentOn = false, kickOn = false, howlOn = false, coldOn = false, camoOn = false,
-             thermalOn = false, constrictOn = false, digestOn = false, bellowOn = false, antlerOn = false, chargeOn = false,
+             thermalOn = false, constrictOn = false, digestOn = false, bellowOn = false, antlerOn = false, chargeOn = false, rollOn = false,
              constrictNativeOn = false, insightOn = false, keenEarOn = false,
              thornsOn = false, venomResistOn = false, quillVolleyOn = false, bleedResistOn = false;
         float volleyMult = 0f;
@@ -689,7 +692,7 @@ public class CreatureBody : MonoBehaviour
             howlStunAt = Mathf.Max(howlStunAt, c.howlStunAt);
             biteOn |= c.bite; scentOn |= c.scent; kickOn |= c.kick; howlOn |= c.howl;
             coldOn |= c.cold; camoOn |= c.camo; thermalOn |= c.thermalOn; constrictOn |= c.constrict;
-            digestOn |= c.digest; bellowOn |= c.bellow; antlerOn |= c.antler; chargeOn |= c.charge;
+            digestOn |= c.digest; bellowOn |= c.bellow; antlerOn |= c.antler; chargeOn |= c.charge; rollOn |= c.roll;
             constrictNativeOn |= c.constrictNative; insightOn |= c.insight;
             keenEarOn |= c.keenEar; earMult = Mathf.Max(earMult, c.earMult);
             thornsOn |= c.thorns; venomResistOn |= c.venomResist; quillVolleyOn |= c.quillVolley;
@@ -724,6 +727,10 @@ public class CreatureBody : MonoBehaviour
         if (bellowAb != null) bellowAb.BellowEnabled = bellowOn;             // РЁВ — фича Глотки лося (K2)
         if (antlerAb != null) antlerAb.AntlerEnabled = antlerOn;             // РОГА — фича придатка «Рога» (химерный слот)
         if (chargeAb != null) chargeAb.ChargeEnabled = chargeOn;             // ТАРАН — фича «Лосиных ног» (рывок горит)
+        // ПЕРЕКАТ — КРОСС-СЛОТ СЕТ (спека §0-бис «дожд-ролл с иглами»): Ноги дают ФОРМУ (кувырок+i-frames),
+        // Шкура-иглы дают ЖАЛО. Колется только при обоих; одни ноги = защитный уворот без урона (i-frames
+        // рывка и так у любых ног). У ежа-NPC иглы есть всегда → его перекат всегда колючий
+        if (rollAb != null) rollAb.RollEnabled = rollOn && thornsOn;
         if (volleyAb != null) { volleyAb.VolleyEnabled = quillVolleyOn; volleyAb.SetPower(volleyMult); } // ЗАЛП — фича придатка «Игломёт»; мощь растёт с родством к ежу
         if (satietyComp != null) satietyComp.SetMetabolism(Homogeneity); // МЕТАБОЛИЗМ по тирам: чистый держит сытость дольше, химера сгорает
         SetColdBlooded(coldOn); // холоднокровность (Сердце змеи): невидимость для термозрения врагов

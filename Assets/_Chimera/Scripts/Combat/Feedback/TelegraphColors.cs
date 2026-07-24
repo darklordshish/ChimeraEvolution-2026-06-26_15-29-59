@@ -23,6 +23,7 @@ public static class TelegraphColors
     public static readonly Color Sword  = new(0.55f, 0.75f, 0.95f); // меч (человек) — стальной
     public static readonly Color Kick   = new(0.80f, 0.85f, 0.25f); // пинок (человек) — лаймовый
     public static readonly Color Volley = new(0.95f, 0.80f, 0.30f); // залп игл (ёж) — янтарный: ПЕРВЫЙ дальний приём
+    public static readonly Color Roll   = new(0.60f, 0.62f, 0.66f); // перекат (ежиные ноги) — стальной: колючий клубок на рывке
 
     // НЕРАСПОЗНАННОЕ НАМЕРЕНИЕ: «что-то готовит», но что — не разобрать. Так замах выглядит БЕЗ человеческого
     // Чутья: факт виден всем (окно реакции то же), смысл открывает наблюдательность.
