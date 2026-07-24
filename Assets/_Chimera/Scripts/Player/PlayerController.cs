@@ -53,6 +53,7 @@ public class PlayerController : MonoBehaviour
     InputAction moveAction, lookAction, dashAction, toggleViewAction, sneakAction, sprintAction;
     Stamina stamina;   // дыхалка: гейтит рывок и спринт, на нуле — отдышка (замедление)
     Slow slow;         // замедление от игл ежа (до-создаётся эффектом): режет ход, не рывок
+    Satiety satiety;   // истощение (пустая шкала голода) слабит ход
     Vector3 velocity;
     float dashTimer, dashReadyAt, groundY, legDashOverride; // legDashOverride: длинный рывок лосиных ног (0 = дефолт dashDuration)
     Vector3 dashDir;
@@ -175,7 +176,9 @@ public class PlayerController : MonoBehaviour
         // увяз в булавках, зато рвануть ещё можешь (окно на разрыв дистанции честно оставлено)
         if (slow == null) TryGetComponent(out slow); // до-создаётся эффектом при первом попадании
         float mired = slow != null ? slow.MoveMult : 1f;
-        Vector3 horizontal = dashTimer > 0f ? dashDir * dashSpeed * grip : move * moveSpeed * grip * hold * sneak * sprint * winded * mired;
+        if (satiety == null) TryGetComponent(out satiety); // тело заводит шкалу в Awake
+        float starve = satiety != null ? satiety.Vigor : 1f; // истощён (пустая шкала голода) — ползёшь
+        Vector3 horizontal = dashTimer > 0f ? dashDir * dashSpeed * grip : move * moveSpeed * grip * hold * sneak * sprint * winded * mired * starve;
         if (knockback != null && knockback.IsActive) horizontal = Vector3.zero; // пока откидывает — не рулим (толкает Knockback)
         if (dashTimer > 0f) dashTimer -= Time.deltaTime;
         if (health != null) health.Invulnerable = dashTimer > 0f;

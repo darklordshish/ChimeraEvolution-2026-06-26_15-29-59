@@ -49,6 +49,7 @@ MonoBehaviour:
     enablesConstrict: 0
     thorns: 0
     venomResist: 0
+    bleedResist: 0
     enablesQuillVolley: 0
     keenHearing: 0
     hearingMult: 0
@@ -92,6 +93,7 @@ MonoBehaviour:
     enablesConstrict: 0
     thorns: 0
     venomResist: 0
+    bleedResist: 0
     enablesQuillVolley: 0
     keenHearing: 0
     hearingMult: 0
@@ -135,6 +137,7 @@ MonoBehaviour:
     enablesConstrict: 0
     thorns: 0
     venomResist: 0
+    bleedResist: 0
     enablesQuillVolley: 0
     keenHearing: 0
     hearingMult: 0
@@ -178,6 +181,7 @@ MonoBehaviour:
     enablesConstrict: 0
     thorns: 0
     venomResist: 0
+    bleedResist: 0
     enablesQuillVolley: 0
     keenHearing: 1
     hearingMult: 2
@@ -221,6 +225,7 @@ MonoBehaviour:
     enablesConstrict: 0
     thorns: 0
     venomResist: 0
+    bleedResist: 1
     enablesQuillVolley: 0
     keenHearing: 0
     hearingMult: 0
@@ -264,6 +269,7 @@ MonoBehaviour:
     enablesConstrict: 0
     thorns: 0
     venomResist: 0
+    bleedResist: 0
     enablesQuillVolley: 0
     keenHearing: 0
     hearingMult: 0
@@ -307,6 +313,7 @@ MonoBehaviour:
     enablesConstrict: 0
     thorns: 0
     venomResist: 0
+    bleedResist: 0
     enablesQuillVolley: 0
     keenHearing: 0
     hearingMult: 0

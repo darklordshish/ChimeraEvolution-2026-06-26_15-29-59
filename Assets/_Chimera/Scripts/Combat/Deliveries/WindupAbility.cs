@@ -35,16 +35,18 @@ public abstract class WindupAbility : MonoBehaviour, IAbility
         TryGetComponent(out variance);
     }
 
-    Morale morale; // шкала духа стайных (вешает психика ПОСЛЕ нашего Awake — берём лениво)
+    Morale morale;   // шкала духа стайных (вешает психика ПОСЛЕ нашего Awake — берём лениво)
+    Satiety satiety; // шкала сытости-голода (тело вешает в Awake): истощённый бьёт слабее
 
-    // урон доставки: ярость × разброс особи × ДУХ (M2: раскачанная мораль бьёт больнее — плавно до +25%)
+    // урон доставки: ярость × разброс особи × ДУХ (раскачанная мораль бьёт больнее) × ВИГОР (истощённый — слабее)
     protected float DamageMult
     {
         get
         {
             if (morale == null) TryGetComponent(out morale);
+            if (satiety == null) TryGetComponent(out satiety);
             return (rage != null ? rage.DamageMult : 1f) * (variance != null ? variance.DamageMult : 1f)
-                 * (morale != null ? morale.DamageMult : 1f);
+                 * (morale != null ? morale.DamageMult : 1f) * (satiety != null ? satiety.Vigor : 1f);
         }
     }
 

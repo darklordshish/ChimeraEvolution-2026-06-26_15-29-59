@@ -96,6 +96,8 @@ public class CreatureBody : MonoBehaviour
     Camouflage camoComp;    // камуфляж-в-неподвижности (Чешуя змеи) — вешаем/снимаем по сборке
     Thorns thornsComp;      // иглы-ответка (Шкура ежа) — тем же паттерном
     VenomResist venomResistComp; // ядоупорность (Сердце ежа)
+    BleedResist bleedResistComp; // кровеупорность (Лосиное сердце)
+    Satiety satietyComp;    // шкала сытости-голода — у любого тела; распад зависит от однородности (метаболизм химеры)
     PlayerBellow bellowAb;  // рёв (Глотка лося) — до-создаём игроку в Awake, включаем сборкой
     PlayerAntler antlerAb;  // рога (придаток лося, химерный слот) — до-создаём игроку, включаем сборкой
     PlayerCharge chargeAb;  // таран (Лосиные ноги) — до-создаём игроку, включаем сборкой
@@ -114,7 +116,7 @@ public class CreatureBody : MonoBehaviour
     public const int AffinityCap = 100; // потолок родства на вид (дальше некуда: скидка и мощь на полке)
 
     [SerializeField] float assistFeedRadius = 14f; // сытость помощникам: тела своего вида в этом радиусе от убийцы делят добычу (радиус стаи)
-    [SerializeField] float wholePreyMeal = 2f;     // множитель сытости у глотающего целиком (змея): полная трапеза vs доля
+    const float KillMeal = 0.7f;                   // насколько убийство наполняет ШКАЛУ сытости (0..1); глотающий целиком — на всю (1)
 
     // РОДСТВО — ЛОКАЛЬНОЕ, в теле КАЖДОГО существа (не в глобальном трекере: «ЦНС» игры не грузим).
     // Все звери мира — эксперименты с сывороткой (или съевшие их) → родство = база любого тела.
@@ -392,6 +394,9 @@ public class CreatureBody : MonoBehaviour
         if (move == null && !TryGetComponent<Morale>(out _)) gameObject.AddComponent<Morale>();
         // ШУМ — физика любого тела (ось звука): движение слышно, сам меряет скорость. Уши — у кого есть канал Hearing
         if (!TryGetComponent<Noise>(out _)) gameObject.AddComponent<Noise>();
+        // СЫТОСТЬ↔ГОЛОД — движитель у ЛЮБОГО животного (все едят): шкала тает с рождения, психики читают её
+        // как мотивацию (M3). Едой наполняют CreditKiller (хищник) и кормёжка (травоядный, M2)
+        if (!TryGetComponent(out satietyComp)) satietyComp = gameObject.AddComponent<Satiety>();
         // ЗАПАХ — тоже физика любого тела: след вешает ТЕЛО (не каждая психика поштучно — лось однажды остался
         // без запаха). Цвет = состав (Recompute), сила — тюнинг психики (змея приглушает SetStrength)
         if (!TryGetComponent<ScentTrail>(out _)) gameObject.AddComponent<ScentTrail>();
@@ -509,14 +514,18 @@ public class CreatureBody : MonoBehaviour
         // половина. Поведение сытого (змея прячется на насест) — на психике, читает Satiety.IsSated
         if (killer.chassis != null && killer.chassis.eatsMeat)
         {
-            Feed(killer, killer.DigestsWhole ? wholePreyMeal : 1f);
-            foreach (var col in Physics.OverlapSphere(killer.transform.position, assistFeedRadius, ~0, QueryTriggerInteraction.Ignore))
-            {
-                var ally = col.GetComponentInParent<CreatureBody>();
-                if (ally == null || ally == killer || ally == this) continue;
-                if (ally.chassis != killer.chassis || !ally.chassis.eatsMeat) continue;
-                Feed(ally, 0.5f);
-            }
+            Feed(killer, killer.DigestsWhole ? 1f : KillMeal); // глотающий целиком (змея) наедается на всю шкалу
+
+            // МАССИВНАЯ добыча (лось, вервольф) велика — кормит и СТАЮ: кины, участвовавшие в бою (рядом
+            // с тушей), получают половину. Мелкую жертву делить нечего — ест только убийца
+            if (GetComponent<Massive>() != null)
+                foreach (var col in Physics.OverlapSphere(killer.transform.position, assistFeedRadius, ~0, QueryTriggerInteraction.Ignore))
+                {
+                    var ally = col.GetComponentInParent<CreatureBody>();
+                    if (ally == null || ally == killer || ally == this) continue;
+                    if (ally.chassis != killer.chassis || !ally.chassis.eatsMeat) continue;
+                    Feed(ally, KillMeal * 0.5f); // стая делит тушу — половина трапезы
+                }
         }
 
         var present = new HashSet<string>();
@@ -547,6 +556,7 @@ public class CreatureBody : MonoBehaviour
         public int venom, bleed;
         public bool bite, scent, kick, howl, cold, camo, thermalOn, constrict, digest, bellow, antler, charge;
         public bool thorns, venomResist, quillVolley; // иглы-ответка, ядоупорность, залп (ёж)
+        public bool bleedResist;  // кровеупорность (лосиное сердце)
         public float volleyMult; // мощь залпа от родства с ежом (0 = залпа нет)
         public bool insight; // ЧУТЬЁ УЧЁНОГО: распознавание намерений + числа состояний (человеческое Чутьё)
         public bool keenEar;  // ОСТРЫЙ СЛУХ: различение вида источника + волны звука на экране
@@ -575,6 +585,7 @@ public class CreatureBody : MonoBehaviour
             keenEar = a.keenEar || b.keenEar, earMult = Mathf.Max(a.earMult, b.earMult),
             thorns = a.thorns || b.thorns, venomResist = a.venomResist || b.venomResist,
             quillVolley = a.quillVolley || b.quillVolley, volleyMult = Mathf.Max(a.volleyMult, b.volleyMult),
+            bleedResist = a.bleedResist || b.bleedResist,
         };
     }
 
@@ -634,6 +645,7 @@ public class CreatureBody : MonoBehaviour
             keenEar = w.keenHearing, earMult = w.hearingMult,
             thorns = w.thorns, venomResist = w.venomResist, quillVolley = w.enablesQuillVolley,
             volleyMult = w.enablesQuillVolley ? m : 0f, // мощь залпа = экспрессия органа-придатка (родство с ежом)
+            bleedResist = w.bleedResist,
             constrictNative = w.enablesConstrict && chassis != null && w.nativeChassis == chassis.speciesName,
         };
     }
@@ -663,7 +675,7 @@ public class CreatureBody : MonoBehaviour
         bool biteOn = false, scentOn = false, kickOn = false, howlOn = false, coldOn = false, camoOn = false,
              thermalOn = false, constrictOn = false, digestOn = false, bellowOn = false, antlerOn = false, chargeOn = false,
              constrictNativeOn = false, insightOn = false, keenEarOn = false,
-             thornsOn = false, venomResistOn = false, quillVolleyOn = false;
+             thornsOn = false, venomResistOn = false, quillVolleyOn = false, bleedResistOn = false;
         float volleyMult = 0f;
         float earMult = 0f;
         foreach (var kv in groups)
@@ -681,6 +693,7 @@ public class CreatureBody : MonoBehaviour
             constrictNativeOn |= c.constrictNative; insightOn |= c.insight;
             keenEarOn |= c.keenEar; earMult = Mathf.Max(earMult, c.earMult);
             thornsOn |= c.thorns; venomResistOn |= c.venomResist; quillVolleyOn |= c.quillVolley;
+            bleedResistOn |= c.bleedResist;
             volleyMult = Mathf.Max(volleyMult, c.volleyMult);
         }
         int dmg = Mathf.RoundToInt(dmgF), dmgBite = Mathf.RoundToInt(dmgBiteF);
@@ -712,11 +725,13 @@ public class CreatureBody : MonoBehaviour
         if (antlerAb != null) antlerAb.AntlerEnabled = antlerOn;             // РОГА — фича придатка «Рога» (химерный слот)
         if (chargeAb != null) chargeAb.ChargeEnabled = chargeOn;             // ТАРАН — фича «Лосиных ног» (рывок горит)
         if (volleyAb != null) { volleyAb.VolleyEnabled = quillVolleyOn; volleyAb.SetPower(volleyMult); } // ЗАЛП — фича придатка «Игломёт»; мощь растёт с родством к ежу
+        if (satietyComp != null) satietyComp.SetMetabolism(Homogeneity); // МЕТАБОЛИЗМ по тирам: чистый держит сытость дольше, химера сгорает
         SetColdBlooded(coldOn); // холоднокровность (Сердце змеи): невидимость для термозрения врагов
         SetCamouflage(camoOn);  // камуфляж (Чешуя змеи): невидимость в неподвижности
         DigestsWhole = digestOn; // «глотает целиком» (Тело-хвост змеи): убил → ПОЛНАЯ сытость (см. CreditKiller)
         SetThorns(thornsOn);          // иглы (Шкура ежа): ударил в упор — порезался
         SetVenomResist(venomResistOn); // ядоупорность (Сердце ежа): яд не накапливается
+        SetBleedResist(bleedResistOn); // кровеупорность (Лосиное сердце): кровь не накапливается
         if (move != null) // чувства игрока меняет ТОЛЬКО тело игрока (NPC-тело не должно включать их игроку)
         {
             Perception.WolfScent = scentOn;
@@ -807,6 +822,13 @@ public class CreatureBody : MonoBehaviour
         else if (!on && venomResistComp != null) { Destroy(venomResistComp); venomResistComp = null; }
     }
 
+    // КРОВЕУПОРНОСТЬ как маркер: опрашивается кровотечением при добавлении стака (зеркало ядоупорности)
+    void SetBleedResist(bool on)
+    {
+        if (on && bleedResistComp == null) bleedResistComp = gameObject.AddComponent<BleedResist>();
+        else if (!on && bleedResistComp != null) { Destroy(bleedResistComp); bleedResistComp = null; }
+    }
+
     // камуфляж-в-неподвижности как компонент: вешаем/снимаем по итогу сборки (живо на смене Шкуры у игрока)
     void SetCamouflage(bool on)
     {
@@ -815,10 +837,10 @@ public class CreatureBody : MonoBehaviour
     }
 
     // переваривание как компонент-маркер: физиология змеиного шасси (chassisOnly — аугументом не крадётся)
-    // единый вход сытости: до-создаёт Satiety на теле и кормит с масштабом (1 убийца / 0.5 помощник /
-    // wholePreyMeal — змея глотает целиком). Одна механика лечения на всех хищников
-    static void Feed(CreatureBody body, float scale) =>
-        (body.GetComponent<Satiety>() ?? body.gameObject.AddComponent<Satiety>()).Feed(scale);
+    // единый вход сытости: до-создаёт шкалу Satiety на теле и наполняет её долей (см. CreditKiller).
+    // Одна ось сытости-голода на всех, кто ест (хищник — убийством, травоядный — обгладыванием, M2)
+    static void Feed(CreatureBody body, float amount) =>
+        (body.GetComponent<Satiety>() ?? body.gameObject.AddComponent<Satiety>()).Feed(amount);
 
     // человеч.значение + (звериное − человеч.) × множитель: на ×1 = звериное, на ×2 = вдвое дальше от человека
     static float Blend(float human, float beast, float mult) => human + (beast - human) * mult;
@@ -888,6 +910,19 @@ public class CreatureBody : MonoBehaviour
             if (owner == species) mine += unit;
         }
         return mass > 0f ? Mathf.Clamp01(mine / mass) : 0f;
+    }
+
+    /// <summary>ОДНОРОДНОСТЬ 0..1 — макс. идентичность среди присутствующих видов (насколько тело «чистое»).
+    /// Чистый вид = 1, полная химера = меньше. Метаболизм сытости зависит от неё: чем разнороднее, тем
+    /// быстрее голод (цена химеризации). Разнородность = 1 − однородность.</summary>
+    public float Homogeneity
+    {
+        get
+        {
+            float max = chassis != null ? Identity(chassis) : 0f;
+            if (donors != null) foreach (var d in donors) if (d != null) max = Mathf.Max(max, Identity(d));
+            return max;
+        }
     }
 
     // аугумент-пул вида: сколько его органов можно надеть (chassisOnly не в счёт)

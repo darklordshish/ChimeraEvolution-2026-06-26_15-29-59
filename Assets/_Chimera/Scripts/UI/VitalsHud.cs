@@ -44,6 +44,9 @@ public class VitalsHud : MonoBehaviour
     // СТАМИНА — своя пара цветов, НЕ из палитры HP: две зелёные полоски друг под другом читались бы как одна
     static readonly Color StamFull = new(0.85f, 0.72f, 0.25f);   // тёплая охра — дыхание
     static readonly Color StamWinded = new(0.55f, 0.25f, 0.55f); // отдышка: полоска пустая И цвет чужой
+    static readonly Color SatSated = new(0.45f, 0.72f, 0.40f);   // сыт — зелёный (сытая жизнь)
+    static readonly Color SatHungry = new(0.80f, 0.62f, 0.25f);  // голоден — охристо-жёлтый (беспокойство)
+    static readonly Color SatStarving = new(0.78f, 0.34f, 0.20f); // истощён — тревожно-рыжий
 
     /// <summary>Показывать полоски ВСЕМ воспринимаемым (наблюдение за сценами в призраке) или только тем,
     /// кто дерётся. Тумблер — клавиша H.</summary>
@@ -65,9 +68,11 @@ public class VitalsHud : MonoBehaviour
     float nextRescan;
 
     // свои данные + сводка
-    Image ownFill, stamFill;
+    Image ownFill, stamFill, satFill;
+    RectTransform[] satNotches; // засечки порогов сытости (сыт/голоден/истощён)
     GameObject crosshair;   // прицел залпа — центр экрана, включает Чутьё (аналитика = прицельность)
     Stamina playerStamina;
+    Satiety playerSatiety;
     Text ownText, grabText, summaryText;
     RectTransform summaryPanel;
     readonly List<(float dist, Health h, SenseKind by)> summary = new();
@@ -197,6 +202,21 @@ public class VitalsHud : MonoBehaviour
             stamFill.color = playerStamina.Exhausted ? StamWinded : StamFull;
         }
 
+        // СЫТОСТЬ: длина — шкала, цвет — стадия; засечки на порогах показывают, куда ползёт голод
+        if (playerSatiety == null && player != null) player.TryGetComponent(out playerSatiety);
+        if (satFill != null && playerSatiety != null)
+        {
+            float f = playerSatiety.Fullness;
+            satFill.rectTransform.sizeDelta = new Vector2(ownBarWidth * f, satFill.rectTransform.sizeDelta.y);
+            satFill.color = playerSatiety.IsStarving ? SatStarving : playerSatiety.IsSated ? SatSated : SatHungry;
+            if (satNotches != null && satNotches.Length == 3) // ставим один раз (пороги статичны), но дёшево обновлять
+            {
+                satNotches[0].anchoredPosition = new Vector2(ownBarWidth * playerSatiety.SatedAt, satNotches[0].anchoredPosition.y);
+                satNotches[1].anchoredPosition = new Vector2(ownBarWidth * playerSatiety.HungryAt, satNotches[1].anchoredPosition.y);
+                satNotches[2].anchoredPosition = new Vector2(ownBarWidth * playerSatiety.StarveAt, satNotches[2].anchoredPosition.y);
+            }
+        }
+
         string combat = !playerHealth.InCombat
             ? (playerHealth.OutOfCombatRegen > 0f ? "   вне боя — реген" : "   вне боя") : "";
         // СВОИ данные — числом ВСЕГДА: своё тело учёный знает изнутри, органом это не отнимается
@@ -284,7 +304,11 @@ public class VitalsHud : MonoBehaviour
         if (h.TryGetComponent<Venom>(out var v) && v.Stacks > 0) s += $"  <color=#73D933>☠{N(v.Stacks, numbers)}</color>";
         if (h.TryGetComponent<Bleed>(out var b) && b.Stacks > 0) s += $"  <color=#B80A1F>♦♦{N(b.Stacks, numbers)}</color>";
         if (h.TryGetComponent<Slow>(out var sl) && sl.Stacks > 0) s += $"  <color=#73B3F2>❄{N(sl.Stacks, numbers)}</color>"; // замедление — стылый голубой
-        if (h.TryGetComponent<Satiety>(out var sat) && sat.IsSated) s += "  <color=#7BE0A0>✚</color>"; // сыт — восстанавливается (зелёный крест)
+        if (h.TryGetComponent<Satiety>(out var sat))
+        {
+            if (sat.IsStarving) s += "  <color=#C8862E>▼</color>";      // истощён — слабеет (тускло-оранжевый)
+            else if (sat.IsSated) s += "  <color=#7BE0A0>✚</color>";    // сыт — восстанавливается (зелёный крест)
+        }
         if (h.TryGetComponent<Stagger>(out var st) && st.IsStunned) s += "  <color=#EBEBD9>✱</color>";
         if (h.TryGetComponent<Morale>(out var m) && Mathf.Abs(m.Current) >= 0.5f)
         {
@@ -365,6 +389,31 @@ public class VitalsHud : MonoBehaviour
         stamFill.rectTransform.anchorMin = stamFill.rectTransform.anchorMax = stamFill.rectTransform.pivot = Vector2.zero;
         stamFill.rectTransform.sizeDelta = new Vector2(ownBarWidth, stamH);
         stamFill.rectTransform.anchoredPosition = new Vector2(0f, -(stamH + 3f));
+
+        // СЫТОСТЬ↔ГОЛОД — ещё ниже, той же тонкой полоской, но С ЗАСЕЧКАМИ СТАДИЙ: чёрточки на порогах
+        // «сыт / голоден / истощён» — видно, куда ползёт шкала, не считывая цифру
+        const float satH = 9f;
+        float satY = -(stamH + 3f) - (satH + 3f);
+        var satBack = NewImage("SatBack", ownRoot.transform, BarBack);
+        satBack.rectTransform.anchorMin = satBack.rectTransform.anchorMax = satBack.rectTransform.pivot = Vector2.zero;
+        satBack.rectTransform.sizeDelta = new Vector2(ownBarWidth, satH);
+        satBack.rectTransform.anchoredPosition = new Vector2(0f, satY);
+
+        satFill = NewImage("SatFill", ownRoot.transform, SatSated);
+        satFill.rectTransform.anchorMin = satFill.rectTransform.anchorMax = satFill.rectTransform.pivot = Vector2.zero;
+        satFill.rectTransform.sizeDelta = new Vector2(ownBarWidth, satH);
+        satFill.rectTransform.anchoredPosition = new Vector2(0f, satY);
+
+        // ЗАСЕЧКИ порогов — тонкие тёмные чёрточки поверх полосы (позиции берём у Satiety при первом Draw)
+        satNotches = new RectTransform[3];
+        for (int i = 0; i < 3; i++)
+        {
+            var tick = NewImage("SatTick" + i, ownRoot.transform, new Color(0.05f, 0.05f, 0.05f, 0.9f));
+            tick.rectTransform.anchorMin = tick.rectTransform.anchorMax = tick.rectTransform.pivot = Vector2.zero;
+            tick.rectTransform.sizeDelta = new Vector2(2f, satH);
+            tick.rectTransform.anchoredPosition = new Vector2(0f, satY); // на уровне полосы сытости; X проставит DrawOwn
+            satNotches[i] = tick.rectTransform;
+        }
 
         ownText = NewText("Text", ownRoot.transform, 17, OwnText, TextAnchor.LowerLeft);
         ownText.rectTransform.anchorMin = ownText.rectTransform.anchorMax = ownText.rectTransform.pivot = Vector2.zero;

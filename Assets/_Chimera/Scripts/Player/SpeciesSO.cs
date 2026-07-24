@@ -60,6 +60,7 @@ public class Organ
     public bool enablesBite, enablesScent, enablesKick, enablesHowl, coldBlooded, camo, enablesThermal, enablesConstrict;
     public bool thorns;            // ИГЛЫ (Шкура ежа): ответка на удар в упор + кровотечение обидчику
     public bool venomResist;       // ЯДОУПОРНОСТЬ (Сердце ежа): яд не накапливается — стак разлагается почти сразу
+    public bool bleedResist;       // КРОВЕУПОРНОСТЬ (Лосиное сердце): кровь не накапливается — рана быстро затягивается
     public bool enablesQuillVolley; // ЗАЛП ИГЛАМИ (придаток «Игломёт» ежа, химерный слот — аддитивен, как Рога/Хвост):
                                     // ПЕРВЫЙ дальний бой игрока. Своя кнопка — дальний ≠ ближний, не делят слот-оружие
     public bool keenHearing;       // ОСТРЫЙ СЛУХ (лосиное Ухо): вдвое дальше + различение ВИДА источника

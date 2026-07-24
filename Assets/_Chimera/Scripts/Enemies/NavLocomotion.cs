@@ -32,6 +32,7 @@ public class NavLocomotion : MonoBehaviour
     Vector3 smoothed;   // сглаженная горизонтальная скорость (между кадрами)
     float verticalVel;
     Slow slow;          // замедление (иглы ежа): ЕДИНЫЙ хук на всех NPC — психики трогать не надо
+    Satiety satiety;    // истощение (пустая шкала голода) слабит ход — тот же единый хук
 
     void Awake()
     {
@@ -47,6 +48,8 @@ public class NavLocomotion : MonoBehaviour
         // ЗАМЕДЛЕНИЕ — здесь, в единой точке хода: снаряд-иглы тянут вниз ЛЮБОГО NPC без правок его психики
         if (slow == null) TryGetComponent(out slow); // до-создаётся эффектом на первом попадании — привязка ленивая
         if (slow != null) desiredHorizontal *= slow.MoveMult;
+        if (satiety == null) TryGetComponent(out satiety);
+        if (satiety != null) desiredHorizontal *= satiety.Vigor; // истощён — плетётся
         if (desiredHorizontal.sqrMagnitude < stopDeadzone * stopDeadzone) desiredHorizontal = Vector3.zero; // дедзона
         smoothed = Vector3.MoveTowards(smoothed, desiredHorizontal, accel * Time.deltaTime);
 

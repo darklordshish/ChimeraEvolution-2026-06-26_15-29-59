@@ -82,6 +82,10 @@ public class ChimeraDevWindow : EditorWindow
         // СТАМИНА рядом с HP — та же витальность. Выводим ЧИСЛОМ по гоче «молчащая система не даёт ошибок»:
         // бак 0 или реген 0 = виды не перегенерены, и это должно бросаться в глаза, а не проявляться
         // загадочным «рывок почему-то не работает»
+        var sat = health.GetComponent<Satiety>();
+        if (sat != null)
+            EditorGUILayout.LabelField($"Сытость {sat.Fullness * 100f:0}%  {(sat.IsSated ? "СЫТ (реген)" : sat.IsHungry ? "ГОЛОДЕН" : "—")}");
+
         var stam = health.GetComponent<Stamina>();
         if (stam != null)
         {

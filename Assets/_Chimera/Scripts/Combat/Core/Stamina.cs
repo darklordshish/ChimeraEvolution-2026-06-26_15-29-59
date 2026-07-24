@@ -18,10 +18,14 @@ public class Stamina : MonoBehaviour
     [SerializeField, Range(0.1f, 1f)] float exhaustSlow = 0.6f; // насколько медленнее двигаешься, пока отдышка
 
     public float Current { get; private set; }
-    public float Max => maxStamina;
-    public float Normalized => maxStamina > 0f ? Mathf.Clamp01(Current / maxStamina) : 0f;
+    // ЭФФЕКТИВНЫЙ МАКСИМУМ срезается ИСТОЩЕНИЕМ (голод × Vigor): у голодного меньше резервов на рывки/таран
+    public float Max => maxStamina * StarveMult;
+    public float Normalized => Max > 0f ? Mathf.Clamp01(Current / Max) : 0f;
     public float RegenPerSecond { get; set; }
     public bool Exhausted { get; private set; }
+
+    Satiety satiety; // истощение (пустая шкала голода) режет ёмкость бака — ленивая привязка (тело вешает в Awake)
+    float StarveMult { get { if (satiety == null) TryGetComponent(out satiety); return satiety != null ? satiety.Vigor : 1f; } }
 
     /// <summary>Множитель скорости от выдоха: 1 в норме, меньше — пока отдышка. Читают локомоции.</summary>
     public float MoveMult => Exhausted ? exhaustSlow : 1f;
@@ -33,15 +37,19 @@ public class Stamina : MonoBehaviour
 
     void Update()
     {
+        if (Current > Max) Current = Max;        // истощение срезало ёмкость — лишнее сверх нового потолка сливается
         if (Time.time < readyAt) return;
         Exhausted = false;                       // пауза вышла — отдышался, замедление снято
-        if (Current >= maxStamina) return;
+        if (Current >= Max) return;
 
         if (rage == null) TryGetComponent(out rage); // ленивая привязка: ярость могут повесить в рантайме
         float rate = RegenPerSecond * (rage != null ? rage.StaminaRegenMult : 1f);
         if (rate <= 0f) return;
-        Current = Mathf.Min(maxStamina, Current + rate * Time.deltaTime);
+        Current = Mathf.Min(Max, Current + rate * Time.deltaTime);
     }
+
+    /// <summary>Долить бак (сытость восстанавливает и дыхалку): не тратит паузу-откат, просто пополняет.</summary>
+    public void Recover(float amount) { if (amount > 0f) Current = Mathf.Min(Max, Current + amount); }
 
     /// <summary>Хватит ли на действие. На отдышке НЕ хватает ничего — в этом её смысл.</summary>
     public bool Has(float cost) => !Exhausted && Current >= cost;

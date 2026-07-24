@@ -24,10 +24,14 @@ public class Bleed : MonoBehaviour
 
     void Awake() => TryGetComponent(out health);
 
+    BleedResist resist; // КРОВЕУПОРНОСТЬ (сердце лося): не блокирует порез, а укорачивает жизнь стака
+
     public void AddStack()
     {
+        if (resist == null) TryGetComponent(out resist); // ленивая привязка (маркер вешает тело в Recompute)
         stacks = Mathf.Min(maxStacks, Stacks + 1);
-        expireAt = Time.time + stackDuration;
+        // у кровеупорного рана затягивается быстро: порез проходит, но кровь НЕ КОПИТСЯ до порога кровопотери
+        expireAt = Time.time + stackDuration * (resist != null ? resist.DurationMult : 1f);
     }
 
     public void SetSource(Health s) => source = s;
