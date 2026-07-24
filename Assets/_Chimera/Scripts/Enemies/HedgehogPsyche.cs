@@ -63,6 +63,9 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
     // ленивая привязка: бак до-создаёт тело в Recompute, он бывает позже нашего Awake
     Stamina Breath { get { if (breath == null) TryGetComponent(out breath); return breath; } }
 
+    Satiety satiety; // шкала сытости-голода (M3): сытый ёж не гоняется за змеями
+    Satiety Belly { get { if (satiety == null) TryGetComponent(out satiety); return satiety; } }
+
     /// <summary>ЦЕПКАЯ ПАСТЬ — та же машина захвата, что у волка и змеи, но на ОДНУ стадию: ёж не душит
     /// и не заваливает, он ВЦЕПЛЯЕТСЯ и мотает головой, добивая. Это последнее звено анти-змеиной связки:
     /// змея бросается → срывается об иглы → ёж вцепился → добил.
@@ -246,7 +249,11 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
         if (Time.time < nextRetarget) return;
         nextRetarget = Time.time + retargetInterval;
 
-        Health prey = null; float best = preyRange * preyRange;
+        // M3: СЫТЫЙ ёж не охотится — не гоняется за змеями, чилит (цель = игрок/брожение). Голод включает охоту
+        Health prey = null;
+        bool sated = Belly != null && Belly.IsSated;
+        float best = preyRange * preyRange;
+        if (!sated)
         foreach (var col in Physics.OverlapSphere(transform.position, preyRange, ~0, QueryTriggerInteraction.Ignore))
         {
             var snake = col.GetComponentInParent<SnakePsyche>();

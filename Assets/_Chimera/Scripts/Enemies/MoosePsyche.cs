@@ -104,6 +104,12 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     Satiety satiety;
     Satiety Belly { get { if (satiety == null) TryGetComponent(out satiety); return satiety; } } // тело заводит в Awake
 
+    // M3: ГОЛОД → РАЗДРАЖИТЕЛЬНОСТЬ. Голодный лось на взводе (быстрее вскипает, злее защищает еду), сытый
+    // placid (медленнее заводится). Плавно по шкале сытости
+    [SerializeField] float hungryAgitation = 1.6f; // множитель роста раздражения на голоде (сытость 0)
+    [SerializeField] float satedAgitation = 0.6f;  // на полной сытости
+    float Agitation => Belly != null ? Mathf.Lerp(hungryAgitation, satedAgitation, Belly.Fullness) : 1f;
+
     [SerializeField] float chargeCost = 70f; // 45 не читалось: реген успевал вернуть между таранами
     // ПОГОНЯ ЖЖЁТ ДЫХАЛКУ — главный расход, а не приёмы. Пока трата шла только на редкий таран, полоска
     // «телепалась у полной»: реген всё возвращал между ударами. Непрерывный слив делает состояние зверя
@@ -335,7 +341,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
             else
             {
                 if (sees && dist <= warnRadius)
-                    irritation = Mathf.Min(1f, irritation + irritationRise * (0.5f + 0.5f * (1f - dist / warnRadius)) * Time.deltaTime);
+                    irritation = Mathf.Min(1f, irritation + irritationRise * Agitation * (0.5f + 0.5f * (1f - dist / warnRadius)) * Time.deltaTime);
                 else
                     irritation = Mathf.Max(0f, irritation - irritationDecay * Time.deltaTime);
                 if (irritation >= 1f) Provoke();
@@ -419,7 +425,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
                 // шумный преследователь в углу дожмёт до ответной агрессии (фырк → топот → берсерк)
                 if (dir.sqrMagnitude < 0.04f)
                 {
-                    irritation = Mathf.Min(1f, irritation + irritationRise * Time.deltaTime);
+                    irritation = Mathf.Min(1f, irritation + irritationRise * Agitation * Time.deltaTime);
                     UpdateMood(); TellSteps();
                     if (irritation >= 1f) { Provoke(); return; }
                     transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(watch), rotationSpeed * Time.deltaTime);
