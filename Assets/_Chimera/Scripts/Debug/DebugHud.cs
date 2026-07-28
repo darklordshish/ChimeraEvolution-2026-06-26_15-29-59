@@ -100,6 +100,8 @@ public class DebugHud : MonoBehaviour
             LegendRow(ref y, x, TelegraphColors.Sword,  "меч");
             LegendRow(ref y, x, TelegraphColors.Kick,   "пинок");
             LegendRow(ref y, x, TelegraphColors.Volley, "залп игл (дальний)");
+            LegendRow(ref y, x, TelegraphColors.Roll,   "перекат (рывок в клубке)");
+            LegendRow(ref y, x, TelegraphColors.Curl,   "клубок / катание ежа (в ярости — бордовый)");
 
             LegendHeader(ref y, x, "— статусы —");
             LegendRow(ref y, x, TelegraphColors.Stunned, "стан / схвачен (всё тело)");

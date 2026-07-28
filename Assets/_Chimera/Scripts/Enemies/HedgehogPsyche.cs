@@ -11,8 +11,9 @@ using UnityEngine;
 /// Лестница отчаяния собирается по слайсам: залп-замедление (не подпускает) и уход перекатами есть;
 /// КЛУБОК (C1) — угроза давит → сворачивается (`CurlDefense`: броня↑ + жжёт стамину). ПРОДАВИЛИ — дыхалка
 /// на исходе → КАТАНИЕ (C2): прорыв тараном сквозь угрозу, подруливая. Выдохся до ИСТОЩЕНИЯ → ОКНО «НА
-/// СПИНЕ» (C3): лежит беспомощным, иглы прижаты (хватают безболезненно), пока не отдышится. Полная
-/// психика-лестница (5 ступеней + Cornered + закольцовка страха→ярость) — слайс D.
+/// СПИНЕ» (C3): лежит беспомощным, иглы прижаты, пока не отдышится. ПРЕДЕЛ (D): под давлением копит страх
+/// (морда синеет) → HP-дно ИЛИ страх-дно → ЗАКОЛЬЦОВКА в максимальную ярость (морда бордовая): не
+/// отступает, на спину не падает — бьётся ценой HP (ярость-на-HP), пока не остынет без угроз. Ёж закрыт.
 ///
 /// Опасность ежа держится НЕ психикой, а телом: иглы (`Thorns`) наказывают удар в упор, ядоупорное
 /// сердце (`VenomResist`) обесценивает змеиный укус. Оба компонента вешает `CreatureBody` по флагам
@@ -38,6 +39,9 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
     [SerializeField] float curlTriggerRange = 2.8f; // угроза ближе этого = «в упор» (слайс C)
     [SerializeField] float hurtCurlWindow = 2.5f;   // сколько «помним» удар не-кина как повод держать клубок (перестал бить → через столько развернётся)
     [SerializeField] float rollAtBreath = 0.3f;     // доля стамины, ниже которой свёрнутый ёж идёт на ПРОРЫВ катанием (C2)
+    [SerializeField] float cornerHpFrac = 0.25f;    // ПРЕДЕЛ (D): HP ниже этой доли ПОД давлением → закольцовка страха в ярость
+    [SerializeField] float cornerCooldown = 6f;     // угроз нет столько секунд → предел остывает (как лосиный берсерк)
+    [SerializeField] float fearPerHit = 1f;         // сколько страха копит один удар не-кина (мораль в минус)
     [SerializeField] float retargetInterval = 0.7f;
 
     [Header("Бой")]
@@ -68,6 +72,14 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
     CurlDefense curl; // КЛУБОК (слайс C): оборонительная стойка последнего рубежа — свернулся, когда стая в упор
     Thorns thornsComp; // иглы — гасим «на спине» (истощён), чтобы хватали безболезненно; ленивая (тело вешает их по флагу)
     Thorns Quills { get { if (thornsComp == null) TryGetComponent(out thornsComp); return thornsComp; } }
+
+    Morale morale;          // ПРЕДЕЛ (D): страх копится под давлением (морда синеет), дно → закольцовка в ярость
+    Personality personality;
+    bool cornered;          // ЗАГНАН: страх закольцован в максимальную ярость, обратной дороги нет, пока угроза рядом
+    float lastThreatAt;
+    float CornerHpFrac => cornerHpFrac > 0f ? cornerHpFrac : 0.25f;   // 0-гоча: новое поле у психики на префабе приходит нулём
+    float CornerCooldown => cornerCooldown > 0f ? cornerCooldown : 6f;
+    float FearPerHit => fearPerHit > 0f ? fearPerHit : 1f;
 
     Stamina breath;
     // ленивая привязка: бак до-создаёт тело в Recompute, он бывает позже нашего Awake
@@ -126,7 +138,7 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
         ownHealth.onDamaged.AddListener(OnHurt);       // «кто атакует»: удар не-кина → повод свернуться
         stagger = GetComponent<Stagger>();
         knockback = GetComponent<Knockback>();
-        TryGetComponent(out rage);
+        if (!TryGetComponent(out rage)) rage = gameObject.AddComponent<Rage>(); // ПРЕДЕЛ (D) требует ярость — до-создаём, если нет на префабе
         TryGetComponent(out variance);
         if (!TryGetComponent(out nav)) nav = gameObject.AddComponent<NavLocomotion>();
         if (!TryGetComponent(out bite)) bite = gameObject.AddComponent<BiteAbility>();
@@ -153,6 +165,12 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
             targetHealth = playerHealth;
             bite.SetTarget(targetHealth);
         }
+
+        // ПРЕДЕЛ (D): ёж ТЕПЛОКРОВНЫЙ → есть мораль и личность (тело вешает в Awake, читаем после всех Awake).
+        // Порог храбрости — от личности, как у волка
+        TryGetComponent(out personality);
+        if (morale == null) TryGetComponent(out morale);
+        if (morale != null && personality != null) morale.SetThreshold(personality.Bravery);
     }
 
     void OnDestroy() { if (ownHealth != null) ownHealth.onDamaged.RemoveListener(OnHurt); }
@@ -165,7 +183,10 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
         if (atk == null) return;
         var body = atk.GetComponentInParent<CreatureBody>();
         if (body != null && body != ownBody && CreatureBody.Regard(ownBody, body) == KinTier.None)
+        {
             hurtUntil = Time.time + HurtWindow;
+            if (morale != null && !cornered) morale.Add(-FearPerHit); // ПРЕДЕЛ: удар не-кина копит СТРАХ (морда синеет; в загоне уже не копим)
+        }
     }
 
     void Update()
@@ -210,12 +231,30 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
 
         if (stagger != null && stagger.IsStaggered) { Settle(Vector3.zero); return; }
 
+        // ПРЕДЕЛ (D): под давлением копится страх (морда синеет через EmotionTint). Дошёл до ДНА —
+        // HP-дно ИЛИ страх-дно (Morale.IsRouting) — → ЗАКОЛЬЦОВКА в максимальную ярость: страх СТЁРТ
+        // (морда ХЛОП бордовая), самоподдержка ярости, обратной дороги нет. Остывает, когда угроз нет
+        // CornerCooldown секунд (как лосиный берсерк — не вечный)
+        bool hpDno = ownHealth.Current <= ownHealth.Max * CornerHpFrac;
+        bool fearDno = morale != null && morale.IsRouting;
+        if (cornered || hpDno || fearDno || Time.time < hurtUntil) // скан угроз только у предела — иначе здоровый спокойный ёж зря сканит
+        {
+            bool threatNow = ThreatsNear(out _, out _, out _) || Time.time < hurtUntil;
+            if (threatNow) lastThreatAt = Time.time;
+            if (!cornered)
+            {
+                if (threatNow && (hpDno || fearDno)) { cornered = true; if (morale != null) morale.Calm(); } // страх ЗАКОЛЬЦОВАН → морда синь→бордо
+            }
+            else if (Time.time - lastThreatAt > CornerCooldown) cornered = false; // угроз нет — остыл
+            if (cornered && rage != null) rage.Enrage(1f); // самоподдержка макс. ярости: +урон/+скорость + ярость-на-HP
+        }
+
         // НА СПИНЕ (C3): выдохся до ИСТОЩЕНИЯ (`Winded`) — лежит беспомощным, ИГЛЫ ПРИЖАТЫ (хватают
-        // безболезненно), пока не отдышится (выберется из истощения — реген там медленный, дно липкое).
-        // УПРАВЛЯЕМЫЙ ВЫХОД выпадает сам: развернулся/вышел из клубка ДО дна = стамина не в истощении = не лёг
-        bool onBack = Breath != null && Breath.Winded;
-        if (Quills != null) Quills.enabled = !onBack; // иглы off на спине, обратно — как отдышался
-        if (onBack)
+        // безболезненно), пока не отдышится. НО ЗАГНАННЫЙ (cornered) на спину НЕ падает — бьётся до конца
+        // ценой HP (ярость-на-HP). Управляемый выход выпадает сам: вышел из клубка ДО дна = не Winded = не лёг
+        bool helpless = Breath != null && Breath.Winded && !cornered;
+        if (Quills != null) Quills.enabled = !helpless;               // на спине иглы off; загнанный иглы держит
+        if (helpless)
         {
             if (curl != null) curl.Uncurl(); // не шар — лежит развёрнутым
             Settle(Vector3.zero);
@@ -276,8 +315,9 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
                 return;
             }
 
-            // стая ЧИСЛОМ, но не в упор → отходим ПО ДУГЕ, не даём окружить (одиночку на дистанции игнорим — иглы)
-            if (threatN >= wolfFearCount)
+            // стая ЧИСЛОМ, но не в упор → отходим ПО ДУГЕ, не даём окружить (одиночку на дистанции игнорим — иглы).
+            // ЗАГНАННЫЙ (cornered) НЕ отступает — берсерк лезет вперёд, не пятится
+            if (threatN >= wolfFearCount && !cornered)
             {
                 Vector3 away = transform.position - threatCenter; away.y = 0f;
                 if (away.sqrMagnitude > 0.001f)

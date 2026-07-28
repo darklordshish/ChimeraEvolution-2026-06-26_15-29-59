@@ -39,11 +39,14 @@ public class CurlDefense : MonoBehaviour
     // ЛЕНИВО: бак до-создаёт ТЕЛО (CreatureBody.Recompute) ПОЗЖЕ нашего Awake — привязка в Awake поймала бы null,
     // и клубок молча не жёг бы стамину (катание не наступало). Та же причина, что у Breath в психике
     Stamina Breath { get { if (stamina == null) TryGetComponent(out stamina); return stamina; } }
+    Rage rage; // ЗАГНАН (ярость): на истощении НЕ разворачивается — держит клубок/катится ценой HP (ярость-на-HP)
+    bool Raging { get { if (rage == null) TryGetComponent(out rage); return rage != null && rage.IsEnraged; } }
     Telegraph telegraph;
     CharacterController controller;
     float baseArmor;
     Vector3 rollDir;
     readonly HashSet<Health> rolledThis = new();
+    bool tintShown; Color tintColor; // тинт шара: держим последний, меняем только на смену (серый ↔ бордо по ярости)
 
     void Awake()
     {
@@ -59,7 +62,7 @@ public class CurlDefense : MonoBehaviour
         Curled = true;
         baseArmor = health.DamageReduction;
         health.DamageReduction = Mathf.Max(baseArmor, curlArmor);
-        if (telegraph != null) telegraph.Set(true, TelegraphColors.Curl); // факт-статус (не намерение) — виден без Чутья
+        ShowTint(BallTint(false)); // серый клубок; ярый — бордовый (ярость виднее серого)
     }
 
     /// <summary>Развернуться: вернуть базовую броню и рест-вид. Идемпотентно.</summary>
@@ -69,7 +72,7 @@ public class CurlDefense : MonoBehaviour
         Curled = false;
         Rolling = false;
         health.DamageReduction = baseArmor;
-        if (telegraph != null) telegraph.Set(false, TelegraphColors.Curl);
+        HideTint();
     }
 
     /// <summary>Держим клубок (не катясь): жжём стамину. Выдохся → развернулись, false психике.</summary>
@@ -79,9 +82,10 @@ public class CurlDefense : MonoBehaviour
         var s = Breath;
         if (s != null)
         {
-            s.Drain(staminaDrain * Time.deltaTime);
-            if (s.Exhausted) { Uncurl(); return false; }
+            s.Drain(staminaDrain * Time.deltaTime);                  // истощён+ярость → Drain сам жжёт HP (ярость-на-HP)
+            if (s.Exhausted && !Raging) { Uncurl(); return false; } // выдохся БЕЗ ярости → развернулся; ЗАГНАННЫЙ держит ценой HP
         }
+        ShowTint(BallTint(false)); // серый ↔ бордо: свернувшийся ярый ёж светится яростью, не серым
         return true;
     }
 
@@ -95,8 +99,8 @@ public class CurlDefense : MonoBehaviour
             Rolling = true;
             rolledThis.Clear();
             rollDir = Flat(aim, transform.forward);
-            if (telegraph != null) telegraph.Set(true, TelegraphColors.Roll); // катящийся шар — цвет переката
         }
+        ShowTint(BallTint(true)); // катящийся шар: серый (перекат) ↔ бордо (ярый прорыв)
 
         // ПОДРУЛИВАНИЕ к цели — медленно (малоуправляемо, но не строго по прямой)
         rollDir = Vector3.RotateTowards(rollDir, Flat(aim, rollDir), rollTurnSpeed * Mathf.Deg2Rad * Time.deltaTime, 0f).normalized;
@@ -115,12 +119,28 @@ public class CurlDefense : MonoBehaviour
         if (s != null)
         {
             s.Drain(rollDrain * Time.deltaTime);
-            if (s.Exhausted) { Uncurl(); return false; } // выдохся — развернулся (C3 заменит на «спину»)
+            if (s.Exhausted && !Raging) { Uncurl(); return false; } // выдохся БЕЗ ярости → развернулся; ЗАГНАННЫЙ катится дальше ценой HP
         }
         return true;
     }
 
     static Vector3 Flat(Vector3 v, Vector3 fallback) { v.y = 0f; return v.sqrMagnitude > 0.001f ? v.normalized : fallback; }
+
+    // ТИНТ ШАРА красит ТЕЛО (серый клубок / перекат), но ЗАГНАННЫЙ (ярость) — БОРДОВЫЙ: иначе серый
+    // перекрывал эмоц-морду и яростный ёж в шаре был весь серый (жалоба плейтеста). Меняем только на смену цвета
+    Color BallTint(bool rolling) => Raging ? TelegraphColors.RageTint : (rolling ? TelegraphColors.Roll : TelegraphColors.Curl);
+    void ShowTint(Color c)
+    {
+        if (telegraph == null || (tintShown && tintColor == c)) return;
+        tintColor = c; tintShown = true;
+        telegraph.Set(true, c);
+    }
+    void HideTint()
+    {
+        if (telegraph == null || !tintShown) return;
+        tintShown = false;
+        telegraph.Set(false, tintColor);
+    }
 
     void OnDrawGizmos()
     {
