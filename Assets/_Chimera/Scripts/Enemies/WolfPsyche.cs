@@ -516,7 +516,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
                 return;
             }
             // ПРЫЖОК — рывок усилия: без дыхалки волк остаётся грызть вблизи (отсюда «волны» стаи)
-            if (dist >= leap.MinRange && dist <= leap.MaxRange && (Breath == null || Breath.Has(LeapCost)))
+            if (dist >= leap.MinRange && dist <= leap.MaxRange && (Breath == null || Breath.CanSpend(LeapCost)))
             { if (leap.TryUse()) { Breath?.TrySpend(LeapCost); activeAbility = leap; } Settle(Vector3.zero); return; }
         }
 
@@ -612,7 +612,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
             if (Time.time >= nextAttackTime && Vector3.Angle(transform.forward, dir) <= bite.HalfAngle)
             {
                 if (dist <= bite.Range) { if (bite.TryUse()) activeAbility = bite; Settle(Vector3.zero); return true; }
-                if (dist >= leap.MinRange && dist <= leap.MaxRange && (Breath == null || Breath.Has(LeapCost)))
+                if (dist >= leap.MinRange && dist <= leap.MaxRange && (Breath == null || Breath.CanSpend(LeapCost)))
                 { if (leap.TryUse()) { Breath?.TrySpend(LeapCost); activeAbility = leap; } Settle(Vector3.zero); return true; }
             }
             Settle(nav.Arrive(mooseTarget.transform.position, Speed, stopAt: bite.Range * 0.85f) + Separation() * attackSeparation);
