@@ -16,6 +16,8 @@ public class Stamina : MonoBehaviour
     [SerializeField] float regenDelay = 0.5f;      // пауза после ЛЮБОЙ траты: спам не превращается в вечный бег
     [SerializeField] float exhaustRecovery = 1.6f; // ОТДЫШКА: пауза после опустошения — заметно длиннее обычной
     [SerializeField, Range(0.1f, 1f)] float exhaustSlow = 0.6f; // насколько медленнее двигаешься, пока отдышка
+    [SerializeField, Range(0f, 0.5f)] float windedBelow = 0.1f;    // ИСТОЩЕНИЕ: ниже этой доли бака — замедлен + плохо регенит (дно ЛИПКОЕ = окно уязвимости; общая механика)
+    [SerializeField, Range(0.1f, 1f)] float windedRegenMult = 0.5f; // насколько медленнее реген в истощении — выбираешься не мгновенно
 
     public float Current { get; private set; }
     // ЭФФЕКТИВНЫЙ МАКСИМУМ срезается ИСТОЩЕНИЕМ (голод × Vigor): у голодного меньше резервов на рывки/таран
@@ -23,12 +25,13 @@ public class Stamina : MonoBehaviour
     public float Normalized => Max > 0f ? Mathf.Clamp01(Current / Max) : 0f;
     public float RegenPerSecond { get; set; }
     public bool Exhausted { get; private set; }
+    public bool Winded { get; private set; }     // ИСТОЩЁН: в нижней зоне бака — замедлен и плохо регенит (общая механика, не только ёж)
 
     Satiety satiety; // истощение (пустая шкала голода) режет ёмкость бака — ленивая привязка (тело вешает в Awake)
     float StarveMult { get { if (satiety == null) TryGetComponent(out satiety); return satiety != null ? satiety.Vigor : 1f; } }
 
     /// <summary>Множитель скорости от выдоха: 1 в норме, меньше — пока отдышка. Читают локомоции.</summary>
-    public float MoveMult => Exhausted ? exhaustSlow : 1f;
+    public float MoveMult => (Exhausted || Winded) ? exhaustSlow : 1f;
 
     float readyAt;
     Rage rage; // ЯРОСТЬ КАЧАЕТ ДЫХАЛКУ (решение ревью): к «+урон +скорость −защита» добавляется второе дыхание
@@ -37,13 +40,17 @@ public class Stamina : MonoBehaviour
 
     void Update()
     {
-        if (Current > Max) Current = Max;        // истощение срезало ёмкость — лишнее сверх нового потолка сливается
+        if (Current > Max) Current = Max;        // истощение голода срезало ёмкость — лишнее сверх нового потолка сливается
+        // ИСТОЩЕНИЕ СТАМИНЫ: нижняя зона бака (гистерезис — вошёл при windedBelow, вышел при ×2, чтоб не дребезжало на границе)
+        Winded = Winded ? Normalized < windedBelow * 2f : Normalized < windedBelow;
+
         if (Time.time < readyAt) return;
         Exhausted = false;                       // пауза вышла — отдышался, замедление снято
         if (Current >= Max) return;
 
         if (rage == null) TryGetComponent(out rage); // ленивая привязка: ярость могут повесить в рантайме
         float rate = RegenPerSecond * (rage != null ? rage.StaminaRegenMult : 1f);
+        if (Winded) rate *= windedRegenMult;     // в истощении регенишь медленнее — дно ЛИПКОЕ (окно, чтоб схватить)
         if (rate <= 0f) return;
         Current = Mathf.Min(Max, Current + rate * Time.deltaTime);
     }
