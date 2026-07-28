@@ -57,7 +57,8 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     [Header("Охота на лося (тень-загон, M3)")]
     [SerializeField] float mooseSpotRange = 22f;  // видит тушу — интерес стаи (дальше мутного лосиного зрения!)
     [SerializeField] float shadowRange = 12f;     // дистанция ТЕНИ: сразу ЗА границей лесенки лося (~10) — умно не провоцируем
-    [SerializeField] int shadowMinPack = 2;       // одиночка с тушей не связывается (обходит молча)
+    [SerializeField] int normalPack = 2;          // ОБЫЧНАЯ добыча (змея, ёж): нападаем стаей от стольких — одиночка не лезет, зовёт
+    [SerializeField] int massivePack = 5;         // МАССИВНАЯ (Massive: лось, вервольф): туша опаснее — нужно больше
     [SerializeField] float packCountRadius = 15f; // «стая рядом» для решения о тени
 
     [Header("Кулдаун")]
@@ -490,12 +491,18 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         // цель ушла из зоны вовлечения — отпускаем жетон
         if (hasToken && dist > disengageRange) ReleaseToken();
 
-        // жетон атаки — только против ИГРОКА (кольцо/лимит атакующих вокруг него); добычу-змею грызут все без жетона
+        // СТАЙНАЯ ОХОТА (общий принцип): на добычу нападаем только СТАЕЙ от RequiredPack (порог по массивности).
+        // Мало нас — не грызём в одиночку, а ЗОВЁМ кинов и кружим в тени (см. движение ниже). Единый закон
+        // для змеи/ежа/туши: одиночка об колючего ежа больше не убивается, а собирает стаю, как на лосе
+        bool preyReady = !huntingPrey || PackNearCount(packCountRadius) >= RequiredPack(targetHealth);
+        if (huntingPrey && !preyReady) HuntHowl(target.position); // зов на добычу — сбор стаи
+
+        // жетон атаки — только против ИГРОКА (кольцо/лимит атакующих вокруг него); добычу грызут все без жетона
         if (!huntingPrey && !hasToken && Time.time >= nextAttackTime && inCone && dist <= leap.MaxRange)
             if (pack.TryAcquireAttack(this)) hasToken = true;
 
-        // атакуем по дистанции (по змее — без жетона)
-        if ((huntingPrey || hasToken) && Time.time >= nextAttackTime && inCone)
+        // атакуем по дистанции (по добыче — без жетона, но только СОБРАННОЙ стаей)
+        if (((huntingPrey && preyReady) || hasToken) && Time.time >= nextAttackTime && inCone)
         {
             if (dist <= bite.Range)
             {
@@ -516,10 +523,16 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         // движение: по ЗМЕЕ окружаем КОЛЬЦОМ (личный угол вокруг добычи); против игрока — с жетоном рвёмся в упор,
         // на откате идём на слот кольца / в рыхлую стаю (battle-circle в PackCoordinator.StandoffPoint)
         Vector3 horizontal;
-        if (huntingPrey)
+        if (huntingPrey && !preyReady)
+        {
+            // МАЛО СТАИ → ТЕНЬ: кружим у границы, ждём кинов на зов — не лезем в упор в одиночку (как стая на лосе)
+            Vector3 spot = target.position + personalOffset.normalized * shadowRange;
+            horizontal = nav.Arrive(spot, Speed * circleSpeed, arriveRadius) + Separation();
+        }
+        else if (huntingPrey)
         {
             Vector3 spot = (preyBody != null ? preyBody.BodyPoint(preyT) : target.position) + personalOffset * 0.35f;
-            horizontal = nav.Arrive(spot, Speed) + Separation() * attackSeparation; // плавный подход вместо газ/стоп
+            horizontal = nav.Arrive(spot, Speed) + Separation() * attackSeparation; // собрались — окружаем вплотную
         }
         else if (hasToken && Time.time >= nextAttackTime)
             // ПЛАВНО подъезжаем на дистанцию укуса: раньше на самой границе был полный газ/полный стоп
@@ -540,7 +553,13 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         Settle(smoothHoriz);
     }
 
-    // сколько СВОИХ рядом (включая себя) — решение «связываться ли с тушей»
+    // СКОЛЬКО НАС НУЖНО для атаки на цель — по МАССИВНОСТИ (общий принцип, не исключения на вид):
+    // обычная добыча берётся стаей от normalPack, массивная (Massive: лось/вервольф) — от massivePack.
+    // Так «одиночка не суётся, зовёт стаю» едино для змеи, ежа и туши — без веток «если ёж… если лось…»
+    int RequiredPack(Health target) =>
+        target != null && target.GetComponent<Massive>() != null ? massivePack : normalPack;
+
+    // сколько СВОИХ рядом (включая себя) — решение «хватает ли стаи на добычу»
     int PackNearCount(float radius)
     {
         int count = 1;
@@ -578,7 +597,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
             if (mooseHunting) { mooseHunting = false; bite.SetTarget(playerHealth); leap.SetTarget(playerHealth); } // туша ушла/пала — доставки назад на игрока
             return false;
         }
-        if (PackNearCount(packCountRadius) < shadowMinPack) return false; // одиночка обходит тушу молча
+        if (PackNearCount(packCountRadius) < RequiredPack(mooseTarget)) return false; // мало стаи на тушу — обходим молча
 
         Vector3 to = mooseTarget.transform.position - transform.position; to.y = 0f;
         float dist = to.magnitude;
