@@ -38,7 +38,7 @@ public class Thorns : MonoBehaviour
 
     void Reflect()
     {
-        if (reflecting) return;
+        if (reflecting || !isActiveAndEnabled) return; // выключены (ёж «на спине» в истощении) — иглы прижаты, хватают безболезненно
 
         var attacker = health.LastAttacker;
         if (attacker == null || ReferenceEquals(attacker, health)) return;
