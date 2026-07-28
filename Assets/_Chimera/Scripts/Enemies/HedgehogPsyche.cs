@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -7,8 +8,9 @@ using UnityEngine;
 /// Круг замыкается: ёж бьёт змею, змея бьёт волка, волк берёт ежа числом. У каждого есть и добыча,
 /// и охотник — поэтому биом живёт сам, без сценариев.
 ///
-/// Лестница отчаяния (не подпускает → уходит → клубок → катание → выдохся) приедет слайсом D, когда
-/// будут снаряды и альт-шасси: сейчас её нечем играть.
+/// Лестница отчаяния собирается по слайсам: залп-замедление (не подпускает) и уход перекатами есть;
+/// КЛУБОК (C1) — стая в упор → сворачивается (`CurlDefense`: броня↑ + жжёт стамину, выдохся → развернулся).
+/// Катание (C2), окно «на спине» (C3) и полная психика-лестница (Cornered + закольцовка страха→ярость) — слайс D.
 ///
 /// Опасность ежа держится НЕ психикой, а телом: иглы (`Thorns`) наказывают удар в упор, ядоупорное
 /// сердце (`VenomResist`) обесценивает змеиный укус. Оба компонента вешает `CreatureBody` по флагам
@@ -26,11 +28,13 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
 
     [Header("Экосистема")]
     [SerializeField] float preyRange = 18f;      // в каком радиусе ищем ЗМЕЙ (добыча)
-    // ОПАСАЕТСЯ СТАИ, А НЕ ВОЛКА. Порог обязателен: волков на арене десятки, и «отходить от любого
-    // ближнего» означало отходить всегда — ежи уползали по прямой и забивались в углы. Колючему зверю
-    // одиночный волк не страшен (иглы), опасно именно ЧИСЛО — так и в спеке: стая берёт его числом
-    [SerializeField] float wolfFearRadius = 8f;
-    [SerializeField] int wolfFearCount = 2;      // сколько волков рядом, чтобы начать отходить
+    // ОПАСАЕТСЯ ЧИСЛА, А НЕ ОДИНОЧКИ. Угроза = ЧУЖОЙ ХИЩНИК (не-кин + eatsMeat) — обобщено через
+    // CreatureBody, не хардкод на волка: так же сработает игрок-хищник и будущие виды, а травоядный
+    // лось и кин-игрок — нет. Колючему зверю одиночка не страшен (иглы), опасно ЧИСЛО (стая берёт числом)
+    [SerializeField] float wolfFearRadius = 8f;  // радиус скана угроз (имя-легаси, сериализация на префабе)
+    [SerializeField] int wolfFearCount = 2;      // сколько угроз рядом, чтобы отходить / считаться «окружили»
+    [SerializeField] float curlTriggerRange = 2.8f; // угроза ближе этого = «в упор» (слайс C)
+    [SerializeField] float hurtCurlWindow = 2.5f;   // сколько «помним» удар не-кина как повод держать клубок (перестал бить → через столько развернётся)
     [SerializeField] float retargetInterval = 0.7f;
 
     [Header("Бой")]
@@ -58,6 +62,7 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
     WindupAbility activeAbility;
     float nextAttackTime, nextRetarget, nextGrabAt;
     bool huntingPrey, holding;
+    CurlDefense curl; // КЛУБОК (слайс C): оборонительная стойка последнего рубежа — свернулся, когда стая в упор
 
     Stamina breath;
     // ленивая привязка: бак до-создаёт тело в Recompute, он бывает позже нашего Awake
@@ -65,6 +70,14 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
 
     Satiety satiety; // шкала сытости-голода (M3): сытый ёж не гоняется за змеями
     Satiety Belly { get { if (satiety == null) TryGetComponent(out satiety); return satiety; } }
+
+    // UNITY-ГОЧА: новое [SerializeField]-поле у психики, УЖЕ лежащей на префабе, приходит НУЛЁМ (инициализатор
+    // применяется только к свежесозданным). Порог 0 = «в упор ≤0 никогда» → клубок молча не сработает. Читаем 0 как «не настроено»
+    float CurlTrigger => curlTriggerRange > 0f ? curlTriggerRange : 2.8f;
+    float HurtWindow => hurtCurlWindow > 0f ? hurtCurlWindow : 2.5f;
+
+    CreatureBody ownBody; // кин-признание угроз (Regard): свой вид и травоядные — не повод для клубка
+    float hurtUntil;      // не-кин ударил недавно → сворачиваемся (Health.onDamaged — «кто атакует»)
 
     /// <summary>ЦЕПКАЯ ПАСТЬ — та же машина захвата, что у волка и змеи, но на ОДНУ стадию: ёж не душит
     /// и не заваливает, он ВЦЕПЛЯЕТСЯ и мотает головой, добивая. Это последнее звено анти-змеиной связки:
@@ -103,6 +116,8 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
     void Awake()
     {
         ownHealth = GetComponent<Health>();
+        TryGetComponent(out ownBody);                 // тело ежа — для кин-признания угроз (Regard)
+        ownHealth.onDamaged.AddListener(OnHurt);       // «кто атакует»: удар не-кина → повод свернуться
         stagger = GetComponent<Stagger>();
         knockback = GetComponent<Knockback>();
         TryGetComponent(out rage);
@@ -112,6 +127,7 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
         TryGetComponent(out volley); // залп — ТОЛЬКО с префаба (орган Иглы): нет компонента = ближний ёж
         if (!TryGetComponent(out senses)) senses = gameObject.AddComponent<Senses>();
         if (!TryGetComponent(out alert)) alert = gameObject.AddComponent<AlertState>();
+        if (!TryGetComponent(out curl)) curl = gameObject.AddComponent<CurlDefense>(); // клубок — фича ежа (тюнить на префабе)
 
         // профиль чувств: зрение скупое и КОНУСОМ, слух и нюх щедрые и круговые
         senses.Seed(SenseKind.Sight, sightRange);
@@ -131,6 +147,19 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
             targetHealth = playerHealth;
             bite.SetTarget(targetHealth);
         }
+    }
+
+    void OnDestroy() { if (ownHealth != null) ownHealth.onDamaged.RemoveListener(OnHurt); }
+
+    // «КТО АТАКУЕТ» — ударил не-кин → окно, в котором ёж сворачивается. Клубок реагирует на ДАВЛЕНИЕ,
+    // а не на вид: Regard решает свой/чужой, onDamaged — что бьют. Случайный удар кина угрозой не считаем
+    void OnHurt()
+    {
+        var atk = ownHealth.LastAttacker;
+        if (atk == null) return;
+        var body = atk.GetComponentInParent<CreatureBody>();
+        if (body != null && body != ownBody && CreatureBody.Regard(ownBody, body) == KinTier.None)
+            hurtUntil = Time.time + HurtWindow;
     }
 
     void Update()
@@ -175,23 +204,60 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
 
         if (stagger != null && stagger.IsStaggered) { Settle(Vector3.zero); return; }
 
-        Retarget();
-
-        // ОПАСКА ВОЛКОВ — отходим, а не паникуем: ёж не убегает в ужасе, он не даёт себя окружить.
-        // Проверяем ДО боя: волк рядом важнее любой добычи
-        Vector3 packCenter = Vector3.zero;
-        if (WolvesNear(ref packCenter))
+        // КЛУБОК (слайс C): свёрнутый ёж только держит шар — не ретаргетит, не стреляет, не ходит.
+        // Держим, пока рядом угроза, что давит (в упор ИЛИ недавно ударила), и есть дыхалка
+        if (curl != null && curl.Curled)
         {
-            Vector3 away = transform.position - packCenter; away.y = 0f;
-            if (away.sqrMagnitude > 0.001f)
+            bool press = Time.time < hurtUntil
+                         || (ThreatsNear(out _, out float nsq, out _) && nsq <= CurlTrigger * CurlTrigger);
+            if (press && curl.Hold())
             {
-                // уходим ПО ДУГЕ, а не по прямой: чистое «прочь от стаи» упирает в стену и держит там,
-                // пока стая не подойдёт вплотную. Боковая составляющая даёт скольжение вдоль препятствий
-                Vector3 dir = (away.normalized + Vector3.Cross(Vector3.up, away.normalized) * 0.45f).normalized;
-                Face(dir);
-                Settle(dir * Speed);
+                Settle(Vector3.zero);
                 alert.Observe(true, true);
                 return;
+            }
+            curl.Uncurl();
+            return;
+        }
+
+        Retarget();
+
+        // АТАКОВАН не-кином (кто бьёт — угроза, вид не важен: волк, игрок, задевший тараном лось) →
+        // СВОРАЧИВАЕМСЯ, если есть дыхалка. «Кто атакует» — прямая просьба, реагируем на удар, не на вид
+        if (curl != null && Time.time < hurtUntil && (Breath == null || !Breath.Exhausted))
+        {
+            curl.Curl();
+            Settle(Vector3.zero);
+            alert.Observe(true, true);
+            return;
+        }
+
+        // УГРОЗЫ-ХИЩНИКИ рядом — не паникуем, не даём окружить. Проверяем ДО боя: хищник важнее добычи
+        if (ThreatsNear(out Vector3 threatCenter, out float nearestSq, out int threatN))
+        {
+            // ОКРУЖИЛИ В УПОР (≥ порога хищников продавили дистанцию) → клубок превентивно, пока не ударили
+            if (curl != null && threatN >= wolfFearCount && nearestSq <= CurlTrigger * CurlTrigger
+                && (Breath == null || !Breath.Exhausted))
+            {
+                curl.Curl();
+                Settle(Vector3.zero);
+                alert.Observe(true, true);
+                return;
+            }
+
+            // стая ЧИСЛОМ, но не в упор → отходим ПО ДУГЕ, не даём окружить (одиночку на дистанции игнорим — иглы)
+            if (threatN >= wolfFearCount)
+            {
+                Vector3 away = transform.position - threatCenter; away.y = 0f;
+                if (away.sqrMagnitude > 0.001f)
+                {
+                    // боковая составляющая даёт скольжение вдоль стен: чистое «прочь» упирало в угол и держало там
+                    Vector3 dir = (away.normalized + Vector3.Cross(Vector3.up, away.normalized) * 0.45f).normalized;
+                    Face(dir);
+                    Settle(dir * Speed);
+                    alert.Observe(true, true);
+                    return;
+                }
             }
         }
 
@@ -276,21 +342,35 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
         if (bite != null) bite.SetTarget(newHealth);
     }
 
-    /// <summary>Стая рядом? Считаем волков в радиусе и отдаём их ЦЕНТР — отходить надо от кучи, а не от
-    /// ближайшего: иначе ёж шарахается между двумя волками, стоящими по бокам.</summary>
-    bool WolvesNear(ref Vector3 center)
+    readonly HashSet<CreatureBody> threatSet = new(); // дедуп: одно многосегментное существо (змея) = один голос
+
+    /// <summary>Угрозы рядом? Считаем ЧУЖИХ ХИЩНИКОВ (не-кин + eatsMeat) в радиусе: count (число — для
+    /// «окружили»/отхода), центр (отходить от кучи, а не от ближайшего — иначе шарахает между двумя по бокам)
+    /// и квадрат дистанции до ближайшего (для «в упор»). Обобщено через CreatureBody — ни одного вида в коде.</summary>
+    bool ThreatsNear(out Vector3 center, out float nearestSq, out int count)
     {
-        Vector3 sum = Vector3.zero; int n = 0;
+        threatSet.Clear();
+        Vector3 sum = Vector3.zero; count = 0; nearestSq = float.MaxValue; center = Vector3.zero;
         foreach (var col in Physics.OverlapSphere(transform.position, wolfFearRadius, ~0, QueryTriggerInteraction.Ignore))
         {
-            var wolf = col.GetComponentInParent<WolfPsyche>();
-            if (wolf == null) continue;
-            sum += wolf.transform.position; n++;
+            var other = col.GetComponentInParent<CreatureBody>();
+            if (other == null || other == ownBody || !IsThreat(other) || !threatSet.Add(other)) continue;
+            Vector3 p = other.transform.position;
+            sum += p; count++;
+            float d = (p - transform.position).sqrMagnitude;
+            if (d < nearestSq) nearestSq = d;
         }
-        if (n < wolfFearCount) return false;
-        center = sum / n;
+        if (count == 0) return false;
+        center = sum / count;
         return true;
     }
+
+    // УГРОЗА = ЧУЖОЙ ХИЩНИК: травоядные (лось, eatsMeat=false) не давят, кин (свой вид, кин-игрок) не враг.
+    // Переиспользуем Regard (кин) + eatsMeat (хищник) — без исключений на конкретный вид. Змея формально
+    // попадает (хищник, не-кин), но она добыча ежа: не бьёт его и одна не «окружает» — клубок не триггерит
+    bool IsThreat(CreatureBody other) =>
+        other.Chassis != null && other.Chassis.eatsMeat
+        && CreatureBody.Regard(ownBody, other) == KinTier.None;
 
     void ReleaseGrab()
     {
