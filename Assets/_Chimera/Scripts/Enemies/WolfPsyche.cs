@@ -272,15 +272,29 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         if (Time.time < nextPreyScan) return;
         nextPreyScan = Time.time + 0.4f;
 
+        // КОЛЮЧАЯ ДИЧЬ (ёж): на иглы стая идёт только РЕАЛЬНО ГОЛОДНОЙ (IsHungry ≤0.25), а не просто «не наелась» —
+        // иначе волк «решает не затягивать и убивается об ежа» без причины. Голод оправдывает риск (спека §9.1).
+        // Змею берём всегда (раскрытую), ежа — только на голодный желудок
+        bool hungry = Belly != null && Belly.IsHungry;
         Health prey = null; float best = preyRange * preyRange;
         foreach (var col in Physics.OverlapSphere(transform.position, preyRange, ~0, QueryTriggerInteraction.Ignore))
         {
             var snake = col.GetComponentInParent<SnakePsyche>();
-            if (snake == null) continue;
-            if (snake.TryGetComponent<Camouflage>(out var camo) && camo.Hidden) continue; // затаилась — не видим
-            if (snake.transform.position.y > transform.position.y + 2f) continue;          // на стене-насесте — не достать, теряем интерес
-            float d = (snake.transform.position - transform.position).sqrMagnitude;
-            if (d < best) { best = d; prey = snake.GetComponent<Health>(); }
+            if (snake != null)
+            {
+                if (snake.TryGetComponent<Camouflage>(out var camo) && camo.Hidden) continue; // затаилась — не видим
+                if (snake.transform.position.y > transform.position.y + 2f) continue;          // на стене-насесте — не достать
+                float ds = (snake.transform.position - transform.position).sqrMagnitude;
+                if (ds < best) { best = ds; prey = snake.GetComponent<Health>(); }
+                continue;
+            }
+            if (hungry)
+            {
+                var hog = col.GetComponentInParent<HedgehogPsyche>();
+                if (hog == null) continue;
+                float dh = (hog.transform.position - transform.position).sqrMagnitude;
+                if (dh < best) { best = dh; prey = hog.GetComponent<Health>(); }
+            }
         }
 
         Transform newTarget = prey != null ? prey.transform : (playerCtl != null ? playerCtl.transform : null);
