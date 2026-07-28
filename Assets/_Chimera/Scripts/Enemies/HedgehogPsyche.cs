@@ -9,8 +9,9 @@ using UnityEngine;
 /// и охотник — поэтому биом живёт сам, без сценариев.
 ///
 /// Лестница отчаяния собирается по слайсам: залп-замедление (не подпускает) и уход перекатами есть;
-/// КЛУБОК (C1) — стая в упор → сворачивается (`CurlDefense`: броня↑ + жжёт стамину, выдохся → развернулся).
-/// Катание (C2), окно «на спине» (C3) и полная психика-лестница (Cornered + закольцовка страха→ярость) — слайс D.
+/// КЛУБОК (C1) — угроза давит → сворачивается (`CurlDefense`: броня↑ + жжёт стамину). ПРОДАВИЛИ — дыхалка
+/// на исходе → КАТАНИЕ (C2): прорыв тараном сквозь угрозу, подруливая к ней. Окно «на спине» (C3) и полная
+/// психика-лестница (5 ступеней + Cornered + закольцовка страха→ярость) — слайс D.
 ///
 /// Опасность ежа держится НЕ психикой, а телом: иглы (`Thorns`) наказывают удар в упор, ядоупорное
 /// сердце (`VenomResist`) обесценивает змеиный укус. Оба компонента вешает `CreatureBody` по флагам
@@ -35,6 +36,7 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
     [SerializeField] int wolfFearCount = 2;      // сколько угроз рядом, чтобы отходить / считаться «окружили»
     [SerializeField] float curlTriggerRange = 2.8f; // угроза ближе этого = «в упор» (слайс C)
     [SerializeField] float hurtCurlWindow = 2.5f;   // сколько «помним» удар не-кина как повод держать клубок (перестал бить → через столько развернётся)
+    [SerializeField] float rollAtBreath = 0.3f;     // доля стамины, ниже которой свёрнутый ёж идёт на ПРОРЫВ катанием (C2)
     [SerializeField] float retargetInterval = 0.7f;
 
     [Header("Бой")]
@@ -75,6 +77,7 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
     // применяется только к свежесозданным). Порог 0 = «в упор ≤0 никогда» → клубок молча не сработает. Читаем 0 как «не настроено»
     float CurlTrigger => curlTriggerRange > 0f ? curlTriggerRange : 2.8f;
     float HurtWindow => hurtCurlWindow > 0f ? hurtCurlWindow : 2.5f;
+    float RollAtBreath => rollAtBreath > 0f ? rollAtBreath : 0.3f;
 
     CreatureBody ownBody; // кин-признание угроз (Regard): свой вид и травоядные — не повод для клубка
     float hurtUntil;      // не-кин ударил недавно → сворачиваемся (Health.onDamaged — «кто атакует»)
@@ -208,13 +211,26 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
         // Держим, пока рядом угроза, что давит (в упор ИЛИ недавно ударила), и есть дыхалка
         if (curl != null && curl.Curled)
         {
-            bool press = Time.time < hurtUntil
-                         || (ThreatsNear(out _, out float nsq, out _) && nsq <= CurlTrigger * CurlTrigger);
-            if (press && curl.Hold())
+            // УЖЕ КАТИМСЯ — докатываем (коммит, как таран), подруливая к угрозе, пока не выдохлись
+            if (curl.Rolling)
             {
-                Settle(Vector3.zero);
-                alert.Observe(true, true);
-                return;
+                Vector3 rollAim = ThreatsNear(out Vector3 rc, out _, out _) ? rc - transform.position : transform.forward;
+                if (curl.RollTick(rollAim)) alert.Observe(true, true);
+                return; // выдохся — RollTick сам развернул (окно «на спине» — C3)
+            }
+
+            bool near = ThreatsNear(out Vector3 tc, out float nsq, out _);
+            bool press = Time.time < hurtUntil || (near && nsq <= CurlTrigger * CurlTrigger);
+            if (press)
+            {
+                // ПРОДАВИЛИ: дыхалка на исходе → ПРОРЫВ катанием сквозь угрозу (последний рывок перед выдохом)
+                if (Breath != null && !Breath.Exhausted && Breath.Normalized < RollAtBreath)
+                {
+                    curl.RollTick(near ? tc - transform.position : transform.forward);
+                    alert.Observe(true, true);
+                    return;
+                }
+                if (curl.Hold()) { Settle(Vector3.zero); alert.Observe(true, true); return; }
             }
             curl.Uncurl();
             return;
