@@ -19,7 +19,7 @@ public partial class CreatureBody
         public bool insight; // ЧУТЬЁ УЧЁНОГО: распознавание намерений + числа состояний (человеческое Чутьё)
         public bool keenEar;  // ОСТРЫЙ СЛУХ: различение вида источника + волны звука на экране
         public float earMult; // множитель дальности слуха (супремум дублей)
-        public bool constrictNative; // хват на РОДНОМ шасси (nativeChassis == шасси тела) → открыта ст.3 удушения
+        public int constrictCap; // эффективный кап стадии захвата органа: native ? constrictStage : min(2, constrictStage); 0 = не грэпл
 
         // СУПРЕМУМ дублей одного типа слота: скаляры — max (кулдауны — min: меньше = лучше), флаги — OR.
         // Дубль оси силу НЕ растит (второе сердце ≠ ×2 регена) — окупается только НОВЫМ направлением.
@@ -37,7 +37,7 @@ public partial class CreatureBody
             bite = a.bite || b.bite, scent = a.scent || b.scent, kick = a.kick || b.kick,
             howl = a.howl || b.howl, cold = a.cold || b.cold, camo = a.camo || b.camo,
             thermalOn = a.thermalOn || b.thermalOn, constrict = a.constrict || b.constrict,
-            constrictNative = a.constrictNative || b.constrictNative,
+            constrictCap = Mathf.Max(a.constrictCap, b.constrictCap),
             digest = a.digest || b.digest, bellow = a.bellow || b.bellow, antler = a.antler || b.antler,
             charge = a.charge || b.charge, roll = a.roll || b.roll, insight = a.insight || b.insight,
             keenEar = a.keenEar || b.keenEar, earMult = Mathf.Max(a.earMult, b.earMult),
@@ -76,6 +76,11 @@ public partial class CreatureBody
         float Scaled(float hv, float wv) => own ? wv * m : Blend(hv, wv, m);
         float Timed(float hv, float wv) => own ? wv : Blend(hv, wv, m); // СВОЁ время не растягиваем: ×2 на кулдаун = наказание за свой вид
 
+        // ЭФФЕКТИВНЫЙ КАП ЗАХВАТА: нативен для шасси → полная сила органа, чужой → min(2, сила).
+        // 0 у enablesConstrict-органа = «не настроено» → дефолт 3 (старое нативное); после бутстрапа не встречается
+        int cStage = w.constrictStage > 0 ? w.constrictStage : 3;
+        bool cNative = chassis != null && w.nativeChassis == chassis.speciesName;
+
         return new Contribution
         {
             dmg = Scaled(h.damage, w.damage),
@@ -104,7 +109,7 @@ public partial class CreatureBody
             thorns = w.thorns, venomResist = w.venomResist, quillVolley = w.enablesQuillVolley,
             volleyMult = w.enablesQuillVolley ? m : 0f, // мощь залпа = экспрессия органа-придатка (родство с ежом)
             bleedResist = w.bleedResist,
-            constrictNative = w.enablesConstrict && chassis != null && w.nativeChassis == chassis.speciesName,
+            constrictCap = w.enablesConstrict ? (cNative ? cStage : Mathf.Min(2, cStage)) : 0,
         };
     }
 

@@ -648,7 +648,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
             if (grabMachine == null)
             {
                 if (!TryGetComponent(out grabMachine)) grabMachine = gameObject.AddComponent<Constrict>();
-                grabMachine.SetMaxStage(1);                 // слабейший держатель: хват не давит, стая грызёт
+                // кап стадии даёт ТЕЛО из данных (Пасть волка constrictStage=1 → ст.1, слабейший держатель); психика — только хват+драйв
                 grabMachine.ConfigureHolder(99f, 99f, 9999); // жертва-игрок (escape N/A); срыв-по-удару отключён — релиз у драйвера
             }
             return grabMachine;

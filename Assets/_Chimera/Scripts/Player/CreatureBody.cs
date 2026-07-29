@@ -236,10 +236,11 @@ public partial class CreatureBody : MonoBehaviour
         int venom = 0, bleed = 0;
         bool biteOn = false, scentOn = false, kickOn = false, howlOn = false, coldOn = false, camoOn = false,
              thermalOn = false, constrictOn = false, digestOn = false, bellowOn = false, antlerOn = false, chargeOn = false, rollOn = false,
-             constrictNativeOn = false, insightOn = false, keenEarOn = false,
+             insightOn = false, keenEarOn = false,
              thornsOn = false, venomResistOn = false, quillVolleyOn = false, bleedResistOn = false;
         float volleyMult = 0f;
         float earMult = 0f;
+        int constrictCap = 0; // макс кап стадии захвата среди надетых грэпл-органов (0 = захвата нет)
         foreach (var kv in groups)
         {
             var c = kv.Value;
@@ -252,7 +253,7 @@ public partial class CreatureBody : MonoBehaviour
             biteOn |= c.bite; scentOn |= c.scent; kickOn |= c.kick; howlOn |= c.howl;
             coldOn |= c.cold; camoOn |= c.camo; thermalOn |= c.thermalOn; constrictOn |= c.constrict;
             digestOn |= c.digest; bellowOn |= c.bellow; antlerOn |= c.antler; chargeOn |= c.charge; rollOn |= c.roll;
-            constrictNativeOn |= c.constrictNative; insightOn |= c.insight;
+            constrictCap = Mathf.Max(constrictCap, c.constrictCap); insightOn |= c.insight;
             keenEarOn |= c.keenEar; earMult = Mathf.Max(earMult, c.earMult);
             thornsOn |= c.thorns; venomResistOn |= c.venomResist; quillVolleyOn |= c.quillVolley;
             bleedResistOn |= c.bleedResist;
@@ -278,10 +279,17 @@ public partial class CreatureBody : MonoBehaviour
         // без флагов «это игрок»: один вой на всех, разница — в составе носителя
         HowlStuns = howlStunAt > 0f && Power >= howlStunAt;
         if (howl != null) { howl.HowlEnabled = howlOn; howl.SetReach(howlReach); howl.StunUnlocked = HowlStuns; }
-        if (constrictAb != null)
+        if (constrictAb != null) // ИГРОК: драйвер PlayerConstrict оборачивает машину
         {
             constrictAb.ConstrictEnabled = constrictOn;               // обхват — фича Хвоста (химерный слот)
-            constrictAb.SetMaxStage(constrictNativeOn ? 3 : 2);       // РОДНОЕ ШАССИ (nativeChassis): своё → ст.3 (партер+чок), чужое → кап ст.2
+            constrictAb.SetMaxStage(Mathf.Max(1, constrictCap));      // кап из данных: constrictStage органа × nativeChassis (свой → полный, чужой → min 2)
+        }
+        // NPC-ПРОВИЗИЯ ЗАХВАТА: тело гарантирует машину и кап из данных (constrictStage×nativeChassis).
+        // Психика перестала капить — только драйвит; get-or-add робастен к порядку Awake/Start, чужеродной химере даёт хват по её органу
+        else if (move == null && constrictOn)
+        {
+            if (!TryGetComponent<Constrict>(out var grabM)) grabM = gameObject.AddComponent<Constrict>();
+            grabM.SetMaxStage(Mathf.Max(1, constrictCap));
         }
         if (bellowAb != null) bellowAb.BellowEnabled = bellowOn;             // РЁВ — фича Глотки лося (K2)
         if (antlerAb != null) antlerAb.AntlerEnabled = antlerOn;             // РОГА — фича придатка «Рога» (химерный слот)

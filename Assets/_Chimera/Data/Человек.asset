@@ -61,6 +61,7 @@ MonoBehaviour:
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
+    constrictStage: 0
   - organName: "\u041D\u043E\u0433\u0438"
     slot: "\u041D\u043E\u0433\u0438"
     hotkey: 2
@@ -106,6 +107,7 @@ MonoBehaviour:
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
+    constrictStage: 0
   - organName: "\u0421\u0435\u0440\u0434\u0446\u0435"
     slot: "\u0421\u0435\u0440\u0434\u0446\u0435"
     hotkey: 3
@@ -151,6 +153,7 @@ MonoBehaviour:
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
+    constrictStage: 0
   - organName: "\u0427\u0443\u0442\u044C\u0451"
     slot: "\u0427\u0443\u0442\u044C\u0451"
     hotkey: 4
@@ -196,6 +199,7 @@ MonoBehaviour:
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
+    constrictStage: 0
   - organName: "\u0420\u043E\u0442"
     slot: "\u041F\u0430\u0441\u0442\u044C"
     hotkey: 5
@@ -241,6 +245,7 @@ MonoBehaviour:
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
+    constrictStage: 0
   - organName: "\u041A\u043E\u0436\u0430"
     slot: "\u0428\u043A\u0443\u0440\u0430"
     hotkey: 6
@@ -286,6 +291,7 @@ MonoBehaviour:
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
+    constrictStage: 0
   eatsMeat: 1
   baseHp: 75
   baseStamina: 100
