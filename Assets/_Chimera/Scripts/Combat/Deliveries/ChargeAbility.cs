@@ -15,7 +15,8 @@ public class ChargeAbility : WindupAbility
     [SerializeField] int damage = 20;            // база удара копытами (вплотную ≈ рога)
     [SerializeField] float damagePerMeter = 1.5f; // ФИЗИКА РАЗГОНА: +урон за каждый метр разбега — длинная прямая сокрушает
     [SerializeField] float hitRadius = 1.8f;
-    [SerializeField] float knockForce = 12f;   // отлёт цели (Knockback сам резистит Massive)
+    [SerializeField] float knockForce = 12f;   // отлёт цели (Knockback сам резистит Massive-ЦЕЛЬ)
+    [SerializeField, Range(0f, 1f)] float lightChargeMult = 0.25f; // ТАРАН-ПО-МАССЕ: доля отброса, если таранящий сам НЕ массивен (снести с ног = нужна масса)
     [SerializeField] float staggerTime = 0.5f; // сбив цели при попадании
     [SerializeField] float stompRadius = 4f;   // топот-приземление: AOE в конце тарана (разгоняет скопления)
     [SerializeField] float stompStagger = 0.4f;
@@ -57,7 +58,10 @@ public class ChargeAbility : WindupAbility
             int dmg = Mathf.RoundToInt((damage + damagePerMeter * run) * DamageMult);
             var blow = new MeleeBlow { Damage = dmg, StaggerTime = staggerTime };
             blow.Deliver(new Hit(ownHealth, transform.position), targetHealth);
-            if (targetHealth.TryGetComponent<Knockback>(out var kb)) kb.Push(dir * knockForce); // Massive-цель Push проигнорит
+            // ТАРАН-ПО-МАССЕ (§5 спеки #2A): массивная туша (лось) сносит в полную силу, лёгкое тело
+            // (игрок на человечьем шасси) — лишь слабый толчок. Приём читает СВОЁ тело
+            float appliedKnock = GetComponent<Massive>() != null ? knockForce : knockForce * lightChargeMult;
+            if (targetHealth.TryGetComponent<Knockback>(out var kb)) kb.Push(dir * appliedKnock); // Massive-ЦЕЛЬ Push всё равно проигнорит
         }
         if (Time.time < chargeEnd) return AbilityRun.Running;
 
