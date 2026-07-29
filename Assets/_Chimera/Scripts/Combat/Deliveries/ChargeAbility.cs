@@ -1,8 +1,10 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
 /// Доставка «таран»: замах (телеграф Charge) → закоммиченный рывок ВПЕРЁД по земле (без дуги прыжка) →
 /// удар копытами по цели в hitRadius: урон + Knockback (резист у Massive — внутри Knockback) + Stagger.
+/// ПРОПАШКА (массивный таранящий): по пути раздвигает попавшихся — кин толчком, не-кин толчком+уроном разгона.
 /// Закоммичен как прыжок: мягкий срыв (стаггер) игнорит, жёсткий (нокбэк) рвёт. Дефолты — лось.
 /// </summary>
 public class ChargeAbility : WindupAbility
@@ -22,6 +24,10 @@ public class ChargeAbility : WindupAbility
     [SerializeField] float stompStagger = 0.4f;
     [SerializeField] float stompForce = 13f;   // радиальный толчок топота у эпицентра — «землетрясение» (спад к краю; Massive резистит)
 
+    [Header("Пропашка (только массивный таранящий)")]
+    [SerializeField] float plowForce = 6f;     // несильный снос тех, кто попался на пути разгона (не главная цель)
+    [SerializeField] float plowRadius = 1.6f;  // ширина пропашки (кого задевает туша на ходу)
+
     public float MinRange => minRange; // психика читает окно дистанций тарана
     public float MaxRange => maxRange;
 
@@ -31,6 +37,8 @@ public class ChargeAbility : WindupAbility
     bool charging, hit;
     float chargeEnd;
     Vector3 dir, chargeStart; // старт разбега — от него меряем разгон (метры → бонус урона)
+    readonly HashSet<Health> plowedThisCharge = new(); // пропашка: каждого задеваем раз за таран
+    CreatureBody ownBody; // для кин-чека Regard (лениво)
 
     protected override Color TelegraphColor => TelegraphColors.Charge;
 
@@ -39,7 +47,7 @@ public class ChargeAbility : WindupAbility
         if (!charging)
         {
             if (Time.time < windupEnd) { SettleInPlace(); return AbilityRun.Running; }
-            charging = true; hit = false;
+            charging = true; hit = false; plowedThisCharge.Clear();
             telegraph.Clear();
             chargeEnd = Time.time + duration;
             dir = DirToTarget();               // направление берём в последний кадр замаха
@@ -49,7 +57,32 @@ public class ChargeAbility : WindupAbility
         controller.Move(dir * chargeSpeed * Time.deltaTime);                                // рывок вперёд
         if (!controller.isGrounded) controller.Move(Vector3.up * gravity * Time.deltaTime); // прижать к земле
 
-        if (!hit && targetHealth != null && DistToTarget() <= hitRadius)
+        // ПРОПАШКА: массивная туша по пути раздвигает попавшихся — ВКЛЮЧАЯ главную цель (её штатный удар в конце
+        // ЧАСТО МАЖЕТ: лось коммитит разбег и стартует ближе своего разгона → проскакивает мимо увернувшейся цели,
+        // урона не было вовсе). Дедуплится с финальным ударом ниже (не задвоит, когда тот всё же попадает). Кин —
+        // только толчок; не-кин — толчок + урон ТОЙ ЖЕ формулы разгона. Кин-чек через Regard (идентичность, не тип-B)
+        if (GetComponent<Massive>() != null)
+        {
+            if (ownBody == null) TryGetComponent(out ownBody);
+            foreach (var hp in TargetScan.Healths(transform.position, plowRadius, transform))
+            {
+                if (!plowedThisCharge.Add(hp)) continue; // каждого задеваем раз за таран (цель — тоже, её удар часто мажет)
+                var vb = hp.GetComponent<CreatureBody>();
+                bool kin = ownBody != null && vb != null && CreatureBody.Regard(ownBody, vb) != KinTier.None;
+                if (!kin) // не-кин: урон разгона (формула главного удара), БЕЗ стаггера — это снос, не стан
+                {
+                    float run = (transform.position - chargeStart).magnitude;
+                    int dmg = Mathf.RoundToInt((damage + damagePerMeter * run) * DamageMult);
+                    new MeleeBlow { Damage = dmg }.Deliver(new Hit(ownHealth, transform.position), hp);
+                }
+                Vector3 away = hp.transform.position - transform.position; away.y = 0f;
+                if (hp.TryGetComponent<Knockback>(out var kb)) kb.Push((away.sqrMagnitude > 0.0001f ? away.normalized : dir) * plowForce); // несильный снос (Massive-цель проигнорит)
+            }
+        }
+
+        // финальный удар — только если пропашка цель ещё не задела (дедуп: `Add` вернёт false, если уже плужена).
+        // Так цель гарантированно получает урон (обычно от пропашки), а полный отброс/стаггер — когда доехал в упор
+        if (!hit && targetHealth != null && DistToTarget() <= hitRadius && plowedThisCharge.Add(targetHealth))
         {
             hit = true;
             float run = (transform.position - chargeStart).magnitude; // метры разбега = импульс туши
