@@ -136,7 +136,7 @@ public static class MoosePrefab
         go.AddComponent<Knockback>();
         go.AddComponent<Stagger>();
         go.AddComponent<HitFlash>();
-        go.AddComponent<Massive>(); // массивная туша: обхват слабее, нокбэк не берёт
+        // Massive теперь вешает ТЕЛО из флага Лось.massive (add-only) — префаб его больше не бейкает (#2A масса-в-данные)
 
         var charge = go.AddComponent<ChargeAbility>();
         // ДЛИННЫЙ мощный таран: быстрее волчьего рывка (35 > 30) + долгий разбег (1.1c ≈ 38м) + дальний завод (18м) →
