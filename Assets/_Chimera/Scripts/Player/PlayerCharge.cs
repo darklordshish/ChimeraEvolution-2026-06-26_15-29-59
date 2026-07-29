@@ -11,7 +11,8 @@ public class PlayerCharge : MonoBehaviour
 {
     [Header("Таран (на рывке)")]
     [SerializeField] int damage = 22;
-    [SerializeField] float force = 13f;   // отлёт (Massive резистит)
+    [SerializeField] float force = 13f;   // отлёт ЦЕЛИ (Massive-цель резистит)
+    [SerializeField, Range(0f, 1f)] float lightChargeMult = 0.25f; // ТАРАН-ПО-МАССЕ: доля отброса у НЕмассивного таранящего (игрок на человечьем шасси)
     [SerializeField] float radius = 1.3f; // ширина тарана
     [SerializeField] float reach = 1.0f;  // вынос центра вперёд
     [SerializeField] float shake = 0.3f;
@@ -42,7 +43,9 @@ public class PlayerCharge : MonoBehaviour
 
         Vector3 center = transform.position + transform.forward * reach + Vector3.up * 0.3f; // грудь — таран корпусом (корень — центр капсулы)
         var hit = new Hit(ownHealth, transform.position);
-        var blow = new MeleeBlow { Damage = damage, KnockForce = force }; // единый паёк тарана (см. MeleeBlow)
+        // ТАРАН-ПО-МАССЕ (§5 спеки #2A): снести с ног = нужна масса. Игрок на человечьем шасси (не Massive) толкает слабо
+        float knock = GetComponent<Massive>() != null ? force : force * lightChargeMult;
+        var blow = new MeleeBlow { Damage = damage, KnockForce = knock }; // единый паёк тарана (см. MeleeBlow)
         foreach (var hp in TargetScan.Healths(center, radius, transform))
         {
             if (!goredThisDash.Add(hp)) continue; // раз за рывок (память живёт весь дэш)
