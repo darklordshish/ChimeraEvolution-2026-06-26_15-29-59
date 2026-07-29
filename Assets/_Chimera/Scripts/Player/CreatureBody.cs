@@ -237,7 +237,7 @@ public partial class CreatureBody : MonoBehaviour
         bool biteOn = false, scentOn = false, kickOn = false, howlOn = false, coldOn = false, camoOn = false,
              thermalOn = false, constrictOn = false, digestOn = false, bellowOn = false, antlerOn = false, chargeOn = false, rollOn = false,
              insightOn = false, keenEarOn = false,
-             thornsOn = false, venomResistOn = false, quillVolleyOn = false, bleedResistOn = false;
+             thornsOn = false, venomResistOn = false, quillVolleyOn = false, bleedResistOn = false, curlOn = false;
         float volleyMult = 0f;
         float earMult = 0f;
         int constrictCap = 0; // макс кап стадии захвата среди надетых грэпл-органов (0 = захвата нет)
@@ -252,7 +252,7 @@ public partial class CreatureBody : MonoBehaviour
             howlStunAt = Mathf.Max(howlStunAt, c.howlStunAt);
             biteOn |= c.bite; scentOn |= c.scent; kickOn |= c.kick; howlOn |= c.howl;
             coldOn |= c.cold; camoOn |= c.camo; thermalOn |= c.thermalOn; constrictOn |= c.constrict;
-            digestOn |= c.digest; bellowOn |= c.bellow; antlerOn |= c.antler; chargeOn |= c.charge; rollOn |= c.roll;
+            digestOn |= c.digest; bellowOn |= c.bellow; antlerOn |= c.antler; chargeOn |= c.charge; rollOn |= c.roll; curlOn |= c.curl;
             constrictCap = Mathf.Max(constrictCap, c.constrictCap); insightOn |= c.insight;
             keenEarOn |= c.keenEar; earMult = Mathf.Max(earMult, c.earMult);
             thornsOn |= c.thorns; venomResistOn |= c.venomResist; quillVolleyOn |= c.quillVolley;
@@ -304,6 +304,7 @@ public partial class CreatureBody : MonoBehaviour
         SetCamouflage(camoOn);  // камуфляж (Чешуя змеи): невидимость в неподвижности
         DigestsWhole = digestOn; // «глотает целиком» (Тело-хвост змеи): убил → ПОЛНАЯ сытость (см. CreditKiller)
         SetThorns(thornsOn);          // иглы (Шкура ежа): ударил в упор — порезался
+        SetCurl(curlOn);              // клубок (chassisOnly-орган ежа): тело вешает CurlDefense, психика драйвит
         SetVenomResist(venomResistOn); // ядоупорность (Сердце ежа): яд не накапливается
         SetBleedResist(bleedResistOn); // кровеупорность (Лосиное сердце): кровь не накапливается
         if (move != null) // чувства игрока меняет ТОЛЬКО тело игрока (NPC-тело не должно включать их игроку)
@@ -387,6 +388,14 @@ public partial class CreatureBody : MonoBehaviour
     {
         if (on && thornsComp == null) thornsComp = gameObject.AddComponent<Thorns>();
         else if (!on && thornsComp != null) { Destroy(thornsComp); thornsComp = null; }
+    }
+
+    // КЛУБОК как компонент: тело вешает/снимает CurlDefense по флагу enablesCurl (chassisOnly-орган ежа).
+    // Провизия здесь, РЕШЕНИЯ (когда свернуться/катиться) — на психике ежа. Без кэш-поля: носитель один
+    void SetCurl(bool on)
+    {
+        if (on && !TryGetComponent<CurlDefense>(out _)) gameObject.AddComponent<CurlDefense>();
+        else if (!on && TryGetComponent<CurlDefense>(out var c)) Destroy(c);
     }
 
     // ЯДОУПОРНОСТЬ как маркер: опрашивается ядом при добавлении стака (по образцу ColdBlooded)
