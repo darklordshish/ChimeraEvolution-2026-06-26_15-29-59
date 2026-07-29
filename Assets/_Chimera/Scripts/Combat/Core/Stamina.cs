@@ -18,7 +18,6 @@ public class Stamina : MonoBehaviour
     [SerializeField, Range(0.1f, 1f)] float exhaustSlow = 0.6f; // насколько медленнее двигаешься, пока отдышка
     [SerializeField, Range(0f, 0.5f)] float windedBelow = 0.1f;    // ИСТОЩЕНИЕ: ниже этой доли бака — замедлен + плохо регенит (дно ЛИПКОЕ = окно уязвимости; общая механика)
     [SerializeField, Range(0.1f, 1f)] float windedRegenMult = 0.5f; // насколько медленнее реген в истощении — выбираешься не мгновенно
-    [SerializeField, Range(0f, 1f)] float rageHpCost = 0.25f;      // ЯРОСТЬ-НА-HP: истощённый БЕРСЕРК жжёт HP вместо стамины («на зубах») — доля цены стамины
 
     public float Current { get; private set; }
     // ЭФФЕКТИВНЫЙ МАКСИМУМ срезается ИСТОЩЕНИЕМ (голод × Vigor): у голодного меньше резервов на рывки/таран
@@ -36,9 +35,6 @@ public class Stamina : MonoBehaviour
 
     float readyAt;
     Rage rage; // ЯРОСТЬ КАЧАЕТ ДЫХАЛКУ (решение ревью): к «+урон +скорость −защита» добавляется второе дыхание
-    Health body; // ЯРОСТЬ-НА-HP: на истощении расход жжёт HP — общая связь мораль/ярость ↔ стамина ↔ HP (не только ёж)
-    bool Raging { get { if (rage == null) TryGetComponent(out rage); return rage != null && rage.IsEnraged; } }
-    Health Body { get { if (body == null) TryGetComponent(out body); return body; } }
 
     void Awake() => Current = maxStamina;
 
@@ -65,22 +61,11 @@ public class Stamina : MonoBehaviour
     /// <summary>Хватит ли на действие. На отдышке НЕ хватает ничего — в этом её смысл.</summary>
     public bool Has(float cost) => !Exhausted && Current >= cost;
 
-    /// <summary>Может ли ДЕЙСТВОВАТЬ (пред-гейт приёма у психики): хватает стамины ИЛИ в ЯРОСТИ — берсерк
-    /// платит HP вместо стамины («на зубах»), а `TrySpend` сам конвертирует. Без этого ярость-на-HP жила бы
-    /// только в длительной нагрузке (`Drain`): рывковые приёмы (прыжок/таран) пред-гейтятся `Has` и при
-    /// истощении просто не запускаются, не доходя до HP-ветки. Через `CanSpend` берсерк бьёт рывком ценой HP.</summary>
-    public bool CanSpend(float cost) => Has(cost) || Raging;
-
     /// <summary>Потратить, если хватает. false = действие не состоялось (кнопка не сработала).</summary>
     public bool TrySpend(float cost)
     {
         if (cost <= 0f) return true;
-        if (!Has(cost))
-        {
-            // ЯРОСТЬ-НА-HP: истощённый берсерк всё равно бьёт рывком — ценой HP (¼). Иначе действие не состоялось
-            if (Raging && Body != null) { Body.TakeDamage(Mathf.Max(1, Mathf.RoundToInt(cost * rageHpCost)), true); return true; }
-            return false;
-        }
+        if (!Has(cost)) return false;
 
         Current -= cost;
         readyAt = Time.time + regenDelay;
@@ -102,13 +87,7 @@ public class Stamina : MonoBehaviour
     /// ДЛИТЕЛЬНАЯ НАГРУЗКА (бежать, держать) — `Drain`, она мешает восстанавливаться, а не обнуляет.</summary>
     public void Drain(float amount)
     {
-        if (amount <= 0f) return;
-        if (Exhausted)
-        {
-            // ЯРОСТЬ-НА-HP: истощённый берсерк тянет нагрузку дальше — непрерывно ценой HP (¼)
-            if (Raging && Body != null) Body.TakeDamage(Mathf.CeilToInt(amount * rageHpCost), true);
-            return;
-        }
+        if (amount <= 0f || Exhausted) return;
         Current = Mathf.Max(0f, Current - amount);
         if (Current <= 0.01f) { Exhausted = true; readyAt = Time.time + exhaustRecovery; }
     }

@@ -83,7 +83,7 @@ public class CurlDefense : MonoBehaviour
         if (s != null)
         {
             s.Drain(staminaDrain * Time.deltaTime);                  // истощён+ярость → Drain сам жжёт HP (ярость-на-HP)
-            if (s.Exhausted && !Raging) { Uncurl(); return false; } // выдохся БЕЗ ярости → развернулся; ЗАГНАННЫЙ держит ценой HP
+            if (s.Exhausted) { Uncurl(); return false; } // выдохся → развернулся (окно на спине — C3)
         }
         ShowTint(BallTint(false)); // серый ↔ бордо: свернувшийся ярый ёж светится яростью, не серым
         return true;
@@ -119,7 +119,7 @@ public class CurlDefense : MonoBehaviour
         if (s != null)
         {
             s.Drain(rollDrain * Time.deltaTime);
-            if (s.Exhausted && !Raging) { Uncurl(); return false; } // выдохся БЕЗ ярости → развернулся; ЗАГНАННЫЙ катится дальше ценой HP
+            if (s.Exhausted) { Uncurl(); return false; } // выдохся — развернулся (C3: спина)
         }
         return true;
     }

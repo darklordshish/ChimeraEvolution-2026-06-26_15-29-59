@@ -383,7 +383,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
                 { if (antler.TryUse()) activeAbility = antler; Settle(Vector3.zero); return; }
                 // ТАРАН копытами (+топот на приземлении) — в окне дистанции И при дыхалке. Выдохся —
                 // условие не выполнится, и он просто пойдёт догонять шагом: угроза осталась, разгон кончился
-                if (dist >= charge.MinRange && dist <= charge.MaxRange && (Breath == null || Breath.CanSpend(ChargeCost)))
+                if (dist >= charge.MinRange && dist <= charge.MaxRange && (Breath == null || Breath.Has(ChargeCost)))
                 { if (charge.TryUse()) { Breath?.TrySpend(ChargeCost); activeAbility = charge; } Settle(Vector3.zero); return; }
             }
             // ПОВОДОК: ушёл от места вспышки дальше leashRange — ВКОПАЛСЯ. Мордой к цели, бью что подойдёт
