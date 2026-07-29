@@ -101,9 +101,6 @@ public partial class CreatureBody : MonoBehaviour
     // а не долю. Само лечение — общий `Satiety` (переваривание больше не отдельный компонент); поведение
     // «прячусь переваривать на насест» — на психике змеи (читает Satiety.IsSated)
     public bool DigestsWhole { get; private set; }
-    Renderer[] renderers;
-    MaterialPropertyBlock mpb;
-    static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
 
     [SerializeField] float assistFeedRadius = 14f; // сытость помощникам: тела своего вида в этом радиусе от убийцы делят добычу (радиус стаи)
     const float KillMeal = 0.7f;                   // насколько убийство наполняет ШКАЛУ сытости (0..1); глотающий целиком — на всю (1)
@@ -706,36 +703,7 @@ public partial class CreatureBody : MonoBehaviour
     static void Feed(CreatureBody body, float amount) =>
         (body.GetComponent<Satiety>() ?? body.gameObject.AddComponent<Satiety>()).Feed(amount);
 
-    // цвет тела ИГРОКА = СМЕСЬ тинтов ВИДОВ надетых органов (CompositionTint). NPC сюда не заходят
-    // (запечённый материал — не драться с Telegraph), но их ЗАПАХ красится той же смесью в Recompute.
-    void UpdateTint()
-    {
-        Color body = CompositionTint();
-        for (int i = 0; i < renderers.Length; i++)
-        {
-            if (renderers[i] == null) continue;
-            renderers[i].GetPropertyBlock(mpb);
-            mpb.SetColor(BaseColor, body);
-            renderers[i].SetPropertyBlock(mpb);
-        }
-    }
-
-    // СМЕСЬ тинтов ВИДОВ по составу тела: человеческий слот → тинт шасси (телесный), звериный → тинт
-    // вида-донора. Отражает СОСТАВ (волчий билд серее, змеиный зеленее; чем химернее, тем «грязнее»/чуждее —
-    // визуальная цена химеризации). ОБЩАЯ для палитры тела и запахового следа (видовой отпечаток в запахе)
-    Color CompositionTint()
-    {
-        float r = 0f, g = 0f, b = 0f; int n = 0;
-        foreach (var sl in slots)
-        {
-            if (sl.Empty) continue;                                                  // пустой химерный слот не считаем
-            Color t = sl.Installed ? SpeciesTint(sl.DonorSpecies)                    // звериный орган → тинт его вида
-                                   : (chassis != null ? chassis.tint : Color.gray);  // родной → телесный
-            r += t.r; g += t.g; b += t.b; n++;
-        }
-        return n > 0 ? new Color(r / n, g / n, b / n) : (chassis != null ? chassis.tint : Color.gray);
-    }
-
+    // ─── ПАЛИТРА ТЕЛА (UpdateTint/CompositionTint) вынесена в CreatureBody.Tint.cs (partial-split #4) ───
     // ─── ВИДОВАЯ ИДЕНТИЧНОСТЬ вынесена в CreatureBody.Identity.cs (partial-split #1, поведение то же) ───
 
 }
