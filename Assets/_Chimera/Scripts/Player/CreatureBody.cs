@@ -17,15 +17,7 @@ public partial class CreatureBody : MonoBehaviour
     [SerializeField] SpeciesSO chassis;    // базовое тело (MVP: Человек) — слоты, пул, дефолт-органы
     [SerializeField] SpeciesSO[] donors;   // доноры органов (MVP: [Волк])
 
-    // РОДСТВО — ЕДИНАЯ РАВНОМЕРНАЯ КРИВАЯ 0→100 (решение пользователя): и скидка, и мощь растут ЛИНЕЙНО
-    // на всём диапазоне. Прежде было ступенчато (скидка 0–80, мощь только 80–100) — и грайнд 0–80 не давал
-    // силы вовсе, лишь дешевизну. Теперь КАЖДОЕ убийство делает орган и дешевле, И сильнее — прогресс ровный.
-    // Концы те же: 0 родства = полная цена ×1 мощь, 100 = −80% цена ×2 мощь
-    [SerializeField] float discountPerAffinity = 0.008f; // −0.8% за единицу → −80% на 100 родства
-    [SerializeField] float maxDiscount = 0.8f;
-    [SerializeField] float bonusStartAffinity = 0f;      // мощь копится С НУЛЯ (было 80 — «мёртвая зона» силы)
-    [SerializeField] float bonusFullAffinity = 100f;
-    [SerializeField] float maxBonusMult = 2f;            // звериная часть органа ×2 на 100 родства
+    // — РОДСТВО (аффинити: кривые скидки/мощи, словарь, Power) вынесено в CreatureBody.Affinity.cs (partial-split #2) —
 
     [Header("Капы овершута мощи (глушим 2з−ч на 100 родства)")]
     [SerializeField] float maxDamageReduction = 0.6f;   // потолок брони (иначе Blend(0,0.4,2)=0.8 = 80% резист)
@@ -111,33 +103,15 @@ public partial class CreatureBody : MonoBehaviour
     public bool DigestsWhole { get; private set; }
     Renderer[] renderers;
     MaterialPropertyBlock mpb;
-    int lastAffinitySum = -1;
     static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
-
-    public const int AffinityCap = 100; // потолок родства на вид (дальше некуда: скидка и мощь на полке)
 
     [SerializeField] float assistFeedRadius = 14f; // сытость помощникам: тела своего вида в этом радиусе от убийцы делят добычу (радиус стаи)
     const float KillMeal = 0.7f;                   // насколько убийство наполняет ШКАЛУ сытости (0..1); глотающий целиком — на всю (1)
 
-    // РОДСТВО — ЛОКАЛЬНОЕ, в теле КАЖДОГО существа (не в глобальном трекере: «ЦНС» игры не грузим).
-    // Все звери мира — эксперименты с сывороткой (или съевшие их) → родство = база любого тела.
-    // Задел эволюции химер-NPC: змея, съевшая волков, копит родство-волк (пока ничего с ним не делает).
-    readonly Dictionary<string, int> affinity = new();
-
     public static CreatureBody PlayerBody { get; private set; } // тело ИГРОКА: HUD/dev/спавнеры читают его родство
-
-    /// <summary>МОЩЬ носителя — ось экспрессии как ЧИСЛО: у игрока множитель родства (1..2), у NPC —
-    /// фикс. экспрессия вида (волк 0.45, вервольф 2). Общая ручка: на неё вешаются и масштабы (радиус
-    /// голоса), и ПОРОГИ-ФИЧИ («что вообще открывается»). Переиспользуемо химерами и новыми видами.</summary>
-    public float Power => move != null ? BonusMult : expression;
 
     /// <summary>Дорос ли носитель до СТАНА в вое (порог задан органом Пасти, см. Organ.howlStunAt).</summary>
     public bool HowlStuns { get; private set; }
-
-    public int GetAffinity(string species) { affinity.TryGetValue(species, out int v); return v; }
-    public void AddAffinity(string species, int n) => affinity[species] = Mathf.Clamp(GetAffinity(species) + n, 0, AffinityCap);
-    public void SetAffinity(string species, int v) => affinity[species] = Mathf.Clamp(v, 0, AffinityCap);
-    public IEnumerable<KeyValuePair<string, int>> AllAffinity => affinity;
 
     int poolBonus; // расширение пула наградами (SuperBossReward) — рантайм-бонус, ассет шасси не трогаем
 
@@ -152,7 +126,6 @@ public partial class CreatureBody : MonoBehaviour
     int CostOf(Slot sl, Variant v) => Mathf.CeilToInt(EffectiveCost(v.organ, v.species) * (sl.chimera ? chimeraSlotMult : 1f)); // химерный слот — дорогой «графт»
     public int MaxSlots => slots != null ? slots.Length : 0;
     public int BeastSlots { get { int n = 0; if (slots != null) foreach (var sl in slots) if (sl.Installed) n++; return n; } }
-    public float BonusMult => donors != null && donors.Length > 0 && donors[0] != null ? BonusMultiplier(donors[0].speciesName) : 1f;
 
     public string SlotsInfo
     {
@@ -372,16 +345,6 @@ public partial class CreatureBody : MonoBehaviour
         return sl.current;
     }
 
-    // ЭКСПРЕССИЯ звериной части: у игрока РАВНОМЕРНО ×1 (родство 0) → maxBonusMult (родство 100), линейно
-    // на всём диапазоне (мутаген раскрывает гены с каждым убийством). У NPC — фиксированная (поле expression).
-    float BonusMultiplier(string species)
-    {
-        if (expression > 0f) return expression;
-        float span = Mathf.Max(1f, bonusFullAffinity - bonusStartAffinity);
-        float t = Mathf.Clamp01((GetAffinity(species) - bonusStartAffinity) / span);
-        return Mathf.Lerp(1f, maxBonusMult, t);
-    }
-
     void Awake()
     {
         // тело не предполагает игрока: берём тех потребителей, какие есть на объекте
@@ -493,13 +456,6 @@ public partial class CreatureBody : MonoBehaviour
     {
         int affSum = AffinitySum();
         if (affSum != lastAffinitySum) { lastAffinitySum = affSum; Recompute(); } // родство выросло → пересчёт
-    }
-
-    int AffinitySum()
-    {
-        int s = 0;
-        if (donors != null) foreach (var d in donors) if (d != null) s += GetAffinity(d.speciesName);
-        return s;
     }
 
     // РОДСТВО — УБИЙЦЕ: на нашу смерть тело кредитует убийцу (+1 за каждый УНИКАЛЬНЫЙ видо-флаг НАШЕГО
