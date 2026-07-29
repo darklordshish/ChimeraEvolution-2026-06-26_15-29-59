@@ -299,6 +299,7 @@ MonoBehaviour:
     constrictStage: 0
     enablesCurl: 0
   eatsMeat: 1
+  massive: 0
   baseHp: 38
   baseStamina: 70
   baseStaminaRegen: 9

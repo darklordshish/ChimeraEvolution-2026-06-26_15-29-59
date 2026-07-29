@@ -305,6 +305,7 @@ public partial class CreatureBody : MonoBehaviour
         DigestsWhole = digestOn; // «глотает целиком» (Тело-хвост змеи): убил → ПОЛНАЯ сытость (см. CreditKiller)
         SetThorns(thornsOn);          // иглы (Шкура ежа): ударил в упор — порезался
         SetCurl(curlOn);              // клубок (chassisOnly-орган ежа): тело вешает CurlDefense, психика драйвит
+        SetMassive(chassis != null && chassis.massive); // масса (физ.свойство шасси): тело ДОБАВЛЯЕТ Massive по флагу (add-only — не срывает префаб-массу боссов)
         SetVenomResist(venomResistOn); // ядоупорность (Сердце ежа): яд не накапливается
         SetBleedResist(bleedResistOn); // кровеупорность (Лосиное сердце): кровь не накапливается
         if (move != null) // чувства игрока меняет ТОЛЬКО тело игрока (NPC-тело не должно включать их игроку)
@@ -396,6 +397,14 @@ public partial class CreatureBody : MonoBehaviour
     {
         if (on && !TryGetComponent<CurlDefense>(out _)) gameObject.AddComponent<CurlDefense>();
         else if (!on && TryGetComponent<CurlDefense>(out var c)) Destroy(c);
+    }
+
+    // МАССА как маркер: тело ДОБАВЛЯЕТ Massive по флагу шасси (лось). ADD-ONLY, НЕ снимает: масса — статичное
+    // свойство шасси (в MVP не меняется), а на боссах с ОБЩИМ шасси (вервольф на человечьем) Massive висит с
+    // ПРЕФАБА — снятие по флагу=false сорвало бы его. Потребители (Knockback/Constrict/RequiredPack/змея) уже чекают GetComponent<Massive>
+    void SetMassive(bool on)
+    {
+        if (on && !TryGetComponent<Massive>(out _)) gameObject.AddComponent<Massive>();
     }
 
     // ЯДОУПОРНОСТЬ как маркер: опрашивается ядом при добавлении стака (по образцу ColdBlooded)
