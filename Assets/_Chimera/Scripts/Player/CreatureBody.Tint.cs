@@ -24,6 +24,7 @@ public partial class CreatureBody
             mpb.SetColor(BaseColor, body);
             renderers[i].SetPropertyBlock(mpb);
         }
+        GetComponent<Telegraph>()?.Rebase(); // замах гаснет В ЦВЕТ-ПО-СОСТАВУ, а не в стартовый материал (развязка тинт×Telegraph)
     }
 
     // СМЕСЬ тинтов ВИДОВ по составу тела: человеческий слот → тинт шасси (телесный), звериный → тинт

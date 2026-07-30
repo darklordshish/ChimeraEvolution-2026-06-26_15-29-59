@@ -80,6 +80,21 @@ public class Telegraph : MonoBehaviour
     /// <summary>Восстановить текущее состояние (телеграф/рест) — после того как HitFlash перебил вспышкой.</summary>
     public void Reapply() => Apply();
 
+    /// <summary>Переснять «родные» цвета из ТЕКУЩЕГО состояния рендереров (per-renderer _BaseColor из MPB).
+    /// Тело зовёт после покраски составом (tintComposition): иначе Telegraph держит СТАРТОВЫЙ материаловый
+    /// цвет (снят в Awake) и гасит замах В НЕГО, стирая тинт-по-составу. no-op до Awake (renderers ещё нет).</summary>
+    public void Rebase()
+    {
+        if (renderers == null) return;
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            if (renderers[i] == null) continue;
+            renderers[i].GetPropertyBlock(mpb);
+            if (mpb.isEmpty) continue;                 // тело ещё не красило этот рендерер — держим материаловую базу
+            baseColors[i] = mpb.GetColor(BaseColor);   // текущий цвет-по-составу становится «родным» для телеграфа
+        }
+    }
+
     public void Clear() { active = false; Apply(); }
 
     // насколько тело СВЕТЛЕЕТ, когда намерение не распознано. Не отдельный цвет (чужеродная метка поверх
