@@ -163,6 +163,18 @@ public partial class CreatureBody : MonoBehaviour
 
     void Start() => Recompute();
 
+    /// <summary>РАНТАЙМ-СБОРКА (тест-химера / будущая стохастическая химеризация NPC): задать шасси+доноров и
+    /// пересобрать. Обычные тела конфигурятся сериализацией (префаб/бутстрап); это — для рождённых на лету.
+    /// tintFromComposition — красить тело смесью тинтов состава (заглушка-сфера без Telegraph, как тело игрока).</summary>
+    public void Configure(SpeciesSO newChassis, SpeciesSO[] newDonors, bool tintFromComposition = false)
+    {
+        chassis = newChassis;
+        donors = newDonors;
+        tintComposition = tintFromComposition;
+        BuildSlots();
+        Recompute();
+    }
+
     void Update()
     {
         int affSum = AffinitySum();
@@ -370,7 +382,7 @@ public partial class CreatureBody : MonoBehaviour
         // ЭФФЕКТЫ УКУСА (яд/кровь из Пасти) и ГОЛОС (радиус воя, уже × мощь) — всё data-driven как у игрока
         foreach (var c in GetComponents<IBodyStatConsumer>()) c.OnBodyStats(dmg + dmgBite, mv, venom, bleed, howlReach);
 
-        if (move != null) UpdateTint(); // ТОЛЬКО игрок: тело = смесь тинтов видов надетых органов. NPC — запечённый материал (не драться с Telegraph)
+        if (move != null || tintComposition) UpdateTint(); // игрок ВСЕГДА; NPC — только тест-химера (флаг tintComposition); обычные NPC — запечённый материал (не драться с Telegraph)
 
         // ВИДОВОЙ ОТПЕЧАТОК В ЗАПАХЕ: след пахнет СОСТАВОМ — красится смесью тинтов шасси+аугументов
         // (природная особь → чистый тинт вида, химера → грязный микс). Волчье Чутьё читает, КТО прошёл,

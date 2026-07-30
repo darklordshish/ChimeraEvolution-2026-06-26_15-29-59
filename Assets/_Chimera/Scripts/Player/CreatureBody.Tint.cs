@@ -9,6 +9,7 @@ public partial class CreatureBody
 {
     Renderer[] renderers;
     MaterialPropertyBlock mpb;
+    bool tintComposition; // тинтить тело смесью состава даже у NPC (тест-химера-заглушка, ставит Configure); обычные NPC — запечённый материал
     static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
 
     // цвет тела ИГРОКА = СМЕСЬ тинтов ВИДОВ надетых органов (CompositionTint). NPC сюда не заходят
