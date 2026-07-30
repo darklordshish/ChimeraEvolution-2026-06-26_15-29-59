@@ -2,17 +2,16 @@ using UnityEngine;
 using UnityEngine.AI;
 
 /// <summary>
-/// Призывает босса-вервольфа, когда родство с видом достигает порога — кульминация ветки волка.
-/// Пока босс жив — нового не плодит; после его смерти через паузу появляется новый (так, пока родство ≥ порога).
-/// Положи на пустой объект в сцене и назначь префаб вервольфа в инспекторе.
+/// Призывает босса-суперхимеру (пока вервольф), когда родство со ВСЕМИ донор-видами достигает порога —
+/// кульминация всего леса, не одной ветки волка. Пока босс жив — нового не плодит; после смерти через
+/// (долгую) паузу появляется новый, пока родство держится ≥ порога. Положи на объект в сцене + назначь префаб.
 /// </summary>
 public class WerewolfSpawner : MonoBehaviour
 {
     [SerializeField] GameObject werewolfPrefab;
-    [SerializeField] string species = "Волк";
-    [SerializeField] int triggerAffinity = 80;
+    [SerializeField] int triggerAffinity = 75;   // порог по КАЖДОМУ донор-виду (все виды освоены → апекс приходит)
     [SerializeField] float spawnDistance = 16f;  // на каком расстоянии от игрока появляется
-    [SerializeField] float respawnDelay = 5f;    // пауза после смерти босса до следующего
+    [SerializeField] float respawnDelay = 45f;   // ДОЛГАЯ пауза: апекс-босс редкий, не спамим тушу за тушей
     [SerializeField] bool autoSpawn;             // авто-призыв по родству. ВЫКЛЮЧЕН по умолчанию: родство на отладке
                                                  // крутят постоянно, а босс ломает естественный порядок сцены —
                                                  // включать осознанно (тумблер в Dev-панели), а не ловить внезапно
@@ -33,7 +32,7 @@ public class WerewolfSpawner : MonoBehaviour
     {
         if (!autoSpawn) return;
         var pb = CreatureBody.PlayerBody; // родство теперь локальное — читаем тело игрока
-        if (pb == null || pb.GetAffinity(species) < triggerAffinity) return;
+        if (pb == null || !pb.AllDonorsAffinityAtLeast(triggerAffinity)) return; // ВСЕ виды освоены до порога
 
         if (werewolfPrefab == null)
         {

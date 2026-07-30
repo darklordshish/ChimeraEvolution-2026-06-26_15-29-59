@@ -41,6 +41,16 @@ public partial class CreatureBody
     public void SetAffinity(string species, int v) => affinity[species] = Mathf.Clamp(v, 0, AffinityCap);
     public IEnumerable<KeyValuePair<string, int>> AllAffinity => affinity;
 
+    // ВСЕ ДОНОРСКИЕ виды набраны ДО порога (шасси-человек всегда на капе — не в счёт; доноры и есть «лес»).
+    // Пороги прогрессии: ≥75 по всем → босс-суперхимера (WerewolfSpawner), ≥100 → химерный слот (ChimeraSlotReward).
+    // Нет доноров → false (мастерить нечего)
+    public bool AllDonorsAffinityAtLeast(int threshold)
+    {
+        if (donors == null || donors.Length == 0) return false;
+        foreach (var d in donors) if (d == null || GetAffinity(d.speciesName) < threshold) return false;
+        return true;
+    }
+
     public float BonusMult => donors != null && donors.Length > 0 && donors[0] != null ? BonusMultiplier(donors[0].speciesName) : 1f;
 
     // ЭКСПРЕССИЯ звериной части: у игрока РАВНОМЕРНО ×1 (родство 0) → maxBonusMult (родство 100), линейно
