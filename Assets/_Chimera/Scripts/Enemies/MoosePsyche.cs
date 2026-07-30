@@ -203,7 +203,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
         foreach (var col in Physics.OverlapSphere(transform.position, maxR, ~0, QueryTriggerInteraction.Ignore))
         {
             var morale = col.GetComponentInParent<Morale>();
-            if (morale != null && morale.transform != transform && morale.GetComponentInParent<MoosePsyche>() == null // своих (лосей) не пугаем — им цепь-ярость
+            if (morale != null && morale.transform != transform && !body.IsKin(morale.GetComponentInParent<CreatureBody>()) // своих (лосей) не пугаем — им цепь-ярость (кин по идентичности)
                 && hit.Add(morale)
                 && (morale.transform.position - transform.position).sqrMagnitude <= bellowRadius * bellowRadius)
                 morale.Add(-2f); // РЁВ туши весит два воя (прецедент «большого голоса» — как вой игрока)
@@ -246,7 +246,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
         {
             var morale = col.GetComponentInParent<Morale>();
             // теллы пугают ЧУЖИХ (у лося теперь тоже есть Morale — своих не стращаем, для них рёв = цепь-ярость)
-            if (morale != null && morale.transform != transform && morale.GetComponentInParent<MoosePsyche>() == null
+            if (morale != null && morale.transform != transform && !body.IsKin(morale.GetComponentInParent<CreatureBody>())
                 && hit.Add(morale)) morale.Add(-1f);
         }
     }

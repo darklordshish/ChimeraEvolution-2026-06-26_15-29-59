@@ -155,9 +155,9 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         nextMateScan = Time.time + 0.5f;
         foreach (var col in Physics.OverlapSphere(transform.position, rescueRadius, ~0, QueryTriggerInteraction.Ignore))
         {
-            var mate = col.GetComponentInParent<WolfPsyche>();
-            if (mate == null || mate == this) continue;
-            if (mate.stagger == null || !mate.stagger.IsStunned) continue;
+            var mate = col.GetComponentInParent<CreatureBody>();
+            if (mate == null || mate == body || !body.IsKin(mate)) continue; // кин-собрат по идентичности
+            if (!mate.TryGetComponent<Stagger>(out var st) || !st.IsStunned) continue;
             rescuePos = mate.transform.position;
             rescueUntil = Time.time + 3f;
             return;
@@ -566,8 +566,8 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         int n = Physics.OverlapSphereNonAlloc(transform.position, radius, neighbors, ~0, QueryTriggerInteraction.Ignore);
         for (int i = 0; i < n; i++)
         {
-            var w = neighbors[i] != null ? neighbors[i].GetComponentInParent<WolfPsyche>() : null;
-            if (w != null && w != this) count++;
+            var w = neighbors[i] != null ? neighbors[i].GetComponentInParent<CreatureBody>() : null;
+            if (w != null && w != body && body.IsKin(w)) count++; // кин-стая по идентичности
         }
         return count;
     }
@@ -842,7 +842,8 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         {
             Collider col = neighbors[i];
             if (col.transform == transform) continue;
-            if (col.GetComponentInParent<WolfPsyche>() == null) continue;
+            var cb = col.GetComponentInParent<CreatureBody>();
+            if (cb == null || cb == body || !body.IsKin(cb)) continue; // разлетаемся только от кина
             Vector3 away = transform.position - col.transform.position;
             away.y = 0f;
             float d = away.magnitude;

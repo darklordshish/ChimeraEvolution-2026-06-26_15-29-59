@@ -231,7 +231,7 @@ public class WerewolfPsyche : MonoBehaviour, IBodyStatConsumer
             var hit = new Hit(ownHealth, transform.position);
             float stunR = howlReach * 0.5f; // ближнее кольцо глушит, дальнее — только дух (как у игроцкого воя)
             foreach (var hp in TargetScan.Healths(transform.position, stunR, transform))
-                if (hp.GetComponent<WolfPsyche>() == null) hit.Apply(hp, HitEffect.Stun(howlStunDuration)); // своих не глушим
+                if (hp.GetComponent<WolfPsyche>() == null) hit.Apply(hp, HitEffect.Stun(howlStunDuration)); // своих не глушим. ВЕРВОЛЬФ — химера на человечьем шасси: IsKin по Chassis его волков не узнаёт → кин-по-ДОМИНАНТНОМУ-виду ждёт #4b
         }
         nextHowl = Time.time + howlCooldown;
     }

@@ -90,6 +90,13 @@ public partial class CreatureBody
     public static KinTier Regard(CreatureBody observer, CreatureBody target) =>
         observer != null && target != null && target.Chassis != null ? observer.Tier(target.Chassis) : KinTier.None;
 
+    /// <summary>Признаёт ли ЭТО тело (this) во ВСТРЕЧНОМ (other) СВОЕГО — тир-осознанно (мост тип-B → идентичность, #4a).
+    /// Направление: `Regard(other, this)` = «сколько МОЕГО вида (this.Chassis) в other» = насколько other похож на меня.
+    /// Порог Weak по умолчанию — внутривидовое узнавание ЛЕНИВО (свои читают тебя рано). У чистых видов: свой →
+    /// Strong, чужой → None (любой порог даёт то же). Химере/химеризующемуся игроку даёт градиент по составу.
+    /// Психики зовут это вместо `GetComponentInParent&lt;XxxPsyche&gt;()` в кин-местах.</summary>
+    public bool IsKin(CreatureBody other, KinTier minTier = KinTier.Weak) => other != null && Regard(other, this) >= minTier;
+
     /// <summary>УДАР ПО ЦЕЛИ: если по составу это мой вид — подорвать признание своего вида в её глазах
     /// (стак эрозии, см. Betrayal). Гейт по СЫРОЙ идентичности (не эффективной): пока ты их вида —
     /// непрерывные удары держат признание просевшим; перестал бить — стаки гаснут, признание вернулось.
