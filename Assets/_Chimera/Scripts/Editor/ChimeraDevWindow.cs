@@ -229,6 +229,22 @@ public class ChimeraDevWindow : EditorWindow
                     wwSpawner.AutoSpawn = !wwSpawner.AutoSpawn;
         }
 
+        // ТЕСТ-ХИМЕРА (#4b-1): спавн носителя со СЛУЧАЙНЫМ составом + ридаут идентичности (MostKin)
+        var tcSpawner = Object.FindAnyObjectByType<TestChimeraSpawner>();
+        using (new EditorGUILayout.HorizontalScope(EditorStyles.helpBox))
+        {
+            EditorGUILayout.LabelField("Тест-химера", EditorStyles.boldLabel, GUILayout.Width(90));
+            using (new EditorGUI.DisabledScope(tcSpawner == null))
+                if (GUILayout.Button("спавн (случайный состав)", GUILayout.Width(180))) tcSpawner.SpawnRandom();
+            if (tcSpawner == null) EditorGUILayout.LabelField("нет TestChimeraSpawner в сцене", GUILayout.Width(220));
+        }
+        foreach (var tc in Object.FindObjectsByType<CreatureBody>())
+        {
+            if (tc.name != "TestChimera") continue;
+            var dom = tc.MostKin(out var tier);
+            EditorGUILayout.LabelField(dom != null ? $"  доминанта: {dom.speciesName} ({tier})" : "  ИСТИННАЯ ХИМЕРА (кин ни к кому)");
+        }
+
         // разброс особей: множители/личность живут в get-only свойствах (в инспекторе НЕ видны) — дамп в консоль
         if (GUILayout.Button("Разброс волков → консоль"))
             foreach (var w in wolves)
