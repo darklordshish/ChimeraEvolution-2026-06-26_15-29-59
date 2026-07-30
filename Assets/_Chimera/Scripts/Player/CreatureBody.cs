@@ -198,12 +198,17 @@ public partial class CreatureBody : MonoBehaviour
                 }
         }
 
-        var present = new HashSet<string>();
-        if (chassis != null) present.Add(chassis.speciesName);
+        // РОДСТВО — УБИЙЦЕ по СОСТАВУ трупа: +1 за шасси и КАЖДЫЙ орган (по виду органа) × AffinityPerOrgan.
+        // Композиционно: «более волчья» тварь → больше волчьего родства; химера-NPC естественно раздаёт по видам.
+        // Было: +1 за уникальный вид (пёстрый пёс = +1) → грайнд 100 killов; теперь ~25 (тюнинг AffinityPerOrgan)
+        var tally = new Dictionary<string, int>();
+        if (chassis != null) tally[chassis.speciesName] = 1;                    // шасси
         if (slots != null)
             foreach (var sl in slots)
-                if (sl.Installed && sl.DonorSpecies != null) present.Add(sl.DonorSpecies);
-        foreach (var species in present) killer.AddAffinity(species, 1);
+                if (!sl.Empty && sl.Pick != null && sl.Pick.species != null)    // каждый надетый орган — по СВОЕМУ виду
+                    tally[sl.Pick.species] = (tally.TryGetValue(sl.Pick.species, out var c) ? c : 0) + 1;
+        foreach (var kv in tally)
+            killer.AddAffinity(kv.Key, Mathf.Max(1, Mathf.RoundToInt(kv.Value * AffinityPerOrgan))); // ≥1: любой след вида регистрируется
     }
 
     void OnDestroy() { if (PlayerBody == this) PlayerBody = null; }

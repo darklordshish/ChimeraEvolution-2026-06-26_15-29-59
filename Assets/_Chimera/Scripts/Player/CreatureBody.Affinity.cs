@@ -17,6 +17,12 @@ public partial class CreatureBody
     [SerializeField] float bonusFullAffinity = 100f;
     [SerializeField] float maxBonusMult = 2f;            // звериная часть органа ×2 на 100 родства
 
+    // НАБОР РОДСТВА: убийце капает +1 за шасси и КАЖДЫЙ орган трупа (по виду органа) × этот вес. Цель —
+    // ~25 killов чистого вида до капа (пёстрый ~7-8 органов × 0.55 ≈ +4/килл, 100/4 = 25). Тюним под ощущение.
+    // 0 = не настроено (гоча нового поля на старом компоненте) → дефолт свойством
+    [SerializeField] float affinityPerOrgan = 0.55f;
+    float AffinityPerOrgan => affinityPerOrgan > 0f ? affinityPerOrgan : 0.55f;
+
     public const int AffinityCap = 100; // потолок родства на вид (дальше некуда: скидка и мощь на полке)
     int lastAffinitySum = -1;
 
