@@ -83,12 +83,16 @@ public partial class CreatureBody
         return k >= 0.999f ? KinTier.Strong : k >= mediumAt ? KinTier.Medium : k >= weakAt ? KinTier.Weak : KinTier.None;
     }
 
-    /// <summary>ЕДИНЫЙ ГЛАГОЛ РОДСТВА: как `observer` признаёт вид (шасси) существа `target`. None, если один
+    /// <summary>ЕДИНЫЙ ГЛАГОЛ РОДСТВА: как `observer` признаёт существо `target` — по ДОМИНАНТЕ состава (MostKin). None, если один
     /// из тел отсутствует или у цели нет шасси. Заменяет дословный повтор `PlayerBody.Tier(body.Chassis)`,
     /// разбросанный по психикам (волк/лось) и голосам (вой/рёв) — теперь правило признания живёт ОДНИМ местом
     /// (задел под термо-поправку змеи: у неё «свой/добыча» по теплу — ляжет сюда же).</summary>
-    public static KinTier Regard(CreatureBody observer, CreatureBody target) =>
-        observer != null && target != null && target.Chassis != null ? observer.Tier(target.Chassis) : KinTier.None;
+    public static KinTier Regard(CreatureBody observer, CreatureBody target)
+    {
+        if (observer == null || target == null) return KinTier.None;
+        var dom = target.MostKin(out _);                        // идентичность цели = ДОМИНАНТА состава (не шасси): волк-по-идентичности для стаи волк
+        return dom != null ? observer.Tier(dom) : KinTier.None; // истинная химера (dom==null) — никому не своя (согласуется с химерой-альфой)
+    }
 
     /// <summary>Признаёт ли ЭТО тело (this) во ВСТРЕЧНОМ (other) СВОЕГО — тир-осознанно (мост тип-B → идентичность, #4a).
     /// Направление: `Regard(other, this)` = «сколько МОЕГО вида (this.Chassis) в other» = насколько other похож на меня.
