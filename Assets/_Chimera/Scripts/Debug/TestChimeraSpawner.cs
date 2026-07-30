@@ -3,8 +3,8 @@ using UnityEngine;
 /// <summary>
 /// ТЕСТБЕД (#4b-1): спавнит сферу-химеру со СЛУЧАЙНЫМ-спаннинг составом (от доминанты одного вида до истинной
 /// химеры, не кин никому), красит по составу (CompositionTint), показывает идентичность (MostKin, ридаут в
-/// дев-панели). ПСИХИКИ НЕТ — стоит и демонстрирует состав. Носитель, против которого проверяем следующие
-/// слайсы #4b (диспатч/поведение). Положи на объект в сцене, назначь species (Человек/Волк/Змея/Лось/Ёж).
+/// дев-панели). ОЖИВЛЯЕТ её (#4b-2): CC/Health/базовый укус → ходячий/дерущийся NPC, затем PsycheDispatch
+/// вешает психику (пока всегда химера-альфа). Положи на объект в сцене, назначь species (Человек/Волк/Змея/Лось/Ёж).
 /// Спавн — кнопкой в дев-панели (Chimera Dev).
 /// </summary>
 public class TestChimeraSpawner : MonoBehaviour
@@ -21,7 +21,13 @@ public class TestChimeraSpawner : MonoBehaviour
         go.name = "TestChimera";
         Vector2 c = Random.insideUnitCircle * spawnRadius;
         go.transform.position = transform.position + new Vector3(c.x, 0.5f, c.y);
-        if (go.TryGetComponent<Collider>(out var col)) Destroy(col); // без физ-коллайдера-заглушки
+        // ОЖИВЛЕНИЕ (#4b-2): сфера → ходячий/дерущийся NPC. Порядок важен — CC/Health/укус ДО CreatureBody,
+        // чтобы его Awake их нашёл, а Recompute задал HP (health.SetMaxHealth гейтится наличием Health)
+        if (go.TryGetComponent<Collider>(out var col)) Destroy(col); // сферный коллайдер долой
+        var cc = go.AddComponent<CharacterController>();             // и коллайдер, и мотор для NavLocomotion.Move
+        cc.height = 1f; cc.radius = 0.5f; cc.center = Vector3.zero;  // центр капсулы = центр меш-сферы, иначе pivot садится на землю и меш тонет наполовину
+        go.AddComponent<Health>();      // тело задаст Max в Recompute (applyVitals)
+        go.AddComponent<BiteAbility>(); // базовая атака (гарантия хотя бы одной); Awake создаст и Telegraph
 
         var body = go.AddComponent<CreatureBody>();
         var chassis = species[Random.Range(0, species.Length)];
@@ -39,6 +45,8 @@ public class TestChimeraSpawner : MonoBehaviour
             var vars = body.GetVariants(slot);
             if (vars.Count > 0) body.Install(slot, Random.Range(0, vars.Count)); // случайный вариант (вкл. чужие виды)
         }
+
+        PsycheDispatch.Attach(body); // по идентичности вешает психику (пока всегда альфа) + пере-раздаёт статы
         return body;
     }
 }

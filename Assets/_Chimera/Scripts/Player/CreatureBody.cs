@@ -175,6 +175,11 @@ public partial class CreatureBody : MonoBehaviour
         Recompute();
     }
 
+    /// <summary>Пере-раздать статы компонентам (урон/скорость через OnBodyStats, HP и т.д.). Для психики,
+    /// НАВЕШЕННОЙ В РАНТАЙМЕ ПОСЛЕ сборки (диспатч добавляет её после Recompute — Feed→OnBodyStats до неё
+    /// не дошёл, урон/скорость не получены). Идемпотентно (просто пересчёт).</summary>
+    public void Refeed() => Recompute();
+
     void Update()
     {
         int affSum = AffinitySum();
