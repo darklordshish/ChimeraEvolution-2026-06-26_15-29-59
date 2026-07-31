@@ -142,6 +142,21 @@ public partial class CreatureBody : MonoBehaviour
         TryGetComponent(out cold);
         TryGetComponent(out camoComp);
 
+        // ЭВОЛЮЦИЯ: NPC встаёт на платформу «тело=данные» как игрок — все ветки-доноры + стартовое родство +
+        // цвет по составу. Родство — ЕДИНАЯ ось (>0 → ветка доступна). Ставим ДО BuildSlots, чтобы слоты
+        // собрались со всеми вариантами. Игрока (move != null) не трогаем — у него donors назначены сборкой
+        if (move == null && chassis != null)
+        {
+            var evoCfg = EvolutionConfig.Instance;
+            if (evoCfg != null && evoCfg.EvolveNpc && evoCfg.AllSpecies != null && evoCfg.AllSpecies.Length > 0)
+            {
+                donors = evoCfg.AllSpecies;                       // все виды — потенциальные доноры (родные надеты → чистый вид)
+                tintComposition = true;                           // цвет по составу (развязка Telegraph.Rebase готова)
+                foreach (var sp in evoCfg.AllSpecies)
+                    if (sp != null && sp != chassis) SetAffinity(sp.speciesName, evoCfg.StartAffinity); // стартовое родство чужим
+            }
+        }
+
         BuildSlots();
 
         // РОДСТВО — УБИЙЦЕ: на нашу смерть кредитуем ТОГО, КТО УБИЛ (см. CreditKiller)
