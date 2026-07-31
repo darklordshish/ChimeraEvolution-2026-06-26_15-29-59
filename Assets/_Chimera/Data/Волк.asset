@@ -63,6 +63,10 @@ MonoBehaviour:
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 0
+    visualPart: "\u043F\u0435\u0440\u0435\u0434\u043D\u0438\u0435"
+    visualScale: {x: 1, y: 1, z: 1.2}
+    visualOffset: {x: 0, y: 0, z: 0}
+    visualEuler: {x: 0, y: 0, z: 0}
   - organName: "\u0412\u043E\u043B\u0447\u044C\u0438 \u043D\u043E\u0433\u0438"
     slot: "\u041D\u043E\u0433\u0438"
     hotkey: 2
@@ -110,6 +114,10 @@ MonoBehaviour:
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 0
+    visualPart: "\u0437\u0430\u0434\u043D\u0438\u0435"
+    visualScale: {x: 1, y: 1, z: 1.2}
+    visualOffset: {x: 0, y: 0, z: 0}
+    visualEuler: {x: 0, y: 0, z: 0}
   - organName: "\u0412\u043E\u043B\u0447\u044C\u0435 \u0441\u0435\u0440\u0434\u0446\u0435"
     slot: "\u0421\u0435\u0440\u0434\u0446\u0435"
     hotkey: 3
@@ -157,6 +165,10 @@ MonoBehaviour:
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 0
+    visualPart: 
+    visualScale: {x: 1, y: 1, z: 1}
+    visualOffset: {x: 0, y: 0, z: 0}
+    visualEuler: {x: 0, y: 0, z: 0}
   - organName: "\u041D\u044E\u0445"
     slot: "\u0427\u0443\u0442\u044C\u0451"
     hotkey: 4
@@ -204,6 +216,10 @@ MonoBehaviour:
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 0
+    visualPart: 
+    visualScale: {x: 1, y: 1, z: 1}
+    visualOffset: {x: 0, y: 0, z: 0}
+    visualEuler: {x: 0, y: 0, z: 0}
   - organName: "\u041F\u0430\u0441\u0442\u044C"
     slot: "\u041F\u0430\u0441\u0442\u044C"
     hotkey: 5
@@ -251,6 +267,10 @@ MonoBehaviour:
     nativeChassis: "\u0412\u043E\u043B\u043A"
     constrictStage: 1
     enablesCurl: 0
+    visualPart: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    visualScale: {x: 1.1, y: 1, z: 1.3}
+    visualOffset: {x: 0, y: 0, z: 0}
+    visualEuler: {x: 0, y: 0, z: 0}
   - organName: "\u0428\u043A\u0443\u0440\u0430"
     slot: "\u0428\u043A\u0443\u0440\u0430"
     hotkey: 6
@@ -298,8 +318,28 @@ MonoBehaviour:
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 0
+    visualPart: "\u043A\u043E\u0440\u043F\u0443\u0441"
+    visualScale: {x: 1, y: 1, z: 1}
+    visualOffset: {x: 0, y: 0, z: 0}
+    visualEuler: {x: 0, y: 0, z: 0}
   eatsMeat: 1
   massive: 0
   baseHp: 38
   baseStamina: 70
   baseStaminaRegen: 9
+  skeleton:
+  - part: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    localPos: {x: 0, y: 1.15, z: 0.9}
+    baseSize: {x: 0.35, y: 0.35, z: 0.4}
+  - part: "\u043A\u043E\u0440\u043F\u0443\u0441"
+    localPos: {x: 0, y: 0.76, z: 0}
+    baseSize: {x: 0.54, y: 0.6, z: 0.9}
+  - part: "\u043F\u0435\u0440\u0435\u0434\u043D\u0438\u0435"
+    localPos: {x: 0, y: 0.3, z: 0.42}
+    baseSize: {x: 0.45, y: 0.5, z: 0.18}
+  - part: "\u0437\u0430\u0434\u043D\u0438\u0435"
+    localPos: {x: 0, y: 0.32, z: -0.44}
+    baseSize: {x: 0.45, y: 0.5, z: 0.22}
+  - part: "\u0445\u0432\u043E\u0441\u0442"
+    localPos: {x: 0, y: 0.9, z: -0.76}
+    baseSize: {x: 0.15, y: 0.15, z: 0.55}

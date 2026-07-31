@@ -29,6 +29,10 @@ public class SpeciesSO : ScriptableObject
     // без регена (туша прёт долго, отходит медленно), волк — середина.
     public int baseStamina = 0;
     public float baseStaminaRegen = 0f;
+
+    // СКЕЛЕТ (data-driven морфология, ось 2): именованные ЯКОРЯ — куда MorphBuilder крепит куб-части органов.
+    // Пусто = морфологии у вида нет (остаётся старый визуал префаба)
+    public SkeletonAnchor[] skeleton;
 }
 
 /// <summary>
@@ -86,4 +90,21 @@ public class Organ
     public string nativeChassis;   // РОДНОЕ ШАССИ приёма (2-я ось экспрессии): полная форма открыта только на этом шасси, на чужом — кап. Пусто = нет гейта. Носитель — Хвост (ст.3 удушения только на змеином шасси)
     public int constrictStage;     // РОДНАЯ сила захвата грэпл-органа (1–3): Хвост змеи 3, челюсти волка/ежа 1. Кап = нативен ? стадия : min(2, стадия). 0 = не грэпл-орган
     public bool enablesCurl;       // КЛУБОК (CurlDefense): свернуться в шар — броня↑, катание-таран. Носитель — chassisOnly-орган ежа (форма целого тела)
+
+    // МОРФОЛОГИЯ (data-driven модель, ось 2): видимая КУБ-ЧАСТЬ органа. Пустой visualPart = НЕВИДИМЫЙ (Сердце/Чутьё).
+    // Крепится к якорю шасси по имени visualPart; форма от органа, поза/место — от скелета шасси (SkeletonAnchor)
+    public string visualPart;                 // имя якоря на скелете шасси ("морда"/"передние"/"хвост"/"корпус"/"макушка"/"голова"…)
+    public Vector3 visualScale = Vector3.one; // габариты куба-части (× baseSize якоря)
+    public Vector3 visualOffset;              // локальное смещение от якоря
+    public Vector3 visualEuler;               // локальный поворот
+}
+
+/// <summary>ЯКОРЬ СКЕЛЕТА (морфология): именованное место на теле шасси, куда MorphBuilder крепит куб-часть
+/// органа. Позиции под РОСТ/ПОЗУ вида — человек прямоходящий, волк 4-ногий. Совпадение по имени с Organ.visualPart.</summary>
+[System.Serializable]
+public class SkeletonAnchor
+{
+    public string part;                    // имя якоря (совпадает с Organ.visualPart)
+    public Vector3 localPos;               // локальная позиция места на теле
+    public Vector3 baseSize = Vector3.one; // базовый габарит места (часть масштабируется относительно него)
 }

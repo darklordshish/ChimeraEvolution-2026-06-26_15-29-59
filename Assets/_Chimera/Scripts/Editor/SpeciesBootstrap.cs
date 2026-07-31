@@ -32,12 +32,20 @@ public static class SpeciesBootstrap
             // Человек = ПОЛНОЦЕННЫЙ вид (просто стартовое шасси). Цены СЫРЫЕ, как у всех; дёшевы ДЛЯ ТЕБЯ
             // потому что ты на 100 родства с Человеком (−80% скидка, честно через EffectiveCost). Мощь ×2 (100
             // родства), база ×0.75 → нетто ≈ ×1.5. Кулдауны/дальность не масштабируются.
-            new Organ { organName = "Кисть",  slot = "Руки",   hotkey = "1", cost = 3, damage = 8, range = 1.6f },                          // ×2 ≈ 16 урона; платишь 1
-            new Organ { organName = "Ноги",   slot = "Ноги",   hotkey = "2", cost = 3, moveSpeed = 4.5f, dashSpeed = 15f, enablesKick = true }, // ×2 ≈ 9 ход / 30 рывок; пинок — фича человеческих ног
-            new Organ { organName = "Сердце", slot = "Сердце", hotkey = "3", cost = 6, atkCooldown = 0.45f, hpBonus = 0.5f, staminaBonus = 0.5f, staminaRegenBonus = 0.5f, regen = 0f, regenOOC = 0.75f }, // +50% базы: 112 HP на старте, 150 на сотке родства; платишь 2
-            new Organ { organName = "Чутьё",  slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.7f, insight = true }, // НАБЛЮДАТЕЛЬНОСТЬ учёного: распознаёт намерения и читает состояния числом (был пустым слотом — платил 3 ни за что)
-            new Organ { organName = "Рот",    slot = "Пасть",  hotkey = "5", cost = 3, enablesBite = false },
-            new Organ { organName = "Кожа",   slot = "Шкура",  hotkey = "6", cost = 3, damageReduction = 0f },
+            new Organ { organName = "Кисть",  slot = "Руки",   hotkey = "1", cost = 3, damage = 8, range = 1.6f, visualPart = "передние", visualScale = new Vector3(0.9f, 1f, 0.6f) },
+            new Organ { organName = "Ноги",   slot = "Ноги",   hotkey = "2", cost = 3, moveSpeed = 4.5f, dashSpeed = 15f, enablesKick = true, visualPart = "задние", visualScale = new Vector3(0.9f, 1f, 0.8f) },
+            new Organ { organName = "Сердце", slot = "Сердце", hotkey = "3", cost = 6, atkCooldown = 0.45f, hpBonus = 0.5f, staminaBonus = 0.5f, staminaRegenBonus = 0.5f, regen = 0f, regenOOC = 0.75f }, // внутренний — visualPart пусто
+            new Organ { organName = "Чутьё",  slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.7f, insight = true }, // внутренний — visualPart пусто
+            new Organ { organName = "Рот",    slot = "Пасть",  hotkey = "5", cost = 3, enablesBite = false, visualPart = "голова" },
+            new Organ { organName = "Кожа",   slot = "Шкура",  hotkey = "6", cost = 3, damageReduction = 0f, visualPart = "корпус" },
+        };
+        // СКЕЛЕТ человека (прямоходящий): якоря по СМЫСЛУ слота (общий словарь), позиции под рост человека
+        human.skeleton = new[]
+        {
+            new SkeletonAnchor { part = "голова",   localPos = new Vector3(0f, 1.68f, 0f),    baseSize = new Vector3(0.34f, 0.4f, 0.34f) },
+            new SkeletonAnchor { part = "корпус",   localPos = new Vector3(0f, 1.1f, 0f),     baseSize = new Vector3(0.5f, 0.8f, 0.3f) },
+            new SkeletonAnchor { part = "передние", localPos = new Vector3(0f, 1.15f, 0.18f), baseSize = new Vector3(0.5f, 0.55f, 0.18f) },
+            new SkeletonAnchor { part = "задние",   localPos = new Vector3(0f, 0.42f, 0f),    baseSize = new Vector3(0.32f, 0.82f, 0.22f) },
         };
         EditorUtility.SetDirty(human);
 
@@ -51,12 +59,21 @@ public static class SpeciesBootstrap
         wolf.baseStaminaRegen = 9f;
         wolf.organs = new[]
         {
-            new Organ { organName = "Коготь",        slot = "Руки",   hotkey = "1", cost = 4, damage = 18, range = 1.5f },
-            new Organ { organName = "Волчьи ноги",   slot = "Ноги",   hotkey = "2", cost = 4, moveSpeed = 9f, dashSpeed = 30f },
+            new Organ { organName = "Коготь",        slot = "Руки",   hotkey = "1", cost = 4, damage = 18, range = 1.5f, visualPart = "передние", visualScale = new Vector3(1f, 1f, 1.2f) },
+            new Organ { organName = "Волчьи ноги",   slot = "Ноги",   hotkey = "2", cost = 4, moveSpeed = 9f, dashSpeed = 30f, visualPart = "задние", visualScale = new Vector3(1f, 1f, 1.2f) },
             new Organ { organName = "Волчье сердце", slot = "Сердце", hotkey = "3", cost = 6, atkCooldown = 0.30f, hpBonus = 1.75f, staminaBonus = 0.5f, staminaRegenBonus = 0.25f, regen = 3f, regenOOC = 0f }, // «заживает как на собаке»: реген 2→3, чтобы босс вернул свои 6/с (Blend на Э=2), а волки затягивали раны на глазах. +175%: лёгкое тело, огромный мотор → волк-NPC 68 HP, вервольф ровно 300. Постоянный реген ВМЕСТО тихого в покое (вне-боя — фича человеческого сердца)
             new Organ { organName = "Нюх",           slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.45f, enablesScent = true },
-            new Organ { organName = "Пасть",         slot = "Пасть",  hotkey = "5", cost = 5, enablesBite = true, enablesHowl = true, bleedStacks = 2, howlRadius = 14f, howlStunAt = 2f, enablesConstrict = true, constrictStage = 1, nativeChassis = "Волк" }, // укус + кровь + ГОЛОС + ХВАТ пастью (ст.1, плоский); СТАН — за порогом мощи 2. Игрок с Пастью крадёт волчий грэпл
-            new Organ { organName = "Шкура",         slot = "Шкура",  hotkey = "6", cost = 4, damageReduction = 0.3f },
+            new Organ { organName = "Пасть",         slot = "Пасть",  hotkey = "5", cost = 5, enablesBite = true, enablesHowl = true, bleedStacks = 2, howlRadius = 14f, howlStunAt = 2f, enablesConstrict = true, constrictStage = 1, nativeChassis = "Волк", visualPart = "голова", visualScale = new Vector3(1.1f, 1f, 1.3f) }, // укус + кровь + ГОЛОС + ХВАТ пастью; visualPart голова = морда (на человечьем шасси → вервольф)
+            new Organ { organName = "Шкура",         slot = "Шкура",  hotkey = "6", cost = 4, damageReduction = 0.3f, visualPart = "корпус" },
+        };
+        // СКЕЛЕТ волка (4-ногий): ТЕ ЖЕ имена якорей, что у человека (общий словарь), позиции из BuildBlocky-плейсхолдера
+        wolf.skeleton = new[]
+        {
+            new SkeletonAnchor { part = "голова",   localPos = new Vector3(0f, 1.15f, 0.9f),   baseSize = new Vector3(0.35f, 0.35f, 0.4f) },
+            new SkeletonAnchor { part = "корпус",   localPos = new Vector3(0f, 0.76f, 0f),     baseSize = new Vector3(0.54f, 0.6f, 0.9f) },
+            new SkeletonAnchor { part = "передние", localPos = new Vector3(0f, 0.3f, 0.42f),   baseSize = new Vector3(0.45f, 0.5f, 0.18f) },
+            new SkeletonAnchor { part = "задние",   localPos = new Vector3(0f, 0.32f, -0.44f), baseSize = new Vector3(0.45f, 0.5f, 0.22f) },
+            new SkeletonAnchor { part = "хвост",    localPos = new Vector3(0f, 0.9f, -0.76f),  baseSize = new Vector3(0.15f, 0.15f, 0.55f) },
         };
         EditorUtility.SetDirty(wolf);
 
