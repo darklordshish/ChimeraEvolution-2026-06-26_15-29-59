@@ -46,14 +46,15 @@ public static class PlayerModel
             if (System.Array.IndexOf(Known, c.name) >= 0) Object.DestroyImmediate(c.gameObject);
         }
 
-        // МОДЕЛЬ из Blender, если она есть; кубы остаются запасным визуалом (и историей проекта)
-        if (TryAttachModel(t, footY))
-        {
-            EditorSceneManager.MarkSceneDirty(t.gameObject.scene);
-            Debug.Log("Модель игрока подключена из " + ModelPath + ". Сохрани сцену (Ctrl+S). "
-                    + "Тинт состава и FPS-скрытие работают по именам деталей — они совпадают с контрактом.");
-            return;
-        }
+        // FBX ОТКЛЮЧЁН (запрос): кубическая модель игрока — единый стиль с волком (морфология-детали лягут поверх кубов).
+        // Вернуть FBX — раскомментировать блок ниже.
+        // if (TryAttachModel(t, footY))
+        // {
+        //     EditorSceneManager.MarkSceneDirty(t.gameObject.scene);
+        //     Debug.Log("Модель игрока подключена из " + ModelPath + ". Сохрани сцену (Ctrl+S). "
+        //             + "Тинт состава и FPS-скрытие работают по именам деталей — они совпадают с контрактом.");
+        //     return;
+        // }
 
         // ── человек-учёный из кубов (рост ~1.9; худой — «до озверения») ──
         GameObject Part(string name, Vector3 pos, Vector3 scale)

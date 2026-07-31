@@ -64,7 +64,7 @@ public static class WolfPrefab
         // её радиус держит волков на расстоянии друг от друга, и сепарация стаи настроена под это число
         cc.height = 1.6f; cc.radius = 0.5f; cc.center = new Vector3(0f, 0.8f, 0f);
 
-        if (!TryAttachModel(go)) BuildBlocky(go); // модель из Blender, иначе кубы-плейсхолдеры
+        BuildBlocky(go); // FBX отключён (морфология собирает детали кубами поверх — единый кубический стиль, без каши с реалистичной моделью)
 
         go.AddComponent<Health>();
         go.AddComponent<Knockback>();

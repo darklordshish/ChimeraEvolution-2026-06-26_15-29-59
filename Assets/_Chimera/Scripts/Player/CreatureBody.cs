@@ -411,6 +411,25 @@ public partial class CreatureBody : MonoBehaviour
         // ЭФФЕКТЫ УКУСА (яд/кровь из Пасти) и ГОЛОС (радиус воя, уже × мощь) — всё data-driven как у игрока
         foreach (var c in GetComponents<IBodyStatConsumer>()) c.OnBodyStats(dmg + dmgBite, mv, venom, bleed, howlReach);
 
+        // МОРФОЛОГИЯ (ось 2): пересобрать куб-модель из состава (слоты шасси раньше химерных → шасси-фёрст) +
+        // пере-собрать renderers (морф-части новые), чтобы тинт их покрасил. Только у видов со скелетом (Волк/Человек)
+        // МОРФОЛОГИЯ: NPC/химеры собираются кубами из состава; игрок — своя PlayerModel (worn=null → Build лишь
+        // СНОСИТ старый Morph, если остался от прежнего билда, и не строит). Гейт по скелету (Волк/Человек)
+        if (chassis != null && chassis.skeleton != null && chassis.skeleton.Length > 0)
+        {
+            System.Collections.Generic.List<Organ> worn = null;
+            if (move == null) // морф-кубы только у NPC/химер
+            {
+                worn = new System.Collections.Generic.List<Organ>();
+                foreach (var sl in slots) if (!sl.Empty && sl.Worn != null) worn.Add(sl.Worn);
+            }
+            MorphBuilder.Build(transform, chassis, worn); // worn==null (игрок) → сносит старый Morph, не строит
+            if (move == null)
+                renderers = System.Array.FindAll(GetComponentsInChildren<Renderer>(), r =>
+                    r.name != "EyeL" && r.name != "EyeR" && r.name != "BrowL" && r.name != "BrowR"
+                    && r.name != "Beard" && r.name != "Teeth");
+        }
+
         if (move != null || tintComposition) UpdateTint(); // игрок ВСЕГДА; NPC — только тест-химера (флаг tintComposition); обычные NPC — запечённый материал (не драться с Telegraph)
 
         // ВИДОВОЙ ОТПЕЧАТОК В ЗАПАХЕ: след пахнет СОСТАВОМ — красится смесью тинтов шасси+аугументов
