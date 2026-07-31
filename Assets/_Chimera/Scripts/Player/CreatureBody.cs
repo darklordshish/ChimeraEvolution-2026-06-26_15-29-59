@@ -154,6 +154,7 @@ public partial class CreatureBody : MonoBehaviour
                 tintComposition = true;                           // цвет по составу (развязка Telegraph.Rebase готова)
                 foreach (var sp in evoCfg.AllSpecies)
                     if (sp != null && sp != chassis) SetAffinity(sp.speciesName, evoCfg.StartAffinity); // стартовое родство чужим
+                if (GetComponent<Metamorph>() == null) gameObject.AddComponent<Metamorph>(); // ре-диспатч психики при сдвиге доминанты
             }
         }
 
@@ -250,6 +251,12 @@ public partial class CreatureBody : MonoBehaviour
     // — СЛОТЫ/КОНСТРУКТОР (BuildSlots/Toggle/…) вынесены в CreatureBody.Slots.cs (partial-split #5) —
 
     // — ДВИЖОК ЭКСПРЕССИИ (Contribution/Sup/EmptyOrgan/ChassisOrgan/Express) вынесен в CreatureBody.Expression.cs (partial-split #3) —
+
+    // МЕТАМОРФОЗА (эволюция NPC): доминанта состава сменилась → перевесить психику. Тело про психики НЕ знает,
+    // только эмитит; слушатель Metamorph ре-диспатчит. lastDominant — для детекции смены в Recompute.
+    SpeciesSO lastDominant;
+    bool dominantInit;   // первый Recompute задаёт lastDominant БЕЗ метаморфозы (психика уже стоит с префаба/диспатча)
+    public System.Action<SpeciesSO> onDominantChanged;
 
     void Recompute()
     {
@@ -413,6 +420,17 @@ public partial class CreatureBody : MonoBehaviour
         {
             Color comp = CompositionTint();
             scentTrail.Configure(new Color(comp.r, comp.g, comp.b, 0.65f), move != null);
+        }
+
+        // МЕТАМОРФОЗА: целевой модуль психики = доминанта, если она уверенна (Medium+, гистерезис), ИНАЧЕ null
+        // (размытие в истинную химеру → альфа). Сменился целевой модуль → сигнал. Первый Recompute — без метаморфозы.
+        var dom = MostKin(out var domTier);
+        var targetDom = domTier >= KinTier.Medium ? dom : null; // Medium+ → видовой модуль; иначе (None/размытие) → химера-альфа
+        if (!dominantInit) { dominantInit = true; lastDominant = targetDom; }
+        else if (targetDom != lastDominant)
+        {
+            lastDominant = targetDom;
+            onDominantChanged?.Invoke(targetDom);
         }
     }
 

@@ -23,9 +23,7 @@ public partial class CreatureBody
         if (loot.Count == 0) return;
 
         var pick = loot[Random.Range(0, loot.Count)];
-        int aff = killer.GetAffinity(pick.species);
-        float chance = (aff / 100f) * cfg.ChimerizeMultiplier;  // РОДСТВО-ПРОЦЕНТ (0..100 → 0..1) × множитель конфига
-        Debug.Log($"попытка химеризации {killer.name} ← {pick.organ}({pick.species}): шанс {chance:P0}, родство {aff}"); // ОТЛАДКА — убрать, когда настроим баланс
+        float chance = (killer.GetAffinity(pick.species) / 100f) * cfg.ChimerizeMultiplier; // РОДСТВО-ПРОЦЕНТ (0..100 → 0..1) × множитель конфига
         if (Random.value > chance) return; // не выпало
 
         // найти у убийцы слот+вариант этого органа (donors=все → вариант присутствует) и надеть

@@ -690,6 +690,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     void UpdateConstrict()
     {
         if (ownHealth == null) { EndConstrict(0.3f); return; }
+        if (constrictM == null || constrictM.Victim == null) { EndConstrict(0.3f); return; } // жертва пропала (метаморфоза оставила грязную машину / жертва ушла) — не держим призрак
         bool victimIsPlayer = constrictM.VictimIsPlayer;
 
         // ДРАЙВЕРНЫЕ срывы (решения психики — машина про них не знает):
@@ -720,6 +721,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
             nextGrabBite = Time.time + grabBiteInterval;
             bite.BiteNow(constrictM.Victim);
         }
+        if (constrictM.Victim == null) { EndConstrict(attackCooldown); return; } // grab-укус мог УБИТЬ жертву в этом же кадре → машина освободила → её transform ниже был бы NRE
 
         if (victimIsPlayer) { HoldNearVictim(); return; }
 
