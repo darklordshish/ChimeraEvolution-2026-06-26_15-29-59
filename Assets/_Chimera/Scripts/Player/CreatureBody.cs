@@ -241,6 +241,8 @@ public partial class CreatureBody : MonoBehaviour
                     tally[sl.Pick.species] = (tally.TryGetValue(sl.Pick.species, out var c) ? c : 0) + 1;
         foreach (var kv in tally)
             killer.AddAffinity(kv.Key, Mathf.Max(1, Mathf.RoundToInt(kv.Value * AffinityPerOrgan))); // ≥1: любой след вида регистрируется
+
+        TryChimerize(killer); // ЭВОЛЮЦИЯ: шанс надеть убийце орган из нашего состава (родство = шанс)
     }
 
     void OnDestroy() { if (PlayerBody == this) PlayerBody = null; }

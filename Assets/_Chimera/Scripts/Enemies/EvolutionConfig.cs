@@ -9,12 +9,12 @@ public class EvolutionConfig : MonoBehaviour
     [SerializeField] SpeciesSO[] allSpecies;               // ВСЕ виды (Человек/Волк/Змея/Лось/Ёж) — назначить в инспекторе
     [SerializeField] bool evolveNpc = true;                // рубильник всей фичи
     [SerializeField, Range(0, 100)] int startAffinity = 1; // стартовое родство ко всем НЕ-своим видам
-    [SerializeField] float chimerizeChancePerAffinity = 0.01f; // шанс гранта = родство × это (высокая динамика; тюним)
+    [SerializeField] float chimerizeMultiplier = 1f; // множитель шанса ПОВЕРХ чистых процентов родства (1=родство% как есть; >1 разгон для отладки; <1 сдержать «чтоб не разлеталось»)
 
     public SpeciesSO[] AllSpecies => allSpecies;
     public bool EvolveNpc => evolveNpc;
     public int StartAffinity => startAffinity;
-    public float ChimerizeChancePerAffinity => chimerizeChancePerAffinity > 0f ? chimerizeChancePerAffinity : 0.01f;
+    public float ChimerizeMultiplier => chimerizeMultiplier > 0f ? chimerizeMultiplier : 1f;
 
     static EvolutionConfig instance;
     public static EvolutionConfig Instance => instance != null ? instance : (instance = FindAnyObjectByType<EvolutionConfig>());

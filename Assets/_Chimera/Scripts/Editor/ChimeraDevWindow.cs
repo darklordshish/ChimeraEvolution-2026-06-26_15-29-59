@@ -183,7 +183,7 @@ public class ChimeraDevWindow : EditorWindow
         var wolfSpawner = Object.FindAnyObjectByType<WolfSpawner>();
         SpeciesRow(pb, "Волк", wolves.Length,
             "+1", wolfSpawner != null ? () => wolfSpawner.SpawnBurst(1) : null,
-            "+3", wolfSpawner != null ? () => wolfSpawner.SpawnBurst(3) : null,
+            "+5", wolfSpawner != null ? () => wolfSpawner.SpawnBurst(5) : null,
             () => KillAll(wolves));
 
         var snakes = Object.FindObjectsByType<SnakePsyche>();
