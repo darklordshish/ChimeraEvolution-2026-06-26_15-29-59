@@ -26,6 +26,6 @@ public class Metamorph : MonoBehaviour
         foreach (var p in GetComponents<MonoBehaviour>())
             if (p is WolfPsyche or SnakePsyche or MoosePsyche or HedgehogPsyche or ChimeraAlphaPsyche) Destroy(p);
         PsycheDispatch.Attach(body); // повесит по доминанте (+ Refeed раздаст статы новой психике)
-        Debug.Log($"метаморфоза: {name} → доминанта {(dom != null ? dom.speciesName : "химера")}");
+        if (EvolutionConfig.Verbose) Debug.Log($"метаморфоза: {name} → доминанта {(dom != null ? dom.speciesName : "химера")}");
     }
 }

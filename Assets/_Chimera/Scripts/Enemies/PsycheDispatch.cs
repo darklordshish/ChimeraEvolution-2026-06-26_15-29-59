@@ -23,7 +23,7 @@ public static class PsycheDispatch
             _      => typeof(ChimeraAlphaPsyche),
         };
 
-        Debug.Log(dom != null
+        if (EvolutionConfig.Verbose) Debug.Log(dom != null
             ? $"диспатч: доминанта {dom.speciesName} ({tier}) → {psyche.Name}"
             : "диспатч: истинная химера (кин ни к кому) → химера-альфа");
 

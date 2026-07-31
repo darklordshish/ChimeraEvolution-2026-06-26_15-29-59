@@ -33,7 +33,7 @@ public partial class CreatureBody
             for (int v = 0; v < vars.Count; v++)
                 if (vars[v].species == pick.species && vars[v].organName == pick.organ)
                 {
-                    if (killer.Install(s, v)) Debug.Log($"химеризация: {killer.name} надел {pick.organ} ({pick.species})");
+                    if (killer.Install(s, v) && EvolutionConfig.Verbose) Debug.Log($"химеризация: {killer.name} надел {pick.organ} ({pick.species})");
                     return; // один орган за убийство
                 }
         }
