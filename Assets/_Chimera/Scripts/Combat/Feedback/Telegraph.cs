@@ -33,7 +33,14 @@ public class Telegraph : MonoBehaviour
     void Awake()
     {
         isPlayer = GetComponent<PlayerController>() != null;
+        mpb = new MaterialPropertyBlock();
+        RebuildRenderers();
+    }
 
+    /// <summary>Пере-собрать рендереры тела. Морф-части рождаются в РАНТАЙМЕ (MorphBuilder) ПОСЛЕ Awake — тело
+    /// зовёт этот метод после сборки морфологии, иначе телеграф не знает новые части и не красит на них замах.</summary>
+    public void RebuildRenderers()
+    {
         var list = new List<Renderer>();
         foreach (var r in GetComponentsInChildren<Renderer>())
             if (r is MeshRenderer || r is SkinnedMeshRenderer) list.Add(r); // не красим след/линии
@@ -41,7 +48,6 @@ public class Telegraph : MonoBehaviour
 
         baseColors = new Color[renderers.Length];
         headPart = new bool[renderers.Length];
-        mpb = new MaterialPropertyBlock();
         for (int i = 0; i < renderers.Length; i++)
         {
             var m = renderers[i].sharedMaterial;

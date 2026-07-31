@@ -64,7 +64,9 @@ public static class WolfPrefab
         // её радиус держит волков на расстоянии друг от друга, и сепарация стаи настроена под это число
         cc.height = 1.6f; cc.radius = 0.5f; cc.center = new Vector3(0f, 0.8f, 0f);
 
-        BuildBlocky(go); // FBX отключён (морфология собирает детали кубами поверх — единый кубический стиль, без каши с реалистичной моделью)
+        // ВИЗУАЛ собирает МОРФОЛОГИЯ в рантайме (MorphBuilder из состава: якоря-база + органы-детали) —
+        // статичный BuildBlocky УБРАН (был дубль с морфом). Метод BuildBlocky/AttachWolfHead сохранён в коде
+        // (справка + AttachWolfHead ещё зовёт вервольф); визуал префаба пуст, морф строит на Start/Recompute
 
         go.AddComponent<Health>();
         go.AddComponent<Knockback>();
