@@ -66,9 +66,58 @@ public static class MorphBuilder
     {
         Vector3 pos = socket.localPos + (organ != null ? organ.visualOffset : Vector3.zero);
         Vector3 euler = socket.baseEuler + (organ != null ? organ.visualEuler : Vector3.zero);
+        Vector3 size = organ != null ? Vector3.Scale(socket.baseSize, organ.visualScale) : socket.baseSize;
+
+        // СОСТАВНАЯ ФОРМА («лего 8+»): орган из нескольких частей — рога = стебель+лопасть+отростки,
+        // иглы = щетина. Смещения частей заданы В КАЛИБРАХ МЕСТА, поэтому одна форма годится и мелкому
+        // ежу, и крупному лосю: она ужимается/разрастается вместе с местом
+        var parts = organ != null ? organ.visualParts : null;
+        if (parts != null && parts.Length > 0)
+        {
+            // ПОВОРОТ МЕСТА ВРАЩАЕТ ФОРМУ ЦЕЛИКОМ — и углы частей, И их смещения (иначе доворот крутил бы
+            // каждую деталь по отдельности, а расстановка оставалась бы прежней)
+            Quaternion socketRot = Quaternion.Euler(euler);
+
+            // АВТО-ОРИЕНТАЦИЯ ПО ТЕЛУ: части описаны в каноничном кадре (X поперёк, Y НАРУЖУ, Z ВДОЛЬ тела) и
+            // раскладываются на РЕАЛЬНЫЕ оси места: вдоль = длинная сторона, наружу = короткая. Ежиный торс
+            // ЛЕЖИТ → щетина встаёт на спину; человечий СТОИТ → та же щетина ложится гребнем вдоль позвоночника
+            // со спины, а не втыкается в шею. Одна форма, разные тела — без спец-полей у видов
+            bool align = organ.visualAlignToBody;
+            int across = 0, outward = 1, along = 2;
+            Quaternion frameRot = Quaternion.identity;
+            if (align)
+            {
+                var b = socket.baseSize;
+                along = b.x >= b.y && b.x >= b.z ? 0 : (b.y >= b.z ? 1 : 2);
+                outward = b.x <= b.y && b.x <= b.z ? 0 : (b.y <= b.z ? 1 : 2);
+                if (outward == along) outward = (along + 1) % 3;
+                across = 3 - along - outward;
+                // ЗНАК «наружу»: если короткая ось совпала с осью ВЗГЛЯДА (Z), наружу = НАЗАД, иначе вперёд лезло бы
+                // в грудь (у человека щетина выстраивалась рядком по бокам — «капитолийская волчица»). У четвероногих
+                // короткая ось вертикальная, и «наружу» естественно вверх = спина
+                Vector3 outDir = outward == 2 ? Vector3.back : Axis(outward);
+                frameRot = Quaternion.LookRotation(Axis(along), outDir); // канон: Z→вдоль тела, Y→наружу
+            }
+
+            // ВСЁ ОСТАЁТСЯ В КАНОНИЧНОМ КАДРЕ, поворот — ОДИН, в самом конце. (Перекладывать компоненты И
+            // вращать нельзя: форма развернётся дважды — из ежиной щетины выходит крест из плит.)
+            Vector3 canonBase = align ? Pick(socket.baseSize, across, outward, along) : socket.baseSize;
+            Vector3 canonSize = align ? Pick(size, across, outward, along) : size;
+            Quaternion place = socketRot * frameRot;
+
+            foreach (var pt in parts)
+            {
+                if (pt == null) continue;
+                Spawn(parent, socket.name,
+                      pos + place * Vector3.Scale(pt.offset, canonBase),
+                      (place * Quaternion.Euler(pt.euler)).eulerAngles,
+                      Vector3.Scale(canonSize, pt.scale), side);
+            }
+            return;
+        }
+
         if (side < 0f) { pos.x = -pos.x; euler.y = -euler.y; euler.z = -euler.z; }
         Quaternion rot = Quaternion.Euler(euler);
-        Vector3 size = organ != null ? Vector3.Scale(socket.baseSize, organ.visualScale) : socket.baseSize;
 
         // СЕГМЕНТНАЯ ЦЕПЬ (змеиный хвост, отростки рога): ось — ДЛИННАЯ сторона места. Хвост лежит вдоль Z
         // → тянется назад; рог вытянут по Y → растёт вверх. Отдельного поля-направления не нужно
@@ -85,18 +134,28 @@ public static class MorphBuilder
             float len = axisLen * k;
             if (i > 0) travel += (prevLen + len) * 0.5f; // встык, с сужением
             prevLen = len;
-
-            var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            if (cube.TryGetComponent<Collider>(out var col)) Object.Destroy(col); // визуал без физики (коллайдер — у CharacterController)
-            // ИМЯ = СОКЕТ (стабильный словарь), не орган: по именам частей работают ПЕРВОЕ ЛИЦО (прячет свою
-            // голову) и ЭМОЦ-ТИНТ (красит морду-градусник). Имя органа менялось бы от сборки и ломало обе системы
-            cube.name = socket.name;
-
-            var t = cube.transform;
-            t.SetParent(parent, false);
-            t.localPosition = pos + rot * (dir * travel);
-            t.localRotation = rot;
-            t.localScale = size * k;
+            Spawn(parent, socket.name, pos + rot * (dir * travel), euler, size * k, 1f); // зеркалирование уже учтено выше
         }
+    }
+
+    static Vector3 Axis(int i) => i == 0 ? Vector3.right : i == 1 ? Vector3.up : Vector3.forward;
+    static Vector3 Pick(Vector3 v, int a, int b, int c) => new(v[a], v[b], v[c]);          // взять компоненты в порядке осей формы
+
+    // одна куб-деталь. side = -1 зеркалит вынос по X и рыскание/крен (тангаж общий: левая лапа не «смотрит» иначе правой)
+    static void Spawn(Transform parent, string name, Vector3 pos, Vector3 euler, Vector3 size, float side)
+    {
+        if (side < 0f) { pos.x = -pos.x; euler.y = -euler.y; euler.z = -euler.z; }
+
+        var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        if (cube.TryGetComponent<Collider>(out var col)) Object.Destroy(col); // визуал без физики (коллайдер — у CharacterController)
+        // ИМЯ = СОКЕТ (стабильный словарь), не орган: по именам частей работают ПЕРВОЕ ЛИЦО (прячет свою
+        // голову) и ЭМОЦ-ТИНТ (красит морду-градусник). Имя органа менялось бы от сборки и ломало обе системы
+        cube.name = name;
+
+        var t = cube.transform;
+        t.SetParent(parent, false);
+        t.localPosition = pos;
+        t.localRotation = Quaternion.Euler(euler);
+        t.localScale = size;
     }
 }

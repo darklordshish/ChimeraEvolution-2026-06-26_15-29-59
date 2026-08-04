@@ -66,6 +66,8 @@ MonoBehaviour:
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
+    visualAlignToBody: 0
+    visualParts: []
     visualSegments: 0
     visualTaper: 0
   - organName: "\u041B\u043E\u0441\u0438\u043D\u044B\u0435 \u043D\u043E\u0433\u0438"
@@ -118,6 +120,8 @@ MonoBehaviour:
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
+    visualAlignToBody: 0
+    visualParts: []
     visualSegments: 0
     visualTaper: 0
   - organName: "\u0413\u043B\u043E\u0442\u043A\u0430"
@@ -170,6 +174,8 @@ MonoBehaviour:
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
+    visualAlignToBody: 0
+    visualParts: []
     visualSegments: 0
     visualTaper: 0
   - organName: "\u0421\u043B\u0443\u0445"
@@ -222,6 +228,8 @@ MonoBehaviour:
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
+    visualAlignToBody: 0
+    visualParts: []
     visualSegments: 0
     visualTaper: 0
   - organName: "\u041B\u043E\u0441\u0438\u043D\u043E\u0435 \u0441\u0435\u0440\u0434\u0446\u0435"
@@ -274,6 +282,8 @@ MonoBehaviour:
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
+    visualAlignToBody: 0
+    visualParts: []
     visualSegments: 0
     visualTaper: 0
   - organName: "\u0422\u043E\u043B\u0441\u0442\u0430\u044F \u0448\u043A\u0443\u0440\u0430"
@@ -326,6 +336,8 @@ MonoBehaviour:
     visualScale: {x: 1.15, y: 1.1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
+    visualAlignToBody: 0
+    visualParts: []
     visualSegments: 0
     visualTaper: 0
   - organName: "\u0420\u043E\u0433\u0430"
@@ -375,9 +387,26 @@ MonoBehaviour:
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 0
-    visualScale: {x: 2.2, y: 0.9, z: 3.4}
+    visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
+    visualAlignToBody: 0
+    visualParts:
+    - scale: {x: 0.34, y: 1.4, z: 0.34}
+      offset: {x: 0.1, y: 0.35, z: 0}
+      euler: {x: 0, y: 0, z: 0}
+    - scale: {x: 1.9, y: 0.3, z: 2.4}
+      offset: {x: 0.8, y: 1, z: 0.15}
+      euler: {x: 0, y: 26, z: 22}
+    - scale: {x: 0.26, y: 0.85, z: 0.26}
+      offset: {x: 1.45, y: 1.55, z: 1}
+      euler: {x: 0, y: 26, z: 28}
+    - scale: {x: 0.26, y: 0.95, z: 0.26}
+      offset: {x: 1.7, y: 1.6, z: 0.15}
+      euler: {x: 0, y: 26, z: 32}
+    - scale: {x: 0.24, y: 0.8, z: 0.24}
+      offset: {x: 1.55, y: 1.5, z: -0.75}
+      euler: {x: 0, y: 26, z: 36}
     visualSegments: 0
     visualTaper: 0
   eatsMeat: 0
@@ -450,9 +479,9 @@ MonoBehaviour:
     hidden: 0
     graft: 0
   - name: "\u0420\u043E\u0433\u0430"
-    localPos: {x: 0.3, y: 2.97, z: 1.5}
+    localPos: {x: 0.14, y: 2.84, z: 1.5}
     baseSize: {x: 0.26, y: 0.26, z: 0.26}
-    baseEuler: {x: 0, y: 0, z: 25}
+    baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 1
     hidden: 0
     graft: 0
@@ -471,9 +500,9 @@ MonoBehaviour:
     hidden: 1
     graft: 0
   - name: "\u0418\u0433\u043B\u043E\u043C\u0451\u0442"
-    localPos: {x: 0, y: 2.66, z: -0.25}
-    baseSize: {x: 0.32, y: 0.32, z: 0.32}
-    baseEuler: {x: 0, y: 0, z: 0}
+    localPos: {x: 0, y: 2.42, z: 0.55}
+    baseSize: {x: 0.3, y: 0.3, z: 0.3}
+    baseEuler: {x: -10, y: 0, z: 0}
     mirrorX: 0
     hidden: 0
     graft: 1
