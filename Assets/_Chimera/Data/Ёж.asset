@@ -63,6 +63,10 @@ MonoBehaviour:
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 0
+    visualPart: "\u0438\u0433\u043B\u044B"
+    visualScale: {x: 1, y: 1, z: 1}
+    visualOffset: {x: 0, y: 0, z: 0}
+    visualEuler: {x: 0, y: 0, z: 0}
   - organName: "\u0418\u0433\u043B\u044B"
     slot: "\u0428\u043A\u0443\u0440\u0430"
     hotkey: 6
@@ -110,6 +114,10 @@ MonoBehaviour:
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 0
+    visualPart: "\u043A\u043E\u0440\u043F\u0443\u0441"
+    visualScale: {x: 1, y: 1, z: 1}
+    visualOffset: {x: 0, y: 0, z: 0}
+    visualEuler: {x: 0, y: 0, z: 0}
   - organName: "\u0415\u0436\u0438\u043D\u044B\u0435 \u043D\u043E\u0433\u0438"
     slot: "\u041D\u043E\u0433\u0438"
     hotkey: 2
@@ -157,6 +165,10 @@ MonoBehaviour:
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 0
+    visualPart: "\u0437\u0430\u0434\u043D\u0438\u0435"
+    visualScale: {x: 1, y: 1, z: 1}
+    visualOffset: {x: 0, y: 0, z: 0}
+    visualEuler: {x: 0, y: 0, z: 0}
   - organName: "\u0426\u0435\u043F\u043A\u0430\u044F \u043F\u0430\u0441\u0442\u044C"
     slot: "\u041F\u0430\u0441\u0442\u044C"
     hotkey: 5
@@ -204,6 +216,10 @@ MonoBehaviour:
     nativeChassis: "\u0401\u0436"
     constrictStage: 1
     enablesCurl: 0
+    visualPart: "\u043C\u043E\u0440\u0434\u0430"
+    visualScale: {x: 1, y: 1, z: 1}
+    visualOffset: {x: 0, y: 0, z: 0}
+    visualEuler: {x: 0, y: 0, z: 0}
   - organName: "\u042F\u0434\u043E\u0443\u043F\u043E\u0440\u043D\u043E\u0435 \u0441\u0435\u0440\u0434\u0446\u0435"
     slot: "\u0421\u0435\u0440\u0434\u0446\u0435"
     hotkey: 3
@@ -251,6 +267,10 @@ MonoBehaviour:
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 0
+    visualPart: 
+    visualScale: {x: 1, y: 1, z: 1}
+    visualOffset: {x: 0, y: 0, z: 0}
+    visualEuler: {x: 0, y: 0, z: 0}
   - organName: "\u041F\u044F\u0442\u0430\u043A"
     slot: "\u0427\u0443\u0442\u044C\u0451"
     hotkey: 4
@@ -298,6 +318,10 @@ MonoBehaviour:
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 0
+    visualPart: 
+    visualScale: {x: 1, y: 1, z: 1}
+    visualOffset: {x: 0, y: 0, z: 0}
+    visualEuler: {x: 0, y: 0, z: 0}
   - organName: "\u0418\u0433\u043E\u043B\u044C\u0447\u0430\u0442\u043E\u0435 \u0442\u0435\u043B\u043E"
     slot: "\u0422\u0435\u043B\u043E"
     hotkey: 7
@@ -345,8 +369,13 @@ MonoBehaviour:
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 1
+    visualPart: 
+    visualScale: {x: 1, y: 1, z: 1}
+    visualOffset: {x: 0, y: 0, z: 0}
+    visualEuler: {x: 0, y: 0, z: 0}
   eatsMeat: 1
   massive: 0
   baseHp: 52
   baseStamina: 60
   baseStaminaRegen: 8
+  skeleton: []
