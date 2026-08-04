@@ -46,6 +46,10 @@ public static class HedgehogPrefab
         // приземистый и широкий: капсула ниже волчьей, но не уже — ёж крупный (лабораторный мутант)
         cc.height = 0.9f; cc.radius = 0.45f; cc.center = new Vector3(0f, 0.45f, 0f);
 
+        // ── СТАТИЧНАЯ СБОРКА ОТКЛЮЧЕНА ─────────────────────────────────────────────────────────────────
+        // Тело ежа собирает МОРФОЛОГИЯ из состава (`MorphBuilder` по сокет-плану вида) — статичные кубы были
+        // бы ДУБЛЕМ. Числа перенесены в `SpeciesBootstrap.hog.sockets`. Сборка ниже — справка/откат.
+        /*
         GameObject Part(string name, Vector3 pos, Vector3 scale, Vector3 euler = default)
         {
             var p = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -87,6 +91,7 @@ public static class HedgehogPrefab
             Part(side < 0 ? "PawFrontL" : "PawFrontR", new Vector3(0.26f * side, 0.11f, 0.34f), new Vector3(0.16f, 0.22f, 0.2f));
             Part(side < 0 ? "PawRearL" : "PawRearR", new Vector3(0.26f * side, 0.11f, -0.34f), new Vector3(0.16f, 0.22f, 0.2f));
         }
+        */
 
         go.AddComponent<Health>();
         go.AddComponent<Knockback>();

@@ -56,7 +56,7 @@ public static class SpeciesBootstrap
             // змеиный Хвост / лосиные Рога / ежиный Игломёт — и они проступают на теле
             new BodySocket { name = "Хвост",   localPos = new Vector3(0f, 0.85f, -0.22f), baseSize = new Vector3(0.14f, 0.14f, 0.50f), baseEuler = new Vector3(25f, 0f, 0f), graft = true },
             new BodySocket { name = "Рога",    localPos = new Vector3(0.12f, 1.92f, 0f),  baseSize = new Vector3(0.08f, 0.36f, 0.08f), baseEuler = new Vector3(0f, 0f, 20f), mirrorX = true, graft = true },
-            new BodySocket { name = "Игломёт", localPos = new Vector3(0f, 1.30f, -0.18f), baseSize = new Vector3(0.42f, 0.50f, 0.16f), graft = true },
+            new BodySocket { name = "Игломёт", localPos = new Vector3(0f, 1.15f, -0.28f), baseSize = new Vector3(0.46f, 0.62f, 0.22f), graft = true }, // хребет ВЕРТИКАЛЬНЫЙ — плита вдоль позвоночника, ЗА спиной (спина на z -0.14)
         };
         EditorUtility.SetDirty(human);
 
@@ -93,7 +93,7 @@ public static class SpeciesBootstrap
             new BodySocket { name = "Чутьё",  hidden = true },
             // закрытые места (пустыми не рисуются): волк с лосиными рогами / ежиным игломётом читается сразу
             new BodySocket { name = "Рога",    localPos = new Vector3(0.10f, 1.38f, 0.85f), baseSize = new Vector3(0.07f, 0.30f, 0.07f), baseEuler = new Vector3(0f, 0f, 22f), mirrorX = true, graft = true },
-            new BodySocket { name = "Игломёт", localPos = new Vector3(0f, 1.05f, 0.05f),    baseSize = new Vector3(0.50f, 0.35f, 0.90f), graft = true },
+            new BodySocket { name = "Игломёт", localPos = new Vector3(0f, 1.18f, 0.05f),    baseSize = new Vector3(0.58f, 0.38f, 0.95f), graft = true }, // хребет горизонтальный (4-ногий): панцирь ВЫШЕ спины (верх туши 1.08)
         };
         EditorUtility.SetDirty(wolf);
 
@@ -152,7 +152,7 @@ public static class SpeciesBootstrap
             new BodySocket { name = "Рога",   localPos = new Vector3(0.32f, 2.95f, 1.50f),baseSize = new Vector3(0.40f, 0.45f, 0.70f), baseEuler = new Vector3(0f, 0f, 28f), mirrorX = true }, // СВОИ рога (не графт)
             new BodySocket { name = "Сердце", hidden = true },
             new BodySocket { name = "Чутьё",  hidden = true },
-            new BodySocket { name = "Игломёт", localPos = new Vector3(0f, 2.55f, 0.10f),  baseSize = new Vector3(0.90f, 0.40f, 1.80f), graft = true }, // закрытое: лось-ёж обрастает иглами по хребту
+            new BodySocket { name = "Игломёт", localPos = new Vector3(0f, 2.66f, -0.25f), baseSize = new Vector3(1.0f, 0.42f, 1.9f), graft = true }, // закрытое: лось-ёж обрастает иглами; ВЫШЕ спины (верх туши 2.49), сдвинут назад — не спорит с горбом
         };
         EditorUtility.SetDirty(moose);
 
@@ -183,6 +183,23 @@ public static class SpeciesBootstrap
             new Organ { organName = "Ядоупорное сердце", slot = "Сердце", hotkey = "3", cost = 6, hpBonus = 1.2f, staminaBonus = 0.4f, staminaRegenBonus = 0.3f, regen = 0.5f, atkCooldown = 0.5f, venomResist = true }, // РЕЗИСТ ЯДА (медоед-конституция) — делает ежа контр-видом змеи
             new Organ { organName = "Пятак",             slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.5f, enablesScent = true, keenHearing = true, hearingMult = 1.6f }, // НОЧНОЙ ЗВЕРЬ: подвижный нос и большие уши — нюх и слух остры (цена в зрении придёт со слайсом сенсорики)
             new Organ { organName = "Игольчатое тело",   slot = "Тело",   hotkey = "7", cost = 4, chassisOnly = true, enablesCurl = true }, // ходовая ФОРМА шасси ежа: сворачивание в шар (клубок/катание). chassisOnly — аугументом не крадётся, как змеиное «Тело-хвост»
+        };
+        // СОКЕТ-ПЛАН ежа (приземистый и широкий; иглы по хребту — главный силуэт). Числа из HedgehogPrefab.
+        // «Руки» — обычное место (передние лапки рисуются), но органа Руки у ежа НЕТ → слота нет, только графтом
+        hog.sockets = new[]
+        {
+            new BodySocket { name = "голова", localPos = new Vector3(0f, 0.40f, 0.52f),   baseSize = new Vector3(0.30f, 0.28f, 0.32f) },
+            new BodySocket { name = "Пасть",  localPos = new Vector3(0f, 0.34f, 0.74f),   baseSize = new Vector3(0.26f, 0.24f, 0.34f) },
+            new BodySocket { name = "уши",    localPos = new Vector3(0.15f, 0.56f, 0.42f),baseSize = new Vector3(0.09f, 0.11f, 0.05f), mirrorX = true },
+            new BodySocket { name = "Шкура",  localPos = new Vector3(0f, 0.50f, -0.05f),  baseSize = new Vector3(0.86f, 0.62f, 1.05f) },
+            new BodySocket { name = "Руки",   localPos = new Vector3(0.26f, 0.11f, 0.34f),baseSize = new Vector3(0.16f, 0.22f, 0.20f), mirrorX = true }, // передние лапки
+            new BodySocket { name = "Ноги",   localPos = new Vector3(0.26f, 0.11f, -0.34f),baseSize = new Vector3(0.16f, 0.22f, 0.20f), mirrorX = true },
+            new BodySocket { name = "Игломёт",localPos = new Vector3(0f, 0.90f, -0.08f),  baseSize = new Vector3(0.92f, 0.42f, 1.12f) }, // СВОИ иглы (не графт): хребет ГОРИЗОНТАЛЬНЫЙ — панцирь вдоль спины, ВЫШЕ корпуса (верх туши 0.81) и чуть шире, иначе тонет в теле
+            new BodySocket { name = "Сердце", hidden = true },
+            new BodySocket { name = "Чутьё",  hidden = true },
+            new BodySocket { name = "Тело",   hidden = true }, // Игольчатое тело — ФОРМА (клубок), своей детали нет
+            new BodySocket { name = "Хвост",  localPos = new Vector3(0f, 0.48f, -0.60f),  baseSize = new Vector3(0.10f, 0.10f, 0.26f), baseEuler = new Vector3(20f, 0f, 0f), graft = true },
+            new BodySocket { name = "Рога",   localPos = new Vector3(0.11f, 0.60f, 0.48f),baseSize = new Vector3(0.06f, 0.22f, 0.06f), baseEuler = new Vector3(0f, 0f, 20f), mirrorX = true, graft = true },
         };
         EditorUtility.SetDirty(hog);
 
