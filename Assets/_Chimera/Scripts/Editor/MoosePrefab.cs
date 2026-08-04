@@ -43,6 +43,11 @@ public static class MoosePrefab
         var cc = go.AddComponent<CharacterController>();
         cc.height = 2.7f; cc.radius = 0.9f; cc.center = new Vector3(0f, 1.35f, 0f); // ходульная туша: ноги ≈ полроста
 
+        // ── СТАТИЧНАЯ СБОРКА ОТКЛЮЧЕНА ─────────────────────────────────────────────────────────────────
+        // Тело лося собирает МОРФОЛОГИЯ из состава (`MorphBuilder` по сокет-плану вида, в рантайме) — статичные
+        // кубы были бы ДУБЛЕМ (случай волка: «оброс кубами»). Числа перенесены в `SpeciesBootstrap.moose.sockets`
+        // (ходульность `lift` уже вживлена в координаты). Сборка ниже сохранена как справка/откат.
+        /*
         // ХОДУЛЬНОСТЬ ЛОСЯ: `lift` поднимает всю тушу над землёй, ноги удлинены на ту же высоту (стопы на 0).
         // Одна ручка силуэта — крути её, чтобы сделать длинноногее/приземистее (остальное едет следом)
         const float lift = 0.5f;
@@ -131,6 +136,7 @@ public static class MoosePrefab
             palm.transform.localScale = new Vector3(0.4f, 0.08f, 0.7f);            // большая сторона (0.7) — вдоль тела (z)
             Object.DestroyImmediate(palm.GetComponent<Collider>());
         }
+        */
 
         go.AddComponent<Health>();
         go.AddComponent<Knockback>();

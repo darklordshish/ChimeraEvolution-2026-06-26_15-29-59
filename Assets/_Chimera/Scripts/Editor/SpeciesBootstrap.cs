@@ -136,6 +136,24 @@ public static class SpeciesBootstrap
             new Organ { organName = "Толстая шкура",  slot = "Шкура",  hotkey = "6", cost = 5, damageReduction = 0.35f, visualScale = new Vector3(1.15f, 1.1f, 1f) }, // броня против ПРЯМОГО урона (не крови)
             new Organ { organName = "Рога",           slot = "Рога",   hotkey = "8", cost = 5, enablesAntler = true }, // ПРИДАТОК (химерный слот): удар рогами — откидывание + кровь
         };
+        // СОКЕТ-ПЛАН лося (ходульная туша: ноги ≈ полроста, горб над холкой, рога веером над головой).
+        // Числа перенесены из статичной сборки MoosePrefab (ходульность lift=0.5 уже вживлена в координаты)
+        moose.sockets = new[]
+        {
+            new BodySocket { name = "голова", localPos = new Vector3(0f, 2.65f, 1.55f),   baseSize = new Vector3(0.42f, 0.42f, 0.50f) },
+            new BodySocket { name = "Пасть",  localPos = new Vector3(0f, 2.53f, 1.95f),   baseSize = new Vector3(0.30f, 0.32f, 0.62f), baseEuler = new Vector3(22f, 0f, 0f) }, // длинная морда с горбинкой
+            new BodySocket { name = "уши",    localPos = new Vector3(0.24f, 2.82f, 1.45f),baseSize = new Vector3(0.10f, 0.22f, 0.08f), mirrorX = true },
+            new BodySocket { name = "шея",    localPos = new Vector3(0f, 2.40f, 1.25f),   baseSize = new Vector3(0.35f, 0.38f, 0.80f), baseEuler = new Vector3(-35f, 0f, 0f) },
+            new BodySocket { name = "горб",   localPos = new Vector3(0f, 2.60f, 0.45f),   baseSize = new Vector3(0.85f, 0.35f, 0.90f) }, // холка — читаемый профиль лося
+            new BodySocket { name = "Шкура",  localPos = new Vector3(0f, 1.98f, 0.05f),   baseSize = new Vector3(1.05f, 1.02f, 2.30f) }, // корпус целиком (грудь+круп)
+            new BodySocket { name = "Руки",   localPos = new Vector3(0.35f, 0.80f, 0.85f),baseSize = new Vector3(0.18f, 1.50f, 0.18f), mirrorX = true }, // передние ходули (Копыто)
+            new BodySocket { name = "Ноги",   localPos = new Vector3(0.35f, 0.85f, -0.86f),baseSize = new Vector3(0.22f, 1.60f, 0.26f), mirrorX = true },
+            new BodySocket { name = "Хвост",  localPos = new Vector3(0f, 2.20f, -1.08f),  baseSize = new Vector3(0.12f, 0.28f, 0.14f), baseEuler = new Vector3(-25f, 0f, 0f) }, // вплотную к крупу (корпус кончается на z≈-1.10)
+            new BodySocket { name = "Рога",   localPos = new Vector3(0.32f, 2.95f, 1.50f),baseSize = new Vector3(0.40f, 0.45f, 0.70f), baseEuler = new Vector3(0f, 0f, 28f), mirrorX = true }, // СВОИ рога (не графт)
+            new BodySocket { name = "Сердце", hidden = true },
+            new BodySocket { name = "Чутьё",  hidden = true },
+            new BodySocket { name = "Игломёт", localPos = new Vector3(0f, 2.55f, 0.10f),  baseSize = new Vector3(0.90f, 0.40f, 1.80f), graft = true }, // закрытое: лось-ёж обрастает иглами по хребту
+        };
         EditorUtility.SetDirty(moose);
 
         // ── Ёж «Хеджхалк»: колючий анти-контроль и будущий стрелок (спека 2026-07-22). Лабораторный
