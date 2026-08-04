@@ -28,7 +28,8 @@ public class Telegraph : MonoBehaviour
     // череп с носом, а уши и челюсть оставались натуральными: морда выходила пятнистой.
     // КЛЫКИ НАМЕРЕННО ВНЕ СПИСКА: белый оскал — акцент, он должен читаться на любой эмоции
     static bool IsHeadName(string n) =>
-        n == "Head" || n == "Muzzle" || n == "Nose" || n == "Jaw" || n.StartsWith("Ear");
+        n == "Head" || n == "Muzzle" || n == "Nose" || n == "Jaw" || n.StartsWith("Ear")
+        || n == "голова" || n == "морда" || n == "уши"; // МОРФ-части именуются по якорю (общий словарь) — эмоции красят их же
 
     void Awake()
     {

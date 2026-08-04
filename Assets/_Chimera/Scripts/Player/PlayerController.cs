@@ -209,16 +209,25 @@ public class PlayerController : MonoBehaviour
         Cursor.visible = false;
         // свою голову от ПЕРВОГО лица не рендерим (нос/куб лезут в камеру) — классика FPS; в 3-м лице возвращаем.
         // Лицо (глаза/брови/борода из PlayerModel) прячется вместе с головой
-        foreach (var r in GetComponentsInChildren<Renderer>())
-            if (IsOwnFace(r.name)) r.enabled = !on;
+        ReapplyFirstPerson();
     }
 
-    // ЧТО ПРЯЧЕМ ОТ ПЕРВОГО ЛИЦА: всю голову целиком. Список синхронизирован с моделью игрока — у неё
-    // голова нарезана по слотам органов, и без челюсти с ушами они висели бы в камере отдельно от лица
+    /// <summary>Пере-применить сокрытие головы. МОРФОЛОГИЯ пересобирает части тела в рантайме (химеризация),
+    /// новые рендереры рождаются включёнными — без этого вызова своя голова возвращалась бы в камеру от
+    /// первого лица после каждой смены органа. Зовёт `CreatureBody` после сборки морфа.</summary>
+    public void ReapplyFirstPerson()
+    {
+        foreach (var r in GetComponentsInChildren<Renderer>())
+            if (IsOwnFace(r.name)) r.enabled = !FirstPerson;
+    }
+
+    // ЧТО ПРЯЧЕМ ОТ ПЕРВОГО ЛИЦА: всю голову целиком. Имена — и статичной модели, и МОРФ-частей (по якорям
+    // общего словаря): голова нарезана по местам, и без челюсти с ушами они висели бы в камере отдельно от лица
     static bool IsOwnFace(string n) =>
         n == "Head" || n == "Nose" || n == "Jaw" || n == "Teeth"
         || n == "EyeL" || n == "EyeR" || n == "EarL" || n == "EarR"
-        || n == "BrowL" || n == "BrowR" || n == "Beard";
+        || n == "BrowL" || n == "BrowR" || n == "Beard"
+        || n == "голова" || n == "морда" || n == "уши";
 
     // конструктор меняет мобильность при смене органа в слоте «Ноги»
     public void SetLegs(float newMoveSpeed, float newDashSpeed, float newDashDuration = 0f)

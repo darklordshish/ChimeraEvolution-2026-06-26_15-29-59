@@ -418,20 +418,14 @@ public partial class CreatureBody : MonoBehaviour
         // !installAllBeast: вервольф-босс остаётся при своей РУЧНОЙ детальной модели (WerewolfPrefab), не морфим
         if (!installAllBeast && chassis != null && chassis.skeleton != null && chassis.skeleton.Length > 0)
         {
-            System.Collections.Generic.List<Organ> worn = null;
-            if (move == null) // морф-кубы только у NPC/химер
-            {
-                worn = new System.Collections.Generic.List<Organ>();
-                foreach (var sl in slots) if (!sl.Empty && sl.Worn != null) worn.Add(sl.Worn);
-            }
-            MorphBuilder.Build(transform, chassis, worn); // worn==null (игрок) → сносит старый Morph, не строит
-            if (move == null)
-            {
-                renderers = System.Array.FindAll(GetComponentsInChildren<Renderer>(), r =>
-                    r.name != "EyeL" && r.name != "EyeR" && r.name != "BrowL" && r.name != "BrowR"
-                    && r.name != "Beard" && r.name != "Teeth");
-                if (TryGetComponent<Telegraph>(out var tg)) tg.RebuildRenderers(); // морф-части новые → телеграф пере-соберёт (иначе замах не красится)
-            }
+            var worn = new System.Collections.Generic.List<Organ>();
+            foreach (var sl in slots) if (!sl.Empty && sl.Worn != null) worn.Add(sl.Worn); // слоты шасси раньше химерных → шасси-фёрст
+            MorphBuilder.Build(transform, chassis, worn); // ИГРОК СТРОИТСЯ ТАК ЖЕ: его тело — такая же химера, без исключений
+            renderers = System.Array.FindAll(GetComponentsInChildren<Renderer>(), r =>
+                r.name != "EyeL" && r.name != "EyeR" && r.name != "BrowL" && r.name != "BrowR"
+                && r.name != "Beard" && r.name != "Teeth");
+            if (TryGetComponent<Telegraph>(out var tg)) tg.RebuildRenderers(); // морф-части новые → телеграф пере-соберёт (иначе замах не красится)
+            if (move != null) move.ReapplyFirstPerson(); // и своя голова снова спрятана от первого лица (части-то новые)
         }
 
         if (move != null || tintComposition) UpdateTint(); // игрок ВСЕГДА; NPC — только тест-химера (флаг tintComposition); обычные NPC — запечённый материал (не драться с Telegraph)
