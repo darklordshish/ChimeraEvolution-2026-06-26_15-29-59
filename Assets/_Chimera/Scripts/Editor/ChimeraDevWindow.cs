@@ -430,6 +430,21 @@ public class ChimeraDevWindow : EditorWindow
         foreach (var w in Object.FindObjectsByType<WolfPsyche>()) w.ForgetAlert();
     }
 
+    /// <summary>ПОСТАВИТЬ спавн НА МЕСТО. Гоча: у существ на префабе есть `CharacterController`, и он ПЕРЕБИВАЕТ
+    /// прямое присвоение `transform.position` сразу после `Instantiate` — объект отбрасывает в начало координат
+    /// («спавн рядом» кидал ежей/змей в ЦЕНТР арены). Гасим CC на время телепорта. Волчий спавнер этим не болел:
+    /// он задаёт позицию прямо в `Instantiate(prefab, pos, rot)`.</summary>
+    static void Place(GameObject go, Vector3 pos)
+    {
+        if (go.TryGetComponent<CharacterController>(out var cc))
+        {
+            cc.enabled = false;
+            go.transform.position = pos;
+            cc.enabled = true;
+        }
+        else go.transform.position = pos;
+    }
+
     static void SpawnSnake()
     {
         var pc = Object.FindAnyObjectByType<PlayerController>();
@@ -437,7 +452,7 @@ public class ChimeraDevWindow : EditorWindow
         if (NavMesh.SamplePosition(pos, out var hit, 10f, NavMesh.AllAreas)) pos = hit.position;
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(SnakePrefab.Path);
         var go = prefab != null ? Object.Instantiate(prefab) : SnakePrefab.BuildSnake();
-        go.transform.position = pos;
+        Place(go, pos);
     }
 
     static void SpawnMoose()
@@ -447,7 +462,7 @@ public class ChimeraDevWindow : EditorWindow
         if (NavMesh.SamplePosition(pos, out var hit, 10f, NavMesh.AllAreas)) pos = hit.position;
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(MoosePrefab.Path);
         var go = prefab != null ? Object.Instantiate(prefab) : MoosePrefab.BuildMoose();
-        go.transform.position = pos;
+        Place(go, pos);
     }
 
     static void SpawnHedgehog()
@@ -457,7 +472,7 @@ public class ChimeraDevWindow : EditorWindow
         if (NavMesh.SamplePosition(pos, out var hit, 10f, NavMesh.AllAreas)) pos = hit.position;
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(HedgehogPrefab.Path);
         var go = prefab != null ? Object.Instantiate(prefab) : HedgehogPrefab.BuildHedgehog();
-        go.transform.position = pos;
+        Place(go, pos);
     }
 
     static void SpawnWerewolf()
@@ -469,6 +484,6 @@ public class ChimeraDevWindow : EditorWindow
         // префаб (с твоим тюнингом), если создан через «Chimera → Создать префаб Вервольфа»; иначе — сборка с нуля
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(WerewolfPrefab.Path);
         var go = prefab != null ? Object.Instantiate(prefab) : WerewolfPrefab.BuildWerewolf();
-        go.transform.position = pos;
+        Place(go, pos);
     }
 }
