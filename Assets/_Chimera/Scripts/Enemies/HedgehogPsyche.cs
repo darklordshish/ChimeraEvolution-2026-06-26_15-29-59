@@ -60,6 +60,8 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
     QuillVolley volley;   // залп — ДАЛЬНЯЯ грань (первый ranged в игре); есть только если орган Иглы даёт его
     float nextVolleyAt;
     [SerializeField] float volleyCooldown = 2.5f;
+    [SerializeField] float highTargetY = 1.6f;   // цель ВЫШЕ этого над ежом — ближним боем не достать (змея уползла на стену/насест)
+    float HighTargetY => highTargetY > 0f ? highTargetY : 1.6f; // 0-гоча: новое поле у психики на префабе приходит нулём
     Stagger stagger;
     Knockback knockback;
     Senses senses;
@@ -347,10 +349,17 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
 
         // ДАЛЬНЯЯ ГРАНЬ — ЗАЛП ИГЛАМИ: держит дистанцию и осыпает. Число попавших замедляет цель — по
         // добыче это КИТ (увязла → подошёл → схватил), по игроку — «не подпускаю». В окне дистанции залпа
-        // не сближаемся: стоим и стреляем. НУЖЕН ВИЗУАЛЬНЫЙ КОНТАКТ — в невидимку (манок) не прицелиться
-        if (volley != null && sees && dist >= volley.MinRange && dist <= volley.MaxRange && Time.time >= nextVolleyAt)
+        // не сближаемся: стоим и стреляем.
+        // ЗАЛП ПО НЮХУ: затаившаяся (камуфляж) ДОБЫЧА не видна, но ЧУЕТСЯ — бьём ПРИМЕРНО туда, если путь
+        // свободен (сквозь стену не стреляем). Камуфляж сбивает прицел, а не отменяет залп; задел попал →
+        // урон РАСКРЫВАЕТ цель → дальше прицельно. Та же видовая заявка, что в Retarget: «от носа не спрятаться».
+        // По игроку/прочим — только визуально (huntingPrey гейтит): ёж наводится нюхом лишь на свою добычу
+        bool volleyReady = volley != null && Time.time >= nextVolleyAt && dist >= volley.MinRange && dist <= volley.MaxRange;
+        bool smellShot = volleyReady && !sees && huntingPrey && Perception.HasLineOfSight(transform.position, target, transform);
+        if (volleyReady && (sees || smellShot))
         {
             volley.SetTarget(targetHealth);
+            volley.SetBlind(!sees); // не вижу, но чую — прицел уводит на BlindAimError
             if (volley.TryUse())
             {
                 activeAbility = volley;
@@ -358,6 +367,23 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
                 Settle(Vector3.zero);
                 return;
             }
+        }
+
+        // НЕДОСЯГАЕМАЯ ЦЕЛЬ (змея ушла НА СТЕНУ — её насест): ближним боем не взять, а дистанция считается
+        // ГОРИЗОНТАЛЬНО — подойдя вплотную, ёж получал ~0 и вываливался из окна залпа: стоял под стеной и
+        // тупил. Теперь работает СТРЕЛКОМ: пятится в окно залпа (морда к цели — отход не теряет прицел),
+        // держит позицию на перезарядке, подходит, если далеко. Нечем стрелять — не сторожит стену, уходит
+        if (target.position.y - transform.position.y > HighTargetY)
+        {
+            if (volley == null) { Wander(); return; }        // без Игломёта достать нечем — не топчемся
+            Vector3 hold;
+            if (dist < volley.MinRange) hold = -to.normalized * Speed;                     // слишком близко — назад, в окно
+            else if (dist > volley.MaxRange)                                               // далеко — подойти к середине окна
+                hold = nav.Arrive(target.position, Speed, stopAt: (volley.MinRange + volley.MaxRange) * 0.5f);
+            else hold = Vector3.zero;                                                      // в окне — стоим, ждём перезарядки
+            Settle(hold);
+            alert.Observe(true, true);
+            return;
         }
 
         // ВЦЕПИТЬСЯ — только в ДОБЫЧУ (змею): игрока и прочих ёж не хватает, он для них крепость,
