@@ -168,6 +168,8 @@ public static class SpeciesBootstrap
         };
         EditorUtility.SetDirty(hog);
 
+        ValidateSockets(new[] { human, wolf, snake, moose, hog }); // сверка сокет-плана: молчит, пока всё сходится
+
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
@@ -192,6 +194,39 @@ public static class SpeciesBootstrap
         else
         {
             Debug.Log("Виды обновлены в " + Dir + ". CreatureBody в сцене не найден — назначь chassis/donors вручную.");
+        }
+    }
+
+    /// <summary>СВЕРКА СОКЕТ-ПЛАНА (страховка от молчания). Место органа следует из его `slot`; нет сокета с
+    /// таким именем — орган либо не встанет вовсе (в родных слотах его нет), либо встанет ЧЕРЕЗ ХИМЕРНЫЙ слот
+    /// и будет НЕВИДИМ. Раньше это молчало: опечатка в имени = деталь просто не рисуется, без единой ошибки.
+    /// Виды без сокет-плана (пока Змея/Лось/Ёж) не проверяем — у них свой визуал префаба.</summary>
+    static void ValidateSockets(SpeciesSO[] all)
+    {
+        foreach (var chassis in all)
+        {
+            if (chassis == null || chassis.sockets == null || chassis.sockets.Length == 0 || chassis.organs == null) continue;
+
+            var places = new System.Collections.Generic.HashSet<string>();
+            foreach (var s in chassis.sockets)
+                if (s != null && !string.IsNullOrEmpty(s.name)) places.Add(s.name);
+
+            // РОДНЫЕ органы: без места не рисуется часть тела САМОГО вида
+            foreach (var o in chassis.organs)
+                if (o != null && !places.Contains(o.slot))
+                    Debug.LogWarning($"Сокет-план «{chassis.speciesName}»: родной орган «{o.organName}» (слот «{o.slot}») БЕЗ МЕСТА — часть тела не рисуется.");
+
+            // ЧУЖИЕ органы: встанут химерным слотом, но окажутся невидимыми (chassisOnly не крадётся — не в счёт)
+            var missing = new System.Collections.Generic.List<string>();
+            foreach (var donor in all)
+            {
+                if (donor == null || donor == chassis || donor.organs == null) continue;
+                foreach (var o in donor.organs)
+                    if (o != null && !o.chassisOnly && !places.Contains(o.slot))
+                        missing.Add($"{o.organName} ({donor.speciesName} → слот «{o.slot}»)");
+            }
+            if (missing.Count > 0)
+                Debug.LogWarning($"Сокет-план «{chassis.speciesName}»: графты БЕЗ МЕСТА (встанут в химерный слот, но будут невидимы): {string.Join(", ", missing)}");
         }
     }
 
