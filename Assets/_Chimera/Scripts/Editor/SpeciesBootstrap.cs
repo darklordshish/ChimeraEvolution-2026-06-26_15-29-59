@@ -32,28 +32,31 @@ public static class SpeciesBootstrap
             // Человек = ПОЛНОЦЕННЫЙ вид (просто стартовое шасси). Цены СЫРЫЕ, как у всех; дёшевы ДЛЯ ТЕБЯ
             // потому что ты на 100 родства с Человеком (−80% скидка, честно через EffectiveCost). Мощь ×2 (100
             // родства), база ×0.75 → нетто ≈ ×1.5. Кулдауны/дальность не масштабируются.
-            new Organ { organName = "Кисть",  slot = "Руки",   hotkey = "1", cost = 3, damage = 8, range = 1.6f, visualPart = "передние" },
-            new Organ { organName = "Ноги",   slot = "Ноги",   hotkey = "2", cost = 3, moveSpeed = 4.5f, dashSpeed = 15f, enablesKick = true, visualPart = "задние" },
-            new Organ { organName = "Сердце", slot = "Сердце", hotkey = "3", cost = 6, atkCooldown = 0.45f, hpBonus = 0.5f, staminaBonus = 0.5f, staminaRegenBonus = 0.5f, regen = 0f, regenOOC = 0.75f }, // внутренний — visualPart пусто
-            new Organ { organName = "Чутьё",  slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.7f, insight = true }, // внутренний — visualPart пусто
-            new Organ { organName = "Рот",    slot = "Пасть",  hotkey = "5", cost = 3, enablesBite = false, visualPart = "морда" }, // лицо/пасть — ОТДЕЛЬНО от черепа: волчья Пасть сядет сюда же → морда вервольфа
-            new Organ { organName = "Кожа",   slot = "Шкура",  hotkey = "6", cost = 3, damageReduction = 0f, visualPart = "корпус" },
+            new Organ { organName = "Кисть",  slot = "Руки",   hotkey = "1", cost = 3, damage = 8, range = 1.6f },
+            new Organ { organName = "Ноги",   slot = "Ноги",   hotkey = "2", cost = 3, moveSpeed = 4.5f, dashSpeed = 15f, enablesKick = true },
+            new Organ { organName = "Сердце", slot = "Сердце", hotkey = "3", cost = 6, atkCooldown = 0.45f, hpBonus = 0.5f, staminaBonus = 0.5f, staminaRegenBonus = 0.5f, regen = 0f, regenOOC = 0.75f }, // внутренний: сокет hidden — места на теле нет
+            new Organ { organName = "Чутьё",  slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.7f, insight = true }, // внутренний: сокет hidden — места на теле нет
+            new Organ { organName = "Рот",    slot = "Пасть",  hotkey = "5", cost = 3, enablesBite = false }, // лицо/пасть — ОТДЕЛЬНО от черепа: волчья Пасть сядет сюда же → морда вервольфа
+            new Organ { organName = "Кожа",   slot = "Шкура",  hotkey = "6", cost = 3, damageReduction = 0f },
         };
-        // СКЕЛЕТ человека (прямоходящий): якоря по СМЫСЛУ слота (общий словарь — те же имена, что у зверей,
-        // потому волчьи органы и садятся на человечьи места → вервольф). mirrorX = парное место (2 руки/ноги)
-        human.skeleton = new[]
+        // СОКЕТ-ПЛАН человека (прямоходящий). ИМЯ СОКЕТА = Organ.slot — одно и то же имя держит механику и
+        // визуал, разойтись не могут. Те же имена у зверей → волчьи органы садятся на человечьи места (вервольф).
+        // mirrorX — парное место (2 руки/ноги); hidden — внутренний (места на теле нет); graft — закрытое место
+        human.sockets = new[]
         {
-            new SkeletonAnchor { part = "голова",   localPos = new Vector3(0f, 1.70f, 0f),     baseSize = new Vector3(0.32f, 0.36f, 0.32f) },
-            new SkeletonAnchor { part = "морда",    localPos = new Vector3(0f, 1.66f, 0.18f),  baseSize = new Vector3(0.20f, 0.16f, 0.10f) },
-            new SkeletonAnchor { part = "шея",      localPos = new Vector3(0f, 1.48f, 0f),     baseSize = new Vector3(0.14f, 0.16f, 0.14f) },
-            new SkeletonAnchor { part = "корпус",   localPos = new Vector3(0f, 1.12f, 0f),     baseSize = new Vector3(0.48f, 0.72f, 0.28f) },
-            new SkeletonAnchor { part = "передние", localPos = new Vector3(0.31f, 1.15f, 0f),  baseSize = new Vector3(0.13f, 0.62f, 0.15f), mirrorX = true },
-            new SkeletonAnchor { part = "задние",   localPos = new Vector3(0.13f, 0.42f, 0f),  baseSize = new Vector3(0.16f, 0.82f, 0.20f), mirrorX = true },
-            // ГНЁЗДА ПОД ГРАФТ (organOnly — пустыми НЕ рисуются): у человека нет хвоста/рогов/игл, но привил
+            new BodySocket { name = "голова", localPos = new Vector3(0f, 1.70f, 0f),     baseSize = new Vector3(0.32f, 0.36f, 0.32f) }, // телесное место (органа нет)
+            new BodySocket { name = "Пасть",  localPos = new Vector3(0f, 1.66f, 0.18f),  baseSize = new Vector3(0.20f, 0.16f, 0.10f) },
+            new BodySocket { name = "шея",    localPos = new Vector3(0f, 1.48f, 0f),     baseSize = new Vector3(0.14f, 0.16f, 0.14f) }, // телесное место
+            new BodySocket { name = "Шкура",  localPos = new Vector3(0f, 1.12f, 0f),     baseSize = new Vector3(0.48f, 0.72f, 0.28f) },
+            new BodySocket { name = "Руки",   localPos = new Vector3(0.31f, 1.15f, 0f),  baseSize = new Vector3(0.13f, 0.62f, 0.15f), mirrorX = true },
+            new BodySocket { name = "Ноги",   localPos = new Vector3(0.13f, 0.42f, 0f),  baseSize = new Vector3(0.16f, 0.82f, 0.20f), mirrorX = true },
+            new BodySocket { name = "Сердце", hidden = true },
+            new BodySocket { name = "Чутьё",  hidden = true },
+            // ЗАКРЫТЫЕ МЕСТА (graft — пустыми НЕ рисуются): у человека нет хвоста/рогов/игломёта, но привил
             // змеиный Хвост / лосиные Рога / ежиный Игломёт — и они проступают на теле
-            new SkeletonAnchor { part = "хвост",    localPos = new Vector3(0f, 0.85f, -0.22f), baseSize = new Vector3(0.14f, 0.14f, 0.50f), baseEuler = new Vector3(25f, 0f, 0f), organOnly = true },
-            new SkeletonAnchor { part = "рога",     localPos = new Vector3(0.12f, 1.92f, 0f),  baseSize = new Vector3(0.08f, 0.36f, 0.08f), baseEuler = new Vector3(0f, 0f, 20f), mirrorX = true, organOnly = true },
-            new SkeletonAnchor { part = "иглы",     localPos = new Vector3(0f, 1.30f, -0.18f), baseSize = new Vector3(0.42f, 0.50f, 0.16f), organOnly = true },
+            new BodySocket { name = "Хвост",   localPos = new Vector3(0f, 0.85f, -0.22f), baseSize = new Vector3(0.14f, 0.14f, 0.50f), baseEuler = new Vector3(25f, 0f, 0f), graft = true },
+            new BodySocket { name = "Рога",    localPos = new Vector3(0.12f, 1.92f, 0f),  baseSize = new Vector3(0.08f, 0.36f, 0.08f), baseEuler = new Vector3(0f, 0f, 20f), mirrorX = true, graft = true },
+            new BodySocket { name = "Игломёт", localPos = new Vector3(0f, 1.30f, -0.18f), baseSize = new Vector3(0.42f, 0.50f, 0.16f), graft = true },
         };
         EditorUtility.SetDirty(human);
 
@@ -67,28 +70,30 @@ public static class SpeciesBootstrap
         wolf.baseStaminaRegen = 9f;
         wolf.organs = new[]
         {
-            new Organ { organName = "Коготь",        slot = "Руки",   hotkey = "1", cost = 4, damage = 18, range = 1.5f, visualPart = "передние", visualScale = new Vector3(1f, 1f, 1.2f) },
-            new Organ { organName = "Волчьи ноги",   slot = "Ноги",   hotkey = "2", cost = 4, moveSpeed = 9f, dashSpeed = 30f, visualPart = "задние", visualScale = new Vector3(1f, 1f, 1.2f) },
+            new Organ { organName = "Коготь",        slot = "Руки",   hotkey = "1", cost = 4, damage = 18, range = 1.5f, visualScale = new Vector3(1f, 1f, 1.2f) },
+            new Organ { organName = "Волчьи ноги",   slot = "Ноги",   hotkey = "2", cost = 4, moveSpeed = 9f, dashSpeed = 30f, visualScale = new Vector3(1f, 1f, 1.2f) },
             new Organ { organName = "Волчье сердце", slot = "Сердце", hotkey = "3", cost = 6, atkCooldown = 0.30f, hpBonus = 1.75f, staminaBonus = 0.5f, staminaRegenBonus = 0.25f, regen = 3f, regenOOC = 0f }, // «заживает как на собаке»: реген 2→3, чтобы босс вернул свои 6/с (Blend на Э=2), а волки затягивали раны на глазах. +175%: лёгкое тело, огромный мотор → волк-NPC 68 HP, вервольф ровно 300. Постоянный реген ВМЕСТО тихого в покое (вне-боя — фича человеческого сердца)
             new Organ { organName = "Нюх",           slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.45f, enablesScent = true },
-            new Organ { organName = "Пасть",         slot = "Пасть",  hotkey = "5", cost = 5, enablesBite = true, enablesHowl = true, bleedStacks = 2, howlRadius = 14f, howlStunAt = 2f, enablesConstrict = true, constrictStage = 1, nativeChassis = "Волк", visualPart = "морда", visualScale = new Vector3(1.1f, 1f, 1.25f) }, // укус + кровь + ГОЛОС + ХВАТ пастью; МОРДА: на человечьем шасси садится на его «лицо» → морда вервольфа
-            new Organ { organName = "Шкура",         slot = "Шкура",  hotkey = "6", cost = 4, damageReduction = 0.3f, visualPart = "корпус" },
+            new Organ { organName = "Пасть",         slot = "Пасть",  hotkey = "5", cost = 5, enablesBite = true, enablesHowl = true, bleedStacks = 2, howlRadius = 14f, howlStunAt = 2f, enablesConstrict = true, constrictStage = 1, nativeChassis = "Волк", visualScale = new Vector3(1.1f, 1f, 1.25f) }, // укус + кровь + ГОЛОС + ХВАТ пастью; МОРДА: на человечьем шасси садится на его «лицо» → морда вервольфа
+            new Organ { organName = "Шкура",         slot = "Шкура",  hotkey = "6", cost = 4, damageReduction = 0.3f },
         };
-        // СКЕЛЕТ волка (4-ногий): ТЕ ЖЕ имена якорей, что у человека (общий словарь), позиции из BuildBlocky-плейсхолдера.
+        // СОКЕТ-ПЛАН волка (4-ногий): ТЕ ЖЕ имена, что у человека (имя = Organ.slot), позиции из BuildBlocky.
         // mirrorX даёт ЧЕТЫРЕ лапы и ДВА уха одной записью (раньше пара выглядела единым блоком)
-        wolf.skeleton = new[]
+        wolf.sockets = new[]
         {
-            new SkeletonAnchor { part = "голова",   localPos = new Vector3(0f, 1.15f, 0.90f),    baseSize = new Vector3(0.35f, 0.35f, 0.38f) },
-            new SkeletonAnchor { part = "морда",    localPos = new Vector3(0f, 1.11f, 1.20f),    baseSize = new Vector3(0.20f, 0.24f, 0.28f) },
-            new SkeletonAnchor { part = "уши",      localPos = new Vector3(0.10f, 1.32f, 0.83f), baseSize = new Vector3(0.11f, 0.11f, 0.06f), baseEuler = new Vector3(0f, 0f, 45f), mirrorX = true },
-            new SkeletonAnchor { part = "шея",      localPos = new Vector3(0f, 0.98f, 0.63f),    baseSize = new Vector3(0.32f, 0.32f, 0.42f), baseEuler = new Vector3(-40f, 0f, 0f) },
-            new SkeletonAnchor { part = "корпус",   localPos = new Vector3(0f, 0.78f, 0.08f),    baseSize = new Vector3(0.54f, 0.60f, 1.05f) },
-            new SkeletonAnchor { part = "передние", localPos = new Vector3(0.20f, 0.26f, 0.42f), baseSize = new Vector3(0.14f, 0.48f, 0.15f), mirrorX = true },
-            new SkeletonAnchor { part = "задние",   localPos = new Vector3(0.19f, 0.30f, -0.45f),baseSize = new Vector3(0.17f, 0.55f, 0.20f), mirrorX = true },
-            new SkeletonAnchor { part = "хвост",    localPos = new Vector3(0f, 1.00f, -0.62f),   baseSize = new Vector3(0.15f, 0.15f, 0.55f), baseEuler = new Vector3(30f, 0f, 0f) }, // крепится СВЕРХУ крупа, продолжением позвоночника (было — из середины зада)
-            // гнёзда под графт (пустыми не рисуются): волк с лосиными рогами / ежиными иглами читается сразу
-            new SkeletonAnchor { part = "рога",     localPos = new Vector3(0.10f, 1.38f, 0.85f), baseSize = new Vector3(0.07f, 0.30f, 0.07f), baseEuler = new Vector3(0f, 0f, 22f), mirrorX = true, organOnly = true },
-            new SkeletonAnchor { part = "иглы",     localPos = new Vector3(0f, 1.05f, 0.05f),    baseSize = new Vector3(0.50f, 0.35f, 0.90f), organOnly = true },
+            new BodySocket { name = "голова", localPos = new Vector3(0f, 1.15f, 0.90f),    baseSize = new Vector3(0.35f, 0.35f, 0.38f) }, // телесное место
+            new BodySocket { name = "Пасть",  localPos = new Vector3(0f, 1.11f, 1.20f),    baseSize = new Vector3(0.20f, 0.24f, 0.28f) },
+            new BodySocket { name = "уши",    localPos = new Vector3(0.10f, 1.32f, 0.83f), baseSize = new Vector3(0.11f, 0.11f, 0.06f), baseEuler = new Vector3(0f, 0f, 45f), mirrorX = true }, // телесное место
+            new BodySocket { name = "шея",    localPos = new Vector3(0f, 0.98f, 0.63f),    baseSize = new Vector3(0.32f, 0.32f, 0.42f), baseEuler = new Vector3(-40f, 0f, 0f) }, // телесное место
+            new BodySocket { name = "Шкура",  localPos = new Vector3(0f, 0.78f, 0.08f),    baseSize = new Vector3(0.54f, 0.60f, 1.05f) },
+            new BodySocket { name = "Руки",   localPos = new Vector3(0.20f, 0.26f, 0.42f), baseSize = new Vector3(0.14f, 0.48f, 0.15f), mirrorX = true },
+            new BodySocket { name = "Ноги",   localPos = new Vector3(0.19f, 0.30f, -0.45f),baseSize = new Vector3(0.17f, 0.55f, 0.20f), mirrorX = true },
+            new BodySocket { name = "Хвост",  localPos = new Vector3(0f, 1.00f, -0.62f),   baseSize = new Vector3(0.15f, 0.15f, 0.55f), baseEuler = new Vector3(30f, 0f, 0f) }, // СВОЙ хвост (не графт): крепится сверху крупа, продолжением позвоночника
+            new BodySocket { name = "Сердце", hidden = true },
+            new BodySocket { name = "Чутьё",  hidden = true },
+            // закрытые места (пустыми не рисуются): волк с лосиными рогами / ежиным игломётом читается сразу
+            new BodySocket { name = "Рога",    localPos = new Vector3(0.10f, 1.38f, 0.85f), baseSize = new Vector3(0.07f, 0.30f, 0.07f), baseEuler = new Vector3(0f, 0f, 22f), mirrorX = true, graft = true },
+            new BodySocket { name = "Игломёт", localPos = new Vector3(0f, 1.05f, 0.05f),    baseSize = new Vector3(0.50f, 0.35f, 0.90f), graft = true },
         };
         EditorUtility.SetDirty(wolf);
 
@@ -102,12 +107,12 @@ public static class SpeciesBootstrap
         snake.baseStaminaRegen = 7f;
         snake.organs = new[]
         {
-            new Organ { organName = "Ядовитые клыки",       slot = "Пасть",  hotkey = "5", cost = 5, damage = 24, enablesBite = true, venomStacks = 1, visualPart = "морда" }, // укус игрока травит
+            new Organ { organName = "Ядовитые клыки",       slot = "Пасть",  hotkey = "5", cost = 5, damage = 24, enablesBite = true, venomStacks = 1 }, // укус игрока травит
             new Organ { organName = "Хладнокровное сердце", slot = "Сердце", hotkey = "3", cost = 5, hpBonus = 1.35f, staminaBonus = 0.3f, staminaRegenBonus = 0.2f, regen = 0f, regenOOC = 2f, atkCooldown = 0.5f, coldBlooded = true }, // ХОЛОДНЫЙ МЕТАБОЛИЗМ: в бою НЕ регенит (regen 0), вне боя восстанавливается ЛУЧШЕ человека (regenOOC 2 > 1). Кулдаун ОБЯЗАТЕЛЕН (0 в бленде = меч-пулемёт)
             new Organ { organName = "Тело-хвост",           slot = "Тело",   hotkey = "7", cost = 5, moveSpeed = 10f, dashSpeed = 20f, chassisOnly = true, digestion = true }, // ходовая часть ШАССИ змеи: аугументом не крадётся (локомоция = свойство шасси) + ПЕРЕВАРИВАНИЕ (глотание целиком = свойство змеиного тела)
-            new Organ { organName = "Чешуя",                slot = "Шкура",  hotkey = "6", cost = 4, damageReduction = 0.25f, camo = true, visualPart = "корпус" }, // лёгкая броня: стелс+яд+одиночная охота компенсируют (D-тюнинг)
+            new Organ { organName = "Чешуя",                slot = "Шкура",  hotkey = "6", cost = 4, damageReduction = 0.25f, camo = true }, // лёгкая броня: стелс+яд+одиночная охота компенсируют (D-тюнинг)
             new Organ { organName = "Пит-орган",            slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.7f, enablesThermal = true, thermalRange = 14f }, // тепло сквозь стены; dashCd обязателен (0 = спам рывка)
-            new Organ { organName = "Хвост",                slot = "Хвост",  hotkey = "8", cost = 5, enablesConstrict = true, constrictStage = 3, nativeChassis = "Змея", visualPart = "хвост", visualScale = new Vector3(1f, 1f, 1.3f) }, // АУГУМЕНТ игроку (обхват); constrictStage=3 + nativeChassis=Змея → ст.3 удушения только на змеином шасси (у человека кап min(2,3)=2). «Тело-хвост» выше — ходовая часть ШАССИ змеи, не путать
+            new Organ { organName = "Хвост",                slot = "Хвост",  hotkey = "8", cost = 5, enablesConstrict = true, constrictStage = 3, nativeChassis = "Змея", visualScale = new Vector3(1f, 1f, 1.3f) }, // АУГУМЕНТ игроку (обхват); constrictStage=3 + nativeChassis=Змея → ст.3 удушения только на змеином шасси (у человека кап min(2,3)=2). «Тело-хвост» выше — ходовая часть ШАССИ змеи, не путать
         };
         EditorUtility.SetDirty(snake);
 
@@ -123,13 +128,13 @@ public static class SpeciesBootstrap
         moose.baseStaminaRegen = 5f; // загнанный лось потому и страшен, что запас у него кончается не сразу
         moose.organs = new[]
         {
-            new Organ { organName = "Копыто",         slot = "Руки",   hotkey = "1", cost = 5, damage = 22, range = 1.8f, visualPart = "передние" }, // удар копытом — оружие
-            new Organ { organName = "Лосиные ноги",   slot = "Ноги",   hotkey = "2", cost = 5, moveSpeed = 5f, dashSpeed = 35f, dashDuration = 0.38f, enablesCharge = true, visualPart = "задние" }, // длинные ноги: шаг ровный, а рывок = ДЛИННЫЙ мощный ТАРАН (35 > волчьих 30 + вдвое дольше → прёт быстро и далеко)
-            new Organ { organName = "Глотка",         slot = "Пасть",  hotkey = "5", cost = 4, enablesBellow = true, visualPart = "морда" }, // РЁВ (K2): кин-лоси в берсерк на месте, чужим страх
+            new Organ { organName = "Копыто",         slot = "Руки",   hotkey = "1", cost = 5, damage = 22, range = 1.8f }, // удар копытом — оружие
+            new Organ { organName = "Лосиные ноги",   slot = "Ноги",   hotkey = "2", cost = 5, moveSpeed = 5f, dashSpeed = 35f, dashDuration = 0.38f, enablesCharge = true }, // длинные ноги: шаг ровный, а рывок = ДЛИННЫЙ мощный ТАРАН (35 > волчьих 30 + вдвое дольше → прёт быстро и далеко)
+            new Organ { organName = "Глотка",         slot = "Пасть",  hotkey = "5", cost = 4, enablesBellow = true }, // РЁВ (K2): кин-лоси в берсерк на месте, чужим страх
             new Organ { organName = "Слух",           slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.7f, keenHearing = true, hearingMult = 2f }, // ОСТРЫЙ СЛУХ: вдвое дальше + различение вида + волны звука на экране (лось — слухач при слабом зрении)
             new Organ { organName = "Лосиное сердце", slot = "Сердце", hotkey = "3", cost = 6, hpBonus = 2f, staminaBonus = 0.6f, staminaRegenBonus = 0f, regen = 1f, regenOOC = 0f, atkCooldown = 0.5f, bleedResist = true }, // +200% HP + КРОВЕУПОРНОСТЬ: сердце ТАНКА — явный HP-король (обгоняет волчьи 1.75); у массивного лося своё преимущество (гора HP), а кровь ему особенно опасна (% от макс HP)
-            new Organ { organName = "Толстая шкура",  slot = "Шкура",  hotkey = "6", cost = 5, damageReduction = 0.35f, visualPart = "корпус", visualScale = new Vector3(1.15f, 1.1f, 1f) }, // броня против ПРЯМОГО урона (не крови)
-            new Organ { organName = "Рога",           slot = "Рога",   hotkey = "8", cost = 5, enablesAntler = true, visualPart = "рога" }, // ПРИДАТОК (химерный слот): удар рогами — откидывание + кровь
+            new Organ { organName = "Толстая шкура",  slot = "Шкура",  hotkey = "6", cost = 5, damageReduction = 0.35f, visualScale = new Vector3(1.15f, 1.1f, 1f) }, // броня против ПРЯМОГО урона (не крови)
+            new Organ { organName = "Рога",           slot = "Рога",   hotkey = "8", cost = 5, enablesAntler = true }, // ПРИДАТОК (химерный слот): удар рогами — откидывание + кровь
         };
         EditorUtility.SetDirty(moose);
 
@@ -153,10 +158,10 @@ public static class SpeciesBootstrap
             // Аддитивен: игрок берёт копыта/коготь В РУКИ И «Игломёт» отдельно — две кнопки, два приёма.
             // У NPC залп — компонентом на префабе; орган нужен ИГРОКУ-донору
             // ИМЕНА ОРГАНОВ УНИКАЛЬНЫ ПО ВСЕМ ВИДАМ: в конструкторе они рядом в одном списке
-            new Organ { organName = "Игломёт",           slot = "Игломёт", hotkey = "8", cost = 4, enablesQuillVolley = true, visualPart = "иглы" }, // ПРИДАТОК: дальний бой игрока (химерный слот)
-            new Organ { organName = "Иглы",              slot = "Шкура",  hotkey = "6", cost = 5, damageReduction = 0.2f, thorns = true, visualPart = "корпус" }, // ОТВЕТКА: броня умеренная — иглы это ответ, а не панцирь
-            new Organ { organName = "Ежиные ноги",       slot = "Ноги",   hotkey = "2", cost = 4, moveSpeed = 6f, dashSpeed = 18f, dashDuration = 0.14f, dashCooldown = 0.35f, enablesRoll = true, visualPart = "задние" }, // ёж НЕ догоняла, а ПИННЕР: на Э 0.5 = 3.0 — медленнее уползающей змеи (3.75), сам не догонит. Ловит КИТОМ: залп замедляет → подошёл → схватил. ПЕРЕКАТ (enablesRoll): рывок «в клубке» режет иглами кого прокатил — третий профиль ног
-            new Organ { organName = "Цепкая пасть",      slot = "Пасть",  hotkey = "5", cost = 4, damage = 22, enablesBite = true, enablesConstrict = true, constrictStage = 1, nativeChassis = "Ёж", visualPart = "морда" }, // ДОБИВАНИЕ + ПИН пастью (ст.1): та же челюсть грабит и кусает прижатую добычу. 22 (≈11 на Э 0.5) даёт ежу грабнуть-и-добить
+            new Organ { organName = "Игломёт",           slot = "Игломёт", hotkey = "8", cost = 4, enablesQuillVolley = true }, // ПРИДАТОК: дальний бой игрока (химерный слот)
+            new Organ { organName = "Иглы",              slot = "Шкура",  hotkey = "6", cost = 5, damageReduction = 0.2f, thorns = true }, // ОТВЕТКА: броня умеренная — иглы это ответ, а не панцирь
+            new Organ { organName = "Ежиные ноги",       slot = "Ноги",   hotkey = "2", cost = 4, moveSpeed = 6f, dashSpeed = 18f, dashDuration = 0.14f, dashCooldown = 0.35f, enablesRoll = true }, // ёж НЕ догоняла, а ПИННЕР: на Э 0.5 = 3.0 — медленнее уползающей змеи (3.75), сам не догонит. Ловит КИТОМ: залп замедляет → подошёл → схватил. ПЕРЕКАТ (enablesRoll): рывок «в клубке» режет иглами кого прокатил — третий профиль ног
+            new Organ { organName = "Цепкая пасть",      slot = "Пасть",  hotkey = "5", cost = 4, damage = 22, enablesBite = true, enablesConstrict = true, constrictStage = 1, nativeChassis = "Ёж" }, // ДОБИВАНИЕ + ПИН пастью (ст.1): та же челюсть грабит и кусает прижатую добычу. 22 (≈11 на Э 0.5) даёт ежу грабнуть-и-добить
             new Organ { organName = "Ядоупорное сердце", slot = "Сердце", hotkey = "3", cost = 6, hpBonus = 1.2f, staminaBonus = 0.4f, staminaRegenBonus = 0.3f, regen = 0.5f, atkCooldown = 0.5f, venomResist = true }, // РЕЗИСТ ЯДА (медоед-конституция) — делает ежа контр-видом змеи
             new Organ { organName = "Пятак",             slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.5f, enablesScent = true, keenHearing = true, hearingMult = 1.6f }, // НОЧНОЙ ЗВЕРЬ: подвижный нос и большие уши — нюх и слух остры (цена в зрении придёт со слайсом сенсорики)
             new Organ { organName = "Игольчатое тело",   slot = "Тело",   hotkey = "7", cost = 4, chassisOnly = true, enablesCurl = true }, // ходовая ФОРМА шасси ежа: сворачивание в шар (клубок/катание). chassisOnly — аугументом не крадётся, как змеиное «Тело-хвост»

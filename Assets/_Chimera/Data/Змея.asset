@@ -63,7 +63,6 @@ MonoBehaviour:
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 0
-    visualPart: "\u043C\u043E\u0440\u0434\u0430"
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -115,7 +114,6 @@ MonoBehaviour:
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 0
-    visualPart: 
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -166,7 +164,6 @@ MonoBehaviour:
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 0
-    visualPart: 
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -217,7 +214,6 @@ MonoBehaviour:
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 0
-    visualPart: "\u043A\u043E\u0440\u043F\u0443\u0441"
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -268,7 +264,6 @@ MonoBehaviour:
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 0
-    visualPart: 
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -319,7 +314,6 @@ MonoBehaviour:
     nativeChassis: "\u0417\u043C\u0435\u044F"
     constrictStage: 3
     enablesCurl: 0
-    visualPart: "\u0445\u0432\u043E\u0441\u0442"
     visualScale: {x: 1, y: 1, z: 1.3}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -328,4 +322,4 @@ MonoBehaviour:
   baseHp: 60
   baseStamina: 55
   baseStaminaRegen: 7
-  skeleton: []
+  sockets: []

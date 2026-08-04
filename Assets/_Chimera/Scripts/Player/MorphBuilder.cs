@@ -2,9 +2,10 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>МОРФОЛОГИЯ (ось 2): собирает КУБ-МОДЕЛЬ тела из данных — ОДНА система (без статичного BuildBlocky,
-/// потому нет дубля). База: куб на КАЖДОМ якоре скелета шасси (голая тушка). Орган с visualPart ЗАМЕНЯЕТ куб
-/// своего якоря деталью (форма органа). Пересобирается при смене состава. Эмерджентность: волчья морда (орган
-/// Пасть, visualPart=голова) на ЧЕЛОВЕЧЬЕМ якоре-голове = морда вервольфа. Кубы грубо, без подгонки.</summary>
+/// потому нет дубля). База: куб на КАЖДОМ СОКЕТЕ шасси (голая тушка). Орган ЗАМЕНЯЕТ куб СВОЕГО сокета
+/// деталью — место следует из `Organ.slot`, отдельного адреса нет (единый источник правды, спека сокет-плана).
+/// Пересобирается при смене состава. Эмерджентность: волчья Пасть на ЧЕЛОВЕЧЬЕМ сокете «Пасть» = морда
+/// вервольфа. Кубы грубо, без подгонки.</summary>
 public static class MorphBuilder
 {
     const string Container = "Morph";
@@ -26,13 +27,15 @@ public static class MorphBuilder
             c.gameObject.SetActive(false);
             Object.Destroy(c.gameObject);
         }
-        if (chassis == null || chassis.skeleton == null || chassis.skeleton.Length == 0 || wornOrgans == null) return;
+        if (chassis == null || chassis.sockets == null || chassis.sockets.Length == 0 || wornOrgans == null) return;
 
-        // орган на part (шасси-фёрст: первый в списке — родные раньше химерных); невидимые (пустой visualPart) не в счёт
-        var organByPart = new Dictionary<string, Organ>();
+        // орган на СОКЕТ по его `slot` — место следует из механики, отдельного поля-адреса нет.
+        // ПЕРВИЧЕН орган РОДНОГО слота шасси (он раньше в списке), химерный — вторичный: на общем сокете
+        // виден первичный. Слияние дизайна двух органов на одном месте — отдельная фича (сокет морфный)
+        var organBySocket = new Dictionary<string, Organ>();
         foreach (var o in wornOrgans)
-            if (o != null && !string.IsNullOrEmpty(o.visualPart) && !organByPart.ContainsKey(o.visualPart))
-                organByPart[o.visualPart] = o;
+            if (o != null && !string.IsNullOrEmpty(o.slot) && !organBySocket.ContainsKey(o.slot))
+                organBySocket[o.slot] = o;
 
         // ВЫСОТЫ ЯКОРЕЙ ЗАДАНЫ ОТ ЗЕМЛИ, а корень объекта у всех разный: у волка он на земле, у игрока — ЦЕНТР
         // капсулы (низ на −1). Сдвигаем контейнер к НИЗУ CharacterController, иначе тело игрока висит в метре
@@ -46,35 +49,35 @@ public static class MorphBuilder
 
         // КАЖДЫЙ якорь = часть: орган своего part (деталь) ЛИБО базовый куб (голая тушка шасси).
         // Парный якорь (mirrorX) даёт ДВЕ части зеркально — 4 лапы/2 уха одной записью данных
-        foreach (var anchor in chassis.skeleton)
+        foreach (var socket in chassis.sockets)
         {
-            if (anchor == null || string.IsNullOrEmpty(anchor.part)) continue;
-            organByPart.TryGetValue(anchor.part, out var organ);
-            if (organ == null && anchor.organOnly) continue; // гнездо под графт: без органа не рисуем (у человека нет хвоста)
+            if (socket == null || string.IsNullOrEmpty(socket.name) || socket.hidden) continue; // внутренний (Сердце/Чутьё) — места на теле нет
+            organBySocket.TryGetValue(socket.name, out var organ);
+            if (organ == null && socket.graft) continue; // закрытое место: без органа не рисуем (у человека нет хвоста)
 
-            Piece(container.transform, anchor, organ, +1f);
-            if (anchor.mirrorX) Piece(container.transform, anchor, organ, -1f);
+            Piece(container.transform, socket, organ, +1f);
+            if (socket.mirrorX) Piece(container.transform, socket, organ, -1f);
         }
     }
 
     // одна куб-часть на якоре. side = +1/-1 — сторона парного якоря (зеркалим вынос по X и рыскание/крен,
     // тангаж общий: левая лапа не должна «смотреть» иначе правой)
-    static void Piece(Transform parent, SkeletonAnchor anchor, Organ organ, float side)
+    static void Piece(Transform parent, BodySocket socket, Organ organ, float side)
     {
         var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
         if (cube.TryGetComponent<Collider>(out var col)) Object.Destroy(col); // визуал без физики (коллайдер — у CharacterController)
-        // ИМЯ = ЯКОРЬ (стабильный словарь), не орган: по именам частей работают ПЕРВОЕ ЛИЦО (прячет свою голову)
+        // ИМЯ = СОКЕТ (стабильный словарь), не орган: по именам частей работают ПЕРВОЕ ЛИЦО (прячет свою голову)
         // и ЭМОЦ-ТИНТ (красит морду-градусник). Имя органа менялось бы от сборки и ломало обе системы
-        cube.name = anchor.part;
+        cube.name = socket.name;
 
-        Vector3 pos = anchor.localPos + (organ != null ? organ.visualOffset : Vector3.zero);
-        Vector3 euler = anchor.baseEuler + (organ != null ? organ.visualEuler : Vector3.zero);
+        Vector3 pos = socket.localPos + (organ != null ? organ.visualOffset : Vector3.zero);
+        Vector3 euler = socket.baseEuler + (organ != null ? organ.visualEuler : Vector3.zero);
         if (side < 0f) { pos.x = -pos.x; euler.y = -euler.y; euler.z = -euler.z; }
 
         var t = cube.transform;
         t.SetParent(parent, false);
         t.localPosition = pos;
         t.localRotation = Quaternion.Euler(euler);
-        t.localScale = organ != null ? Vector3.Scale(anchor.baseSize, organ.visualScale) : anchor.baseSize;
+        t.localScale = organ != null ? Vector3.Scale(socket.baseSize, organ.visualScale) : socket.baseSize;
     }
 }

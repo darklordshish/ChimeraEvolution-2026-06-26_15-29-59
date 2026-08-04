@@ -416,7 +416,7 @@ public partial class CreatureBody : MonoBehaviour
         // МОРФОЛОГИЯ: NPC/химеры собираются кубами из состава; игрок — своя PlayerModel (worn=null → Build лишь
         // СНОСИТ старый Morph, если остался от прежнего билда, и не строит). Гейт по скелету (Волк/Человек).
         // !installAllBeast: вервольф-босс остаётся при своей РУЧНОЙ детальной модели (WerewolfPrefab), не морфим
-        if (!installAllBeast && chassis != null && chassis.skeleton != null && chassis.skeleton.Length > 0)
+        if (!installAllBeast && chassis != null && chassis.sockets != null && chassis.sockets.Length > 0)
         {
             var worn = new System.Collections.Generic.List<Organ>();
             foreach (var sl in slots) if (!sl.Empty && sl.Worn != null) worn.Add(sl.Worn); // слоты шасси раньше химерных → шасси-фёрст
