@@ -54,9 +54,9 @@ public static class SpeciesBootstrap
             new BodySocket { name = "Чутьё",  hidden = true },
             // ЗАКРЫТЫЕ МЕСТА (graft — пустыми НЕ рисуются): у человека нет хвоста/рогов/игломёта, но привил
             // змеиный Хвост / лосиные Рога / ежиный Игломёт — и они проступают на теле
-            new BodySocket { name = "Хвост",   localPos = new Vector3(0f, 0.85f, -0.22f), baseSize = new Vector3(0.14f, 0.14f, 0.50f), baseEuler = new Vector3(25f, 0f, 0f), graft = true },
-            new BodySocket { name = "Рога",    localPos = new Vector3(0.12f, 1.92f, 0f),  baseSize = new Vector3(0.08f, 0.36f, 0.08f), baseEuler = new Vector3(0f, 0f, 20f), mirrorX = true, graft = true },
-            new BodySocket { name = "Игломёт", localPos = new Vector3(0f, 1.15f, -0.28f), baseSize = new Vector3(0.46f, 0.62f, 0.22f), graft = true }, // хребет ВЕРТИКАЛЬНЫЙ — плита вдоль позвоночника, ЗА спиной (спина на z -0.14)
+            new BodySocket { name = "Хвост",   localPos = new Vector3(0f, 0.85f, -0.24f), baseSize = new Vector3(0.13f, 0.13f, 0.13f), baseEuler = new Vector3(25f, 0f, 0f), graft = true },  // КАЛИБР места; форму (сегментность) несёт орган
+            new BodySocket { name = "Рога",    localPos = new Vector3(0.15f, 1.92f, 0.02f), baseSize = new Vector3(0.13f, 0.13f, 0.13f), baseEuler = new Vector3(0f, 0f, 25f), mirrorX = true, graft = true }, // КАЛИБР: НАД макушкой (верх головы 1.88) и наружу — лопасть не врастает в череп
+            new BodySocket { name = "Игломёт", localPos = new Vector3(0f, 1.15f, -0.26f), baseSize = new Vector3(0.14f, 0.14f, 0.14f), baseEuler = new Vector3(90f, 0f, 0f), graft = true }, // КАЛИБР + ОРИЕНТАЦИЯ: хребет человека ВЕРТИКАЛЬНЫЙ, поворот 90° ставит плиту органа вдоль позвоночника
         };
         EditorUtility.SetDirty(human);
 
@@ -92,8 +92,8 @@ public static class SpeciesBootstrap
             new BodySocket { name = "Сердце", hidden = true },
             new BodySocket { name = "Чутьё",  hidden = true },
             // закрытые места (пустыми не рисуются): волк с лосиными рогами / ежиным игломётом читается сразу
-            new BodySocket { name = "Рога",    localPos = new Vector3(0.10f, 1.38f, 0.85f), baseSize = new Vector3(0.07f, 0.30f, 0.07f), baseEuler = new Vector3(0f, 0f, 22f), mirrorX = true, graft = true },
-            new BodySocket { name = "Игломёт", localPos = new Vector3(0f, 1.18f, 0.05f),    baseSize = new Vector3(0.58f, 0.38f, 0.95f), graft = true }, // хребет горизонтальный (4-ногий): панцирь ВЫШЕ спины (верх туши 1.08)
+            new BodySocket { name = "Рога",    localPos = new Vector3(0.15f, 1.37f, 0.88f), baseSize = new Vector3(0.13f, 0.13f, 0.13f), baseEuler = new Vector3(0f, 0f, 25f), mirrorX = true, graft = true }, // КАЛИБР: над черепом и наружу
+            new BodySocket { name = "Игломёт", localPos = new Vector3(0f, 1.18f, 0.05f),    baseSize = new Vector3(0.20f, 0.20f, 0.20f), graft = true }, // КАЛИБР; хребет ГОРИЗОНТАЛЬНЫЙ — доворот не нужен, выше спины (верх туши 1.08)
         };
         EditorUtility.SetDirty(wolf);
 
@@ -112,7 +112,26 @@ public static class SpeciesBootstrap
             new Organ { organName = "Тело-хвост",           slot = "Тело",   hotkey = "7", cost = 5, moveSpeed = 10f, dashSpeed = 20f, chassisOnly = true, digestion = true }, // ходовая часть ШАССИ змеи: аугументом не крадётся (локомоция = свойство шасси) + ПЕРЕВАРИВАНИЕ (глотание целиком = свойство змеиного тела)
             new Organ { organName = "Чешуя",                slot = "Шкура",  hotkey = "6", cost = 4, damageReduction = 0.25f, camo = true }, // лёгкая броня: стелс+яд+одиночная охота компенсируют (D-тюнинг)
             new Organ { organName = "Пит-орган",            slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.7f, enablesThermal = true, thermalRange = 14f }, // тепло сквозь стены; dashCd обязателен (0 = спам рывка)
-            new Organ { organName = "Хвост",                slot = "Хвост",  hotkey = "8", cost = 5, enablesConstrict = true, constrictStage = 3, nativeChassis = "Змея", visualScale = new Vector3(1f, 1f, 1.3f) }, // АУГУМЕНТ игроку (обхват); constrictStage=3 + nativeChassis=Змея → ст.3 удушения только на змеином шасси (у человека кап min(2,3)=2). «Тело-хвост» выше — ходовая часть ШАССИ змеи, не путать
+            new Organ { organName = "Хвост",                slot = "Хвост",  hotkey = "8", cost = 5, enablesConstrict = true, constrictStage = 3, nativeChassis = "Змея", visualScale = new Vector3(0.9f, 0.9f, 2.4f), visualSegments = 3, visualTaper = 0.82f }, // ХВОСТ СЕГМЕНТЕН: привитый — цепочка звеньев (≈треть змеиных сегментов), масштаб под человека, а не волчий обрубок. АУГУМЕНТ игроку (обхват); constrictStage=3 + nativeChassis=Змея → ст.3 удушения только на змеином шасси (у человека кап min(2,3)=2). «Тело-хвост» выше — ходовая часть ШАССИ змеи, не путать
+        };
+        // СОКЕТ-ПЛАН змеи — ТОЛЬКО ГНЁЗДА-ГРАФТЫ. Своё тело морфология НЕ строит и не трогает:
+        //  • туловище и хвост — ЦЕПЬ СЕГМЕНТОВ (`SnakeBodyChain` расставляет их в МИРОВЫХ координатах каждый
+        //    кадр, они ползут следом и лезут по стенам) — это локомоция, планом тела не выразить;
+        //  • голова — статичные дети с ВКЛЮЧЁННЫМ коллайдером (поверхность попаданий), сносить нельзя.
+        // Поэтому всё родное — hidden, а морфология даёт химере на змеином шасси ВИДИМЫЕ конечности
+        snake.sockets = new[]
+        {
+            new BodySocket { name = "Пасть",  hidden = true }, // голова статична (с коллайдером)
+            new BodySocket { name = "Шкура",  hidden = true }, // «кожа» змеи — это сегменты цепи
+            new BodySocket { name = "Тело",   hidden = true }, // Тело-хвост — ходовая часть шасси (цепь)
+            new BodySocket { name = "Хвост",  hidden = true }, // хвост — конец той же цепи
+            new BodySocket { name = "Сердце", hidden = true },
+            new BodySocket { name = "Чутьё",  hidden = true },
+            // ГРАФТЫ: змея, отрастившая лапы/рога/иглы — читается сразу
+            new BodySocket { name = "Руки",   localPos = new Vector3(0.24f, 0.26f, 0.12f), baseSize = new Vector3(0.10f, 0.34f, 0.10f), mirrorX = true, graft = true },
+            new BodySocket { name = "Ноги",   localPos = new Vector3(0.24f, 0.26f, -0.28f),baseSize = new Vector3(0.10f, 0.34f, 0.10f), mirrorX = true, graft = true },
+            new BodySocket { name = "Рога",   localPos = new Vector3(0.10f, 0.55f, 0.40f), baseSize = new Vector3(0.09f, 0.09f, 0.09f), baseEuler = new Vector3(0f, 0f, 25f), mirrorX = true, graft = true }, // КАЛИБР
+            new BodySocket { name = "Игломёт",localPos = new Vector3(0f, 0.56f, 0.0f),     baseSize = new Vector3(0.14f, 0.14f, 0.14f), graft = true }, // КАЛИБР
         };
         EditorUtility.SetDirty(snake);
 
@@ -134,7 +153,7 @@ public static class SpeciesBootstrap
             new Organ { organName = "Слух",           slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.7f, keenHearing = true, hearingMult = 2f }, // ОСТРЫЙ СЛУХ: вдвое дальше + различение вида + волны звука на экране (лось — слухач при слабом зрении)
             new Organ { organName = "Лосиное сердце", slot = "Сердце", hotkey = "3", cost = 6, hpBonus = 2f, staminaBonus = 0.6f, staminaRegenBonus = 0f, regen = 1f, regenOOC = 0f, atkCooldown = 0.5f, bleedResist = true }, // +200% HP + КРОВЕУПОРНОСТЬ: сердце ТАНКА — явный HP-король (обгоняет волчьи 1.75); у массивного лося своё преимущество (гора HP), а кровь ему особенно опасна (% от макс HP)
             new Organ { organName = "Толстая шкура",  slot = "Шкура",  hotkey = "6", cost = 5, damageReduction = 0.35f, visualScale = new Vector3(1.15f, 1.1f, 1f) }, // броня против ПРЯМОГО урона (не крови)
-            new Organ { organName = "Рога",           slot = "Рога",   hotkey = "8", cost = 5, enablesAntler = true }, // ПРИДАТОК (химерный слот): удар рогами — откидывание + кровь
+            new Organ { organName = "Рога",           slot = "Рога",   hotkey = "8", cost = 5, enablesAntler = true, visualScale = new Vector3(2.0f, 0.85f, 2.6f), visualEuler = new Vector3(0f, 32f, 0f) }, // ФОРМА ЛОСИНАЯ — задана ОРГАНОМ, одна на все шасси (место даёт лишь калибр). Лопасть РАЗВЕДЕНА НАРУЖУ (рыскание 32°, зеркалится сама): вдоль тела она читалась козырьком над мордой, а не рогами // ПРИДАТОК (химерный слот): удар рогами — откидывание + кровь. Форма ЛОСИНАЯ (лопасть-лопата) задана местом у каждого шасси — масштаб свой, вид один
         };
         // СОКЕТ-ПЛАН лося (ходульная туша: ноги ≈ полроста, горб над холкой, рога веером над головой).
         // Числа перенесены из статичной сборки MoosePrefab (ходульность lift=0.5 уже вживлена в координаты)
@@ -149,10 +168,10 @@ public static class SpeciesBootstrap
             new BodySocket { name = "Руки",   localPos = new Vector3(0.35f, 0.80f, 0.85f),baseSize = new Vector3(0.18f, 1.50f, 0.18f), mirrorX = true }, // передние ходули (Копыто)
             new BodySocket { name = "Ноги",   localPos = new Vector3(0.35f, 0.85f, -0.86f),baseSize = new Vector3(0.22f, 1.60f, 0.26f), mirrorX = true },
             new BodySocket { name = "Хвост",  localPos = new Vector3(0f, 2.20f, -1.08f),  baseSize = new Vector3(0.12f, 0.28f, 0.14f), baseEuler = new Vector3(-25f, 0f, 0f) }, // вплотную к крупу (корпус кончается на z≈-1.10)
-            new BodySocket { name = "Рога",   localPos = new Vector3(0.32f, 2.95f, 1.50f),baseSize = new Vector3(0.40f, 0.45f, 0.70f), baseEuler = new Vector3(0f, 0f, 28f), mirrorX = true }, // СВОИ рога (не графт)
+            new BodySocket { name = "Рога",   localPos = new Vector3(0.30f, 2.97f, 1.50f),baseSize = new Vector3(0.26f, 0.26f, 0.26f), baseEuler = new Vector3(0f, 0f, 25f), mirrorX = true }, // СВОИ рога: КАЛИБР крупный. ВЫШЕ макушки (верх черепа 2.86) и ВБОК за габарит головы — раньше лопасти врастали в макушку и торчали из висков
             new BodySocket { name = "Сердце", hidden = true },
             new BodySocket { name = "Чутьё",  hidden = true },
-            new BodySocket { name = "Игломёт", localPos = new Vector3(0f, 2.66f, -0.25f), baseSize = new Vector3(1.0f, 0.42f, 1.9f), graft = true }, // закрытое: лось-ёж обрастает иглами; ВЫШЕ спины (верх туши 2.49), сдвинут назад — не спорит с горбом
+            new BodySocket { name = "Игломёт", localPos = new Vector3(0f, 2.66f, -0.25f), baseSize = new Vector3(0.32f, 0.32f, 0.32f), graft = true }, // КАЛИБР (крупная туша): выше спины, сдвинут назад — не спорит с горбом
         };
         EditorUtility.SetDirty(moose);
 
@@ -176,7 +195,7 @@ public static class SpeciesBootstrap
             // Аддитивен: игрок берёт копыта/коготь В РУКИ И «Игломёт» отдельно — две кнопки, два приёма.
             // У NPC залп — компонентом на префабе; орган нужен ИГРОКУ-донору
             // ИМЕНА ОРГАНОВ УНИКАЛЬНЫ ПО ВСЕМ ВИДАМ: в конструкторе они рядом в одном списке
-            new Organ { organName = "Игломёт",           slot = "Игломёт", hotkey = "8", cost = 4, enablesQuillVolley = true }, // ПРИДАТОК: дальний бой игрока (химерный слот)
+            new Organ { organName = "Игломёт",           slot = "Игломёт", hotkey = "8", cost = 4, enablesQuillVolley = true, visualScale = new Vector3(3.2f, 1.4f, 4.0f) }, // ФОРМА ЕЖИНАЯ (игольчатая плита вдоль хребта) — у органа; вертикальный хребет человека доворачивает МЕСТО // ПРИДАТОК: дальний бой игрока (химерный слот)
             new Organ { organName = "Иглы",              slot = "Шкура",  hotkey = "6", cost = 5, damageReduction = 0.2f, thorns = true }, // ОТВЕТКА: броня умеренная — иглы это ответ, а не панцирь
             new Organ { organName = "Ежиные ноги",       slot = "Ноги",   hotkey = "2", cost = 4, moveSpeed = 6f, dashSpeed = 18f, dashDuration = 0.14f, dashCooldown = 0.35f, enablesRoll = true }, // ёж НЕ догоняла, а ПИННЕР: на Э 0.5 = 3.0 — медленнее уползающей змеи (3.75), сам не догонит. Ловит КИТОМ: залп замедляет → подошёл → схватил. ПЕРЕКАТ (enablesRoll): рывок «в клубке» режет иглами кого прокатил — третий профиль ног
             new Organ { organName = "Цепкая пасть",      slot = "Пасть",  hotkey = "5", cost = 4, damage = 22, enablesBite = true, enablesConstrict = true, constrictStage = 1, nativeChassis = "Ёж" }, // ДОБИВАНИЕ + ПИН пастью (ст.1): та же челюсть грабит и кусает прижатую добычу. 22 (≈11 на Э 0.5) даёт ежу грабнуть-и-добить
@@ -194,12 +213,12 @@ public static class SpeciesBootstrap
             new BodySocket { name = "Шкура",  localPos = new Vector3(0f, 0.50f, -0.05f),  baseSize = new Vector3(0.86f, 0.62f, 1.05f) },
             new BodySocket { name = "Руки",   localPos = new Vector3(0.26f, 0.11f, 0.34f),baseSize = new Vector3(0.16f, 0.22f, 0.20f), mirrorX = true }, // передние лапки
             new BodySocket { name = "Ноги",   localPos = new Vector3(0.26f, 0.11f, -0.34f),baseSize = new Vector3(0.16f, 0.22f, 0.20f), mirrorX = true },
-            new BodySocket { name = "Игломёт",localPos = new Vector3(0f, 0.90f, -0.08f),  baseSize = new Vector3(0.92f, 0.42f, 1.12f) }, // СВОИ иглы (не графт): хребет ГОРИЗОНТАЛЬНЫЙ — панцирь вдоль спины, ВЫШЕ корпуса (верх туши 0.81) и чуть шире, иначе тонет в теле
+            new BodySocket { name = "Игломёт",localPos = new Vector3(0f, 0.90f, -0.08f),  baseSize = new Vector3(0.28f, 0.28f, 0.28f) }, // СВОИ иглы: КАЛИБР (форма-плита у органа), хребет горизонтальный; ВЫШЕ корпуса (верх туши 0.81), иначе тонет в теле
             new BodySocket { name = "Сердце", hidden = true },
             new BodySocket { name = "Чутьё",  hidden = true },
             new BodySocket { name = "Тело",   hidden = true }, // Игольчатое тело — ФОРМА (клубок), своей детали нет
-            new BodySocket { name = "Хвост",  localPos = new Vector3(0f, 0.48f, -0.60f),  baseSize = new Vector3(0.10f, 0.10f, 0.26f), baseEuler = new Vector3(20f, 0f, 0f), graft = true },
-            new BodySocket { name = "Рога",   localPos = new Vector3(0.11f, 0.60f, 0.48f),baseSize = new Vector3(0.06f, 0.22f, 0.06f), baseEuler = new Vector3(0f, 0f, 20f), mirrorX = true, graft = true },
+            new BodySocket { name = "Хвост",  localPos = new Vector3(0f, 0.48f, -0.60f),  baseSize = new Vector3(0.09f, 0.09f, 0.09f), baseEuler = new Vector3(20f, 0f, 0f), graft = true }, // КАЛИБР
+            new BodySocket { name = "Рога",   localPos = new Vector3(0.11f, 0.575f, 0.50f),baseSize = new Vector3(0.10f, 0.10f, 0.10f), baseEuler = new Vector3(0f, 0f, 25f), mirrorX = true, graft = true }, // КАЛИБР
         };
         EditorUtility.SetDirty(hog);
 

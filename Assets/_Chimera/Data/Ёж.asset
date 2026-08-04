@@ -63,9 +63,11 @@ MonoBehaviour:
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 0
-    visualScale: {x: 1, y: 1, z: 1}
+    visualScale: {x: 3.2, y: 1.4, z: 4}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
+    visualSegments: 0
+    visualTaper: 0
   - organName: "\u0418\u0433\u043B\u044B"
     slot: "\u0428\u043A\u0443\u0440\u0430"
     hotkey: 6
@@ -116,6 +118,8 @@ MonoBehaviour:
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
+    visualSegments: 0
+    visualTaper: 0
   - organName: "\u0415\u0436\u0438\u043D\u044B\u0435 \u043D\u043E\u0433\u0438"
     slot: "\u041D\u043E\u0433\u0438"
     hotkey: 2
@@ -166,6 +170,8 @@ MonoBehaviour:
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
+    visualSegments: 0
+    visualTaper: 0
   - organName: "\u0426\u0435\u043F\u043A\u0430\u044F \u043F\u0430\u0441\u0442\u044C"
     slot: "\u041F\u0430\u0441\u0442\u044C"
     hotkey: 5
@@ -216,6 +222,8 @@ MonoBehaviour:
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
+    visualSegments: 0
+    visualTaper: 0
   - organName: "\u042F\u0434\u043E\u0443\u043F\u043E\u0440\u043D\u043E\u0435 \u0441\u0435\u0440\u0434\u0446\u0435"
     slot: "\u0421\u0435\u0440\u0434\u0446\u0435"
     hotkey: 3
@@ -266,6 +274,8 @@ MonoBehaviour:
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
+    visualSegments: 0
+    visualTaper: 0
   - organName: "\u041F\u044F\u0442\u0430\u043A"
     slot: "\u0427\u0443\u0442\u044C\u0451"
     hotkey: 4
@@ -316,6 +326,8 @@ MonoBehaviour:
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
+    visualSegments: 0
+    visualTaper: 0
   - organName: "\u0418\u0433\u043E\u043B\u044C\u0447\u0430\u0442\u043E\u0435 \u0442\u0435\u043B\u043E"
     slot: "\u0422\u0435\u043B\u043E"
     hotkey: 7
@@ -366,6 +378,8 @@ MonoBehaviour:
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
+    visualSegments: 0
+    visualTaper: 0
   eatsMeat: 1
   massive: 0
   baseHp: 52
@@ -415,8 +429,8 @@ MonoBehaviour:
     hidden: 0
     graft: 0
   - name: "\u0418\u0433\u043B\u043E\u043C\u0451\u0442"
-    localPos: {x: 0, y: 0.78, z: -0.1}
-    baseSize: {x: 0.72, y: 0.34, z: 0.92}
+    localPos: {x: 0, y: 0.9, z: -0.08}
+    baseSize: {x: 0.28, y: 0.28, z: 0.28}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
     hidden: 0
@@ -444,15 +458,15 @@ MonoBehaviour:
     graft: 0
   - name: "\u0425\u0432\u043E\u0441\u0442"
     localPos: {x: 0, y: 0.48, z: -0.6}
-    baseSize: {x: 0.1, y: 0.1, z: 0.26}
+    baseSize: {x: 0.09, y: 0.09, z: 0.09}
     baseEuler: {x: 20, y: 0, z: 0}
     mirrorX: 0
     hidden: 0
     graft: 1
   - name: "\u0420\u043E\u0433\u0430"
-    localPos: {x: 0.11, y: 0.6, z: 0.48}
-    baseSize: {x: 0.06, y: 0.22, z: 0.06}
-    baseEuler: {x: 0, y: 0, z: 20}
+    localPos: {x: 0.11, y: 0.575, z: 0.5}
+    baseSize: {x: 0.1, y: 0.1, z: 0.1}
+    baseEuler: {x: 0, y: 0, z: 25}
     mirrorX: 1
     hidden: 0
     graft: 1

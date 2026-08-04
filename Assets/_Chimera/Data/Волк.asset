@@ -66,6 +66,8 @@ MonoBehaviour:
     visualScale: {x: 1, y: 1, z: 1.2}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
+    visualSegments: 0
+    visualTaper: 0
   - organName: "\u0412\u043E\u043B\u0447\u044C\u0438 \u043D\u043E\u0433\u0438"
     slot: "\u041D\u043E\u0433\u0438"
     hotkey: 2
@@ -116,6 +118,8 @@ MonoBehaviour:
     visualScale: {x: 1, y: 1, z: 1.2}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
+    visualSegments: 0
+    visualTaper: 0
   - organName: "\u0412\u043E\u043B\u0447\u044C\u0435 \u0441\u0435\u0440\u0434\u0446\u0435"
     slot: "\u0421\u0435\u0440\u0434\u0446\u0435"
     hotkey: 3
@@ -166,6 +170,8 @@ MonoBehaviour:
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
+    visualSegments: 0
+    visualTaper: 0
   - organName: "\u041D\u044E\u0445"
     slot: "\u0427\u0443\u0442\u044C\u0451"
     hotkey: 4
@@ -216,6 +222,8 @@ MonoBehaviour:
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
+    visualSegments: 0
+    visualTaper: 0
   - organName: "\u041F\u0430\u0441\u0442\u044C"
     slot: "\u041F\u0430\u0441\u0442\u044C"
     hotkey: 5
@@ -266,6 +274,8 @@ MonoBehaviour:
     visualScale: {x: 1.1, y: 1, z: 1.25}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
+    visualSegments: 0
+    visualTaper: 0
   - organName: "\u0428\u043A\u0443\u0440\u0430"
     slot: "\u0428\u043A\u0443\u0440\u0430"
     hotkey: 6
@@ -316,6 +326,8 @@ MonoBehaviour:
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
+    visualSegments: 0
+    visualTaper: 0
   eatsMeat: 1
   massive: 0
   baseHp: 38
@@ -393,15 +405,15 @@ MonoBehaviour:
     hidden: 1
     graft: 0
   - name: "\u0420\u043E\u0433\u0430"
-    localPos: {x: 0.1, y: 1.38, z: 0.85}
-    baseSize: {x: 0.07, y: 0.3, z: 0.07}
-    baseEuler: {x: 0, y: 0, z: 22}
+    localPos: {x: 0.15, y: 1.37, z: 0.88}
+    baseSize: {x: 0.13, y: 0.13, z: 0.13}
+    baseEuler: {x: 0, y: 0, z: 25}
     mirrorX: 1
     hidden: 0
     graft: 1
   - name: "\u0418\u0433\u043B\u043E\u043C\u0451\u0442"
-    localPos: {x: 0, y: 1.05, z: 0.05}
-    baseSize: {x: 0.5, y: 0.35, z: 0.9}
+    localPos: {x: 0, y: 1.18, z: 0.05}
+    baseSize: {x: 0.2, y: 0.2, z: 0.2}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
     hidden: 0

@@ -64,20 +64,39 @@ public static class MorphBuilder
     // тангаж общий: левая лапа не должна «смотреть» иначе правой)
     static void Piece(Transform parent, BodySocket socket, Organ organ, float side)
     {
-        var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        if (cube.TryGetComponent<Collider>(out var col)) Object.Destroy(col); // визуал без физики (коллайдер — у CharacterController)
-        // ИМЯ = СОКЕТ (стабильный словарь), не орган: по именам частей работают ПЕРВОЕ ЛИЦО (прячет свою голову)
-        // и ЭМОЦ-ТИНТ (красит морду-градусник). Имя органа менялось бы от сборки и ломало обе системы
-        cube.name = socket.name;
-
         Vector3 pos = socket.localPos + (organ != null ? organ.visualOffset : Vector3.zero);
         Vector3 euler = socket.baseEuler + (organ != null ? organ.visualEuler : Vector3.zero);
         if (side < 0f) { pos.x = -pos.x; euler.y = -euler.y; euler.z = -euler.z; }
+        Quaternion rot = Quaternion.Euler(euler);
+        Vector3 size = organ != null ? Vector3.Scale(socket.baseSize, organ.visualScale) : socket.baseSize;
 
-        var t = cube.transform;
-        t.SetParent(parent, false);
-        t.localPosition = pos;
-        t.localRotation = Quaternion.Euler(euler);
-        t.localScale = organ != null ? Vector3.Scale(socket.baseSize, organ.visualScale) : socket.baseSize;
+        // СЕГМЕНТНАЯ ЦЕПЬ (змеиный хвост, отростки рога): ось — ДЛИННАЯ сторона места. Хвост лежит вдоль Z
+        // → тянется назад; рог вытянут по Y → растёт вверх. Отдельного поля-направления не нужно
+        int n = Mathf.Max(1, organ != null ? organ.visualSegments : 1);
+        float taper = organ != null && organ.visualTaper > 0f ? organ.visualTaper : 0.85f;
+        Vector3 dir = size.z >= size.x && size.z >= size.y ? Vector3.back
+                    : size.y >= size.x ? Vector3.up : Vector3.right;
+        float axisLen = Mathf.Abs(Vector3.Dot(size, new Vector3(Mathf.Abs(dir.x), Mathf.Abs(dir.y), Mathf.Abs(dir.z))));
+
+        float travel = 0f, prevLen = 0f;
+        for (int i = 0; i < n; i++)
+        {
+            float k = Mathf.Pow(taper, i);
+            float len = axisLen * k;
+            if (i > 0) travel += (prevLen + len) * 0.5f; // встык, с сужением
+            prevLen = len;
+
+            var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            if (cube.TryGetComponent<Collider>(out var col)) Object.Destroy(col); // визуал без физики (коллайдер — у CharacterController)
+            // ИМЯ = СОКЕТ (стабильный словарь), не орган: по именам частей работают ПЕРВОЕ ЛИЦО (прячет свою
+            // голову) и ЭМОЦ-ТИНТ (красит морду-градусник). Имя органа менялось бы от сборки и ломало обе системы
+            cube.name = socket.name;
+
+            var t = cube.transform;
+            t.SetParent(parent, false);
+            t.localPosition = pos + rot * (dir * travel);
+            t.localRotation = rot;
+            t.localScale = size * k;
+        }
     }
 }

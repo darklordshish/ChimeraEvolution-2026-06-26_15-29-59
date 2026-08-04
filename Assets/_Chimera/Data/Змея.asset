@@ -66,6 +66,8 @@ MonoBehaviour:
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
+    visualSegments: 0
+    visualTaper: 0
   - organName: "\u0425\u043B\u0430\u0434\u043D\u043E\u043A\u0440\u043E\u0432\u043D\u043E\u0435
       \u0441\u0435\u0440\u0434\u0446\u0435"
     slot: "\u0421\u0435\u0440\u0434\u0446\u0435"
@@ -117,6 +119,8 @@ MonoBehaviour:
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
+    visualSegments: 0
+    visualTaper: 0
   - organName: "\u0422\u0435\u043B\u043E-\u0445\u0432\u043E\u0441\u0442"
     slot: "\u0422\u0435\u043B\u043E"
     hotkey: 7
@@ -167,6 +171,8 @@ MonoBehaviour:
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
+    visualSegments: 0
+    visualTaper: 0
   - organName: "\u0427\u0435\u0448\u0443\u044F"
     slot: "\u0428\u043A\u0443\u0440\u0430"
     hotkey: 6
@@ -217,6 +223,8 @@ MonoBehaviour:
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
+    visualSegments: 0
+    visualTaper: 0
   - organName: "\u041F\u0438\u0442-\u043E\u0440\u0433\u0430\u043D"
     slot: "\u0427\u0443\u0442\u044C\u0451"
     hotkey: 4
@@ -267,6 +275,8 @@ MonoBehaviour:
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
+    visualSegments: 0
+    visualTaper: 0
   - organName: "\u0425\u0432\u043E\u0441\u0442"
     slot: "\u0425\u0432\u043E\u0441\u0442"
     hotkey: 8
@@ -314,12 +324,84 @@ MonoBehaviour:
     nativeChassis: "\u0417\u043C\u0435\u044F"
     constrictStage: 3
     enablesCurl: 0
-    visualScale: {x: 1, y: 1, z: 1.3}
+    visualScale: {x: 0.9, y: 0.9, z: 2.4}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
+    visualSegments: 3
+    visualTaper: 0.82
   eatsMeat: 1
   massive: 0
   baseHp: 60
   baseStamina: 55
   baseStaminaRegen: 7
-  sockets: []
+  sockets:
+  - name: "\u041F\u0430\u0441\u0442\u044C"
+    localPos: {x: 0, y: 0, z: 0}
+    baseSize: {x: 1, y: 1, z: 1}
+    baseEuler: {x: 0, y: 0, z: 0}
+    mirrorX: 0
+    hidden: 1
+    graft: 0
+  - name: "\u0428\u043A\u0443\u0440\u0430"
+    localPos: {x: 0, y: 0, z: 0}
+    baseSize: {x: 1, y: 1, z: 1}
+    baseEuler: {x: 0, y: 0, z: 0}
+    mirrorX: 0
+    hidden: 1
+    graft: 0
+  - name: "\u0422\u0435\u043B\u043E"
+    localPos: {x: 0, y: 0, z: 0}
+    baseSize: {x: 1, y: 1, z: 1}
+    baseEuler: {x: 0, y: 0, z: 0}
+    mirrorX: 0
+    hidden: 1
+    graft: 0
+  - name: "\u0425\u0432\u043E\u0441\u0442"
+    localPos: {x: 0, y: 0, z: 0}
+    baseSize: {x: 1, y: 1, z: 1}
+    baseEuler: {x: 0, y: 0, z: 0}
+    mirrorX: 0
+    hidden: 1
+    graft: 0
+  - name: "\u0421\u0435\u0440\u0434\u0446\u0435"
+    localPos: {x: 0, y: 0, z: 0}
+    baseSize: {x: 1, y: 1, z: 1}
+    baseEuler: {x: 0, y: 0, z: 0}
+    mirrorX: 0
+    hidden: 1
+    graft: 0
+  - name: "\u0427\u0443\u0442\u044C\u0451"
+    localPos: {x: 0, y: 0, z: 0}
+    baseSize: {x: 1, y: 1, z: 1}
+    baseEuler: {x: 0, y: 0, z: 0}
+    mirrorX: 0
+    hidden: 1
+    graft: 0
+  - name: "\u0420\u0443\u043A\u0438"
+    localPos: {x: 0.24, y: 0.26, z: 0.12}
+    baseSize: {x: 0.1, y: 0.34, z: 0.1}
+    baseEuler: {x: 0, y: 0, z: 0}
+    mirrorX: 1
+    hidden: 0
+    graft: 1
+  - name: "\u041D\u043E\u0433\u0438"
+    localPos: {x: 0.24, y: 0.26, z: -0.28}
+    baseSize: {x: 0.1, y: 0.34, z: 0.1}
+    baseEuler: {x: 0, y: 0, z: 0}
+    mirrorX: 1
+    hidden: 0
+    graft: 1
+  - name: "\u0420\u043E\u0433\u0430"
+    localPos: {x: 0.1, y: 0.55, z: 0.4}
+    baseSize: {x: 0.09, y: 0.09, z: 0.09}
+    baseEuler: {x: 0, y: 0, z: 25}
+    mirrorX: 1
+    hidden: 0
+    graft: 1
+  - name: "\u0418\u0433\u043B\u043E\u043C\u0451\u0442"
+    localPos: {x: 0, y: 0.56, z: 0}
+    baseSize: {x: 0.14, y: 0.14, z: 0.14}
+    baseEuler: {x: 0, y: 0, z: 0}
+    mirrorX: 0
+    hidden: 0
+    graft: 1
