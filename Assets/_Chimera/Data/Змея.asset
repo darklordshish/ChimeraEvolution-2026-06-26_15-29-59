@@ -354,6 +354,7 @@ MonoBehaviour:
     mirrorX: 0
     hidden: 1
     graft: 0
+    parts: []
   - name: "\u0428\u043A\u0443\u0440\u0430"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 1, y: 1, z: 1}
@@ -361,6 +362,7 @@ MonoBehaviour:
     mirrorX: 0
     hidden: 1
     graft: 0
+    parts: []
   - name: "\u0422\u0435\u043B\u043E"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 1, y: 1, z: 1}
@@ -368,6 +370,7 @@ MonoBehaviour:
     mirrorX: 0
     hidden: 1
     graft: 0
+    parts: []
   - name: "\u0425\u0432\u043E\u0441\u0442"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 1, y: 1, z: 1}
@@ -375,6 +378,7 @@ MonoBehaviour:
     mirrorX: 0
     hidden: 1
     graft: 0
+    parts: []
   - name: "\u0421\u0435\u0440\u0434\u0446\u0435"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 1, y: 1, z: 1}
@@ -382,6 +386,7 @@ MonoBehaviour:
     mirrorX: 0
     hidden: 1
     graft: 0
+    parts: []
   - name: "\u0427\u0443\u0442\u044C\u0451"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 1, y: 1, z: 1}
@@ -389,6 +394,7 @@ MonoBehaviour:
     mirrorX: 0
     hidden: 1
     graft: 0
+    parts: []
   - name: "\u0420\u0443\u043A\u0438"
     localPos: {x: 0.24, y: 0.26, z: 0.12}
     baseSize: {x: 0.1, y: 0.34, z: 0.1}
@@ -396,6 +402,7 @@ MonoBehaviour:
     mirrorX: 1
     hidden: 0
     graft: 1
+    parts: []
   - name: "\u041D\u043E\u0433\u0438"
     localPos: {x: 0.24, y: 0.26, z: -0.28}
     baseSize: {x: 0.1, y: 0.34, z: 0.1}
@@ -403,6 +410,7 @@ MonoBehaviour:
     mirrorX: 1
     hidden: 0
     graft: 1
+    parts: []
   - name: "\u0420\u043E\u0433\u0430"
     localPos: {x: 0.08, y: 0.5, z: 0.4}
     baseSize: {x: 0.09, y: 0.09, z: 0.09}
@@ -410,6 +418,7 @@ MonoBehaviour:
     mirrorX: 1
     hidden: 0
     graft: 1
+    parts: []
   - name: "\u0418\u0433\u043B\u043E\u043C\u0451\u0442"
     localPos: {x: 0, y: 0.48, z: 0.18}
     baseSize: {x: 0.13, y: 0.13, z: 0.13}
@@ -417,3 +426,4 @@ MonoBehaviour:
     mirrorX: 0
     hidden: 0
     graft: 1
+    parts: []
