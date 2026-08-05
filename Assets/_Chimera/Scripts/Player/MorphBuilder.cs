@@ -71,7 +71,13 @@ public static class MorphBuilder
         // СОСТАВНАЯ ФОРМА («лего 8+»): орган из нескольких частей — рога = стебель+лопасть+отростки,
         // иглы = щетина. Смещения частей заданы В КАЛИБРАХ МЕСТА, поэтому одна форма годится и мелкому
         // ежу, и крупному лосю: она ужимается/разрастается вместе с местом
-        var parts = organ != null ? organ.visualParts : null;
+        var parts = organ != null && organ.visualParts != null && organ.visualParts.Length > 0 ? organ.visualParts : null;
+
+        // ФОРМА МЕСТА — силуэт шасси. Торс/голова/шея органа не имеют вовсе, и без своей формы туша обречена
+        // быть бруском: волк неотличим от ящика. Место собирается из кусков ТЕМ ЖЕ механизмом, что и орган.
+        // Приоритет: форма ОРГАНА → сегментная цепь органа (змеиный хвост) → форма МЕСТА
+        if (parts == null && (organ == null || organ.visualSegments <= 1)) parts = socket.parts;
+
         if (parts != null && parts.Length > 0)
         {
             // ПОВОРОТ МЕСТА ВРАЩАЕТ ФОРМУ ЦЕЛИКОМ — и углы частей, И их смещения (иначе доворот крутил бы
@@ -82,7 +88,7 @@ public static class MorphBuilder
             // раскладываются на РЕАЛЬНЫЕ оси места: вдоль = длинная сторона, наружу = короткая. Ежиный торс
             // ЛЕЖИТ → щетина встаёт на спину; человечий СТОИТ → та же щетина ложится гребнем вдоль позвоночника
             // со спины, а не втыкается в шею. Одна форма, разные тела — без спец-полей у видов
-            bool align = organ.visualAlignToBody;
+            bool align = organ != null && organ.visualAlignToBody;
             int across = 0, outward = 1, along = 2;
             Quaternion frameRot = Quaternion.identity;
             if (align)
@@ -111,7 +117,7 @@ public static class MorphBuilder
                 Spawn(parent, socket.name,
                       pos + place * Vector3.Scale(pt.offset, canonBase),
                       (place * Quaternion.Euler(pt.euler)).eulerAngles,
-                      Vector3.Scale(canonSize, pt.scale), side);
+                      Vector3.Scale(canonSize, pt.scale), side, pt.shape);
             }
             return;
         }
@@ -141,12 +147,20 @@ public static class MorphBuilder
     static Vector3 Axis(int i) => i == 0 ? Vector3.right : i == 1 ? Vector3.up : Vector3.forward;
     static Vector3 Pick(Vector3 v, int a, int b, int c) => new(v[a], v[b], v[c]);          // взять компоненты в порядке осей формы
 
-    // одна куб-деталь. side = -1 зеркалит вынос по X и рыскание/крен (тангаж общий: левая лапа не «смотрит» иначе правой)
-    static void Spawn(Transform parent, string name, Vector3 pos, Vector3 euler, Vector3 size, float side)
+    // одна деталь. side = -1 зеркалит вынос по X и рыскание/крен (тангаж общий: левая лапа не «смотрит» иначе правой)
+    static void Spawn(Transform parent, string name, Vector3 pos, Vector3 euler, Vector3 size, float side,
+                      PartShape shape = PartShape.Cube)
     {
         if (side < 0f) { pos.x = -pos.x; euler.y = -euler.y; euler.z = -euler.z; }
 
-        var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        // КАПСУЛА И ЦИЛИНДР у Unity ВДВОЕ ВЫШЕ куба при том же масштабе (высота примитива 2, диаметр 1).
+        // Делим Y, чтобы `scale` во всех данных значил ОДНО И ТО ЖЕ — габарит куска, а не масштаб примитива
+        if (shape == PartShape.Capsule || shape == PartShape.Cylinder) size.y *= 0.5f;
+
+        var cube = GameObject.CreatePrimitive(shape == PartShape.Sphere ? PrimitiveType.Sphere
+                                            : shape == PartShape.Capsule ? PrimitiveType.Capsule
+                                            : shape == PartShape.Cylinder ? PrimitiveType.Cylinder
+                                            : PrimitiveType.Cube);
         if (cube.TryGetComponent<Collider>(out var col)) Object.Destroy(col); // визуал без физики (коллайдер — у CharacterController)
         // ИМЯ = СОКЕТ (стабильный словарь), не орган: по именам частей работают ПЕРВОЕ ЛИЦО (прячет свою
         // голову) и ЭМОЦ-ТИНТ (красит морду-градусник). Имя органа менялось бы от сборки и ломало обе системы
