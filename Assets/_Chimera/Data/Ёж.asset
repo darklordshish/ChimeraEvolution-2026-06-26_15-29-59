@@ -138,86 +138,118 @@ MonoBehaviour:
     visualEuler: {x: 0, y: 0, z: 0}
     visualAlignToBody: 1
     visualParts:
-    - scale: {x: 0.62, y: 0.7, z: 0.34}
-      offset: {x: 0, y: -0.14, z: 0.33}
+    - scale: {x: 0.62, y: 0.74, z: 0.34}
+      offset: {x: 0, y: -0.1, z: 0.33}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
-    - scale: {x: 0.86, y: 0.88, z: 0.42}
-      offset: {x: 0, y: -0.04, z: 0.13}
+    - scale: {x: 0.88, y: 0.92, z: 0.42}
+      offset: {x: 0, y: -0.02, z: 0.13}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
     - scale: {x: 1, y: 1, z: 0.46}
-      offset: {x: 0, y: 0.04, z: -0.09}
+      offset: {x: 0, y: 0.02, z: -0.09}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
-    - scale: {x: 0.92, y: 0.9, z: 0.44}
-      offset: {x: 0, y: -0.02, z: -0.31}
+    - scale: {x: 0.94, y: 0.92, z: 0.44}
+      offset: {x: 0, y: 0, z: -0.31}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
     - scale: {x: 0.07, y: 0.62, z: 0.07}
-      offset: {x: -0.26, y: 0.48, z: 0.3}
-      euler: {x: -22, y: 0, z: -20}
+      offset: {x: -0.26, y: 0.5, z: 0.26}
+      euler: {x: -20, y: 0, z: -20}
       shape: 0
     - scale: {x: 0.07, y: 0.62, z: 0.07}
-      offset: {x: -0.09, y: 0.53, z: 0.3}
-      euler: {x: -22, y: 0, z: -7}
+      offset: {x: -0.09, y: 0.55, z: 0.26}
+      euler: {x: -20, y: 0, z: -7}
       shape: 0
     - scale: {x: 0.07, y: 0.62, z: 0.07}
-      offset: {x: 0.09, y: 0.53, z: 0.3}
-      euler: {x: -22, y: 0, z: 7}
+      offset: {x: 0.09, y: 0.55, z: 0.26}
+      euler: {x: -20, y: 0, z: 7}
       shape: 0
     - scale: {x: 0.07, y: 0.62, z: 0.07}
-      offset: {x: 0.26, y: 0.48, z: 0.3}
-      euler: {x: -22, y: 0, z: 20}
+      offset: {x: 0.26, y: 0.5, z: 0.26}
+      euler: {x: -20, y: 0, z: 20}
       shape: 0
     - scale: {x: 0.07, y: 0.62, z: 0.07}
-      offset: {x: -0.26, y: 0.54, z: 0.12}
-      euler: {x: -30, y: 0, z: -20}
+      offset: {x: -0.26, y: 0.54, z: 0.1}
+      euler: {x: -28, y: 0, z: -20}
       shape: 0
     - scale: {x: 0.07, y: 0.62, z: 0.07}
-      offset: {x: -0.09, y: 0.59, z: 0.12}
-      euler: {x: -30, y: 0, z: -7}
+      offset: {x: -0.09, y: 0.6, z: 0.1}
+      euler: {x: -28, y: 0, z: -7}
       shape: 0
     - scale: {x: 0.07, y: 0.62, z: 0.07}
-      offset: {x: 0.09, y: 0.59, z: 0.12}
-      euler: {x: -30, y: 0, z: 7}
+      offset: {x: 0.09, y: 0.6, z: 0.1}
+      euler: {x: -28, y: 0, z: 7}
       shape: 0
     - scale: {x: 0.07, y: 0.62, z: 0.07}
-      offset: {x: 0.26, y: 0.54, z: 0.12}
-      euler: {x: -30, y: 0, z: 20}
+      offset: {x: 0.26, y: 0.54, z: 0.1}
+      euler: {x: -28, y: 0, z: 20}
       shape: 0
     - scale: {x: 0.07, y: 0.62, z: 0.07}
-      offset: {x: -0.26, y: 0.54, z: -0.1}
-      euler: {x: -30, y: 0, z: -20}
+      offset: {x: -0.26, y: 0.54, z: -0.06}
+      euler: {x: -28, y: 0, z: -20}
       shape: 0
     - scale: {x: 0.07, y: 0.62, z: 0.07}
-      offset: {x: -0.09, y: 0.59, z: -0.1}
-      euler: {x: -30, y: 0, z: -7}
+      offset: {x: -0.09, y: 0.6, z: -0.06}
+      euler: {x: -28, y: 0, z: -7}
       shape: 0
     - scale: {x: 0.07, y: 0.62, z: 0.07}
-      offset: {x: 0.09, y: 0.59, z: -0.1}
-      euler: {x: -30, y: 0, z: 7}
+      offset: {x: 0.09, y: 0.6, z: -0.06}
+      euler: {x: -28, y: 0, z: 7}
       shape: 0
     - scale: {x: 0.07, y: 0.62, z: 0.07}
-      offset: {x: 0.26, y: 0.54, z: -0.1}
-      euler: {x: -30, y: 0, z: 20}
+      offset: {x: 0.26, y: 0.54, z: -0.06}
+      euler: {x: -28, y: 0, z: 20}
       shape: 0
     - scale: {x: 0.07, y: 0.62, z: 0.07}
-      offset: {x: -0.26, y: 0.46, z: -0.3}
-      euler: {x: -44, y: 0, z: -20}
+      offset: {x: -0.26, y: 0.49, z: -0.24}
+      euler: {x: -42, y: 0, z: -20}
       shape: 0
     - scale: {x: 0.07, y: 0.62, z: 0.07}
-      offset: {x: -0.09, y: 0.5, z: -0.3}
-      euler: {x: -44, y: 0, z: -7}
+      offset: {x: -0.09, y: 0.54, z: -0.24}
+      euler: {x: -42, y: 0, z: -7}
       shape: 0
     - scale: {x: 0.07, y: 0.62, z: 0.07}
-      offset: {x: 0.09, y: 0.5, z: -0.3}
-      euler: {x: -44, y: 0, z: 7}
+      offset: {x: 0.09, y: 0.54, z: -0.24}
+      euler: {x: -42, y: 0, z: 7}
       shape: 0
     - scale: {x: 0.07, y: 0.62, z: 0.07}
-      offset: {x: 0.26, y: 0.46, z: -0.3}
-      euler: {x: -44, y: 0, z: 20}
+      offset: {x: 0.26, y: 0.49, z: -0.24}
+      euler: {x: -42, y: 0, z: 20}
       shape: 0
+    - scale: {x: 0.07, y: 0.62, z: 0.07}
+      offset: {x: -0.26, y: 0.38, z: -0.4}
+      euler: {x: -42, y: 0, z: -20}
+      shape: 0
+    - scale: {x: 0.07, y: 0.62, z: 0.07}
+      offset: {x: -0.09, y: 0.42, z: -0.4}
+      euler: {x: -42, y: 0, z: -7}
+      shape: 0
+    - scale: {x: 0.07, y: 0.62, z: 0.07}
+      offset: {x: 0.09, y: 0.42, z: -0.4}
+      euler: {x: -42, y: 0, z: 7}
+      shape: 0
+    - scale: {x: 0.07, y: 0.62, z: 0.07}
+      offset: {x: 0.26, y: 0.38, z: -0.4}
+      euler: {x: -42, y: 0, z: 20}
+      shape: 0
+    - scale: {x: 0.34, y: 0.52, z: 0.34}
+      offset: {x: 0.3, y: -0.3, z: -0.28}
+      euler: {x: 0, y: 0, z: 0}
+      shape: 1
+    - scale: {x: 0.34, y: 0.52, z: 0.34}
+      offset: {x: -0.3, y: -0.3, z: -0.28}
+      euler: {x: 0, y: 0, z: 0}
+      shape: 1
+    - scale: {x: 0.3, y: 0.46, z: 0.3}
+      offset: {x: 0.28, y: -0.28, z: 0.26}
+      euler: {x: 0, y: 0, z: 0}
+      shape: 1
+    - scale: {x: 0.3, y: 0.46, z: 0.3}
+      offset: {x: -0.28, y: -0.28, z: 0.26}
+      euler: {x: 0, y: 0, z: 0}
+      shape: 1
     visualSegments: 0
     visualTaper: 0
   - organName: "\u0415\u0436\u0438\u043D\u044B\u0435 \u043D\u043E\u0433\u0438"
@@ -519,6 +551,9 @@ MonoBehaviour:
     mirrorX: 0
     hidden: 0
     graft: 0
+    parent: 
+    attach: 1
+    attachOffset: {x: 0, y: 0, z: 0}
     parts:
     - scale: {x: 1, y: 1, z: 1}
       offset: {x: 0, y: 0, z: 0}
@@ -531,26 +566,36 @@ MonoBehaviour:
     mirrorX: 0
     hidden: 0
     graft: 0
+    parent: 
+    attach: 1
+    attachOffset: {x: 0, y: 0, z: 0}
     parts:
-    - scale: {x: 1, y: 0.94, z: 0.52}
-      offset: {x: 0, y: 0, z: -0.2}
+    - scale: {x: 1, y: 0.94, z: 0.4}
+      offset: {x: 0, y: 0, z: -0.28}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
-    - scale: {x: 0.62, y: 0.58, z: 0.46}
-      offset: {x: 0, y: -0.06, z: 0.14}
+    - scale: {x: 0.74, y: 0.7, z: 0.34}
+      offset: {x: 0, y: -0.04, z: -0.02}
       euler: {x: 0, y: 0, z: 0}
-      shape: 0
-    - scale: {x: 0.3, y: 0.28, z: 0.22}
-      offset: {x: 0, y: -0.12, z: 0.38}
+      shape: 1
+    - scale: {x: 0.48, y: 0.46, z: 0.3}
+      offset: {x: 0, y: -0.08, z: 0.22}
+      euler: {x: 0, y: 0, z: 0}
+      shape: 1
+    - scale: {x: 0.24, y: 0.22, z: 0.18}
+      offset: {x: 0, y: -0.1, z: 0.42}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
   - name: "\u0443\u0448\u0438"
-    localPos: {x: 0.13, y: 0.58, z: 0.56}
-    baseSize: {x: 0.12, y: 0.14, z: 0.06}
+    localPos: {x: 0.105, y: 0.56, z: 0.48}
+    baseSize: {x: 0.11, y: 0.13, z: 0.06}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 1
     hidden: 0
     graft: 0
+    parent: 
+    attach: 1
+    attachOffset: {x: 0, y: 0, z: 0}
     parts:
     - scale: {x: 0.95, y: 0.65, z: 1}
       offset: {x: 0, y: -0.18, z: 0}
@@ -567,6 +612,9 @@ MonoBehaviour:
     mirrorX: 0
     hidden: 0
     graft: 0
+    parent: 
+    attach: 1
+    attachOffset: {x: 0, y: 0, z: 0}
     parts:
     - scale: {x: 0.96, y: 0.96, z: 0.86}
       offset: {x: 0, y: 0.02, z: -0.04}
@@ -587,6 +635,9 @@ MonoBehaviour:
     mirrorX: 1
     hidden: 0
     graft: 0
+    parent: 
+    attach: 1
+    attachOffset: {x: 0, y: 0, z: 0}
     parts:
     - scale: {x: 0.92, y: 0.42, z: 0.92}
       offset: {x: 0, y: 0.27, z: -0.04}
@@ -611,6 +662,9 @@ MonoBehaviour:
     mirrorX: 1
     hidden: 0
     graft: 0
+    parent: 
+    attach: 1
+    attachOffset: {x: 0, y: 0, z: 0}
     parts: []
   - name: "\u0418\u0433\u043B\u043E\u043C\u0451\u0442"
     localPos: {x: 0, y: 0.7, z: 0.22}
@@ -619,6 +673,9 @@ MonoBehaviour:
     mirrorX: 0
     hidden: 0
     graft: 0
+    parent: 
+    attach: 1
+    attachOffset: {x: 0, y: 0, z: 0}
     parts: []
   - name: "\u0421\u0435\u0440\u0434\u0446\u0435"
     localPos: {x: 0, y: 0, z: 0}
@@ -627,6 +684,9 @@ MonoBehaviour:
     mirrorX: 0
     hidden: 1
     graft: 0
+    parent: 
+    attach: 1
+    attachOffset: {x: 0, y: 0, z: 0}
     parts: []
   - name: "\u0427\u0443\u0442\u044C\u0451"
     localPos: {x: 0, y: 0, z: 0}
@@ -635,6 +695,9 @@ MonoBehaviour:
     mirrorX: 0
     hidden: 1
     graft: 0
+    parent: 
+    attach: 1
+    attachOffset: {x: 0, y: 0, z: 0}
     parts: []
   - name: "\u0422\u0435\u043B\u043E"
     localPos: {x: 0, y: 0, z: 0}
@@ -643,14 +706,20 @@ MonoBehaviour:
     mirrorX: 0
     hidden: 1
     graft: 0
+    parent: 
+    attach: 1
+    attachOffset: {x: 0, y: 0, z: 0}
     parts: []
   - name: "\u0425\u0432\u043E\u0441\u0442"
     localPos: {x: 0, y: 0.4, z: -0.56}
-    baseSize: {x: 0.045, y: 0.045, z: 0.08}
+    baseSize: {x: 0.075, y: 0.075, z: 0.15}
     baseEuler: {x: -40, y: 0, z: 0}
     mirrorX: 0
     hidden: 0
     graft: 0
+    parent: 
+    attach: 1
+    attachOffset: {x: 0, y: 0, z: 0}
     parts:
     - scale: {x: 1, y: 1, z: 1}
       offset: {x: 0, y: 0, z: 0}
@@ -663,4 +732,7 @@ MonoBehaviour:
     mirrorX: 1
     hidden: 0
     graft: 1
+    parent: 
+    attach: 1
+    attachOffset: {x: 0, y: 0, z: 0}
     parts: []
