@@ -47,25 +47,63 @@ public static class MorphBuilder
         container.transform.localPosition = Vector3.up * footY;
         container.transform.localRotation = Quaternion.identity;
 
+        // ГРАФ ХРЕБТА: место с `parent` не хранит своих координат — считаем их от родителя и НАСЛЕДУЕМ
+        // его поворот. Поэтому наклон шеи тянет за собой голову, морду, уши и рога, а не оставляет их
+        // висеть на прежней абсолютной высоте (спека 2026-08-05)
+        var byName = new Dictionary<string, BodySocket>();
+        foreach (var s in chassis.sockets)
+            if (s != null && !string.IsNullOrEmpty(s.name)) byName[s.name] = s;
+        var placed = new Dictionary<string, (Vector3 pos, Quaternion rot)>();
+
         // КАЖДЫЙ якорь = часть: орган своего part (деталь) ЛИБО базовый куб (голая тушка шасси).
         // Парный якорь (mirrorX) даёт ДВЕ части зеркально — 4 лапы/2 уха одной записью данных
         foreach (var socket in chassis.sockets)
         {
-            if (socket == null || string.IsNullOrEmpty(socket.name) || socket.hidden) continue; // внутренний (Сердце/Чутьё) — места на теле нет
+            if (socket == null || string.IsNullOrEmpty(socket.name) || socket.hidden) continue; // внутренний (Чутьё) — места на теле нет
             organBySocket.TryGetValue(socket.name, out var organ);
             if (organ == null && socket.graft) continue; // закрытое место: без органа не рисуем (у человека нет хвоста)
 
-            Piece(container.transform, socket, organ, +1f);
-            if (socket.mirrorX) Piece(container.transform, socket, organ, -1f);
+            var (pos, rot) = Place(socket, byName, placed, 0);
+            Piece(container.transform, socket, organ, +1f, pos, rot);
+            if (socket.mirrorX) Piece(container.transform, socket, organ, -1f, pos, rot);
         }
+    }
+
+    /// <summary>Позиция и поворот места. Корень (без `parent`) стоит по своим `localPos`/`baseEuler`;
+    /// у ребёнка обе величины считаются ОТ РОДИТЕЛЯ — отсюда невозможность разъехаться.
+    /// `depth` страхует от цикла в данных (его же ловит `ValidateSockets`, но билдер не должен зависать).</summary>
+    static (Vector3, Quaternion) Place(BodySocket s, Dictionary<string, BodySocket> byName,
+                                       Dictionary<string, (Vector3, Quaternion)> placed, int depth)
+    {
+        if (placed.TryGetValue(s.name, out var done)) return done;
+
+        var rot = Quaternion.Euler(s.baseEuler);
+        var pos = s.localPos;
+
+        if (depth < 16 && !string.IsNullOrEmpty(s.parent) && byName.TryGetValue(s.parent, out var par) && par != s)
+        {
+            var (ppos, prot) = Place(par, byName, placed, depth + 1);
+            // СТЫК на ДЛИННОЙ оси родителя: `attach` = доля вдоль неё (0 — начало, 1 — конец).
+            // Смещение — в КАЛИБРАХ родителя, поэтому переживает масштабирование вида
+            var b = par.baseSize;
+            Vector3 axis = b.z >= b.x && b.z >= b.y ? Vector3.forward : (b.y >= b.x ? Vector3.up : Vector3.right);
+            float len = Mathf.Abs(Vector3.Dot(b, new Vector3(Mathf.Abs(axis.x), Mathf.Abs(axis.y), Mathf.Abs(axis.z))));
+
+            pos = ppos + prot * (axis * ((s.attach - 0.5f) * len) + Vector3.Scale(s.attachOffset, b));
+            rot = prot * rot;   // поворот НАСЛЕДУЕТСЯ: наклонили родителя — вся ветка поехала
+        }
+
+        placed[s.name] = (pos, rot);
+        return (pos, rot);
     }
 
     // одна куб-часть на якоре. side = +1/-1 — сторона парного якоря (зеркалим вынос по X и рыскание/крен,
     // тангаж общий: левая лапа не должна «смотреть» иначе правой)
-    static void Piece(Transform parent, BodySocket socket, Organ organ, float side)
+    static void Piece(Transform parent, BodySocket socket, Organ organ, float side, Vector3 basePos, Quaternion baseRot)
     {
-        Vector3 pos = socket.localPos + (organ != null ? organ.visualOffset : Vector3.zero);
-        Vector3 euler = socket.baseEuler + (organ != null ? organ.visualEuler : Vector3.zero);
+        // basePos/baseRot приходят из графа (уже с учётом родителя) — своих координат у места может и не быть
+        Vector3 pos = basePos + (organ != null ? organ.visualOffset : Vector3.zero);
+        Vector3 euler = (baseRot * Quaternion.Euler(organ != null ? organ.visualEuler : Vector3.zero)).eulerAngles;
         Vector3 size = organ != null ? Vector3.Scale(socket.baseSize, organ.visualScale) : socket.baseSize;
 
         // СОСТАВНАЯ ФОРМА («лего 8+»): орган из нескольких частей — рога = стебель+лопасть+отростки,
