@@ -244,10 +244,28 @@ public static class SpeciesBootstrap
         // Поэтому всё родное — hidden, а морфология даёт химере на змеином шасси ВИДИМЫЕ конечности
         snake.sockets = new[]
         {
-            new BodySocket { name = "Пасть",  codeDriven = true }, // [ANIM] ведёт SnakeBodyChain
-            new BodySocket { name = "Шкура",  codeDriven = true }, // [ANIM] ведёт SnakeBodyChain
-            new BodySocket { name = "Тело",   codeDriven = true }, // [ANIM] ведёт SnakeBodyChain
-            new BodySocket { name = "Хвост",  codeDriven = true }, // [ANIM] ведёт SnakeBodyChain
+            // ── ГРАФ ЗМЕИ: голова — корень, дальше хребет цепью звеньев (спека 4.1: трети шея/туловище/хвост;
+            // змея ДРЕВЕСНАЯ, её хвост длинный и цепкий — им же работает Constrict). Числа согласованы
+            // с SnakePrefab (сегменты 0.55→0.42, шаг 0.62), чтобы новое тело совпало с уже ползающим.
+            // [ANIM] codeDriven ПОКА ОСТАЁТСЯ: без переписанного SnakeBodyChain морф построил бы статичное
+            // тело ПОВЕРХ префабной цепи — на арене оказалось бы две змеи. Снимается вместе с ним
+            new BodySocket { name = "голова", localPos = new Vector3(0.000f, 0.300f, 0.000f), baseSize = new Vector3(0.340f, 0.200f, 0.620f), codeDriven = true, parts = new[] {
+                new OrganPart { scale = new Vector3(1.00f, 1.00f, 0.72f), offset = new Vector3(0.00f, 0.00f, -0.10f) }, // клин черепа: сзади широкий
+                new OrganPart { scale = new Vector3(0.62f, 0.86f, 0.46f), offset = new Vector3(0.00f, -0.02f, 0.30f) }, // сужение к носу
+            } },
+            new BodySocket { name = "Пасть",  parent = "голова", attach = 1.000f, attachOffset = new Vector3(0.000f, -0.150f, 0.120f), baseSize = new Vector3(0.300f, 0.140f, 0.300f), codeDriven = true, parts = new[] {
+                new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), offset = new Vector3(0.00f, 0.00f, 0.00f), shape = PartShape.Sphere }, // челюсть — ТЕПЕРЬ МЕСТО С ФОРМОЙ: змеиная морда наконец участвует в морфе
+            } },
+            new BodySocket { name = "шея",    parent = "голова", attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, -0.030f), baseSize = new Vector3(0.550f, 0.550f, 0.420f), chain = 3, chainTaper = 0.98f, codeDriven = true, parts = new[] {
+                new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), offset = new Vector3(0.00f, 0.00f, 0.00f), euler = new Vector3(90f, 0f, 0f), shape = PartShape.Capsule }, // звено без рёбер
+            } },
+            new BodySocket { name = "Тело",   parent = "шея",    attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, 0.000f), baseSize = new Vector3(0.520f, 0.520f, 0.420f), chain = 3, chainTaper = 0.97f, codeDriven = true, parts = new[] {
+                new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), offset = new Vector3(0.00f, 0.00f, 0.00f), euler = new Vector3(90f, 0f, 0f), shape = PartShape.Capsule }, // туловище: у каждого позвонка пара рёбер
+            } },
+            new BodySocket { name = "Хвост",  parent = "Тело",   attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, 0.000f), baseSize = new Vector3(0.460f, 0.460f, 0.420f), chain = 3, chainTaper = 0.78f, codeDriven = true, parts = new[] {
+                new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), offset = new Vector3(0.00f, 0.00f, 0.00f), euler = new Vector3(90f, 0f, 0f), shape = PartShape.Capsule }, // после клоаки: рёбер нет, сходит на конус
+            } },
+            new BodySocket { name = "Шкура",  codeDriven = true }, // [ANIM] чешуя — покров всей цепи, своей детали нет
             new BodySocket { name = "Сердце", inner = true },  // грудной клетки у этого вида пока нет — формы нет, деталь и не родится
             new BodySocket { name = "Чутьё",  inner = true },  // формы у нюха нет, и деталь не родится сама собой; дай органу форму (термо-ямки) — место проступит, флаги править не придётся
             // ГРАФТЫ: змея, отрастившая лапы/рога/иглы — читается сразу
