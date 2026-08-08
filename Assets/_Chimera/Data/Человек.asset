@@ -219,7 +219,11 @@ MonoBehaviour:
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
     visualAlignToBody: 0
-    visualParts: []
+    visualParts:
+    - scale: {x: 1, y: 0.94, z: 0.78}
+      offset: {x: 0, y: 0, z: 0.04}
+      euler: {x: 0, y: 0, z: 0}
+      shape: 1
     visualSegments: 0
     visualTaper: 0
   - organName: "\u0427\u0443\u0442\u044C\u0451"
@@ -396,6 +400,8 @@ MonoBehaviour:
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
     hidden: 1
+    codeDriven: 0
+    inner: 0
     graft: 0
     parent: 
     attach: 1
@@ -409,6 +415,8 @@ MonoBehaviour:
     baseEuler: {x: -10, y: 0, z: 0}
     mirrorX: 0
     hidden: 0
+    codeDriven: 0
+    inner: 0
     graft: 0
     parent: "\u0448\u0435\u044F"
     attach: 1
@@ -466,6 +474,8 @@ MonoBehaviour:
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
     hidden: 0
+    codeDriven: 0
+    inner: 0
     graft: 0
     parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
     attach: 1
@@ -483,6 +493,8 @@ MonoBehaviour:
     baseEuler: {x: -15, y: 0, z: 0}
     mirrorX: 1
     hidden: 0
+    codeDriven: 0
+    inner: 0
     graft: 0
     parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
     attach: 0.5
@@ -504,6 +516,8 @@ MonoBehaviour:
     baseEuler: {x: 10, y: 0, z: 0}
     mirrorX: 0
     hidden: 0
+    codeDriven: 0
+    inner: 0
     graft: 0
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     attach: 1
@@ -529,29 +543,23 @@ MonoBehaviour:
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
     hidden: 0
+    codeDriven: 0
+    inner: 0
     graft: 0
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     attach: 0.5
     attachOffset: {x: 0, y: 0, z: 0}
     parts:
-    - scale: {x: 0.62, y: 0.22, z: 0.52}
-      offset: {x: 0, y: 0.38, z: -0.08}
+    - scale: {x: 0.78, y: 0.34, z: 0.62}
+      offset: {x: 0, y: 0.4, z: -0.06}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
     - scale: {x: 1, y: 0.2, z: 0.62}
       offset: {x: 0, y: 0.36, z: 0.04}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
-    - scale: {x: 0.74, y: 0.56, z: 0.92}
-      offset: {x: 0, y: 0.22, z: 0}
-      euler: {x: 0, y: 0, z: 0}
-      shape: 1
     - scale: {x: 0.62, y: 0.22, z: 0.3}
       offset: {x: 0, y: 0.24, z: 0.3}
-      euler: {x: 0, y: 0, z: 0}
-      shape: 1
-    - scale: {x: 0.84, y: 0.34, z: 0.48}
-      offset: {x: 0, y: 0.1, z: -0.1}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
     - scale: {x: 0.56, y: 0.3, z: 0.68}
@@ -560,6 +568,10 @@ MonoBehaviour:
       shape: 1
     - scale: {x: 0.38, y: 0.26, z: 0.24}
       offset: {x: 0, y: -0.06, z: 0.24}
+      euler: {x: 0, y: 0, z: 0}
+      shape: 1
+    - scale: {x: 0.84, y: 0.34, z: 0.48}
+      offset: {x: 0, y: 0.1, z: -0.1}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
     - scale: {x: 0.8, y: 0.3, z: 0.66}
@@ -582,6 +594,8 @@ MonoBehaviour:
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 1
     hidden: 0
+    codeDriven: 0
+    inner: 0
     graft: 0
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     attach: 0.9
@@ -595,6 +609,8 @@ MonoBehaviour:
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 1
     hidden: 0
+    codeDriven: 0
+    inner: 0
     graft: 0
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     attach: 0.05
@@ -604,14 +620,16 @@ MonoBehaviour:
     chainTaper: 0
   - name: "\u0421\u0435\u0440\u0434\u0446\u0435"
     localPos: {x: 0, y: 0, z: 0}
-    baseSize: {x: 1, y: 1, z: 1}
+    baseSize: {x: 0.38, y: 0.34, z: 0.28}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
-    hidden: 1
+    hidden: 0
+    codeDriven: 0
+    inner: 1
     graft: 0
-    parent: 
-    attach: 1
-    attachOffset: {x: 0, y: 0, z: 0}
+    parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
+    attach: 0.5
+    attachOffset: {x: 0, y: 0.15, z: 0}
     parts: []
     chain: 0
     chainTaper: 0
@@ -620,7 +638,9 @@ MonoBehaviour:
     baseSize: {x: 1, y: 1, z: 1}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
-    hidden: 1
+    hidden: 0
+    codeDriven: 0
+    inner: 1
     graft: 0
     parent: 
     attach: 1
@@ -634,6 +654,8 @@ MonoBehaviour:
     baseEuler: {x: 25, y: 0, z: 0}
     mirrorX: 0
     hidden: 0
+    codeDriven: 0
+    inner: 0
     graft: 1
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     attach: 0.1
@@ -647,6 +669,8 @@ MonoBehaviour:
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 1
     hidden: 0
+    codeDriven: 0
+    inner: 0
     graft: 1
     parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
     attach: 0.75
@@ -660,6 +684,8 @@ MonoBehaviour:
     baseEuler: {x: -135, y: 0, z: 0}
     mirrorX: 0
     hidden: 0
+    codeDriven: 0
+    inner: 0
     graft: 1
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     attach: 0.65

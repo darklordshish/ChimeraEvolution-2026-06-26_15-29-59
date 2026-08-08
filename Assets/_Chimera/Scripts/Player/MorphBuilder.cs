@@ -59,13 +59,35 @@ public static class MorphBuilder
         // Парный якорь (mirrorX) даёт ДВЕ части зеркально — 4 лапы/2 уха одной записью данных
         foreach (var socket in chassis.sockets)
         {
-            if (socket == null || string.IsNullOrEmpty(socket.name) || socket.hidden) continue; // внутренний (Чутьё) — места на теле нет
+            if (socket == null || string.IsNullOrEmpty(socket.name)) continue;
+            if (socket.hidden) continue;        // служебное (хребет) — своей формы нет и быть не может
+            if (socket.codeDriven) continue;    // [ANIM] позицию места каждый кадр считает своя система (цепь змеи) — морф не вмешивается
             organBySocket.TryGetValue(socket.name, out var organ);
-            if (organ == null && socket.graft) continue; // закрытое место: без органа не рисуем (у человека нет хвоста)
+            // БЕЗ ОРГАНА НЕ РИСУЕМ в двух случаях: место закрыто у этого шасси (у человека нет хвоста) либо
+            // лежит ВНУТРИ тела и проступает только формой органа (Сердце → грудная клетка)
+            if (organ == null && (socket.graft || socket.inner)) continue;
+            // ВНУТРЕННЕЕ МЕСТО ВИДНО РОВНО ТОГДА, КОГДА ЕСТЬ ЧТО ПОКАЗАТЬ. Ни у органа, ни у места нет
+            // формы — детали нет, и «голую тушку» кубом сюда подставлять нельзя (Чутьё вылезло бы ящиком
+            // из груди). Раньше это решал флаг `hidden` на каждом виде: нюх скрывали руками, и, реши мы
+            // однажды дать ему форму (термо-ямки, вибриссы), пришлось бы править флаги у всех пяти видов
+            if (socket.inner && (organ.visualParts == null || organ.visualParts.Length == 0)
+                             && (socket.parts == null || socket.parts.Length == 0)) continue;
 
             var (pos, rot) = Place(socket, byName, placed, 0);
             Piece(container.transform, socket, organ, +1f, pos, rot);
             if (socket.mirrorX) Piece(container.transform, socket, organ, -1f, pos, rot);
+
+            // КОСТЬ ОТ ОРГАНА + МЯСО ОТ ШАССИ. У внутреннего места форма органа НЕ вытесняет форму места:
+            // Сердце даёт грудную КЛЕТКУ, а место — мышцы поверх неё. Мышцы заданы в долях грудной коробки,
+            // поэтому перестраиваются вместе с ней: поставил волчье сердце — коробка стала глубокой и узкой,
+            // пекторали с трапецией поехали следом сами. Иначе кость тонула в мышцах, живущих отдельно
+            // (у прочих мест правило прежнее — орган ЗАМЕЩАЕТ: волчья морда встаёт вместо человечьей)
+            if (socket.inner && organ != null && organ.visualParts != null && organ.visualParts.Length > 0
+                             && socket.parts != null && socket.parts.Length > 0)
+            {
+                Piece(container.transform, socket, null, +1f, pos, rot);
+                if (socket.mirrorX) Piece(container.transform, socket, null, -1f, pos, rot);
+            }
         }
     }
 

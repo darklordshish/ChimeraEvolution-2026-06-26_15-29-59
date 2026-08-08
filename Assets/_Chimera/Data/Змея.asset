@@ -352,7 +352,9 @@ MonoBehaviour:
     baseSize: {x: 1, y: 1, z: 1}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
-    hidden: 1
+    hidden: 0
+    codeDriven: 1
+    inner: 0
     graft: 0
     parent: 
     attach: 1
@@ -365,7 +367,9 @@ MonoBehaviour:
     baseSize: {x: 1, y: 1, z: 1}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
-    hidden: 1
+    hidden: 0
+    codeDriven: 1
+    inner: 0
     graft: 0
     parent: 
     attach: 1
@@ -378,7 +382,9 @@ MonoBehaviour:
     baseSize: {x: 1, y: 1, z: 1}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
-    hidden: 1
+    hidden: 0
+    codeDriven: 1
+    inner: 0
     graft: 0
     parent: 
     attach: 1
@@ -391,7 +397,9 @@ MonoBehaviour:
     baseSize: {x: 1, y: 1, z: 1}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
-    hidden: 1
+    hidden: 0
+    codeDriven: 1
+    inner: 0
     graft: 0
     parent: 
     attach: 1
@@ -404,7 +412,9 @@ MonoBehaviour:
     baseSize: {x: 1, y: 1, z: 1}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
-    hidden: 1
+    hidden: 0
+    codeDriven: 0
+    inner: 1
     graft: 0
     parent: 
     attach: 1
@@ -417,7 +427,9 @@ MonoBehaviour:
     baseSize: {x: 1, y: 1, z: 1}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
-    hidden: 1
+    hidden: 0
+    codeDriven: 0
+    inner: 1
     graft: 0
     parent: 
     attach: 1
@@ -431,6 +443,8 @@ MonoBehaviour:
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 1
     hidden: 0
+    codeDriven: 0
+    inner: 0
     graft: 1
     parent: 
     attach: 1
@@ -444,6 +458,8 @@ MonoBehaviour:
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 1
     hidden: 0
+    codeDriven: 0
+    inner: 0
     graft: 1
     parent: 
     attach: 1
@@ -457,6 +473,8 @@ MonoBehaviour:
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 1
     hidden: 0
+    codeDriven: 0
+    inner: 0
     graft: 1
     parent: 
     attach: 1
@@ -470,6 +488,8 @@ MonoBehaviour:
     baseEuler: {x: -10, y: 0, z: 0}
     mirrorX: 0
     hidden: 0
+    codeDriven: 0
+    inner: 0
     graft: 1
     parent: 
     attach: 1
