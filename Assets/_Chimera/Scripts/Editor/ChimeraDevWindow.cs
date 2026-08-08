@@ -179,6 +179,19 @@ public class ChimeraDevWindow : EditorWindow
         showSpecies = EditorGUILayout.Foldout(showSpecies, "Виды: родство и поголовье", true, EditorStyles.foldoutHeader);
         if (!showSpecies) return;
 
+        // ОПТОМ ПО ВСЕМ ВИДАМ: родство перещёлкивалось по одному виду за раз, а проверять химеризацию
+        // почти всегда нужно СРАЗУ ВЕЗДЕ (скидка и мощь считаются от родства к КАЖДОМУ донору).
+        // Пять кликов на каждый прогон — та самая утомительная перетычка
+        using (new EditorGUI.DisabledScope(pb == null))
+        using (new EditorGUILayout.HorizontalScope())
+        {
+            EditorGUILayout.LabelField("всем видам", GUILayout.Width(84));
+            if (GUILayout.Button("0", GUILayout.Width(26))) SetAllAffinity(pb, 0);
+            if (GUILayout.Button("80", GUILayout.Width(32))) SetAllAffinity(pb, 80);
+            if (GUILayout.Button("100", GUILayout.Width(38))) SetAllAffinity(pb, 100);
+            GUILayout.FlexibleSpace();
+        }
+
         var wolves = Object.FindObjectsByType<WolfPsyche>();
         var wolfSpawner = Object.FindAnyObjectByType<WolfSpawner>();
         SpeciesRow(pb, "Волк", wolves.Length,
@@ -302,6 +315,18 @@ public class ChimeraDevWindow : EditorWindow
             if (GUILayout.Button("+10", GUILayout.Width(38))) pb.AddAffinity(species, 10);
             if (GUILayout.Button("80", GUILayout.Width(32))) pb.SetAffinity(species, 80);   // порог безопасности
             if (GUILayout.Button("100", GUILayout.Width(38))) pb.SetAffinity(species, 100); // потолок родства
+        }
+    }
+
+    /// <summary>Родство ко ВСЕМ видам разом. Виды берём из ассетов, а не списком в коде: заведём шестой —
+    /// кнопка подхватит его сама, иначе она молча врала бы («всем» без новичка).</summary>
+    static void SetAllAffinity(CreatureBody pb, int value)
+    {
+        if (pb == null) return;
+        foreach (var guid in AssetDatabase.FindAssets("t:SpeciesSO"))
+        {
+            var sp = AssetDatabase.LoadAssetAtPath<SpeciesSO>(AssetDatabase.GUIDToAssetPath(guid));
+            if (sp != null && !string.IsNullOrEmpty(sp.speciesName)) pb.SetAffinity(sp.speciesName, value);
         }
     }
 
