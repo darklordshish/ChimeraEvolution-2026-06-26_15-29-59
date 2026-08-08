@@ -356,12 +356,12 @@ MonoBehaviour:
     visualEuler: {x: 0, y: 0, z: 0}
     visualAlignToBody: 0
     visualParts:
-    - scale: {x: 1.14, y: 1.1, z: 1.16}
+    - scale: {x: 1.06, y: 1, z: 1.1}
       offset: {x: 0, y: 0, z: 0.04}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
-    - scale: {x: 0.78, y: 0.62, z: 0.66}
-      offset: {x: 0, y: 0.46, z: -0.16}
+    - scale: {x: 0.7, y: 0.56, z: 1.02}
+      offset: {x: 0, y: 0.52, z: -0.2}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
     visualSegments: 0

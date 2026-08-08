@@ -220,7 +220,7 @@ MonoBehaviour:
     visualEuler: {x: 0, y: 0, z: 0}
     visualAlignToBody: 0
     visualParts:
-    - scale: {x: 1, y: 0.94, z: 0.78}
+    - scale: {x: 0.9, y: 0.86, z: 0.7}
       offset: {x: 0, y: 0, z: 0.04}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
@@ -550,16 +550,8 @@ MonoBehaviour:
     attach: 0.5
     attachOffset: {x: 0, y: 0, z: 0}
     parts:
-    - scale: {x: 0.78, y: 0.34, z: 0.62}
-      offset: {x: 0, y: 0.4, z: -0.06}
-      euler: {x: 0, y: 0, z: 0}
-      shape: 1
     - scale: {x: 1, y: 0.2, z: 0.62}
       offset: {x: 0, y: 0.36, z: 0.04}
-      euler: {x: 0, y: 0, z: 0}
-      shape: 1
-    - scale: {x: 0.62, y: 0.22, z: 0.3}
-      offset: {x: 0, y: 0.24, z: 0.3}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
     - scale: {x: 0.56, y: 0.3, z: 0.68}
@@ -568,10 +560,6 @@ MonoBehaviour:
       shape: 1
     - scale: {x: 0.38, y: 0.26, z: 0.24}
       offset: {x: 0, y: -0.06, z: 0.24}
-      euler: {x: 0, y: 0, z: 0}
-      shape: 1
-    - scale: {x: 0.84, y: 0.34, z: 0.48}
-      offset: {x: 0, y: 0.1, z: -0.1}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
     - scale: {x: 0.8, y: 0.3, z: 0.66}
@@ -630,7 +618,19 @@ MonoBehaviour:
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     attach: 0.5
     attachOffset: {x: 0, y: 0.15, z: 0}
-    parts: []
+    parts:
+    - scale: {x: 0.97, y: 0.6, z: 0.53}
+      offset: {x: 0, y: 0.44, z: -0.05}
+      euler: {x: 0, y: 0, z: 0}
+      shape: 1
+    - scale: {x: 0.77, y: 0.39, z: 0.26}
+      offset: {x: 0, y: 0.16, z: 0.26}
+      euler: {x: 0, y: 0, z: 0}
+      shape: 1
+    - scale: {x: 1.04, y: 0.6, z: 0.41}
+      offset: {x: 0, y: -0.09, z: -0.09}
+      euler: {x: 0, y: 0, z: 0}
+      shape: 1
     chain: 0
     chainTaper: 0
   - name: "\u0427\u0443\u0442\u044C\u0451"

@@ -48,7 +48,7 @@ public static class SpeciesBootstrap
                 new OrganPart { scale = new Vector3(0.78f, 0.10f, 1.55f), offset = new Vector3(0.00f, -0.46f, 0.20f) }, // стопа
             } },
             new Organ { organName = "Сердце", slot = "Сердце", hotkey = "3", cost = 6, atkCooldown = 0.45f, hpBonus = 0.5f, staminaBonus = 0.5f, staminaRegenBonus = 0.5f, regen = 0f, regenOOC = 0.75f, visualParts = new[] {
-                new OrganPart { scale = new Vector3(1.00f, 0.94f, 0.78f), offset = new Vector3(0.00f, 0.00f, 0.04f), shape = PartShape.Sphere }, // грудная клетка ЧЕЛОВЕКА: ПЛОСКАЯ и широкая — рёбра сходятся на грудине
+                new OrganPart { scale = new Vector3(0.90f, 0.86f, 0.70f), offset = new Vector3(0.00f, 0.00f, 0.04f), shape = PartShape.Sphere }, // грудная клетка ЧЕЛОВЕКА: ПЛОСКАЯ и широкая — рёбра сходятся на грудине
             } }, // СЕРДЦЕ ЛЕПИТ ГРУДЬ: форма ушла из торса в орган, поэтому чужое сердце перестраивает силуэт
             new Organ { organName = "Чутьё",  slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.7f, insight = true }, // внутренний: сокет hidden — места на теле нет
             new Organ { organName = "Рот",    slot = "Пасть",  hotkey = "5", cost = 3, enablesBite = false }, // лицо/пасть — ОТДЕЛЬНО от черепа: волчья Пасть сядет сюда же → морда вервольфа
@@ -102,13 +102,10 @@ public static class SpeciesBootstrap
                 // ЭТЮД ТОРСА: два объёма (грудная клетка-яйцо и таз-клин) + перемычка талии между ними, сверху
                 // «вешалка» плечевого пояса. Мышцы — ТОНКИЕ НАКЛАДКИ поверх костных объёмов, а не отдельные шары:
                 // силуэт держит скелет, мышца лишь читается на нём. Числа — от канона 8 голов (H = 0.234 м)
-                new OrganPart { scale = new Vector3(0.78f, 0.34f, 0.62f), offset = new Vector3(0.00f, 0.40f, -0.06f), shape = PartShape.Sphere }, // ТРАПЕЦИЯ усилена: это подводка от шеи к плечам, прежняя не читалась вовсе
                 new OrganPart { scale = new Vector3(1.00f, 0.20f, 0.62f), offset = new Vector3(0.00f, 0.36f, 0.04f), shape = PartShape.Sphere }, // плечевой пояс («вешалка» ключиц) — размах 2H = 0.47
                 // грудная клетка УШЛА В ОРГАН «Сердце» — теперь её лепит сердце, и чужое перестраивает силуэт
-                new OrganPart { scale = new Vector3(0.62f, 0.22f, 0.30f), offset = new Vector3(0.00f, 0.24f, 0.30f), shape = PartShape.Sphere }, // грудные — плита ВРОВЕНЬ с рёбрами, не выпирает
                 new OrganPart { scale = new Vector3(0.56f, 0.30f, 0.68f), offset = new Vector3(0.00f, -0.06f, 0.00f), shape = PartShape.Sphere }, // талия — перемычка 1.12H, САМОЕ узкое место торса
                 new OrganPart { scale = new Vector3(0.38f, 0.26f, 0.24f), offset = new Vector3(0.00f, -0.06f, 0.24f), shape = PartShape.Sphere }, // пресс — накладка вровень с животом
-                new OrganPart { scale = new Vector3(0.84f, 0.34f, 0.48f), offset = new Vector3(0.00f, 0.10f, -0.10f), shape = PartShape.Sphere }, // широчайшие — конус к талии
                 new OrganPart { scale = new Vector3(0.80f, 0.30f, 0.66f), offset = new Vector3(0.00f, -0.32f, 0.00f), shape = PartShape.Sphere }, // таз — клин 1.51H, снова шире талии (но уже плеч: мужской силуэт)
                 new OrganPart { scale = new Vector3(0.34f, 0.24f, 0.42f), offset = new Vector3(0.18f, -0.37f, -0.15f), shape = PartShape.Sphere }, // ягодица (пр)
                 new OrganPart { scale = new Vector3(0.34f, 0.24f, 0.42f), offset = new Vector3(-0.18f, -0.37f, -0.15f), shape = PartShape.Sphere }, // ягодица (лев)
@@ -118,7 +115,14 @@ public static class SpeciesBootstrap
             // СЕРДЦЕ — ВНУТРЕННЕЕ, НО С МЕСТОМ: своего силуэта нет, проступает формой органа (грудная клетка).
             // Калибр и посадка — те же, что у торса, поэтому доли частей читаются 1:1 и родное сердце даёт
             // ровно прежнюю грудь; чужое приносит СВОЮ форму и перестраивает силуэт
-            new BodySocket { name = "Сердце", inner = true, parent = "хребет", attach = 0.500f, attachOffset = new Vector3(0.000f, 0.150f, 0.000f), baseSize = new Vector3(0.380f, 0.340f, 0.280f) }, // ГРУДНАЯ КОРОБКА человека: шире, чем глубже (рёбра сходятся на грудине) // ГРУДНАЯ КОРОБКА человека: шире, чем глубже (рёбра сходятся на грудине)
+            new BodySocket { name = "Сердце", inner = true, parent = "хребет", attach = 0.500f, attachOffset = new Vector3(0.000f, 0.150f, 0.000f), baseSize = new Vector3(0.380f, 0.340f, 0.280f), parts = new[] {
+                // МЯСО ПОВЕРХ КОСТИ. Мышцы груди живут В ДОЛЯХ ГРУДНОЙ КОРОБКИ, а её форму приносит Сердце —
+                // значит чужое сердце перестраивает и мышцы, они не спорят с костью. Пока мышцы сидели в торсе,
+                // кость приходилось раздувать, чтобы её было видно из-под них, и силуэт выходил пузатым
+                new OrganPart { scale = new Vector3(0.97f, 0.60f, 0.53f), offset = new Vector3(0.00f, 0.44f, -0.05f), shape = PartShape.Sphere }, // трапеция — подводка от шеи к плечам
+                new OrganPart { scale = new Vector3(0.77f, 0.39f, 0.26f), offset = new Vector3(0.00f, 0.16f, 0.26f), shape = PartShape.Sphere }, // грудные (пекторали) — плита поверх рёбер
+                new OrganPart { scale = new Vector3(1.04f, 0.60f, 0.41f), offset = new Vector3(0.00f, -0.09f, -0.09f), shape = PartShape.Sphere }, // широчайшие — шире рёбер, дают конус к талии
+            } }, // ГРУДНАЯ КОРОБКА человека: шире, чем глубже (рёбра сходятся на грудине) // ГРУДНАЯ КОРОБКА человека: шире, чем глубже (рёбра сходятся на грудине)
             new BodySocket { name = "Чутьё",  inner = true },  // формы у нюха нет, и деталь не родится сама собой; дай органу форму (термо-ямки) — место проступит, флаги править не придётся
             // ЗАКРЫТЫЕ МЕСТА (graft — пустыми НЕ рисуются): у человека нет хвоста/рогов/игломёта, но привил
             // змеиный Хвост / лосиные Рога / ежиный Игломёт — и они проступают на теле
@@ -155,7 +159,8 @@ public static class SpeciesBootstrap
                 new OrganPart { scale = new Vector3(0.80f, 0.10f, 0.95f), offset = new Vector3(0.00f, -0.45f, -0.09f) }, // лапа
             } },
             new Organ { organName = "Волчье сердце", slot = "Сердце", hotkey = "3", cost = 6, atkCooldown = 0.30f, hpBonus = 1.75f, staminaBonus = 0.5f, staminaRegenBonus = 0.25f, regen = 3f, regenOOC = 0f, visualParts = new[] {
-                new OrganPart { scale = new Vector3(0.74f, 1.02f, 1.30f), offset = new Vector3(0.00f, 0.00f, 0.04f), shape = PartShape.Sphere }, // грудная клетка ВОЛКА: СЖАТА С БОКОВ и глубокая — мотор гончей. На человеке даст узкую бочку вперёд
+                new OrganPart { scale = new Vector3(0.78f, 0.86f, 1.22f), offset = new Vector3(0.00f, 0.20f, 0.06f), shape = PartShape.Sphere }, // грудная клетка ВОЛКА, ВЕРХ: рёберный свод — глубокий и сжатый с боков, сидит ВЫСОКО (мотор гончей)
+                new OrganPart { scale = new Vector3(0.62f, 0.54f, 0.88f), offset = new Vector3(0.00f, -0.22f, 0.02f), shape = PartShape.Sphere }, // ...и СУЖЕНИЕ к подреберью: одним шаром грудь читалась пузом, а у бегуна рёбра сходятся книзу
             } }, // «заживает как на собаке»: реген 2→3, чтобы босс вернул свои 6/с (Blend на Э=2), а волки затягивали раны на глазах. +175%: лёгкое тело, огромный мотор → волк-NPC 68 HP, вервольф ровно 300. Постоянный реген ВМЕСТО тихого в покое (вне-боя — фича человеческого сердца)
             new Organ { organName = "Нюх",           slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.45f, enablesScent = true },
             new Organ { organName = "Пасть",         slot = "Пасть",  hotkey = "5", cost = 5, enablesBite = true, enablesHowl = true, bleedStacks = 2, howlRadius = 14f, howlStunAt = 2f, enablesConstrict = true, constrictStage = 1, nativeChassis = "Волк", visualScale = new Vector3(1.1f, 1f, 1.25f) }, // укус + кровь + ГОЛОС + ХВАТ пастью; МОРДА: на человечьем шасси садится на его «лицо» → морда вервольфа
@@ -290,8 +295,8 @@ public static class SpeciesBootstrap
             new Organ { organName = "Глотка",         slot = "Пасть",  hotkey = "5", cost = 4, enablesBellow = true }, // РЁВ (K2): кин-лоси в берсерк на месте, чужим страх
             new Organ { organName = "Слух",           slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.7f, keenHearing = true, hearingMult = 2f }, // ОСТРЫЙ СЛУХ: вдвое дальше + различение вида + волны звука на экране (лось — слухач при слабом зрении)
             new Organ { organName = "Лосиное сердце", slot = "Сердце", hotkey = "3", cost = 6, hpBonus = 2f, staminaBonus = 0.6f, staminaRegenBonus = 0f, regen = 1f, regenOOC = 0f, atkCooldown = 0.5f, bleedResist = true, visualParts = new[] {
-                new OrganPart { scale = new Vector3(1.14f, 1.10f, 1.16f), offset = new Vector3(0.00f, 0.00f, 0.04f), shape = PartShape.Sphere }, // грудная клетка ЛОСЯ
-                new OrganPart { scale = new Vector3(0.78f, 0.62f, 0.66f), offset = new Vector3(0.00f, 0.46f, -0.16f), shape = PartShape.Sphere }, // ГОРБ (холка): лосиное сердце приносит не только грудь, но и характерную холку — на человеке проступит сутулым загривком: объём во все стороны — на человеке грудь колесом
+                new OrganPart { scale = new Vector3(1.06f, 1.00f, 1.10f), offset = new Vector3(0.00f, 0.00f, 0.04f), shape = PartShape.Sphere }, // грудная клетка ЛОСЯ
+                new OrganPart { scale = new Vector3(0.70f, 0.56f, 1.02f), offset = new Vector3(0.00f, 0.52f, -0.20f), shape = PartShape.Sphere }, // ГОРБ (холка): РАСТЯНУТ вдоль спины и поднят — у лося это длинный гребень остистых отростков под тяжёлую голову с рогами, а не ком на загривке
             } }, // +200% HP + КРОВЕУПОРНОСТЬ: сердце ТАНКА — явный HP-король (обгоняет волчьи 1.75); у массивного лося своё преимущество (гора HP), а кровь ему особенно опасна (% от макс HP)
             new Organ { organName = "Толстая шкура",  slot = "Шкура",  hotkey = "6", cost = 5, damageReduction = 0.35f, visualScale = new Vector3(1.15f, 1.1f, 1f) }, // броня против ПРЯМОГО урона (не крови)
             new Organ { organName = "Рога",           slot = "Рога",   hotkey = "8", cost = 5, enablesAntler = true, visualScale = new Vector3(1f, 1f, 1f), visualParts = new[] {
