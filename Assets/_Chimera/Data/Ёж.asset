@@ -555,6 +555,8 @@ MonoBehaviour:
     attach: 1
     attachOffset: {x: 0, y: 0, z: 0}
     parts: []
+    chain: 0
+    chainTaper: 0
   - name: "\u0433\u043E\u043B\u043E\u0432\u0430"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.3, y: 0.28, z: 0.32}
@@ -570,6 +572,8 @@ MonoBehaviour:
       offset: {x: 0, y: 0, z: 0}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+    chain: 0
+    chainTaper: 0
   - name: "\u041F\u0430\u0441\u0442\u044C"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.22, y: 0.2, z: 0.28}
@@ -597,6 +601,8 @@ MonoBehaviour:
       offset: {x: 0, y: -0.1, z: 0.42}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+    chain: 0
+    chainTaper: 0
   - name: "\u0443\u0448\u0438"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.11, y: 0.13, z: 0.06}
@@ -616,6 +622,8 @@ MonoBehaviour:
       offset: {x: 0, y: 0.24, z: -0.04}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+    chain: 0
+    chainTaper: 0
   - name: "\u0428\u043A\u0443\u0440\u0430"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.76, y: 0.6, z: 1.05}
@@ -639,6 +647,8 @@ MonoBehaviour:
       offset: {x: 0, y: 0.02, z: -0.28}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+    chain: 0
+    chainTaper: 0
   - name: "\u0420\u0443\u043A\u0438"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.15, y: 0.26, z: 0.19}
@@ -666,6 +676,8 @@ MonoBehaviour:
       offset: {x: 0, y: -0.41, z: 0.2}
       euler: {x: 0, y: 0, z: 0}
       shape: 0
+    chain: 0
+    chainTaper: 0
   - name: "\u041D\u043E\u0433\u0438"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.15, y: 0.26, z: 0.19}
@@ -677,6 +689,8 @@ MonoBehaviour:
     attach: 0.22
     attachOffset: {x: 0.316, y: -0.617, z: 0.023}
     parts: []
+    chain: 0
+    chainTaper: 0
   - name: "\u0418\u0433\u043B\u043E\u043C\u0451\u0442"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.24, y: 0.24, z: 0.24}
@@ -688,6 +702,8 @@ MonoBehaviour:
     attach: 0.55
     attachOffset: {x: 0, y: 0.333, z: 0.207}
     parts: []
+    chain: 0
+    chainTaper: 0
   - name: "\u0421\u0435\u0440\u0434\u0446\u0435"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 1, y: 1, z: 1}
@@ -699,6 +715,8 @@ MonoBehaviour:
     attach: 1
     attachOffset: {x: 0, y: 0, z: 0}
     parts: []
+    chain: 0
+    chainTaper: 0
   - name: "\u0427\u0443\u0442\u044C\u0451"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 1, y: 1, z: 1}
@@ -710,6 +728,8 @@ MonoBehaviour:
     attach: 1
     attachOffset: {x: 0, y: 0, z: 0}
     parts: []
+    chain: 0
+    chainTaper: 0
   - name: "\u0422\u0435\u043B\u043E"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 1, y: 1, z: 1}
@@ -721,6 +741,8 @@ MonoBehaviour:
     attach: 1
     attachOffset: {x: 0, y: 0, z: 0}
     parts: []
+    chain: 0
+    chainTaper: 0
   - name: "\u0425\u0432\u043E\u0441\u0442"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.075, y: 0.075, z: 0.15}
@@ -744,6 +766,8 @@ MonoBehaviour:
       offset: {x: 0, y: 0, z: -0.6}
       euler: {x: 0, y: 0, z: 0}
       shape: 0
+    chain: 0
+    chainTaper: 0
   - name: "\u0420\u043E\u0433\u0430"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.1, y: 0.1, z: 0.1}
@@ -755,3 +779,5 @@ MonoBehaviour:
     attach: 0.7
     attachOffset: {x: 0.233, y: 0.429, z: -0.263}
     parts: []
+    chain: 0
+    chainTaper: 0

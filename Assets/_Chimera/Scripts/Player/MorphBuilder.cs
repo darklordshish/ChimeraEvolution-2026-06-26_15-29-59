@@ -89,7 +89,18 @@ public static class MorphBuilder
             Vector3 axis = b.z >= b.x && b.z >= b.y ? Vector3.forward : (b.y >= b.x ? Vector3.up : Vector3.right);
             float len = Mathf.Abs(Vector3.Dot(b, new Vector3(Mathf.Abs(axis.x), Mathf.Abs(axis.y), Mathf.Abs(axis.z))));
 
-            pos = ppos + prot * (axis * ((s.attach - 0.5f) * len) + Vector3.Scale(s.attachOffset, b));
+            int links = Mathf.Max(1, par.chain);
+            if (links > 1)
+            {
+                // РОДИТЕЛЬ — ЦЕПЬ (тело змеи): его «длина» это вся вереница, а `localPos` — центр ПЕРВОГО
+                // звена, не середина места. Считаем стык от начала цепи вдоль её роста, иначе хвост сел бы
+                // в середину туловища. attach 1 = начало (у головы), 0 = конец (кончик)
+                Vector3 grow = ChainDir(b);
+                pos = ppos + prot * (grow * ((1f - s.attach) * ChainLength(par, len) - len * 0.5f)
+                                     + Vector3.Scale(s.attachOffset, b));
+            }
+            else
+                pos = ppos + prot * (axis * ((s.attach - 0.5f) * len) + Vector3.Scale(s.attachOffset, b));
             rot = prot * rot;   // поворот НАСЛЕДУЕТСЯ: наклонили родителя — вся ветка поехала
         }
 
@@ -111,10 +122,20 @@ public static class MorphBuilder
         // ежу, и крупному лосю: она ужимается/разрастается вместе с местом
         var parts = organ != null && organ.visualParts != null && organ.visualParts.Length > 0 ? organ.visualParts : null;
 
+        // ЦЕПЬ ЗВЕНЬЕВ. Сколько — говорит ОРГАН (привитый змеиный хвост сегментен на любом носителе),
+        // иначе МЕСТО (тело самой змеи — `chain`). Раньше цепь была ОТДЕЛЬНОЙ веткой и работала только
+        // там, где формы нет: место не умело быть цепью вовсе. Теперь это внешний цикл, и каждое звено
+        // несёт свою форму — одним кодом строятся и тело змеи, и привитый ей же хвост на чужом шасси
+        bool organChain = organ != null && organ.visualSegments > 1;
+        int links = organChain ? organ.visualSegments : Mathf.Max(1, socket.chain);
+        float chainTaper = organChain ? (organ.visualTaper > 0f ? organ.visualTaper : 0.85f)
+                                      : (socket.chainTaper > 0f ? socket.chainTaper : 0.94f);
+
         // ФОРМА МЕСТА — силуэт шасси. Торс/голова/шея органа не имеют вовсе, и без своей формы туша обречена
         // быть бруском: волк неотличим от ящика. Место собирается из кусков ТЕМ ЖЕ механизмом, что и орган.
-        // Приоритет: форма ОРГАНА → сегментная цепь органа (змеиный хвост) → форма МЕСТА
-        if (parts == null && (organ == null || organ.visualSegments <= 1)) parts = socket.parts;
+        // Приоритет: форма ОРГАНА → форма МЕСТА. НО сегментный ОРГАН форму места не берёт: змеиный хвост,
+        // привитый волку, иначе повторил бы волчий хвост трижды — три шарнира подряд
+        if (parts == null && !organChain) parts = socket.parts;
 
         if (parts != null && parts.Length > 0)
         {
@@ -149,13 +170,23 @@ public static class MorphBuilder
             Vector3 canonSize = align ? Pick(size, across, outward, along) : size;
             Quaternion place = socketRot * frameRot;
 
-            foreach (var pt in parts)
+            Vector3 grow = ChainDir(socket.baseSize);
+            float linkLen = Mathf.Abs(Vector3.Dot(size, new Vector3(Mathf.Abs(grow.x), Mathf.Abs(grow.y), Mathf.Abs(grow.z))));
+            float run = 0f, prev = 0f;
+            for (int i = 0; i < links; i++)
             {
-                if (pt == null) continue;
-                Spawn(parent, socket.name,
-                      pos + place * Vector3.Scale(pt.offset, canonBase),
-                      (place * Quaternion.Euler(pt.euler)).eulerAngles,
-                      Vector3.Scale(canonSize, pt.scale), side, pt.shape);
+                float k = Mathf.Pow(chainTaper, i);       // links == 1 → k = 1, run = 0: ровно прежнее поведение
+                if (i > 0) run += (prev + linkLen * k) * 0.5f;   // встык, с сужением
+                prev = linkLen * k;
+                Vector3 linkPos = pos + socketRot * (grow * run);
+                foreach (var pt in parts)
+                {
+                    if (pt == null) continue;
+                    Spawn(parent, socket.name,
+                          linkPos + place * Vector3.Scale(pt.offset, canonBase * k),
+                          (place * Quaternion.Euler(pt.euler)).eulerAngles,
+                          Vector3.Scale(canonSize, pt.scale) * k, side, pt.shape);
+                }
             }
             return;
         }
@@ -163,23 +194,35 @@ public static class MorphBuilder
         if (side < 0f) { pos.x = -pos.x; euler.y = -euler.y; euler.z = -euler.z; }
         Quaternion rot = Quaternion.Euler(euler);
 
-        // СЕГМЕНТНАЯ ЦЕПЬ (змеиный хвост, отростки рога): ось — ДЛИННАЯ сторона места. Хвост лежит вдоль Z
-        // → тянется назад; рог вытянут по Y → растёт вверх. Отдельного поля-направления не нужно
-        int n = Mathf.Max(1, organ != null ? organ.visualSegments : 1);
-        float taper = organ != null && organ.visualTaper > 0f ? organ.visualTaper : 0.85f;
-        Vector3 dir = size.z >= size.x && size.z >= size.y ? Vector3.back
-                    : size.y >= size.x ? Vector3.up : Vector3.right;
+        // ЦЕПЬ БЕЗ ФОРМЫ — голые звенья (привитый хвост на чужом шасси: места своей формы не имеет)
+        Vector3 dir = ChainDir(socket.baseSize);
         float axisLen = Mathf.Abs(Vector3.Dot(size, new Vector3(Mathf.Abs(dir.x), Mathf.Abs(dir.y), Mathf.Abs(dir.z))));
 
         float travel = 0f, prevLen = 0f;
-        for (int i = 0; i < n; i++)
+        for (int i = 0; i < links; i++)
         {
-            float k = Mathf.Pow(taper, i);
+            float k = Mathf.Pow(chainTaper, i);
             float len = axisLen * k;
             if (i > 0) travel += (prevLen + len) * 0.5f; // встык, с сужением
             prevLen = len;
             Spawn(parent, socket.name, pos + rot * (dir * travel), euler, size * k, 1f); // зеркалирование уже учтено выше
         }
+    }
+
+    /// <summary>КУДА РАСТЁТ ЦЕПЬ: по длинной оси места. Хвост/тело лежат вдоль Z → тянутся НАЗАД;
+    /// рог вытянут по Y → растёт ВВЕРХ. Отдельного поля-направления не нужно — его говорит габарит.
+    /// Считаем по `baseSize`, а не по итоговому размеру: та же ось, что берёт `Place` для стыка детей,
+    /// иначе хвост цеплялся бы к одному концу, а рос в другой.</summary>
+    static Vector3 ChainDir(Vector3 b) => b.z >= b.x && b.z >= b.y ? Vector3.back
+                                        : b.y >= b.x ? Vector3.up : Vector3.right;
+
+    /// <summary>Полная длина цепи со схождением на конус: геометрическая прогрессия, а не длина × число
+    /// звеньев. Нужна `Place`, чтобы ребёнок сел на КОНЕЦ вереницы (хвост змеи — за туловищем).</summary>
+    static float ChainLength(BodySocket s, float linkLen)
+    {
+        int n = Mathf.Max(1, s.chain);
+        float t = s.chainTaper > 0f ? s.chainTaper : 0.94f;
+        return Mathf.Approximately(t, 1f) ? linkLen * n : linkLen * (1f - Mathf.Pow(t, n)) / (1f - t);
     }
 
     static Vector3 Axis(int i) => i == 0 ? Vector3.right : i == 1 ? Vector3.up : Vector3.forward;
