@@ -236,10 +236,29 @@ public static class SpeciesBootstrap
             new Organ { organName = "Чешуя",                slot = "Шкура",  hotkey = "6", cost = 4, damageReduction = 0.25f, camo = true }, // лёгкая броня: стелс+яд+одиночная охота компенсируют (D-тюнинг)
             new Organ { organName = "Пит-орган",            slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.7f, enablesThermal = true, thermalRange = 14f }, // тепло сквозь стены; dashCd обязателен (0 = спам рывка)
             new Organ { organName = "Погремушка",          slot = "Погремушка", hotkey = "9", cost = 2, chassisOnly = true, visualParts = new[] {
-                new OrganPart { scale = new Vector3(1.000f, 0.567f, 0.500f), offset = new Vector3(0.00f, 0.30f, 0.00f), shape = PartShape.Capsule }, // ПОГРЕМУШКА — стопка роговых колец: гремит стуком колец друг о друга. КАПСУЛЫ, а не кубы: звено доворачивается на 90° под капсулу, и кубы ложились набок
-                new OrganPart { scale = new Vector3(0.880f, 0.533f, 0.440f), offset = new Vector3(0.00f, 0.00f, 0.02f), shape = PartShape.Capsule }, // кольцо 2
-                new OrganPart { scale = new Vector3(0.740f, 0.500f, 0.370f), offset = new Vector3(0.00f, -0.86f, 0.00f), shape = PartShape.Capsule }, // кольцо 3
-                new OrganPart { scale = new Vector3(0.600f, 0.467f, 0.300f), offset = new Vector3(0.00f, -1.38f, 0.00f), shape = PartShape.Capsule }, // кольцо 4 — кончик
+                // СТОПКА РОГОВЫХ КОЛЕЦ вдоль хребта: шайбы-цилиндры с плоскими торцами (они и гремят стуком
+                // друг о друга), доворот 90° кладёт ось цилиндра из Y в Z. Шаг 0.6 калибра = 0.09 м, толщина
+                // та же — кольца стоят вплотную; сужение к кончику 1 → 0.61. Прежние доли раскладывали их
+                // по Y (наследие поворота, жившего в данных) — стопка вставала торчком поперёк тела
+                // ПО РЕФЕРЕНСУ: кольца — не диски, а ВЛОЖЕННЫЕ ЧАШЕЧКИ. Каждое = перетяжка (узкая шейка) +
+                // ободок (широкий задний край), отсюда зубчатый силуэт «еловой шишки». Гладкий конус читался
+                // просто как кончик хвоста: погремушку опознаёт РЕЛЬЕФ, а не диаметр. Профиль тоже не конус,
+                // а веретено-маракас — 0.80 → 1.00 → 0.68: у хвоста перетяжка (погремушка отделена, а не
+                // продолжает его), к середине раздутие, к концу сходит на нет
+                new OrganPart { scale = new Vector3(0.576f, 0.178f, 0.576f), offset = new Vector3(0.00f, 0.00f,  1.297f), euler = new Vector3(90f, 0f, 0f), shape = PartShape.Cylinder }, // 1 шейка — перетяжка у хвоста (0.075)
+                new OrganPart { scale = new Vector3(0.800f, 0.218f, 0.800f), offset = new Vector3(0.00f, 0.00f,  1.099f), euler = new Vector3(90f, 0f, 0f), shape = PartShape.Cylinder }, // 1 ободок (0.104)
+                new OrganPart { scale = new Vector3(0.684f, 0.178f, 0.684f), offset = new Vector3(0.00f, 0.00f,  0.901f), euler = new Vector3(90f, 0f, 0f), shape = PartShape.Cylinder }, // 2 шейка
+                new OrganPart { scale = new Vector3(0.950f, 0.218f, 0.950f), offset = new Vector3(0.00f, 0.00f,  0.703f), euler = new Vector3(90f, 0f, 0f), shape = PartShape.Cylinder }, // 2 ободок
+                new OrganPart { scale = new Vector3(0.720f, 0.178f, 0.720f), offset = new Vector3(0.00f, 0.00f,  0.505f), euler = new Vector3(90f, 0f, 0f), shape = PartShape.Cylinder }, // 3 шейка
+                new OrganPart { scale = new Vector3(1.000f, 0.218f, 1.000f), offset = new Vector3(0.00f, 0.00f,  0.307f), euler = new Vector3(90f, 0f, 0f), shape = PartShape.Cylinder }, // 3 ободок — САМОЕ широкое (0.130)
+                new OrganPart { scale = new Vector3(0.706f, 0.178f, 0.706f), offset = new Vector3(0.00f, 0.00f,  0.109f), euler = new Vector3(90f, 0f, 0f), shape = PartShape.Cylinder }, // 4 шейка
+                new OrganPart { scale = new Vector3(0.980f, 0.218f, 0.980f), offset = new Vector3(0.00f, 0.00f, -0.089f), euler = new Vector3(90f, 0f, 0f), shape = PartShape.Cylinder }, // 4 ободок
+                new OrganPart { scale = new Vector3(0.662f, 0.178f, 0.662f), offset = new Vector3(0.00f, 0.00f, -0.287f), euler = new Vector3(90f, 0f, 0f), shape = PartShape.Cylinder }, // 5 шейка
+                new OrganPart { scale = new Vector3(0.920f, 0.218f, 0.920f), offset = new Vector3(0.00f, 0.00f, -0.485f), euler = new Vector3(90f, 0f, 0f), shape = PartShape.Cylinder }, // 5 ободок
+                new OrganPart { scale = new Vector3(0.590f, 0.178f, 0.590f), offset = new Vector3(0.00f, 0.00f, -0.683f), euler = new Vector3(90f, 0f, 0f), shape = PartShape.Cylinder }, // 6 шейка
+                new OrganPart { scale = new Vector3(0.820f, 0.218f, 0.820f), offset = new Vector3(0.00f, 0.00f, -0.881f), euler = new Vector3(90f, 0f, 0f), shape = PartShape.Cylinder }, // 6 ободок
+                new OrganPart { scale = new Vector3(0.490f, 0.178f, 0.490f), offset = new Vector3(0.00f, 0.00f, -1.079f), euler = new Vector3(90f, 0f, 0f), shape = PartShape.Cylinder }, // 7 шейка
+                new OrganPart { scale = new Vector3(0.680f, 0.218f, 0.680f), offset = new Vector3(0.00f, 0.00f, -1.277f), euler = new Vector3(90f, 0f, 0f), shape = PartShape.Cylinder }, // 7 ободок — кончик (0.088)
             } }, // КОНЧИК ХВОСТА отдельным органом: цепь повторяет одну форму на всех звеньях, особый кончик ею не выразить. chassisOnly — принадлежность змеиного шасси
             new Organ { organName = "Хвост",                slot = "Хвост",  hotkey = "8", cost = 5, enablesConstrict = true, constrictStage = 3, nativeChassis = "Змея", visualScale = new Vector3(1f, 1f, 1f), visualSegments = 3, visualTaper = 0.82f, visualParts = new[] {
                 new OrganPart { scale = new Vector3(1.000f, 1.200f, 0.586f), offset = new Vector3(0.00f, 0.00f, 0.00f), shape = PartShape.Capsule }, // звено В СТИЛЕ ТЕЛА
@@ -276,19 +295,27 @@ public static class SpeciesBootstrap
             new BodySocket { name = "Пасть",  parent = "голова", attach = 1.000f, attachOffset = new Vector3(0.000f, -0.150f, 0.120f), baseSize = new Vector3(0.170f, 0.080f, 0.240f), codeDriven = true, solid = true, parts = new[] {
                 new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), offset = new Vector3(0.00f, 0.00f, 0.00f), shape = PartShape.Sphere }, // челюсть — ТЕПЕРЬ МЕСТО С ФОРМОЙ: змеиная морда наконец участвует в морфе
             } },
-            new BodySocket { name = "шея",    parent = "голова", attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, -0.030f), baseSize = new Vector3(0.215f, 0.215f, 0.512f), chain = 4, chainTaper = 1.118f, codeDriven = true, solid = true, parts = new[] {
-                new OrganPart { scale = new Vector3(1.000f, 1.674f, 0.420f), offset = new Vector3(0.00f, 0.00f, 0.00f), shape = PartShape.Capsule }, // звено без рёбер
-                new OrganPart { scale = new Vector3(1.000f, 1.000f, 0.420f), offset = new Vector3(0.00f, 0.00f, 0.00f), shape = PartShape.Sphere }, // СУСТАВ-ШАР диаметром в капсулу: тот же язык соединений, что в конечностях. Идёт СЛЕДУЮЩИМ звеном цепи, поэтому сам садится на стык
-            } },
-            new BodySocket { name = "Тело",   parent = "шея",    attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, 0.000f), baseSize = new Vector3(0.300f, 0.300f, 0.512f), chain = 5, chainTaper = 0.97f, codeDriven = true, solid = true, parts = new[] {
-                new OrganPart { scale = new Vector3(1.000f, 1.200f, 0.586f), offset = new Vector3(0.00f, 0.00f, 0.00f), shape = PartShape.Capsule }, // туловище: у каждого позвонка пара рёбер
-                new OrganPart { scale = new Vector3(1.000f, 1.000f, 0.586f), offset = new Vector3(0.00f, 0.00f, 0.00f), shape = PartShape.Sphere }, // СУСТАВ-ШАР диаметром в капсулу: тот же язык соединений, что в конечностях. Идёт СЛЕДУЮЩИМ звеном цепи, поэтому сам садится на стык
-            } },
-            new BodySocket { name = "Хвост",  parent = "Тело",   attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, 0.000f), baseSize = new Vector3(0.300f, 0.300f, 0.512f), chain = 4, chainTaper = 0.752f, codeDriven = true, solid = true, parts = new[] {
-                new OrganPart { scale = new Vector3(1.000f, 1.200f, 0.586f), offset = new Vector3(0.00f, 0.00f, 0.00f), shape = PartShape.Capsule }, // после клоаки: рёбер нет, сходит на конус
-                new OrganPart { scale = new Vector3(1.000f, 1.000f, 0.586f), offset = new Vector3(0.00f, 0.00f, 0.00f), shape = PartShape.Sphere }, // СУСТАВ-ШАР диаметром в капсулу: тот же язык соединений, что в конечностях. Идёт СЛЕДУЮЩИМ звеном цепи, поэтому сам садится на стык
-            } },
-            new BodySocket { name = "Погремушка", parent = "Хвост", attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, 0.000f), baseSize = new Vector3(0.150f, 0.150f, 0.300f), codeDriven = true, solid = true }, // [ANIM] последнее звено цепи — форму несёт орган
+            // ЩЕЛЬ ЗА ГОЛОВОЙ: место головы 0.43 длиной, но НАРИСОВАННЫЙ затылок кончается на 0.194 от центра
+            // (сфера 0.46 калибра, смещённая на −0.22) — цепь, поставленная по габариту места, висела в 5 см
+            // позади черепа. Отсюда +0.035: шея начинается на 0.18, входя в затылок на полтора сантиметра
+            new BodySocket { name = "шея", parent = "голова", attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, 0.035f), codeDriven = true, solid = true, linkDiameter = 0.215f, linkLength = 0.360f, linkTaper = 1.118f, chain = 4 }, // шея: от толщины головы РАСТЁТ к телу (taper > 1) — последнее звено ровно в тело
+            // ДИАМЕТР НЕ ЗАДАН — наследуется: тело выходит из шеи (0.300), хвост из тела (0.266). Прежде числа
+            // дублировались, и хвост стартовал с 0.300, то есть был ТОЛЩЕ туловища, из которого растёт
+            new BodySocket { name = "Тело", parent = "шея", attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, 0.000f), codeDriven = true, solid = true, linkLength = 0.360f, linkTaper = 0.970f, chain = 5 }, // туловище: самое массивное, чуть сходит к хвосту
+            // ЗВЕНЬЯ ХВОСТА МЕЛЬЧЕ ТЕЛЕСНЫХ (0.24 против 0.36) — как хвостовые позвонки у змей. При общей
+            // длине звена 0.36 кончик выходил втрое длиннее своей толщины, то есть тонкой прямой палочкой:
+            // суставов на метр столько же, что у туловища, а контур из длинных отрезков читается жёстким.
+            // Теперь 6 звеньев вместо 4: длина хвоста та же 1.44, суставов на метр 4.2 против 2.8
+            new BodySocket { name = "Хвост", parent = "Тело", attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, 0.000f), codeDriven = true, solid = true, linkLength = 0.240f, linkTaper = 0.843f, chain = 6 }, // хвост: подхватывает толщину тела (0.266) и уходит на конус к 0.113
+            // ПОГРЕМУШКА — НЕ ЗВЕНО, и правильно, что не звено: другой орган (шасси-онли), цельный, со своим
+            // смыслом — трещотка. Форму даёт ОРГАН (стопка роговых колец), место лишь держит калибр. Цепью
+            // её описывать было ошибкой: кольца становились сегментами, и движок растаскивал их по пути
+            // головы с общим шагом 0.36 при своей длине 0.09. Теперь морф вешает её ПОТОМКОМ последнего
+            // звена хвоста (attach 0) — едет со звеном сама, цельная по построению, а не по списку имён.
+            // Сдвиг на полустопки (0.18 м) — место центрирует её, а начинаться она должна от конца хвоста.
+            // ВНИМАНИЕ: смещение задано в КАЛИБРАХ ХВОСТА, а его калибр вдоль хребта = длина звена. Мельчим
+            // звено — надо пересчитать и это число: 0.75 × 0.24 = 0.18 (при звене 0.36 стояло 0.5)
+            new BodySocket { name = "Погремушка", parent = "Хвост", attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, -0.750f), baseSize = new Vector3(0.130f, 0.130f, 0.130f), solid = true },
             new BodySocket { name = "Шкура",  inner = true }, // чешуя — покров всей ЦЕПИ, отдельной детали нет. Не codeDriven: у места нет ни формы, ни позиции, и морф рисовал ей базовый куб в начале координат — тот самый ящик на голове
             new BodySocket { name = "Сердце", inner = true },  // грудной клетки у этого вида пока нет — формы нет, деталь и не родится
             new BodySocket { name = "Чутьё",  inner = true },  // формы у нюха нет, и деталь не родится сама собой; дай органу форму (термо-ямки) — место проступит, флаги править не придётся

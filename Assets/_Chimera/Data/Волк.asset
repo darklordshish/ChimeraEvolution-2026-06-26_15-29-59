@@ -418,6 +418,9 @@ MonoBehaviour:
     parts: []
     chain: 0
     chainTaper: 0
+    linkDiameter: 0
+    linkLength: 0
+    linkTaper: 0
   - name: "\u0433\u043E\u043B\u043E\u0432\u0430"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.3, y: 0.345, z: 0.42}
@@ -450,6 +453,9 @@ MonoBehaviour:
       shape: 0
     chain: 0
     chainTaper: 0
+    linkDiameter: 0
+    linkLength: 0
+    linkTaper: 0
   - name: "\u041F\u0430\u0441\u0442\u044C"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.19, y: 0.215, z: 0.26}
@@ -486,6 +492,9 @@ MonoBehaviour:
       shape: 0
     chain: 0
     chainTaper: 0
+    linkDiameter: 0
+    linkLength: 0
+    linkTaper: 0
   - name: "\u0443\u0448\u0438"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.11, y: 0.185, z: 0.07}
@@ -514,6 +523,9 @@ MonoBehaviour:
       shape: 0
     chain: 0
     chainTaper: 0
+    linkDiameter: 0
+    linkLength: 0
+    linkTaper: 0
   - name: "\u0448\u0435\u044F"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.205, y: 0.25, z: 0.56}
@@ -538,6 +550,9 @@ MonoBehaviour:
       shape: 1
     chain: 0
     chainTaper: 0
+    linkDiameter: 0
+    linkLength: 0
+    linkTaper: 0
   - name: "\u0428\u043A\u0443\u0440\u0430"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.427, y: 0.625, z: 1.296}
@@ -582,6 +597,9 @@ MonoBehaviour:
       shape: 1
     chain: 0
     chainTaper: 0
+    linkDiameter: 0
+    linkLength: 0
+    linkTaper: 0
   - name: "\u0420\u0443\u043A\u0438"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.128, y: 0.74, z: 0.17}
@@ -598,6 +616,9 @@ MonoBehaviour:
     parts: []
     chain: 0
     chainTaper: 0
+    linkDiameter: 0
+    linkLength: 0
+    linkTaper: 0
   - name: "\u041D\u043E\u0433\u0438"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.14, y: 0.76, z: 0.2}
@@ -614,6 +635,9 @@ MonoBehaviour:
     parts: []
     chain: 0
     chainTaper: 0
+    linkDiameter: 0
+    linkLength: 0
+    linkTaper: 0
   - name: "\u0425\u0432\u043E\u0441\u0442"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.15, y: 0.15, z: 0.88}
@@ -650,6 +674,9 @@ MonoBehaviour:
       shape: 0
     chain: 0
     chainTaper: 0
+    linkDiameter: 0
+    linkLength: 0
+    linkTaper: 0
   - name: "\u0421\u0435\u0440\u0434\u0446\u0435"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.4, y: 0.42, z: 0.48}
@@ -666,6 +693,9 @@ MonoBehaviour:
     parts: []
     chain: 0
     chainTaper: 0
+    linkDiameter: 0
+    linkLength: 0
+    linkTaper: 0
   - name: "\u0427\u0443\u0442\u044C\u0451"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 1, y: 1, z: 1}
@@ -682,6 +712,9 @@ MonoBehaviour:
     parts: []
     chain: 0
     chainTaper: 0
+    linkDiameter: 0
+    linkLength: 0
+    linkTaper: 0
   - name: "\u0420\u043E\u0433\u0430"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.137, y: 0.137, z: 0.137}
@@ -698,6 +731,9 @@ MonoBehaviour:
     parts: []
     chain: 0
     chainTaper: 0
+    linkDiameter: 0
+    linkLength: 0
+    linkTaper: 0
   - name: "\u0418\u0433\u043B\u043E\u043C\u0451\u0442"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.198, y: 0.198, z: 0.198}
@@ -714,3 +750,6 @@ MonoBehaviour:
     parts: []
     chain: 0
     chainTaper: 0
+    linkDiameter: 0
+    linkLength: 0
+    linkTaper: 0
