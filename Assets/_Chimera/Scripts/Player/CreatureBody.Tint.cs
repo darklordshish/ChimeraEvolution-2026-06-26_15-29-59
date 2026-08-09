@@ -7,24 +7,19 @@ using UnityEngine;
 // Поля renderers/mpb ПРИСВАИВАЮТСЯ в Awake (лайфсайкл, остался в ядре) — partial-доступ через тот же класс.
 public partial class CreatureBody
 {
-    Renderer[] renderers;
-    MaterialPropertyBlock mpb;
+    TintMixer mixer;      // единственный, кто пишет цвет в материалы (спека «язык цвета»)
     bool tintComposition; // тинтить тело смесью состава даже у NPC (тест-химера-заглушка, ставит Configure); обычные NPC — запечённый материал
-    static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
 
     // цвет тела ИГРОКА = СМЕСЬ тинтов ВИДОВ надетых органов (CompositionTint). NPC сюда не заходят
     // (запечённый материал — не драться с Telegraph), но их ЗАПАХ красится той же смесью в Recompute.
+    // Сами мы больше не красим: отдаём микшеру СОСТАВ как базу, а он собирает итог с прочими слоями —
+    // деталь со своей окраской (глаз, кольцо погремушки) состав до себя не пускает, без всяких исключений
     void UpdateTint()
     {
-        Color body = CompositionTint();
-        for (int i = 0; i < renderers.Length; i++)
-        {
-            if (renderers[i] == null) continue;
-            renderers[i].GetPropertyBlock(mpb);
-            mpb.SetColor(BaseColor, body);
-            renderers[i].SetPropertyBlock(mpb);
-        }
-        GetComponent<Telegraph>()?.Rebase(); // замах гаснет В ЦВЕТ-ПО-СОСТАВУ, а не в стартовый материал (развязка тинт×Telegraph)
+        if (mixer == null) return;
+        mixer.SetComposition(CompositionTint());
+        mixer.Apply();                       // НЕМЕДЛЕННО: следом телеграф снимает этим цветом свою базу,
+        GetComponent<Telegraph>()?.Rebase(); // и отложи мы запись до конца кадра — он снял бы прошлый
     }
 
     // СМЕСЬ тинтов ВИДОВ по составу тела: человеческий слот → тинт шасси (телесный), звериный → тинт

@@ -41,18 +41,32 @@ public class Camouflage : MonoBehaviour
         TryGetComponent(out stagger);
         if (TryGetComponent(out health)) health.onDamaged.AddListener(OnDamaged); // рвут/ранят — раскрываемся (не спрятаться под ударом)
         lastPos = transform.position;
+        Rebuild();
+    }
+
+    /// <summary>Пере-собрать меши тела. ЗОВЁТ `CreatureBody` ПОСЛЕ КАЖДОЙ СБОРКИ МОРФА: части рождаются в
+    /// рантайме, и ссылки, снятые в `Awake`, к этому моменту мертвы — камуфляж прятал префабные меши,
+    /// которых уже нет, и не видел звеньев цепи. Змея просто переставала исчезать, без единой ошибки
+    /// в консоли. Ровно та же гоча была у телеграфа (там `RebuildRenderers`), лечится так же.</summary>
+    public void Rebuild()
+    {
         var list = new List<Renderer>();
         foreach (var r in GetComponentsInChildren<Renderer>())
         {
             if (!(r is MeshRenderer || r is SkinnedMeshRenderer)) continue; // след/линии не прячем — запах = зацепка
-            string n = r.gameObject.name;
             // каналы чувств НЕ трогаем — ими рулят свои системы: термо-контур (HeatGhost, сквозь стены!)
-            // гаснет сам по холоднокровности, аура запаха (Sphere) — по нюху, ПОГРЕМУШКА (RattleMesh) —
-            // психикой змеи (гремок мигает ей даже у невидимой). Камуфляж прячет только ТЕЛО.
-            if (n == "HeatGhost" || n == "Sphere" || n == "RattleMesh") continue;
+            // гаснет сам по холоднокровности, аура запаха (Sphere) — по нюху. Камуфляж прячет ТЕЛО ЦЕЛИКОМ,
+            // включая глаза: невидимость честная, а зацепка остаётся через другие чувства (КНБ восприятия).
+            // Прежде в списке значился ещё «RattleMesh» — имя из префабной змеи, которого после перевода
+            // погремушки на сокеты не существует; исключение молча перестало что-либо исключать
+            string n = r.gameObject.name;
+            if (n == "HeatGhost" || n == "Sphere") continue;
             list.Add(r);
         }
         bodyRenderers = list.ToArray();
+        // пересборка во время невидимости: новые части рождаются ВИДИМЫМИ — гасим их сразу, иначе
+        // сменившая состав змея проступит на насесте, хотя по состоянию она спрятана
+        if (hidden) foreach (var r in bodyRenderers) if (r != null) r.enabled = false;
     }
 
     void OnDisable() => SetHidden(false); // сняли компонент/выключили — вернуть видимость
