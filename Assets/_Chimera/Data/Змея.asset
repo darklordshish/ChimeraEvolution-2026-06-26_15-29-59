@@ -339,10 +339,22 @@ MonoBehaviour:
     visualEuler: {x: 0, y: 0, z: 0}
     visualAlignToBody: 0
     visualParts:
-    - scale: {x: 0.92, y: 0.92, z: 1}
-      offset: {x: 0, y: 0, z: 0}
+    - scale: {x: 1, y: 0.567, z: 0.5}
+      offset: {x: 0, y: 0.3, z: 0}
       euler: {x: 0, y: 0, z: 0}
-      shape: 0
+      shape: 2
+    - scale: {x: 0.88, y: 0.533, z: 0.44}
+      offset: {x: 0, y: 0, z: 0.02}
+      euler: {x: 0, y: 0, z: 0}
+      shape: 2
+    - scale: {x: 0.74, y: 0.5, z: 0.37}
+      offset: {x: 0, y: -0.86, z: 0}
+      euler: {x: 0, y: 0, z: 0}
+      shape: 2
+    - scale: {x: 0.6, y: 0.467, z: 0.3}
+      offset: {x: 0, y: -1.38, z: 0}
+      euler: {x: 0, y: 0, z: 0}
+      shape: 2
     visualSegments: 0
     visualTaper: 0
   - organName: "\u0425\u0432\u043E\u0441\u0442"
@@ -397,10 +409,14 @@ MonoBehaviour:
     visualEuler: {x: 0, y: 0, z: 0}
     visualAlignToBody: 0
     visualParts:
-    - scale: {x: 1, y: 1.28, z: 0.78}
+    - scale: {x: 1, y: 1.2, z: 0.586}
       offset: {x: 0, y: 0, z: 0}
       euler: {x: 0, y: 0, z: 0}
       shape: 2
+    - scale: {x: 1, y: 1, z: 0.586}
+      offset: {x: 0, y: 0, z: 0}
+      euler: {x: 0, y: 0, z: 0}
+      shape: 1
     visualSegments: 3
     visualTaper: 0.82
   eatsMeat: 1
@@ -411,7 +427,7 @@ MonoBehaviour:
   sockets:
   - name: "\u0433\u043E\u043B\u043E\u0432\u0430"
     localPos: {x: 0, y: 0.3, z: 0}
-    baseSize: {x: 0.408, y: 0.272, z: 0.56}
+    baseSize: {x: 0.39, y: 0.26, z: 0.43}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
     hidden: 0
@@ -423,20 +439,20 @@ MonoBehaviour:
     attach: 1
     attachOffset: {x: 0, y: 0, z: 0}
     parts:
-    - scale: {x: 1, y: 0.94, z: 0.44}
-      offset: {x: 0, y: -0.02, z: -0.24}
+    - scale: {x: 1, y: 1, z: 0.46}
+      offset: {x: 0, y: 0, z: -0.22}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
     - scale: {x: 0.86, y: 0.34, z: 0.52}
       offset: {x: 0, y: 0.26, z: -0.14}
       euler: {x: 0, y: 0, z: 0}
       shape: 0
-    - scale: {x: 0.66, y: 0.78, z: 0.34}
-      offset: {x: 0, y: -0.04, z: 0.1}
+    - scale: {x: 0.7, y: 0.88, z: 0.34}
+      offset: {x: 0, y: -0.02, z: 0.1}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
-    - scale: {x: 0.46, y: 0.54, z: 0.26}
-      offset: {x: 0, y: -0.06, z: 0.34}
+    - scale: {x: 0.5, y: 0.66, z: 0.26}
+      offset: {x: 0, y: -0.04, z: 0.34}
       euler: {x: 0, y: 0, z: 0}
       shape: 0
     - scale: {x: 0.3, y: 0.16, z: 0.3}
@@ -475,7 +491,7 @@ MonoBehaviour:
     chainTaper: 0
   - name: "\u041F\u0430\u0441\u0442\u044C"
     localPos: {x: 0, y: 0, z: 0}
-    baseSize: {x: 0.204, y: 0.095, z: 0.24}
+    baseSize: {x: 0.17, y: 0.08, z: 0.24}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
     hidden: 0
@@ -495,7 +511,7 @@ MonoBehaviour:
     chainTaper: 0
   - name: "\u0448\u0435\u044F"
     localPos: {x: 0, y: 0, z: 0}
-    baseSize: {x: 0.289, y: 0.289, z: 0.512}
+    baseSize: {x: 0.215, y: 0.215, z: 0.512}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
     hidden: 0
@@ -507,19 +523,19 @@ MonoBehaviour:
     attach: 0
     attachOffset: {x: 0, y: 0, z: -0.03}
     parts:
-    - scale: {x: 1, y: 1.28, z: 0.78}
+    - scale: {x: 1, y: 1.674, z: 0.42}
       offset: {x: 0, y: 0, z: 0}
       euler: {x: 0, y: 0, z: 0}
       shape: 2
-    - scale: {x: 1, y: 1, z: 0.78}
+    - scale: {x: 1, y: 1, z: 0.42}
       offset: {x: 0, y: 0, z: 0}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
-    chain: 2
-    chainTaper: 1.06
+    chain: 4
+    chainTaper: 1.118
   - name: "\u0422\u0435\u043B\u043E"
     localPos: {x: 0, y: 0, z: 0}
-    baseSize: {x: 0.374, y: 0.374, z: 0.512}
+    baseSize: {x: 0.3, y: 0.3, z: 0.512}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
     hidden: 0
@@ -531,11 +547,11 @@ MonoBehaviour:
     attach: 0
     attachOffset: {x: 0, y: 0, z: 0}
     parts:
-    - scale: {x: 1, y: 1.28, z: 0.78}
+    - scale: {x: 1, y: 1.2, z: 0.586}
       offset: {x: 0, y: 0, z: 0}
       euler: {x: 0, y: 0, z: 0}
       shape: 2
-    - scale: {x: 1, y: 1, z: 0.78}
+    - scale: {x: 1, y: 1, z: 0.586}
       offset: {x: 0, y: 0, z: 0}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
@@ -543,7 +559,7 @@ MonoBehaviour:
     chainTaper: 0.97
   - name: "\u0425\u0432\u043E\u0441\u0442"
     localPos: {x: 0, y: 0, z: 0}
-    baseSize: {x: 0.306, y: 0.306, z: 0.512}
+    baseSize: {x: 0.3, y: 0.3, z: 0.512}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
     hidden: 0
@@ -555,19 +571,19 @@ MonoBehaviour:
     attach: 0
     attachOffset: {x: 0, y: 0, z: 0}
     parts:
-    - scale: {x: 1, y: 1.28, z: 0.78}
+    - scale: {x: 1, y: 1.2, z: 0.586}
       offset: {x: 0, y: 0, z: 0}
       euler: {x: 0, y: 0, z: 0}
       shape: 2
-    - scale: {x: 1, y: 1, z: 0.78}
+    - scale: {x: 1, y: 1, z: 0.586}
       offset: {x: 0, y: 0, z: 0}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
-    chain: 3
-    chainTaper: 0.74
+    chain: 4
+    chainTaper: 0.752
   - name: "\u041F\u043E\u0433\u0440\u0435\u043C\u0443\u0448\u043A\u0430"
     localPos: {x: 0, y: 0, z: 0}
-    baseSize: {x: 0.187, y: 0.187, z: 0.3}
+    baseSize: {x: 0.15, y: 0.15, z: 0.3}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
     hidden: 0
