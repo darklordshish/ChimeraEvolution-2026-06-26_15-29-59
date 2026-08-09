@@ -61,7 +61,9 @@ public static class MorphBuilder
         {
             if (socket == null || string.IsNullOrEmpty(socket.name)) continue;
             if (socket.hidden) continue;        // служебное (хребет) — своей формы нет и быть не может
-            if (socket.codeDriven) continue;    // [ANIM] позицию места каждый кадр считает своя система (цепь змеи) — морф не вмешивается
+            // [ANIM] codeDriven НЕ пропускаем: морф СТРОИТ ФОРМУ и ставит звенья в стартовую позу, а дальше
+            // позицию каждый кадр перезаписывает своя система (SnakeBodyChain ведёт цепь по пути головы).
+            // Раньше здесь стоял continue — отсюда невидимая змея: место есть, а рисовать его было некому
             organBySocket.TryGetValue(socket.name, out var organ);
             // БЕЗ ОРГАНА НЕ РИСУЕМ в двух случаях: место закрыто у этого шасси (у человека нет хвоста) либо
             // лежит ВНУТРИ тела и проступает только формой органа (Сердце → грудная клетка)
@@ -207,7 +209,7 @@ public static class MorphBuilder
                     Spawn(parent, socket.name,
                           linkPos + place * Vector3.Scale(pt.offset, canonBase * k),
                           (place * Quaternion.Euler(pt.euler)).eulerAngles,
-                          Vector3.Scale(canonSize, pt.scale) * k, side, pt.shape);
+                          Vector3.Scale(canonSize, pt.scale) * k, side, pt.shape, socket.solid);
                 }
             }
             return;
@@ -227,7 +229,7 @@ public static class MorphBuilder
             float len = axisLen * k;
             if (i > 0) travel += (prevLen + len) * 0.5f; // встык, с сужением
             prevLen = len;
-            Spawn(parent, socket.name, pos + rot * (dir * travel), euler, size * k, 1f); // зеркалирование уже учтено выше
+            Spawn(parent, socket.name, pos + rot * (dir * travel), euler, size * k, 1f, PartShape.Cube, socket.solid); // зеркалирование уже учтено выше
         }
     }
 
@@ -252,7 +254,7 @@ public static class MorphBuilder
 
     // одна деталь. side = -1 зеркалит вынос по X и рыскание/крен (тангаж общий: левая лапа не «смотрит» иначе правой)
     static void Spawn(Transform parent, string name, Vector3 pos, Vector3 euler, Vector3 size, float side,
-                      PartShape shape = PartShape.Cube)
+                      PartShape shape = PartShape.Cube, bool solid = false)
     {
         if (side < 0f) { pos.x = -pos.x; euler.y = -euler.y; euler.z = -euler.z; }
 
@@ -264,7 +266,10 @@ public static class MorphBuilder
                                             : shape == PartShape.Capsule ? PrimitiveType.Capsule
                                             : shape == PartShape.Cylinder ? PrimitiveType.Cylinder
                                             : PrimitiveType.Cube);
-        if (cube.TryGetComponent<Collider>(out var col)) Object.Destroy(col); // визуал без физики (коллайдер — у CharacterController)
+        // [ANIM] ПЛОТНАЯ ЧАСТЬ оставляет коллайдер: кусок тела — препятствие для других и поверхность
+        // попаданий (тело змеи плотное по всей длине). Обычная часть остаётся чистым визуалом:
+        // физика носителя — его CharacterController, лишние коллайдеры мешали бы ему самому
+        if (!solid && cube.TryGetComponent<Collider>(out var col)) Object.Destroy(col);
         // ИМЯ = СОКЕТ (стабильный словарь), не орган: по именам частей работают ПЕРВОЕ ЛИЦО (прячет свою
         // голову) и ЭМОЦ-ТИНТ (красит морду-градусник). Имя органа менялось бы от сборки и ломало обе системы
         cube.name = name;

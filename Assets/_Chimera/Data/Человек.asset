@@ -401,6 +401,7 @@ MonoBehaviour:
     mirrorX: 0
     hidden: 1
     codeDriven: 0
+    solid: 0
     inner: 0
     graft: 0
     parent: 
@@ -416,6 +417,7 @@ MonoBehaviour:
     mirrorX: 0
     hidden: 0
     codeDriven: 0
+    solid: 0
     inner: 0
     graft: 0
     parent: "\u0448\u0435\u044F"
@@ -475,6 +477,7 @@ MonoBehaviour:
     mirrorX: 0
     hidden: 0
     codeDriven: 0
+    solid: 0
     inner: 0
     graft: 0
     parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
@@ -494,6 +497,7 @@ MonoBehaviour:
     mirrorX: 1
     hidden: 0
     codeDriven: 0
+    solid: 0
     inner: 0
     graft: 0
     parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
@@ -517,6 +521,7 @@ MonoBehaviour:
     mirrorX: 0
     hidden: 0
     codeDriven: 0
+    solid: 0
     inner: 0
     graft: 0
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
@@ -544,6 +549,7 @@ MonoBehaviour:
     mirrorX: 0
     hidden: 0
     codeDriven: 0
+    solid: 0
     inner: 0
     graft: 0
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
@@ -583,6 +589,7 @@ MonoBehaviour:
     mirrorX: 1
     hidden: 0
     codeDriven: 0
+    solid: 0
     inner: 0
     graft: 0
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
@@ -598,6 +605,7 @@ MonoBehaviour:
     mirrorX: 1
     hidden: 0
     codeDriven: 0
+    solid: 0
     inner: 0
     graft: 0
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
@@ -613,6 +621,7 @@ MonoBehaviour:
     mirrorX: 0
     hidden: 0
     codeDriven: 0
+    solid: 0
     inner: 1
     graft: 0
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
@@ -640,6 +649,7 @@ MonoBehaviour:
     mirrorX: 0
     hidden: 0
     codeDriven: 0
+    solid: 0
     inner: 1
     graft: 0
     parent: 
@@ -655,6 +665,7 @@ MonoBehaviour:
     mirrorX: 0
     hidden: 0
     codeDriven: 0
+    solid: 0
     inner: 0
     graft: 1
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
@@ -670,6 +681,7 @@ MonoBehaviour:
     mirrorX: 1
     hidden: 0
     codeDriven: 0
+    solid: 0
     inner: 0
     graft: 1
     parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
@@ -685,6 +697,7 @@ MonoBehaviour:
     mirrorX: 0
     hidden: 0
     codeDriven: 0
+    solid: 0
     inner: 0
     graft: 1
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"

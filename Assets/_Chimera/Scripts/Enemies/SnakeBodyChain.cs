@@ -11,7 +11,9 @@ using UnityEngine;
 public class SnakeBodyChain : MonoBehaviour
 {
     [SerializeField] Transform[] segments;      // от шеи к погремушке (генератор заполняет)
-    [SerializeField] float spacing = 0.45f;     // дистанция между сегментами вдоль пути
+    [SerializeField] float spacing = 0.32f;     // шаг = ПОЛОВИНА длины звена (0.64): части идут подряд и чередуются
+                                                // капсула → сустав → капсула, поэтому шар всегда садится ровно на стык.
+                                                // Тот же язык соединений, что в конечностях: шар-сустав, в него входит звено
     [SerializeField] float height = 0.3f;       // высота центров сегментов над путём (путь пишется по земле)
     [SerializeField] float sampleStep = 0.08f;  // шаг записи пути головы
     [SerializeField] int maxSamples = 256;
@@ -29,6 +31,64 @@ public class SnakeBodyChain : MonoBehaviour
         Vector3 a = i == 0 ? transform.position : (segments[i - 1] != null ? segments[i - 1].position : transform.position);
         Vector3 b = segments[i] != null ? segments[i].position : a;
         return Vector3.Lerp(a, b, f - i);
+    }
+
+    // звенья хребта в порядке от головы: имена морф-частей = имена сокетов (действующий контракт)
+    static readonly string[] ChainNames = { "шея", "Тело", "Хвост", "Погремушка" };
+    // СЛУЖЕБНЫЕ дети корня, которые сносить НЕЛЬЗЯ: не части тела, а системы (след запаха и т.п.)
+    static readonly string[] KeepAlive = { "Morph", "ScentTrail", "ScentField" };
+
+    /// <summary>ЦЕПЬ ИЗ МОРФ-ЧАСТЕЙ. Раньше сегменты лежали в префабе и назначались генератором — тело
+    /// змеи было единственным, что конструктор не собирал. Теперь звенья рождаются морфом (сокет-план:
+    /// шея×3 → Тело×3 → Хвост×3), а этот компонент лишь ДВИЖЕТ их: состав — данные, движение — код.
+    /// Порядок звеньев берём из иерархии: билдер создаёт их в порядке сокетов, а сокеты идут от головы.
+    /// Зовётся из `CreatureBody` после каждой сборки — состав может смениться прямо в бою.</summary>
+    public void RebuildFromMorph()
+    {
+        var morph = transform.Find("Morph");
+        if (morph == null) return;
+
+        var found = new List<Transform>();
+        for (int i = 0; i < morph.childCount; i++)
+        {
+            var c = morph.GetChild(i);
+            foreach (var n in ChainNames)
+                if (c.name == n) { found.Add(c); break; }
+        }
+        if (found.Count == 0) return; // морф ничего не дал (чужое шасси без цепи) — остаёмся на прежних сегментах
+
+        // МИГРАЦИЯ СО СТАРОГО ПРЕФАБА: сносим ВСЮ статичную геометрию корня, иначе на арене две змеи —
+        // ползущая морфная и неподвижная префабная. Сносим ПО ПРИЗНАКУ (есть чем рисоваться), а не по
+        // списку имён: у головы префаба были отдельные Cheek/Eye/Tongue/Sphere, и перечислять их —
+        // бесконечная погоня, где каждый забытый кусок висит поверх морфа кубом
+        for (int i = transform.childCount - 1; i >= 0; i--)
+        {
+            var t = transform.GetChild(i);
+            if (System.Array.IndexOf(KeepAlive, t.name) >= 0) continue;
+            if (t.GetComponentInChildren<Renderer>() == null) continue; // не геометрия — не трогаем
+            t.gameObject.SetActive(false);
+            Destroy(t.gameObject);
+        }
+
+        segments = found.ToArray();
+
+        // ШАГ СЧИТАЕМ ИЗ РЕАЛЬНОГО РАЗМЕРА ЗВЕНА, а не берём из поля. Сериализованное значение живёт В
+        // ПРЕФАБЕ и НЕ обновляется, когда правишь дефолт в коде: в префабе лежало 0.62 против 0.32 здесь,
+        // и пять итераций подряд менялось число, которое игра игнорировала. Теперь расхождение невозможно —
+        // шаг = ПОЛОВИНА длины звена, потому что части чередуются капсула → сустав → капсула
+        var r = found[0].GetComponent<Renderer>();
+        if (r != null) spacing = Mathf.Max(0.05f, Mathf.Max(r.bounds.size.x, Mathf.Max(r.bounds.size.y, r.bounds.size.z)) * 0.5f);
+
+        IgnoreOwnBody(); // части плотные (solid) — свои же коллайдеры не должны толкать собственный CC
+    }
+
+    /// <summary>Своё тело — не препятствие себе. Повторяем ПОСЛЕ КАЖДОЙ пересборки: части новые, а
+    /// прежние IgnoreCollision умерли вместе со старыми коллайдерами — иначе змея спотыкается о себя.</summary>
+    void IgnoreOwnBody()
+    {
+        if (!TryGetComponent<CharacterController>(out var cc)) return;
+        foreach (var col in GetComponentsInChildren<Collider>())
+            if (col != cc) Physics.IgnoreCollision(cc, col);
     }
 
     void Awake()
@@ -64,7 +124,11 @@ public class SnakeBodyChain : MonoBehaviour
             // смещение вдоль ВЕРХА ТЕЛА (transform.up): на земле = мировой верх (как было), на стене = нормаль
             // стены → сегменты отходят ОТ стены заодно с головой, а не влипают в плоскость
             segments[i].position = p + transform.up * height;
-            if (toHead.sqrMagnitude > 0.0001f) segments[i].rotation = Quaternion.LookRotation(toHead, transform.up); // ориентация с учётом верха тела
+            // ПОВОРОТ ЗВЕНА ЖИВЁТ ТОЛЬКО ЗДЕСЬ. Мы задаём rotation ЦЕЛИКОМ, то есть любой наклон из данных
+            // затирается каждый кадр — держать его ещё и там значит ловить то двойной доворот, то никакого.
+            // Euler(90) кладёт капсулу (она вытянута по Y) вдоль пути; шар-шарнир к повороту безразличен
+            if (toHead.sqrMagnitude > 0.0001f)
+                segments[i].rotation = Quaternion.LookRotation(toHead, transform.up) * Quaternion.Euler(90f, 0f, 0f);
         }
     }
 
@@ -88,6 +152,13 @@ public class SnakeBodyChain : MonoBehaviour
             if (seg > 0.0001f) dirToHead = prev - pt;
             prev = pt;
         }
-        return prev; // путь короче нужного — хвост у последней записанной точки
+        // ПУТЬ КОРОЧЕ ТЕЛА (змея развернулась или стоит) — ПРОДОЛЖАЕМ ЕГО ПРЯМОЙ за последней точкой.
+        // Раньше здесь возвращалась сама точка, и ВСЕ оставшиеся звенья садились в неё одну: тело
+        // схлопывалось само в себя комом. Теперь хвост просто вытягивается назад по своему же курсу
+        Vector3 back = path.Count > 1 ? (path[path.Count - 2] - path[path.Count - 1]) : -transform.forward;
+        if (back.sqrMagnitude < 0.0001f) back = -transform.forward;
+        back.Normalize();
+        dirToHead = back * -1f;
+        return prev - back * remaining;
     }
 }

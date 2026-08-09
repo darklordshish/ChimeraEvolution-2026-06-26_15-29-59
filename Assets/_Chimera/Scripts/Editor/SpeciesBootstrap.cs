@@ -235,7 +235,12 @@ public static class SpeciesBootstrap
             new Organ { organName = "Тело-хвост",           slot = "Тело",   hotkey = "7", cost = 5, moveSpeed = 10f, dashSpeed = 20f, chassisOnly = true, digestion = true }, // ходовая часть ШАССИ змеи: аугументом не крадётся (локомоция = свойство шасси) + ПЕРЕВАРИВАНИЕ (глотание целиком = свойство змеиного тела)
             new Organ { organName = "Чешуя",                slot = "Шкура",  hotkey = "6", cost = 4, damageReduction = 0.25f, camo = true }, // лёгкая броня: стелс+яд+одиночная охота компенсируют (D-тюнинг)
             new Organ { organName = "Пит-орган",            slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.7f, enablesThermal = true, thermalRange = 14f }, // тепло сквозь стены; dashCd обязателен (0 = спам рывка)
-            new Organ { organName = "Хвост",                slot = "Хвост",  hotkey = "8", cost = 5, enablesConstrict = true, constrictStage = 3, nativeChassis = "Змея", visualScale = new Vector3(0.9f, 0.9f, 2.4f), visualSegments = 3, visualTaper = 0.82f }, // ХВОСТ СЕГМЕНТЕН: привитый — цепочка звеньев (≈треть змеиных сегментов), масштаб под человека, а не волчий обрубок. АУГУМЕНТ игроку (обхват); constrictStage=3 + nativeChassis=Змея → ст.3 удушения только на змеином шасси (у человека кап min(2,3)=2). «Тело-хвост» выше — ходовая часть ШАССИ змеи, не путать
+            new Organ { organName = "Погремушка",          slot = "Погремушка", hotkey = "9", cost = 2, chassisOnly = true, visualParts = new[] {
+                new OrganPart { scale = new Vector3(0.92f, 0.92f, 1.00f), offset = new Vector3(0.00f, 0.00f, 0.00f) }, // ПОГРЕМУШКА ОДНИМ КУСКОМ: цепь двигает ЧАСТИ, а не места, поэтому стопка колец разъезжалась четырьмя звеньями. Ступенчатость вернём, когда звеном станет место, а не деталь
+            } }, // КОНЧИК ХВОСТА отдельным органом: цепь повторяет одну форму на всех звеньях, особый кончик ею не выразить. chassisOnly — принадлежность змеиного шасси
+            new Organ { organName = "Хвост",                slot = "Хвост",  hotkey = "8", cost = 5, enablesConstrict = true, constrictStage = 3, nativeChassis = "Змея", visualScale = new Vector3(1f, 1f, 1f), visualSegments = 3, visualTaper = 0.82f, visualParts = new[] {
+                new OrganPart { scale = new Vector3(1.00f, 1.28f, 0.78f), offset = new Vector3(0.00f, 0.00f, 0.00f), shape = PartShape.Capsule }, // звено В СТИЛЕ ТЕЛА: орган перебивал форму места своими кубами, и хвост выпадал из силуэта
+            } }, // ХВОСТ СЕГМЕНТЕН: привитый — цепочка звеньев (≈треть змеиных сегментов), масштаб под человека, а не волчий обрубок. АУГУМЕНТ игроку (обхват); constrictStage=3 + nativeChassis=Змея → ст.3 удушения только на змеином шасси (у человека кап min(2,3)=2). «Тело-хвост» выше — ходовая часть ШАССИ змеи, не путать
         };
         // СОКЕТ-ПЛАН змеи — ТОЛЬКО ГНЁЗДА-ГРАФТЫ. Своё тело морфология НЕ строит и не трогает:
         //  • туловище и хвост — ЦЕПЬ СЕГМЕНТОВ (`SnakeBodyChain` расставляет их в МИРОВЫХ координатах каждый
@@ -249,30 +254,45 @@ public static class SpeciesBootstrap
             // с SnakePrefab (сегменты 0.55→0.42, шаг 0.62), чтобы новое тело совпало с уже ползающим.
             // [ANIM] codeDriven ПОКА ОСТАЁТСЯ: без переписанного SnakeBodyChain морф построил бы статичное
             // тело ПОВЕРХ префабной цепи — на арене оказалось бы две змеи. Снимается вместе с ним
-            new BodySocket { name = "голова", localPos = new Vector3(0.000f, 0.300f, 0.000f), baseSize = new Vector3(0.340f, 0.200f, 0.620f), codeDriven = true, parts = new[] {
-                new OrganPart { scale = new Vector3(1.00f, 1.00f, 0.72f), offset = new Vector3(0.00f, 0.00f, -0.10f) }, // клин черепа: сзади широкий
-                new OrganPart { scale = new Vector3(0.62f, 0.86f, 0.46f), offset = new Vector3(0.00f, -0.02f, 0.30f) }, // сужение к носу
+            new BodySocket { name = "голова", localPos = new Vector3(0.000f, 0.300f, 0.000f), baseSize = new Vector3(0.408f, 0.340f, 0.560f), codeDriven = true, solid = true, parts = new[] {
+                // ТРЕУГОЛЬНЫЙ ЧЕРЕП ЯМКОГОЛОВОЙ: широкий затылок с ядовитыми железами → резкое сужение → тупая морда
+                new OrganPart { scale = new Vector3(1.00f, 1.00f, 0.46f), offset = new Vector3(0.00f, 0.00f, -0.22f), shape = PartShape.Sphere }, // затылок с железами — САМОЕ широкое место, шире шеи
+                new OrganPart { scale = new Vector3(0.86f, 0.34f, 0.52f), offset = new Vector3(0.00f, 0.26f, -0.14f) }, // ПЛОСКОЕ ТЕМЯ в щитках — кость гранёная
+                new OrganPart { scale = new Vector3(0.70f, 0.88f, 0.34f), offset = new Vector3(0.00f, -0.02f, 0.10f), shape = PartShape.Sphere }, // сужение за глазами
+                new OrganPart { scale = new Vector3(0.50f, 0.66f, 0.26f), offset = new Vector3(0.00f, -0.04f, 0.34f) }, // ТУПАЯ МОРДА (рострум) — обрублена, а не заострена
+                new OrganPart { scale = new Vector3(0.30f, 0.16f, 0.30f), offset = new Vector3(0.30f, 0.24f, -0.04f) }, // надглазничный щиток (пр) — козырёк над глазом
+                new OrganPart { scale = new Vector3(0.30f, 0.16f, 0.30f), offset = new Vector3(-0.30f, 0.24f, -0.04f) }, // надглазничный щиток (лев)
+                new OrganPart { scale = new Vector3(0.22f, 0.26f, 0.22f), offset = new Vector3(0.32f, 0.08f, 0.02f), shape = PartShape.Sphere }, // глаз (пр) — высоко и вбок
+                new OrganPart { scale = new Vector3(0.22f, 0.26f, 0.22f), offset = new Vector3(-0.32f, 0.08f, 0.02f), shape = PartShape.Sphere }, // глаз (лев)
+                new OrganPart { scale = new Vector3(0.14f, 0.16f, 0.12f), offset = new Vector3(0.26f, -0.06f, 0.28f), shape = PartShape.Sphere }, // ТЕРМОЯМКА (пр) между глазом и ноздрёй — родовой признак
+                new OrganPart { scale = new Vector3(0.14f, 0.16f, 0.12f), offset = new Vector3(-0.26f, -0.06f, 0.28f), shape = PartShape.Sphere }, // термоямка (лев)
+                new OrganPart { scale = new Vector3(0.10f, 0.10f, 0.08f), offset = new Vector3(0.16f, 0.02f, 0.44f), shape = PartShape.Sphere }, // ноздря (пр)
+                new OrganPart { scale = new Vector3(0.10f, 0.10f, 0.08f), offset = new Vector3(-0.16f, 0.02f, 0.44f), shape = PartShape.Sphere }, // ноздря (лев)
             } },
-            new BodySocket { name = "Пасть",  parent = "голова", attach = 1.000f, attachOffset = new Vector3(0.000f, -0.150f, 0.120f), baseSize = new Vector3(0.300f, 0.140f, 0.300f), codeDriven = true, parts = new[] {
+            new BodySocket { name = "Пасть",  parent = "голова", attach = 1.000f, attachOffset = new Vector3(0.000f, -0.150f, 0.120f), baseSize = new Vector3(0.204f, 0.095f, 0.240f), codeDriven = true, solid = true, parts = new[] {
                 new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), offset = new Vector3(0.00f, 0.00f, 0.00f), shape = PartShape.Sphere }, // челюсть — ТЕПЕРЬ МЕСТО С ФОРМОЙ: змеиная морда наконец участвует в морфе
             } },
-            new BodySocket { name = "шея",    parent = "голова", attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, -0.030f), baseSize = new Vector3(0.550f, 0.550f, 0.420f), chain = 3, chainTaper = 0.98f, codeDriven = true, parts = new[] {
-                new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), offset = new Vector3(0.00f, 0.00f, 0.00f), euler = new Vector3(90f, 0f, 0f), shape = PartShape.Capsule }, // звено без рёбер
+            new BodySocket { name = "шея",    parent = "голова", attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, -0.030f), baseSize = new Vector3(0.289f, 0.289f, 0.512f), chain = 2, chainTaper = 1.06f, codeDriven = true, solid = true, parts = new[] {
+                new OrganPart { scale = new Vector3(1.00f, 1.28f, 0.78f), offset = new Vector3(0.00f, 0.00f, 0.00f), shape = PartShape.Capsule }, // звено без рёбер
+                new OrganPart { scale = new Vector3(1.00f, 1.00f, 0.78f), offset = new Vector3(0.00f, 0.00f, 0.00f), shape = PartShape.Sphere }, // СУСТАВ-ШАР диаметром в капсулу: тот же язык соединений, что в конечностях. Идёт СЛЕДУЮЩИМ звеном цепи, поэтому сам садится на стык
             } },
-            new BodySocket { name = "Тело",   parent = "шея",    attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, 0.000f), baseSize = new Vector3(0.520f, 0.520f, 0.420f), chain = 3, chainTaper = 0.97f, codeDriven = true, parts = new[] {
-                new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), offset = new Vector3(0.00f, 0.00f, 0.00f), euler = new Vector3(90f, 0f, 0f), shape = PartShape.Capsule }, // туловище: у каждого позвонка пара рёбер
+            new BodySocket { name = "Тело",   parent = "шея",    attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, 0.000f), baseSize = new Vector3(0.374f, 0.374f, 0.512f), chain = 5, chainTaper = 0.97f, codeDriven = true, solid = true, parts = new[] {
+                new OrganPart { scale = new Vector3(1.00f, 1.28f, 0.78f), offset = new Vector3(0.00f, 0.00f, 0.00f), shape = PartShape.Capsule }, // туловище: у каждого позвонка пара рёбер
+                new OrganPart { scale = new Vector3(1.00f, 1.00f, 0.78f), offset = new Vector3(0.00f, 0.00f, 0.00f), shape = PartShape.Sphere }, // СУСТАВ-ШАР диаметром в капсулу: тот же язык соединений, что в конечностях. Идёт СЛЕДУЮЩИМ звеном цепи, поэтому сам садится на стык
             } },
-            new BodySocket { name = "Хвост",  parent = "Тело",   attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, 0.000f), baseSize = new Vector3(0.460f, 0.460f, 0.420f), chain = 3, chainTaper = 0.78f, codeDriven = true, parts = new[] {
-                new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), offset = new Vector3(0.00f, 0.00f, 0.00f), euler = new Vector3(90f, 0f, 0f), shape = PartShape.Capsule }, // после клоаки: рёбер нет, сходит на конус
+            new BodySocket { name = "Хвост",  parent = "Тело",   attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, 0.000f), baseSize = new Vector3(0.306f, 0.306f, 0.512f), chain = 3, chainTaper = 0.74f, codeDriven = true, solid = true, parts = new[] {
+                new OrganPart { scale = new Vector3(1.00f, 1.28f, 0.78f), offset = new Vector3(0.00f, 0.00f, 0.00f), shape = PartShape.Capsule }, // после клоаки: рёбер нет, сходит на конус
+                new OrganPart { scale = new Vector3(1.00f, 1.00f, 0.78f), offset = new Vector3(0.00f, 0.00f, 0.00f), shape = PartShape.Sphere }, // СУСТАВ-ШАР диаметром в капсулу: тот же язык соединений, что в конечностях. Идёт СЛЕДУЮЩИМ звеном цепи, поэтому сам садится на стык
             } },
-            new BodySocket { name = "Шкура",  codeDriven = true }, // [ANIM] чешуя — покров всей цепи, своей детали нет
+            new BodySocket { name = "Погремушка", parent = "Хвост", attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, 0.000f), baseSize = new Vector3(0.187f, 0.187f, 0.300f), codeDriven = true, solid = true }, // [ANIM] последнее звено цепи — форму несёт орган
+            new BodySocket { name = "Шкура",  inner = true }, // чешуя — покров всей ЦЕПИ, отдельной детали нет. Не codeDriven: у места нет ни формы, ни позиции, и морф рисовал ей базовый куб в начале координат — тот самый ящик на голове
             new BodySocket { name = "Сердце", inner = true },  // грудной клетки у этого вида пока нет — формы нет, деталь и не родится
             new BodySocket { name = "Чутьё",  inner = true },  // формы у нюха нет, и деталь не родится сама собой; дай органу форму (термо-ямки) — место проступит, флаги править не придётся
             // ГРАФТЫ: змея, отрастившая лапы/рога/иглы — читается сразу
-            new BodySocket { name = "Руки",   localPos = new Vector3(0.24f, 0.26f, 0.12f), baseSize = new Vector3(0.10f, 0.34f, 0.10f), mirrorX = true, graft = true },
-            new BodySocket { name = "Ноги",   localPos = new Vector3(0.24f, 0.26f, -0.28f),baseSize = new Vector3(0.10f, 0.34f, 0.10f), mirrorX = true, graft = true },
-            new BodySocket { name = "Рога",   localPos = new Vector3(0.08f, 0.50f, 0.40f), baseSize = new Vector3(0.09f, 0.09f, 0.09f), mirrorX = true, graft = true }, // КАЛИБР
-            new BodySocket { name = "Игломёт",localPos = new Vector3(0f, 0.48f, 0.18f),    baseSize = new Vector3(0.13f, 0.13f, 0.13f), baseEuler = new Vector3(-10f, 0f, 0f), graft = true }, // КАЛИБР
+            new BodySocket { name = "Руки",   localPos = new Vector3(0.24f, 0.26f, 0.12f), baseSize = new Vector3(0.068f, 0.231f, 0.080f), mirrorX = true, graft = true },
+            new BodySocket { name = "Ноги",   localPos = new Vector3(0.24f, 0.26f, -0.28f),baseSize = new Vector3(0.068f, 0.231f, 0.080f), mirrorX = true, graft = true },
+            new BodySocket { name = "Рога",   localPos = new Vector3(0.08f, 0.50f, 0.40f), baseSize = new Vector3(0.061f, 0.061f, 0.072f), mirrorX = true, graft = true }, // КАЛИБР
+            new BodySocket { name = "Игломёт",localPos = new Vector3(0f, 0.48f, 0.18f),    baseSize = new Vector3(0.088f, 0.088f, 0.104f), baseEuler = new Vector3(-10f, 0f, 0f), graft = true }, // КАЛИБР
         };
         EditorUtility.SetDirty(snake);
 
