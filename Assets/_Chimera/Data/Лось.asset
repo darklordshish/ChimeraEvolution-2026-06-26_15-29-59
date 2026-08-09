@@ -72,38 +72,56 @@ MonoBehaviour:
       offset: {x: 0, y: 0.35, z: 0.07}
       euler: {x: -19, y: 0, z: 0}
       shape: 2
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 1, y: 0.18, z: 1.02}
       offset: {x: 0, y: 0.11, z: 0.08}
       euler: {x: 24, y: 0, z: 0}
       shape: 2
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.74, y: 0.21, z: 0.78}
       offset: {x: 0, y: -0.08, z: 0.05}
       euler: {x: -6, y: 0, z: 0}
       shape: 2
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.5, y: 0.18, z: 0.54}
       offset: {x: 0, y: -0.27, z: 0.06}
       euler: {x: -3, y: 0, z: 0}
       shape: 2
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 1.32, y: 0.34, z: 1.28}
       offset: {x: 0, y: 0.32, z: 0.08}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 1.03, y: 0.16, z: 1.05}
       offset: {x: 0, y: 0.02, z: 0.04}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.76, y: 0.12, z: 0.8}
       offset: {x: 0, y: -0.18, z: 0.06}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.48, y: 0.09, z: 0.5}
       offset: {x: 0, y: -0.4, z: 0.07}
       euler: {x: 16, y: 0, z: 0}
       shape: 2
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.68, y: 0.07, z: 0.86}
       offset: {x: 0, y: -0.47, z: 0.09}
       euler: {x: 0, y: 0, z: 0}
       shape: 0
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     visualSegments: 0
     visualTaper: 0
   - organName: "\u041B\u043E\u0441\u0438\u043D\u044B\u0435 \u043D\u043E\u0433\u0438"
@@ -162,38 +180,56 @@ MonoBehaviour:
       offset: {x: 0, y: 0.28, z: -0.05}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 1.24, y: 0.38, z: 1.22}
       offset: {x: 0, y: 0.32, z: -0.05}
       euler: {x: -14, y: 0, z: 0}
       shape: 2
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 1.08, y: 0.2, z: 1.1}
       offset: {x: 0, y: 0.13, z: 0.02}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.9, y: 0.2, z: 0.94}
       offset: {x: 0, y: 0.04, z: -0.06}
       euler: {x: 28, y: 0, z: 0}
       shape: 2
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.68, y: 0.14, z: 0.72}
       offset: {x: 0, y: -0.06, z: -0.14}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.56, y: 0.3, z: 0.6}
       offset: {x: 0, y: -0.22, z: -0.13}
       euler: {x: -5, y: 0, z: 0}
       shape: 2
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.42, y: 0.08, z: 0.34}
       offset: {x: 0, y: -0.05, z: -0.21}
       euler: {x: 0, y: 0, z: 0}
       shape: 0
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.46, y: 0.12, z: 0.48}
       offset: {x: 0, y: -0.4, z: -0.09}
       euler: {x: 14, y: 0, z: 0}
       shape: 2
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.66, y: 0.09, z: 0.84}
       offset: {x: 0, y: -0.46, z: -0.05}
       euler: {x: 0, y: 0, z: 0}
       shape: 0
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     visualSegments: 0
     visualTaper: 0
   - organName: "\u0413\u043B\u043E\u0442\u043A\u0430"
@@ -301,7 +337,13 @@ MonoBehaviour:
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
     visualAlignToBody: 0
-    visualParts: []
+    visualParts:
+    - scale: {x: 1, y: 1, z: 1}
+      offset: {x: 0, y: 0, z: 0}
+      euler: {x: 0, y: 0, z: 0}
+      shape: 1
+      role: 1
+      color: {r: 0.78, g: 0.82, b: 0.86, a: 1}
     visualSegments: 0
     visualTaper: 0
   - organName: "\u041B\u043E\u0441\u0438\u043D\u043E\u0435 \u0441\u0435\u0440\u0434\u0446\u0435"
@@ -360,10 +402,14 @@ MonoBehaviour:
       offset: {x: 0, y: 0, z: 0.04}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.7, y: 0.56, z: 1.02}
       offset: {x: 0, y: 0.52, z: -0.2}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     visualSegments: 0
     visualTaper: 0
   - organName: "\u0422\u043E\u043B\u0441\u0442\u0430\u044F \u0448\u043A\u0443\u0440\u0430"
@@ -476,38 +522,56 @@ MonoBehaviour:
       offset: {x: 0.05, y: 0, z: 0}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.46, y: 0.65, z: 0.48}
       offset: {x: 0.28, y: 0.22, z: 0.02}
       euler: {x: 0, y: 0, z: -62}
       shape: 2
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 1.9, y: 0.26, z: 2.2}
       offset: {x: 1.35, y: 0.56, z: 0.05}
-      euler: {x: 0, y: 0, z: 16}
+      euler: {x: -34, y: 0, z: 24}
       shape: 0
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.32, y: 1.1, z: 0.34}
       offset: {x: 0.5, y: 0.8, z: 1}
       euler: {x: 56, y: 0, z: 14}
       shape: 2
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.32, y: 1.1, z: 0.34}
       offset: {x: 1.55, y: 1.05, z: 1.05}
       euler: {x: 0, y: 0, z: 10}
       shape: 2
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.32, y: 1.35, z: 0.34}
       offset: {x: 1.95, y: 1.29, z: 0.7}
       euler: {x: 0, y: 0, z: 10}
       shape: 2
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.32, y: 1.5, z: 0.34}
       offset: {x: 2.15, y: 1.43, z: 0.05}
       euler: {x: 0, y: 0, z: 10}
       shape: 2
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.32, y: 1.35, z: 0.34}
       offset: {x: 1.95, y: 1.29, z: -0.7}
       euler: {x: 0, y: 0, z: 10}
       shape: 2
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.32, y: 1.1, z: 0.34}
       offset: {x: 1.55, y: 1.05, z: -1.05}
       euler: {x: 0, y: 0, z: 10}
       shape: 2
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     visualSegments: 0
     visualTaper: 0
   eatsMeat: 0
@@ -518,7 +582,7 @@ MonoBehaviour:
   sockets:
   - name: "\u0445\u0440\u0435\u0431\u0435\u0442"
     localPos: {x: 0, y: 1.93, z: 0}
-    baseSize: {x: 0.703, y: 0.9, z: 2.284}
+    baseSize: {x: 0.521, y: 0.791, z: 2.284}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
     hidden: 1
@@ -533,11 +597,14 @@ MonoBehaviour:
     chain: 0
     chainTaper: 0
     linkDiameter: 0
+    sizeRel: {x: 0, y: 0, z: 0}
+    formFrom: 
+    formRole: 0
     linkLength: 0
     linkTaper: 0
   - name: "\u0433\u043E\u043B\u043E\u0432\u0430"
     localPos: {x: 0, y: 0, z: 0}
-    baseSize: {x: 0.39, y: 0.44, z: 0.45}
+    baseSize: {x: 0.219, y: 0.34, z: 0.548}
     baseEuler: {x: 40, y: 0, z: 0}
     mirrorX: 0
     hidden: 0
@@ -552,19 +619,26 @@ MonoBehaviour:
     - scale: {x: 1, y: 0.94, z: 0.62}
       offset: {x: 0, y: 0.03, z: -0.17}
       euler: {x: 0, y: 0, z: 0}
-      shape: 0
+      shape: 1
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.74, y: 0.7, z: 0.52}
       offset: {x: 0, y: -0.04, z: 0.24}
       euler: {x: 0, y: 0, z: 0}
-      shape: 0
+      shape: 1
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     chain: 0
     chainTaper: 0
     linkDiameter: 0
+    sizeRel: {x: 0.677, y: 0.789, z: 1.018}
+    formFrom: 
+    formRole: 0
     linkLength: 0
     linkTaper: 0
   - name: "\u041F\u0430\u0441\u0442\u044C"
     localPos: {x: 0, y: 0, z: 0}
-    baseSize: {x: 0.3, y: 0.35, z: 0.47}
+    baseSize: {x: 0.15, y: 0.17, z: 0.26}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
     hidden: 0
@@ -574,35 +648,48 @@ MonoBehaviour:
     graft: 0
     parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
     attach: 1
-    attachOffset: {x: 0, y: -0.15, z: 0.344}
+    attachOffset: {x: 0, y: -0.25, z: -0.05}
     parts:
-    - scale: {x: 1, y: 0.94, z: 0.42}
-      offset: {x: 0, y: 0.02, z: -0.28}
+    - scale: {x: 0.94, y: 0.3, z: 0.92}
+      offset: {x: 0, y: 0, z: 0}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
-    - scale: {x: 0.88, y: 0.86, z: 0.44}
-      offset: {x: 0, y: 0.1, z: -0.02}
-      euler: {x: 0, y: 0, z: 0}
-      shape: 1
-    - scale: {x: 0.74, y: 0.68, z: 0.42}
-      offset: {x: 0, y: 0, z: 0.22}
-      euler: {x: 0, y: 0, z: 0}
-      shape: 1
-    - scale: {x: 0.6, y: 0.52, z: 0.26}
-      offset: {x: 0, y: -0.04, z: 0.4}
-      euler: {x: 0, y: 0, z: 0}
-      shape: 1
-    - scale: {x: 0.66, y: 0.46, z: 0.34}
-      offset: {x: 0, y: -0.26, z: 0.34}
-      euler: {x: 0, y: 0, z: 0}
-      shape: 1
-    - scale: {x: 0.56, y: 0.86, z: 0.2}
-      offset: {x: 0, y: -0.24, z: -0.1}
-      euler: {x: 90, y: 0, z: 0}
-      shape: 2
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     chain: 0
     chainTaper: 0
     linkDiameter: 0
+    sizeRel: {x: 0.685, y: 0.5, z: 0.474}
+    formFrom: 
+    formRole: 0
+    linkLength: 0
+    linkTaper: 0
+  - name: "\u0433\u043B\u0430\u0437\u0430"
+    localPos: {x: 0, y: 0, z: 0}
+    baseSize: {x: 0.045, y: 0.045, z: 0.045}
+    baseEuler: {x: 0, y: 0, z: 0}
+    mirrorX: 1
+    hidden: 0
+    codeDriven: 0
+    solid: 0
+    inner: 0
+    graft: 0
+    parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    attach: 0.5
+    attachOffset: {x: 0.42, y: 0.13, z: -0.24}
+    parts:
+    - scale: {x: 1, y: 1, z: 1}
+      offset: {x: 0, y: 0, z: 0}
+      euler: {x: 0, y: 0, z: 0}
+      shape: 1
+      role: 1
+      color: {r: 0.1, g: 0.1, b: 0.12, a: 1}
+    chain: 0
+    chainTaper: 0
+    linkDiameter: 0
+    sizeRel: {x: 0.205, y: 0.132, z: 0.082}
+    formFrom: "\u0427\u0443\u0442\u044C\u0451"
+    formRole: 1
     linkLength: 0
     linkTaper: 0
   - name: "\u0443\u0448\u0438"
@@ -623,13 +710,20 @@ MonoBehaviour:
       offset: {x: 0, y: 0, z: 0}
       euler: {x: 0, y: 0, z: 0}
       shape: 0
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.58, y: 0.52, z: 0.5}
       offset: {x: 0, y: 0.44, z: -0.08}
       euler: {x: 0, y: 0, z: 0}
       shape: 0
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     chain: 0
     chainTaper: 0
     linkDiameter: 0
+    sizeRel: {x: 0.525, y: 0.882, z: 0.182}
+    formFrom: 
+    formRole: 0
     linkLength: 0
     linkTaper: 0
   - name: "\u0448\u0435\u044F"
@@ -650,13 +744,20 @@ MonoBehaviour:
       offset: {x: 0, y: 0, z: 0}
       euler: {x: 90, y: 0, z: 0}
       shape: 2
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.54, y: 0.64, z: 0.32}
       offset: {x: 0, y: -0.34, z: 0.32}
       euler: {x: 20, y: 0, z: 0}
       shape: 1
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     chain: 0
     chainTaper: 0
     linkDiameter: 0
+    sizeRel: {x: 0.636, y: 0.824, z: 0.378}
+    formFrom: 
+    formRole: 0
     linkLength: 0
     linkTaper: 0
   - name: "\u0433\u043E\u0440\u0431"
@@ -677,26 +778,37 @@ MonoBehaviour:
       offset: {x: 0, y: 0, z: 0.08}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 1, y: 0.8, z: 0.72}
       offset: {x: 0, y: -0.2, z: 0.06}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.88, y: 0.62, z: 0.62}
       offset: {x: 0, y: -0.22, z: -0.34}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.8, y: 0.66, z: 0.44}
       offset: {x: 0, y: -0.16, z: 0.4}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     chain: 0
     chainTaper: 0
     linkDiameter: 0
+    sizeRel: {x: 1.267, y: 0.86, z: 0.81}
+    formFrom: 
+    formRole: 0
     linkLength: 0
     linkTaper: 0
   - name: "\u0428\u043A\u0443\u0440\u0430"
     localPos: {x: 0, y: 0, z: 0}
-    baseSize: {x: 0.703, y: 0.9, z: 2.284}
+    baseSize: {x: 0.521, y: 0.791, z: 2.284}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
     hidden: 0
@@ -712,29 +824,44 @@ MonoBehaviour:
       offset: {x: 0, y: 0.04, z: -0.02}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.92, y: 0.86, z: 0.44}
       offset: {x: 0, y: 0.06, z: -0.32}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.5, y: 0.82, z: 0.44}
       offset: {x: 0.33, y: -0.2, z: -0.32}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.5, y: 0.82, z: 0.44}
       offset: {x: -0.33, y: -0.2, z: -0.32}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.44, y: 0.74, z: 0.38}
       offset: {x: 0.31, y: -0.12, z: 0.28}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.44, y: 0.74, z: 0.38}
       offset: {x: -0.31, y: -0.12, z: 0.28}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     chain: 0
     chainTaper: 0
     linkDiameter: 0
+    sizeRel: {x: 1, y: 1, z: 1}
+    formFrom: 
+    formRole: 0
     linkLength: 0
     linkTaper: 0
   - name: "\u0420\u0443\u043A\u0438"
@@ -754,6 +881,9 @@ MonoBehaviour:
     chain: 0
     chainTaper: 0
     linkDiameter: 0
+    sizeRel: {x: 0.326, y: 1.922, z: 0.085}
+    formFrom: 
+    formRole: 0
     linkLength: 0
     linkTaper: 0
   - name: "\u041D\u043E\u0433\u0438"
@@ -773,6 +903,9 @@ MonoBehaviour:
     chain: 0
     chainTaper: 0
     linkDiameter: 0
+    sizeRel: {x: 0.393, y: 1.96, z: 0.1}
+    formFrom: 
+    formRole: 0
     linkLength: 0
     linkTaper: 0
   - name: "\u0425\u0432\u043E\u0441\u0442"
@@ -793,21 +926,32 @@ MonoBehaviour:
       offset: {x: 0, y: 0, z: 0.34}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 1, y: 1, z: 0.44}
       offset: {x: 0, y: 0, z: -0.02}
       euler: {x: 0, y: 0, z: 0}
       shape: 0
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.8, y: 0.8, z: 0.4}
       offset: {x: 0, y: 0, z: -0.42}
       euler: {x: 0, y: 0, z: 0}
       shape: 0
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.6, y: 0.6, z: 0.32}
       offset: {x: 0, y: 0, z: -0.76}
       euler: {x: 0, y: 0, z: 0}
       shape: 0
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     chain: 0
     chainTaper: 0
     linkDiameter: 0
+    sizeRel: {x: 0.25, y: 0.164, z: 0.149}
+    formFrom: 
+    formRole: 0
     linkLength: 0
     linkTaper: 0
   - name: "\u0420\u043E\u0433\u0430"
@@ -822,11 +966,14 @@ MonoBehaviour:
     graft: 0
     parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
     attach: 0.7
-    attachOffset: {x: 0.33, y: 0.42, z: -0.06}
+    attachOffset: {x: 0.5, y: 0.56, z: -0.1}
     parts: []
     chain: 0
     chainTaper: 0
     linkDiameter: 0
+    sizeRel: {x: 1.461, y: 0.941, z: 0.584}
+    formFrom: 
+    formRole: 0
     linkLength: 0
     linkTaper: 0
   - name: "\u0421\u0435\u0440\u0434\u0446\u0435"
@@ -846,6 +993,9 @@ MonoBehaviour:
     chain: 0
     chainTaper: 0
     linkDiameter: 0
+    sizeRel: {x: 1.228, y: 0.961, z: 0.359}
+    formFrom: 
+    formRole: 0
     linkLength: 0
     linkTaper: 0
   - name: "\u0427\u0443\u0442\u044C\u0451"
@@ -865,6 +1015,9 @@ MonoBehaviour:
     chain: 0
     chainTaper: 0
     linkDiameter: 0
+    sizeRel: {x: 0, y: 0, z: 0}
+    formFrom: 
+    formRole: 0
     linkLength: 0
     linkTaper: 0
   - name: "\u0418\u0433\u043B\u043E\u043C\u0451\u0442"
@@ -884,5 +1037,8 @@ MonoBehaviour:
     chain: 0
     chainTaper: 0
     linkDiameter: 0
+    sizeRel: {x: 0.539, y: 0.355, z: 0.123}
+    formFrom: 
+    formRole: 0
     linkLength: 0
     linkTaper: 0

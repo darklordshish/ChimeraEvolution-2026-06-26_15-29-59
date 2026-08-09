@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 620" font-family="Segoe UI, sans-serif">
+  <rect width="980" height="620" fill="#1b1b22"/>
+  <text x="24" y="38" fill="#e8e4dc" font-size="22" font-weight="600">ЧЕРЕП ВОЛКА — эскиз в профиль (морда вправо)</text>
+  <text x="24" y="62" fill="#8d8a99" font-size="14">калибр места «голова» 0.300 × 0.345 × 0.420 м · координаты в ДОЛЯХ калибра, как в данных</text>
+
+  <!-- сетка долей -->
+  <g stroke="#2e2e3a" stroke-width="1">
+    <line x1="140" y1="120" x2="860" y2="120"/><line x1="140" y1="200" x2="860" y2="200"/>
+    <line x1="140" y1="280" x2="860" y2="280"/><line x1="140" y1="360" x2="860" y2="360"/>
+    <line x1="140" y1="440" x2="860" y2="440"/>
+    <line x1="140" y1="120" x2="140" y2="440"/><line x1="284" y1="120" x2="284" y2="440"/>
+    <line x1="428" y1="120" x2="428" y2="440"/><line x1="572" y1="120" x2="572" y2="440"/>
+    <line x1="716" y1="120" x2="716" y2="440"/><line x1="860" y1="120" x2="860" y2="440"/>
+  </g>
+  <g fill="#6f6c7d" font-size="12">
+    <text x="130" y="458" text-anchor="middle">-0.5</text><text x="284" y="458" text-anchor="middle">-0.25</text>
+    <text x="428" y="458" text-anchor="middle">0</text><text x="572" y="458" text-anchor="middle">+0.25</text>
+    <text x="716" y="458" text-anchor="middle">+0.5</text><text x="855" y="458" text-anchor="middle">Z (вдоль морды)</text>
+    <text x="126" y="124" text-anchor="end">+0.5</text><text x="126" y="204" text-anchor="end">+0.25</text>
+    <text x="126" y="284" text-anchor="end">0</text><text x="126" y="364" text-anchor="end">-0.25</text>
+    <text x="126" y="444" text-anchor="end">-0.5</text>
+  </g>
+
+  <!-- 1 мозговая коробка -->
+  <ellipse cx="284" cy="264" rx="112" ry="86" fill="#4a5a74" fill-opacity="0.55" stroke="#8fb0dd" stroke-width="2"/>
+  <!-- 2 затылочный гребень -->
+  <ellipse cx="196" cy="216" rx="44" ry="30" fill="#41506a" fill-opacity="0.7" stroke="#8fb0dd" stroke-width="1.5"/>
+  <!-- 3 скуловая дуга -->
+  <ellipse cx="360" cy="316" rx="86" ry="26" fill="#6a5570" fill-opacity="0.7" stroke="#c79fd0" stroke-width="2"/>
+  <!-- 4 ГЛАЗНИЦА -->
+  <circle cx="404" cy="252" r="34" fill="#1b1b22" stroke="#e0b453" stroke-width="3"/>
+  <circle cx="404" cy="252" r="19" fill="#e0b453" fill-opacity="0.85"/>
+  <!-- 5 носовая кость -->
+  <ellipse cx="556" cy="276" rx="94" ry="40" fill="#4a6a58" fill-opacity="0.6" stroke="#8ed0a8" stroke-width="2"/>
+  <!-- 6 мочка носа -->
+  <circle cx="676" cy="288" r="30" fill="#2f2f3c" stroke="#8ed0a8" stroke-width="2.5"/>
+  <!-- 7 верхняя челюсть -->
+  <ellipse cx="540" cy="330" rx="104" ry="30" fill="#6d5a44" fill-opacity="0.65" stroke="#d3ab77" stroke-width="2"/>
+  <!-- 8 нижняя челюсть: ветвь + тело -->
+  <ellipse cx="352" cy="372" rx="44" ry="42" fill="#5c4a38" fill-opacity="0.7" stroke="#d3ab77" stroke-width="2"/>
+  <ellipse cx="546" cy="374" rx="112" ry="24" fill="#5c4a38" fill-opacity="0.7" stroke="#d3ab77" stroke-width="2"/>
+  <!-- 9 ушная раковина -->
+  <path d="M232 186 L262 96 L300 178 Z" fill="#4a5a74" fill-opacity="0.7" stroke="#8fb0dd" stroke-width="2"/>
+
+  <!-- выноски -->
+  <g stroke="#5a5768" stroke-width="1" stroke-dasharray="3 3">
+    <line x1="284" y1="264" x2="150" y2="510"/><line x1="404" y1="252" x2="404" y2="150"/>
+    <line x1="360" y1="316" x2="300" y2="546"/><line x1="676" y1="288" x2="800" y2="212"/>
+    <line x1="556" y1="276" x2="620" y2="150"/><line x1="262" y1="130" x2="180" y2="96"/>
+    <line x1="352" y1="372" x2="452" y2="546"/><line x1="540" y1="330" x2="640" y2="510"/>
+  </g>
+  <g font-size="13" fill="#cfcbdd">
+    <text x="150" y="528">1 · мозговая коробка</text>
+    <text x="150" y="546" fill="#8d8a99" font-size="11">свод + виски, самая широкая кость</text>
+    <text x="300" y="564">3 · скуловая дуга</text>
+    <text x="300" y="582" fill="#8d8a99" font-size="11">жевательная мышца — ширина морды</text>
+    <text x="452" y="564">8 · нижняя челюсть: ВЕТВЬ + тело</text>
+    <text x="452" y="582" fill="#8d8a99" font-size="11">ветвь у СУСТАВА (под скулой), не в середине пасти</text>
+    <text x="640" y="528">7 · верхняя челюсть</text>
+    <text x="640" y="546" fill="#8d8a99" font-size="11">линия зубов, короче спинки носа</text>
+    <text x="620" y="142" text-anchor="middle">5 · носовая кость</text>
+    <text x="800" y="204">6 · МОЧКА НОСА (место)</text>
+    <text x="404" y="140" text-anchor="middle">4 · ГЛАЗНИЦА (место)</text>
+    <text x="404" y="122" text-anchor="middle" fill="#e0b453" font-size="11">глаз сидит В НЕЙ, а не на коже</text>
+    <text x="180" y="88" text-anchor="end">9 · ушная раковина (место)</text>
+    <text x="180" y="70" text-anchor="end" fill="#8d8a99" font-size="11">на затылке, за скуловой дугой</text>
+  </g>
+
+  <text x="24" y="608" fill="#8d8a99" font-size="12">
+    ЖЁЛТЫМ — анатомические МЕСТА (сокеты): глазница, мочка носа, ушная раковина. Их форму и цвет даёт орган Чутья; кость их только держит.
+  </text>
+</svg>

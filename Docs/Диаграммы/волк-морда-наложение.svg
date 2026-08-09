@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1060 640" font-family="Segoe UI, sans-serif">
+  <rect width="1060" height="640" fill="#16161c"/>
+  <text x="24" y="34" fill="#e8e4dc" font-size="21" font-weight="600">ВОЛК · профиль: контур с фото + предлагаемые кости</text>
+  <text x="24" y="56" fill="#8d8a99" font-size="13">обмер по второму снимку · координаты в ДОЛЯХ ДЛИНЫ головы · нос справа</text>
+
+  <g transform="translate(430,330)">
+    <g stroke="#2b2b36" stroke-width="1">
+      <line x1="-360" y1="-230" x2="360" y2="-230"/><line x1="-360" y1="-115" x2="360" y2="-115"/>
+      <line x1="-360" y1="0" x2="360" y2="0"/><line x1="-360" y1="115" x2="360" y2="115"/>
+      <line x1="-360" y1="230" x2="360" y2="230"/>
+      <line x1="-345" y1="-230" x2="-345" y2="230"/><line x1="-172" y1="-230" x2="-172" y2="230"/>
+      <line x1="0" y1="-230" x2="0" y2="230"/><line x1="172" y1="-230" x2="172" y2="230"/>
+      <line x1="345" y1="-230" x2="345" y2="230"/>
+    </g>
+    <g fill="#5d5a6b" font-size="11">
+      <text x="-345" y="248" text-anchor="middle">-0.5</text><text x="0" y="248" text-anchor="middle">0</text>
+      <text x="345" y="248" text-anchor="middle">+0.5 (нос)</text>
+    </g>
+
+    <!-- ПРЕДЛАГАЕМЫЕ КОСТИ (под контуром, чтобы контур читался поверх) -->
+    <g transform="scale(1,-1)" opacity="0.60">
+      <ellipse cx="-186" cy="20"  rx="172" ry="102" fill="#4a5a74" stroke="#8fb0dd" stroke-width="2"/>
+      <ellipse cx="-310" cy="8"   rx="86"  ry="75"  fill="#41506a" stroke="#8fb0dd" stroke-width="1.5"/>
+      <ellipse cx="-34"  cy="112" rx="117" ry="59"  fill="#5a6a86" stroke="#8fb0dd" stroke-width="2"/>
+      <ellipse cx="-34"  cy="-40" rx="190" ry="59"  fill="#6a5570" stroke="#c79fd0" stroke-width="2"/>
+      <ellipse cx="152"  cy="8"   rx="207" ry="45"  fill="#4a6a58" stroke="#8ed0a8" stroke-width="2"/>
+      <ellipse cx="324"  cy="-40" rx="48"  ry="30"  fill="#2f2f3c" stroke="#8ed0a8" stroke-width="2.5"/>
+      <ellipse cx="152"  cy="-88" rx="190" ry="32"  fill="#6d5a44" stroke="#d3ab77" stroke-width="2"/>
+      <ellipse cx="-83"  cy="-80" rx="97"  ry="64"  fill="#5c4a38" stroke="#d3ab77" stroke-width="2"/>
+      <ellipse cx="124"  cy="-136" rx="207" ry="30" fill="#5c4a38" stroke="#d3ab77" stroke-width="2"/>
+    </g>
+
+    <!-- КОНТУР ЖИВОЙ ГОЛОВЫ (снят с фото) -->
+    <path d="M 326 84 L 326 140 L 253 180 L 46 196 L -162 231 L -345 241
+             L -345 -64 L -199 -186 L -113 -196 L 34 -114 L 107 -38 L 229 38 Z"
+          fill="none" stroke="#f2efe6" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M -174 -196 L -131 -404 L -64 -201" fill="none" stroke="#f2efe6" stroke-width="3"/>
+    <text x="-131" y="-420" fill="#f2efe6" font-size="11" text-anchor="middle">ухо 0.36 длины</text>
+
+    <!-- места -->
+    <circle cx="0" cy="-110" r="24" fill="#e0b453" fill-opacity="0.9" stroke="#fff2cc" stroke-width="2"/>
+    <text x="0" y="-146" fill="#e0b453" font-size="11" text-anchor="middle">глаз 0.50 назад</text>
+    <line x1="107" y1="-38" x2="107" y2="150" stroke="#c79fd0" stroke-width="1" stroke-dasharray="3 3"/>
+    <text x="107" y="168" fill="#c79fd0" font-size="11" text-anchor="middle">стоп 0.36</text>
+  </g>
+
+  <g font-size="13">
+    <text x="800" y="100" fill="#8ed0a8" font-size="15" font-weight="600">ГАБАРИТ МЕСТА</text>
+    <text x="800" y="126" fill="#cfcbdd">0.210 × 0.210 × 0.420</text>
+    <text x="800" y="148" fill="#e8e4dc" font-weight="600">→ 0.230 × 0.260 × 0.420</text>
+    <text x="800" y="168" fill="#8d8a99" font-size="11">высота 0.62 длины — по живой голове</text>
+
+    <text x="800" y="212" fill="#8fb0dd" font-size="15" font-weight="600">КОСТИ ПОД КОНТУР</text>
+    <text x="800" y="236" fill="#cfcbdd">мозговая коробка · затылок в загривок</text>
+    <text x="800" y="256" fill="#cfcbdd">лоб до стопа · скула-щека массивная</text>
+    <text x="800" y="276" fill="#cfcbdd">носовая кость длинная и узкая</text>
+    <text x="800" y="296" fill="#cfcbdd">челюсть: ветвь у сустава + тело вперёд</text>
+
+    <text x="800" y="340" fill="#e0b453" font-size="15" font-weight="600">МЕСТА</text>
+    <text x="800" y="364" fill="#cfcbdd">глаз ⌀0.085 длины = 36 мм</text>
+    <text x="800" y="384" fill="#cfcbdd">ухо высотой 0.36 длины = 150 мм</text>
+    <text x="800" y="404" fill="#cfcbdd">мочка ⌀0.097 = 41 мм</text>
+  </g>
+
+  <text x="24" y="612" fill="#8d8a99" font-size="12">Сходится ли контур с фото и заполняют ли его тела — твой вердикт. По «да» правлю данные и показываю в игре анфас+профиль.</text>
+</svg>
