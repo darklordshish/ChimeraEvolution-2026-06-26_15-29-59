@@ -74,14 +74,28 @@ public static class MorphBuilder
             // формы — детали нет, и «голую тушку» кубом сюда подставлять нельзя (Чутьё вылезло бы ящиком
             // из груди). Раньше это решал флаг `hidden` на каждом виде: нюх скрывали руками, и, реши мы
             // однажды дать ему форму (термо-ямки, вибриссы), пришлось бы править флаги у всех пяти видов
-            if (socket.inner && (organ.visualParts == null || organ.visualParts.Length == 0)
+            // ...и части считаем ТЕ, ЧТО ПРЕДНАЗНАЧЕНЫ ЭТОМУ МЕСТУ: у Чутья теперь есть форма глаз, но она
+            // адресована месту «глаза», а самому Чутью показывать по-прежнему нечего — позиции у него нет
+            if (socket.inner && PickParts(organ.visualParts, socket.formRole) == null
                              && (socket.parts == null || socket.parts.Length == 0)) continue;
+
+            // ФОРМА ИЗ ЧУЖОГО ОРГАНА: место на голове рисуется частями органа-источника с нужной ролью
+            // (глаза/уши/нос/ямки — от Чутья). Нет источника или нет частей этой роли — место рисует свою
+            OrganPart[] fromOther = null;
+            if (!string.IsNullOrEmpty(socket.formFrom) && organBySocket.TryGetValue(socket.formFrom, out var src)
+                                                       && src != null && src.visualParts != null)
+            {
+                var picked = new List<OrganPart>();
+                foreach (var p in src.visualParts) if (p != null && p.role == socket.formRole) picked.Add(p);
+                if (picked.Count > 0) fromOther = picked.ToArray();
+            }
 
             var (pos, rot) = Place(socket, byName, placed, 0);
             var made = new List<GameObject>();
             float linkD = ChainDiameter(socket, byName, 0);
-            Piece(container.transform, socket, organ, +1f, pos, rot, made, linkD);
-            if (socket.mirrorX) Piece(container.transform, socket, organ, -1f, pos, rot, made, linkD);
+            Vector3 sz = SizeOf(socket, byName, 0);   // габарит: свой или доля родителя
+            Piece(container.transform, socket, organ, +1f, pos, rot, made, linkD, fromOther, sz);
+            if (socket.mirrorX) Piece(container.transform, socket, organ, -1f, pos, rot, made, linkD, fromOther, sz);
 
             // РЕБЁНОК ЦЕПИ СИДИТ НА ЗВЕНЕ. Место, висящее на цепном родителе, становится ПОТОМКОМ того звена,
             // на которое указывает `attach` (0 — последнее, у кончика). Иначе оно остаётся соседом звеньев, и
@@ -105,11 +119,11 @@ public static class MorphBuilder
             // поэтому перестраиваются вместе с ней: поставил волчье сердце — коробка стала глубокой и узкой,
             // пекторали с трапецией поехали следом сами. Иначе кость тонула в мышцах, живущих отдельно
             // (у прочих мест правило прежнее — орган ЗАМЕЩАЕТ: волчья морда встаёт вместо человечьей)
-            if (socket.inner && organ != null && organ.visualParts != null && organ.visualParts.Length > 0
+            if (socket.inner && organ != null && PickParts(organ.visualParts, socket.formRole) != null
                              && socket.parts != null && socket.parts.Length > 0)
             {
-                Piece(container.transform, socket, null, +1f, pos, rot, made, linkD);
-                if (socket.mirrorX) Piece(container.transform, socket, null, -1f, pos, rot, made, linkD);
+                Piece(container.transform, socket, null, +1f, pos, rot, made, linkD, null, sz);
+                if (socket.mirrorX) Piece(container.transform, socket, null, -1f, pos, rot, made, linkD, null, sz);
             }
         }
     }
@@ -130,7 +144,7 @@ public static class MorphBuilder
             var (ppos, prot) = Place(par, byName, placed, depth + 1);
             // СТЫК на ДЛИННОЙ оси родителя: `attach` = доля вдоль неё (0 — начало, 1 — конец).
             // Смещение — в КАЛИБРАХ родителя, поэтому переживает масштабирование вида
-            var b = par.SizeForGraph;
+            var b = SizeOf(par, byName, 0);
             Vector3 axis = b.z >= b.x && b.z >= b.y ? Vector3.forward : (b.y >= b.x ? Vector3.up : Vector3.right);
             float len = Mathf.Abs(Vector3.Dot(b, new Vector3(Mathf.Abs(axis.x), Mathf.Abs(axis.y), Mathf.Abs(axis.z))));
 
@@ -159,17 +173,27 @@ public static class MorphBuilder
     // тангаж общий: левая лапа не должна «смотреть» иначе правой)
     // `made` собирает СОЗДАННЫЕ КОРНЕВЫЕ детали места: по ним `Build` пересаживает ветку на звено цепи
     static void Piece(Transform parent, BodySocket socket, Organ organ, float side, Vector3 basePos,
-                      Quaternion baseRot, List<GameObject> made, float linkD)
+                      Quaternion baseRot, List<GameObject> made, float linkD, OrganPart[] fromOther, Vector3 sz)
     {
         // basePos/baseRot приходят из графа (уже с учётом родителя) — своих координат у места может и не быть
         Vector3 pos = basePos + (organ != null ? organ.visualOffset : Vector3.zero);
         Vector3 euler = (baseRot * Quaternion.Euler(organ != null ? organ.visualEuler : Vector3.zero)).eulerAngles;
-        Vector3 size = organ != null ? Vector3.Scale(socket.SizeForGraph, organ.visualScale) : socket.SizeForGraph;
+        Vector3 size = organ != null ? Vector3.Scale(sz, organ.visualScale) : sz;
 
         // СОСТАВНАЯ ФОРМА («лего 8+»): орган из нескольких частей — рога = стебель+лопасть+отростки,
         // иглы = щетина. Смещения частей заданы В КАЛИБРАХ МЕСТА, поэтому одна форма годится и мелкому
         // ежу, и крупному лосю: она ужимается/разрастается вместе с местом
-        var parts = organ != null && organ.visualParts != null && organ.visualParts.Length > 0 ? organ.visualParts : null;
+        // ПРИОРИТЕТ ФОРМЫ: части ЧУЖОГО органа-источника (место так объявило) → форма своего органа → форма
+        // места. Источник стоит первым потому, что место само его назвало: «глаза рисует Чутьё» — это
+        // решение места, а не случайность сборки
+        // ПРИОРИТЕТ ФОРМЫ: части ЧУЖОГО органа-источника (место так объявило) → форма своего органа → форма
+        // места. Источник стоит первым потому, что место само его назвало: «глаза рисует Чутьё» — это
+        // решение места, а не случайность сборки.
+        // ФИЛЬТР ПО РОЛИ ВЕЗДЕ: место берёт только те части, что предназначены ЕМУ. Иначе орган Чутья,
+        // получив форму глаз, нарисовал бы её ещё и на своём месте — а у «Чутья» позиции нет вовсе, и
+        // деталь родилась бы в начале координат (тот самый ящик на голове). Роль по умолчанию `None`,
+        // поэтому все прежние органы — рога, иглы, хвост — работают как работали
+        var parts = fromOther ?? PickParts(organ != null ? organ.visualParts : null, socket.formRole);
 
         // ЦЕПЬ ЗВЕНЬЕВ. Сколько — говорит ОРГАН (привитый змеиный хвост сегментен на любом носителе),
         // иначе МЕСТО (тело самой змеи — `chain`). Раньше цепь была ОТДЕЛЬНОЙ веткой и работала только
@@ -216,7 +240,7 @@ public static class MorphBuilder
             Quaternion frameRot = Quaternion.identity;
             if (align)
             {
-                var b = socket.SizeForGraph;
+                var b = sz;
                 along = b.x >= b.y && b.x >= b.z ? 0 : (b.y >= b.z ? 1 : 2);
                 outward = b.x <= b.y && b.x <= b.z ? 0 : (b.y <= b.z ? 1 : 2);
                 if (outward == along) outward = (along + 1) % 3;
@@ -230,7 +254,7 @@ public static class MorphBuilder
 
             // ВСЁ ОСТАЁТСЯ В КАНОНИЧНОМ КАДРЕ, поворот — ОДИН, в самом конце. (Перекладывать компоненты И
             // вращать нельзя: форма развернётся дважды — из ежиной щетины выходит крест из плит.)
-            Vector3 canonBase = align ? Pick(socket.SizeForGraph, across, outward, along) : socket.SizeForGraph;
+            Vector3 canonBase = align ? Pick(sz, across, outward, along) : sz;
             Vector3 canonSize = align ? Pick(size, across, outward, along) : size;
             Quaternion place = socketRot * frameRot;
 
@@ -246,10 +270,19 @@ public static class MorphBuilder
                 foreach (var pt in parts)
                 {
                     if (pt == null) continue;
-                    made.Add(Spawn(parent, socket.name,
+                    var made1 = Spawn(parent, socket.name,
                           linkPos + place * Vector3.Scale(pt.offset, canonBase * k),
                           (place * Quaternion.Euler(pt.euler)).eulerAngles,
-                          Vector3.Scale(canonSize, pt.scale) * k, side, pt.shape, socket.solid));
+                          Vector3.Scale(canonSize, pt.scale) * k, side, pt.shape, socket.solid);
+                    // ПАСПОРТ ДЕТАЛИ: роль и своя окраска едут вместе с куском, а не списком имён в чужой
+                    // системе. Вешаем только когда есть что сказать — обычный кусок остаётся чистым визуалом
+                    if (pt.role != PartRole.None || pt.color.a > 0f)
+                    {
+                        var mark = made1.AddComponent<PartMark>();
+                        mark.role = pt.role;
+                        mark.own = pt.color;
+                    }
+                    made.Add(made1);
                 }
             }
             return;
@@ -360,6 +393,32 @@ public static class MorphBuilder
                         || !byName.TryGetValue(s.parent, out var par) || par == s || par.linkLength <= 0f) return 0f;
         float t = par.linkTaper > 0f ? par.linkTaper : 1f;
         return ChainDiameter(par, byName, depth + 1) * Mathf.Pow(t, Mathf.Max(1, par.chain) - 1);
+    }
+
+    /// <summary>ГАБАРИТ МЕСТА. Задан `sizeRel` — считаем ОТ РОДИТЕЛЯ (шасси говорит, как вставлять):
+    /// голова доля корпуса, пасть доля головы, глаз доля головы. Тогда пропорция живёт в данных, и
+    /// правка одного места тянет за собой всю ветку — вместо того чтобы молча с ней разъехаться.
+    /// Пусто — прежний абсолютный `SizeForGraph` (корневые места и цепи в метрах).</summary>
+    static Vector3 SizeOf(BodySocket s, Dictionary<string, BodySocket> byName, int depth)
+    {
+        if (s.sizeRel == Vector3.zero || depth >= 16 || string.IsNullOrEmpty(s.parent)
+            || !byName.TryGetValue(s.parent, out var par) || par == s) return s.SizeForGraph;
+        return Vector3.Scale(SizeOf(par, byName, depth + 1), s.sizeRel);
+    }
+
+    /// <summary>Части органа, предназначенные месту с такой ролью. `null`, если подходящих нет — тогда
+    /// место рисует свою форму. Отдельного массива не плодим, когда фильтровать нечего.</summary>
+    static OrganPart[] PickParts(OrganPart[] src, PartRole role)
+    {
+        if (src == null || src.Length == 0) return null;
+        int n = 0;
+        foreach (var p in src) if (p != null && p.role == role) n++;
+        if (n == 0) return null;
+        if (n == src.Length) return src;
+        var picked = new OrganPart[n];
+        int i = 0;
+        foreach (var p in src) if (p != null && p.role == role) picked[i++] = p;
+        return picked;
     }
 
     static Vector3 Axis(int i) => i == 0 ? Vector3.right : i == 1 ? Vector3.up : Vector3.forward;

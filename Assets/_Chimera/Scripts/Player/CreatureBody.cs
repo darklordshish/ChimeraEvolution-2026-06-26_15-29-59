@@ -168,13 +168,12 @@ public partial class CreatureBody : MonoBehaviour
         if (chassis != null) SetAffinity(chassis.speciesName, AffinityCap);
         if (move != null) PlayerBody = this;
 
-        // ЛИЦО игрока (глаза/брови/борода из PlayerModel) тинтом состава НЕ красим — черты остаются читаемыми
-        // ЗУБЫ тоже вне тинта: у модели игрока они отдельной деталью со своим костяным материалом, и
-        // без исключения зеленели бы вместе с телом — оскал должен читаться на любом составе
-        renderers = System.Array.FindAll(GetComponentsInChildren<Renderer>(), r =>
-            r.name != "EyeL" && r.name != "EyeR" && r.name != "BrowL" && r.name != "BrowR"
-            && r.name != "Beard" && r.name != "Teeth");
-        mpb = new MaterialPropertyBlock();
+        // ЦВЕТ — ЧЕРЕЗ МИКШЕР СЛОЁВ. Прежде тут собирался массив рендереров с исключениями ПО ИМЕНАМ
+        // (EyeL/BrowR/Beard/Teeth — «черты лица не красить составом»), и список умер молча: морф-части
+        // именуются по СОКЕТАМ, таких имён у них нет вовсе. Теперь деталь носит свой паспорт (`PartMark`),
+        // а микшер сам решает, что чем красить — исключений не осталось (спека «язык цвета»)
+        mixer = GetComponent<TintMixer>();
+        if (mixer == null) mixer = gameObject.AddComponent<TintMixer>();
     }
 
     void Start() => Recompute();
@@ -421,10 +420,12 @@ public partial class CreatureBody : MonoBehaviour
             var worn = new System.Collections.Generic.List<Organ>();
             foreach (var sl in slots) if (!sl.Empty && sl.Worn != null) worn.Add(sl.Worn); // слоты шасси раньше химерных → шасси-фёрст
             MorphBuilder.Build(transform, chassis, worn); // ИГРОК СТРОИТСЯ ТАК ЖЕ: его тело — такая же химера, без исключений
-            renderers = System.Array.FindAll(GetComponentsInChildren<Renderer>(), r =>
-                r.name != "EyeL" && r.name != "EyeR" && r.name != "BrowL" && r.name != "BrowR"
-                && r.name != "Beard" && r.name != "Teeth");
+            // ЧАСТИ НОВЫЕ — ВСЕ, КТО ДЕРЖИТ НА НИХ ССЫЛКИ, ПЕРЕ-СОБИРАЮТСЯ. Ссылка, снятая в Awake, к этому
+            // моменту мертва: на этом уже сгорели телеграф (замах не красился) и камуфляж (змея перестала
+            // исчезать — прятались префабные меши, которых нет)
+            mixer?.Rebuild();
             if (TryGetComponent<Telegraph>(out var tg)) tg.RebuildRenderers(); // морф-части новые → телеграф пере-соберёт (иначе замах не красится)
+            if (camoComp != null) camoComp.Rebuild();                          // и камуфляж — иначе прячет пустоту
             if (TryGetComponent<SnakeBodyChain>(out var chain)) chain.RebuildFromMorph(); // [ANIM] цепь тела берёт новые звенья (и заново гасит свои коллайдеры)
             if (move != null) move.ReapplyFirstPerson(); // и своя голова снова спрятана от первого лица (части-то новые)
         }
