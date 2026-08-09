@@ -116,6 +116,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
                          // больше не отдельный компонент: змея глотает целиком → полная сытость (CreatureBody.DigestsWhole)
     float nextWallSeek;  // ретрай поиска стены при сытой осторожности на земле
     Vector3 wallPoint, wallNormal;
+    Vector3 climbPrev, climbFace = Vector3.up;  // позиция прошлого кадра на стене и куда развёрнута морда
 
     // сыты? (тело решает; нет сытости — вечно голодная охотница)
     bool Sated
@@ -327,10 +328,17 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         }
     }
 
-    // морда ВВЕРХ вдоль стены, «спиной» от стены (up = нормаль) — не перпендикулярно, как на полу
+    // МОРДА ПО ХОДУ ДВИЖЕНИЯ, «спиной» от стены (up = нормаль) — не перпендикулярно, как на полу.
+    // Раньше здесь стояло жёсткое `Vector3.up`, и на траверсе змея ползла вдоль стены боком, задрав голову
+    // вверх. Направление берём из ФАКТИЧЕСКОГО смещения, спроецированного на плоскость стены: подъём —
+    // морда вверх, траверс — вдоль стены, спуск — вниз головой (змеи так и спускаются). Одна формула на
+    // все фазы: появится четвёртая — она заработает сама, без нового частного случая
     void FaceWall()
     {
-        Quaternion wallRot = Quaternion.LookRotation(Vector3.up, wallNormal);
+        Vector3 move = Vector3.ProjectOnPlane(transform.position - climbPrev, wallNormal);
+        if (move.sqrMagnitude > 0.0001f) climbFace = move.normalized;      // ползём — смотрим куда ползём
+        if (climbFace.sqrMagnitude < 0.5f) climbFace = Vector3.up;         // ещё не двинулись (насест) — вверх
+        Quaternion wallRot = Quaternion.LookRotation(climbFace, wallNormal);
         transform.rotation = Quaternion.RotateTowards(transform.rotation, wallRot, rotationSpeed * Time.deltaTime);
     }
 
@@ -339,6 +347,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     {
         Vector3 anchor = wallPoint + wallNormal * wallHugOffset; // ближе к стене — голова прижимается (CC при климбе невидим, клип не важен)
         Vector3 p = transform.position;
+        climbPrev = p;                                          // отсюда `FaceWall` прочтёт ход следующего кадра
         p.x = Mathf.MoveTowards(p.x, anchor.x, wallHugSpeed * Time.deltaTime);
         p.z = Mathf.MoveTowards(p.z, anchor.z, wallHugSpeed * Time.deltaTime);
         p.y = Mathf.MoveTowards(p.y, targetY, climbSpeed * Time.deltaTime);
