@@ -178,7 +178,7 @@ public static class SpeciesBootstrap
         wolf.sockets = new[]
         {
             new BodySocket { name = "хребет", localPos = new Vector3(0.000f, 0.937f, 0.000f), baseSize = new Vector3(0.335f, 0.485f, 1.295f), hidden = true }, // ПОЗВОНОЧНИК: корень графа тела. Служебный — не рисуется и НЕ слот органа, поэтому покров (Шкура/Иглы) не может утащить за собой скелет
-            new BodySocket { name = "голова", parent = "шея", attach = 1.000f, attachOffset = new Vector3(0.000f, -0.060f, 0.060f),    baseSize = new Vector3(0.258f, 0.281f, 0.453f), sizeRel = new Vector3(1.446f, 1.364f, 1.052f), baseEuler = new Vector3(22f, 0f, 0f), parts = new[] {
+            new BodySocket { name = "голова", parent = "шея", attach = 1.000f, attachOffset = new Vector3(0.000f, -0.060f, 0.060f),    baseSize = new Vector3(0.336f, 0.366f, 0.589f), sizeRel = new Vector3(1.446f, 1.364f, 1.052f), baseEuler = new Vector3(22f, 0f, 0f), parts = new[] {
                 new OrganPart { scale = new Vector3(1.00f, 0.88f, 0.55f), offset = new Vector3(0.00f, 0.06f, -0.22f), shape = PartShape.Sphere }, // КРУГ: мозговой отдел — почти шар, главный объём головы
                 new OrganPart { scale = new Vector3(0.78f, 0.32f, 0.40f), offset = new Vector3(0.00f, 0.34f, -0.10f), shape = PartShape.Sphere }, // лоб над линией морды — «as high as needed» из схемы
                 new OrganPart { scale = new Vector3(0.72f, 0.55f, 0.42f), offset = new Vector3(0.00f, -0.18f, 0.00f), shape = PartShape.Sphere }, // щека: линия от низа круга к клину (cheek line)
@@ -186,13 +186,13 @@ public static class SpeciesBootstrap
                 new OrganPart { scale = new Vector3(0.42f, 0.24f, 0.42f), offset = new Vector3(0.00f, -0.30f, 0.24f), shape = PartShape.Sphere }, // нижняя челюсть под клином, короче его
                 new OrganPart { scale = new Vector3(0.18f, 0.16f, 0.10f), offset = new Vector3(0.00f, -0.16f, 0.48f), shape = PartShape.Sphere }, // мочка носа на конце клина
             } }, // телесное место
-            new BodySocket { name = "Пасть", parent = "голова", attach = 1.000f, attachOffset = new Vector3(0.000f, -0.300f, -0.100f),     baseSize = new Vector3(0.110f, 0.090f, 0.180f), sizeRel = new Vector3(0.426f, 0.320f, 0.397f), baseEuler = new Vector3(4f, 0f, 0f), parts = new[] {
+            new BodySocket { name = "Пасть", parent = "голова", attach = 1.000f, attachOffset = new Vector3(0.000f, -0.300f, -0.100f),     baseSize = new Vector3(0.143f, 0.117f, 0.234f), sizeRel = new Vector3(0.426f, 0.320f, 0.397f), baseEuler = new Vector3(4f, 0f, 0f), parts = new[] {
                 new OrganPart { scale = new Vector3(0.94f, 0.30f, 0.92f), offset = new Vector3(0.00f, 0.00f, 0.00f), shape = PartShape.Sphere }, // ЛИНИЯ РТА — морду держит голова, пасть только смыкание челюстей
             } },
-            new BodySocket { name = "глаза", parent = "голова", attach = 0.500f, attachOffset = new Vector3(0.400f, 0.190f, 0.000f), baseSize = new Vector3(0.036f, 0.036f, 0.036f), sizeRel = new Vector3(0.140f, 0.128f, 0.079f), mirrorX = true, formFrom = "Чутьё", formRole = PartRole.Eye, parts = new[] {
+            new BodySocket { name = "глаза", parent = "голова", attach = 0.500f, attachOffset = new Vector3(0.400f, 0.190f, 0.000f), baseSize = new Vector3(0.047f, 0.047f, 0.046f), sizeRel = new Vector3(0.140f, 0.128f, 0.079f), mirrorX = true, formFrom = "Чутьё", formRole = PartRole.Eye, parts = new[] {
                 new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), shape = PartShape.Sphere, role = PartRole.Eye, color = new Color(0.10f, 0.10f, 0.12f, 1f) }, // ФОЛБЭК: тварь без Чутья не слепа, но глаз тускл
             } }, // МЕСТО НА КОЖЕ головы (посчитано лучом из её центра) — форму и цвет даёт ЧУТЬЁ
-            new BodySocket { name = "уши", parent = "голова", attach = 0.620f, attachOffset = new Vector3(0.400f, 0.520f, -0.150f),    baseSize = new Vector3(0.110f, 0.185f, 0.070f), sizeRel = new Vector3(0.426f, 0.658f, 0.155f), baseEuler = new Vector3(0.00f, 0.00f, 25.00f), mirrorX = true, parts = new[] {
+            new BodySocket { name = "уши", parent = "голова", attach = 0.620f, attachOffset = new Vector3(0.400f, 0.520f, -0.150f),    baseSize = new Vector3(0.143f, 0.241f, 0.091f), sizeRel = new Vector3(0.426f, 0.658f, 0.155f), baseEuler = new Vector3(0.00f, 0.00f, 25.00f), mirrorX = true, parts = new[] {
                 new OrganPart { scale = new Vector3(1.00f, 0.42f, 0.90f), offset = new Vector3(0.00f, -0.30f, 0.00f), euler = new Vector3(-6f, 0f, -7f), shape = PartShape.Sphere }, // основание уха — широкое
                 new OrganPart { scale = new Vector3(0.70f, 0.40f, 0.62f), offset = new Vector3(0.02f, 0.02f, -0.02f), euler = new Vector3(-6f, 0f, -7f), shape = PartShape.Sphere }, // середина — сужается
                 new OrganPart { scale = new Vector3(0.36f, 0.36f, 0.32f), offset = new Vector3(0.04f, 0.32f, -0.04f), euler = new Vector3(-6f, 0f, -7f), shape = PartShape.Sphere }, // острие — треугольник из схемы
@@ -220,10 +220,10 @@ public static class SpeciesBootstrap
                 new OrganPart { scale = new Vector3(0.74f, 0.74f, 0.24f), offset = new Vector3(0.00f, 0.00f, -0.25f) }, // сегмент 3
                 new OrganPart { scale = new Vector3(0.60f, 0.60f, 0.22f), offset = new Vector3(0.00f, 0.00f, -0.46f) }, // кисточка
             } }, // СВОЙ хвост (не графт): крепится сверху крупа, продолжением позвоночника
-            new BodySocket { name = "Сердце", inner = true, parent = "хребет", attach = 0.500f, attachOffset = new Vector3(0.000f, 0.060f, 0.000f), baseSize = new Vector3(0.400f, 0.420f, 0.480f), sizeRel = new Vector3(0.720f, 0.760f, 0.330f) }, // ГРУДНАЯ КОРОБКА волка: ГЛУБЖЕ, чем шире — грудь бегуна // внутреннее место: форму (грудную клетку) даёт орган
+            new BodySocket { name = "Сердце", inner = true, parent = "хребет", attach = 0.500f, attachOffset = new Vector3(0.000f, 0.060f, 0.000f), baseSize = new Vector3(0.241f, 0.369f, 0.427f), sizeRel = new Vector3(0.720f, 0.760f, 0.330f) }, // ГРУДНАЯ КОРОБКА волка: ГЛУБЖЕ, чем шире — грудь бегуна // внутреннее место: форму (грудную клетку) даёт орган
             new BodySocket { name = "Чутьё",  inner = true },  // формы у нюха нет, и деталь не родится сама собой; дай органу форму (термо-ямки) — место проступит, флаги править не придётся
             // закрытые места (пустыми не рисуются): волк с лосиными рогами / ежиным игломётом читается сразу
-            new BodySocket { name = "Рога", parent = "голова", attach = 0.600f, attachOffset = new Vector3(0.320f, 0.500f, -0.100f),    baseSize = new Vector3(0.137f, 0.137f, 0.137f), sizeRel = new Vector3(0.531f, 0.488f, 0.302f), mirrorX = true, graft = true }, // КАЛИБР: над черепом и наружу
+            new BodySocket { name = "Рога", parent = "голова", attach = 0.600f, attachOffset = new Vector3(0.320f, 0.500f, -0.100f),    baseSize = new Vector3(0.178f, 0.179f, 0.178f), sizeRel = new Vector3(0.531f, 0.488f, 0.302f), mirrorX = true, graft = true }, // КАЛИБР: над черепом и наружу
             new BodySocket { name = "Игломёт", parent = "хребет", attach = 0.550f, attachOffset = new Vector3(0.000f, 0.426f, 0.044f),    baseSize = new Vector3(0.198f, 0.198f, 0.198f), sizeRel = new Vector3(0.591f, 0.408f, 0.153f), baseEuler = new Vector3(-10.00f, 0.00f, 0.00f), graft = true }, // КАЛИБР; хребет ГОРИЗОНТАЛЬНЫЙ — доворот не нужен, выше спины (верх туши 0.85)
         };
         EditorUtility.SetDirty(wolf);
@@ -398,7 +398,7 @@ public static class SpeciesBootstrap
         moose.sockets = new[]
         {
             new BodySocket { name = "хребет", localPos = new Vector3(0.000f, 1.930f, 0.000f), baseSize = new Vector3(0.521f, 0.791f, 2.284f), hidden = true }, // ПОЗВОНОЧНИК: корень графа тела. Служебный — не рисуется и НЕ слот органа, поэтому покров (Толстая шкура) не тащит за собой скелет
-            new BodySocket { name = "голова", parent = "шея", attach = 1.000f, attachOffset = new Vector3(0.000f, -0.066f, 0.148f), baseSize = new Vector3(0.219f, 0.340f, 0.548f), sizeRel = new Vector3(0.677f, 0.789f, 1.018f), baseEuler = new Vector3(40f, 0f, 0f), parts = new[] {
+            new BodySocket { name = "голова", parent = "шея", attach = 1.000f, attachOffset = new Vector3(0.000f, -0.066f, 0.148f), baseSize = new Vector3(0.284f, 0.442f, 0.711f), sizeRel = new Vector3(0.677f, 0.789f, 1.018f), baseEuler = new Vector3(40f, 0f, 0f), parts = new[] {
                 new OrganPart { scale = new Vector3(1.00f, 0.64f, 0.34f), offset = new Vector3(0.00f, 0.14f, -0.33f), shape = PartShape.Sphere }, // КРУГ: мозговой отдел — у лося МАЛЫЙ и сдвинут назад
                 new OrganPart { scale = new Vector3(0.74f, 0.54f, 0.66f), offset = new Vector3(0.00f, -0.04f, 0.12f), shape = PartShape.Sphere }, // КЛИН: морда — три четверти длины головы
                 new OrganPart { scale = new Vector3(0.68f, 0.32f, 0.34f), offset = new Vector3(0.00f, 0.15f, 0.00f), shape = PartShape.Sphere }, // горбинка переносицы — римский профиль лося
@@ -406,21 +406,21 @@ public static class SpeciesBootstrap
                 new OrganPart { scale = new Vector3(0.60f, 0.30f, 0.22f), offset = new Vector3(0.00f, -0.27f, 0.36f), shape = PartShape.Sphere }, // нависающая верхняя губа — примета лося
                 new OrganPart { scale = new Vector3(0.46f, 0.26f, 0.52f), offset = new Vector3(0.00f, -0.28f, 0.08f), shape = PartShape.Sphere }, // нижняя челюсть
             } }, // 40 гасит наклон шеи (−38) до +2 — РОВНО столько же, сколько у Пасти: череп и морда в ОДНУ линию, излома нет
-            new BodySocket { name = "Пасть", parent = "голова", attach = 1.000f, attachOffset = new Vector3(0.000f, -0.250f, -0.050f),  baseSize = new Vector3(0.150f, 0.170f, 0.260f), sizeRel = new Vector3(0.685f, 0.500f, 0.474f), baseEuler = new Vector3(0f, 0f, 0f), parts = new[] {
+            new BodySocket { name = "Пасть", parent = "голова", attach = 1.000f, attachOffset = new Vector3(0.000f, -0.250f, -0.050f),  baseSize = new Vector3(0.195f, 0.221f, 0.337f), sizeRel = new Vector3(0.685f, 0.500f, 0.474f), baseEuler = new Vector3(0f, 0f, 0f), parts = new[] {
                 new OrganPart { scale = new Vector3(0.94f, 0.30f, 0.92f), offset = new Vector3(0.00f, 0.00f, 0.00f), shape = PartShape.Sphere }, // ЛИНИЯ РТА — морду держит голова, пасть только смыкание челюстей
             } }, // длинная морда с горбинкой; излом к черепу УБРАН (0) — «голова задрана, моська прямо» шло именно от него
-            new BodySocket { name = "глаза", parent = "голова", attach = 0.500f, attachOffset = new Vector3(0.420f, 0.130f, -0.240f), baseSize = new Vector3(0.045f, 0.045f, 0.045f), sizeRel = new Vector3(0.205f, 0.132f, 0.082f), mirrorX = true, formFrom = "Чутьё", formRole = PartRole.Eye, parts = new[] {
+            new BodySocket { name = "глаза", parent = "голова", attach = 0.500f, attachOffset = new Vector3(0.420f, 0.130f, -0.240f), baseSize = new Vector3(0.058f, 0.058f, 0.058f), sizeRel = new Vector3(0.205f, 0.132f, 0.082f), mirrorX = true, formFrom = "Чутьё", formRole = PartRole.Eye, parts = new[] {
                 new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), shape = PartShape.Sphere, role = PartRole.Eye, color = new Color(0.10f, 0.10f, 0.12f, 1f) }, // ФОЛБЭК: тварь без Чутья не слепа, но глаз тускл
             } }, // МЕСТО НА КОЖЕ головы (посчитано лучом из её центра) — форму и цвет даёт ЧУТЬЁ
-            new BodySocket { name = "уши", parent = "голова", attach = 0.700f, attachOffset = new Vector3(0.590f, 0.341f, -0.511f),    baseSize = new Vector3(0.115f, 0.300f, 0.100f), sizeRel = new Vector3(0.525f, 0.882f, 0.182f), baseEuler = new Vector3(-24f, 0f, 26f), mirrorX = true, parts = new[] {
+            new BodySocket { name = "уши", parent = "голова", attach = 0.700f, attachOffset = new Vector3(0.590f, 0.341f, -0.511f),    baseSize = new Vector3(0.149f, 0.390f, 0.129f), sizeRel = new Vector3(0.525f, 0.882f, 0.182f), baseEuler = new Vector3(-24f, 0f, 26f), mirrorX = true, parts = new[] {
                 new OrganPart { scale = new Vector3(0.92f, 1.00f, 0.72f), offset = new Vector3(0.00f, 0.00f, 0.00f) }, // раковина
                 new OrganPart { scale = new Vector3(0.58f, 0.52f, 0.50f), offset = new Vector3(0.00f, 0.44f, -0.08f) }, // кончик
             } },
-            new BodySocket { name = "шея", parent = "горб", attach = 1.000f, attachOffset = new Vector3(0.000f, 0.252f, -0.021f),    baseSize = new Vector3(0.420f, 0.560f, 0.700f), sizeRel = new Vector3(0.636f, 0.824f, 0.378f), baseEuler = new Vector3(-38f, 0f, 0f), parts = new[] {
+            new BodySocket { name = "шея", parent = "хребет", attach = 1.000f, attachOffset = new Vector3(0.000f, 0.252f, -0.021f),    baseSize = new Vector3(0.420f, 0.560f, 0.700f), sizeRel = new Vector3(0.806f, 0.708f, 0.306f), baseEuler = new Vector3(-38f, 0f, 0f), parts = new[] {
                 new OrganPart { scale = new Vector3(0.94f, 1.20f, 0.77f), offset = new Vector3(0.00f, 0.00f, 0.00f), euler = new Vector3(90f, 0f, 0f), shape = PartShape.Capsule }, // шея одной массой
                 new OrganPart { scale = new Vector3(0.54f, 0.64f, 0.32f), offset = new Vector3(0.00f, -0.34f, 0.32f), euler = new Vector3(20f, 0f, 0f), shape = PartShape.Sphere }, // ПОДГРУДОК (висячая складка). Прошлый заход убрал «торпеду», но заодно срезал свес до 5 см — складка пропала. Свес вернул (10 см), а торпеду снимает УЗОСТЬ (0.23 при шее 0.40) и сдвиг ВПЕРЁД, к голове: у лося складка висит под челюстью, а не тянется вдоль всей шеи
             } },
-            new BodySocket { name = "горб", parent = "хребет", attach = 0.735f, attachOffset = new Vector3(0.000f, 0.367f, -0.020f),   baseSize = new Vector3(0.660f, 0.680f, 1.850f), sizeRel = new Vector3(0.760f, 0.560f, 0.280f), parts = new[] {
+            new BodySocket { name = "горб", parent = "хребет", attach = 0.735f, attachOffset = new Vector3(0.000f, 0.367f, -0.020f),   baseSize = new Vector3(0.396f, 0.443f, 0.640f), sizeRel = new Vector3(0.760f, 0.560f, 0.280f), parts = new[] {
                 new OrganPart { scale = new Vector3(0.92f, 1.00f, 0.60f), offset = new Vector3(0.00f, 0.00f, 0.08f), shape = PartShape.Sphere }, // ПИК холки — ШИРОКИЙ (0.61 при груди 0.59): холка это массивный горб над лопатками. Узкий высокий гребень читался вертикальным плавником, а не телом
                 new OrganPart { scale = new Vector3(1.00f, 0.80f, 0.72f), offset = new Vector3(0.00f, -0.20f, 0.06f), shape = PartShape.Sphere }, // плечевая масса — основание под пиком
                 new OrganPart { scale = new Vector3(0.88f, 0.62f, 0.62f), offset = new Vector3(0.00f, -0.22f, -0.34f), shape = PartShape.Sphere }, // ДЛИННЫЙ задний скат к спине — он и читает силуэт
@@ -443,8 +443,8 @@ public static class SpeciesBootstrap
                 new OrganPart { scale = new Vector3(0.80f, 0.80f, 0.40f), offset = new Vector3(0.00f, 0.00f, -0.42f) }, // сегмент 2
                 new OrganPart { scale = new Vector3(0.60f, 0.60f, 0.32f), offset = new Vector3(0.00f, 0.00f, -0.76f) }, // кисточка
             } }, // ЕДИНАЯ СХЕМА ХВОСТА (шар-шарнир + сегменты вдоль Z): как у волка, только короче — лосиный обрубок. Шарнир сидит в крупе, а кончик ВЫХОДИТ за него на 17 см: прошлый заход утопил хвост целиком (кончик −1.21 при заднем крае крупа −1.23)
-            new BodySocket { name = "Рога", parent = "голова", attach = 0.700f, attachOffset = new Vector3(0.500f, 0.560f, -0.100f),   baseSize = new Vector3(0.320f, 0.320f, 0.320f), sizeRel = new Vector3(1.461f, 0.941f, 0.584f), baseEuler = new Vector3(-2f, 0f, 0f), mirrorX = true }, // СВОИ рога: −2 гасит наклон ветки «шея→голова» (+2) до нуля — лопата горизонтальна: КАЛИБР крупный. В ВИСКАХ (верх черепа 2.17) и ВБОК за габарит головы — раньше лопасти врастали в макушку и торчали из висков
-            new BodySocket { name = "Сердце", inner = true, parent = "хребет", attach = 0.500f, attachOffset = new Vector3(0.000f, 0.040f, 0.000f), baseSize = new Vector3(0.640f, 0.760f, 0.820f), sizeRel = new Vector3(0.720f, 0.780f, 0.320f) }, // ГРУДНАЯ КОРОБКА лося: самая объёмная // внутреннее место: форму (грудную клетку) даёт орган
+            new BodySocket { name = "Рога", parent = "голова", attach = 0.700f, attachOffset = new Vector3(0.500f, 0.560f, -0.100f),   baseSize = new Vector3(0.415f, 0.416f, 0.416f), sizeRel = new Vector3(1.461f, 0.941f, 0.584f), baseEuler = new Vector3(-2f, 0f, 0f), mirrorX = true }, // СВОИ рога: −2 гасит наклон ветки «шея→голова» (+2) до нуля — лопата горизонтальна: КАЛИБР крупный. В ВИСКАХ (верх черепа 2.17) и ВБОК за габарит головы — раньше лопасти врастали в макушку и торчали из висков
+            new BodySocket { name = "Сердце", inner = true, parent = "хребет", attach = 0.500f, attachOffset = new Vector3(0.000f, 0.040f, 0.000f), baseSize = new Vector3(0.375f, 0.617f, 0.731f), sizeRel = new Vector3(0.720f, 0.780f, 0.320f) }, // ГРУДНАЯ КОРОБКА лося: самая объёмная // внутреннее место: форму (грудную клетку) даёт орган
             new BodySocket { name = "Чутьё",  inner = true },  // формы у нюха нет, и деталь не родится сама собой; дай органу форму (термо-ямки) — место проступит, флаги править не придётся
             new BodySocket { name = "Игломёт", parent = "хребет", attach = 0.550f, attachOffset = new Vector3(0.000f, 0.411f, -0.050f), baseSize = new Vector3(0.281f, 0.281f, 0.281f), sizeRel = new Vector3(0.539f, 0.355f, 0.123f), baseEuler = new Vector3(-10.00f, 0.00f, 0.00f), graft = true }, // КАЛИБР (крупная туша): НА спине (верх туши 2.10) — основания шипов входят в корпус; сдвинут назад, не спорит с горбом
         };
@@ -568,6 +568,16 @@ public static class SpeciesBootstrap
         EditorUtility.SetDirty(hog);
 
         ValidateSockets(new[] { human, wolf, snake, moose, hog }); // сверка сокет-плана: молчит, пока всё сходится
+
+        // ПРАВИЛА ТЕЛА (спека 2026-08-10): объективные поломки — в консоль. Ловит то, что раньше молчало
+        // и находилось глазами через дни: ось на грани переключения, цепь без диаметра, нулевой калибр,
+        // цикл в графе. Анатомию НЕ проверяем — стилизация решение геймдизайнера, её место в карте тел
+        foreach (var sp in new[] { human, wolf, snake, moose, hog })
+            foreach (var issue in BodyRules.CheckData(sp))
+            {
+                string line = $"[тело] {issue.species} · {issue.where}: {issue.text}";
+                if (issue.error) Debug.LogError(line); else Debug.LogWarning(line);
+            }
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
