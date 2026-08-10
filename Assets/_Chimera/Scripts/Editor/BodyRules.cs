@@ -35,19 +35,35 @@ public static class BodyRules
 
             // ЗАПАС ДЛИННОЙ ОСИ. Ось выбирается по максимальной стороне, и при близких числах молча
             // переключается, разворачивая ВСЮ ветку детей: у человека шея 0.128Y при 0.132Z уронила
-            // рост с 1.85 до 1.76, и искали это долго — ошибок нет, просто «голова уехала вперёд»
+            // рост с 1.85 до 1.76, и искали это долго — ошибок нет, просто «голова уехала вперёд».
+            //
+            // НО СПРАШИВАЕМ ТОЛЬКО ТАМ, ГДЕ ОСЬ НА ЧТО-ТО ВЛИЯЕТ: вдоль неё считается `attach` детей и
+            // растёт цепь. У бездетного не-цепного места (глаз-шар, рога-калибр) переключись ось хоть
+            // трижды — не сдвинется ничего, и ругань тут приучила бы игнорировать красное.
+            // Изотропный калибр — тоже не поломка, а намерение: у шара длинной оси нет по определению
             var b = k.baseSize;
-            float max = Mathf.Max(b.x, Mathf.Max(b.y, b.z));
-            float second = 0f;
-            if (b.x < max && b.x > second) second = b.x;
-            if (b.y < max && b.y > second) second = b.y;
-            if (b.z < max && b.z > second) second = b.z;
-            if (max > 0f && second > 0f && (max / second - 1f) < AxisMargin)
-                list.Add(new Issue
-                {
-                    species = s.speciesName, where = k.name, error = true,
-                    text = $"запас длинной оси {(max / second - 1f) * 100f:F0}% — ось может молча переключиться"
-                });
+            bool hasChildren = false;
+            foreach (var other in s.sockets)
+                if (other != null && other.parent == k.name) { hasChildren = true; break; }
+            bool axisMatters = hasChildren || k.linkLength > 0f;
+
+            if (axisMatters)
+            {
+                float max = Mathf.Max(b.x, Mathf.Max(b.y, b.z));
+                float min = Mathf.Min(b.x, Mathf.Min(b.y, b.z));
+                float second = 0f;
+                if (b.x < max && b.x > second) second = b.x;
+                if (b.y < max && b.y > second) second = b.y;
+                if (b.z < max && b.z > second) second = b.z;
+                bool isotropic = max > 0f && (max / Mathf.Max(0.000001f, min) - 1f) < AxisMargin; // куб/шар
+                if (!isotropic && max > 0f && second > 0f && (max / second - 1f) < AxisMargin)
+                    list.Add(new Issue
+                    {
+                        species = s.speciesName, where = k.name, error = true,
+                        text = $"запас длинной оси {(max / second - 1f) * 100f:F0}% — ось может молча переключиться " +
+                               $"и развернуть ветку детей"
+                    });
+            }
 
             // НУЛЕВОЙ КАЛИБР. Деталь схлопнется в плоскость без единой ошибки в консоли
             if (k.linkLength <= 0f && (b.x <= 0f || b.y <= 0f || b.z <= 0f) && k.sizeRel == Vector3.zero)
