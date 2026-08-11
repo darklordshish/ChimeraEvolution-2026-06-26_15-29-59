@@ -52,13 +52,32 @@ public static class BodyMap
             // ровно там, где мы неделю искали щели глазами
             sb.AppendLine("### Стыки (по оси наибольшего разноса)");
             sb.AppendLine();
-            sb.AppendLine("| деталь | родитель | ось | край родителя | край детали | зазор (+) / нахлёст (−) | доля калибра |");
+            sb.AppendLine("| место | родитель | ось | край родителя | край места | зазор (+) / нахлёст (−) | доля калибра |");
             sb.AppendLine("|---|---|---|---|---|---|---|");
-            var byName = new Dictionary<string, BodyProbe.Part>();
-            foreach (var p in parts) byName[p.name] = p;   // одноимённые звенья цепи равнозначны — берём последнее
+
+            // СТЫК СЧИТАЕМ МЕЖДУ МЕСТАМИ, А НЕ ДЕТАЛЯМИ. У головы шесть частей, у цепи полтора десятка
+            // звеньев — брать «последнюю попавшуюся» бессмысленно. Объединяем все части места в один
+            // объём: он и есть то, чем место стыкуется с соседями
+            var whole = new Dictionary<string, Bounds>();
+            var placeParent = new Dictionary<string, string>();
             foreach (var p in parts)
             {
-                if (!byName.TryGetValue(p.parent, out var par)) continue;
+                string sock = p.name;
+                int cut = sock.IndexOf('~');
+                if (cut > 0) sock = sock.Substring(0, cut);          // «Тело~сустав» → «Тело»
+                var b = new Bounds(p.center, p.size);
+                if (whole.TryGetValue(sock, out var acc)) { acc.Encapsulate(b); whole[sock] = acc; }
+                else { whole[sock] = b; placeParent[sock] = p.parent; }
+            }
+
+            foreach (var kv in whole)
+            {
+                string name = kv.Key;
+                if (!placeParent.TryGetValue(name, out var parentName)) continue;
+                if (!whole.TryGetValue(parentName, out var parBounds)) continue;
+
+                var p = new BodyProbe.Part { name = name, center = kv.Value.center, size = kv.Value.size };
+                var par = new BodyProbe.Part { name = parentName, center = parBounds.center, size = parBounds.size };
 
                 Vector3 d = p.center - par.center;
                 int axis = Mathf.Abs(d.x) >= Mathf.Abs(d.y) && Mathf.Abs(d.x) >= Mathf.Abs(d.z) ? 0

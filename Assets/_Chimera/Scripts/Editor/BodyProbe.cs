@@ -42,13 +42,27 @@ public static class BodyProbe
 
             MorphBuilder.Build(go.transform, species, worn);
 
+            // РОДСТВО БЕРЁМ ИЗ ДАННЫХ, А НЕ ИЗ ИЕРАРХИИ. Билдер кладёт детали ПЛОСКО в контейнер `Morph`,
+            // поэтому у всех `Transform.parent` один и тот же — искать по нему стык бессмысленно, таблица
+            // выходила пустой. Настоящее родство живёт в графе мест: имя детали = имя сокета (контракт)
+            var socketParent = new Dictionary<string, string>();
+            if (species.sockets != null)
+                foreach (var k in species.sockets)
+                    if (k != null && !string.IsNullOrEmpty(k.name))
+                        socketParent[k.name] = string.IsNullOrEmpty(k.parent) ? "(корень)" : k.parent;
+
             foreach (var r in go.GetComponentsInChildren<Renderer>())
             {
                 var t = r.transform;
+                // имя части = имя сокета; у сустава цепи оно с суффиксом «~сустав» — режем до сокета
+                string sock = t.name;
+                int cut = sock.IndexOf('~');
+                if (cut > 0) sock = sock.Substring(0, cut);
+
                 parts.Add(new Part
                 {
                     name = t.name,
-                    parent = t.parent != null ? t.parent.name : "(корень)",
+                    parent = socketParent.TryGetValue(sock, out var par) ? par : "(вне графа)",
                     center = r.bounds.center,
                     size = r.bounds.size,
                     hasRenderer = true,
