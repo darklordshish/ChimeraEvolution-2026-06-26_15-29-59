@@ -52,8 +52,8 @@ public static class BodyMap
             // ровно там, где мы неделю искали щели глазами
             sb.AppendLine("### Стыки (по оси наибольшего разноса)");
             sb.AppendLine();
-            sb.AppendLine("| место | родитель | ось | край родителя | край места | зазор (+) / нахлёст (−) | доля калибра |");
-            sb.AppendLine("|---|---|---|---|---|---|---|");
+            sb.AppendLine("| место | родитель | ось | край родителя | край места | зазор (+) / нахлёст (−) | доля калибра | вердикт |");
+            sb.AppendLine("|---|---|---|---|---|---|---|---|");
 
             // СТЫК СЧИТАЕМ МЕЖДУ МЕСТАМИ, А НЕ ДЕТАЛЯМИ. У головы шесть частей, у цепи полтора десятка
             // звеньев — брать «последнюю попавшуюся» бессмысленно. Объединяем все части места в один
@@ -74,24 +74,44 @@ public static class BodyMap
             {
                 string name = kv.Key;
                 if (!placeParent.TryGetValue(name, out var parentName)) continue;
+
+                // ПОДНИМАЕМСЯ ДО ПРЕДКА С ГЕОМЕТРИЕЙ. Хребет служебный — своей формы у него нет, и все
+                // висящие на нём (шея, лапы, хвост) молча выпадали из таблицы: стыковаться не с чем.
+                // Фактический стык у них — с ближайшим НАРИСОВАННЫМ предком
+                int guard = 0;
+                while (!whole.ContainsKey(parentName) && placeParent.TryGetValue(parentName, out var up)
+                       && guard++ < 16)
+                    parentName = up;
                 if (!whole.TryGetValue(parentName, out var parBounds)) continue;
 
-                var p = new BodyProbe.Part { name = name, center = kv.Value.center, size = kv.Value.size };
-                var par = new BodyProbe.Part { name = parentName, center = parBounds.center, size = parBounds.size };
+                var me = kv.Value;
 
-                Vector3 d = p.center - par.center;
+                // ВЛОЖЕНО ИЛИ ПРИСТЫКОВАНО — разные вещи, и мерить их одинаково нельзя. Глаз не стыкуется
+                // с головой, он в неё утоплен; печатать ему «нахлёст −292%» значит приучить читать таблицу
+                // по диагонали. Вложение: объём места почти целиком внутри родительского
+                var ov = Vector3.Min(me.max, parBounds.max) - Vector3.Max(me.min, parBounds.min);
+                float inside = Mathf.Max(0f, ov.x) * Mathf.Max(0f, ov.y) * Mathf.Max(0f, ov.z);
+                float mine = Mathf.Max(0.000001f, me.size.x * me.size.y * me.size.z);
+                bool nested = inside / mine > 0.75f;
+
+                Vector3 d = me.center - parBounds.center;
                 int axis = Mathf.Abs(d.x) >= Mathf.Abs(d.y) && Mathf.Abs(d.x) >= Mathf.Abs(d.z) ? 0
                          : Mathf.Abs(d.y) >= Mathf.Abs(d.z) ? 1 : 2;
                 string axisName = axis == 0 ? "X" : axis == 1 ? "Y" : "Z";
 
-                float sign = d[axis] >= 0f ? 1f : -1f;                       // в какую сторону ушёл ребёнок
-                float parentEdge = par.center[axis] + sign * par.size[axis] * 0.5f;
-                float childEdge = p.center[axis] - sign * p.size[axis] * 0.5f;
+                float sign = d[axis] >= 0f ? 1f : -1f;                       // в какую сторону ушло место
+                float parentEdge = parBounds.center[axis] + sign * parBounds.size[axis] * 0.5f;
+                float childEdge = me.center[axis] - sign * me.size[axis] * 0.5f;
                 float gap = (childEdge - parentEdge) * sign;                 // + щель, − нахлёст
-                float caliber = Mathf.Max(0.000001f, p.size[axis]);
+                float caliber = Mathf.Max(0.000001f, me.size[axis]);
 
-                sb.AppendLine($"| {p.name} | {p.parent} | {axisName} | {parentEdge:F3} | {childEdge:F3} " +
-                              $"| {gap:F3} | {(gap / caliber):P0} |");
+                string verdict = nested ? "вложено"
+                               : gap > BodyRules.GapWarn * caliber ? "**ЩЕЛЬ**"
+                               : gap < -BodyRules.OverlapWarn * caliber ? "врастание"
+                               : "норма";
+
+                sb.AppendLine($"| {name} | {parentName} | {axisName} | {parentEdge:F3} | {childEdge:F3} " +
+                              $"| {gap:F3} | {(gap / caliber):P0} | {verdict} |");
             }
             sb.AppendLine();
 
