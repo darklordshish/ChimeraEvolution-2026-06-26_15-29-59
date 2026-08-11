@@ -88,8 +88,30 @@ public static class BodyMap
                 // Фактический стык у них — с ближайшим НАРИСОВАННЫМ предком
                 int guard = 0;
                 while (!whole.ContainsKey(parentName) && placeParent.TryGetValue(parentName, out var up)
-                       && guard++ < 16)
+                       && !string.IsNullOrEmpty(up) && guard++ < 16)
                     parentName = up;
+
+                // ПРЕДКА С ГЕОМЕТРИЕЙ НЕТ ВОВСЕ — место висит на абстракции (хребет служебный, выше него
+                // корень). Так устроены лапы, шея и хвост: пояса конечностей как места отсутствуют, и
+                // стыковаться лапе физически не с чем. МОЛЧАТЬ ОБ ЭТОМ НЕЛЬЗЯ — это и есть дефект скелета,
+                // а не отсутствие данных. Меряем примыкание к САМОМУ КРУПНОМУ соседу по тому же родителю:
+                // фактически это корпус, к которому конечность и должна крепиться
+                bool viaAbstract = false;
+                if (!whole.ContainsKey(parentName))
+                {
+                    string biggest = null;
+                    float bestVol = 0f;
+                    foreach (var other in whole)
+                    {
+                        if (other.Key == name) continue;
+                        if (!placeParent.TryGetValue(other.Key, out var op) || op != placeParent[name]) continue;
+                        float v = other.Value.size.x * other.Value.size.y * other.Value.size.z;
+                        if (v > bestVol) { bestVol = v; biggest = other.Key; }
+                    }
+                    if (biggest == null) continue;
+                    parentName = biggest;
+                    viaAbstract = true;
+                }
                 if (!whole.TryGetValue(parentName, out var parBounds)) continue;
 
                 var me = kv.Value;
@@ -113,13 +135,15 @@ public static class BodyMap
                 float gap = (childEdge - parentEdge) * sign;                 // + щель, − нахлёст
                 float caliber = Mathf.Max(0.000001f, me.size[axis]);
 
+                // помечаем, что предок фактический, а не по графу: у места нет нарисованного родителя
+                string via = viaAbstract ? " ⚠ через абстракцию" : "";
                 string verdict = nested ? "вложено"
                                : gap > BodyRules.GapWarn * caliber ? "**ЩЕЛЬ**"
                                : gap < -BodyRules.OverlapWarn * caliber ? "врастание"
                                : "норма";
 
                 sb.AppendLine($"| {name} | {parentName} | {axisName} | {parentEdge:F3} | {childEdge:F3} " +
-                              $"| {gap:F3} | {(gap / caliber):P0} | {verdict} |");
+                              $"| {gap:F3} | {(gap / caliber):P0} | {verdict}{via} |");
             }
             sb.AppendLine();
 
