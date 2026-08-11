@@ -58,15 +58,29 @@ public static class BodyMap
             // СТЫК СЧИТАЕМ МЕЖДУ МЕСТАМИ, А НЕ ДЕТАЛЯМИ. У головы шесть частей, у цепи полтора десятка
             // звеньев — брать «последнюю попавшуюся» бессмысленно. Объединяем все части места в один
             // объём: он и есть то, чем место стыкуется с соседями
+            // ПАРНОЕ МЕСТО МЕРЯЕТСЯ ПО КАЖДОЙ СТОРОНЕ ОТДЕЛЬНО. `mirrorX` даёт две конечности одной
+            // записью данных, и объединять их в один прямоугольник нельзя: бокс охватывал бы весь низ
+            // корпуса, его центр совпадал с центром тела, ось разноса выбиралась случайно — так у волка
+            // вышел «нахлёст −128%» там, где нога просто входит в плечо. Это была ошибка ЗАМЕРА, не тела
+            var mirrored = new HashSet<string>();
+            if (sp.sockets != null)
+                foreach (var k in sp.sockets)
+                    if (k != null && k.mirrorX && !string.IsNullOrEmpty(k.name)) mirrored.Add(k.name);
+
             var whole = new Dictionary<string, Bounds>();
+            var sideOf = new Dictionary<string, string>();   // ключ с стороной → имя сокета для поиска родителя
             foreach (var p in parts)
             {
                 string sock = p.name;
                 int cut = sock.IndexOf('~');
                 if (cut > 0) sock = sock.Substring(0, cut);          // «Тело~сустав» → «Тело»
+
+                string key = mirrored.Contains(sock) ? $"{sock} ({(p.center.x >= 0f ? "пр" : "лев")})" : sock;
+                sideOf[key] = sock;
+
                 var b = new Bounds(p.center, p.size);
-                if (whole.TryGetValue(sock, out var acc)) { acc.Encapsulate(b); whole[sock] = acc; }
-                else whole[sock] = b;
+                if (whole.TryGetValue(key, out var acc)) { acc.Encapsulate(b); whole[key] = acc; }
+                else whole[key] = b;
             }
 
             // РОДСТВО — ИЗ ДАННЫХ ВИДА ЦЕЛИКОМ, включая места БЕЗ геометрии. Строй мы его по нарисованным
@@ -81,7 +95,8 @@ public static class BodyMap
             foreach (var kv in whole)
             {
                 string name = kv.Key;
-                if (!placeParent.TryGetValue(name, out var parentName) || string.IsNullOrEmpty(parentName)) continue;
+                string socket = sideOf.TryGetValue(name, out var sn) ? sn : name;   // «Ноги (пр)» → «Ноги»
+                if (!placeParent.TryGetValue(socket, out var parentName) || string.IsNullOrEmpty(parentName)) continue;
 
                 // ПОДНИМАЕМСЯ ДО ПРЕДКА С ГЕОМЕТРИЕЙ. Хребет служебный — своей формы у него нет, и все
                 // висящие на нём (шея, лапы, хвост) молча выпадали из таблицы: стыковаться не с чем.
@@ -104,7 +119,9 @@ public static class BodyMap
                     foreach (var other in whole)
                     {
                         if (other.Key == name) continue;
-                        if (!placeParent.TryGetValue(other.Key, out var op) || op != placeParent[name]) continue;
+                        string osock = sideOf.TryGetValue(other.Key, out var on) ? on : other.Key;
+                        if (osock == socket) continue;                               // другая сторона того же места
+                        if (!placeParent.TryGetValue(osock, out var op) || op != placeParent[socket]) continue;
                         float v = other.Value.size.x * other.Value.size.y * other.Value.size.z;
                         if (v > bestVol) { bestVol = v; biggest = other.Key; }
                     }
