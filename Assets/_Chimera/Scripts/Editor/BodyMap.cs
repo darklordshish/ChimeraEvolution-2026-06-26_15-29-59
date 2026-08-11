@@ -59,7 +59,6 @@ public static class BodyMap
             // звеньев — брать «последнюю попавшуюся» бессмысленно. Объединяем все части места в один
             // объём: он и есть то, чем место стыкуется с соседями
             var whole = new Dictionary<string, Bounds>();
-            var placeParent = new Dictionary<string, string>();
             foreach (var p in parts)
             {
                 string sock = p.name;
@@ -67,13 +66,22 @@ public static class BodyMap
                 if (cut > 0) sock = sock.Substring(0, cut);          // «Тело~сустав» → «Тело»
                 var b = new Bounds(p.center, p.size);
                 if (whole.TryGetValue(sock, out var acc)) { acc.Encapsulate(b); whole[sock] = acc; }
-                else { whole[sock] = b; placeParent[sock] = p.parent; }
+                else whole[sock] = b;
             }
+
+            // РОДСТВО — ИЗ ДАННЫХ ВИДА ЦЕЛИКОМ, включая места БЕЗ геометрии. Строй мы его по нарисованным
+            // деталям — служебный хребет в дерево не попадёт, и подъём к предку оборвётся на первом шаге:
+            // шея, лапы и хвост снова выпадут из таблицы, хотя именно их стыки нас и волнуют
+            var placeParent = new Dictionary<string, string>();
+            if (sp.sockets != null)
+                foreach (var k in sp.sockets)
+                    if (k != null && !string.IsNullOrEmpty(k.name))
+                        placeParent[k.name] = k.parent ?? "";
 
             foreach (var kv in whole)
             {
                 string name = kv.Key;
-                if (!placeParent.TryGetValue(name, out var parentName)) continue;
+                if (!placeParent.TryGetValue(name, out var parentName) || string.IsNullOrEmpty(parentName)) continue;
 
                 // ПОДНИМАЕМСЯ ДО ПРЕДКА С ГЕОМЕТРИЕЙ. Хребет служебный — своей формы у него нет, и все
                 // висящие на нём (шея, лапы, хвост) молча выпадали из таблицы: стыковаться не с чем.
