@@ -17,9 +17,18 @@ public class HitFlash : MonoBehaviour
     Telegraph telegraph;
     float timer;
 
-    void Awake()
+    void Awake() => Rebuild();
+
+    /// <summary>Пере-собрать рендереры. ЗОВЁТ `CreatureBody` после каждой сборки морфа: части рождаются
+    /// в рантайме, а ссылки из Awake к этому моменту мертвы — у волка массив был пуст навсегда (визуал
+    /// префаба отключён), у змеи забит уничтоженными ссылками. Вспышки урона не было вообще, и ошибок
+    /// в консоли тоже: гвард `!= null` гасил их молча.</summary>
+    public void Rebuild()
     {
-        renderers = GetComponentsInChildren<Renderer>();
+        var list = new System.Collections.Generic.List<Renderer>();
+        foreach (var r in GetComponentsInChildren<Renderer>())
+            if (r is MeshRenderer || r is SkinnedMeshRenderer) list.Add(r);   // след/линии не красим
+        renderers = list.ToArray();
         baseColors = new Color[renderers.Length];
         mpb = new MaterialPropertyBlock();
 

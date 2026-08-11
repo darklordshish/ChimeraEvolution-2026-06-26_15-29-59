@@ -103,7 +103,7 @@ public class TintMixer : MonoBehaviour
             bool own = mark != null && mark.HasOwn;
             // ЧУЖОЕ НЕ ТРОГАЕМ: у обычного NPC материал запечён — состава ему никто не задавал, слоёв нет,
             // и красить его нечем. Без этой проверки микшер залил бы волка с лосём серым по построению
-            if (!own && !hasComposition && layers.Count == 0) continue;
+            if (!own && !hasComposition) continue;
             // БАЗА: своя окраска детали, иначе цвет по составу
             Color c = own ? mark.own : composition;
             PartRole role = mark != null ? mark.role : PartRole.None;

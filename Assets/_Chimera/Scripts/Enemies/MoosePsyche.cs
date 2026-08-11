@@ -496,6 +496,9 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
         Settle(w * Speed * grazeSpeed);
     }
 
+    void OnDestroy() { if (ownHealth != null) ownHealth.onDamaged.RemoveListener(Provoke); } // Metamorph сносит психику — подписка не должна её пережить
+
+
     void Face(Vector3 dir) =>
         transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(dir), rotationSpeed * Time.deltaTime);
 

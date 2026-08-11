@@ -204,7 +204,7 @@ public class SnakeBodyChain : MonoBehaviour
         Vector3 back = path.Count > 1 ? (path[path.Count - 2] - path[path.Count - 1]) : -transform.forward;
         if (back.sqrMagnitude < 0.0001f) back = -transform.forward;
         back.Normalize();
-        dirToHead = back * -1f;
+        dirToHead = back;   // `back` уже смотрит К ГОЛОВЕ — лишний минус разворачивал хвост на 180°
         return prev - back * remaining;
     }
 }

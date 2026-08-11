@@ -426,11 +426,18 @@ public partial class CreatureBody : MonoBehaviour
             mixer?.Rebuild();
             if (TryGetComponent<Telegraph>(out var tg)) tg.RebuildRenderers(); // морф-части новые → телеграф пере-соберёт (иначе замах не красится)
             if (camoComp != null) camoComp.Rebuild();                          // и камуфляж — иначе прячет пустоту
+            if (TryGetComponent<HitFlash>(out var hf)) hf.Rebuild();           // вспышка урона — иначе её нет вовсе
+            if (TryGetComponent<HeatSignature>(out var hs)) hs.Rebuild();      // тепловая подпись — иначе термозрение слепо
             if (TryGetComponent<SnakeBodyChain>(out var chain)) chain.RebuildFromMorph(); // [ANIM] цепь тела берёт новые звенья (и заново гасит свои коллайдеры)
             if (move != null) move.ReapplyFirstPerson(); // и своя голова снова спрятана от первого лица (части-то новые)
         }
 
-        if (move != null || tintComposition) UpdateTint(); // игрок ВСЕГДА; NPC — только тест-химера (флаг tintComposition); обычные NPC — запечённый материал (не драться с Telegraph)
+        // ЦВЕТ ПО СОСТАВУ — У ВСЕХ, БЕЗУСЛОВНО. Это одна из главных индикаторных фич: по цвету читается,
+        // из чего тварь собрана, наравне с формой. Прежде тинт стоял за гейтом `move != null ||
+        // tintComposition`, то есть красились только игрок и тест-химера, а весь лес жил на запечённом
+        // материале — и стоило выключить эволюцию NPC, как звери белели. Гейт был нужен, пока тинт дрался
+        // с телеграфом за материал; теперь их развёл микшер (Apply → Rebase → Reapply), драться не за что
+        UpdateTint();
 
         // ВИДОВОЙ ОТПЕЧАТОК В ЗАПАХЕ: след пахнет СОСТАВОМ — красится смесью тинтов шасси+аугументов
         // (природная особь → чистый тинт вида, химера → грязный микс). Волчье Чутьё читает, КТО прошёл,

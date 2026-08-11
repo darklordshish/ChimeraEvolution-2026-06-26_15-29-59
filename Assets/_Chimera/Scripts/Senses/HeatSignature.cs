@@ -25,8 +25,15 @@ public class HeatSignature : MonoBehaviour
     /// <summary>Горит ли подпись сейчас — для диагностики в дев-панели (термо молчит без единой ошибки).</summary>
     public bool IsGlowing { get; private set; }
 
-    void Awake()
+    void Awake() => Rebuild();
+
+    /// <summary>Пере-собрать тепловые дубли. ЗОВЁТ `CreatureBody` после сборки морфа: дубли — дети мешей
+    /// тела, а тело пересобирается на каждое убийство, и призраки умирают вместе с ним. Термозрение
+    /// показывало пустоту на всех морф-существах, молча.</summary>
+    public void Rebuild()
     {
+        foreach (var g in ghosts) if (g != null) Destroy(g.gameObject);
+        ghosts.Clear();
         // дубли по видимым мешам тела; выключенные пропускаем (аура запаха в этот момент выключена)
         foreach (var mf in GetComponentsInChildren<MeshFilter>())
         {

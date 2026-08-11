@@ -862,4 +862,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         if (Engaged && horizontal.sqrMagnitude > 0.5f) Breath?.Drain(ChaseDrain * Time.deltaTime);
         nav.Move(horizontal);
     }
+
+    void OnDestroy() { if (ownHealth != null) { ownHealth.onDamaged.RemoveListener(OnHurt); ownHealth.onDeath.RemoveListener(OnKilled); } } // Metamorph сносит психику — подписки не должны её пережить
+
 }

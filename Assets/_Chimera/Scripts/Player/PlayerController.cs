@@ -227,7 +227,7 @@ public class PlayerController : MonoBehaviour
         n == "Head" || n == "Nose" || n == "Jaw" || n == "Teeth"
         || n == "EyeL" || n == "EyeR" || n == "EarL" || n == "EarR"
         || n == "BrowL" || n == "BrowR" || n == "Beard"
-        || n == "голова" || n == "Пасть" || n == "уши"; // морф-части: имя = сокет (Organ.slot)
+        || n == "голова" || n == "Пасть" || n == "уши" || n == "глаза"; // морф-части: имя = сокет (Organ.slot)
 
     // конструктор меняет мобильность при смене органа в слоте «Ноги»
     public void SetLegs(float newMoveSpeed, float newDashSpeed, float newDashDuration = 0f)

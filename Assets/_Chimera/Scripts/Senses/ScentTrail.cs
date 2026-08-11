@@ -40,7 +40,7 @@ public class ScentTrail : MonoBehaviour
 
         var s = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         if (s.TryGetComponent<Collider>(out var col)) col.enabled = false;
-        s.transform.SetParent(transform, false);
+        s.transform.SetParent(trail.transform, false);   // ВНУТРЬ своего узла: корневого ребёнка сносит зачистка цепи змеи
         s.transform.localPosition = new Vector3(0f, 0.3f, 0f);
         s.transform.localScale = Vector3.one * auraSize;
         aura = s.GetComponent<Renderer>();

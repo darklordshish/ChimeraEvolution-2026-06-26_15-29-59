@@ -157,7 +157,10 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     {
         playerCtl = FindAnyObjectByType<PlayerController>();
 
-        var r = transform.Find("Rattle");
+        // ИМЯ ПО СОКЕТУ, и ищем В ГЛУБИНУ: морф даёт «Погремушку» потомком последнего звена хвоста,
+        // корневым ребёнком её нет. Прежнее "Rattle" — имя снесённого префаба, мигание молчало
+        Transform r = null;
+        foreach (var t in GetComponentsInChildren<Transform>()) if (t.name == "Погремушка") { r = t; break; }
         if (r != null) rattleRenderer = r.GetComponentInChildren<Renderer>();
 
         groundY = transform.position.y; // уровень земли на спавне — от него меряем высоту насеста
@@ -858,4 +861,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     Stamina breath;
     // ленивая привязка: бак до-создаёт тело в Recompute, он бывает позже нашего Awake
     Stamina Breath { get { if (breath == null) TryGetComponent(out breath); return breath; } }
+
+    void OnDestroy() { if (ownHealth != null) ownHealth.onDamaged.RemoveListener(OnHurt); } // Metamorph сносит психику — подписка не должна её пережить
+
 }

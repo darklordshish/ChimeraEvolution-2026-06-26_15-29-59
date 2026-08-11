@@ -156,7 +156,7 @@ public static class MorphBuilder
                 // Поэтому доля отсчитывается от начала: attach 1 = у головы, 0 = кончик — и ноль даёт РОВНО
                 // конец вереницы. Прежняя поправка `− len/2` приводила в ЦЕНТР последнего звена, и вся ветка
                 // садилась внахлёст на ползвена: хвост тонул в туловище, погремушка — в хвосте
-                Vector3 grow = ChainDir(par);
+                Vector3 grow = ChainDir(par, b);
                 pos = ppos + prot * (grow * ((1f - s.attach) * ChainLength(par, len))
                                      + Vector3.Scale(s.attachOffset, b));
             }
@@ -258,7 +258,7 @@ public static class MorphBuilder
             Vector3 canonSize = align ? Pick(size, across, outward, along) : size;
             Quaternion place = socketRot * frameRot;
 
-            Vector3 grow = ChainDir(socket);
+            Vector3 grow = ChainDir(socket, sz);
             float linkLen = Mathf.Abs(Vector3.Dot(size, new Vector3(Mathf.Abs(grow.x), Mathf.Abs(grow.y), Mathf.Abs(grow.z))));
             float run = 0f, prev = 0f;
             for (int i = 0; i < links; i++)
@@ -292,7 +292,7 @@ public static class MorphBuilder
         Quaternion rot = Quaternion.Euler(euler);
 
         // ЦЕПЬ БЕЗ ФОРМЫ — голые звенья (привитый хвост на чужом шасси: места своей формы не имеет)
-        Vector3 dir = ChainDir(socket);
+        Vector3 dir = ChainDir(socket, sz);
         float axisLen = Mathf.Abs(Vector3.Dot(size, new Vector3(Mathf.Abs(dir.x), Mathf.Abs(dir.y), Mathf.Abs(dir.z))));
 
         float travel = 0f, prevLen = 0f;
@@ -319,7 +319,7 @@ public static class MorphBuilder
                            List<GameObject> made, float linkD)
     {
         Quaternion rot = Quaternion.Euler(euler);
-        Vector3 grow = ChainDir(s);                  // у цепного места длина > толщины → ось Z
+        Vector3 grow = ChainDir(s, Vector3.zero);  // метрическая цепь: ось задана по смыслу, габарит не спрашиваем                  // у цепного места длина > толщины → ось Z
         float taper = s.linkTaper > 0f ? s.linkTaper : 1f;        // сужает ТОЛЬКО толщину
         float len = s.linkLength;
 
@@ -368,7 +368,7 @@ public static class MorphBuilder
     /// <summary>Ось цепи. У ЗВЕНА В МЕТРАХ она задана по смыслу — вдоль хребта, всегда Z: звено бывает
     /// КОРОЧЕ своего диаметра (кольцо погремушки 0.09 при 0.15), и вывод оси из габарита увёл бы цепь вбок.
     /// Это та же мина, что разворачивала тело башней вверх, — здесь её просто нет.</summary>
-    static Vector3 ChainDir(BodySocket s) => s.linkLength > 0f ? Vector3.back : ChainDir(s.SizeForGraph);
+    static Vector3 ChainDir(BodySocket s, Vector3 size) => s.linkLength > 0f ? Vector3.back : ChainDir(size);
 
     /// <summary>Полная длина цепи — нужна `Place`, чтобы ребёнок сел на КОНЕЦ вереницы (хвост за туловищем).
     /// У ЗВЕНА В МЕТРАХ это просто длина × число: `linkTaper` сужает только толщину, длину не трогает —
