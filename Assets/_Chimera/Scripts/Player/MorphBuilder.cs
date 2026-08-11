@@ -25,7 +25,7 @@ public static class MorphBuilder
             if (c.name != Container) continue;
             c.name = Container + "~dead";
             c.gameObject.SetActive(false);
-            Object.Destroy(c.gameObject);
+            Kill(c.gameObject);
         }
         if (chassis == null || chassis.sockets == null || chassis.sockets.Length == 0 || wornOrgans == null) return;
 
@@ -395,6 +395,15 @@ public static class MorphBuilder
         return ChainDiameter(par, byName, depth + 1) * Mathf.Pow(t, Mathf.Max(1, par.chain) - 1);
     }
 
+    /// <summary>Снос, работающий И В РЕДАКТОРЕ. Вне Play  запрещён («may not be called from edit
+    /// mode»), а карта тел собирает существо именно там — билдер должен уметь строиться без запущенной игры,
+    /// иначе измерять нечем. В Play поведение прежнее: отложенный снос до конца кадра.</summary>
+    static void Kill(Object o)
+    {
+        if (Application.isPlaying) Object.Destroy(o);
+        else Object.DestroyImmediate(o);
+    }
+
     /// <summary>ГАБАРИТ МЕСТА. Задан `sizeRel` — считаем ОТ РОДИТЕЛЯ (шасси говорит, как вставлять):
     /// голова доля корпуса, пасть доля головы, глаз доля головы. Тогда пропорция живёт в данных, и
     /// правка одного места тянет за собой всю ветку — вместо того чтобы молча с ней разъехаться.
@@ -441,7 +450,7 @@ public static class MorphBuilder
         // [ANIM] ПЛОТНАЯ ЧАСТЬ оставляет коллайдер: кусок тела — препятствие для других и поверхность
         // попаданий (тело змеи плотное по всей длине). Обычная часть остаётся чистым визуалом:
         // физика носителя — его CharacterController, лишние коллайдеры мешали бы ему самому
-        if (!solid && cube.TryGetComponent<Collider>(out var col)) Object.Destroy(col);
+        if (!solid && cube.TryGetComponent<Collider>(out var col)) Kill(col);
         // ИМЯ = СОКЕТ (стабильный словарь), не орган: по именам частей работают ПЕРВОЕ ЛИЦО (прячет свою
         // голову) и ЭМОЦ-ТИНТ (красит морду-градусник). Имя органа менялось бы от сборки и ломало обе системы
         cube.name = name;
