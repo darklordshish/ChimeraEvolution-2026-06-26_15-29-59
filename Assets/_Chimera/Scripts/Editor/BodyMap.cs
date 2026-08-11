@@ -44,19 +44,35 @@ public static class BodyMap
             sb.AppendLine();
 
             // СТЫКИ: где кончается одна деталь и начинается следующая. Это то, что мы неделю мерили
-            // глазами по скриншотам — щель за головой, гусеница пасти, разъехавшийся хвост
-            sb.AppendLine("### Стыки вдоль тела (Z)");
+            // глазами по скриншотам — щель за головой, гусеница пасти, разъехавшийся хвост.
+            //
+            // ОСЬ СТЫКА ВЫБИРАЕТСЯ ПО НАПРАВЛЕНИЮ РАЗНОСА, а не берётся Z. Раньше здесь стояла жёсткая Z,
+            // и у ЧЕТВЕРОНОГИХ таблица выходила ПУСТОЙ: у волка, лося, ежа главные швы идут по Y (лапы
+            // вниз, уши вверх) и по X (рёбра вбок), а вдоль Z у них разнесено немногое. Детектор молчал
+            // ровно там, где мы неделю искали щели глазами
+            sb.AppendLine("### Стыки (по оси наибольшего разноса)");
             sb.AppendLine();
-            sb.AppendLine("| деталь | родитель | конец родителя | начало детали | зазор (+) / нахлёст (−) |");
-            sb.AppendLine("|---|---|---|---|---|");
+            sb.AppendLine("| деталь | родитель | ось | край родителя | край детали | зазор (+) / нахлёст (−) | доля калибра |");
+            sb.AppendLine("|---|---|---|---|---|---|---|");
             var byName = new Dictionary<string, BodyProbe.Part>();
             foreach (var p in parts) byName[p.name] = p;   // одноимённые звенья цепи равнозначны — берём последнее
             foreach (var p in parts)
             {
                 if (!byName.TryGetValue(p.parent, out var par)) continue;
-                float childFront = p.center.z - p.size.z * 0.5f;
-                float parentEnd = par.center.z - par.size.z * 0.5f;
-                sb.AppendLine($"| {p.name} | {p.parent} | {parentEnd:F3} | {childFront:F3} | {(childFront - parentEnd):F3} |");
+
+                Vector3 d = p.center - par.center;
+                int axis = Mathf.Abs(d.x) >= Mathf.Abs(d.y) && Mathf.Abs(d.x) >= Mathf.Abs(d.z) ? 0
+                         : Mathf.Abs(d.y) >= Mathf.Abs(d.z) ? 1 : 2;
+                string axisName = axis == 0 ? "X" : axis == 1 ? "Y" : "Z";
+
+                float sign = d[axis] >= 0f ? 1f : -1f;                       // в какую сторону ушёл ребёнок
+                float parentEdge = par.center[axis] + sign * par.size[axis] * 0.5f;
+                float childEdge = p.center[axis] - sign * p.size[axis] * 0.5f;
+                float gap = (childEdge - parentEdge) * sign;                 // + щель, − нахлёст
+                float caliber = Mathf.Max(0.000001f, p.size[axis]);
+
+                sb.AppendLine($"| {p.name} | {p.parent} | {axisName} | {parentEdge:F3} | {childEdge:F3} " +
+                              $"| {gap:F3} | {(gap / caliber):P0} |");
             }
             sb.AppendLine();
 
