@@ -126,6 +126,15 @@ public static class BodyMap
                         if (v > bestVol) { bestVol = v; biggest = other.Key; }
                     }
                     if (biggest == null) continue;
+                    // САМОЕ КРУПНОЕ МЕСТО — ЭТО И ЕСТЬ КОРПУС, ему стыковаться не с чем. Печатать «Шкура →
+                    // Хвост» бессмысленно: покров ищет опору у собственного отростка. Строка-абсурд, но
+                    // она честно показывает, что корпуса как МЕСТА в скелете нет — говорим это прямо
+                    float myVol = kv.Value.size.x * kv.Value.size.y * kv.Value.size.z;
+                    if (myVol >= bestVol)
+                    {
+                        sb.AppendLine($"| {name} | — | — | — | — | — | — | **несущий объём, предка нет** |");
+                        continue;
+                    }
                     parentName = biggest;
                     viaAbstract = true;
                 }
@@ -141,9 +150,18 @@ public static class BodyMap
                 float mine = Mathf.Max(0.000001f, me.size.x * me.size.y * me.size.z);
                 bool nested = inside / mine > 0.75f;
 
+                // ОСЬ ШВА — ТА, ГДЕ ПЕРЕКРЫТИЕ НАИМЕНЬШЕЕ, а не где дальше разъехались центры. Нога
+                // смещена ВПЕРЁД сильнее, чем вниз, и критерий «наибольший разнос» указывал на Z, хотя
+                // с корпусом она стыкуется СВЕРХУ. Шов проходит там, где тела разделены, — по вертикали
                 Vector3 d = me.center - parBounds.center;
-                int axis = Mathf.Abs(d.x) >= Mathf.Abs(d.y) && Mathf.Abs(d.x) >= Mathf.Abs(d.z) ? 0
-                         : Mathf.Abs(d.y) >= Mathf.Abs(d.z) ? 1 : 2;
+                int axis = 0;
+                float bestOverlap = float.MaxValue;
+                for (int ax = 0; ax < 3; ax++)
+                {
+                    float ovAx = Mathf.Min(me.max[ax], parBounds.max[ax]) - Mathf.Max(me.min[ax], parBounds.min[ax]);
+                    float rel = ovAx / Mathf.Max(0.000001f, me.size[ax]);   // в долях СВОЕГО калибра
+                    if (rel < bestOverlap) { bestOverlap = rel; axis = ax; }
+                }
                 string axisName = axis == 0 ? "X" : axis == 1 ? "Y" : "Z";
 
                 float sign = d[axis] >= 0f ? 1f : -1f;                       // в какую сторону ушло место
