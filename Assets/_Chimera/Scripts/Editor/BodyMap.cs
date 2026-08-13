@@ -52,76 +52,42 @@ public static class BodyMap
             // ровно там, где мы неделю искали щели глазами
             sb.AppendLine("### Стыки (ось шва — где перекрытие наименьшее)");
             sb.AppendLine();
-            sb.AppendLine("| место | родитель | ось | край родителя | край места | зазор (+) / нахлёст (−) | доля калибра | вердикт |");
+            sb.AppendLine("| место | родитель | ось | край родителя | край места | зазор (+) / нахлёст (−) | доля: щель от толщины шва, нахлёст от глубины детали | вердикт |");
             sb.AppendLine("|---|---|---|---|---|---|---|---|");
 
             // СТЫК СЧИТАЕМ МЕЖДУ МЕСТАМИ, А НЕ ДЕТАЛЯМИ. У головы шесть частей, у цепи полтора десятка
             // звеньев — брать «последнюю попавшуюся» бессмысленно. Объединяем все части места в один
             // объём: он и есть то, чем место стыкуется с соседями
-            // ПАРНОЕ МЕСТО МЕРЯЕТСЯ ПО КАЖДОЙ СТОРОНЕ ОТДЕЛЬНО. `mirrorX` даёт две конечности одной
-            // записью данных, и объединять их в один прямоугольник нельзя: бокс охватывал бы весь низ
-            // корпуса, его центр совпадал с центром тела, ось разноса выбиралась случайно — так у волка
-            // вышел «нахлёст −128%» там, где нога просто входит в плечо. Это была ошибка ЗАМЕРА, не тела
-            var mirrored = new HashSet<string>();
-            if (sp.sockets != null)
-                foreach (var k in sp.sockets)
-                    if (k != null && k.mirrorX && !string.IsNullOrEmpty(k.name)) mirrored.Add(k.name);
-
-            var whole = new Dictionary<string, Bounds>();
-            var sideOf = new Dictionary<string, string>();   // ключ с стороной → имя сокета для поиска родителя
-            foreach (var p in parts)
-            {
-                string sock = p.name;
-                int cut = sock.IndexOf('~');
-                if (cut > 0) sock = sock.Substring(0, cut);          // «Тело~сустав» → «Тело»
-
-                string key = mirrored.Contains(sock) ? $"{sock} ({(p.center.x >= 0f ? "пр" : "лев")})" : sock;
-                sideOf[key] = sock;
-
-                var b = new Bounds(p.center, p.size);
-                if (whole.TryGetValue(key, out var acc)) { acc.Encapsulate(b); whole[key] = acc; }
-                else whole[key] = b;
-            }
-
-            // РОДСТВО — ИЗ ДАННЫХ ВИДА ЦЕЛИКОМ, включая места БЕЗ геометрии. Строй мы его по нарисованным
-            // деталям — служебный хребет в дерево не попадёт, и подъём к предку оборвётся на первом шаге:
-            // шея, лапы и хвост снова выпадут из таблицы, хотя именно их стыки нас и волнуют
-            var placeParent = new Dictionary<string, string>();
-            if (sp.sockets != null)
-                foreach (var k in sp.sockets)
-                    if (k != null && !string.IsNullOrEmpty(k.name))
-                        placeParent[k.name] = k.parent ?? "";
+            // ОБЪЁМЫ МЕСТ И РОДСТВО СЧИТАЕТ `BodyProbe.Group` — тот же код, что и у правил. Разойдись
+            // карта с валидатором в способе счёта, мы получили бы отчёт и проверку, спорящие об одном теле
+            var pl = BodyProbe.Group(sp, parts);
+            var whole = pl.whole;
 
             foreach (var kv in whole)
             {
                 string name = kv.Key;
-                string socket = sideOf.TryGetValue(name, out var sn) ? sn : name;   // «Ноги (пр)» → «Ноги»
-                if (!placeParent.TryGetValue(socket, out var parentName) || string.IsNullOrEmpty(parentName)) continue;
+                string socket = pl.socketOf.TryGetValue(name, out var sn) ? sn : name;   // «Ноги (пр)» → «Ноги»
+                if (!pl.parentOf.TryGetValue(socket, out var rawParent) || string.IsNullOrEmpty(rawParent)) continue;
 
-                // ПОДНИМАЕМСЯ ДО ПРЕДКА С ГЕОМЕТРИЕЙ. Хребет служебный — своей формы у него нет, и все
-                // висящие на нём (шея, лапы, хвост) молча выпадали из таблицы: стыковаться не с чем.
-                // Фактический стык у них — с ближайшим НАРИСОВАННЫМ предком
-                int guard = 0;
-                while (!whole.ContainsKey(parentName) && placeParent.TryGetValue(parentName, out var up)
-                       && !string.IsNullOrEmpty(up) && guard++ < 16)
-                    parentName = up;
+                // ПОДНИМАЕМСЯ ДО ПРЕДКА С ГЕОМЕТРИЕЙ: место может висеть на безформенном узле, и тогда
+                // фактический стык у него с ближайшим НАРИСОВАННЫМ предком
+                string parentName = BodyProbe.DrawnParent(pl, socket);
 
-                // ПРЕДКА С ГЕОМЕТРИЕЙ НЕТ ВОВСЕ — место висит на абстракции (хребет служебный, выше него
-                // корень). Так устроены лапы, шея и хвост: пояса конечностей как места отсутствуют, и
-                // стыковаться лапе физически не с чем. МОЛЧАТЬ ОБ ЭТОМ НЕЛЬЗЯ — это и есть дефект скелета,
-                // а не отсутствие данных. Меряем примыкание к САМОМУ КРУПНОМУ соседу по тому же родителю:
-                // фактически это корпус, к которому конечность и должна крепиться
+                // ПРЕДКА С ГЕОМЕТРИЕЙ НЕТ ВОВСЕ — место висит на абстракции. Так было, пока несущую
+                // анатомию рисовал ПОКРОВ, а хребет оставался служебным: лапе стыковаться было физически
+                // не с чем. МОЛЧАТЬ ОБ ЭТОМ НЕЛЬЗЯ — это дефект скелета, а не отсутствие данных. Меряем
+                // примыкание к САМОМУ КРУПНОМУ соседу по тому же родителю: фактически это корпус
                 bool viaAbstract = false;
-                if (!whole.ContainsKey(parentName))
+                if (string.IsNullOrEmpty(parentName))
                 {
                     string biggest = null;
                     float bestVol = 0f;
                     foreach (var other in whole)
                     {
                         if (other.Key == name) continue;
-                        string osock = sideOf.TryGetValue(other.Key, out var on) ? on : other.Key;
+                        string osock = pl.socketOf.TryGetValue(other.Key, out var on) ? on : other.Key;
                         if (osock == socket) continue;                               // другая сторона того же места
-                        if (!placeParent.TryGetValue(osock, out var op) || op != placeParent[socket]) continue;
+                        if (!pl.parentOf.TryGetValue(osock, out var op) || op != rawParent) continue;
                         float v = other.Value.size.x * other.Value.size.y * other.Value.size.z;
                         if (v > bestVol) { bestVol = v; biggest = other.Key; }
                     }
@@ -168,17 +134,31 @@ public static class BodyMap
                 float parentEdge = parBounds.center[axis] + sign * parBounds.size[axis] * 0.5f;
                 float childEdge = me.center[axis] - sign * me.size[axis] * 0.5f;
                 float gap = (childEdge - parentEdge) * sign;                 // + щель, − нахлёст
-                float caliber = Mathf.Max(0.000001f, me.size[axis]);
+
+                // У ЩЕЛИ И НАХЛЁСТА РАЗНЫЕ МАСШТАБЫ, И МЕРИТЬ ИХ ОДНИМ ЧИСЛОМ НЕЛЬЗЯ.
+                //
+                // ЩЕЛЬ — разрыв ПОВЕРХНОСТИ, её глаз сравнивает с ТОЛЩИНОЙ шва: 5 см на шее диаметром 21 см
+                // видно сразу. Мерили мы вдоль оси шва, и у длинных мест порог уезжал в бессмыслицу: змеиная
+                // цепь тянется на 1.6–2.1 м, поэтому «щелью» считался разрыв от 13 см — тот самый
+                // исторический отрыв цепи от черепа на 5 см эта таблица звала бы нормой.
+                //
+                // НАХЛЁСТ — ГЛУБИНА ПОГРУЖЕНИЯ, и её масштаб — глубина самой детали. Волчья голова заходит
+                // на шею на 14.6 см: от длины головы это треть (норма шарнирной куклы), а от толщины шеи —
+                // 68%, и карта выдала 32 «врастания» на здоровой анатомии. Валидатор, кричащий на
+                // намеренное, приучает игнорировать красное — тот же урок, что с осью у изотропных мест
+                float gapCal = Mathf.Max(0.000001f, 0.5f * (me.size[(axis + 1) % 3] + me.size[(axis + 2) % 3]));
+                float lapCal = Mathf.Max(0.000001f, me.size[axis]);
+                float cal = gap >= 0f ? gapCal : lapCal;   // в колонку идёт та доля, по которой судим
 
                 // помечаем, что предок фактический, а не по графу: у места нет нарисованного родителя
                 string via = viaAbstract ? " ⚠ через абстракцию" : "";
                 string verdict = nested ? "вложено"
-                               : gap > BodyRules.GapWarn * caliber ? "**ЩЕЛЬ**"
-                               : gap < -BodyRules.OverlapWarn * caliber ? "врастание"
+                               : gap > BodyRules.GapWarn * gapCal ? "**ЩЕЛЬ**"
+                               : gap < -BodyRules.OverlapWarn * lapCal ? "врастание"
                                : "норма";
 
                 sb.AppendLine($"| {name} | {parentName} | {axisName} | {parentEdge:F3} | {childEdge:F3} " +
-                              $"| {gap:F3} | {(gap / caliber):P0} | {verdict}{via} |");
+                              $"| {gap:F3} | {(gap / cal):P0} | {verdict}{via} |");
             }
             sb.AppendLine();
 

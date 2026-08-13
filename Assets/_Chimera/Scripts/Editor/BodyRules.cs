@@ -8,8 +8,13 @@ using UnityEngine;
 /// Пороги — ДОЛИ КАЛИБРА, а не метры: иначе мелкие виды всегда в допуске, а крупные всегда виноваты.</summary>
 public static class BodyRules
 {
-    public const float GapWarn = 0.08f;      // щель больше 8% калибра — предупреждение
-    public const float OverlapWarn = 0.40f;  // нахлёст больше 40% калибра
+    public const float GapWarn = 0.08f;      // щель больше 8% ТОЛЩИНЫ шва — предупреждение
+    // НАХЛЁСТ БОЛЬШЕ 75% ГЛУБИНЫ ДЕТАЛИ. Порог 0.40 был назначен до фактов, а первый же прогон по здоровым
+    // телам дал распределение 40…87% и 21 «врастание» на анатомии, которую глаз принимает. Причина не в
+    // телах: шарнирная кукла НАМЕРЕННО сажает детали глубоко друг в друга — иначе на торцах капсул
+    // расходятся щели (торец сходится в точку). Глубокое вхождение здесь способ сборки, а не дефект,
+    // поэтому осмысленное «врастание» — это «деталь утонула почти целиком», а не «вошла наполовину»
+    public const float OverlapWarn = 0.75f;
     public const float DupError = 0.60f;     // пересечение объёмов больше 60% — дубль области
     public const float AxisMargin = 0.05f;   // запас длинной оси меньше 5% — ось вот-вот переключится
 
@@ -115,26 +120,57 @@ public static class BodyRules
         return list;
     }
 
-    /// <summary>Проверки по ЗАМЕРАМ: то, что видно только на построенном теле.</summary>
-    public static List<Issue> CheckParts(string speciesName, List<BodyProbe.Part> parts)
+    /// <summary>Проверки по ЗАМЕРАМ: то, что видно только на построенном теле.
+    ///
+    /// СУДИМ О МЕСТАХ, А НЕ О ДЕТАЛЯХ. Прежняя версия складывала детали в словарь по имени — а имя у
+    /// детали одно на всё место, и десять частей змеиной головы схлопывались в последнюю (левую ноздрю).
+    /// Сравнение с «родителем» шло тогда с случайной деталью: на змее это давало полтора десятка ложных
+    /// ошибок. Валидатор, кричащий на исправное, приучает игнорировать красное — поэтому объёмы мест
+    /// считает `BodyProbe.Group`, общий с картой.</summary>
+    public static List<Issue> CheckParts(SpeciesSO species, List<BodyProbe.Part> parts)
     {
         var list = new List<Issue>();
-        if (parts == null) return list;
+        if (species == null || parts == null) return list;
 
-        var byName = new Dictionary<string, BodyProbe.Part>();
-        foreach (var p in parts) byName[p.name] = p;
+        var pl = BodyProbe.Group(species, parts);
 
-        foreach (var p in parts)
+        foreach (var kv in pl.whole)
         {
-            if (!byName.TryGetValue(p.parent, out var par)) continue;
+            string socket = pl.socketOf.TryGetValue(kv.Key, out var sn) ? sn : kv.Key;
+            if (!pl.parentOf.TryGetValue(socket, out var rawParent) || string.IsNullOrEmpty(rawParent)) continue;
 
-            // ДЕТАЛЬ БОЛЬШЕ РОДИТЕЛЯ СРАЗУ ПО ДВУМ ОСЯМ — она его распирает изнутри. Ровно так грудная
-            // клетка оказалась шире корпуса и лепила «бочку», а мы искали причину в морде
-            if (p.size.x > par.size.x && p.size.y > par.size.y)
+            string drawn = BodyProbe.DrawnParent(pl, socket);
+
+            // МЕСТО ВИСИТ НА ПУСТОТЕ: по графу родитель есть, а нарисованного предка нет ни на одном
+            // уровне вверх. Так жили шея, лапы и хвост, пока несущую анатомию рисовал ПОКРОВ, а хребет
+            // числился служебным: примыкать было не к чему, и любой стык держался на совпадении чисел.
+            // Теперь форму несущему даёт орган «Хребет» — правило сторожит возврат к прежнему
+            if (string.IsNullOrEmpty(drawn))
+            {
                 list.Add(new Issue
                 {
-                    species = speciesName, where = p.name, error = true,
-                    text = $"больше родителя «{p.parent}»: {p.size.x:F3}×{p.size.y:F3} против {par.size.x:F3}×{par.size.y:F3}"
+                    species = species.speciesName, where = kv.Key, error = true,
+                    text = $"нет нарисованного предка: по графу висит на «{rawParent}», а тот ничего не рисует — " +
+                           $"примыкать физически не к чему"
+                });
+                continue;
+            }
+
+            if (!pl.whole.TryGetValue(drawn, out var par)) continue;
+            var me = kv.Value;
+
+            // ВНУТРЕННЕЕ МЕСТО, ВЫЛЕЗШЕЕ ИЗ НОСИТЕЛЯ. Ровно так грудная клетка оказалась шире корпуса и
+            // лепила «бочку», а причину мы искали в морде. Спрашиваем ТОЛЬКО с внутренних: голова
+            // законно шире шеи, и требовать от неё «помещаться в родителя» значит ругаться на норму
+            var inner = System.Array.Find(species.sockets, k => k != null && k.name == socket);
+            if (inner == null || !inner.inner) continue;
+
+            if (me.size.x > par.size.x && me.size.y > par.size.y && me.size.z > par.size.z)
+                list.Add(new Issue
+                {
+                    species = species.speciesName, where = kv.Key, error = true,
+                    text = $"внутреннее место больше носителя «{drawn}» по всем осям: " +
+                           $"{me.size.x:F3}×{me.size.y:F3}×{me.size.z:F3} против {par.size.x:F3}×{par.size.y:F3}×{par.size.z:F3}"
                 });
         }
         return list;

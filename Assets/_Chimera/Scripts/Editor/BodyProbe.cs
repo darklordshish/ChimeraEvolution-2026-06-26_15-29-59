@@ -77,4 +77,69 @@ public static class BodyProbe
         }
         return parts;
     }
+
+    /// <summary>ОБЪЁМЫ МЕСТ: детали, собранные по местам, которым принадлежат. Стык и вложенность —
+    /// свойства МЕСТ, а не деталей: у головы шесть частей, у цепи полтора десятка звеньев, и «последняя
+    /// попавшаяся» деталь не описывает ни того, ни другого. Общий код для карты и правил: разойдись они
+    /// в способе счёта — получили бы отчёт и валидатор, спорящие об одном теле.</summary>
+    public struct Places
+    {
+        public Dictionary<string, Bounds> whole;    // «голова» / «Ноги (пр)» → суммарный объём места
+        public Dictionary<string, string> socketOf; // ключ с стороной → имя сокета
+        public Dictionary<string, string> parentOf; // сокет → сокет-родитель («» у корня)
+    }
+
+    /// <summary>Свести замеры в объёмы мест. Парные места (`mirrorX`) разделяются по сторонам: объединив
+    /// их, мы получали бокс во весь низ корпуса с центром в центре тела — ось разноса выбиралась
+    /// случайно, и у волка выходил «нахлёст −128%» там, где нога просто входит в плечо.</summary>
+    public static Places Group(SpeciesSO species, List<Part> parts)
+    {
+        var res = new Places
+        {
+            whole = new Dictionary<string, Bounds>(),
+            socketOf = new Dictionary<string, string>(),
+            parentOf = new Dictionary<string, string>(),
+        };
+        if (species == null || parts == null) return res;
+
+        var mirrored = new HashSet<string>();
+        if (species.sockets != null)
+            foreach (var k in species.sockets)
+            {
+                if (k == null || string.IsNullOrEmpty(k.name)) continue;
+                if (k.mirrorX) mirrored.Add(k.name);
+                // РОДСТВО — ИЗ ДАННЫХ ЦЕЛИКОМ, включая места без геометрии: строй мы дерево по нарисованным
+                // деталям, подъём к предку обрывался бы на первом же безформенном узле
+                res.parentOf[k.name] = k.parent ?? "";
+            }
+
+        foreach (var p in parts)
+        {
+            string sock = p.name;
+            int cut = sock.IndexOf('~');
+            if (cut > 0) sock = sock.Substring(0, cut);          // «Тело~сустав» → «Тело»
+
+            string key = mirrored.Contains(sock) ? $"{sock} ({(p.center.x >= 0f ? "пр" : "лев")})" : sock;
+            res.socketOf[key] = sock;
+
+            var b = new Bounds(p.center, p.size);
+            if (res.whole.TryGetValue(key, out var acc)) { acc.Encapsulate(b); res.whole[key] = acc; }
+            else res.whole[key] = b;
+        }
+        return res;
+    }
+
+    /// <summary>Ближайший предок, У КОТОРОГО ЕСТЬ ГЕОМЕТРИЯ. Место может висеть на безформенном узле —
+    /// тогда фактический стык у него с ближайшим нарисованным предком, а не с пустотой.
+    /// Возвращает пустую строку, если нарисованного предка нет вовсе (это дефект скелета, не отсутствие
+    /// данных, — так было, пока несущую анатомию рисовал покров, а хребет оставался служебным).</summary>
+    public static string DrawnParent(Places pl, string socket)
+    {
+        if (!pl.parentOf.TryGetValue(socket, out var parent) || string.IsNullOrEmpty(parent)) return "";
+        int guard = 0;
+        while (!pl.whole.ContainsKey(parent) && pl.parentOf.TryGetValue(parent, out var up)
+               && !string.IsNullOrEmpty(up) && guard++ < 16)
+            parent = up;
+        return pl.whole.ContainsKey(parent) ? parent : "";
+    }
 }
