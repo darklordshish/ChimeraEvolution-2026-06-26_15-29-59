@@ -80,6 +80,42 @@ MonoBehaviour:
       shape: 1
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.88, y: 0.92, z: 0.42}
+      offset: {x: 0, y: -0.02, z: 0.13}
+      euler: {x: 0, y: 0, z: 0}
+      shape: 1
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 1, y: 1, z: 0.46}
+      offset: {x: 0, y: 0.02, z: -0.09}
+      euler: {x: 0, y: 0, z: 0}
+      shape: 1
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.34, y: 0.52, z: 0.34}
+      offset: {x: 0.3, y: -0.3, z: -0.28}
+      euler: {x: 0, y: 0, z: 0}
+      shape: 1
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.34, y: 0.52, z: 0.34}
+      offset: {x: -0.3, y: -0.3, z: -0.28}
+      euler: {x: 0, y: 0, z: 0}
+      shape: 1
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.3, y: 0.46, z: 0.3}
+      offset: {x: 0.28, y: -0.28, z: 0.26}
+      euler: {x: 0, y: 0, z: 0}
+      shape: 1
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.3, y: 0.46, z: 0.3}
+      offset: {x: -0.28, y: -0.28, z: 0.26}
+      euler: {x: 0, y: 0, z: 0}
+      shape: 1
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
     visualSegments: 0
     visualTaper: 0
   - organName: "\u0418\u0433\u043B\u043E\u043C\u0451\u0442"
@@ -212,30 +248,6 @@ MonoBehaviour:
     visualEuler: {x: 0, y: 0, z: 0}
     visualAlignToBody: 1
     visualParts:
-    - scale: {x: 0.62, y: 0.74, z: 0.34}
-      offset: {x: 0, y: -0.1, z: 0.33}
-      euler: {x: 0, y: 0, z: 0}
-      shape: 1
-      role: 0
-      color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.88, y: 0.92, z: 0.42}
-      offset: {x: 0, y: -0.02, z: 0.13}
-      euler: {x: 0, y: 0, z: 0}
-      shape: 1
-      role: 0
-      color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 1, y: 1, z: 0.46}
-      offset: {x: 0, y: 0.02, z: -0.09}
-      euler: {x: 0, y: 0, z: 0}
-      shape: 1
-      role: 0
-      color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.94, y: 0.92, z: 0.44}
-      offset: {x: 0, y: 0, z: -0.31}
-      euler: {x: 0, y: 0, z: 0}
-      shape: 1
-      role: 0
-      color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.07, y: 0.62, z: 0.07}
       offset: {x: -0.26, y: 0.41, z: 0.26}
       euler: {x: -20, y: 0, z: -20}
@@ -354,30 +366,6 @@ MonoBehaviour:
       offset: {x: 0.26, y: 0.33, z: -0.4}
       euler: {x: -42, y: 0, z: 20}
       shape: 0
-      role: 0
-      color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.34, y: 0.52, z: 0.34}
-      offset: {x: 0.3, y: -0.3, z: -0.28}
-      euler: {x: 0, y: 0, z: 0}
-      shape: 1
-      role: 0
-      color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.34, y: 0.52, z: 0.34}
-      offset: {x: -0.3, y: -0.3, z: -0.28}
-      euler: {x: 0, y: 0, z: 0}
-      shape: 1
-      role: 0
-      color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.3, y: 0.46, z: 0.3}
-      offset: {x: 0.28, y: -0.28, z: 0.26}
-      euler: {x: 0, y: 0, z: 0}
-      shape: 1
-      role: 0
-      color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.3, y: 0.46, z: 0.3}
-      offset: {x: -0.28, y: -0.28, z: 0.26}
-      euler: {x: 0, y: 0, z: 0}
-      shape: 1
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
     visualSegments: 0

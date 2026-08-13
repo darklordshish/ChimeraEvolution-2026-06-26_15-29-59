@@ -389,7 +389,6 @@ public static class SpeciesBootstrap
             } }, // ОСТРЫЙ СЛУХ: вдвое дальше + различение вида + волны звука на экране (лось — слухач при слабом зрении)
             new Organ { organName = "Лосиное сердце", slot = "Сердце", hotkey = "3", cost = 6, hpBonus = 2f, staminaBonus = 0.6f, staminaRegenBonus = 0f, regen = 1f, regenOOC = 0f, atkCooldown = 0.5f, bleedResist = true, visualParts = new[] {
                 new OrganPart { scale = new Vector3(1.06f, 1.00f, 1.10f), offset = new Vector3(0.00f, 0.00f, 0.04f), shape = PartShape.Sphere }, // грудная клетка ЛОСЯ
-                new OrganPart { scale = new Vector3(0.70f, 0.56f, 1.02f), offset = new Vector3(0.00f, 0.52f, -0.20f), shape = PartShape.Sphere }, // ГОРБ (холка): РАСТЯНУТ вдоль спины и поднят — у лося это длинный гребень остистых отростков под тяжёлую голову с рогами, а не ком на загривке
             } }, // +200% HP + КРОВЕУПОРНОСТЬ: сердце ТАНКА — явный HP-король (обгоняет волчьи 1.75); у массивного лося своё преимущество (гора HP), а кровь ему особенно опасна (% от макс HP)
             new Organ { organName = "Толстая шкура",  slot = "Шкура",  hotkey = "6", cost = 5, damageReduction = 0.35f, visualScale = new Vector3(1.15f, 1.1f, 1f) }, // броня против ПРЯМОГО урона (не крови)
             new Organ { organName = "Рога",           slot = "Рога",   hotkey = "8", cost = 5, enablesAntler = true, visualScale = new Vector3(1f, 1f, 1f), visualParts = new[] {
@@ -432,9 +431,9 @@ public static class SpeciesBootstrap
                 new OrganPart { scale = new Vector3(0.54f, 0.64f, 0.32f), offset = new Vector3(0.00f, -0.34f, 0.32f), euler = new Vector3(20f, 0f, 0f), shape = PartShape.Sphere }, // ПОДГРУДОК (висячая складка). Прошлый заход убрал «торпеду», но заодно срезал свес до 5 см — складка пропала. Свес вернул (10 см), а торпеду снимает УЗОСТЬ (0.23 при шее 0.40) и сдвиг ВПЕРЁД, к голове: у лося складка висит под челюстью, а не тянется вдоль всей шеи
             } },
             new BodySocket { name = "горб", parent = "хребет", attach = 0.735f, attachOffset = new Vector3(0.000f, 0.367f, -0.020f),   baseSize = new Vector3(0.396f, 0.443f, 0.640f), sizeRel = new Vector3(0.760f, 0.560f, 0.280f), parts = new[] {
-                new OrganPart { scale = new Vector3(0.92f, 1.00f, 0.60f), offset = new Vector3(0.00f, 0.00f, 0.08f), shape = PartShape.Sphere }, // ПИК холки — ШИРОКИЙ (0.61 при груди 0.59): холка это массивный горб над лопатками. Узкий высокий гребень читался вертикальным плавником, а не телом
+                new OrganPart { scale = new Vector3(0.92f, 1.00f, 0.60f), offset = new Vector3(0.00f, 0.03f, 0.08f), shape = PartShape.Sphere }, // ПИК холки — ШИРОКИЙ (0.61 при груди 0.59): холка это массивный горб над лопатками. Узкий высокий гребень читался вертикальным плавником, а не телом
                 new OrganPart { scale = new Vector3(1.00f, 0.80f, 0.72f), offset = new Vector3(0.00f, -0.20f, 0.06f), shape = PartShape.Sphere }, // плечевая масса — основание под пиком
-                new OrganPart { scale = new Vector3(0.88f, 0.62f, 0.62f), offset = new Vector3(0.00f, -0.22f, -0.34f), shape = PartShape.Sphere }, // ДЛИННЫЙ задний скат к спине — он и читает силуэт
+                new OrganPart { scale = new Vector3(0.88f, 0.66f, 0.95f), offset = new Vector3(0.00f, -0.18f, -0.46f), shape = PartShape.Sphere }, // ДЛИННЫЙ задний скат к спине — он и читает силуэт
                 new OrganPart { scale = new Vector3(0.80f, 0.66f, 0.44f), offset = new Vector3(0.00f, -0.16f, 0.40f), shape = PartShape.Sphere }, // передний скат — ВЫТЯНУТ вперёд поверх основания шеи: место удлинено 1.30 → 1.60, и скат теперь накрывает излом «шея↔холка», а не упирается в него торцом
             } }, // ХОЛКА: остистые отростки грудных позвонков + мышца. Выше крупа на ~10% — как у живого лося; читается СИЛУЭТОМ (резкий подъём от шеи, долгий спад к крестцу), а не узостью
             new BodySocket { name = "Шкура",  parent = "хребет", attach = 0.500f,   baseSize = new Vector3(0.521f, 0.791f, 2.284f), sizeRel = new Vector3(1.000f, 1.000f, 1.000f), parts = new[] {
@@ -479,6 +478,12 @@ public static class SpeciesBootstrap
             new Organ { organName = "Хребет", slot = "хребет", chassisOnly = true, visualParts = new[] {
                 new OrganPart { scale = new Vector3(0.66f, 0.74f, 0.42f), offset = new Vector3(0.00f, -0.10f, 0.32f), shape = PartShape.Sphere }, // плечи — перед сужен
                 new OrganPart { scale = new Vector3(0.94f, 0.92f, 0.44f), offset = new Vector3(0.00f, 0.02f, -0.28f), shape = PartShape.Sphere }, // круп
+                new OrganPart { scale = new Vector3(0.88f, 0.92f, 0.42f), offset = new Vector3(0.00f, -0.02f, 0.13f), shape = PartShape.Sphere }, // грудь
+                new OrganPart { scale = new Vector3(1.00f, 1.00f, 0.46f), offset = new Vector3(0.00f, 0.02f, -0.09f), shape = PartShape.Sphere }, // середина — шире всех
+                new OrganPart { scale = new Vector3(0.34f, 0.52f, 0.34f), offset = new Vector3(0.30f, -0.30f, -0.28f), shape = PartShape.Sphere }, // бедро (пр)
+                new OrganPart { scale = new Vector3(0.34f, 0.52f, 0.34f), offset = new Vector3(-0.30f, -0.30f, -0.28f), shape = PartShape.Sphere }, // бедро (лев)
+                new OrganPart { scale = new Vector3(0.30f, 0.46f, 0.30f), offset = new Vector3(0.28f, -0.28f, 0.26f), shape = PartShape.Sphere }, // плечо (пр)
+                new OrganPart { scale = new Vector3(0.30f, 0.46f, 0.30f), offset = new Vector3(-0.28f, -0.28f, 0.26f), shape = PartShape.Sphere }, // плечо (лев)
             } }, // СКЕЛЕТ: несущая структура шасси. chassisOnly — её не крадут графтом, как «Тело-хвост»
             new Organ { organName = "Игломёт",           slot = "Игломёт", hotkey = "8", cost = 4, enablesQuillVolley = true, visualScale = new Vector3(1f, 1f, 1f), visualParts = new[] {
                 // БАТАРЕЯ: длинные иглы ВПЕРЁД — куда смотрят стволы, туда и летит залп (читаемость
@@ -489,10 +494,6 @@ public static class SpeciesBootstrap
                 new OrganPart { scale = new Vector3(0.13f, 0.13f, 1.7f), offset = new Vector3(0.42f, 0.12f, 0.55f), euler = new Vector3(-10f, 13.0f, 0f) },
             } }, // ФОРМА ЕЖИНАЯ (игольчатая плита вдоль хребта) — у органа; вертикальный хребет человека доворачивает МЕСТО // ПРИДАТОК: дальний бой игрока (химерный слот)
             new Organ { organName = "Иглы",              slot = "Шкура",  hotkey = "6", cost = 5, damageReduction = 0.2f, thorns = true, visualAlignToBody = true, visualParts = new[] {
-                new OrganPart { scale = new Vector3(0.62f, 0.74f, 0.34f), offset = new Vector3(0.00f, -0.10f, 0.33f), shape = PartShape.Sphere }, // плечи — перед сужен
-                new OrganPart { scale = new Vector3(0.88f, 0.92f, 0.42f), offset = new Vector3(0.00f, -0.02f, 0.13f), shape = PartShape.Sphere }, // грудь
-                new OrganPart { scale = new Vector3(1.00f, 1.00f, 0.46f), offset = new Vector3(0.00f, 0.02f, -0.09f), shape = PartShape.Sphere }, // середина — шире всех
-                new OrganPart { scale = new Vector3(0.94f, 0.92f, 0.44f), offset = new Vector3(0.00f, 0.00f, -0.31f), shape = PartShape.Sphere }, // круп куполом
                 new OrganPart { scale = new Vector3(0.07f, 0.62f, 0.07f), offset = new Vector3(-0.26f, 0.41f, 0.26f), euler = new Vector3(-20f, 0f, -20f) }, // шип
                 new OrganPart { scale = new Vector3(0.07f, 0.62f, 0.07f), offset = new Vector3(-0.09f, 0.51f, 0.26f), euler = new Vector3(-20f, 0f, -7f) }, // шип
                 new OrganPart { scale = new Vector3(0.07f, 0.62f, 0.07f), offset = new Vector3(0.09f, 0.51f, 0.26f), euler = new Vector3(-20f, 0f, 7f) }, // шип
@@ -513,10 +514,6 @@ public static class SpeciesBootstrap
                 new OrganPart { scale = new Vector3(0.07f, 0.62f, 0.07f), offset = new Vector3(-0.09f, 0.42f, -0.40f), euler = new Vector3(-42f, 0f, -7f) }, // шип
                 new OrganPart { scale = new Vector3(0.07f, 0.62f, 0.07f), offset = new Vector3(0.09f, 0.42f, -0.40f), euler = new Vector3(-42f, 0f, 7f) }, // шип
                 new OrganPart { scale = new Vector3(0.07f, 0.62f, 0.07f), offset = new Vector3(0.26f, 0.33f, -0.40f), euler = new Vector3(-42f, 0f, 20f) }, // шип
-                new OrganPart { scale = new Vector3(0.34f, 0.52f, 0.34f), offset = new Vector3(0.30f, -0.30f, -0.28f), shape = PartShape.Sphere }, // бедро (пр)
-                new OrganPart { scale = new Vector3(0.34f, 0.52f, 0.34f), offset = new Vector3(-0.30f, -0.30f, -0.28f), shape = PartShape.Sphere }, // бедро (лев)
-                new OrganPart { scale = new Vector3(0.30f, 0.46f, 0.30f), offset = new Vector3(0.28f, -0.28f, 0.26f), shape = PartShape.Sphere }, // плечо (пр)
-                new OrganPart { scale = new Vector3(0.30f, 0.46f, 0.30f), offset = new Vector3(-0.28f, -0.28f, 0.26f), shape = PartShape.Sphere }, // плечо (лев)
             } }, // ОТВЕТКА: броня умеренная — иглы это ответ, а не панцирь
             new Organ { organName = "Ежиные ноги",       slot = "Ноги",   hotkey = "2", cost = 4, moveSpeed = 6f, dashSpeed = 18f, dashDuration = 0.14f, dashCooldown = 0.35f, enablesRoll = true, enablesCurl = true, nativeChassis = "Ёж", visualParts = new[] {
                 new OrganPart { scale = new Vector3(0.95f, 0.44f, 0.95f), offset = new Vector3(0.00f, 0.27f, -0.06f), euler = new Vector3(-10f, 0f, 0f), shape = PartShape.Capsule }, // бедро

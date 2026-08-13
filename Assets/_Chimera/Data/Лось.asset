@@ -488,12 +488,6 @@ MonoBehaviour:
       shape: 1
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.7, y: 0.56, z: 1.02}
-      offset: {x: 0, y: 0.52, z: -0.2}
-      euler: {x: 0, y: 0, z: 0}
-      shape: 1
-      role: 0
-      color: {r: 0, g: 0, b: 0, a: 0}
     visualSegments: 0
     visualTaper: 0
   - organName: "\u0422\u043E\u043B\u0441\u0442\u0430\u044F \u0448\u043A\u0443\u0440\u0430"
@@ -876,7 +870,7 @@ MonoBehaviour:
     attachOffset: {x: 0, y: 0.367, z: -0.02}
     parts:
     - scale: {x: 0.92, y: 1, z: 0.6}
-      offset: {x: 0, y: 0, z: 0.08}
+      offset: {x: 0, y: 0.03, z: 0.08}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
       role: 0
@@ -887,8 +881,8 @@ MonoBehaviour:
       shape: 1
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.88, y: 0.62, z: 0.62}
-      offset: {x: 0, y: -0.22, z: -0.34}
+    - scale: {x: 0.88, y: 0.66, z: 0.95}
+      offset: {x: 0, y: -0.18, z: -0.46}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
       role: 0
