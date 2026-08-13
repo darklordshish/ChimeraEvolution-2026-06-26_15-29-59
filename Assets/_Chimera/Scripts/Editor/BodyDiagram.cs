@@ -85,7 +85,7 @@ public static class BodyDiagram
         // Это же дерево читается везде и никогда не «не отрисуется»
         t.AppendLine("```text");
         foreach (var r in live.Where(s => string.IsNullOrEmpty(s.parent)))
-            Tree(t, r, live, "", true);
+            Tree(t, r, live, byName, "", true);
         var lost = live.Where(s => !string.IsNullOrEmpty(s.parent) && !byName.ContainsKey(s.parent)).ToList();
         foreach (var s in lost)
             t.AppendLine($"(!) {s.name} — родитель «{s.parent}» НЕ НАЙДЕН, место встанет в корень");
@@ -97,7 +97,8 @@ public static class BodyDiagram
 
         foreach (var s in live)
         {
-            var size = $"{s.baseSize.x:0.##}×{s.baseSize.y:0.##}×{s.baseSize.z:0.##}";
+            var sz = MorphBuilder.SizeOf(s, byName);   // РАЗРЕШЁННЫЙ калибр: свой габарит, доля родителя или звено цепи
+            var size = $"{sz.x:0.##}×{sz.y:0.##}×{sz.z:0.##}";
             var label = s.name + "<br/><small>" + size;
             if (s.chain > 1) label += $" ×{s.chain} звен.";
             if (s.mirrorX) label += " · пара";
@@ -145,7 +146,7 @@ public static class BodyDiagram
             string role = s.inner ? " *(внутр.)*" : s.graft ? " *(графт)*" : "";
             t.AppendLine($"| **{s.name}**{role} | {(string.IsNullOrEmpty(s.parent) ? "— корень" : s.parent)} "
                        + $"| {(string.IsNullOrEmpty(s.parent) ? "—" : s.attach.ToString("0.##"))} "
-                       + $"| {s.baseSize.x:0.###}×{s.baseSize.y:0.###}×{s.baseSize.z:0.###} "
+                       + $"| {MorphBuilder.SizeOf(s, byName).x:0.###}×{MorphBuilder.SizeOf(s, byName).y:0.###}×{MorphBuilder.SizeOf(s, byName).z:0.###} "
                        + $"| {(s.parts != null && s.parts.Length > 0 ? s.parts.Length + " част." : "—")} "
                        + $"| {(org ?? "—")} |");
         }
@@ -174,7 +175,7 @@ public static class BodyDiagram
     }
 
     /// <summary>Ветка дерева отступами. `last` — последний ребёнок у родителя (рисуем угол, а не тройник).</summary>
-    static void Tree(StringBuilder t, BodySocket s, List<BodySocket> live, string pad, bool last, int depth = 0)
+    static void Tree(StringBuilder t, BodySocket s, List<BodySocket> live, Dictionary<string, BodySocket> byName, string pad, bool last, int depth = 0)
     {
         if (depth > 16) { t.AppendLine(pad + "└─ (!) ЦИКЛ В ГРАФЕ — обход оборван"); return; } // Unity не должна виснуть на кривых данных
         string mark = s.inner ? " (внутр.)" : s.graft ? " (графт)" : "";
@@ -184,12 +185,12 @@ public static class BodyDiagram
         // ветка рисуется по ГЛУБИНЕ, а не по длине отступа: у детей корня отступ пустой, и по нему
         // дерево выходило плоским списком
         t.AppendLine($"{pad}{(depth == 0 ? "" : last ? "└─ " : "├─ ")}{s.name}{mark}{at}"
-                   + $"   [{s.baseSize.x:0.###}×{s.baseSize.y:0.###}×{s.baseSize.z:0.###}]");
+                   + $"   [{MorphBuilder.SizeOf(s, byName).x:0.###}×{MorphBuilder.SizeOf(s, byName).y:0.###}×{MorphBuilder.SizeOf(s, byName).z:0.###}]");
 
         var kids = live.Where(k => k.parent == s.name).ToList();
         string childPad = depth == 0 ? "" : pad + (last ? "   " : "│  ");
         for (int i = 0; i < kids.Count; i++)
-            Tree(t, kids[i], live, childPad, i == kids.Count - 1, depth + 1);
+            Tree(t, kids[i], live, byName, childPad, i == kids.Count - 1, depth + 1);
     }
 
     static void Cls(StringBuilder t, string cls, IEnumerable<BodySocket> set, Dictionary<string, string> id)

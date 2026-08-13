@@ -361,8 +361,8 @@ public static class MorphBuilder
 
     /// <summary>КУДА РАСТЁТ ЦЕПЬ: по длинной оси места. Хвост/тело лежат вдоль Z → тянутся НАЗАД;
     /// рог вытянут по Y → растёт ВВЕРХ. Отдельного поля-направления не нужно — его говорит габарит.
-    /// Считаем по `baseSize`, а не по итоговому размеру: та же ось, что берёт `Place` для стыка детей,
-    /// иначе хвост цеплялся бы к одному концу, а рос в другой.</summary>
+    /// Считаем по РАЗРЕШЁННОМУ размеру (`SizeOf` — свой габарит либо доля родителя): это та же величина,
+    /// что берёт `Place` для стыка детей, иначе хвост цеплялся бы к одному концу, а рос в другой.</summary>
     static Vector3 ChainDir(Vector3 b) => b.z >= b.x && b.z >= b.y ? Vector3.back
                                         : b.y >= b.x ? Vector3.up : Vector3.right;
 
@@ -409,11 +409,23 @@ public static class MorphBuilder
     /// голова доля корпуса, пасть доля головы, глаз доля головы. Тогда пропорция живёт в данных, и
     /// правка одного места тянет за собой всю ветку — вместо того чтобы молча с ней разъехаться.
     /// Пусто — прежний абсолютный `SizeForGraph` (корневые места и цепи в метрах).</summary>
-    static Vector3 SizeOf(BodySocket s, Dictionary<string, BodySocket> byName, int depth)
+    public static Vector3 SizeOf(BodySocket s, Dictionary<string, BodySocket> byName, int depth = 0)
     {
         if (s.sizeRel == Vector3.zero || depth >= 16 || string.IsNullOrEmpty(s.parent)
-            || !byName.TryGetValue(s.parent, out var par) || par == s) return s.SizeForGraph;
+            || !byName.TryGetValue(s.parent, out var par) || par == s) return Raw(s, byName, depth);
         return Vector3.Scale(SizeOf(par, byName, depth + 1), s.sizeRel);
+    }
+
+    /// <summary>СОБСТВЕННЫЙ габарит места. У цепи он собран из звена — и толщину надо брать ту же, что
+    /// возьмёт сборка: диаметр прописан ОДИН раз (у шеи) и дальше наследуется по хребту, поэтому сырое
+    /// поле у тела и хвоста пустое. Читая его напрямую, мы получали габарит `0 × 0 × длина`, а на этот
+    /// габарит умножается всё, что задано «в калибрах родителя»: боковой вынос привитых лап на змее
+    /// молча обращался в ноль — лапы садились на осевую линию, и понять это по данным было нельзя.</summary>
+    static Vector3 Raw(BodySocket s, Dictionary<string, BodySocket> byName, int depth)
+    {
+        if (s.linkLength <= 0f) return s.SizeForGraph;
+        float d = ChainDiameter(s, byName, depth);
+        return new Vector3(d, d, s.linkLength);
     }
 
     /// <summary>Части органа, предназначенные месту с такой ролью. `null`, если подходящих нет — тогда
