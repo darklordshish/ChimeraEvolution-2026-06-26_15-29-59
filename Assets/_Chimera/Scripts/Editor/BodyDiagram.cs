@@ -104,7 +104,7 @@ public static class BodyDiagram
             label += "</small>";
 
             // форма узла = роль места: скрытое — овал, графт — гексагон, цепь — двойная рамка
-            string node = s.hidden ? $"{id[s.name]}([\"{label}\"])"
+            string node = s.inner ? $"{id[s.name]}([\"{label}\"])"
                         : s.graft ? $"{id[s.name]}{{{{\"{label}\"}}}}"
                         : s.chain > 1 ? $"{id[s.name]}[[\"{label}\"]]"
                         : $"{id[s.name]}[\"{label}\"]";
@@ -127,9 +127,9 @@ public static class BodyDiagram
         t.AppendLine("    classDef hid fill:#eee,stroke:#999,stroke-dasharray:4 3,color:#666");
         t.AppendLine("    classDef gr fill:#fdf3e0,stroke:#c98a2b,color:#7a5310");
         t.AppendLine("    classDef ch fill:#e8f2ff,stroke:#3b74c4,color:#1c3f70");
-        Cls(t, "hid", live.Where(s => s.hidden), id);
-        Cls(t, "gr", live.Where(s => s.graft && !s.hidden), id);
-        Cls(t, "ch", live.Where(s => s.chain > 1 && !s.hidden && !s.graft), id);
+        Cls(t, "hid", live.Where(s => s.inner), id);
+        Cls(t, "gr", live.Where(s => s.graft && !s.inner), id);
+        Cls(t, "ch", live.Where(s => s.chain > 1 && !s.inner && !s.graft), id);
         t.AppendLine("```");
 
         t.AppendLine();
@@ -142,7 +142,7 @@ public static class BodyDiagram
         foreach (var s in live)
         {
             organs.TryGetValue(s.name, out var org);
-            string role = s.hidden ? " *(внутр.)*" : s.graft ? " *(графт)*" : "";
+            string role = s.inner ? " *(внутр.)*" : s.graft ? " *(графт)*" : "";
             t.AppendLine($"| **{s.name}**{role} | {(string.IsNullOrEmpty(s.parent) ? "— корень" : s.parent)} "
                        + $"| {(string.IsNullOrEmpty(s.parent) ? "—" : s.attach.ToString("0.##"))} "
                        + $"| {s.baseSize.x:0.###}×{s.baseSize.y:0.###}×{s.baseSize.z:0.###} "
@@ -177,7 +177,7 @@ public static class BodyDiagram
     static void Tree(StringBuilder t, BodySocket s, List<BodySocket> live, string pad, bool last, int depth = 0)
     {
         if (depth > 16) { t.AppendLine(pad + "└─ (!) ЦИКЛ В ГРАФЕ — обход оборван"); return; } // Unity не должна виснуть на кривых данных
-        string mark = s.hidden ? " (внутр.)" : s.graft ? " (графт)" : "";
+        string mark = s.inner ? " (внутр.)" : s.graft ? " (графт)" : "";
         if (s.chain > 1) mark += $" ×{s.chain} звен.";
         if (s.mirrorX) mark += " (пара)";
         string at = string.IsNullOrEmpty(s.parent) ? "" : $"  attach {s.attach:0.##}";

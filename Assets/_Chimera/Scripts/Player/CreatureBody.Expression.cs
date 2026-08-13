@@ -104,7 +104,12 @@ public partial class CreatureBody
             bite = w.enablesBite, scent = w.enablesScent, kick = w.enablesKick,
             howl = w.enablesHowl, cold = w.coldBlooded, camo = w.camo, thermalOn = w.enablesThermal,
             constrict = w.enablesConstrict, digest = w.digestion, bellow = w.enablesBellow,
-            antler = w.enablesAntler, charge = w.enablesCharge, roll = w.enablesRoll, curl = w.enablesCurl, insight = w.insight,
+            antler = w.enablesAntler, charge = w.enablesCharge, roll = w.enablesRoll, insight = w.insight,
+            // КЛУБОК ТОЛЬКО ДОМА. Перекат и клубок — одна способность ежиных ног на двух глубинах: рывок
+            // «в клубке» (кувырок с i-frames) открыт всем, полный шар с бронёй и катанием — лишь на ежином
+            // шасси. Гейт точечный, а НЕ на все дискретные флаги: у волчьей Пасти тоже `nativeChassis`, и
+            // загейти мы всё подряд — вервольф остался бы без укуса на человечьем теле
+            curl = w.enablesCurl && (string.IsNullOrEmpty(w.nativeChassis) || cNative),
             keenEar = w.keenHearing, earMult = w.hearingMult,
             thorns = w.thorns, venomResist = w.venomResist, quillVolley = w.enablesQuillVolley,
             volleyMult = w.enablesQuillVolley ? m : 0f, // мощь залпа = экспрессия органа-придатка (родство с ежом)

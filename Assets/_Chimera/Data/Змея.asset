@@ -508,7 +508,6 @@ MonoBehaviour:
     baseSize: {x: 0.24, y: 0.163, z: 0.43}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
-    hidden: 0
     codeDriven: 1
     solid: 1
     inner: 0
@@ -590,7 +589,6 @@ MonoBehaviour:
     baseSize: {x: 0.17, y: 0.08, z: 0.24}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
-    hidden: 0
     codeDriven: 1
     solid: 1
     inner: 0
@@ -618,7 +616,6 @@ MonoBehaviour:
     baseSize: {x: 0.056, y: 0.056, z: 0.056}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 1
-    hidden: 0
     codeDriven: 0
     solid: 0
     inner: 0
@@ -646,7 +643,6 @@ MonoBehaviour:
     baseSize: {x: 1, y: 1, z: 1}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
-    hidden: 0
     codeDriven: 1
     solid: 1
     inner: 0
@@ -668,7 +664,6 @@ MonoBehaviour:
     baseSize: {x: 1, y: 1, z: 1}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
-    hidden: 0
     codeDriven: 1
     solid: 1
     inner: 0
@@ -690,7 +685,6 @@ MonoBehaviour:
     baseSize: {x: 1, y: 1, z: 1}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
-    hidden: 0
     codeDriven: 1
     solid: 1
     inner: 0
@@ -712,7 +706,6 @@ MonoBehaviour:
     baseSize: {x: 0.13, y: 0.13, z: 0.13}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
-    hidden: 0
     codeDriven: 0
     solid: 1
     inner: 0
@@ -734,7 +727,6 @@ MonoBehaviour:
     baseSize: {x: 1, y: 1, z: 1}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
-    hidden: 0
     codeDriven: 0
     solid: 0
     inner: 1
@@ -756,7 +748,6 @@ MonoBehaviour:
     baseSize: {x: 1, y: 1, z: 1}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
-    hidden: 0
     codeDriven: 0
     solid: 0
     inner: 1
@@ -778,7 +769,6 @@ MonoBehaviour:
     baseSize: {x: 1, y: 1, z: 1}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
-    hidden: 0
     codeDriven: 0
     solid: 0
     inner: 1
@@ -800,7 +790,6 @@ MonoBehaviour:
     baseSize: {x: 0.068, y: 0.231, z: 0.08}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 1
-    hidden: 0
     codeDriven: 0
     solid: 0
     inner: 0
@@ -822,7 +811,6 @@ MonoBehaviour:
     baseSize: {x: 0.068, y: 0.231, z: 0.08}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 1
-    hidden: 0
     codeDriven: 0
     solid: 0
     inner: 0
@@ -844,7 +832,6 @@ MonoBehaviour:
     baseSize: {x: 0.061, y: 0.061, z: 0.072}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 1
-    hidden: 0
     codeDriven: 0
     solid: 0
     inner: 0
@@ -866,7 +853,6 @@ MonoBehaviour:
     baseSize: {x: 0.088, y: 0.088, z: 0.104}
     baseEuler: {x: -10, y: 0, z: 0}
     mirrorX: 0
-    hidden: 0
     codeDriven: 0
     solid: 0
     inner: 0

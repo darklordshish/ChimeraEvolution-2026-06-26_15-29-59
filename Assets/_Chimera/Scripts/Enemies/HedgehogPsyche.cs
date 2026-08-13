@@ -71,7 +71,7 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
     WindupAbility activeAbility;
     float nextAttackTime, nextRetarget, nextGrabAt;
     bool huntingPrey, holding;
-    CurlDefense _curl; // КЛУБОК (слайс C): оборонительная стойка последнего рубежа. Тело вешает CurlDefense по флагу enablesCurl (Игольчатое тело)
+    CurlDefense _curl; // КЛУБОК (слайс C): оборонительная стойка последнего рубежа. Тело вешает CurlDefense по флагу enablesCurl («Ежиные ноги» на ежином шасси)
     CurlDefense curl { get { if (_curl == null) TryGetComponent(out _curl); return _curl; } } // лениво: тело до-создаёт в Recompute (после нашего Awake), как Quills
     Thorns thornsComp; // иглы — гасим «на спине» (истощён), чтобы хватали безболезненно; ленивая (тело вешает их по флагу)
     Thorns Quills { get { if (thornsComp == null) TryGetComponent(out thornsComp); return thornsComp; } }
@@ -148,7 +148,7 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
         TryGetComponent(out volley); // залп — ТОЛЬКО с префаба (орган Иглы): нет компонента = ближний ёж
         if (!TryGetComponent(out senses)) senses = gameObject.AddComponent<Senses>();
         if (!TryGetComponent(out alert)) alert = gameObject.AddComponent<AlertState>();
-        // клубок (CurlDefense) теперь вешает ТЕЛО по флагу enablesCurl (орган «Игольчатое тело»); берём лениво через свойство curl
+        // клубок (CurlDefense) теперь вешает ТЕЛО по флагу enablesCurl (орган «Ежиные ноги», гейт nativeChassis); берём лениво через свойство curl
 
         // профиль чувств: зрение скупое и КОНУСОМ, слух и нюх щедрые и круговые
         senses.Seed(SenseKind.Sight, sightRange);
