@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
@@ -13,6 +14,9 @@ public static class BodyMap
     [MenuItem("Chimera/Выгрузить карту тел")]
     public static void Generate()
     {
+        // ЛОКАЛЬ МАШИНЫ НЕ ДОЛЖНА ПРОТЕКАТЬ В ОТЧЁТ: на русской «0.000» печаталось как «0,000»,
+        // и колонка «центр x,y,z» переставала разбираться — запятая была и разделителем чисел
+        var ci = CultureInfo.InvariantCulture;
         var sb = new StringBuilder();
         sb.AppendLine("# КАРТА ТЕЛ");
         sb.AppendLine();
@@ -39,8 +43,8 @@ public static class BodyMap
             sb.AppendLine("| деталь | родитель | центр x,y,z | габарит ш×в×д |");
             sb.AppendLine("|---|---|---|---|");
             foreach (var p in parts)
-                sb.AppendLine($"| {p.name} | {p.parent} | {p.center.x:F3}, {p.center.y:F3}, {p.center.z:F3} " +
-                              $"| {p.size.x:F3} × {p.size.y:F3} × {p.size.z:F3} |");
+                sb.AppendLine(string.Format(ci, "| {0} | {1} | {2:F3}, {3:F3}, {4:F3} | {5:F3} × {6:F3} × {7:F3} |",
+                              p.name, p.parent, p.center.x, p.center.y, p.center.z, p.size.x, p.size.y, p.size.z));
             sb.AppendLine();
 
             // СТЫКИ: где кончается одна деталь и начинается следующая. Это то, что мы неделю мерили
@@ -50,9 +54,9 @@ public static class BodyMap
             // и у ЧЕТВЕРОНОГИХ таблица выходила ПУСТОЙ: у волка, лося, ежа главные швы идут по Y (лапы
             // вниз, уши вверх) и по X (рёбра вбок), а вдоль Z у них разнесено немногое. Детектор молчал
             // ровно там, где мы неделю искали щели глазами
-            sb.AppendLine("### Стыки (ось шва — где перекрытие наименьшее)");
+            sb.AppendLine("### Стыки (по БЛИЖАЙШЕЙ паре деталей; ось — где они разведены дальше всего)");
             sb.AppendLine();
-            sb.AppendLine("| место | родитель | ось | край родителя | край места | зазор (+) / нахлёст (−) | доля: щель от толщины шва, нахлёст от глубины детали | вердикт |");
+            sb.AppendLine("| место | родитель | ось | край родителя | край места | зазор (+) / нахлёст (−) | доля от ДЕТАЛИ шва: щель к толщине, нахлёст к глубине | вердикт |");
             sb.AppendLine("|---|---|---|---|---|---|---|---|");
 
             // СТЫК СЧИТАЕМ МЕЖДУ МЕСТАМИ, А НЕ ДЕТАЛЯМИ. У головы шесть частей, у цепи полтора десятка
@@ -116,24 +120,29 @@ public static class BodyMap
                 float mine = Mathf.Max(0.000001f, me.size.x * me.size.y * me.size.z);
                 bool nested = inside / mine > 0.75f;
 
-                // ОСЬ ШВА — ТА, ГДЕ ПЕРЕКРЫТИЕ НАИМЕНЬШЕЕ, а не где дальше разъехались центры. Нога
-                // смещена ВПЕРЁД сильнее, чем вниз, и критерий «наибольший разнос» указывал на Z, хотя
-                // с корпусом она стыкуется СВЕРХУ. Шов проходит там, где тела разделены, — по вертикали
-                Vector3 d = me.center - parBounds.center;
+                // СТЫК — МЕЖДУ БЛИЖАЙШИМИ ДЕТАЛЯМИ, А НЕ МЕЖДУ КОРОБКАМИ ГРУПП. Меряя облака целиком, мы
+                // спрашивали «пересекаются ли габариты», а не «сходятся ли поверхности»: рога лося сидят
+                // в коробке 1.15×1.11×1.09 м, поэтому «норма» печаталась при розетке, висящей в 3.4 см от
+                // головы (порог 2.5). Класс «деталь не заполняет своё место» так не ловился ПО ПОСТРОЕНИЮ —
+                // ровно тот, ради которого карта и заведена
+                pl.pieces.TryGetValue(name, out var myPieces);
+                pl.pieces.TryGetValue(parentName, out var parPieces);
+                Vector3 seam = BodyProbe.ClosestSeam(myPieces, parPieces, out var seamPiece);
+
+                // ОСЬ ШВА — РАЗДЕЛЯЮЩАЯ, то есть где детали разведены дальше всего. Прежний критерий
+                // «наименьшее перекрытие в долях калибра» решал ту же задачу на агрегатах; здесь он
+                // выражен прямо: у пары боксов шов там, где расстояние между ними наибольшее
                 int axis = 0;
-                float bestOverlap = float.MaxValue;
-                for (int ax = 0; ax < 3; ax++)
-                {
-                    float ovAx = Mathf.Min(me.max[ax], parBounds.max[ax]) - Mathf.Max(me.min[ax], parBounds.min[ax]);
-                    float rel = ovAx / Mathf.Max(0.000001f, me.size[ax]);   // в долях СВОЕГО калибра
-                    if (rel < bestOverlap) { bestOverlap = rel; axis = ax; }
-                }
+                for (int ax = 1; ax < 3; ax++) if (seam[ax] > seam[axis]) axis = ax;
                 string axisName = axis == 0 ? "X" : axis == 1 ? "Y" : "Z";
 
-                float sign = d[axis] >= 0f ? 1f : -1f;                       // в какую сторону ушло место
+                float gap = seam[axis];                                      // + щель, − нахлёст
+                // края печатаем по ГРУППАМ: они показывают, где место стоит целиком (диагностика позы),
+                // тогда как вердикт судит по фактическому шву
+                Vector3 d = me.center - parBounds.center;
+                float sign = d[axis] >= 0f ? 1f : -1f;
                 float parentEdge = parBounds.center[axis] + sign * parBounds.size[axis] * 0.5f;
                 float childEdge = me.center[axis] - sign * me.size[axis] * 0.5f;
-                float gap = (childEdge - parentEdge) * sign;                 // + щель, − нахлёст
 
                 // У ЩЕЛИ И НАХЛЁСТА РАЗНЫЕ МАСШТАБЫ, И МЕРИТЬ ИХ ОДНИМ ЧИСЛОМ НЕЛЬЗЯ.
                 //
@@ -146,19 +155,27 @@ public static class BodyMap
                 // на шею на 14.6 см: от длины головы это треть (норма шарнирной куклы), а от толщины шеи —
                 // 68%, и карта выдала 32 «врастания» на здоровой анатомии. Валидатор, кричащий на
                 // намеренное, приучает игнорировать красное — тот же урок, что с осью у изотропных мест
-                float gapCal = Mathf.Max(0.000001f, 0.5f * (me.size[(axis + 1) % 3] + me.size[(axis + 2) % 3]));
-                float lapCal = Mathf.Max(0.000001f, me.size[axis]);
+                // МАСШТАБ — ОТ ДЕТАЛИ, ОБРАЗУЮЩЕЙ ШОВ, а не от коробки всего места: место может быть
+                // облаком в метр (рога, щетина), и порог, снятый с него, прощает любую щель
+                float gapCal = Mathf.Max(0.000001f, 0.5f * (seamPiece[(axis + 1) % 3] + seamPiece[(axis + 2) % 3]));
+                float lapCal = Mathf.Max(0.000001f, seamPiece[axis]);
                 float cal = gap >= 0f ? gapCal : lapCal;   // в колонку идёт та доля, по которой судим
 
                 // помечаем, что предок фактический, а не по графу: у места нет нарисованного родителя
                 string via = viaAbstract ? " ⚠ через абстракцию" : "";
-                string verdict = nested ? "вложено"
-                               : gap > BodyRules.GapWarn * gapCal ? "**ЩЕЛЬ**"
+                // ПОЛОЖИТЕЛЬНЫЙ ЗАЗОР — ПРИНЦИПИАЛЬНО ИНОЕ СОСТОЯНИЕ, ЧЕМ ПЕРЕКРЫТИЕ: деталь не касается
+                // родителя, между ними просвет. Даже мелкий, он значит «висит», а не «сидит», и прятать
+                // его в «норму» нельзя — рога лося не касаются черепа на 1.3 см, уши на 1.2 см, и по
+                // прежней шкале (порог 8% толщины шва) оба проходили молча. Кричать красным на такое тоже
+                // неверно, поэтому вердикта два: «не касается» — просвет в пределах порога, «ЩЕЛЬ» — сверх
+                string verdict = gap > BodyRules.GapWarn * gapCal ? "**ЩЕЛЬ**"
+                               : gap > BodyRules.GapTouch * gapCal ? "не касается"
+                               : nested ? "вложено"
                                : gap < -BodyRules.OverlapWarn * lapCal ? "врастание"
                                : "норма";
 
-                sb.AppendLine($"| {name} | {parentName} | {axisName} | {parentEdge:F3} | {childEdge:F3} " +
-                              $"| {gap:F3} | {(gap / cal):P0} | {verdict}{via} |");
+                sb.AppendLine(string.Format(ci, "| {0} | {1} | {2} | {3:F3} | {4:F3} | {5:F3} | {6:P0} | {7}{8} |",
+                              name, parentName, axisName, parentEdge, childEdge, gap, gap / cal, verdict, via));
             }
             sb.AppendLine();
 
@@ -172,7 +189,6 @@ public static class BodyMap
                 for (int j = i + 1; j < parts.Count; j++)
                 {
                     if (parts[i].name == parts[j].name) continue;                                   // звенья одной цепи
-                    if (parts[i].name == parts[j].parent || parts[j].name == parts[i].parent) continue; // родство
                     var a = new Bounds(parts[i].center, parts[i].size);
                     var b = new Bounds(parts[j].center, parts[j].size);
                     if (!a.Intersects(b)) continue;
@@ -181,7 +197,25 @@ public static class BodyMap
                     float va = a.size.x * a.size.y * a.size.z, vb = b.size.x * b.size.y * b.size.z;
                     float share = inter / Mathf.Max(0.000001f, Mathf.Min(va, vb));
                     if (share < 0.35f) continue;                                                     // касания не шумим
-                    sb.AppendLine($"| {parts[i].name} | {parts[j].name} | {share:P0} |");
+
+                    // РОДСТВО САМО ПО СЕБЕ НЕ ОПРАВДАНИЕ — оправдание РАЗНИЦА В РАЗМЕРЕ. Пара
+                    // «родитель ↔ ребёнок» пропускалась целиком, и это скрыло настоящий дубль: у ежа
+                    // несущую тушу рисовал орган-покров, а место «Шкура» числится ребёнком хребта —
+                    // шары плеч совпадали на 100%, крупы до третьего знака, и обе пары молчали.
+                    // Мелкое в крупном (глаз в голове, сердце в корпусе) — норма; СОПОСТАВИМЫЕ объёмы
+                    // на одном месте — две детали, рисующие одно и то же
+                    // ДУБЛЬ — ЭТО «ДВЕ ДЕТАЛИ ПОЧТИ СОВПАЛИ», а не «сильно перекрылись». Доля от МЕНЬШЕГО
+                    // велика и у нормальной посадки: лопатка внутри корпуса, голова на шее, покров поверх
+                    // скелета — там мелкое просто утоплено в крупное. Спрашиваем долю от БОЛЬШЕГО: она
+                    // высока, только когда тела совпадают телами, как совпадали шары ежа (плечи 100%,
+                    // крупы до третьего знака). Прежний критерий «сопоставимые объёмы» метил нормальный
+                    // покров и пугал зря — валидатор, кричащий на намеренное, приучает игнорировать красное
+                    bool kin = parts[i].name == parts[j].parent || parts[j].name == parts[i].parent;
+                    float shareBig = inter / Mathf.Max(0.000001f, Mathf.Max(va, vb));
+                    bool twin = shareBig > 0.6f;
+                    if (kin && !twin) continue;                                                      // мелкое в крупном — норма
+                    string note = kin ? " ⚠ родня, и детали почти совпадают" : "";
+                    sb.AppendLine(string.Format(ci, "| {0} | {1} | {2:P0}{3} |", parts[i].name, parts[j].name, share, note));
                 }
             sb.AppendLine();
         }

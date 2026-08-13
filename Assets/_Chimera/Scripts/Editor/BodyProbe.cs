@@ -87,6 +87,11 @@ public static class BodyProbe
         public Dictionary<string, Bounds> whole;    // «голова» / «Ноги (пр)» → суммарный объём места
         public Dictionary<string, string> socketOf; // ключ с стороной → имя сокета
         public Dictionary<string, string> parentOf; // сокет → сокет-родитель («» у корня)
+        // ОТДЕЛЬНЫЕ ДЕТАЛИ места — без них стык меряется между КОРОБКАМИ ГРУПП, а это не стык. Рога лося
+        // сидят в коробке 1.15×1.11×1.09 м: карта says «норма», а розетка висит в 3.4 см от головы при
+        // пороге 2.5 см. Класс «деталь не заполняет своё место» так не ловится ПО ПОСТРОЕНИЮ — ровно тот,
+        // ради которого карта и заведена (правило тандема: мерить границы НАРИСОВАННЫХ частей)
+        public Dictionary<string, List<Bounds>> pieces;
     }
 
     /// <summary>Свести замеры в объёмы мест. Парные места (`mirrorX`) разделяются по сторонам: объединив
@@ -99,6 +104,7 @@ public static class BodyProbe
             whole = new Dictionary<string, Bounds>(),
             socketOf = new Dictionary<string, string>(),
             parentOf = new Dictionary<string, string>(),
+            pieces = new Dictionary<string, List<Bounds>>(),
         };
         if (species == null || parts == null) return res;
 
@@ -125,8 +131,51 @@ public static class BodyProbe
             var b = new Bounds(p.center, p.size);
             if (res.whole.TryGetValue(key, out var acc)) { acc.Encapsulate(b); res.whole[key] = acc; }
             else res.whole[key] = b;
+
+            if (!res.pieces.TryGetValue(key, out var list)) res.pieces[key] = list = new List<Bounds>();
+            list.Add(b);
         }
         return res;
+    }
+
+    /// <summary>РАССТОЯНИЕ МЕЖДУ ДВУМЯ ДЕТАЛЯМИ по каждой оси: плюс — щель, минус — глубина захода друг в
+    /// друга. Разделяющая ось та, где число НАИБОЛЬШЕЕ: по ней тела дальше всего разведены, и именно там
+    /// проходит шов (перекройся они по всем трём — деталь сидит внутри).</summary>
+    public static Vector3 Separation(Bounds a, Bounds b)
+    {
+        return new Vector3(
+            Mathf.Max(a.min.x - b.max.x, b.min.x - a.max.x),
+            Mathf.Max(a.min.y - b.max.y, b.min.y - a.max.y),
+            Mathf.Max(a.min.z - b.max.z, b.min.z - a.max.z));
+    }
+
+    /// <summary>БЛИЖАЙШАЯ ПАРА ДЕТАЛЕЙ двух мест — фактический стык. Меряя коробки групп, мы спрашивали
+    /// «пересекаются ли облака», а не «сходятся ли поверхности»: у лося рога с головой не соприкасаются
+    /// вовсе, а карта печатала «норма», потому что коробка рогов метровая и перекрывает голову с запасом.
+    /// Возвращает разделение по осям для той пары, что сошлась теснее всех.</summary>
+    public static Vector3 ClosestSeam(List<Bounds> child, List<Bounds> parent, out Vector3 seamPiece)
+    {
+        var best = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
+        float bestGap = float.MaxValue;
+        seamPiece = Vector3.one;
+        if (child == null || parent == null) return Vector3.zero;
+        foreach (var c in child)
+            foreach (var p in parent)
+            {
+                var sep = Separation(c, p);
+                float gap = Mathf.Max(sep.x, Mathf.Max(sep.y, sep.z));  // расстояние между боксами
+                // БЛИЖАЙШАЯ — ТА, ГДЕ ПОВЕРХНОСТИ СХОДЯТСЯ ТЕСНЕЕ ВСЕГО, то есть минимален МОДУЛЬ. Брать
+                // просто наименьшее число нельзя: наименьшее — это самое глубокое ПЕРЕКРЫТИЕ, и выбирались
+                // детали, вложенные друг в друга (шар-сустав внутри кости). Оттуда шла лавина «врастаний»
+                // ровно на −100% при полном отсутствии щелей: перекос детектора в одну сторону
+                if (Mathf.Abs(gap) >= Mathf.Abs(bestGap)) continue;
+                // РАЗМЕР ИМЕННО ЭТОЙ ДЕТАЛИ — им же меряются пороги. Считая их от коробки ГРУППЫ, мы
+                // получали абсурд: у места «Рога» коробка 1.15 м, поэтому «щелью» считался разрыв от
+                // 8.8 см — а розетка висела в 3.4 см от головы и проходила как норма. Шов образует
+                // конкретная деталь, и масштаб у него её собственный
+                bestGap = gap; best = sep; seamPiece = c.size;
+            }
+        return bestGap == float.MaxValue ? Vector3.zero : best;
     }
 
     /// <summary>Ближайший предок, У КОТОРОГО ЕСТЬ ГЕОМЕТРИЯ. Место может висеть на безформенном узле —
