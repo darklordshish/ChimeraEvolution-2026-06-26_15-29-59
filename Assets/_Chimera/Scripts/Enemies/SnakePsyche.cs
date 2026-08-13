@@ -130,7 +130,40 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     bool windingUp, constricting;                 // windingUp — только замах ОБХВАТА
     int shownStage;                               // последняя показанная стадия хвата (градиент телеграфа — наш, драйверный)
     float nextGrabBite;                           // ритм укусов в хвате (сам укус — органный, BiteAbility.BiteNow)
-    Renderer rattleRenderer;                      // жёлтая погремушка: гремок мигает ИМЕННО ей
+    Renderer[] rattleRenderers;                   // ВСЯ погремушка: гремок мигает стопкой колец целиком
+    float nextRattleScan;                         // когда можно снова искать кольца (см. свойство ниже)
+
+    /// <summary>Кольца погремушки, С ПЕРЕЗАПРОСОМ. Морф пересобирает тело на КАЖДЫЙ графт, прежние детали
+    /// сносятся — и ссылка, снятая один раз в `Start`, протухала МОЛЧА: первый же надетый органом гремок
+    /// переставал мигать, без единой ошибки в консоли. Unity обнуляет ссылку на снесённый объект, по ней и
+    /// узнаём (тот же приём, что у ежа с `CurlDefense`: тело до-создаёт своё позже нашего `Awake`).
+    /// Берём ВСЕ кольца, а не первое попавшееся: погремушка — стопка, мигать ей положено целиком. Заодно
+    /// исчезает вопрос «какое кольцо взять» — прежний `break` брал верхнее, а оно утоплено в концевом шаре
+    /// хвоста (радиус шара 0.055 против кольца 0.038), то есть мигало почти невидимо.</summary>
+    Renderer[] Rattle
+    {
+        get
+        {
+            if (rattleRenderers != null && rattleRenderers.Length > 0 && rattleRenderers[0] != null)
+                return rattleRenderers;
+            // ПЕРЕЗАПРОС НЕ КАЖДЫЙ КАДР. `LateUpdate` спрашивает нас постоянно, а у змеи под сотню
+            // деталей: тело без погремушки (сняли органом) или ещё не собранное обходилось бы целиком
+            // 60 раз в секунду. Полсекунды задержки для гремка незаметны — он и мигает медленнее
+            if (Time.time < nextRattleScan) return rattleRenderers;
+            nextRattleScan = Time.time + 0.5f;
+            // ИМЯ ПО СОКЕТУ, и ищем В ГЛУБИНУ: морф сажает кольца потомками последнего звена хвоста,
+            // корневыми детьми их нет. Прежнее "Rattle" — имя снесённого префаба, мигание молчало
+            // РЕНДЕРЕР САМОГО КОЛЬЦА, А НЕ ВСЁ, ЧТО ВНУТРИ НЕГО. `HeatSignature` вешает тепловые дубли
+            // ДЕТЬМИ мешей тела, поэтому «все рендереры в глубину» захватывали и `HeatGhost` — и мы
+            // включали его каждый кадр: погремушка светилась термо-контуром, хотя змея холоднокровна и
+            // её подпись погашена. Чужой слой не наш, чтобы им распоряжаться
+            var found = new System.Collections.Generic.List<Renderer>();
+            foreach (var t in GetComponentsInChildren<Transform>(true))
+                if (t.name == "Погремушка" && t.TryGetComponent<Renderer>(out var rr)) found.Add(rr);
+            rattleRenderers = found.ToArray();
+            return rattleRenderers;
+        }
+    }
 
     void Awake()
     {
@@ -156,12 +189,6 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     void Start()
     {
         playerCtl = FindAnyObjectByType<PlayerController>();
-
-        // ИМЯ ПО СОКЕТУ, и ищем В ГЛУБИНУ: морф даёт «Погремушку» потомком последнего звена хвоста,
-        // корневым ребёнком её нет. Прежнее "Rattle" — имя снесённого префаба, мигание молчало
-        Transform r = null;
-        foreach (var t in GetComponentsInChildren<Transform>()) if (t.name == "Погремушка") { r = t; break; }
-        if (r != null) rattleRenderer = r.GetComponentInChildren<Renderer>();
 
         groundY = transform.position.y; // уровень земли на спавне — от него меряем высоту насеста
         if (ownHealth != null) ownHealth.onDamaged.AddListener(OnHurt); // ударили → обидчик становится добычей (реактивный агр)
@@ -443,9 +470,11 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     // видимость погремушки: вместе с телом (камуфляж её не трогает) ЛИБО мигание гремка
     void LateUpdate()
     {
-        if (rattleRenderer == null) return;
+        var rings = Rattle;
+        if (rings == null || rings.Length == 0) return;
         if (camo == null) TryGetComponent(out camo);
-        rattleRenderer.enabled = camo == null || !camo.Hidden || Time.time < rattleBlinkUntil;
+        bool on = camo == null || !camo.Hidden || Time.time < rattleBlinkUntil;
+        foreach (var rr in rings) if (rr != null) rr.enabled = on;
     }
 
     void Update()
