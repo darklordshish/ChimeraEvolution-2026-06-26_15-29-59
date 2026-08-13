@@ -724,15 +724,15 @@ MonoBehaviour:
     linkTaper: 0
   - name: "\u0428\u043A\u0443\u0440\u0430"
     localPos: {x: 0, y: 0, z: 0}
-    baseSize: {x: 1, y: 1, z: 1}
+    baseSize: {x: 0.3, y: 0.3, z: 1.2}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
     codeDriven: 0
     solid: 0
     inner: 1
     graft: 0
-    parent: 
-    attach: 1
+    parent: "\u0422\u0435\u043B\u043E"
+    attach: 0.5
     attachOffset: {x: 0, y: 0, z: 0}
     parts: []
     chain: 0
@@ -745,15 +745,15 @@ MonoBehaviour:
     linkTaper: 0
   - name: "\u0421\u0435\u0440\u0434\u0446\u0435"
     localPos: {x: 0, y: 0, z: 0}
-    baseSize: {x: 1, y: 1, z: 1}
+    baseSize: {x: 0.22, y: 0.22, z: 0.4}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
     codeDriven: 0
     solid: 0
     inner: 1
     graft: 0
-    parent: 
-    attach: 1
+    parent: "\u0422\u0435\u043B\u043E"
+    attach: 0.7
     attachOffset: {x: 0, y: 0, z: 0}
     parts: []
     chain: 0
@@ -773,20 +773,20 @@ MonoBehaviour:
     solid: 0
     inner: 1
     graft: 0
-    parent: 
-    attach: 1
+    parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    attach: 0.5
     attachOffset: {x: 0, y: 0, z: 0}
     parts: []
     chain: 0
     chainTaper: 0
     linkDiameter: 0
-    sizeRel: {x: 0, y: 0, z: 0}
+    sizeRel: {x: 0.5, y: 0.5, z: 0.5}
     formFrom: 
     formRole: 0
     linkLength: 0
     linkTaper: 0
   - name: "\u0420\u0443\u043A\u0438"
-    localPos: {x: 0.24, y: 0.26, z: 0.12}
+    localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.068, y: 0.231, z: 0.08}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 1
@@ -794,9 +794,9 @@ MonoBehaviour:
     solid: 0
     inner: 0
     graft: 1
-    parent: 
-    attach: 1
-    attachOffset: {x: 0, y: 0, z: 0}
+    parent: "\u0422\u0435\u043B\u043E"
+    attach: 0.88
+    attachOffset: {x: 0.6, y: -0.3, z: 0}
     parts: []
     chain: 0
     chainTaper: 0
@@ -807,7 +807,7 @@ MonoBehaviour:
     linkLength: 0
     linkTaper: 0
   - name: "\u041D\u043E\u0433\u0438"
-    localPos: {x: 0.24, y: 0.26, z: -0.28}
+    localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.068, y: 0.231, z: 0.08}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 1
@@ -815,9 +815,9 @@ MonoBehaviour:
     solid: 0
     inner: 0
     graft: 1
-    parent: 
-    attach: 1
-    attachOffset: {x: 0, y: 0, z: 0}
+    parent: "\u0422\u0435\u043B\u043E"
+    attach: 0.22
+    attachOffset: {x: 0.6, y: -0.3, z: 0}
     parts: []
     chain: 0
     chainTaper: 0
@@ -828,7 +828,7 @@ MonoBehaviour:
     linkLength: 0
     linkTaper: 0
   - name: "\u0420\u043E\u0433\u0430"
-    localPos: {x: 0.08, y: 0.5, z: 0.4}
+    localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.061, y: 0.061, z: 0.072}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 1
@@ -836,9 +836,9 @@ MonoBehaviour:
     solid: 0
     inner: 0
     graft: 1
-    parent: 
-    attach: 1
-    attachOffset: {x: 0, y: 0, z: 0}
+    parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    attach: 0.7
+    attachOffset: {x: 0.5, y: 0.6, z: -0.2}
     parts: []
     chain: 0
     chainTaper: 0
@@ -849,7 +849,7 @@ MonoBehaviour:
     linkLength: 0
     linkTaper: 0
   - name: "\u0418\u0433\u043B\u043E\u043C\u0451\u0442"
-    localPos: {x: 0, y: 0.48, z: 0.18}
+    localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.088, y: 0.088, z: 0.104}
     baseEuler: {x: -10, y: 0, z: 0}
     mirrorX: 0
@@ -857,9 +857,9 @@ MonoBehaviour:
     solid: 0
     inner: 0
     graft: 1
-    parent: 
-    attach: 1
-    attachOffset: {x: 0, y: 0, z: 0}
+    parent: "\u0422\u0435\u043B\u043E"
+    attach: 0.55
+    attachOffset: {x: 0, y: 0.6, z: 0}
     parts: []
     chain: 0
     chainTaper: 0

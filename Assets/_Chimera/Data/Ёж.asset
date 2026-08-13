@@ -910,14 +910,14 @@ MonoBehaviour:
     solid: 0
     inner: 1
     graft: 0
-    parent: 
-    attach: 1
-    attachOffset: {x: 0, y: 0, z: 0}
+    parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
+    attach: 0.5
+    attachOffset: {x: 0, y: 0.08, z: 0}
     parts: []
     chain: 0
     chainTaper: 0
     linkDiameter: 0
-    sizeRel: {x: 0, y: 0, z: 0}
+    sizeRel: {x: 0.7, y: 0.75, z: 0.4}
     formFrom: 
     formRole: 0
     linkLength: 0
@@ -931,14 +931,14 @@ MonoBehaviour:
     solid: 0
     inner: 1
     graft: 0
-    parent: 
-    attach: 1
+    parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    attach: 0.5
     attachOffset: {x: 0, y: 0, z: 0}
     parts: []
     chain: 0
     chainTaper: 0
     linkDiameter: 0
-    sizeRel: {x: 0, y: 0, z: 0}
+    sizeRel: {x: 0.5, y: 0.5, z: 0.5}
     formFrom: 
     formRole: 0
     linkLength: 0
