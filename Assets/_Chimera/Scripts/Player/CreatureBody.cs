@@ -68,6 +68,7 @@ public partial class CreatureBody : MonoBehaviour
     BleedResist bleedResistComp; // кровеупорность (Лосиное сердце)
     Satiety satietyComp;    // шкала сытости-голода — у любого тела; распад зависит от однородности (метаболизм химеры)
     PlayerBellow bellowAb;  // рёв (Глотка лося) — до-создаём игроку в Awake, включаем сборкой
+    PlayerScream screamAb;  // клич (Рот человека) — тот же порядок: до-создание в Awake, включение сборкой
     PlayerAntler antlerAb;  // рога (придаток лося, химерный слот) — до-создаём игроку, включаем сборкой
     PlayerCharge chargeAb;  // таран (Лосиные ноги) — до-создаём игроку, включаем сборкой
     PlayerRoll rollAb;      // перекат (Ежиные ноги) — до-создаём игроку, включаем сборкой
@@ -128,6 +129,8 @@ public partial class CreatureBody : MonoBehaviour
         if (move != null && constrictAb == null) constrictAb = gameObject.AddComponent<PlayerConstrict>();
         TryGetComponent(out bellowAb);
         if (move != null && bellowAb == null) bellowAb = gameObject.AddComponent<PlayerBellow>();
+        TryGetComponent(out screamAb);
+        if (move != null && screamAb == null) screamAb = gameObject.AddComponent<PlayerScream>();
         TryGetComponent(out antlerAb);
         if (move != null && antlerAb == null) antlerAb = gameObject.AddComponent<PlayerAntler>();
         TryGetComponent(out chargeAb);
@@ -280,7 +283,7 @@ public partial class CreatureBody : MonoBehaviour
         float rng = 0f, atkCd = 0f, mv = 0f, dash = 0f, dashDur = 0f, dashCd = 0f, reduce = 0f, regen = 0f, regenOOC = 0f, thermal = 0f, howlR = 0f, howlStunAt = 0f;
         int venom = 0, bleed = 0;
         bool biteOn = false, scentOn = false, kickOn = false, howlOn = false, coldOn = false, camoOn = false,
-             thermalOn = false, constrictOn = false, digestOn = false, bellowOn = false, antlerOn = false, chargeOn = false, rollOn = false,
+             thermalOn = false, constrictOn = false, digestOn = false, bellowOn = false, antlerOn = false, chargeOn = false, rollOn = false, screamOn = false,
              insightOn = false, keenEarOn = false,
              thornsOn = false, venomResistOn = false, quillVolleyOn = false, bleedResistOn = false, curlOn = false;
         float volleyMult = 0f;
@@ -297,7 +300,7 @@ public partial class CreatureBody : MonoBehaviour
             howlStunAt = Mathf.Max(howlStunAt, c.howlStunAt);
             biteOn |= c.bite; scentOn |= c.scent; kickOn |= c.kick; howlOn |= c.howl;
             coldOn |= c.cold; camoOn |= c.camo; thermalOn |= c.thermalOn; constrictOn |= c.constrict;
-            digestOn |= c.digest; bellowOn |= c.bellow; antlerOn |= c.antler; chargeOn |= c.charge; rollOn |= c.roll; curlOn |= c.curl;
+            digestOn |= c.digest; bellowOn |= c.bellow; antlerOn |= c.antler; chargeOn |= c.charge; rollOn |= c.roll; curlOn |= c.curl; screamOn |= c.scream;
             constrictCap = Mathf.Max(constrictCap, c.constrictCap); insightOn |= c.insight;
             keenEarOn |= c.keenEar; earMult = Mathf.Max(earMult, c.earMult);
             thornsOn |= c.thorns; venomResistOn |= c.venomResist; quillVolleyOn |= c.quillVolley;
@@ -337,6 +340,7 @@ public partial class CreatureBody : MonoBehaviour
             grabM.SetMaxStage(Mathf.Max(1, constrictCap));
         }
         if (bellowAb != null) bellowAb.BellowEnabled = bellowOn;             // РЁВ — фича Глотки лося (K2)
+        if (screamAb != null) screamAb.ScreamEnabled = screamOn;             // КЛИЧ — фича Рта человека
         if (antlerAb != null) antlerAb.AntlerEnabled = antlerOn;             // РОГА — фича придатка «Рога» (химерный слот)
         if (chargeAb != null) chargeAb.ChargeEnabled = chargeOn;             // ТАРАН — фича «Лосиных ног» (рывок горит)
         // ПЕРЕКАТ — КРОСС-СЛОТ СЕТ (спека §0-бис «дожд-ролл с иглами»): Ноги дают ФОРМУ (кувырок+i-frames),

@@ -12,7 +12,7 @@ public partial class CreatureBody
     {
         public float dmg, hpBonus, stam, stamRegen, life, rng, atkCd, mv, dash, dashDur, dashCd, reduce, regen, regenOOC, thermal, howlR, howlStunAt;
         public int venom, bleed;
-        public bool bite, scent, kick, howl, cold, camo, thermalOn, constrict, digest, bellow, antler, charge, roll, curl;
+        public bool bite, scent, kick, howl, cold, camo, thermalOn, constrict, digest, bellow, antler, charge, roll, curl, scream;
         public bool thorns, venomResist, quillVolley; // иглы-ответка, ядоупорность, залп (ёж)
         public bool bleedResist;  // кровеупорность (лосиное сердце)
         public float volleyMult; // мощь залпа от родства с ежом (0 = залпа нет)
@@ -38,7 +38,7 @@ public partial class CreatureBody
             howl = a.howl || b.howl, cold = a.cold || b.cold, camo = a.camo || b.camo,
             thermalOn = a.thermalOn || b.thermalOn, constrict = a.constrict || b.constrict,
             constrictCap = Mathf.Max(a.constrictCap, b.constrictCap),
-            digest = a.digest || b.digest, bellow = a.bellow || b.bellow, antler = a.antler || b.antler,
+            digest = a.digest || b.digest, bellow = a.bellow || b.bellow, antler = a.antler || b.antler, scream = a.scream || b.scream,
             charge = a.charge || b.charge, roll = a.roll || b.roll, curl = a.curl || b.curl, insight = a.insight || b.insight,
             keenEar = a.keenEar || b.keenEar, earMult = Mathf.Max(a.earMult, b.earMult),
             thorns = a.thorns || b.thorns, venomResist = a.venomResist || b.venomResist,
@@ -105,6 +105,8 @@ public partial class CreatureBody
             howl = w.enablesHowl, cold = w.coldBlooded, camo = w.camo, thermalOn = w.enablesThermal,
             constrict = w.enablesConstrict, digest = w.digestion, bellow = w.enablesBellow,
             antler = w.enablesAntler, charge = w.enablesCharge, roll = w.enablesRoll, insight = w.insight,
+            scream = w.enablesScream,   // КЛИЧ: гейта по шасси нет — человечий Рот кричит на любом теле,
+                                        // цена (своя кровь) и так не даёт этим злоупотреблять
             // КЛУБОК ТОЛЬКО ДОМА. Перекат и клубок — одна способность ежиных ног на двух глубинах: рывок
             // «в клубке» (кувырок с i-frames) открыт всем, полный шар с бронёй и катанием — лишь на ежином
             // шасси. Гейт точечный, а НЕ на все дискретные флаги: у волчьей Пасти тоже `nativeChassis`, и

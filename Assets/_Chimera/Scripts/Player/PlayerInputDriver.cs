@@ -15,6 +15,7 @@ public class PlayerInputDriver : MonoBehaviour
     PlayerKick kick;
     PlayerHowl howl;
     PlayerBellow bellow;
+    PlayerScream scream;
     PlayerAntler antler;
     PlayerConstrict constrict;
     PlayerQuillVolley volley;
@@ -29,6 +30,7 @@ public class PlayerInputDriver : MonoBehaviour
         kick = GetComponent<PlayerKick>();
         howl = GetComponent<PlayerHowl>();
         bellow = GetComponent<PlayerBellow>();
+        scream = GetComponent<PlayerScream>();
         antler = GetComponent<PlayerAntler>();
         // constrict берём в Start: его может до-создать CreatureBody.Awake (порядок Awake не гарантирован)
 
@@ -141,8 +143,10 @@ public class PlayerInputDriver : MonoBehaviour
         if (howlAction.WasPressedThisFrame())
         {
             if (bellow == null) bellow = GetComponent<PlayerBellow>(); // тело могло до-создать после нашего Awake
+            if (scream == null) scream = GetComponent<PlayerScream>();
             howl?.TryUse();
             bellow?.TryUse();
+            scream?.TryUse();
         }
         if (constrict != null && constrictAction.WasPressedThisFrame()) constrict.TryUse();
         if (constrict != null && presentAction.WasPressedThisFrame()) constrict.TogglePresent(); // C: ноша за спину/под удар

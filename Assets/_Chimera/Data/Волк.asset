@@ -55,6 +55,7 @@ MonoBehaviour:
     hearingMult: 0
     insight: 0
     enablesBellow: 0
+    enablesScream: 0
     enablesAntler: 0
     enablesCharge: 0
     enablesRoll: 0
@@ -145,6 +146,7 @@ MonoBehaviour:
     hearingMult: 0
     insight: 0
     enablesBellow: 0
+    enablesScream: 0
     enablesAntler: 0
     enablesCharge: 0
     enablesRoll: 0
@@ -235,6 +237,7 @@ MonoBehaviour:
     hearingMult: 0
     insight: 0
     enablesBellow: 0
+    enablesScream: 0
     enablesAntler: 0
     enablesCharge: 0
     enablesRoll: 0
@@ -325,6 +328,7 @@ MonoBehaviour:
     hearingMult: 0
     insight: 0
     enablesBellow: 0
+    enablesScream: 0
     enablesAntler: 0
     enablesCharge: 0
     enablesRoll: 0
@@ -391,6 +395,7 @@ MonoBehaviour:
     hearingMult: 0
     insight: 0
     enablesBellow: 0
+    enablesScream: 0
     enablesAntler: 0
     enablesCharge: 0
     enablesRoll: 0
@@ -475,6 +480,7 @@ MonoBehaviour:
     hearingMult: 0
     insight: 0
     enablesBellow: 0
+    enablesScream: 0
     enablesAntler: 0
     enablesCharge: 0
     enablesRoll: 0
@@ -529,6 +535,7 @@ MonoBehaviour:
     hearingMult: 0
     insight: 0
     enablesBellow: 0
+    enablesScream: 0
     enablesAntler: 0
     enablesCharge: 0
     enablesRoll: 0
