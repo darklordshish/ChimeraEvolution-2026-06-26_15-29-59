@@ -289,6 +289,12 @@ MonoBehaviour:
       offset: {x: 0, y: 0, z: 0}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      role: 5
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 1, y: 1, z: 1}
+      offset: {x: 0, y: 0, z: 0}
+      euler: {x: 0, y: 0, z: 0}
+      shape: 1
       role: 1
       color: {r: 1, g: 0.45, b: 0.12, a: 1}
     visualSegments: 0
@@ -503,6 +509,27 @@ MonoBehaviour:
   baseStamina: 55
   baseStaminaRegen: 7
   sockets:
+  - name: "\u044F\u043C\u043A\u0438"
+    localPos: {x: 0, y: 0, z: 0}
+    baseSize: {x: 1, y: 1, z: 1}
+    baseEuler: {x: 0, y: 0, z: 0}
+    mirrorX: 1
+    codeDriven: 0
+    solid: 0
+    inner: 0
+    graft: 0
+    parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    attach: 0.5
+    attachOffset: {x: 0.26, y: -0.06, z: 0.28}
+    parts: []
+    chain: 0
+    chainTaper: 0
+    linkDiameter: 0
+    sizeRel: {x: 0.14, y: 0.16, z: 0.12}
+    formFrom: "\u0427\u0443\u0442\u044C\u0451"
+    formRole: 5
+    linkLength: 0
+    linkTaper: 0
   - name: "\u0433\u043E\u043B\u043E\u0432\u0430"
     localPos: {x: 0, y: 0.3, z: 0}
     baseSize: {x: 0.24, y: 0.163, z: 0.43}
@@ -550,18 +577,6 @@ MonoBehaviour:
       offset: {x: -0.3, y: 0.24, z: -0.04}
       euler: {x: 0, y: 0, z: 0}
       shape: 0
-      role: 0
-      color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.14, y: 0.16, z: 0.12}
-      offset: {x: 0.26, y: -0.06, z: 0.28}
-      euler: {x: 0, y: 0, z: 0}
-      shape: 1
-      role: 0
-      color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.14, y: 0.16, z: 0.12}
-      offset: {x: -0.26, y: -0.06, z: 0.28}
-      euler: {x: 0, y: 0, z: 0}
-      shape: 1
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.1, y: 0.1, z: 0.08}

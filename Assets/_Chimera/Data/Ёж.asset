@@ -612,6 +612,24 @@ MonoBehaviour:
       offset: {x: 0, y: 0, z: 0}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      role: 4
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.95, y: 0.65, z: 1}
+      offset: {x: 0, y: -0.18, z: 0}
+      euler: {x: 0, y: 0, z: 0}
+      shape: 1
+      role: 3
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 1, y: 0.7, z: 0.85}
+      offset: {x: 0, y: 0.24, z: -0.04}
+      euler: {x: 0, y: 0, z: 0}
+      shape: 1
+      role: 3
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 1, y: 1, z: 1}
+      offset: {x: 0, y: 0, z: 0}
+      euler: {x: 0, y: 0, z: 0}
+      shape: 1
       role: 1
       color: {r: 0.61, g: 0.56, b: 0.49, a: 1}
     visualSegments: 0
@@ -670,6 +688,27 @@ MonoBehaviour:
     formRole: 0
     linkLength: 0
     linkTaper: 0
+  - name: "\u043D\u043E\u0441"
+    localPos: {x: 0, y: 0, z: 0}
+    baseSize: {x: 1, y: 1, z: 1}
+    baseEuler: {x: 0, y: 0, z: 0}
+    mirrorX: 0
+    codeDriven: 0
+    solid: 0
+    inner: 0
+    graft: 0
+    parent: "\u041F\u0430\u0441\u0442\u044C"
+    attach: 0.5
+    attachOffset: {x: 0, y: -0.1, z: 0.42}
+    parts: []
+    chain: 0
+    chainTaper: 0
+    linkDiameter: 0
+    sizeRel: {x: 0.24, y: 0.22, z: 0.18}
+    formFrom: "\u0427\u0443\u0442\u044C\u0451"
+    formRole: 4
+    linkLength: 0
+    linkTaper: 0
   - name: "\u041F\u0430\u0441\u0442\u044C"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.22, y: 0.2, z: 0.28}
@@ -697,12 +736,6 @@ MonoBehaviour:
       color: {r: 0, g: 0, b: 0, a: 0}
     - scale: {x: 0.48, y: 0.46, z: 0.3}
       offset: {x: 0, y: -0.08, z: 0.22}
-      euler: {x: 0, y: 0, z: 0}
-      shape: 1
-      role: 0
-      color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.24, y: 0.22, z: 0.18}
-      offset: {x: 0, y: -0.1, z: 0.42}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
       role: 0
@@ -754,25 +787,13 @@ MonoBehaviour:
     parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
     attach: 0.7
     attachOffset: {x: 0.35, y: 0.571, z: -0.325}
-    parts:
-    - scale: {x: 0.95, y: 0.65, z: 1}
-      offset: {x: 0, y: -0.18, z: 0}
-      euler: {x: 0, y: 0, z: 0}
-      shape: 1
-      role: 0
-      color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 1, y: 0.7, z: 0.85}
-      offset: {x: 0, y: 0.24, z: -0.04}
-      euler: {x: 0, y: 0, z: 0}
-      shape: 1
-      role: 0
-      color: {r: 0, g: 0, b: 0, a: 0}
+    parts: []
     chain: 0
     chainTaper: 0
     linkDiameter: 0
     sizeRel: {x: 0.524, y: 0.58, z: 0.188}
-    formFrom: 
-    formRole: 0
+    formFrom: "\u0427\u0443\u0442\u044C\u0451"
+    formRole: 3
     linkLength: 0
     linkTaper: 0
   - name: "\u0428\u043A\u0443\u0440\u0430"
