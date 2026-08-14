@@ -20,7 +20,10 @@ public static class BodyProbe
     }
 
     /// <summary>Построить тело вида и вернуть замеры. Временный объект сносится до выхода в любом случае.</summary>
-    public static List<Part> Measure(SpeciesSO species)
+    /// <param name="plan">Пересчитанный сокет-план (морфология по идентичности). Пусто = чистое шасси.
+    /// Нужен, чтобы детектор мерил ХИМЕРУ так же, как вид: сегодня химерные швы не меряет никто —
+    /// карта строит только родной лоадаут, и «численная проверка стыков чиста» для химер неисполнима.</param>
+    public static List<Part> Measure(SpeciesSO species, BodySocket[] plan = null)
     {
         var parts = new List<Part>();
         if (species == null) return parts;
@@ -40,14 +43,15 @@ public static class BodyProbe
             if (species.organs != null)
                 foreach (var o in species.organs) if (o != null) worn.Add(o);
 
-            MorphBuilder.Build(go.transform, species, worn);
+            MorphBuilder.Build(go.transform, species, worn, plan);
 
             // РОДСТВО БЕРЁМ ИЗ ДАННЫХ, А НЕ ИЗ ИЕРАРХИИ. Билдер кладёт детали ПЛОСКО в контейнер `Morph`,
             // поэтому у всех `Transform.parent` один и тот же — искать по нему стык бессмысленно, таблица
             // выходила пустой. Настоящее родство живёт в графе мест: имя детали = имя сокета (контракт)
             var socketParent = new Dictionary<string, string>();
-            if (species.sockets != null)
-                foreach (var k in species.sockets)
+            var sockets = plan ?? species.sockets;
+            if (sockets != null)
+                foreach (var k in sockets)
                     if (k != null && !string.IsNullOrEmpty(k.name))
                         socketParent[k.name] = string.IsNullOrEmpty(k.parent) ? "(корень)" : k.parent;
 

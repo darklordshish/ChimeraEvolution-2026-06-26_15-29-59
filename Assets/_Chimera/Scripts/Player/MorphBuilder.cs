@@ -13,7 +13,8 @@ public static class MorphBuilder
     /// <summary>Пересобрать куб-модель под `root` по надетым органам и скелету `chassis`.
     /// wornOrgans — надетые органы В ПОРЯДКЕ приоритета (РОДНЫЕ раньше химерных → шасси-фёрст: первый занявший
     /// part побеждает). worn == null → только СНОСИТ старый Morph (для игрока: остаётся его PlayerModel).</summary>
-    public static void Build(Transform root, SpeciesSO chassis, IReadOnlyList<Organ> wornOrgans)
+    public static void Build(Transform root, SpeciesSO chassis, IReadOnlyList<Organ> wornOrgans,
+                             BodySocket[] plan = null)
     {
         // СНОСИМ ВСЕ прошлые сборки. Гоча: `Object.Destroy` ОТЛОЖЕН до конца кадра, а `Recompute` за кадр
         // проходит не раз (установка органа + пересчёт родства + Refeed) — `Find` подбирал уже помеченный на
@@ -50,16 +51,32 @@ public static class MorphBuilder
         // ГРАФ ХРЕБТА: место с `parent` не хранит своих координат — считаем их от родителя и НАСЛЕДУЕМ
         // его поворот. Поэтому наклон шеи тянет за собой голову, морду, уши и рога, а не оставляет их
         // висеть на прежней абсолютной высоте (спека 2026-08-05)
+        // ПЛАН МЕСТ вместо прямого чтения шасси: `plan` — тот же сокет-план, но пропорции в нём может
+        // пересчитать морфология по идентичности (спека 2026-08-14). Пусто = чистое шасси, то есть
+        // сегодняшнее поведение до микрона. Топология и калибр в плане остаются шассийными всегда
+        var sockets = plan ?? chassis.sockets;
         var byName = new Dictionary<string, BodySocket>();
-        foreach (var s in chassis.sockets)
+        foreach (var s in sockets)
             if (s != null && !string.IsNullOrEmpty(s.name)) byName[s.name] = s;
+
+        // ОСЬ ПРИКАЛЫВАЕТСЯ ПО ЧИСТОМУ ШАССИ И НЕ ЗАВИСИТ ОТ ПЛАНА. Длинная ось выбирается по максимальной
+        // стороне, и это мина: у головы человека она Y (0.270), у волка Z (0.589) — при смешении пропорций
+        // они пересекаются на весе ≈0.32, то есть первый же слабый графт развернул бы ВСЮ ветку головы.
+        // Пасть уехала бы с лица на макушку, смещения ушли бы в другую ось, и всё это без единой ошибки.
+        // Закон: ВЛИЯНИЕ МЕНЯЕТ ПРОПОРЦИИ, НО НИКОГДА ТОПОЛОГИЮ
+        var pure = new Dictionary<string, BodySocket>();
+        foreach (var s in chassis.sockets)
+            if (s != null && !string.IsNullOrEmpty(s.name)) pure[s.name] = s;
+        var axisOf = new Dictionary<string, Vector3>();
+        foreach (var s in chassis.sockets)
+            if (s != null && !string.IsNullOrEmpty(s.name)) axisOf[s.name] = LongAxis(SizeOf(s, pure, 0));
         var placed = new Dictionary<string, (Vector3 pos, Quaternion rot)>();
         // ЗВЕНЬЯ ПОСТРОЕННЫХ ЦЕПЕЙ — чтобы ребёнок цепи сел НА ЗВЕНО, а не рядом с ним (см. ниже)
         var chainLinks = new Dictionary<string, List<GameObject>>();
 
         // КАЖДЫЙ якорь = часть: орган своего part (деталь) ЛИБО базовый куб (голая тушка шасси).
         // Парный якорь (mirrorX) даёт ДВЕ части зеркально — 4 лапы/2 уха одной записью данных
-        foreach (var socket in chassis.sockets)
+        foreach (var socket in sockets)
         {
             if (socket == null || string.IsNullOrEmpty(socket.name)) continue;
             // [ANIM] codeDriven НЕ пропускаем: морф СТРОИТ ФОРМУ и ставит звенья в стартовую позу, а дальше
@@ -91,7 +108,7 @@ public static class MorphBuilder
                 if (picked.Count > 0) fromOther = picked.ToArray();
             }
 
-            var (pos, rot) = Place(socket, byName, placed, 0);
+            var (pos, rot) = Place(socket, byName, placed, 0, axisOf);
             var made = new List<GameObject>();
             float linkD = ChainDiameter(socket, byName, 0);
             Vector3 sz = SizeOf(socket, byName, 0);   // габарит: свой или доля родителя
@@ -133,7 +150,8 @@ public static class MorphBuilder
     /// у ребёнка обе величины считаются ОТ РОДИТЕЛЯ — отсюда невозможность разъехаться.
     /// `depth` страхует от цикла в данных (его же ловит `ValidateSockets`, но билдер не должен зависать).</summary>
     static (Vector3, Quaternion) Place(BodySocket s, Dictionary<string, BodySocket> byName,
-                                       Dictionary<string, (Vector3, Quaternion)> placed, int depth)
+                                       Dictionary<string, (Vector3, Quaternion)> placed, int depth,
+                                       Dictionary<string, Vector3> axisOf = null)
     {
         if (placed.TryGetValue(s.name, out var done)) return done;
 
@@ -142,11 +160,12 @@ public static class MorphBuilder
 
         if (depth < 16 && !string.IsNullOrEmpty(s.parent) && byName.TryGetValue(s.parent, out var par) && par != s)
         {
-            var (ppos, prot) = Place(par, byName, placed, depth + 1);
+            var (ppos, prot) = Place(par, byName, placed, depth + 1, axisOf);
             // СТЫК на ДЛИННОЙ оси родителя: `attach` = доля вдоль неё (0 — начало, 1 — конец).
             // Смещение — в КАЛИБРАХ родителя, поэтому переживает масштабирование вида
             var b = SizeOf(par, byName, 0);
-            Vector3 axis = b.z >= b.x && b.z >= b.y ? Vector3.forward : (b.y >= b.x ? Vector3.up : Vector3.right);
+            // ось — приколотая (см. `Build`), а не выведенная из текущего габарита
+            Vector3 axis = axisOf != null && axisOf.TryGetValue(par.name, out var pinned) ? pinned : LongAxis(b);
             float len = Mathf.Abs(Vector3.Dot(b, new Vector3(Mathf.Abs(axis.x), Mathf.Abs(axis.y), Mathf.Abs(axis.z))));
 
             int links = Mathf.Max(1, par.chain);
@@ -363,6 +382,12 @@ public static class MorphBuilder
     /// рог вытянут по Y → растёт ВВЕРХ. Отдельного поля-направления не нужно — его говорит габарит.
     /// Считаем по РАЗРЕШЁННОМУ размеру (`SizeOf` — свой габарит либо доля родителя): это та же величина,
     /// что берёт `Place` для стыка детей, иначе хвост цеплялся бы к одному концу, а рос в другой.</summary>
+    /// <summary>ДЛИННАЯ ОСЬ ГАБАРИТА — одно правило на весь билдер (вдоль неё считается `attach` детей и
+    /// растёт цепь). Вынесено из `Place`, чтобы ось можно было ПРИКОЛОТЬ по чистому шасси: иначе смешанные
+    /// пропорции переключают её молча и разворачивают ветку.</summary>
+    static Vector3 LongAxis(Vector3 b) => b.z >= b.x && b.z >= b.y ? Vector3.forward
+                                        : b.y >= b.x ? Vector3.up : Vector3.right;
+
     static Vector3 ChainDir(Vector3 b) => b.z >= b.x && b.z >= b.y ? Vector3.back
                                         : b.y >= b.x ? Vector3.up : Vector3.right;
 

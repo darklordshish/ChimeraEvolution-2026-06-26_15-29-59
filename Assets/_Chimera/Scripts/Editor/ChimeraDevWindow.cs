@@ -383,6 +383,13 @@ public class ChimeraDevWindow : EditorWindow
         EditorGUILayout.LabelField($"Звериных слотов: {pb.BeastSlots}/{pb.MaxSlots}   бонус ×{pb.BonusMult:0.00}");
         EditorGUILayout.LabelField("Идентичность:", EditorStyles.boldLabel);
         EditorGUILayout.LabelField(pb.IdentityInfo, EditorStyles.wordWrappedLabel);
+        // ОБЛИК — вход будущей морфологии по идентичности (спека 2026-08-14). Пока инфраструктура: вес
+        // считается и показывается, но форму ещё не двигает. Строка стоит здесь ЗАРАНЕЕ по гоче проекта —
+        // молчащую фичу не диагностируют, и «почему морда не поехала» гадали бы по скриншотам
+        var domSp = pb.MostKin(out _);
+        EditorGUILayout.LabelField(domSp != null
+            ? $"Облик: {domSp.speciesName} {pb.Identity(domSp):P0} · смешение ВЫКЛ (инфраструктура)"
+            : "Облик: доминанты нет — истинная химера · смешение ВЫКЛ");
         EditorGUILayout.LabelField("Слоты:", EditorStyles.boldLabel);
         EditorGUILayout.LabelField(pb.SlotsInfo, EditorStyles.wordWrappedLabel);
     }
