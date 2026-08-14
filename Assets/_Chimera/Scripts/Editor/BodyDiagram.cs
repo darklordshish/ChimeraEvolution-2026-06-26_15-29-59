@@ -156,7 +156,7 @@ public static class BodyDiagram
         t.AppendLine();
         t.AppendLine("### Запас длинной оси");
         t.AppendLine();
-        t.AppendLine("Ось выбирается по максимальной стороне `baseSize`. Мал запас — правка размера "
+        t.AppendLine("Ось выбирается по максимальной стороне РАЗРЕШЁННОГО размера (свой габарит либо доля родителя). Мал запас — правка размера "
                    + "переключит ось и развернёт ветку детей (ловится только глазом).");
         t.AppendLine();
         t.AppendLine("| место с детьми | ось | запас |");
@@ -164,7 +164,7 @@ public static class BodyDiagram
         var hasKids = new HashSet<string>(live.Where(s => !string.IsNullOrEmpty(s.parent)).Select(s => s.parent));
         foreach (var s in live.Where(s => hasKids.Contains(s.name)))
         {
-            var b = s.baseSize;
+            var b = MorphBuilder.SizeOf(s, byName);   // тот же размер, по которому ось выбирает сборка
             int ax = b.z >= b.x && b.z >= b.y ? 2 : (b.y >= b.x ? 1 : 0);
             float[] v = { b.x, b.y, b.z };
             System.Array.Sort(v); System.Array.Reverse(v);
