@@ -48,6 +48,54 @@ public static class MorphBuilder
         container.transform.localPosition = Vector3.up * footY;
         container.transform.localRotation = Quaternion.identity;
 
+        // СКЕЛЕТ ЗАБИРАЕТ СВОИ МЕСТА (спека 2026-08-18). Кость называет место, форму которого строит она;
+        // старый сокет-план это место пропускает, иначе кость и место лепят одно и то же вдвоём. Само место
+        // остаётся в данных — его имя есть `Organ.slot`, то есть механика слота не трогается вовсе.
+        // Так прототип живёт РЯДОМ со старой системой: у кого `bones` пуст (четыре вида из пяти), сборка
+        // идёт до микрона как прежде
+        var boneSockets = new HashSet<string>();
+        if (chassis.skeletonHides != null)
+            foreach (var h in chassis.skeletonHides)
+                if (!string.IsNullOrEmpty(h)) boneSockets.Add(h);
+
+        var byBone = new Dictionary<string, Bone>();
+        var bonePos = new Dictionary<string, (Vector3, Quaternion)>();
+        if (chassis.bones != null && chassis.bones.Length > 0)
+        {
+            foreach (var b in chassis.bones)
+                if (b != null && !string.IsNullOrEmpty(b.name)) byBone[b.name] = b;
+
+            // ГРУППА НА СЛОТ — иерархия, а не список имён. Слот есть единица химеризации, поэтому он же
+            // единица тела: под него собираются все кости модуля. Отсюда сразу три вещи, и ни одна не
+            // требует перечислений в коде: (1) при скиннинге группа станет ОДНИМ `SkinnedMeshRenderer`,
+            // и графт перестроит меш своего модуля, а не всю тушу; (2) телеграф сможет подсветить ту
+            // часть, которой бьют, — способность знает свой слот, а слот теперь знает свои детали;
+            // (3) контракт имён частей продолжает работать, потому что деталь зовётся по слоту
+            var groups = new Dictionary<string, Transform>();
+            Transform GroupFor(string slot)
+            {
+                if (string.IsNullOrEmpty(slot)) return container.transform;
+                if (groups.TryGetValue(slot, out var g)) return g;
+                var go = new GameObject(slot);
+                go.transform.SetParent(container.transform, false);
+                groups[slot] = go.transform;
+                return go.transform;
+            }
+
+            var grown = new List<GameObject>();
+            foreach (var b in chassis.bones)
+            {
+                if (b == null || string.IsNullOrEmpty(b.name)) continue;
+                var (bp, br) = SkeletonBuilder.Place(b, byBone, bonePos);
+                // БЕЗ ПОПРАВКИ НА `footY`: контейнер уже сдвинут к низу капсулы, а кости живут в ЕГО системе
+                // координат — той же, в какой меряет карта тел. Второй сдвиг поднял бы ногу над землёй ровно
+                // на рост носителя, и это тот самый класс ошибок «мерь там же, где расставляешь»
+                var into = GroupFor(b.socket);
+                SkeletonBuilder.Grow(into, b, bp, br, +1f, grown);
+                if (b.mirrorX) SkeletonBuilder.Grow(into, b, bp, br, -1f, grown);
+            }
+        }
+
         // ГРАФ ХРЕБТА: место с `parent` не хранит своих координат — считаем их от родителя и НАСЛЕДУЕМ
         // его поворот. Поэтому наклон шеи тянет за собой голову, морду, уши и рога, а не оставляет их
         // висеть на прежней абсолютной высоте (спека 2026-08-05)
@@ -79,6 +127,7 @@ public static class MorphBuilder
         foreach (var socket in sockets)
         {
             if (socket == null || string.IsNullOrEmpty(socket.name)) continue;
+            if (boneSockets.Contains(socket.name)) continue;   // форму этого места строит скелет
             // [ANIM] codeDriven НЕ пропускаем: морф СТРОИТ ФОРМУ и ставит звенья в стартовую позу, а дальше
             // позицию каждый кадр перезаписывает своя система (SnakeBodyChain ведёт цепь по пути головы).
             // Раньше здесь стоял continue — отсюда невидимая змея: место есть, а рисовать его было некому
@@ -108,7 +157,7 @@ public static class MorphBuilder
                 if (picked.Count > 0) fromOther = picked.ToArray();
             }
 
-            var (pos, rot) = Place(socket, byName, placed, 0, axisOf);
+            var (pos, rot) = Place(socket, byName, placed, 0, axisOf, byBone, bonePos);
             var made = new List<GameObject>();
             float linkD = ChainDiameter(socket, byName, 0);
             Vector3 sz = SizeOf(socket, byName, 0);   // габарит: свой или доля родителя
@@ -151,16 +200,39 @@ public static class MorphBuilder
     /// `depth` страхует от цикла в данных (его же ловит `ValidateSockets`, но билдер не должен зависать).</summary>
     static (Vector3, Quaternion) Place(BodySocket s, Dictionary<string, BodySocket> byName,
                                        Dictionary<string, (Vector3, Quaternion)> placed, int depth,
-                                       Dictionary<string, Vector3> axisOf = null)
+                                       Dictionary<string, Vector3> axisOf = null,
+                                       Dictionary<string, Bone> byBone = null,
+                                       Dictionary<string, (Vector3, Quaternion)> bonePos = null)
     {
         if (placed.TryGetValue(s.name, out var done)) return done;
 
         var rot = Quaternion.Euler(s.baseEuler);
         var pos = s.localPos;
 
+        // МЕСТО НА КОСТИ. Скелет забирает несущее (позвоночник, рёбра, конечности), а голова, хвост и
+        // закрытые места остаются сокетами — и родителя им надо где-то взять. Берут его на КОСТИ: место
+        // садится в точку `attach` вдоль неё и наследует её поворот, ровно как кость садится на кость.
+        // Это и есть будущий адрес аугумента: привитый рог сядет на череп, а не «рядом с местом головы».
+        //     СМЕЩЕНИЕ ЗДЕСЬ В МЕТРАХ, а не в калибрах родителя. У кости нет габаритной коробки, делить
+        // не на что — зато вся кость и так задана метрами, поэтому смешения единиц не возникает
+        if (depth < 16 && !string.IsNullOrEmpty(s.parent) && byBone != null && bonePos != null
+                       && byBone.TryGetValue(s.parent, out var pbone))
+        {
+            var (bp, br) = SkeletonBuilder.Place(pbone, byBone, bonePos);
+            // РАЗВОРОТ ОСЕЙ СНИМАЕТСЯ. Кость растёт по своему +Y, а тело смотрит в +Z, поэтому у кости
+            // вдоль хребта поворот около +90° по X — чистая техника роста, а не наклон зверя. Место,
+            // унаследовав его как есть, легло бы набок: голова волка ушла бы носом в землю на 82°, и
+            // по скриншоту это читалось бы как «голова оторвалась», а не как разворот системы координат
+            var body = br * Quaternion.Euler(-90f, 0f, 0f);
+            pos = bp + br * (Vector3.up * (pbone.length * s.attach)) + body * s.attachOffset;
+            rot = body * rot;
+            placed[s.name] = (pos, rot);
+            return (pos, rot);
+        }
+
         if (depth < 16 && !string.IsNullOrEmpty(s.parent) && byName.TryGetValue(s.parent, out var par) && par != s)
         {
-            var (ppos, prot) = Place(par, byName, placed, depth + 1, axisOf);
+            var (ppos, prot) = Place(par, byName, placed, depth + 1, axisOf, byBone, bonePos);
             // СТЫК на ДЛИННОЙ оси родителя: `attach` = доля вдоль неё (0 — начало, 1 — конец).
             // Смещение — в КАЛИБРАХ родителя, поэтому переживает масштабирование вида
             var b = SizeOf(par, byName, 0);

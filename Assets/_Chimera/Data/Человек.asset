@@ -962,3 +962,5 @@ MonoBehaviour:
     formRole: 0
     linkLength: 0
     linkTaper: 0
+  bones: []
+  skeletonHides: []
