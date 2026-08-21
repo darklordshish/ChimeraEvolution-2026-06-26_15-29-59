@@ -159,6 +159,16 @@ public static class BodyRules
             // Теперь форму несущему даёт орган «Хребет» — правило сторожит возврат к прежнему
             if (string.IsNullOrEmpty(drawn))
             {
+                // ...НО КОСТЬ — ЗАКОННЫЙ ПРЕДОК. Со скелетом место может висеть не на другом месте, а
+                // прямо на кости: хвост сидит на «крестце», голова на «шее». Кость рисует не хуже места,
+                // просто её нет в сокет-плане — и правило, не знающее о костях, ругалось на исправное.
+                // Валидатор, кричащий на здоровое, приучает игнорировать красное
+                bool onBone = false;
+                if (species.bones != null)
+                    foreach (var bn in species.bones)
+                        if (bn != null && bn.name == rawParent) { onBone = true; break; }
+                if (onBone) continue;
+
                 list.Add(new Issue
                 {
                     species = species.speciesName, where = kv.Key, error = true,

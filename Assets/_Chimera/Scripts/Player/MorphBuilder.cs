@@ -65,35 +65,15 @@ public static class MorphBuilder
             foreach (var b in chassis.bones)
                 if (b != null && !string.IsNullOrEmpty(b.name)) byBone[b.name] = b;
 
-            // ГРУППА НА СЛОТ — иерархия, а не список имён. Слот есть единица химеризации, поэтому он же
-            // единица тела: под него собираются все кости модуля. Отсюда сразу три вещи, и ни одна не
-            // требует перечислений в коде: (1) при скиннинге группа станет ОДНИМ `SkinnedMeshRenderer`,
-            // и графт перестроит меш своего модуля, а не всю тушу; (2) телеграф сможет подсветить ту
-            // часть, которой бьют, — способность знает свой слот, а слот теперь знает свои детали;
-            // (3) контракт имён частей продолжает работать, потому что деталь зовётся по слоту
-            var groups = new Dictionary<string, Transform>();
-            Transform GroupFor(string slot)
-            {
-                if (string.IsNullOrEmpty(slot)) return container.transform;
-                if (groups.TryGetValue(slot, out var g)) return g;
-                var go = new GameObject(slot);
-                go.transform.SetParent(container.transform, false);
-                groups[slot] = go.transform;
-                return go.transform;
-            }
-
-            var grown = new List<GameObject>();
-            foreach (var b in chassis.bones)
-            {
-                if (b == null || string.IsNullOrEmpty(b.name)) continue;
-                var (bp, br) = SkeletonBuilder.Place(b, byBone, bonePos);
-                // БЕЗ ПОПРАВКИ НА `footY`: контейнер уже сдвинут к низу капсулы, а кости живут в ЕГО системе
-                // координат — той же, в какой меряет карта тел. Второй сдвиг поднял бы ногу над землёй ровно
-                // на рост носителя, и это тот самый класс ошибок «мерь там же, где расставляешь»
-                var into = GroupFor(b.socket);
-                SkeletonBuilder.Grow(into, b, bp, br, +1f, grown);
-                if (b.mirrorX) SkeletonBuilder.Grow(into, b, bp, br, -1f, grown);
-            }
+            // ШКУРА ВМЕСТО ШАРОВ: один `SkinnedMeshRenderer` НА СЛОТ поверх общей иерархии костей.
+            // Слот — единица химеризации, поэтому он же единица тела: графт перестраивает меш своего
+            // модуля, имя рендерера совпадает с именем слота (контракт имён частей цел), телеграф может
+            // подсветить ту часть, которой бьют. Цена шаров была известна заранее: 315 рендереров на
+            // волка при ~160 тыс. вершин против 8 и ~2 тыс. здесь
+            //     БЕЗ ПОПРАВКИ НА `footY`: контейнер уже сдвинут к низу капсулы, а кости живут в ЕГО
+            // системе координат — той же, в какой меряет карта тел. Второй сдвиг поднял бы зверя над
+            // землёй ровно на его рост, и это тот самый класс ошибок «мерь там же, где расставляешь»
+            BoneMesher.Build(container.transform, chassis, PrimitiveMaterial());
         }
 
         // ГРАФ ХРЕБТА: место с `parent` не хранит своих координат — считаем их от родителя и НАСЛЕДУЕМ
@@ -500,6 +480,20 @@ public static class MorphBuilder
     {
         if (Application.isPlaying) Object.Destroy(o);
         else Object.DestroyImmediate(o);
+    }
+
+    static Material primMat;
+
+    /// <summary>Материал по умолчанию — ТОТ ЖЕ, что у примитивов. Берём его с реального примитива, а не
+    /// ищем шейдер по имени: имя зависит от рендер-пайплайна, и промах даёт розовую тушу вместо серой.
+    /// Части-места получают его сами, а скин-мешу материал надо назначить руками.</summary>
+    static Material PrimitiveMaterial()
+    {
+        if (primMat != null) return primMat;
+        var probe = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        primMat = probe.GetComponent<Renderer>().sharedMaterial;
+        Kill(probe);
+        return primMat;
     }
 
     /// <summary>ГАБАРИТ МЕСТА. Задан `sizeRel` — считаем ОТ РОДИТЕЛЯ (шасси говорит, как вставлять):

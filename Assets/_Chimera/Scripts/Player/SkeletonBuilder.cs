@@ -39,43 +39,7 @@ public static class SkeletonBuilder
     /// <summary>Конец кости — он же начало её детей.</summary>
     public static Vector3 Tip(Bone b, Vector3 pos, Quaternion rot) => pos + rot * (Vector3.up * b.length);
 
-    /// <summary>Радиус кости в точке `t` вдоль длины (0 — начало, 1 — конец).</summary>
-    public static float RadiusAt(Bone b, float t) => Mathf.Lerp(b.r0, b.r1, Mathf.Clamp01(t));
-
-    /// <summary>МЯСО НА КОСТИ — веретено: цепочка объёмов от `r0` к `r1` вдоль оси.
-    ///
-    /// ПЛОТНОСТЬ РЕШАЕТ ГЛАДКОСТЬ — найдено 15.08 на ручной лепке геймдизайнера: в кубическом языке
-    /// силуэт сглаживает не форма отдельной детали, а ЧИСЛО промежуточных объёмов. Два шара встык
-    /// читаются уступом, пять — перетекают. Шаг берём от толщины: чем тоньше кость, тем чаще сегменты.
-    ///
-    /// СЕЧЕНИЕ НЕРАВНОМЕРНОЕ. `section` сплющивает объём по X: грудь волка анфас вдвое уже, чем глубока,
-    /// и без этого корпус читается бочкой, сколько ни правь длины.</summary>
-    public static void Grow(Transform parent, Bone b, Vector3 pos, Quaternion rot, float side,
-                            List<GameObject> made)
-    {
-        float avg = Mathf.Max(0.001f, (b.r0 + b.r1) * 0.5f);
-        int segs = Mathf.Clamp(Mathf.RoundToInt(b.length / avg), 2, 12);
-
-        for (int i = 0; i <= segs; i++)
-        {
-            float t = i / (float)segs;
-            float r = RadiusAt(b, t);
-            var p = pos + rot * (Vector3.up * (b.length * t));
-            var e = rot.eulerAngles;
-            if (side < 0f) { p.x = -p.x; e.y = -e.y; e.z = -e.z; }   // зеркало пары, как у парных мест
-
-            var go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            // ИМЯ ПО СЛОТУ, А НЕ ПО КОСТИ. Контракт имён частей знает словарь МЕСТ («голова», «Пасть»,
-            // «уши»), и он же остаётся именем модуля скелета: кость «ростр» — это часть «голова», и
-            // эмоц-тинт красит её, ничего не зная про кости. Не будь этого, пришлось бы перечислять в
-            // `Telegraph` все кости черепа — то есть завести список исключений вместо иерархии
-            go.name = string.IsNullOrEmpty(b.socket) ? b.name : b.socket;
-            Object.DestroyImmediate(go.GetComponent<Collider>());
-            go.transform.SetParent(parent, false);
-            go.transform.localPosition = p;
-            go.transform.localEulerAngles = e;
-            go.transform.localScale = new Vector3(r * 2f * b.section, r * 2f, r * 2f);
-            made.Add(go);
-        }
-    }
+    // МЯСО НАРАЩИВАЕТ `BoneMesher` — трубой со скиннингом. Прежде здесь жил `Grow`, лепивший вдоль кости
+    // цепочку сфер: он был честным промежуточным шагом (проверял ПРАВИЛА обрастания, не трогая покраску),
+    // но стоил 315 рендереров на волка и не давал анимации. Правила проверены, шары сняты.
 }
