@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>ПРАВИЛА ТЕЛА: суждения над данными и замерами. Отдельно от карты, потому что нужны бутстрапу
@@ -38,6 +38,42 @@ public static class BodyRules
         var byName = new Dictionary<string, BodySocket>();
         foreach (var k in s.sockets)
             if (k != null && !string.IsNullOrEmpty(k.name)) byName[k.name] = k;
+
+        // ── ПОКРЫТИЕ СЛОВАРЁМ СЛОТОВ (`BodySlots`) ────────────────────────────────────────────────
+        // Имя слота — строка, и держит она сразу три вещи: что можно надеть (`Organ.slot`), где это
+        // видно (`BodySocket.name`) и какие кости принадлежат части (`Bone.socket`). Опечатка в этой
+        // строке не даёт НИ ОДНОЙ ошибки: орган просто не находит своё место и молча исчезает с тела,
+        // а ловится это глазами на скриншоте. Словарь превращает молчание в строку отчёта
+        foreach (var o in s.organs ?? System.Array.Empty<Organ>())
+        {
+            if (o == null || string.IsNullOrEmpty(o.slot)) continue;
+            if (BodySlots.IsPlace(o.slot))
+                list.Add(new Issue
+                {
+                    species = s.speciesName, where = o.organName, error = true,
+                    text = $"орган сидит на ТЕЛЕСНОМ МЕСТЕ «{o.slot}» — надеть туда нечего, " +
+                           $"такого слота в конструкторе нет"
+                });
+            else if (!BodySlots.IsSlot(o.slot))
+                list.Add(new Issue
+                {
+                    species = s.speciesName, where = o.organName, error = true,
+                    text = $"слот «{o.slot}» не в словаре `BodySlots` — опечатка либо новый слот, " +
+                           $"который надо туда занести"
+                });
+        }
+
+        foreach (var k in s.sockets)
+        {
+            if (k == null || string.IsNullOrEmpty(k.name)) continue;
+            if (!BodySlots.IsKnown(k.name))
+                list.Add(new Issue
+                {
+                    species = s.speciesName, where = k.name, error = true,
+                    text = "имя места не в словаре `BodySlots` — опечатка либо новое место; " +
+                           "новое надо занести в словарь, иначе следующая опечатка снова пройдёт молча"
+                });
+        }
 
         foreach (var k in s.sockets)
         {
