@@ -247,8 +247,19 @@ def audit(path, slots, places):
     # печатать это ошибкой значит держать отчёт вечно красным — а красное, которое горит всегда,
     # перестают читать. Здесь видно, что сделано, а что впереди
     spec = []
-    root = roots[0] if len(roots) == 1 else None
-    spec.append(('И1 корень = голова', root == 'голова', 'корень «%s»' % (root or '—')))
+    # У ВИДА СО СКЕЛЕТОМ ОСЬ ЖИВЁТ В КОСТЯХ, А НЕ В МЕСТАХ. У волка граф мест растёт от «хребта», но
+    # форму несут кости, и корень у них — череп; места на эту ось просто навешаны. Спрашивать с графа
+    # мест там, где он ничего не строит, значит объявить исправное несделанным
+    if bones:
+        broots = [unesc(b.get('name')) for b in bones if not unesc(b.get('parent'))]
+        axis_roots = [r for r in broots if any(unesc(x.get('socket')) in ('голова', 'Пасть')
+                                               for x in bones if unesc(x.get('name')) == r)]
+        head_first = bool(axis_roots)
+        spec.append(('И1 корень = голова (по скелету)', head_first,
+                     'корни костей: %s' % ', '.join(broots[:3])))
+    else:
+        root = roots[0] if len(roots) == 1 else None
+        spec.append(('И1 корень = голова', root == 'голова', 'корень «%s»' % (root or '—')))
 
     axis = [x for x in sockets if x['_name'] in AXIS]
     branchy = []
