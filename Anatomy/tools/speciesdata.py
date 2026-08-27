@@ -200,3 +200,62 @@ def offset_for(child_pos, parent_pos, parent_rot, parent_size, attach, chain=1, 
 def euler_for(child_rot, parent_rot):
     """baseEuler ребёнка, дающий нужный мировой поворот под новым родителем."""
     return matrix_to_euler(_mul(transpose(parent_rot), child_rot))
+
+
+# ── СКЕЛЕТ: порт `SkeletonBuilder.Place` ──────────────────────────────────────────────────────────
+# Кость растёт по своему локальному +Y, начинается в точке `attach` вдоль родителя (от его НАЧАЛА),
+# поворот наследуется. Из этого следует и обратная операция: развернуть кость значит поставить её
+# начало в прежний конец и повернуть ось роста на 180 градусов.
+UP = (0.0, 1.0, 0.0)
+
+
+def bones_index(bones):
+    out = {}
+    for b in bones:
+        b['_name'] = unesc(b.get('name'))
+        b['_parent'] = unesc(b.get('parent'))
+        out[b['_name']] = b
+    return out
+
+
+def bone_place(b, by, cache=None, depth=0):
+    """Мировые позиция и поворот кости — как считает `SkeletonBuilder.Place`."""
+    cache = {} if cache is None else cache
+    if b['_name'] in cache:
+        return cache[b['_name']]
+    rot = euler(vec(b.get('dir')))
+    pos = vec(b.get('origin'))
+    par = by.get(b['_parent'])
+    if depth < 16 and par is not None and par is not b:
+        ppos, prot = bone_place(par, by, cache, depth + 1)
+        step = _apply(prot, tuple(UP[i] * (num(par, 'length') * num(b, 'attach')) for i in range(3)))
+        pos = tuple(ppos[i] + step[i] for i in range(3))
+        rot = _mul(prot, rot)
+    cache[b['_name']] = (pos, rot)
+    return pos, rot
+
+
+def bone_tip(b, pos, rot):
+    d = _apply(rot, tuple(UP[i] * num(b, 'length') for i in range(3)))
+    return tuple(pos[i] + d[i] for i in range(3))
+
+
+def flip(rot):
+    """Развернуть ось роста кости: поворот на 180 вокруг локального X даёт +Y -> -Y."""
+    return _mul(rot, euler((180.0, 0.0, 0.0)))
+
+
+def attach_for(child_pos, parent_pos, parent_rot, parent_len):
+    """Доля вдоль родителя, дающая нужное начало ребёнка. Возвращает (attach, ошибка_поперёк):
+    крепление идёт СТРОГО по оси родителя, поэтому поперечная составляющая обязана быть нулевой —
+    если она велика, кость так прицепить нельзя, и число молча соврёт."""
+    d = tuple(child_pos[i] - parent_pos[i] for i in range(3))
+    local = _apply(transpose(parent_rot), d)
+    att = local[1] / parent_len if parent_len > 0 else 0.0
+    side = math.hypot(local[0], local[2])
+    return att, side
+
+
+def dir_for(child_rot, parent_rot):
+    """dir ребёнка, дающий нужный мировой поворот под новым родителем."""
+    return matrix_to_euler(_mul(transpose(parent_rot), child_rot))

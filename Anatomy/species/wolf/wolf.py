@@ -2,9 +2,10 @@
 """СКЕЛЕТ ВОЛКА: задаю АНАТОМИЧЕСКИЕ ТОЧКИ (сустав → сустав), скрипт считает углы и длины для данных.
 Референс: холка 1.170, круп 1.100, плечевой 0.725, локоть 0.585, тазобедренный 0.749, колено 0.560,
 скакательный 0.300, низ груди 0.575, ширина корпуса 0.27, лапы на 0.000."""
-import math, sys, io
+import math
+import os, sys, io
 import numpy as np
-sys.path.insert(0, r'C:\Temp\claude\C--Users-semion-Documents-Chimera-game\699e32bc-87a8-46b1-a97a-3e1ba7e42b45\scratchpad')
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), 'tools'))  # Anatomy/tools в репо, а НЕ временная папка: scratchpad живёт до конца сессии
 from skel import B, build, tip, report, euler, UP
 
 def aim(Rpar, a, b):
@@ -512,6 +513,100 @@ while z <= 0.85:
         print('Z %+.2f   верх %.3f  низ %.3f  h %.3f  %s' % (z, hi, lo, hi - lo, bar))
     z += 0.10
 
+# ── РАЗВОРОТ ОСИ ОТ ГОЛОВЫ (спека 2026-08-27 «Единый план тела») ──────────────────────────────────
+# Скелет удобно ЗАДАВАТЬ от крестца вперёд — так ложатся анатомические точки. Но в игре корень графа
+# у всех видов один: ГОЛОВА. Она единственная есть у всех пяти; хребта нет у змеи, и корень «хребет»
+# универсальным быть не может по построению. Однородность тут не эстетика: чем больше у видов разных
+# структур, тем быстрее всё разъезжается и тем дороже каждая общая механика.
+#
+# ДЕЛАЕТСЯ В ГЕНЕРАТОРЕ, а не правкой выходных чисел: числа обязаны оставаться следствием
+# анатомических точек, иначе следующая правка точки их затрёт.
+#
+# КАК. Кость растёт по локальному +Y от точки `attach` вдоль родителя. Развернуть кость — поставить
+# её начало в прежний КОНЕЦ и повернуть ось роста на 180° (Euler(180,0,0) переводит +Y в −Y): тогда
+# её собственный конец приходит ровно в прежнее начало, и цепь читается с другой стороны, не
+# сдвинувшись ни на миллиметр. Детям инвертированной кости меняется отсчёт (доля считается от
+# начала, а начало стало концом) — это учитывается пересчётом `attach` из мировой позы.
+AXIS = ['крестец', 'поясница', 'грудной', 'шея']
+ROOT_AFTER = 'коробка'
+
+
+def mat_to_euler(m):
+    """Матрица → углы Unity (Ry*Rx*Rz) — обратная к `euler` из skel.py."""
+    x = math.asin(max(-1.0, min(1.0, -m[1][2])))
+    if abs(m[1][2]) < 0.9999:
+        z = math.atan2(m[1][0], m[1][1]); y = math.atan2(m[0][2], m[2][2])
+    else:
+        z = 0.0; y = math.atan2(-m[2][0], m[0][0])
+    return (math.degrees(x), math.degrees(y), math.degrees(z))
+
+
+def reverse_axis():
+    _by, pos0, rot0 = build(bones)
+    world = {b.name: (pos0[b.name].copy(), rot0[b.name].copy()) for b in bones}
+    tips = {b.name: tip(b, pos0, rot0) for b in bones}
+    flip180 = euler((180, 0, 0))
+
+    target = {}
+    for b in bones:
+        if b.name in AXIS:
+            target[b.name] = (tips[b.name], world[b.name][1] @ flip180)
+        else:
+            target[b.name] = world[b.name]
+
+    chain = [ROOT_AFTER] + AXIS[::-1]
+    for i in range(1, len(chain)):
+        for b in bones:
+            if b.name == chain[i]:
+                b.parent = chain[i - 1]
+    for b in bones:
+        if b.name == ROOT_AFTER:
+            b.parent = ''
+
+    order, seen = [], set()
+
+    def walk(name):
+        if name in seen: return
+        seen.add(name); order.append(name)
+        for c in bones:
+            if c.parent == name: walk(c.name)
+
+    for b in bones:
+        if not b.parent: walk(b.name)
+    for b in bones:
+        if b.name not in seen: order.append(b.name); seen.add(b.name)
+
+    byname = {b.name: b for b in bones}
+    worst = 0.0
+    for name in order:
+        b = byname[name]
+        tp, tr = target[name]
+        if not b.parent:
+            b.origin = np.array(tp, dtype=float)
+            b.dir = mat_to_euler(tr)
+            continue
+        par = byname[b.parent]
+        ppos, prot = target[par.name]
+        b.dir = mat_to_euler(prot.T @ tr)
+        local = prot.T @ (np.array(tp) - np.array(ppos))
+        b.attach = float(local[1] / par.length) if par.length > 0 else 0.0
+        worst = max(worst, float(math.hypot(local[0], local[2])))
+    # ПОРЯДОК В МАССИВЕ: родитель обязан идти раньше ребёнка. В Unity это не важно (Place рекурсивна
+    # с кэшем), но наш расчётчик обходит список подряд — а после разворота крестец стал ребёнком
+    # поясницы, которая лежит ниже него
+    bones[:] = [byname[n] for n in order if n in byname] + [b for b in bones if b.name not in seen]
+    return worst, target
+
+
+_side, _target = reverse_axis()
+_by3, _pos3, _rot3 = build(bones)
+_moved = max(float(np.linalg.norm(np.array(_pos3[n]) - np.array(t[0]))) for n, t in _target.items())
+print('РАЗВОРОТ ОСИ: корень «%s»; расхождение с целью %.4f м, поперечная невязка креплений %.4f м'
+      % (ROOT_AFTER, _moved, _side))
+if _moved > 0.002 or _side > 0.002:
+    print('!! РАЗВОРОТ НЕ ЧИСТ — числа применять нельзя')
+
+
 # АДРЕСА ОСТАВШИХСЯ МЕСТ: голова, хвост и игломёт живут сокетами и садятся на кость — считаем их
 # смещения В МЕТРАХ в системе кости-родителя, чтобы части встали ровно туда, где стояли
 print()
@@ -567,6 +662,6 @@ for b in bones:
     bl = (', blend = %.3ff' % b.blend) if b.blend > 0 else ''
     if b.endBone: bl += ', endBone = "%s", endAttach = %.2ff' % (b.endBone, b.endAttach)
     if b.layer: bl += ', layer = BodyLayer.%s' % ('Muscle', 'Feature', 'Cut')[b.layer - 1]
-    print('new Bone { name = "%s", socket = "%s", %s%s%slength = %.3ff, dir = new Vector3(%.1ff, 0f, %.1ff), '
+    print('new Bone { name = "%s", socket = "%s", %s%s%slength = %.3ff, dir = new Vector3(%.1ff, %.1ff, %.1ff), '
           'r0 = %.3ff, r1 = %.3ff, section = %.2ff%s%s%s },'
-          % (b.name, b.socket, par, o, att, b.length, b.dir[0], b.dir[2], b.r0, b.r1, b.section, dep, bl, mir))
+          % (b.name, b.socket, par, o, att, b.length, b.dir[0], b.dir[1], b.dir[2], b.r0, b.r1, b.section, dep, bl, mir))
