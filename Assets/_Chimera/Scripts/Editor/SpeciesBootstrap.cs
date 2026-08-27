@@ -1,4 +1,4 @@
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 
@@ -210,7 +210,7 @@ public static class SpeciesBootstrap
             // по-прежнему считается КАЛИБР головы). Смещение здесь В МЕТРАХ, а не в калибрах родителя:
             // у кости нет габаритной коробки, делить не на что. baseEuler гасит наклон шеи (−7.5°),
             // чтобы морда держалась горизонтально, — то же правило, что и было, просто число новое
-            new BodySocket { name = "голова", parent = "шея", attach = 1.000f, attachOffset = new Vector3(0.000f, -0.028f, 0.174f),    baseSize = new Vector3(0.263f, 0.220f, 0.469f), sizeRel = new Vector3(1.195f, 0.733f, 1.234f), baseEuler = new Vector3(0.8f, 0f, 0f), parts = new[] {
+            new BodySocket { name = "голова", parent = "шея", attach = 1.000f, attachOffset = new Vector3(0.000f, -0.003f, 0.167f),    baseSize = new Vector3(0.263f, 0.220f, 0.469f), sizeRel = new Vector3(1.195f, 0.733f, 1.234f), baseEuler = new Vector3(0.8f, 0f, 0f), parts = new[] {
                 new OrganPart { scale = new Vector3(0.677f, 0.682f, 0.450f), offset = new Vector3(0.000f, 0.091f, -0.275f), shape = PartShape.Sphere }, // МОЗГОВАЯ КОРОБКА — задние 45% длины, 0.38L шириной, сверху округлая
                 new OrganPart { scale = new Vector3(0.221f, 0.355f, 0.224f), offset = new Vector3(0.000f, 0.327f, -0.405f), shape = PartShape.Sphere }, // затылочный гребень — киль сверху сзади, выступает
                 new OrganPart { scale = new Vector3(0.290f, 0.300f, 0.320f), offset = new Vector3(0.355f, -0.082f, -0.032f), shape = PartShape.Sphere }, // СКУЛОВАЯ ДУГА (пр): ОТДЕЛЬНОЕ КРЫЛО вбок — она и даёт волчью голову анфас (макс. ширина 0.56L). ДУГА ВИСЕЛА В ВОЗДУХЕ, не касаясь НИ ОДНОЙ детали головы (9.6 мм пустоты): разрыв шёл по Y, а не по X, поэтому мало было расширить её внутрь (0.209→0.290 при сдвинутом адресе, наружный край держит те же 0.1315) — пришлось добрать и высоту 0.227→0.300, чтобы дуга дошла снизу до тела челюсти, а сверху до надбровья
@@ -225,8 +225,8 @@ public static class SpeciesBootstrap
                 new OrganPart { scale = new Vector3(0.365f, 0.282f, 0.640f), offset = new Vector3(0.000f, -0.336f, 0.117f), shape = PartShape.Sphere }, // ...и тело челюсти: длинное, прямое и УЖЕ морды — в зазор выходят клыки
             } }, // 45% коробка / 55% морда; стоп ПОЛОГИЙ. baseEuler −4 гасит наклон шеи: морда держится горизонтально
 
-            new BodySocket { name = "Пасть", parent = "голова", attach = 1.000f, attachOffset = new Vector3(0.000f, -0.227f, -0.287f), baseSize = new Vector3(0.130f, 0.090f, 0.220f), sizeRel = new Vector3(0.494f, 0.409f, 0.469f) }, // АДРЕС ПАСТИ: зубы рисует ОРГАН, место лишь держит калибр и сидит ВНУТРИ габарита головы, на линии смыкания губ
-            new BodySocket { name = "глаза", parent = "голова", attach = 0.500f, attachOffset = new Vector3(0.255f, 0.168f, 0.005f), baseSize = new Vector3(0.032f, 0.032f, 0.032f), sizeRel = new Vector3(0.122f, 0.145f, 0.068f), mirrorX = true, formFrom = "Чутьё", formRole = PartRole.Eye, parts = new[] { // ГЛАЗ НА ГЛАЗНИЦЕ: стык коробки и морды, НАД скуловой дугой, смотрит вперёд-вбок. Сидит в надбровье наполовину — не тонет и не висит
+            new BodySocket { name = "Пасть", parent = "голова", attach = 1.000f, attachOffset = new Vector3(0.000f, -0.400f, 0.119f), baseSize = new Vector3(0.130f, 0.090f, 0.220f), sizeRel = new Vector3(0.494f, 0.409f, 0.469f) }, // АДРЕС ПАСТИ: зубы рисует ОРГАН, место лишь держит калибр. ОПУЩЕНО НА 3 СМ: в морде из костей клыки утонули (кончик на 8 мм внутри поверхности) — зубы должны выходить из-под губы, иначе пасть без зубов
+            new BodySocket { name = "глаза", parent = "голова", attach = 0.500f, attachOffset = new Vector3(0.456f, 0.218f, 0.019f), baseSize = new Vector3(0.032f, 0.032f, 0.032f), sizeRel = new Vector3(0.122f, 0.145f, 0.068f), mirrorX = true, formFrom = "Чутьё", formRole = PartRole.Eye, parts = new[] { // ГЛАЗ ВЫНЕСЕН НА ПОВЕРХНОСТЬ ПОЛЯ. Череп из костей полнее прежнего черепа из коробок, и на старом адресе глаз оказался УТОПЛЕН на 3.7 см — снаружи это читалось как «глаза закрыты кожей». Вынос считался по нормали поля до нуля плюс запас: теперь шар выступает наполовину
                 new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), shape = PartShape.Sphere, role = PartRole.Eye, color = new Color(0.10f, 0.10f, 0.12f, 1f) }, // ФОЛБЭК: тварь без Чутья не слепа, но глаз тускл
             } }, // МЕСТО НА КОЖЕ головы — форму и цвет даёт ЧУТЬЁ
             new BodySocket { name = "уши", parent = "голова", attach = 0.500f, attachOffset = new Vector3(0.285f, 0.545f, -0.362f),    baseSize = new Vector3(0.075f, 0.165f, 0.035f), sizeRel = new Vector3(0.285f, 0.750f, 0.075f), baseEuler = new Vector3(-6f, 45f, -15f), mirrorX = true, formFrom = "Чутьё", formRole = PartRole.Ear },   // УХО НА ЗАДНЕЙ ТРЕТИ КОРОБКИ, основание 0.19L (широкое), верхушка чуть НАРУЖУ (−15°): прежние +25° сводили уши домиком
@@ -252,7 +252,7 @@ public static class SpeciesBootstrap
             new BodySocket { name = "Чутьё",  inner = true, parent = "голова", attach = 0.500f, sizeRel = new Vector3(0.500f, 0.500f, 0.500f) },  // ЧУВСТВА ЖИВУТ В ГОЛОВЕ. Своей формы у места нет, и деталь не родится сама собой — но АДРЕС нужен заранее: дашь органу форму (термо-ямки), и без родителя с калибром она сядет метровым кубом в начало координат. Доля от головы — одна на все виды
             // закрытые места (пустыми не рисуются): волк с лосиными рогами / ежиным игломётом читается сразу
             new BodySocket { name = "Рога", parent = "голова", attach = 0.600f, attachOffset = new Vector3(0.285f, 0.591f, -0.228f),    baseSize = new Vector3(0.101f, 0.127f, 0.142f), sizeRel = new Vector3(0.384f, 0.577f, 0.303f), mirrorX = true, graft = true }, // КАЛИБР: над мозговой коробкой и наружу — лопасть не врастает в череп
-            new BodySocket { name = "Игломёт", parent = "грудной", attach = 0.500f, attachOffset = new Vector3(0.000f, 0.161f, 0.015f),    baseSize = new Vector3(0.198f, 0.198f, 0.198f), sizeRel = new Vector3(0.591f, 0.408f, 0.153f), baseEuler = new Vector3(-8.1f, 0.00f, 0.00f), graft = true }, // КАЛИБР; сидит на середине грудного отдела и выступает над спиной на 0.16
+            new BodySocket { name = "Игломёт", parent = "грудной", attach = 0.500f, attachOffset = new Vector3(0.000f, 0.191f, 0.001f),    baseSize = new Vector3(0.198f, 0.198f, 0.198f), sizeRel = new Vector3(0.591f, 0.408f, 0.153f), baseEuler = new Vector3(-8.1f, 0.00f, 0.00f), graft = true }, // КАЛИБР; сидит на середине грудного отдела и выступает над спиной на 0.16
         };
         // СКЕЛЕТ (спека 2026-08-18): НЕСУЩАЯ ОСЬ И ЧЕТЫРЕ НОГИ. Череп пока остаётся местом и переезжает
         // следующим шагом — он же и есть проверка обобщаемости метода.
@@ -267,63 +267,110 @@ public static class SpeciesBootstrap
         // 0.60 на 0.99 за десять сантиметров — это и есть глазами «грудь отваливается отдельным телом».
         wolf.bones = new[]
         {
-            // ── ОСЬ: от крестца вперёд. Первый угол ~85° разворачивает цепь вдоль тела (кость растёт по
-            // своему +Y), дальше идут МАЛЫЕ поправки — они и читаются как наклон отдела
-            new Bone { name = "крестец", socket = "хребет", origin = new Vector3(0.000f, 1.025f, -0.560f), length = 0.181f, dir = new Vector3(85.2f, 0f, 0f), r0 = 0.080f, r1 = 0.076f, section = 0.90f },
-            new Bone { name = "поясница", socket = "Шкура", parent = "крестец", length = 0.401f, dir = new Vector3(1.7f, 0f, 0f), r0 = 0.076f, r1 = 0.082f, section = 0.90f },
-            new Bone { name = "грудной", socket = "хребет", parent = "поясница", length = 0.400f, dir = new Vector3(1.2f, 0f, 0f), r0 = 0.082f, r1 = 0.096f, section = 0.90f },
-            new Bone { name = "шея", socket = "шея", parent = "грудной", length = 0.370f, dir = new Vector3(1.1f, 0f, 0f), r0 = 0.105f, r1 = 0.088f, section = 0.90f },
+            // ══ СЛОЙ 1: СКЕЛЕТ ══ `SpeciesSO.buildLayers` показывает срез: 1 — голый скелет, 2 — с мышцами,
+            // 3 — с признаками, 4 — с прорезями.
+            //     ИМЯ КОСТИ = АНАТОМИЯ + СЛОЙ. Одна единица живёт сразу в нескольких слоях: есть кость скулы и
+            // мясо скулы, есть ветвь челюсти и жевательная поверх неё. Пока слой в имя не входил, такие соседи
+            // сталкивались адресами — и не с ошибкой, а молча: словарь оставлял последнюю, и часть морды
+            // строилась не там, где её считали данные (так было у «жевательной», заданной дважды). Суффикс
+            // делает адрес уникальным ПО ПОСТРОЕНИЮ: `.м` — мышца, `.п` — признак, `.р` — рез. Скелет без
+            // суффикса — он основа, на его имена ссылаются места, дети и мышцы.
+            //     ШЕЯ СПАДАЕТ ВПЕРЁД-ВНИЗ. Прежде ось шла горизонтально (1.075 → 1.080), и зверь нёс голову на
+            // уровне спины: контур верха превышал эталонный на 11-13 см от загривка до носа, отчего тело
+            // читалось вытянутым бруском. Теперь основание 1.030, затылок 0.980 — и верх сошёлся с эталоном
+            // в среднем на 1.8 см при холке 1.170.
+            new Bone { name = "крестец", socket = "хребет", origin = new Vector3(0.000f, 1.003f, -0.560f), length = 0.181f, dir = new Vector3(84.6f, 0f, -0.0f), r0 = 0.078f, r1 = 0.082f, section = 1.75f },
+            new Bone { name = "поясница", socket = "хребет", parent = "крестец", length = 0.401f, dir = new Vector3(1.4f, 0f, -0.0f), r0 = 0.082f, r1 = 0.086f, section = 1.75f },
+            new Bone { name = "грудной", socket = "хребет", parent = "поясница", length = 0.400f, dir = new Vector3(6.6f, 0f, -0.0f), r0 = 0.086f, r1 = 0.090f, section = 1.65f },
+            new Bone { name = "шея", socket = "шея", parent = "грудной", length = 0.383f, dir = new Vector3(4.9f, 0f, -0.0f), r0 = 0.134f, r1 = 0.116f, section = 1.05f },
+            new Bone { name = "ребро1", socket = "Сердце", parent = "грудной", attach = 0.05f, length = 0.107f, dir = new Vector3(87.4f, 0f, -35.4f), r0 = 0.062f, r1 = 0.058f, section = 0.80f, mirrorX = true },
+            new Bone { name = "ребро1с", socket = "Сердце", parent = "ребро1", length = 0.141f, dir = new Vector3(0.0f, 0f, 27.3f), r0 = 0.058f, r1 = 0.050f, section = 0.80f, mirrorX = true },
+            new Bone { name = "ребро1н", socket = "Сердце", parent = "ребро1с", length = 0.074f, dir = new Vector3(0.0f, 0f, 44.4f), r0 = 0.050f, r1 = 0.040f, section = 0.80f, mirrorX = true },
+            new Bone { name = "ребро2", socket = "Сердце", parent = "грудной", attach = 0.24f, length = 0.104f, dir = new Vector3(87.4f, 0f, -36.5f), r0 = 0.068f, r1 = 0.064f, section = 0.80f, mirrorX = true },
+            new Bone { name = "ребро2с", socket = "Сердце", parent = "ребро2", length = 0.141f, dir = new Vector3(0.0f, 0f, 28.4f), r0 = 0.064f, r1 = 0.055f, section = 0.80f, mirrorX = true },
+            new Bone { name = "ребро2н", socket = "Сердце", parent = "ребро2с", length = 0.114f, dir = new Vector3(0.0f, 0f, 30.8f), r0 = 0.055f, r1 = 0.044f, section = 0.80f, mirrorX = true },
+            new Bone { name = "ребро3", socket = "Сердце", parent = "грудной", attach = 0.44f, length = 0.101f, dir = new Vector3(87.4f, 0f, -37.8f), r0 = 0.070f, r1 = 0.066f, section = 0.80f, mirrorX = true },
+            new Bone { name = "ребро3с", socket = "Сердце", parent = "ребро3", length = 0.141f, dir = new Vector3(0.0f, 0f, 29.7f), r0 = 0.066f, r1 = 0.057f, section = 0.80f, mirrorX = true },
+            new Bone { name = "ребро3н", socket = "Сердце", parent = "ребро3с", length = 0.137f, dir = new Vector3(0.0f, 0f, 26.8f), r0 = 0.057f, r1 = 0.046f, section = 0.80f, mirrorX = true },
+            new Bone { name = "ребро4", socket = "Сердце", parent = "грудной", attach = 0.64f, length = 0.098f, dir = new Vector3(87.4f, 0f, -39.1f), r0 = 0.068f, r1 = 0.064f, section = 0.80f, mirrorX = true },
+            new Bone { name = "ребро4с", socket = "Сердце", parent = "ребро4", length = 0.141f, dir = new Vector3(0.0f, 0f, 31.0f), r0 = 0.064f, r1 = 0.055f, section = 0.80f, mirrorX = true },
+            new Bone { name = "ребро4н", socket = "Сердце", parent = "ребро4с", length = 0.142f, dir = new Vector3(0.0f, 0f, 26.2f), r0 = 0.055f, r1 = 0.044f, section = 0.80f, mirrorX = true },
+            new Bone { name = "ребро5", socket = "Сердце", parent = "грудной", attach = 0.84f, length = 0.096f, dir = new Vector3(87.4f, 0f, -40.4f), r0 = 0.064f, r1 = 0.060f, section = 0.80f, mirrorX = true },
+            new Bone { name = "ребро5с", socket = "Сердце", parent = "ребро5", length = 0.141f, dir = new Vector3(0.0f, 0f, 32.3f), r0 = 0.060f, r1 = 0.052f, section = 0.80f, mirrorX = true },
+            new Bone { name = "ребро5н", socket = "Сердце", parent = "ребро5с", length = 0.118f, dir = new Vector3(0.0f, 0f, 29.9f), r0 = 0.052f, r1 = 0.042f, section = 0.80f, mirrorX = true },
+            new Bone { name = "отросток1", socket = "хребет", parent = "поясница", attach = 0.10f, length = 0.141f, dir = new Vector3(94.0f, 0f, -38.7f), r0 = 0.030f, r1 = 0.024f, section = 0.80f, mirrorX = true },
+            new Bone { name = "отросток2", socket = "хребет", parent = "поясница", attach = 0.38f, length = 0.149f, dir = new Vector3(94.0f, 0f, -36.3f), r0 = 0.030f, r1 = 0.024f, section = 0.80f, mirrorX = true },
+            new Bone { name = "отросток3", socket = "хребет", parent = "поясница", attach = 0.66f, length = 0.149f, dir = new Vector3(94.0f, 0f, -36.3f), r0 = 0.030f, r1 = 0.024f, section = 0.80f, mirrorX = true },
+            new Bone { name = "отросток4", socket = "хребет", parent = "поясница", attach = 0.92f, length = 0.141f, dir = new Vector3(94.0f, 0f, -38.7f), r0 = 0.030f, r1 = 0.024f, section = 0.80f, mirrorX = true },
+            new Bone { name = "грудина", socket = "Сердце", parent = "грудной", attach = 0.95f, length = 0.283f, dir = new Vector3(62.2f, 0f, -0.0f), r0 = 0.085f, r1 = 0.062f, section = 0.85f },
+            new Bone { name = "лопатка", socket = "Руки", parent = "ребро4", attach = 0.45f, length = 0.304f, dir = new Vector3(-42.3f, 0f, 18.8f), r0 = 0.088f, r1 = 0.070f, section = 0.65f, blend = 0.035f, mirrorX = true },
+            new Bone { name = "плечо", socket = "Руки", parent = "лопатка", length = 0.316f, dir = new Vector3(91.4f, 0f, 25.4f), r0 = 0.062f, r1 = 0.046f, section = 0.80f, blend = 0.035f, mirrorX = true },
+            new Bone { name = "предплечье", socket = "Руки", parent = "плечо", length = 0.317f, dir = new Vector3(-67.5f, 0f, 10.8f), r0 = 0.055f, r1 = 0.030f, section = 0.85f, blend = 0.035f, mirrorX = true },
+            new Bone { name = "пясть", socket = "Руки", parent = "предплечье", length = 0.201f, dir = new Vector3(-2.0f, 0f, 0.1f), r0 = 0.030f, r1 = 0.026f, section = 0.85f, blend = 0.035f, mirrorX = true },
+            new Bone { name = "лапа", socket = "Руки", parent = "пясть", length = 0.061f, dir = new Vector3(-17.1f, 0f, 1.3f), r0 = 0.026f, r1 = 0.032f, section = 1.15f, blend = 0.035f, mirrorX = true },
+            new Bone { name = "коробка", socket = "голова", parent = "шея", length = 0.180f, dir = new Vector3(-15.8f, 0f, -0.0f), r0 = 0.074f, r1 = 0.068f, section = 1.15f },
+            new Bone { name = "ростр", socket = "голова", parent = "коробка", length = 0.183f, dir = new Vector3(26.1f, 0f, -0.0f), r0 = 0.062f, r1 = 0.040f, section = 1.15f, depth = 0.62f },
+            new Bone { name = "гребень", socket = "голова", parent = "коробка", attach = 0.05f, length = 0.057f, dir = new Vector3(-90.1f, 0f, -0.0f), r0 = 0.026f, r1 = 0.020f, section = 0.50f },
+            new Bone { name = "скула", socket = "голова", parent = "коробка", length = 0.122f, dir = new Vector3(117.0f, 0f, -44.9f), r0 = 0.030f, r1 = 0.025f, section = 1.00f, mirrorX = true },
+            new Bone { name = "ветвь", socket = "Пасть", parent = "коробка", attach = 0.25f, length = 0.126f, dir = new Vector3(86.5f, 0f, -21.5f), r0 = 0.034f, r1 = 0.028f, section = 0.85f, mirrorX = true },
+            new Bone { name = "хвост1", socket = "Хвост", parent = "крестец", attach = 0.00f, length = 0.159f, dir = new Vector3(121.2f, 0f, -0.0f), r0 = 0.090f, r1 = 0.088f, section = 0.95f },
+            new Bone { name = "хвост2", socket = "Хвост", parent = "хвост1", length = 0.159f, dir = new Vector3(-0.0f, 0f, -0.0f), r0 = 0.088f, r1 = 0.086f, section = 0.95f },
+            new Bone { name = "хвост3", socket = "Хвост", parent = "хвост2", length = 0.160f, dir = new Vector3(-0.2f, 0f, -0.0f), r0 = 0.086f, r1 = 0.078f, section = 0.95f },
+            new Bone { name = "хвост4", socket = "Хвост", parent = "хвост3", length = 0.159f, dir = new Vector3(0.2f, 0f, -0.0f), r0 = 0.078f, r1 = 0.060f, section = 0.95f },
+            new Bone { name = "челюсть", socket = "Пасть", parent = "ветвь", length = 0.267f, dir = new Vector3(-86.5f, 0f, 7.9f), r0 = 0.032f, r1 = 0.024f, section = 0.85f, mirrorX = true },
+            new Bone { name = "таз", socket = "Ноги", parent = "крестец", attach = 0.55f, length = 0.280f, dir = new Vector3(93.9f, 0f, -19.6f), r0 = 0.112f, r1 = 0.104f, section = 0.86f, blend = 0.035f, mirrorX = true },
+            new Bone { name = "бедро", socket = "Ноги", parent = "таз", length = 0.319f, dir = new Vector3(-56.0f, 0f, 11.3f), r0 = 0.118f, r1 = 0.062f, section = 0.78f, blend = 0.035f, mirrorX = true },
+            new Bone { name = "голень", socket = "Ноги", parent = "бедро", length = 0.350f, dir = new Vector3(92.9f, 0f, 16.1f), r0 = 0.060f, r1 = 0.032f, section = 0.85f, blend = 0.035f, mirrorX = true },
+            new Bone { name = "плюсна", socket = "Ноги", parent = "голень", length = 0.221f, dir = new Vector3(-50.0f, 0f, 0.6f), r0 = 0.032f, r1 = 0.026f, section = 0.85f, blend = 0.035f, mirrorX = true },
+            new Bone { name = "лапа_з", socket = "Ноги", parent = "плюсна", length = 0.054f, dir = new Vector3(-27.4f, 0f, 0.2f), r0 = 0.026f, r1 = 0.032f, section = 1.15f, blend = 0.035f, mirrorX = true },
 
-            // ── ГРУДНАЯ КЛЕТКА = МОДУЛЬ СЕРДЦА (спека): пять дуг, а не три. Три давали шаг 0.14 при радиусе
-            // 0.09 — валики смыкались краями, и бок читался ГОФРОЙ. Гладкость даёт ПЛОТНОСТЬ: то же правило,
-            // что внутри кости, только поперёк неё
-            new Bone { name = "ребро1", socket = "Сердце", parent = "грудной", attach = 0.05f, length = 0.388f, dir = new Vector3(91.9f, 0f, -11.9f), r0 = 0.086f, r1 = 0.070f, section = 0.80f, mirrorX = true },
-            new Bone { name = "ребро2", socket = "Сердце", parent = "грудной", attach = 0.24f, length = 0.418f, dir = new Vector3(91.9f, 0f, -11.0f), r0 = 0.092f, r1 = 0.074f, section = 0.80f, mirrorX = true },
-            new Bone { name = "ребро3", socket = "Сердце", parent = "грудной", attach = 0.44f, length = 0.428f, dir = new Vector3(91.9f, 0f, -10.8f), r0 = 0.094f, r1 = 0.076f, section = 0.80f, mirrorX = true },
-            new Bone { name = "ребро4", socket = "Сердце", parent = "грудной", attach = 0.64f, length = 0.418f, dir = new Vector3(91.9f, 0f, -11.0f), r0 = 0.092f, r1 = 0.074f, section = 0.80f, mirrorX = true },
-            new Bone { name = "ребро5", socket = "Сердце", parent = "грудной", attach = 0.84f, length = 0.398f, dir = new Vector3(91.9f, 0f, -11.6f), r0 = 0.088f, r1 = 0.070f, section = 0.80f, mirrorX = true },
+            // ══ СЛОЙ 2: МЫШЦЫ ══ У мышцы ДВА крепления (`endBone`), и в этом вся разница с костью: кость при
+            // движении меняет положение, мышца — ещё и форму. Ни длины, ни угла ей не задают: подвинул сустав —
+            // подтянулась сама, рассогласовать нечем.
+            new Bone { name = "длиннейшая.м", socket = "хребет", parent = "отросток1", length = 0.329f, dir = new Vector3(-93.1f, 0f, -2.5f), r0 = 0.058f, r1 = 0.058f, section = 1.00f, endBone = "отросток4", endAttach = 1.00f, layer = BodyLayer.Muscle, mirrorX = true },
+            new Bone { name = "брюшная.м", socket = "хребет", parent = "ребро1н", length = 0.497f, dir = new Vector3(94.9f, 0f, -2.8f), r0 = 0.084f, r1 = 0.078f, section = 0.85f, endBone = "таз", endAttach = 0.88f, layer = BodyLayer.Muscle, mirrorX = true },
+            new Bone { name = "косая_живота.м", socket = "хребет", parent = "ребро2с", attach = 0.85f, length = 0.573f, dir = new Vector3(91.6f, 0f, 2.0f), r0 = 0.082f, r1 = 0.072f, section = 0.80f, endBone = "таз", endAttach = 0.60f, layer = BodyLayer.Muscle, mirrorX = true },
+            new Bone { name = "межрёберная.м", socket = "Сердце", parent = "ребро4с", attach = 0.60f, length = 0.236f, dir = new Vector3(89.9f, 0f, -0.0f), r0 = 0.070f, r1 = 0.066f, section = 0.85f, endBone = "ребро1с", endAttach = 0.60f, layer = BodyLayer.Muscle, mirrorX = true },
+            new Bone { name = "грудная.м", socket = "Сердце", parent = "грудина", attach = 0.95f, length = 0.204f, dir = new Vector3(81.8f, 0f, -24.9f), r0 = 0.062f, r1 = 0.056f, section = 0.85f, endBone = "плечо", endAttach = 0.45f, layer = BodyLayer.Muscle, mirrorX = true },
+            new Bone { name = "горловая.м", socket = "шея", parent = "шея", attach = 0.15f, length = 0.397f, dir = new Vector3(7.9f, 0f, -4.0f), r0 = 0.070f, r1 = 0.052f, section = 0.85f, endBone = "ветвь", endAttach = 0.60f, layer = BodyLayer.Muscle },
+            new Bone { name = "грудиночелюстная.м", socket = "шея", parent = "грудина", attach = 0.90f, length = 0.369f, dir = new Vector3(-79.7f, 0f, -5.7f), r0 = 0.062f, r1 = 0.048f, section = 0.80f, endBone = "ветвь", endAttach = 0.80f, layer = BodyLayer.Muscle, mirrorX = true },
+            new Bone { name = "трицепс.м", socket = "Руки", parent = "лопатка", attach = 0.30f, length = 0.404f, dir = new Vector3(51.5f, 0f, 21.2f), r0 = 0.078f, r1 = 0.044f, section = 0.72f, blend = 0.035f, endBone = "предплечье", endAttach = 0.10f, layer = BodyLayer.Muscle, mirrorX = true },
+            new Bone { name = "плечеголовная.м", socket = "Руки", parent = "шея", attach = 0.35f, length = 0.463f, dir = new Vector3(116.5f, 0f, -10.7f), r0 = 0.050f, r1 = 0.058f, section = 0.70f, blend = 0.035f, endBone = "плечо", endAttach = 0.70f, layer = BodyLayer.Muscle, mirrorX = true },
+            new Bone { name = "ягодичная.м", socket = "Ноги", parent = "крестец", attach = 0.60f, length = 0.302f, dir = new Vector3(89.5f, 0f, -18.1f), r0 = 0.100f, r1 = 0.082f, section = 0.80f, blend = 0.035f, endBone = "бедро", endAttach = 0.12f, layer = BodyLayer.Muscle, mirrorX = true },
+            new Bone { name = "икроножная.м", socket = "Ноги", parent = "бедро", attach = 0.90f, length = 0.391f, dir = new Vector3(81.5f, 0f, 16.0f), r0 = 0.052f, r1 = 0.032f, section = 0.85f, blend = 0.035f, endBone = "плюсна", endAttach = 0.25f, layer = BodyLayer.Muscle, mirrorX = true },
+            new Bone { name = "жевательная.м", socket = "голова", parent = "скула", attach = 0.70f, length = 0.077f, dir = new Vector3(0.5f, 0f, 60.8f), r0 = 0.040f, r1 = 0.032f, section = 0.95f, endBone = "челюсть", endAttach = 0.25f, layer = BodyLayer.Muscle, mirrorX = true },
+            new Bone { name = "трапециевидная.м", socket = "хребет", parent = "шея", attach = 0.55f, length = 0.306f, dir = new Vector3(159.4f, 0f, -8.5f), r0 = 0.070f, r1 = 0.058f, section = 0.85f, endBone = "лопатка", endAttach = 0.30f, layer = BodyLayer.Muscle, mirrorX = true },
+            new Bone { name = "длиннейшая_гр.м", socket = "хребет", parent = "ребро5", attach = 0.12f, length = 0.316f, dir = new Vector3(91.8f, 0f, -1.5f), r0 = 0.076f, r1 = 0.070f, section = 1.00f, endBone = "ребро1", endAttach = 0.12f, layer = BodyLayer.Muscle, mirrorX = true },
+            new Bone { name = "ромбовидная.м", socket = "хребет", parent = "шея", attach = 0.30f, length = 0.243f, dir = new Vector3(164.1f, 0f, -7.9f), r0 = 0.062f, r1 = 0.052f, section = 0.80f, endBone = "лопатка", endAttach = 0.10f, layer = BodyLayer.Muscle, mirrorX = true },
+            new Bone { name = "широчайшая.м", socket = "хребет", parent = "поясница", attach = 0.85f, length = 0.458f, dir = new Vector3(25.5f, 0f, -7.5f), r0 = 0.078f, r1 = 0.062f, section = 0.70f, endBone = "лопатка", endAttach = 0.55f, layer = BodyLayer.Muscle, mirrorX = true },
+            new Bone { name = "зубчатая.м", socket = "Сердце", parent = "ребро3с", attach = 0.55f, length = 0.146f, dir = new Vector3(-117.1f, 0f, 8.5f), r0 = 0.070f, r1 = 0.056f, section = 0.70f, endBone = "лопатка", endAttach = 0.25f, layer = BodyLayer.Muscle, mirrorX = true },
+            new Bone { name = "пластыревидная.м", socket = "шея", parent = "грудной", attach = 0.95f, length = 0.438f, dir = new Vector3(3.4f, 0f, -0.0f), r0 = 0.078f, r1 = 0.062f, section = 0.90f, endBone = "коробка", endAttach = 0.20f, layer = BodyLayer.Muscle, mirrorX = true },
+            new Bone { name = "дельтовидная.м", socket = "Руки", parent = "лопатка", attach = 0.75f, length = 0.188f, dir = new Vector3(65.3f, 0f, 23.3f), r0 = 0.052f, r1 = 0.044f, section = 0.80f, blend = 0.035f, endBone = "плечо", endAttach = 0.55f, layer = BodyLayer.Muscle, mirrorX = true },
+            new Bone { name = "бицепс.м", socket = "Руки", parent = "лопатка", attach = 0.90f, length = 0.370f, dir = new Vector3(70.7f, 0f, 26.8f), r0 = 0.048f, r1 = 0.038f, section = 0.80f, blend = 0.035f, endBone = "предплечье", endAttach = 0.30f, layer = BodyLayer.Muscle, mirrorX = true },
+            new Bone { name = "сгибатели.м", socket = "Руки", parent = "предплечье", attach = 0.10f, length = 0.325f, dir = new Vector3(-0.2f, 0f, 0.0f), r0 = 0.044f, r1 = 0.028f, section = 0.85f, blend = 0.035f, endBone = "пясть", endAttach = 0.20f, layer = BodyLayer.Muscle, mirrorX = true },
+            new Bone { name = "двуглавая.м", socket = "Ноги", parent = "крестец", attach = 0.35f, length = 0.593f, dir = new Vector3(71.9f, 0f, -9.1f), r0 = 0.098f, r1 = 0.062f, section = 0.78f, blend = 0.035f, endBone = "голень", endAttach = 0.35f, layer = BodyLayer.Muscle, mirrorX = true },
+            new Bone { name = "четырёхглавая.м", socket = "Ноги", parent = "таз", attach = 0.75f, length = 0.367f, dir = new Vector3(-41.3f, 0f, 11.3f), r0 = 0.086f, r1 = 0.058f, section = 0.80f, blend = 0.035f, endBone = "голень", endAttach = 0.10f, layer = BodyLayer.Muscle, mirrorX = true },
+            new Bone { name = "полусухожильная.м", socket = "Ноги", parent = "крестец", attach = 0.15f, length = 0.630f, dir = new Vector3(72.9f, 0f, -8.6f), r0 = 0.082f, r1 = 0.054f, section = 0.72f, blend = 0.035f, endBone = "голень", endAttach = 0.50f, layer = BodyLayer.Muscle, mirrorX = true },
 
-            // ЖИВОТ: поясничные отростки. Короче рёбер и выше их низа — талия подтянута, как у бегуна
-            new Bone { name = "живот1", socket = "хребет", parent = "поясница", attach = 0.20f, length = 0.238f, dir = new Vector3(93.1f, 0f, -15.1f), r0 = 0.078f, r1 = 0.060f, section = 0.80f, mirrorX = true },
-            new Bone { name = "живот2", socket = "хребет", parent = "поясница", attach = 0.50f, length = 0.258f, dir = new Vector3(93.1f, 0f, -13.9f), r0 = 0.082f, r1 = 0.064f, section = 0.80f, mirrorX = true },
-            new Bone { name = "живот3", socket = "хребет", parent = "поясница", attach = 0.80f, length = 0.297f, dir = new Vector3(93.1f, 0f, -12.1f), r0 = 0.086f, r1 = 0.068f, section = 0.80f, mirrorX = true },
+            // ══ СЛОЙ 3: ПРИЗНАКИ ══ Мелкая форма поверх готового тела: уши, мочка, надбровье, объёмы черепа.
+            new Bone { name = "ухо.п", socket = "Чутьё", parent = "коробка", attach = 0.10f, length = 0.190f, dir = new Vector3(-61.0f, 0f, -29.0f), r0 = 0.046f, r1 = 0.030f, section = 1.00f, depth = 0.40f, layer = BodyLayer.Feature, mirrorX = true },
+            new Bone { name = "мочка.п", socket = "Чутьё", parent = "ростр", length = 0.025f, dir = new Vector3(27.2f, 0f, -0.0f), r0 = 0.030f, r1 = 0.024f, section = 1.10f, layer = BodyLayer.Feature },
+            new Bone { name = "височная.п", socket = "голова", origin = new Vector3(0.038f, 0.996f, 0.824f), length = 0.080f, dir = new Vector3(92.9f, 0f, -2.9f), r0 = 0.030f, r1 = 0.034f, section = 1.00f, layer = BodyLayer.Feature, mirrorX = true },
+            new Bone { name = "дуга.п", socket = "голова", origin = new Vector3(0.052f, 0.932f, 0.886f), length = 0.065f, dir = new Vector3(96.1f, 0f, -29.6f), r0 = 0.017f, r1 = 0.015f, section = 1.00f, depth = 0.50f, layer = BodyLayer.Feature, mirrorX = true },
+            new Bone { name = "лоб_площадка.п", socket = "голова", origin = new Vector3(0.000f, 1.002f, 0.928f), length = 0.053f, dir = new Vector3(98.7f, 0f, -60.2f), r0 = 0.026f, r1 = 0.022f, section = 1.00f, depth = 0.55f, layer = BodyLayer.Feature, mirrorX = true },
+            new Bone { name = "спинка_носа.п", socket = "голова", origin = new Vector3(0.000f, 0.982f, 0.985f), length = 0.159f, dir = new Vector3(99.4f, 0f, -0.0f), r0 = 0.026f, r1 = 0.019f, section = 1.40f, depth = 0.70f, layer = BodyLayer.Feature },
+            new Bone { name = "вибриссы.п", socket = "Чутьё", origin = new Vector3(0.032f, 0.934f, 1.058f), length = 0.071f, dir = new Vector3(98.1f, 0f, 4.9f), r0 = 0.030f, r1 = 0.024f, section = 1.00f, layer = BodyLayer.Feature, mirrorX = true },
+            new Bone { name = "губа_верх.п", socket = "Пасть", origin = new Vector3(0.030f, 0.916f, 1.040f), length = 0.087f, dir = new Vector3(94.0f, 0f, 5.3f), r0 = 0.016f, r1 = 0.013f, section = 1.10f, depth = 0.70f, layer = BodyLayer.Feature, mirrorX = true },
+            new Bone { name = "подбородок_м.п", socket = "Пасть", origin = new Vector3(0.016f, 0.904f, 1.098f), length = 0.041f, dir = new Vector3(84.0f, 0f, 22.7f), r0 = 0.018f, r1 = 0.015f, section = 1.00f, layer = BodyLayer.Feature },
+            new Bone { name = "затылок_бугор.п", socket = "голова", origin = new Vector3(0.000f, 0.996f, 0.788f), length = 0.047f, dir = new Vector3(-143.6f, 0f, -0.0f), r0 = 0.045f, r1 = 0.040f, section = 1.00f, layer = BodyLayer.Feature },
+            new Bone { name = "надбровье.п", socket = "голова", parent = "коробка", attach = 0.80f, length = 0.060f, dir = new Vector3(-44.9f, 0f, -63.7f), r0 = 0.032f, r1 = 0.028f, section = 1.00f, depth = 0.75f, layer = BodyLayer.Feature, mirrorX = true },
 
-            // ПРЕДНАГРУДЬЕ И ГОРЛО: без них профиль прыгал с 0.60 на 0.99 за десять сантиметров — это и есть
-            // глазами «грудь отваливается», «шея приставлена»
-            new Bone { name = "грудина", socket = "Сердце", parent = "грудной", attach = 0.95f, length = 0.383f, dir = new Vector3(79.9f, 0f, 0f), r0 = 0.085f, r1 = 0.062f, section = 0.85f },
-            new Bone { name = "подгрудок", socket = "шея", parent = "шея", attach = 0.10f, length = 0.333f, dir = new Vector3(38.9f, 0f, 0f), r0 = 0.110f, r1 = 0.070f, section = 0.85f },
-
-            // ── ПЕРЕДНЯЯ. ДЛИНЫ ПО ОСТЕОМЕТРИИ (Canis lupus, доли холки): плечевая и лучевая по 0.26,
-            // лопатка 0.26, бедренная 0.28, большеберцовая 0.29. Прежние числа брались из старых мест,
-            // настроенных на глаз, и врали СИСТЕМНО: проксимальные кости были короче нормы на треть,
-            // лопатка — длиннее на треть.
-            //     ЛОПАТКА ЛЕЖИТ НА РЁБРАХ, а не растёт из позвонка. Иначе она обязана быть длиннее нормы
-            // просто чтобы дотянуться от оси до плечевого сустава — форма подстраивалась под иерархию
-            new Bone { name = "лопатка", socket = "Руки", parent = "ребро4", attach = 0.14f, length = 0.333f, dir = new Vector3(-33.5f, 0f, -3.8f), r0 = 0.105f, r1 = 0.080f, section = 0.65f, mirrorX = true },
-            new Bone { name = "плечо", socket = "Руки", parent = "лопатка", length = 0.304f, dir = new Vector3(80.1f, 0f, 8.4f), r0 = 0.085f, r1 = 0.055f, section = 0.80f, mirrorX = true },
-            new Bone { name = "предплечье", socket = "Руки", parent = "плечо", length = 0.304f, dir = new Vector3(-58.3f, 0f, 9.9f), r0 = 0.055f, r1 = 0.030f, section = 0.85f, mirrorX = true },
-            new Bone { name = "пясть", socket = "Руки", parent = "предплечье", length = 0.164f, dir = new Vector3(-10.4f, 0f, 1.2f), r0 = 0.030f, r1 = 0.026f, section = 0.85f, mirrorX = true },
-            new Bone { name = "лапа", socket = "Руки", parent = "пясть", length = 0.067f, dir = new Vector3(-13.9f, 0f, 1.4f), r0 = 0.026f, r1 = 0.032f, section = 1.15f, mirrorX = true },
-
-            // ── ЧЕРЕП ТЕМ ЖЕ МЕТОДОМ. Ни одного приёма, которого не было у ноги: те же точки, длины, углы —
-            // это и был главный вопрос прототипа. Затылочный сустав — ОДНА точка: конец шеи и начало черепа
-            // (сперва я задал их порознь, и метод показал 5.6 см расхождения числом, а не на скрине).
-            // Кость-в-кость череп 0.316 холки при норме 0.31 — крупным он кажется из-за мяса.
-            // Челюсть принадлежит слоту «Пасть», поэтому чужая пасть перестроит её вместе с прикусом
-            new Bone { name = "коробка", socket = "голова", parent = "шея", length = 0.160f, dir = new Vector3(-2.8f, 0f, 0f), r0 = 0.082f, r1 = 0.076f, section = 1.15f },
-            new Bone { name = "ростр", socket = "голова", parent = "коробка", length = 0.210f, dir = new Vector3(16.0f, 0f, 0f), r0 = 0.070f, r1 = 0.048f, section = 0.95f },
-            new Bone { name = "гребень", socket = "голова", parent = "коробка", attach = 0.05f, length = 0.069f, dir = new Vector3(-85.2f, 0f, 0f), r0 = 0.050f, r1 = 0.036f, section = 0.90f },
-            new Bone { name = "скула", socket = "голова", parent = "коробка", length = 0.127f, dir = new Vector3(85.7f, 0f, -55.9f), r0 = 0.030f, r1 = 0.025f, section = 1.00f, mirrorX = true },
-            new Bone { name = "ветвь", socket = "Пасть", parent = "коробка", attach = 0.25f, length = 0.130f, dir = new Vector3(77.2f, 0f, -18.9f), r0 = 0.034f, r1 = 0.028f, section = 0.85f, mirrorX = true },
-            new Bone { name = "челюсть", socket = "Пасть", parent = "ветвь", length = 0.268f, dir = new Vector3(-82.1f, 0f, 7.7f), r0 = 0.032f, r1 = 0.024f, section = 0.85f, mirrorX = true },
-
-            // ── ЗАДНЯЯ: колено уходит ВПЕРЁД под живот (Z -0.20), скакательный назад (-0.40) — настоящий
-            // зигзаг, пружина бегуна. Прежде колено стояло почти под тазом, и нога читалась ходулей
-            new Bone { name = "таз", socket = "Ноги", parent = "крестец", attach = 0.55f, length = 0.300f, dir = new Vector3(93.4f, 0f, -18.3f), r0 = 0.095f, r1 = 0.080f, section = 0.70f, mirrorX = true },
-            new Bone { name = "бедро", socket = "Ноги", parent = "таз", length = 0.328f, dir = new Vector3(-50.0f, 0f, 12.0f), r0 = 0.092f, r1 = 0.058f, section = 0.80f, mirrorX = true },
-            new Bone { name = "голень", socket = "Ноги", parent = "бедро", length = 0.318f, dir = new Vector3(87.0f, 0f, 13.9f), r0 = 0.060f, r1 = 0.032f, section = 0.85f, mirrorX = true },
-            new Bone { name = "плюсна", socket = "Ноги", parent = "голень", length = 0.215f, dir = new Vector3(-49.3f, 0f, -0.5f), r0 = 0.032f, r1 = 0.026f, section = 0.85f, mirrorX = true },
-            new Bone { name = "лапа_зад", socket = "Ноги", parent = "плюсна", length = 0.054f, dir = new Vector3(-28.3f, 0f, -0.3f), r0 = 0.026f, r1 = 0.032f, section = 1.15f, mirrorX = true },
+            // ══ СЛОЙ 4: ВЫЧИТАНИЕ ══ Рот и ноздри: щель можно только вырезать.
+            //     ГЛАЗНИЦУ ПРИШЛОСЬ УБРАТЬ. Глаз был поставлен по КОСТНОЙ орбите (x 0.058), а поверх неё
+            // у зверя 74 мм мяса — щеки и виска. Вырез прорезал дыру до самого яблока, и получался чёрный
+            // провал вместо глаза. Теперь глаз сидит на поверхности и утоплен ровно на 10 мм
+            new Bone { name = "рот.р", socket = "Пасть", parent = "челюсть", attach = 0.22f, length = 0.232f, dir = new Vector3(-14.1f, 0f, -1.2f), r0 = 0.015f, r1 = 0.012f, section = 1.00f, depth = 0.40f, endBone = "ростр", endAttach = 0.94f, layer = BodyLayer.Cut, mirrorX = true },
+            new Bone { name = "ноздря.р", socket = "Чутьё", parent = "ростр", attach = 0.96f, length = 0.021f, dir = new Vector3(17.8f, 0f, -0.0f), r0 = 0.014f, r1 = 0.011f, section = 1.00f, endBone = "мочка.п", endAttach = 0.55f, layer = BodyLayer.Cut, mirrorX = true },
         };
         // ЧТО ТЕПЕРЬ РИСУЕТ СКЕЛЕТ. Места остаются в данных: их имена — это `Organ.slot` (механика жива) и
         // АДРЕС С КАЛИБРОМ для детей (глаза, уши, нос и зубной ряд по-прежнему считаются от «головы»).
@@ -331,7 +378,24 @@ public static class SpeciesBootstrap
         //     «Пасти» здесь НЕТ, хотя челюсть принадлежит её модулю: подави мы место — исчезли бы зубы,
         // и пропажу было бы видно только глазом на скриншоте. Принадлежность кости слоту и подавление
         // места — разные вещи, потому и живут порознь
-        wolf.skeletonHides = new[] { "хребет", "Шкура", "шея", "Сердце", "Руки", "Ноги", "голова" };
+        // Уши, нос и хвост тоже ушли к костям: местами-шарами они не участвовали в поле и потому торчали
+        // отдельными предметами на гладком теле. Цена перехода названа честно — привитый чужой хвост
+        // (змеиный) пока не покажется, как и чужие уши: у ОРГАНОВ костей ещё нет
+        wolf.skeletonHides = new[] { "хребет", "Шкура", "шея", "Сердце", "Руки", "Ноги", "голова", "уши", "нос", "Хвост" };
+        // ШКУРА ПО ПОЛЮ — два числа на всего зверя. Слияние 0.09 выбрано ЗАМЕРОМ, а не на глаз: волнистость
+        // бока (сумма скачков ширины вдоль тела) при трубах встык 0.616, при 0.05 — 0.164, при 0.09 — 0.040.
+        // Дальше поднимать нельзя: тело начнёт оплывать, а перехват талии (0.39 против 0.62 в груди) исчезнет
+        // ШАГ СЕТКИ 0.014 вместо 0.02: рот и ноздри — детали шириной около сантиметра, а щель УЖЕ ячейки
+        // полигонизатор просто не видит. Цена разовая: меши кэшируются по виду
+        wolf.skinCell = 0.014f;
+        wolf.skinBlend = 0.09f;
+        // ШУБА. Ость на спине и загривке у волка 60–80 мм при росте 0.78 — в нашем масштабе это ~0.045
+        // равномерного слоя поверх мяса. Именно её отсутствия не хватало силуэту: по обхвату груди мы
+        // даже избыточны, просто масса лежала не там, где её ищет глаз. Слой задаётся сдвигом
+        // изоповерхности, поэтому ложится на ВСЁ тело сразу и ничего не деформирует
+        // ШУБА ПОКА СНЯТА (0): сперва выверяем чистый скелет. Слой работает и включается одним числом,
+        // но поверх недоделанной анатомии он просто заливает силуэт — что и вышло на прошлом прогоне
+        wolf.skinFur = 0f;
         EditorUtility.SetDirty(wolf);
 
         // ── Змея: соло-засадный вид (NPC-шасси; органы в мутагенной шкале, природная особь на Э~0.5) ──
@@ -641,7 +705,22 @@ public static class SpeciesBootstrap
         hog.sockets = new[]
         {
             new BodySocket { name = "хребет", localPos = new Vector3(0.00f, 0.50f, -0.05f), baseSize = new Vector3(0.76f, 0.60f, 1.05f) }, // НЕСУЩИЙ ЦЕНТР: форму даёт орган «Хребет» (chassisOnly), поэтому место больше не служебное
-            new BodySocket { name = "голова", parent = "хребет", attach = 1.000f, attachOffset = new Vector3(0.000f, -0.167f, 0.043f), baseSize = new Vector3(0.210f, 0.224f, 0.320f), sizeRel = new Vector3(0.276f, 0.373f, 0.305f), parts = new[] {
+            // ШЕЯ У ЕЖА ЕСТЬ. Её отсутствие было не анатомией, а недоделкой: ежом занимались мало,
+            // и голова садилась прямо на хребет. У настоящего ежа шея короткая и утоплена в иглы,
+            // но она есть — и без неё голова не может ни опускаться к земле (кормёжка), ни
+            // прятаться при сворачивании.
+            //     ДЛИНА 0.20 ПРИ ХРЕБТЕ 1.05 — 19%, против 29% у волка и 53% у человека: короткая,
+            // как и положено. Но НЕ КОРОЧЕ: длинная ось места выбирается по максимальной стороне, и
+            // при Z меньше 0.18 ось молча ушла бы в Y, развернув всю ветку головы вверх. Запас 10.8%
+            //     СДВИГ НАЗАД (z −0.052) — чтобы голова осталась там же, где стояла: вставка звена не
+            // должна удлинять зверя. Число не угадано, а выведено из замера карты: центр места =
+            // конец родителя + attachOffset × калибр родителя. Конец хребта 0.475, нужен конец шеи
+            // 0.520 (там стояла голова) → центр шеи 0.420 → (0.420−0.475)/1.05 = −0.052
+            new BodySocket { name = "шея", parent = "хребет", attach = 1.000f, attachOffset = new Vector3(0.000f, -0.167f, -0.052f), baseSize = new Vector3(0.170f, 0.180f, 0.200f), sizeRel = new Vector3(0.224f, 0.300f, 0.190f), parts = new[] {
+                new OrganPart { scale = new Vector3(1.00f, 1.15f, 0.80f), offset = new Vector3(0.00f, 0.00f, 0.00f), euler = new Vector3(90f, 0f, 0f), shape = PartShape.Capsule }, // шея одной капсулой вдоль оси
+                new OrganPart { scale = new Vector3(1.15f, 0.50f, 0.70f), offset = new Vector3(0.00f, 0.16f, -0.32f), shape = PartShape.Sphere }, // ЗАГРИВОК уходит под иглы: у ежа шея не читается снаружи, она скрыта покровом
+            } }, // короткая шея: несёт голову, утоплена в иглы
+            new BodySocket { name = "голова", parent = "шея", attach = 1.000f, attachOffset = new Vector3(0.000f, 0.000f, 0.000f), baseSize = new Vector3(0.210f, 0.224f, 0.320f), sizeRel = new Vector3(1.235f, 1.244f, 1.600f), parts = new[] { // ДОЛЯ ПЕРЕСЧИТАНА ПОД ШЕЮ (была 0.276/0.373/0.305 от хребта): sizeRel считается от РОДИТЕЛЯ, и при пересадке места на другого родителя старая доля схлопывает деталь — голова ужалась вчетверо вместе с пастью, носом, глазами и ушами
                 new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), offset = new Vector3(0.00f, 0.00f, 0.00f), shape = PartShape.Sphere }, // череп
             } },
             new BodySocket { name = "нос", parent = "Пасть", attach = 0.500f, attachOffset = new Vector3(0.00f, -0.10f, 0.42f), sizeRel = new Vector3(0.24f, 0.22f, 0.18f), formFrom = "Чутьё", formRole = PartRole.Nose }, // АДРЕС НОСА: пятак рисует одноимённый орган, а не пасть

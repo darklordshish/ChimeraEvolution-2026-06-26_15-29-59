@@ -668,6 +668,39 @@ MonoBehaviour:
     formRole: 0
     linkLength: 0
     linkTaper: 0
+  - name: "\u0448\u0435\u044F"
+    localPos: {x: 0, y: 0, z: 0}
+    baseSize: {x: 0.17, y: 0.18, z: 0.2}
+    baseEuler: {x: 0, y: 0, z: 0}
+    mirrorX: 0
+    codeDriven: 0
+    solid: 0
+    inner: 0
+    graft: 0
+    parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
+    attach: 1
+    attachOffset: {x: 0, y: -0.167, z: -0.052}
+    parts:
+    - scale: {x: 1, y: 1.15, z: 0.8}
+      offset: {x: 0, y: 0, z: 0}
+      euler: {x: 90, y: 0, z: 0}
+      shape: 2
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 1.15, y: 0.5, z: 0.7}
+      offset: {x: 0, y: 0.16, z: -0.32}
+      euler: {x: 0, y: 0, z: 0}
+      shape: 1
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    chain: 0
+    chainTaper: 0
+    linkDiameter: 0
+    sizeRel: {x: 0.224, y: 0.3, z: 0.19}
+    formFrom: 
+    formRole: 0
+    linkLength: 0
+    linkTaper: 0
   - name: "\u0433\u043E\u043B\u043E\u0432\u0430"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.21, y: 0.224, z: 0.32}
@@ -677,9 +710,9 @@ MonoBehaviour:
     solid: 0
     inner: 0
     graft: 0
-    parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
+    parent: "\u0448\u0435\u044F"
     attach: 1
-    attachOffset: {x: 0, y: -0.167, z: 0.043}
+    attachOffset: {x: 0, y: 0, z: 0}
     parts:
     - scale: {x: 1, y: 1, z: 1}
       offset: {x: 0, y: 0, z: 0}
@@ -690,7 +723,7 @@ MonoBehaviour:
     chain: 0
     chainTaper: 0
     linkDiameter: 0
-    sizeRel: {x: 0.276, y: 0.373, z: 0.305}
+    sizeRel: {x: 1.235, y: 1.244, z: 1.6}
     formFrom: 
     formRole: 0
     linkLength: 0
@@ -1021,3 +1054,7 @@ MonoBehaviour:
     linkTaper: 0
   bones: []
   skeletonHides: []
+  skinCell: 0.02
+  skinBlend: 0.05
+  skinFur: 0
+  buildLayers: 0

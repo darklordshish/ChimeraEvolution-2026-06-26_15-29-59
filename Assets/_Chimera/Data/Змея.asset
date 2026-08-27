@@ -893,3 +893,7 @@ MonoBehaviour:
     linkTaper: 0
   bones: []
   skeletonHides: []
+  skinCell: 0.02
+  skinBlend: 0.05
+  skinFur: 0
+  buildLayers: 0
