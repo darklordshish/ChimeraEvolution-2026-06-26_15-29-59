@@ -648,7 +648,7 @@ MonoBehaviour:
   baseStaminaRegen: 8
   sockets:
   - name: "\u0445\u0440\u0435\u0431\u0435\u0442"
-    localPos: {x: 0, y: 0.5, z: -0.05}
+    localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.76, y: 0.6, z: 1.05}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
@@ -656,9 +656,9 @@ MonoBehaviour:
     solid: 0
     inner: 0
     graft: 0
-    parent: 
-    attach: 1
-    attachOffset: {x: 0, y: 0, z: 0}
+    parent: "\u0448\u0435\u044F"
+    attach: 0
+    attachOffset: {x: 0, y: 0.556, z: -1.85}
     parts: []
     chain: 0
     chainTaper: 0
@@ -677,9 +677,9 @@ MonoBehaviour:
     solid: 0
     inner: 0
     graft: 0
-    parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
-    attach: 1
-    attachOffset: {x: 0, y: -0.167, z: -0.052}
+    parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    attach: 0
+    attachOffset: {x: 0, y: 0, z: 0.187}
     parts:
     - scale: {x: 1, y: 1.15, z: 0.8}
       offset: {x: 0, y: 0, z: 0}
@@ -696,13 +696,13 @@ MonoBehaviour:
     chain: 0
     chainTaper: 0
     linkDiameter: 0
-    sizeRel: {x: 0.224, y: 0.3, z: 0.19}
+    sizeRel: {x: 0.81, y: 0.804, z: 0.625}
     formFrom: 
     formRole: 0
     linkLength: 0
     linkTaper: 0
   - name: "\u0433\u043E\u043B\u043E\u0432\u0430"
-    localPos: {x: 0, y: 0, z: 0}
+    localPos: {x: 0, y: 0.4, z: 0.52}
     baseSize: {x: 0.21, y: 0.224, z: 0.32}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
@@ -710,7 +710,7 @@ MonoBehaviour:
     solid: 0
     inner: 0
     graft: 0
-    parent: "\u0448\u0435\u044F"
+    parent: 
     attach: 1
     attachOffset: {x: 0, y: 0, z: 0}
     parts:
@@ -723,7 +723,7 @@ MonoBehaviour:
     chain: 0
     chainTaper: 0
     linkDiameter: 0
-    sizeRel: {x: 1.235, y: 1.244, z: 1.6}
+    sizeRel: {x: 0, y: 0, z: 0}
     formFrom: 
     formRole: 0
     linkLength: 0
