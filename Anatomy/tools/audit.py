@@ -38,6 +38,12 @@ def vec(s):
     return tuple(float(x) for x in m[:3]) if len(m) >= 3 else (0.0, 0.0, 0.0)
 
 
+# ── ОСЬ ТЕЛА (спека 2026-08-27 «Единый план тела») ────────────────────────────────────────────────
+# Участок позвоночника — не новый слот, а отдел оси, у которого есть слот-владелец из BodySlots.
+# Перечислены и будущие имена: миграция идёт по видам, и детектор обязан узнавать уже развёрнутые
+AXIS = ('голова', 'шея', 'хребет', 'грудной', 'поясничный', 'крестцовый', 'Тело', 'Хвост')
+
+
 def load_dictionary():
     t = open(SLOTS_CS, encoding='utf-8').read()
     slots = set(re.findall(r'public const string \w+ = "([^"]+)"', t))
@@ -237,6 +243,24 @@ def audit(path, slots, places):
         if c > 1:
             bad(n, 'место объявлено %d раза — имя это адрес' % c)
 
+    # ── ЕДИНЫЙ ПЛАН ТЕЛА: не замечания, а СТАТУС МИГРАЦИИ. Четыре вида ещё растут от хребта, и
+    # печатать это ошибкой значит держать отчёт вечно красным — а красное, которое горит всегда,
+    # перестают читать. Здесь видно, что сделано, а что впереди
+    spec = []
+    root = roots[0] if len(roots) == 1 else None
+    spec.append(('И1 корень = голова', root == 'голова', 'корень «%s»' % (root or '—')))
+
+    axis = [x for x in sockets if x['_name'] in AXIS]
+    branchy = []
+    for a in axis:
+        kids = [k for k in axis if unesc(k.get('parent')) == a['_name']]
+        if len(kids) > 1:
+            branchy.append('%s → %s' % (a['_name'], ', '.join(k['_name'] for k in kids)))
+    spec.append(('И2 ось линейна', not branchy, '; '.join(branchy) if branchy else 'ветвлений нет'))
+
+    off = [a['_name'] for a in axis if a['_name'] not in slots and a['_name'] not in places]
+    spec.append(('И3 участки из словаря', not off, ', '.join(off) if off else 'все известны'))
+
     bones = len(re.findall(r'^  - name:', open(path, encoding='utf-8').read(), re.M))
     print('\n== %s ==  органов %d · мест %d · корень: %s'
           % (name, len(organs), len(sockets), ', '.join(roots) or '—'))
@@ -244,17 +268,27 @@ def audit(path, slots, places):
         print('   чисто')
     for w, t in issues:
         print('   %-16s %s' % (w[:16], t))
-    return len(issues), len(sockets)
+    print('   единый план: ' + ' · '.join(
+        ('%s %s' % ('OK' if ok else '--', name)) for name, ok, _ in spec))
+    for name, ok, why in spec:
+        if not ok:
+            print('      %-22s %s' % (name, why))
+    return len(issues), all(ok for _, ok, _ in spec)
 
 
 def main():
     slots, places = load_dictionary()
     print('словарь: %d слотов, %d телесных мест' % (len(slots), len(places)))
-    total = 0
+    total, migrated, seen = 0, 0, 0
     for p in sorted(glob.glob(os.path.join(DATA, '*.asset'))):
-        n, _ = audit(p, slots, places)
+        n, ok = audit(p, slots, places)
         total += n
+        seen += 1
+        migrated += 1 if ok else 0
     print('\nВСЕГО ЗАМЕЧАНИЙ: %d' % total)
+    # ПРОГРЕСС МИГРАЦИИ отдельной строкой: «сделано» на единый план тела должно быть числом, а не
+    # ощущением. Пока 1 из 5 — и это змея, которая была «исключением», а оказалась образцом
+    print('ЕДИНЫЙ ПЛАН ТЕЛА (спека 2026-08-27): %d из %d видов' % (migrated, seen))
     return 0
 
 
