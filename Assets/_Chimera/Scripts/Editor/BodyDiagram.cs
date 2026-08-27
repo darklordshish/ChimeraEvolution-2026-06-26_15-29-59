@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -46,8 +46,16 @@ public static class BodyDiagram
         index.AppendLine("Карта сокет-плана: кто к кому крепится, где цепи звеньев, где закрытые места.");
         index.AppendLine("**Файлы выгружаются командой `Chimera → Выгрузить схемы тел` — не править руками.**");
         index.AppendLine();
-        index.AppendLine("| вид | мест | корней | цепей | графтов |");
-        index.AppendLine("|---|---|---|---|---|");
+        // ПОЯСНЕНИЕ ЖИВЁТ В ГЕНЕРАТОРЕ, А НЕ В ФАЙЛЕ: приписка, сделанная руками в README, живёт
+        // до первой же выгрузки. Ровно так и вышло — оговорку про скелет пришлось писать дважды
+        index.AppendLine("Дерево отвечает на вопрос «кто к кому крепится и с каким калибром». На вопрос");
+        index.AppendLine("«что рисуется» отвечает пометка **(форму даёт СКЕЛЕТ)**: такое место держит");
+        index.AppendLine("механику слота и остаётся адресом для детей, но собственной формы не строит —");
+        index.AppendLine("её даёт кость (`SpeciesSO.skeletonHides`). Сам скелет, если он у вида есть,");
+        index.AppendLine("выведен отдельным разделом в файле вида.");
+        index.AppendLine();
+        index.AppendLine("| вид | мест | корней | цепей | графтов | костей |");
+        index.AppendLine("|---|---|---|---|---|---|");
 
         foreach (var sp in species)
         {
@@ -55,7 +63,8 @@ public static class BodyDiagram
             File.WriteAllText(Path.Combine(dir, sp.speciesName + ".md"), Build(sp, live), new UTF8Encoding(false));
             index.AppendLine($"| [{sp.speciesName}]({sp.speciesName}.md) | {live.Count} " +
                              $"| {live.Count(s => string.IsNullOrEmpty(s.parent))} " +
-                             $"| {live.Count(s => s.chain > 1)} | {live.Count(s => s.graft)} |");
+                             $"| {live.Count(s => s.chain > 1)} | {live.Count(s => s.graft)} " +
+                             $"| {(sp.bones != null ? sp.bones.Length : 0)} |");
         }
 
         File.WriteAllText(Path.Combine(dir, "README.md"), index.ToString(), new UTF8Encoding(false));
@@ -63,8 +72,14 @@ public static class BodyDiagram
         Debug.Log($"Схемы тел: выгружено {species.Count} шт. → {OutDir}/");
     }
 
+    // МЕСТА, ЧЬЮ ФОРМУ СТРОИТ СКЕЛЕТ. Без этой пометки схема отвечает на вопрос «кто к кому
+    // крепится», но молчит о том, что рисуется: у волка десять мест из пятнадцати своей формы больше
+    // не строят, её даёт кость. Дерево при этом выглядит прежним — и читатель делает неверный вывод
+    static HashSet<string> hides = new HashSet<string>();
+
     static string Build(SpeciesSO sp, List<BodySocket> live)
     {
+        hides = new HashSet<string>(sp.skeletonHides ?? System.Array.Empty<string>());
         var byName = live.ToDictionary(s => s.name, s => s);
         var organs = new Dictionary<string, string>();
         if (sp.organs != null)
@@ -91,6 +106,26 @@ public static class BodyDiagram
             t.AppendLine($"(!) {s.name} — родитель «{s.parent}» НЕ НАЙДЕН, место встанет в корень");
         t.AppendLine("```");
         t.AppendLine();
+
+        // ── СКЕЛЕТ. Печатается только у видов, где он есть: у остальных массив пуст, и лишний
+        // пустой раздел в отчёте — тот же шум, что валидатор, кричащий на исправное
+        if (sp.bones != null && sp.bones.Length > 0)
+        {
+            t.AppendLine("## Скелет");
+            t.AppendLine();
+            t.AppendLine($"Костей: **{sp.bones.Length}** — " +
+                         $"скелет {sp.bones.Count(b => b.layer == BodyLayer.Skeleton)} · " +
+                         $"мышцы {sp.bones.Count(b => b.layer == BodyLayer.Muscle)} · " +
+                         $"признаки {sp.bones.Count(b => b.layer == BodyLayer.Feature)} · " +
+                         $"резы {sp.bones.Count(b => b.layer == BodyLayer.Cut)}. " +
+                         "Оболочку строит `BoneMesher` полем, один меш на слот.");
+            t.AppendLine();
+            t.AppendLine("```text");
+            foreach (var b in sp.bones.Where(b => b != null && string.IsNullOrEmpty(b.parent)))
+                BoneTree(t, b, sp.bones, "", true);
+            t.AppendLine("```");
+            t.AppendLine();
+        }
 
         t.AppendLine("```mermaid");
         t.AppendLine("flowchart TD");
@@ -179,6 +214,7 @@ public static class BodyDiagram
     {
         if (depth > 16) { t.AppendLine(pad + "└─ (!) ЦИКЛ В ГРАФЕ — обход оборван"); return; } // Unity не должна виснуть на кривых данных
         string mark = s.inner ? " (внутр.)" : s.graft ? " (графт)" : "";
+        if (hides.Contains(s.name)) mark += " (форму даёт СКЕЛЕТ)";
         if (s.chain > 1) mark += $" ×{s.chain} звен.";
         if (s.mirrorX) mark += " (пара)";
         string at = string.IsNullOrEmpty(s.parent) ? "" : $"  attach {s.attach:0.##}";
@@ -191,6 +227,26 @@ public static class BodyDiagram
         string childPad = depth == 0 ? "" : pad + (last ? "   " : "│  ");
         for (int i = 0; i < kids.Count; i++)
             Tree(t, kids[i], live, byName, childPad, i == kids.Count - 1, depth + 1);
+    }
+
+    /// <summary>Дерево костей: та же ветка-отступами, что у мест. Слой и слот — в скобках, потому
+    /// что именно они отвечают на вопрос «чья это кость и когда она появляется при сборке».</summary>
+    static void BoneTree(StringBuilder t, Bone b, Bone[] all, string pad, bool last, int depth = 0)
+    {
+        if (depth > 24) { t.AppendLine(pad + "└─ (!) ЦИКЛ В СКЕЛЕТЕ — обход оборван"); return; }
+        string layer = b.layer == BodyLayer.Skeleton ? "кость"
+                     : b.layer == BodyLayer.Muscle ? "мышца"
+                     : b.layer == BodyLayer.Feature ? "признак" : "рез";
+        string slot = string.IsNullOrEmpty(b.socket) ? "" : " · " + b.socket;
+        string pair = b.mirrorX ? " · пара" : "";
+        string endAt = string.IsNullOrEmpty(b.endBone) ? "" : $" → {b.endBone}";
+        t.AppendLine($"{pad}{(depth == 0 ? "" : last ? "└─ " : "├─ ")}{b.name}  ({layer}{slot}{pair})" +
+                     $"  {b.length:0.###} м{endAt}");
+
+        var kids = all.Where(k => k != null && k.parent == b.name).ToList();
+        string childPad = depth == 0 ? "" : pad + (last ? "   " : "│  ");
+        for (int i = 0; i < kids.Count; i++)
+            BoneTree(t, kids[i], all, childPad, i == kids.Count - 1, depth + 1);
     }
 
     static void Cls(StringBuilder t, string cls, IEnumerable<BodySocket> set, Dictionary<string, string> id)
