@@ -685,17 +685,17 @@ MonoBehaviour:
   baseStaminaRegen: 5
   sockets:
   - name: "\u0445\u0440\u0435\u0431\u0435\u0442"
-    localPos: {x: 0, y: 1.93, z: 0}
+    localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.521, y: 0.791, z: 2.284}
-    baseEuler: {x: 0, y: 0, z: 0}
+    baseEuler: {x: 38, y: 0, z: 0}
     mirrorX: 0
     codeDriven: 0
     solid: 0
     inner: 0
     graft: 0
-    parent: 
-    attach: 1
-    attachOffset: {x: 0, y: 0, z: 0}
+    parent: "\u0448\u0435\u044F"
+    attach: 0
+    attachOffset: {x: 0, y: 0.922, z: -0.909}
     parts: []
     chain: 0
     chainTaper: 0
@@ -727,17 +727,17 @@ MonoBehaviour:
     linkLength: 0
     linkTaper: 0
   - name: "\u0433\u043E\u043B\u043E\u0432\u0430"
-    localPos: {x: 0, y: 0, z: 0}
+    localPos: {x: 0, y: 2.379, z: 1.474}
     baseSize: {x: 0.284, y: 0.442, z: 0.711}
-    baseEuler: {x: 40, y: 0, z: 0}
+    baseEuler: {x: 2, y: 0, z: 0}
     mirrorX: 0
     codeDriven: 0
     solid: 0
     inner: 0
     graft: 0
-    parent: "\u0448\u0435\u044F"
+    parent: 
     attach: 1
-    attachOffset: {x: 0, y: -0.066, z: 0.148}
+    attachOffset: {x: 0, y: 0, z: 0}
     parts:
     - scale: {x: 1, y: 0.64, z: 0.34}
       offset: {x: 0, y: 0.14, z: -0.33}
@@ -772,7 +772,7 @@ MonoBehaviour:
     chain: 0
     chainTaper: 0
     linkDiameter: 0
-    sizeRel: {x: 0.677, y: 0.789, z: 1.018}
+    sizeRel: {x: 0, y: 0, z: 0}
     formFrom: 
     formRole: 0
     linkLength: 0
@@ -855,15 +855,15 @@ MonoBehaviour:
   - name: "\u0448\u0435\u044F"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.42, y: 0.56, z: 0.7}
-    baseEuler: {x: -38, y: 0, z: 0}
+    baseEuler: {x: -40, y: 0, z: 0}
     mirrorX: 0
     codeDriven: 0
     solid: 0
     inner: 0
     graft: 0
-    parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
-    attach: 1
-    attachOffset: {x: 0, y: 0.252, z: -0.021}
+    parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    attach: 0
+    attachOffset: {x: 0, y: -0.595, z: -0.021}
     parts:
     - scale: {x: 0.94, y: 1.2, z: 0.77}
       offset: {x: 0, y: 0, z: 0}
@@ -880,7 +880,7 @@ MonoBehaviour:
     chain: 0
     chainTaper: 0
     linkDiameter: 0
-    sizeRel: {x: 0.806, y: 0.708, z: 0.306}
+    sizeRel: {x: 1.477, y: 1.267, z: 0.982}
     formFrom: 
     formRole: 0
     linkLength: 0
