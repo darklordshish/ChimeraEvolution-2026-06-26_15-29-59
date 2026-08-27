@@ -1,0 +1,220 @@
+кость       родитель     начало x,y,z          конец x,y,z           сегм  шаг/диам
+крестец     (корень)    ( 0.000, 1.003,-0.560) ( 0.000, 1.020,-0.380)   2  0.58
+поясница    крестец     ( 0.000, 1.020,-0.380) ( 0.000, 1.048, 0.020)   5  0.49
+грудной     поясница    ( 0.000, 1.048, 0.020) ( 0.000, 1.030, 0.420)   5  0.47
+шея         грудной     ( 0.000, 1.030, 0.420) ( 0.000, 1.245, 0.800)   3  0.63
+ребро1      грудной     ( 0.000, 1.047, 0.040) ( 0.062, 0.960, 0.040)   2  0.46
+ребро1с     ребро1      ( 0.062, 0.960, 0.040) ( 0.082, 0.820, 0.040)   3  0.47
+ребро1н     ребро1с     ( 0.082, 0.820, 0.040) ( 0.038, 0.761, 0.040)   2  0.46
+ребро2      грудной     ( 0.000, 1.044, 0.116) ( 0.062, 0.960, 0.116)   2  0.41
+ребро2с     ребро2      ( 0.062, 0.960, 0.116) ( 0.082, 0.820, 0.116)   2  0.64
+ребро2н     ребро2с     ( 0.082, 0.820, 0.116) ( 0.038, 0.715, 0.116)   2  0.65
+ребро3      грудной     ( 0.000, 1.040, 0.196) ( 0.062, 0.960, 0.196)   2  0.38
+ребро3с     ребро3      ( 0.062, 0.960, 0.196) ( 0.082, 0.821, 0.196)   2  0.62
+ребро3н     ребро3с     ( 0.082, 0.821, 0.196) ( 0.038, 0.691, 0.196)   3  0.50
+ребро4      грудной     ( 0.000, 1.036, 0.276) ( 0.062, 0.960, 0.276)   2  0.38
+ребро4с     ребро4      ( 0.062, 0.960, 0.276) ( 0.082, 0.821, 0.276)   2  0.64
+ребро4н     ребро4с     ( 0.082, 0.821, 0.276) ( 0.038, 0.686, 0.276)   3  0.54
+ребро5      грудной     ( 0.000, 1.033, 0.356) ( 0.062, 0.960, 0.356)   2  0.40
+ребро5с     ребро5      ( 0.062, 0.960, 0.356) ( 0.082, 0.820, 0.356)   3  0.45
+ребро5н     ребро5с     ( 0.082, 0.820, 0.356) ( 0.038, 0.711, 0.356)   3  0.47
+отросток1   поясница    ( 0.000, 1.023,-0.340) ( 0.088, 0.913,-0.340)   5  0.59
+отросток2   поясница    ( 0.000, 1.031,-0.228) ( 0.088, 0.911,-0.228)   6  0.52
+отросток3   поясница    ( 0.000, 1.038,-0.116) ( 0.088, 0.918,-0.116)   6  0.52
+отросток4   поясница    ( 0.000, 1.046,-0.012) ( 0.088, 0.936,-0.012)   5  0.59
+грудина     грудной     ( 0.000, 1.031, 0.400) ( 0.000, 0.775, 0.520)   4  0.57
+лопатка     ребро4      ( 0.028, 1.002, 0.276) ( 0.086, 0.775, 0.470)   4  0.54
+плечо       лопатка     ( 0.086, 0.775, 0.470) ( 0.086, 0.576, 0.225)   6  0.57
+предплечье  плечо       ( 0.086, 0.576, 0.225) ( 0.086, 0.273, 0.318)   7  0.75
+пясть       предплечье  ( 0.086, 0.273, 0.318) ( 0.086, 0.083, 0.384)   7  0.55
+лапа        пясть       ( 0.086, 0.083, 0.384) ( 0.086, 0.033, 0.420)   2  0.59
+коробка     шея         ( 0.000, 1.245, 0.800) ( 0.000, 1.240, 0.980)   3  0.44
+ростр       коробка     ( 0.000, 1.240, 0.980) ( 0.000, 1.154, 1.142)   4  0.57
+гребень     коробка     ( 0.000, 1.245, 0.809) ( 0.000, 1.302, 0.810)   2  0.71
+скула       коробка     ( 0.000, 1.240, 0.980) ( 0.086, 1.164, 0.938)   4  0.61
+ветвь       коробка     ( 0.000, 1.244, 0.845) ( 0.046, 1.127, 0.848)   4  0.56
+ухо.п       коробка     ( 0.000, 1.245, 0.818) ( 0.092, 1.388, 0.902)   5  0.63
+мочка.п     ростр       ( 0.000, 1.154, 1.142) ( 0.000, 1.134, 1.156)   2  0.26
+височная.п  (корень)    ( 0.038, 1.257, 0.826) ( 0.042, 1.239, 0.904)   2  0.67
+дуга.п      (корень)    ( 0.052, 1.183, 0.876) ( 0.084, 1.167, 0.931)   4  0.54
+лоб_площадка.п (корень)    ( 0.000, 1.244, 0.930) ( 0.046, 1.236, 0.955)   2  0.60
+спинка_носа.п (корень)    ( 0.000, 1.215, 0.983) ( 0.000, 1.162, 1.133)   7  0.60
+вибриссы.п  (корень)    ( 0.032, 1.155, 1.046) ( 0.026, 1.133, 1.113)   3  0.49
+губа_верх.п (корень)    ( 0.030, 1.140, 1.025) ( 0.022, 1.119, 1.109)   6  0.56
+подбородок_м.п (корень)    ( 0.016, 1.118, 1.080) ( 0.000, 1.116, 1.118)   2  0.68
+затылок_бугор.п (корень)    ( 0.000, 1.263, 0.791) ( 0.000, 1.230, 0.757)   2  0.29
+хвост1      крестец     ( 0.000, 1.003,-0.560) ( 0.000, 0.860,-0.629)   2  0.45
+хвост2      хвост1      ( 0.000, 0.860,-0.629) ( 0.000, 0.717,-0.698)   2  0.46
+хвост3      хвост2      ( 0.000, 0.717,-0.698) ( 0.000, 0.572,-0.768)   2  0.51
+хвост4      хвост3      ( 0.000, 0.572,-0.768) ( 0.000, 0.429,-0.837)   2  0.66
+надбровье.п коробка     ( 0.000, 1.241, 0.944) ( 0.054, 1.259, 0.963)   2  0.54
+челюсть     ветвь       ( 0.046, 1.127, 0.848) ( 0.018, 1.106, 1.113)  10  0.56
+таз         крестец     ( 0.000, 1.012,-0.461) ( 0.094, 0.749,-0.454)   3  0.45
+бедро       таз         ( 0.094, 0.749,-0.454) ( 0.094, 0.570,-0.190)   4  0.64
+голень      бедро       ( 0.094, 0.570,-0.190) ( 0.094, 0.290,-0.400)   8  0.68
+плюсна      голень      ( 0.094, 0.290,-0.400) ( 0.094, 0.075,-0.350)   8  0.53
+лапа_з      плюсна      ( 0.094, 0.075,-0.350) ( 0.094, 0.034,-0.315)   2  0.52
+длиннейшая.м отросток1   ( 0.088, 0.913,-0.340) ( 0.088, 0.936,-0.012)   6  0.47
+брюшная.м   ребро1н     ( 0.038, 0.761, 0.040) ( 0.083, 0.780,-0.454)   6  0.53
+косая_живота.м ребро2с     ( 0.079, 0.841, 0.116) ( 0.057, 0.854,-0.456)   7  0.57
+межрёберная.м ребро4с     ( 0.074, 0.877, 0.276) ( 0.074, 0.876, 0.040)   3  0.60
+грудная.м   грудина     ( 0.000, 0.788, 0.514) ( 0.086, 0.686, 0.360)   3  0.61
+горловая.м  шея         ( 0.000, 1.062, 0.477) ( 0.028, 1.173, 0.847)   6  0.62
+грудиночелюстная.м грудина     ( 0.000, 0.800, 0.508) ( 0.037, 1.150, 0.848)   9  0.57
+трицепс.м   лопатка     ( 0.045, 0.934, 0.334) ( 0.086, 0.545, 0.234)   7  0.66
+плечеголовная.м шея         ( 0.000, 1.105, 0.553) ( 0.086, 0.636, 0.298)  10  0.54
+ягодичная.м крестец     ( 0.000, 1.013,-0.452) ( 0.094, 0.728,-0.422)   3  0.61
+икроножная.м бедро       ( 0.094, 0.588,-0.216) ( 0.094, 0.236,-0.387)   9  0.68
+жевательная.м скула       ( 0.060, 1.187, 0.951) ( 0.039, 1.121, 0.914)   2  0.61
+трапециевидная.м шея         ( 0.000, 1.148, 0.629) ( 0.045, 0.934, 0.334)   6  0.53
+длиннейшая_гр.м ребро5      ( 0.007, 1.024, 0.356) ( 0.007, 1.037, 0.040)   4  0.56
+ромбовидная.м шея         ( 0.000, 1.094, 0.534) ( 0.033, 0.980, 0.295)   5  0.51
+широчайшая.м поясница    ( 0.000, 1.044,-0.040) ( 0.060, 0.877, 0.383)   7  0.53
+зубчатая.м  ребро3с     ( 0.073, 0.883, 0.196) ( 0.042, 0.946, 0.325)   2  0.65
+пластыревидная.м грудной     ( 0.000, 1.031, 0.400) ( 0.000, 1.244, 0.837)   7  0.56
+дельтовидная.м лопатка     ( 0.071, 0.832, 0.421) ( 0.086, 0.665, 0.335)   4  0.53
+бицепс.м    лопатка     ( 0.080, 0.798, 0.450) ( 0.086, 0.485, 0.253)   9  0.54
+сгибатели.м предплечье  ( 0.086, 0.545, 0.234) ( 0.086, 0.235, 0.331)   9  0.64
+двуглавая.м крестец     ( 0.000, 1.009,-0.497) ( 0.094, 0.472,-0.263)   7  0.68
+четырёхглавая.м таз         ( 0.070, 0.815,-0.456) ( 0.093, 0.542,-0.211)   5  0.63
+полусухожильная.м крестец     ( 0.000, 1.006,-0.533) ( 0.094, 0.430,-0.295)   9  0.65
+рот.р       челюсть     ( 0.040, 1.122, 0.906) (-0.000, 1.159, 1.132)  12  0.81
+ноздря.р    ростр       ( 0.000, 1.158, 1.135) ( 0.000, 1.143, 1.150)   2  0.48
+
+ГАБАРИТ НАРИСОВАННОГО: X -0.186.. 0.186  Y  0.001.. 1.418  Z -0.897.. 1.182
+   ширина 0.372   высота 1.416   длина 2.079
+
+плечевая / холка                     0.270  цель  0.260  ok
+лучевая / холка                      0.271  цель  0.260  ok
+лопатка / холка                      0.260  цель  0.260  ok
+бедренная / холка                    0.273  цель  0.280  ok
+большеберцовая / холка               0.299  цель  0.290  ok
+плюсна / холка                       0.189  цель  0.190  ok
+череп кость-в-кость / холка          0.310  цель  0.310  ok
+холка по мясу над лопатками          1.128  цель  1.165  МИМО (-0.037)
+круп по мясу (перепад 0.03-0.08)     1.124  цель  1.100  ok
+низ груди по мясу (просвет W/2)      0.645  цель  0.680  ok
+ширина груди (ребро3с)               0.255  цель  0.270  ok
+высота уха / длина черепа            0.321  цель  0.390  ok
+хвост / холка 0.50-0.60              0.524  цель  0.550  ok
+шея у основания / ширина головы      1.082  цель  1.050  ok
+большеберцовая > бедренной           1.097  цель  1.060  ok
+низ передней лапы                    0.001  цель  0.000  ok
+низ задней лапы                      0.002  цель  0.000  ok
+длина черепа                         0.456  цель  0.469  ok
+ширина по скулам (0.56 L)            0.222  цель  0.230  ok
+глаз сидит на кости                  0.003  цель -0.020  ok
+зубной ряд сидит на кости            0.015  цель -0.030  МИМО (+0.045)
+ухо основанием на черепе            -0.073  цель -0.040  ok
+мочка носа на конце морды           -0.011  цель -0.010  ok
+
+ПРОВЕРОК МИМО: 2
+
+ПРОФИЛЬ (срез по Z: верх / низ / высота корпуса)
+Z -0.70   верх 0.948  низ 0.494  h 0.453              ########
+Z -0.60   верх 1.093  низ 0.701  h 0.392                  #######
+Z -0.50   верх 1.124  низ 0.645  h 0.480                 ########
+Z -0.40   верх 1.124  низ 0.204  h 0.920         ################
+Z -0.30   верх 1.115  низ 0.315  h 0.800           ##############
+Z -0.20   верх 1.121  низ 0.484  h 0.637              ###########
+Z -0.10   верх 1.128  низ 0.681  h 0.447                 ########
+Z -0.00   верх 1.134  низ 0.677  h 0.457                 ########
+Z +0.10   верх 1.134  низ 0.671  h 0.463                 ########
+Z +0.20   верх 1.128  низ 0.501  h 0.627              ###########
+Z +0.30   верх 1.164  низ 0.240  h 0.924         ################
+Z +0.40   верх 1.164  низ 0.615  h 0.549                #########
+Z +0.50   верх 1.230  низ 0.694  h 0.536                  #########
+Z +0.60   верх 1.295  низ 0.779  h 0.517                   #########
+Z +0.70   верх 1.361  низ 0.900  h 0.461                     ########
+Z +0.80   верх 1.361  низ 1.022  h 0.339                       ######
+
+── СМЕЩЕНИЯ ДЛЯ МЕСТ НА КОСТЯХ (attachOffset, метры) ──
+голова    на кости шея       attach 1.00  ->  attachOffset (0.000, -0.124, 0.111)   наклон осей тела -26.2°
+Хвост     на кости крестец   attach 0.00  ->  attachOffset (0.000, 0.000, 0.000)   наклон осей тела -5.4°
+Игломёт   на кости грудной   attach 0.50  ->  attachOffset (0.000, 0.191, 0.001)   наклон осей тела +2.6°
+
+СТЫК ХВОСТА: первое звено в (0.000, 0.976, -0.595); зазор до мяса крестца -0.099  внутри тела — ok
+РАЗВОРОТ ОСИ: корень «коробка»; расхождение с целью 0.0000 м, поперечная невязка креплений 0.0000 м
+
+== ДАННЫЕ ДЛЯ SpeciesBootstrap ==
+new Bone { name = "коробка", socket = "голова", origin = new Vector3(0.000f, 1.245f, 0.800f), length = 0.180f, dir = new Vector3(88.3f, 0f, 180.0f), r0 = 0.074f, r1 = 0.068f, section = 1.15f },
+new Bone { name = "шея", socket = "шея", parent = "коробка", attach = 0.00f, length = 0.437f, dir = new Vector3(31.2f, 0f, 180.0f), r0 = 0.134f, r1 = 0.116f, section = 1.05f },
+new Bone { name = "грудной", socket = "хребет", parent = "шея", length = 0.400f, dir = new Vector3(32.1f, 0f, 0.0f), r0 = 0.086f, r1 = 0.090f, section = 1.65f },
+new Bone { name = "поясница", socket = "хребет", parent = "грудной", length = 0.401f, dir = new Vector3(-6.6f, 0f, 0.0f), r0 = 0.082f, r1 = 0.086f, section = 1.75f },
+new Bone { name = "крестец", socket = "хребет", parent = "поясница", length = 0.181f, dir = new Vector3(-1.4f, 0f, 0.0f), r0 = 0.078f, r1 = 0.082f, section = 1.75f },
+new Bone { name = "хвост1", socket = "Хвост", parent = "крестец", length = 0.159f, dir = new Vector3(-58.8f, 0f, 0.0f), r0 = 0.090f, r1 = 0.088f, section = 0.95f },
+new Bone { name = "хвост2", socket = "Хвост", parent = "хвост1", length = 0.159f, dir = new Vector3(-0.0f, 0f, 0.0f), r0 = 0.088f, r1 = 0.086f, section = 0.95f },
+new Bone { name = "хвост3", socket = "Хвост", parent = "хвост2", length = 0.160f, dir = new Vector3(-0.2f, 0f, 0.0f), r0 = 0.086f, r1 = 0.078f, section = 0.95f },
+new Bone { name = "хвост4", socket = "Хвост", parent = "хвост3", length = 0.159f, dir = new Vector3(0.2f, 0f, 0.0f), r0 = 0.078f, r1 = 0.060f, section = 0.95f },
+new Bone { name = "таз", socket = "Ноги", parent = "крестец", attach = 0.45f, length = 0.280f, dir = new Vector3(-86.1f, 0f, -19.6f), r0 = 0.112f, r1 = 0.104f, section = 0.86f, blend = 0.035f, mirrorX = true },
+new Bone { name = "бедро", socket = "Ноги", parent = "таз", length = 0.319f, dir = new Vector3(-56.0f, 0f, 11.3f), r0 = 0.118f, r1 = 0.062f, section = 0.78f, blend = 0.035f, mirrorX = true },
+new Bone { name = "голень", socket = "Ноги", parent = "бедро", length = 0.350f, dir = new Vector3(87.1f, 0f, -163.9f), r0 = 0.060f, r1 = 0.032f, section = 0.85f, blend = 0.035f, mirrorX = true },
+new Bone { name = "плюсна", socket = "Ноги", parent = "голень", length = 0.221f, dir = new Vector3(-50.0f, 0f, 0.6f), r0 = 0.032f, r1 = 0.026f, section = 0.85f, blend = 0.035f, mirrorX = true },
+new Bone { name = "лапа_з", socket = "Ноги", parent = "плюсна", length = 0.054f, dir = new Vector3(-27.4f, 0f, 0.2f), r0 = 0.026f, r1 = 0.032f, section = 1.15f, blend = 0.035f, mirrorX = true },
+new Bone { name = "икроножная.м", socket = "Ноги", parent = "бедро", attach = 0.90f, length = 0.391f, dir = new Vector3(81.5f, 0f, 16.0f), r0 = 0.052f, r1 = 0.032f, section = 0.85f, blend = 0.035f, endBone = "плюсна", endAttach = 0.25f, layer = BodyLayer.Muscle, mirrorX = true },
+new Bone { name = "четырёхглавая.м", socket = "Ноги", parent = "таз", attach = 0.75f, length = 0.367f, dir = new Vector3(-41.3f, 0f, 11.3f), r0 = 0.086f, r1 = 0.058f, section = 0.80f, blend = 0.035f, endBone = "голень", endAttach = 0.10f, layer = BodyLayer.Muscle, mirrorX = true },
+new Bone { name = "ягодичная.м", socket = "Ноги", parent = "крестец", attach = 0.40f, length = 0.302f, dir = new Vector3(-89.5f, 0f, 0.0f), r0 = 0.100f, r1 = 0.082f, section = 0.80f, blend = 0.035f, endBone = "бедро", endAttach = 0.12f, layer = BodyLayer.Muscle, mirrorX = true },
+new Bone { name = "двуглавая.м", socket = "Ноги", parent = "крестец", attach = 0.65f, length = 0.593f, dir = new Vector3(-71.9f, 0f, 170.9f), r0 = 0.098f, r1 = 0.062f, section = 0.78f, blend = 0.035f, endBone = "голень", endAttach = 0.35f, layer = BodyLayer.Muscle, mirrorX = true },
+new Bone { name = "полусухожильная.м", socket = "Ноги", parent = "крестец", attach = 0.85f, length = 0.630f, dir = new Vector3(-72.9f, 0f, 171.4f), r0 = 0.082f, r1 = 0.054f, section = 0.72f, blend = 0.035f, endBone = "голень", endAttach = 0.50f, layer = BodyLayer.Muscle, mirrorX = true },
+new Bone { name = "отросток1", socket = "хребет", parent = "поясница", attach = 0.90f, length = 0.141f, dir = new Vector3(-86.0f, 0f, -38.7f), r0 = 0.030f, r1 = 0.024f, section = 0.80f, mirrorX = true },
+new Bone { name = "длиннейшая.м", socket = "хребет", parent = "отросток1", length = 0.329f, dir = new Vector3(-86.9f, 0f, 177.5f), r0 = 0.058f, r1 = 0.058f, section = 1.00f, endBone = "отросток4", endAttach = 1.00f, layer = BodyLayer.Muscle, mirrorX = true },
+new Bone { name = "отросток2", socket = "хребет", parent = "поясница", attach = 0.62f, length = 0.149f, dir = new Vector3(-86.0f, 0f, -36.3f), r0 = 0.030f, r1 = 0.024f, section = 0.80f, mirrorX = true },
+new Bone { name = "отросток3", socket = "хребет", parent = "поясница", attach = 0.34f, length = 0.149f, dir = new Vector3(-86.0f, 0f, -36.3f), r0 = 0.030f, r1 = 0.024f, section = 0.80f, mirrorX = true },
+new Bone { name = "отросток4", socket = "хребет", parent = "поясница", attach = 0.08f, length = 0.141f, dir = new Vector3(-86.0f, 0f, -38.7f), r0 = 0.030f, r1 = 0.024f, section = 0.80f, mirrorX = true },
+new Bone { name = "широчайшая.м", socket = "хребет", parent = "поясница", attach = 0.15f, length = 0.458f, dir = new Vector3(-25.5f, 0f, 172.5f), r0 = 0.078f, r1 = 0.062f, section = 0.70f, endBone = "лопатка", endAttach = 0.55f, layer = BodyLayer.Muscle, mirrorX = true },
+new Bone { name = "ребро1", socket = "Сердце", parent = "грудной", attach = 0.95f, length = 0.107f, dir = new Vector3(-87.4f, 0f, 144.6f), r0 = 0.062f, r1 = 0.058f, section = 0.80f, mirrorX = true },
+new Bone { name = "ребро1с", socket = "Сердце", parent = "ребро1", length = 0.141f, dir = new Vector3(-0.0f, 0f, 27.3f), r0 = 0.058f, r1 = 0.050f, section = 0.80f, mirrorX = true },
+new Bone { name = "ребро1н", socket = "Сердце", parent = "ребро1с", length = 0.074f, dir = new Vector3(-0.0f, 0f, 44.4f), r0 = 0.050f, r1 = 0.040f, section = 0.80f, mirrorX = true },
+new Bone { name = "брюшная.м", socket = "хребет", parent = "ребро1н", length = 0.497f, dir = new Vector3(85.1f, 0f, 177.2f), r0 = 0.084f, r1 = 0.078f, section = 0.85f, endBone = "таз", endAttach = 0.88f, layer = BodyLayer.Muscle, mirrorX = true },
+new Bone { name = "ребро2", socket = "Сердце", parent = "грудной", attach = 0.76f, length = 0.104f, dir = new Vector3(-87.4f, 0f, 143.5f), r0 = 0.068f, r1 = 0.064f, section = 0.80f, mirrorX = true },
+new Bone { name = "ребро2с", socket = "Сердце", parent = "ребро2", length = 0.141f, dir = new Vector3(-0.0f, 0f, 28.4f), r0 = 0.064f, r1 = 0.055f, section = 0.80f, mirrorX = true },
+new Bone { name = "ребро2н", socket = "Сердце", parent = "ребро2с", length = 0.114f, dir = new Vector3(-0.0f, 0f, 30.8f), r0 = 0.055f, r1 = 0.044f, section = 0.80f, mirrorX = true },
+new Bone { name = "косая_живота.м", socket = "хребет", parent = "ребро2с", attach = 0.85f, length = 0.573f, dir = new Vector3(88.4f, 0f, -178.0f), r0 = 0.082f, r1 = 0.072f, section = 0.80f, endBone = "таз", endAttach = 0.60f, layer = BodyLayer.Muscle, mirrorX = true },
+new Bone { name = "ребро3", socket = "Сердце", parent = "грудной", attach = 0.56f, length = 0.101f, dir = new Vector3(-87.4f, 0f, 142.2f), r0 = 0.070f, r1 = 0.066f, section = 0.80f, mirrorX = true },
+new Bone { name = "ребро3с", socket = "Сердце", parent = "ребро3", length = 0.141f, dir = new Vector3(-0.0f, 0f, 29.7f), r0 = 0.066f, r1 = 0.057f, section = 0.80f, mirrorX = true },
+new Bone { name = "ребро3н", socket = "Сердце", parent = "ребро3с", length = 0.137f, dir = new Vector3(-0.0f, 0f, 26.8f), r0 = 0.057f, r1 = 0.046f, section = 0.80f, mirrorX = true },
+new Bone { name = "зубчатая.м", socket = "Сердце", parent = "ребро3с", attach = 0.55f, length = 0.146f, dir = new Vector3(-62.9f, 0f, -171.5f), r0 = 0.070f, r1 = 0.056f, section = 0.70f, endBone = "лопатка", endAttach = 0.25f, layer = BodyLayer.Muscle, mirrorX = true },
+new Bone { name = "ребро4", socket = "Сердце", parent = "грудной", attach = 0.36f, length = 0.098f, dir = new Vector3(-87.4f, 0f, 140.9f), r0 = 0.068f, r1 = 0.064f, section = 0.80f, mirrorX = true },
+new Bone { name = "ребро4с", socket = "Сердце", parent = "ребро4", length = 0.141f, dir = new Vector3(-0.0f, 0f, 31.0f), r0 = 0.064f, r1 = 0.055f, section = 0.80f, mirrorX = true },
+new Bone { name = "ребро4н", socket = "Сердце", parent = "ребро4с", length = 0.142f, dir = new Vector3(-0.0f, 0f, 26.2f), r0 = 0.055f, r1 = 0.044f, section = 0.80f, mirrorX = true },
+new Bone { name = "межрёберная.м", socket = "Сердце", parent = "ребро4с", attach = 0.60f, length = 0.236f, dir = new Vector3(89.9f, 0f, 0.0f), r0 = 0.070f, r1 = 0.066f, section = 0.85f, endBone = "ребро1с", endAttach = 0.60f, layer = BodyLayer.Muscle, mirrorX = true },
+new Bone { name = "лопатка", socket = "Руки", parent = "ребро4", attach = 0.45f, length = 0.304f, dir = new Vector3(-42.3f, 0f, 18.8f), r0 = 0.088f, r1 = 0.070f, section = 0.65f, blend = 0.035f, mirrorX = true },
+new Bone { name = "плечо", socket = "Руки", parent = "лопатка", length = 0.316f, dir = new Vector3(88.6f, 0f, -154.6f), r0 = 0.062f, r1 = 0.046f, section = 0.80f, blend = 0.035f, mirrorX = true },
+new Bone { name = "предплечье", socket = "Руки", parent = "плечо", length = 0.317f, dir = new Vector3(-67.5f, 0f, 10.8f), r0 = 0.055f, r1 = 0.030f, section = 0.85f, blend = 0.035f, mirrorX = true },
+new Bone { name = "пясть", socket = "Руки", parent = "предплечье", length = 0.201f, dir = new Vector3(-2.0f, 0f, 0.1f), r0 = 0.030f, r1 = 0.026f, section = 0.85f, blend = 0.035f, mirrorX = true },
+new Bone { name = "лапа", socket = "Руки", parent = "пясть", length = 0.061f, dir = new Vector3(-17.1f, 0f, 1.3f), r0 = 0.026f, r1 = 0.032f, section = 1.15f, blend = 0.035f, mirrorX = true },
+new Bone { name = "сгибатели.м", socket = "Руки", parent = "предплечье", attach = 0.10f, length = 0.325f, dir = new Vector3(-0.2f, 0f, 0.0f), r0 = 0.044f, r1 = 0.028f, section = 0.85f, blend = 0.035f, endBone = "пясть", endAttach = 0.20f, layer = BodyLayer.Muscle, mirrorX = true },
+new Bone { name = "трицепс.м", socket = "Руки", parent = "лопатка", attach = 0.30f, length = 0.404f, dir = new Vector3(51.5f, 0f, 21.2f), r0 = 0.078f, r1 = 0.044f, section = 0.72f, blend = 0.035f, endBone = "предплечье", endAttach = 0.10f, layer = BodyLayer.Muscle, mirrorX = true },
+new Bone { name = "дельтовидная.м", socket = "Руки", parent = "лопатка", attach = 0.75f, length = 0.188f, dir = new Vector3(65.3f, 0f, 23.3f), r0 = 0.052f, r1 = 0.044f, section = 0.80f, blend = 0.035f, endBone = "плечо", endAttach = 0.55f, layer = BodyLayer.Muscle, mirrorX = true },
+new Bone { name = "бицепс.м", socket = "Руки", parent = "лопатка", attach = 0.90f, length = 0.370f, dir = new Vector3(70.7f, 0f, 26.8f), r0 = 0.048f, r1 = 0.038f, section = 0.80f, blend = 0.035f, endBone = "предплечье", endAttach = 0.30f, layer = BodyLayer.Muscle, mirrorX = true },
+new Bone { name = "ребро5", socket = "Сердце", parent = "грудной", attach = 0.16f, length = 0.096f, dir = new Vector3(-87.4f, 0f, 139.6f), r0 = 0.064f, r1 = 0.060f, section = 0.80f, mirrorX = true },
+new Bone { name = "ребро5с", socket = "Сердце", parent = "ребро5", length = 0.141f, dir = new Vector3(-0.0f, 0f, 32.3f), r0 = 0.060f, r1 = 0.052f, section = 0.80f, mirrorX = true },
+new Bone { name = "ребро5н", socket = "Сердце", parent = "ребро5с", length = 0.118f, dir = new Vector3(-0.0f, 0f, 29.9f), r0 = 0.052f, r1 = 0.042f, section = 0.80f, mirrorX = true },
+new Bone { name = "длиннейшая_гр.м", socket = "хребет", parent = "ребро5", attach = 0.12f, length = 0.316f, dir = new Vector3(88.2f, 0f, 178.5f), r0 = 0.076f, r1 = 0.070f, section = 1.00f, endBone = "ребро1", endAttach = 0.12f, layer = BodyLayer.Muscle, mirrorX = true },
+new Bone { name = "грудина", socket = "Сердце", parent = "грудной", attach = 0.05f, length = 0.283f, dir = new Vector3(-62.2f, 0f, 180.0f), r0 = 0.085f, r1 = 0.062f, section = 0.85f },
+new Bone { name = "грудная.м", socket = "Сердце", parent = "грудина", attach = 0.95f, length = 0.204f, dir = new Vector3(81.8f, 0f, -24.9f), r0 = 0.062f, r1 = 0.056f, section = 0.85f, endBone = "плечо", endAttach = 0.45f, layer = BodyLayer.Muscle, mirrorX = true },
+new Bone { name = "грудиночелюстная.м", socket = "шея", parent = "грудина", attach = 0.90f, length = 0.489f, dir = new Vector3(-69.3f, 0f, 175.7f), r0 = 0.062f, r1 = 0.048f, section = 0.80f, endBone = "ветвь", endAttach = 0.80f, layer = BodyLayer.Muscle, mirrorX = true },
+new Bone { name = "пластыревидная.м", socket = "шея", parent = "грудной", attach = 0.05f, length = 0.486f, dir = new Vector3(28.6f, 0f, 180.0f), r0 = 0.078f, r1 = 0.062f, section = 0.90f, endBone = "коробка", endAttach = 0.20f, layer = BodyLayer.Muscle, mirrorX = true },
+new Bone { name = "горловая.м", socket = "шея", parent = "шея", attach = 0.85f, length = 0.387f, dir = new Vector3(-12.8f, 0f, 175.9f), r0 = 0.070f, r1 = 0.052f, section = 0.85f, endBone = "ветвь", endAttach = 0.60f, layer = BodyLayer.Muscle },
+new Bone { name = "плечеголовная.м", socket = "Руки", parent = "шея", attach = 0.65f, length = 0.541f, dir = new Vector3(-32.0f, 0f, -9.1f), r0 = 0.050f, r1 = 0.058f, section = 0.70f, blend = 0.035f, endBone = "плечо", endAttach = 0.70f, layer = BodyLayer.Muscle, mirrorX = true },
+new Bone { name = "трапециевидная.м", socket = "хребет", parent = "шея", attach = 0.45f, length = 0.367f, dir = new Vector3(-6.5f, 0f, -7.1f), r0 = 0.070f, r1 = 0.058f, section = 0.85f, endBone = "лопатка", endAttach = 0.30f, layer = BodyLayer.Muscle, mirrorX = true },
+new Bone { name = "ромбовидная.м", socket = "хребет", parent = "шея", attach = 0.70f, length = 0.267f, dir = new Vector3(3.8f, 0f, -7.2f), r0 = 0.062f, r1 = 0.052f, section = 0.80f, endBone = "лопатка", endAttach = 0.10f, layer = BodyLayer.Muscle, mirrorX = true },
+new Bone { name = "ростр", socket = "голова", parent = "коробка", length = 0.183f, dir = new Vector3(26.1f, 0f, 0.0f), r0 = 0.062f, r1 = 0.040f, section = 1.15f, depth = 0.62f },
+new Bone { name = "мочка.п", socket = "Чутьё", parent = "ростр", length = 0.025f, dir = new Vector3(27.2f, 0f, 0.0f), r0 = 0.030f, r1 = 0.024f, section = 1.10f, layer = BodyLayer.Feature },
+new Bone { name = "ноздря.р", socket = "Чутьё", parent = "ростр", attach = 0.96f, length = 0.021f, dir = new Vector3(17.8f, 0f, 0.0f), r0 = 0.014f, r1 = 0.011f, section = 1.00f, endBone = "мочка.п", endAttach = 0.55f, layer = BodyLayer.Cut, mirrorX = true },
+new Bone { name = "гребень", socket = "голова", parent = "коробка", attach = 0.05f, length = 0.057f, dir = new Vector3(-89.2f, 0f, 0.0f), r0 = 0.026f, r1 = 0.020f, section = 0.50f },
+new Bone { name = "скула", socket = "голова", parent = "коробка", length = 0.122f, dir = new Vector3(62.7f, 0f, 135.3f), r0 = 0.030f, r1 = 0.025f, section = 1.00f, mirrorX = true },
+new Bone { name = "жевательная.м", socket = "голова", parent = "скула", attach = 0.70f, length = 0.078f, dir = new Vector3(0.1f, 0f, 60.4f), r0 = 0.040f, r1 = 0.032f, section = 0.95f, endBone = "челюсть", endAttach = 0.25f, layer = BodyLayer.Muscle, mirrorX = true },
+new Bone { name = "ветвь", socket = "Пасть", parent = "коробка", attach = 0.25f, length = 0.126f, dir = new Vector3(86.8f, 0f, -21.5f), r0 = 0.034f, r1 = 0.028f, section = 0.85f, mirrorX = true },
+new Bone { name = "челюсть", socket = "Пасть", parent = "ветвь", length = 0.267f, dir = new Vector3(-86.7f, 0f, 7.8f), r0 = 0.032f, r1 = 0.024f, section = 0.85f, mirrorX = true },
+new Bone { name = "рот.р", socket = "Пасть", parent = "челюсть", attach = 0.22f, length = 0.232f, dir = new Vector3(-14.2f, 0f, -1.2f), r0 = 0.015f, r1 = 0.012f, section = 1.00f, depth = 0.40f, endBone = "ростр", endAttach = 0.94f, layer = BodyLayer.Cut, mirrorX = true },
+new Bone { name = "ухо.п", socket = "Чутьё", parent = "коробка", attach = 0.10f, length = 0.190f, dir = new Vector3(-61.2f, 0f, -29.0f), r0 = 0.046f, r1 = 0.030f, section = 1.00f, depth = 0.40f, layer = BodyLayer.Feature, mirrorX = true },
+new Bone { name = "надбровье.п", socket = "голова", parent = "коробка", attach = 0.80f, length = 0.060f, dir = new Vector3(-45.7f, 0f, -64.2f), r0 = 0.032f, r1 = 0.028f, section = 1.00f, depth = 0.75f, layer = BodyLayer.Feature, mirrorX = true },
+new Bone { name = "височная.п", socket = "голова", origin = new Vector3(0.038f, 1.257f, 0.826f), length = 0.080f, dir = new Vector3(77.1f, 0f, 177.1f), r0 = 0.030f, r1 = 0.034f, section = 1.00f, layer = BodyLayer.Feature, mirrorX = true },
+new Bone { name = "дуга.п", socket = "голова", origin = new Vector3(0.052f, 1.183f, 0.876f), length = 0.065f, dir = new Vector3(73.9f, 0f, 150.4f), r0 = 0.017f, r1 = 0.015f, section = 1.00f, depth = 0.50f, layer = BodyLayer.Feature, mirrorX = true },
+new Bone { name = "лоб_площадка.п", socket = "голова", origin = new Vector3(0.000f, 1.244f, 0.930f), length = 0.053f, dir = new Vector3(71.3f, 0f, 119.8f), r0 = 0.026f, r1 = 0.022f, section = 1.00f, depth = 0.55f, layer = BodyLayer.Feature, mirrorX = true },
+new Bone { name = "спинка_носа.п", socket = "голова", origin = new Vector3(0.000f, 1.215f, 0.983f), length = 0.159f, dir = new Vector3(70.6f, 0f, 180.0f), r0 = 0.026f, r1 = 0.019f, section = 1.40f, depth = 0.70f, layer = BodyLayer.Feature },
+new Bone { name = "вибриссы.п", socket = "Чутьё", origin = new Vector3(0.032f, 1.155f, 1.046f), length = 0.071f, dir = new Vector3(71.9f, 0f, -175.1f), r0 = 0.030f, r1 = 0.024f, section = 1.00f, layer = BodyLayer.Feature, mirrorX = true },
+new Bone { name = "губа_верх.п", socket = "Пасть", origin = new Vector3(0.030f, 1.140f, 1.025f), length = 0.087f, dir = new Vector3(76.0f, 0f, -174.7f), r0 = 0.016f, r1 = 0.013f, section = 1.10f, depth = 0.70f, layer = BodyLayer.Feature, mirrorX = true },
+new Bone { name = "подбородок_м.п", socket = "Пасть", origin = new Vector3(0.016f, 1.118f, 1.080f), length = 0.041f, dir = new Vector3(86.0f, 0f, -157.3f), r0 = 0.018f, r1 = 0.015f, section = 1.00f, layer = BodyLayer.Feature },
+new Bone { name = "затылок_бугор.п", socket = "голова", origin = new Vector3(0.000f, 1.263f, 0.791f), length = 0.047f, dir = new Vector3(-46.4f, 0f, 180.0f), r0 = 0.045f, r1 = 0.040f, section = 1.00f, layer = BodyLayer.Feature },
