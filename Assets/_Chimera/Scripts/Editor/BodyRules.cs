@@ -199,11 +199,7 @@ public static class BodyRules
                 // прямо на кости: хвост сидит на «крестце», голова на «шее». Кость рисует не хуже места,
                 // просто её нет в сокет-плане — и правило, не знающее о костях, ругалось на исправное.
                 // Валидатор, кричащий на здоровое, приучает игнорировать красное
-                bool onBone = false;
-                if (species.bones != null)
-                    foreach (var bn in species.bones)
-                        if (bn != null && bn.name == rawParent) { onBone = true; break; }
-                if (onBone) continue;
+                if (MorphBuilder.IsBone(species, rawParent)) continue;
 
                 list.Add(new Issue
                 {

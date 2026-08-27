@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>МОРФОЛОГИЯ (ось 2): собирает КУБ-МОДЕЛЬ тела из данных — ОДНА система (без статичного BuildBlocky,
@@ -500,6 +500,38 @@ public static class MorphBuilder
     /// голова доля корпуса, пасть доля головы, глаз доля головы. Тогда пропорция живёт в данных, и
     /// правка одного места тянет за собой всю ветку — вместо того чтобы молча с ней разъехаться.
     /// Пусто — прежний абсолютный `SizeForGraph` (корневые места и цепи в метрах).</summary>
+    /// <summary>ЕСТЬ ЛИ У ВИДА ТАКОЙ РОДИТЕЛЬ — местом ЛИБО КОСТЬЮ.
+    ///
+    /// Со скелетом место садится не только на другое место, но и прямо на кость: хвост волка сидит на
+    /// «крестце», игломёт на «грудном» (`Place` ищет родителя среди костей и ставит место на сустав).
+    /// Знание об этом выводилось заново в каждом инструменте — и каждый по очереди объявлял исправное
+    /// сломанным: сперва `BodyRules` ругался «нет нарисованного предка», потом аудит данных, потом
+    /// генератор схем писал «родитель НЕ НАЙДЕН, место встанет в корень». Три ложные тревоги об одном
+    /// и том же — признак, что факт живёт не там, где его спрашивают.</summary>
+    /// <summary>ЭТО ИМЯ — КОСТЬ? Отдельный вопрос от `ParentExists`, и путать их нельзя: правило «место
+    /// висит на пустоте» обходится ТОЛЬКО для кости. Спроси там «существует ли родитель вообще» — и
+    /// правило замолчит навсегда, потому что родитель-место существует всегда, вопрос лишь в том,
+    /// рисует ли он что-нибудь.</summary>
+    public static bool IsBone(SpeciesSO species, string name)
+    {
+        if (string.IsNullOrEmpty(name) || species == null || species.bones == null) return false;
+        foreach (var b in species.bones)
+            if (b != null && b.name == name) return true;
+        return false;
+    }
+
+    public static bool ParentExists(SpeciesSO species, string parent)
+    {
+        if (string.IsNullOrEmpty(parent) || species == null) return false;
+        if (species.sockets != null)
+            foreach (var k in species.sockets)
+                if (k != null && k.name == parent) return true;
+        if (species.bones != null)
+            foreach (var b in species.bones)
+                if (b != null && b.name == parent) return true;
+        return false;
+    }
+
     public static Vector3 SizeOf(BodySocket s, Dictionary<string, BodySocket> byName, int depth = 0)
     {
         if (s.sizeRel == Vector3.zero || depth >= 16 || string.IsNullOrEmpty(s.parent)

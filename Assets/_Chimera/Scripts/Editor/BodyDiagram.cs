@@ -101,9 +101,11 @@ public static class BodyDiagram
         t.AppendLine("```text");
         foreach (var r in live.Where(s => string.IsNullOrEmpty(s.parent)))
             Tree(t, r, live, byName, "", true);
-        var lost = live.Where(s => !string.IsNullOrEmpty(s.parent) && !byName.ContainsKey(s.parent)).ToList();
+        // КОСТЬ — ЗАКОННЫЙ РОДИТЕЛЬ (см. MorphBuilder.ParentExists): хвост волка сидит на «крестце».
+        // Раньше здесь печаталось «родитель НЕ НАЙДЕН, место встанет в корень» — про исправные места
+        var lost = live.Where(s => !string.IsNullOrEmpty(s.parent) && !MorphBuilder.ParentExists(sp, s.parent)).ToList();
         foreach (var s in lost)
-            t.AppendLine($"(!) {s.name} — родитель «{s.parent}» НЕ НАЙДЕН, место встанет в корень");
+            t.AppendLine($"(!) {s.name} — родителя «{s.parent}» нет ни местом, ни костью: место встанет в корень");
         t.AppendLine("```");
         t.AppendLine();
 
