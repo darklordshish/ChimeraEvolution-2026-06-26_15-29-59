@@ -17,7 +17,7 @@
     python commons.py cat "Side views of Alces alces"
     python commons.py get "File:Xxx.jpg" species/moose/ref/skeleton/moose_skeleton_side.jpg
 """
-import io, os, sys, json, argparse, urllib.parse, urllib.request
+import io, os, sys, json, socket, hashlib, argparse, urllib.parse, urllib.request
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # Anatomy/
@@ -25,12 +25,69 @@ API = 'https://commons.wikimedia.org/w/api.php'
 UA = 'CHIMERA-refs/1.0 (gamedev asset research; contact via repo)'
 
 
+# ── ОБХОД НЕДОСТУПНОГО ДАТА-ЦЕНТРА ────────────────────────────────────────────────────────────────
+# DNS Викимедиа отдаёт ближайший анонс text-lb, и он может оказаться недоступен с этой машины: у нас
+# 185.15.59.224 (esams) не отвечает на 443 вовсе, при живом файловом хосте 185.15.59.240. Адрес
+# один на ВСЕ текстовые узлы — commons, api, wikipedia, — поэтому «попробовать другой домен» не
+# помогает: он тот же самый IP.
+#     Дата-центров у Викимедиа несколько, и остальные отвечают. Подменяем разрешение имени на живой
+# анонс: SNI и проверка сертификата остаются настоящими, меняется только маршрут.
+TEXT_LB = ['208.80.154.224', '185.15.58.224', '103.102.166.224', '198.35.26.96']
+_pinned = {'ip': None}
+
+
+def _reachable(ip, port=443, timeout=6):
+    s = socket.socket(); s.settimeout(timeout)
+    try:
+        s.connect((ip, port)); return True
+    except Exception:
+        return False
+    finally:
+        s.close()
+
+
+def _pin_datacenter():
+    """Найти отвечающий анонс и прибить к нему разрешение имён текстовых узлов."""
+    if _pinned['ip']:
+        return _pinned['ip']
+    for ip in TEXT_LB:
+        if _reachable(ip):
+            _pinned['ip'] = ip
+            _orig = socket.getaddrinfo
+
+            def _patched(host, port, *a, **kw):
+                if isinstance(host, str) and host.endswith('wikimedia.org') and not host.startswith('upload.'):
+                    return _orig(ip, port, *a, **kw)
+                return _orig(host, port, *a, **kw)
+
+            socket.getaddrinfo = _patched
+            print('[сеть] ближайший узел Викимедиа недоступен, работаю через %s' % ip)
+            return ip
+    return None
+
+
+def _open(url, timeout=45, tries=4):
+    """Открыть с повтором. Связь до Викисклада рвётся через раз, и без повтора каждый запрос
+    становится лотереей: половина поиска отваливается на середине, а причина выглядит как
+    «ничего не найдено». Пауза растёт, чтобы не долбить недоступный узел."""
+    import time
+    last = None
+    for i in range(tries):
+        try:
+            req = urllib.request.Request(url, headers={'User-Agent': UA})
+            return urllib.request.urlopen(req, timeout=timeout).read()
+        except Exception as e:
+            last = e
+            if i == 0 and 'upload.' not in url:
+                _pin_datacenter()      # первая же осечка — пробуем другой дата-центр
+            if i < tries - 1:
+                time.sleep(1 + 2 * i)
+    raise last
+
+
 def _api(params):
     params = dict(params, format='json', formatversion='2')
-    url = API + '?' + urllib.parse.urlencode(params)
-    req = urllib.request.Request(url, headers={'User-Agent': UA})
-    with urllib.request.urlopen(req, timeout=40) as r:
-        return json.loads(r.read().decode('utf-8'))
+    return json.loads(_open(API + '?' + urllib.parse.urlencode(params)).decode('utf-8'))
 
 
 def search(query, limit=12):
@@ -80,6 +137,43 @@ def cat(name, limit=60):
     return out
 
 
+def upload_url(title):
+    """Прямой путь к файлу на `upload.wikimedia.org`, вычисленный из имени.
+
+    ЗАЧЕМ. API-хост `commons.wikimedia.org` бывает недоступен (у нас — заблокирован по TCP 443,
+    при живом DNS и работающем файловом хосте: 0 из 4 против 4 из 4). Путь к самому файлу от API
+    не зависит и считается арифметикой: первый и первые два символа MD5 имени с подчёркиваниями.
+    Значит скачать по известному имени можно всегда, а недоступен только ПОИСК."""
+    n = title.split(':', 1)[-1].replace(' ', '_')
+    h = hashlib.md5(n.encode('utf-8')).hexdigest()
+    return 'https://upload.wikimedia.org/wikipedia/commons/%s/%s/%s' % (h[0], h[:2], urllib.parse.quote(n))
+
+
+def direct(title, dest, maxpx=2000):
+    """Скачать в обход API и уменьшить локально. Лицензию при этом НЕ УЗНАТЬ — её надо
+    вписать в паспорт вида руками, со страницы файла."""
+    path = dest if os.path.isabs(dest) else os.path.join(HERE, dest)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, 'wb') as f:
+        f.write(_open(upload_url(title), timeout=120))
+    from PIL import Image
+    try:
+        im = Image.open(path)
+    except Exception as e:
+        os.remove(path)
+        print('НЕ КАРТИНКА, удалён: %s (%s)' % (title, e))
+        return False
+    w, h = im.size
+    if maxpx and max(w, h) > maxpx:
+        k = maxpx / float(max(w, h))
+        im = im.convert('RGBA' if im.mode == 'RGBA' else 'RGB')
+        im = im.resize((int(w * k), int(h * k)), Image.LANCZOS)
+        im.save(path, quality=90) if path.lower().endswith(('.jpg', '.jpeg')) else im.save(path)
+        w, h = im.size
+    print('СКАЧАН %s  %dx%d  (лицензию вписать руками)' % (os.path.relpath(path, HERE), w, h))
+    return True
+
+
 def get(title, dest, maxpx=2400):
     """Скачать файл по имени `File:...` в путь относительно `Anatomy/`.
 
@@ -108,9 +202,8 @@ def get(title, dest, maxpx=2400):
         p2 = (d2.get('query') or {}).get('pages') or []
         if p2 and p2[0].get('imageinfo'):
             url = p2[0]['imageinfo'][0].get('thumburl') or url
-    req = urllib.request.Request(url, headers={'User-Agent': UA})
-    with urllib.request.urlopen(req, timeout=90) as r, open(path, 'wb') as f:
-        f.write(r.read())
+    with open(path, 'wb') as f:
+        f.write(_open(url, timeout=120))
     from PIL import Image
     try:
         with Image.open(path) as im:
@@ -132,11 +225,15 @@ if __name__ == '__main__':
     s = sub.add_parser('search'); s.add_argument('query'); s.add_argument('--limit', type=int, default=12)
     c = sub.add_parser('cat'); c.add_argument('name'); c.add_argument('--limit', type=int, default=60)
     g = sub.add_parser('get'); g.add_argument('title'); g.add_argument('dest')
+    dd = sub.add_parser('direct'); dd.add_argument('title'); dd.add_argument('dest')
+    dd.add_argument('--max', type=int, default=2000)
     g.add_argument('--max', type=int, default=2400, help='ограничение по большей стороне, px')
     A = AP.parse_args()
     if A.cmd == 'search':
         search(A.query, A.limit)
     elif A.cmd == 'cat':
         cat(A.name, A.limit)
+    elif A.cmd == 'direct':
+        direct(A.title, A.dest, A.max)
     else:
         get(A.title, A.dest, A.max)
