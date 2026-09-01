@@ -842,7 +842,12 @@ public static class SpeciesBootstrap
             foreach (var s in chassis.sockets)
             {
                 if (s == null || string.IsNullOrEmpty(s.parent)) continue;
-                if (!places.Contains(s.parent))
+                // РОДИТЕЛЕМ МОЖЕТ БЫТЬ И КОСТЬ, НЕ ТОЛЬКО МЕСТО. Спрашивать `places` здесь — ложная
+                // тревога: у волка Хвост висит на «крестце», Игломёт на «грудном», и оба родителя
+                // законны. Это ЧЕТВЁРТЫЙ инструмент с той же ошибкой (три уже исправлены), поэтому
+                // знание не дублируется, а берётся из `MorphBuilder` — там же, где его читает билдер.
+                //     Валидатор, кричащий на намеренное, хуже молчащего: он приучает не смотреть на красное.
+                if (!MorphBuilder.ParentExists(chassis, s.parent))
                 {
                     Debug.LogWarning($"Граф «{chassis.speciesName}»: у места «{s.name}» родитель «{s.parent}» НЕ НАЙДЕН — место встанет в корень.");
                     continue;
