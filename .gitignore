@@ -126,3 +126,12 @@ __pycache__/
 #     Уже отслеживаемые референсы из прежних коммитов правило не трогает —
 # .gitignore не действует на то, что git уже ведёт. История не переписывается.
 Anatomy/species/*/ref/
+
+# Модельная линия: рендеры, превью, рабочие файлы Blender — производные, в истории не нужны
+Tools/Blender/out/
+Tools/Blender/preview/
+Tools/Blender/Archive~/
+**/__pycache__/
+Tools/Blender/*.blend
+Tools/Blender/*.blend1
+Tools/Blender/*.fbx
