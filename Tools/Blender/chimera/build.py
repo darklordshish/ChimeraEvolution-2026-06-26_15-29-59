@@ -206,13 +206,31 @@ def paint(objs, kind='кости'):
         ob.data.materials.append(m)
 
 
+def bounds(objs):
+    """Габарит сборки В ОСЯХ BLENDER: (центр x, y, z, наибольший размер).
+
+    ИМЕННО BLENDER, а не игры: `views.py` записан в осях рендера (Z вверх, зверь в −Y), и габарит
+    обязан быть в той же системе. Перевод в оси игры здесь однажды увёл кадр за край — тело уехало
+    в правый верхний угол, потому что «верх» габарита сложился с «глубиной» камеры."""
+    lo = [1e9] * 3
+    hi = [-1e9] * 3
+    for ob in objs:
+        for c in ob.bound_box:
+            p = ob.matrix_world @ Vector(c)
+            for i in range(3):
+                lo[i] = min(lo[i], p[i]); hi[i] = max(hi[i], p[i])
+    if lo[0] > hi[0]:
+        return None
+    return [(lo[i] + hi[i]) / 2.0 for i in range(3)] + [max(hi[i] - lo[i] for i in range(3))]
+
+
 # ── ПРЕВЬЮ. Кадры вынесены в `views.py`: их читает и детектор, которому bpy недоступен
-from .views import VIEWS
+from .views import VIEWS, frame
 
 
 
-def camera(view):
-    pos, look, size = VIEWS[view]
+def camera(view, W=None, centre=None):
+    pos, look, size = frame(view, W, centre) if W else VIEWS[view]
     cam = bpy.data.cameras.new('Cam')
     cam.type = 'ORTHO'
     cam.ortho_scale = size
@@ -225,7 +243,7 @@ def camera(view):
     return ob
 
 
-def render(path, view='profile', res=1500, transparent=True):
+def render(path, view='profile', res=1500, transparent=True, W=None, centre=None):
     sc = bpy.context.scene
     sc.render.engine = 'BLENDER_WORKBENCH'
     sh = sc.display.shading
@@ -241,8 +259,7 @@ def render(path, view='profile', res=1500, transparent=True):
     for ob in list(bpy.data.objects):
         if ob.type == 'CAMERA':
             bpy.data.objects.remove(ob)
-    camera(view)
-    _, _, size = VIEWS[view]
+    camera(view, W, centre)
     sc.render.resolution_x = res
     sc.render.resolution_y = int(res * 0.75)
     sc.render.resolution_percentage = 100

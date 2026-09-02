@@ -60,7 +60,7 @@ for v in A.views.split(','):
     if not v:
         continue
     p = os.path.join(A.out, '%s_%s_%s%s.png' % (A.species, 'cage' if A.cage else 'L%d' % A.layer, v, '_slots' if A.slots else ''))
-    build.render(p, view=v, res=A.res)
+    build.render(p, view=v, res=A.res, W=getattr(sp, 'W', None), centre=build.bounds(objs))
     made.append(p)
 
 if A.fbx:
