@@ -1,0 +1,14 @@
+﻿{
+    "name": "Chimera.Tests.PlayMode",
+    "rootNamespace": "Chimera.Tests.PlayMode",
+    "references": ["Chimera.Runtime", "Chimera.Editor", "UnityEngine.TestRunner", "UnityEditor.TestRunner", "Unity.InputSystem", "Unity.AI.Navigation"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

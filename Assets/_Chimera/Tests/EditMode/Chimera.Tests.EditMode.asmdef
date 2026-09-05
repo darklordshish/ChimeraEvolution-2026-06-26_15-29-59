@@ -1,0 +1,14 @@
+﻿{
+    "name": "Chimera.Tests.EditMode",
+    "rootNamespace": "Chimera.Tests.EditMode",
+    "references": ["Chimera.Runtime", "Chimera.Editor", "UnityEngine.TestRunner", "UnityEditor.TestRunner", "Unity.InputSystem", "Unity.AI.Navigation"],
+    "includePlatforms": ["Editor"],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
