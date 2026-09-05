@@ -262,6 +262,18 @@ public partial class CreatureBody : MonoBehaviour
 
     void Recompute()
     {
+        // EditMode: Awake мог не вызваться → поля-компоненты (health etc.) ещё null. Лениво подбираем.
+        if (health == null) TryGetComponent(out health);
+        if (attack == null) TryGetComponent(out attack);
+        if (move == null) TryGetComponent(out move);
+        if (bite == null) TryGetComponent(out bite);
+        if (kick == null) TryGetComponent(out kick);
+        if (howl == null) TryGetComponent(out howl);
+        if (constrictAb == null) TryGetComponent(out constrictAb);
+        if (variance == null) TryGetComponent(out variance);
+        if (cold == null) TryGetComponent(out cold);
+        if (camoComp == null) TryGetComponent(out camoComp);
+        if (mixer == null) mixer = GetComponent<TintMixer>();
         if (slots == null || slots.Length == 0) return; // нет данных — не трогаем статы компонентов
 
         // Вклады группируются по РОДНОМУ ТИПУ СЛОТА органа: дубли (второе Сердце в химерном слоте)

@@ -123,6 +123,7 @@ public partial class CreatureBody
         for (int v = 0; v < sl.variants.Count; v++)
         {
             var vr = sl.variants[v];
+            bool dup = WornElsewhere(sl, vr);
             res.Add(new VariantView
             {
                 organName = vr.organ.organName,
@@ -131,8 +132,8 @@ public partial class CreatureBody
                 cost = CostOf(sl, vr),
                 native = vr.native,
                 worn = sl.current == v,
-                duplicate = WornElsewhere(sl, vr),
-                affordable = CanInstall(sl, v),
+                duplicate = dup,
+                affordable = !dup && CanInstall(sl, v),
             });
         }
         return res;
@@ -234,7 +235,8 @@ public partial class CreatureBody
         {
             if (sl == self || sl.Empty) continue;
             var w = sl.Pick;
-            if (w.organ == v.organ && w.species == v.species) return true;
+            if (w == null || v == null || w.organ == null || v.organ == null) continue;
+            if (w.organ.organName == v.organ.organName && w.organ.slot == v.organ.slot && w.species == v.species) return true;
         }
         return false;
     }

@@ -37,6 +37,11 @@ public class Health : MonoBehaviour
 
     void Awake() => Current = maxHealth;
 
+    void OnEnable()
+    {
+        if (Current == 0 && !dead) Current = maxHealth;
+    }
+
     void Update()
     {
         // тихая регенерация (без лога): постоянная + добавочная вне боя; копим дробные HP, не выше максимума
@@ -58,8 +63,11 @@ public class Health : MonoBehaviour
     // конструктор меняет макс. HP при смене органа в слоте «Сердце» (разницу даём/забираем у текущего)
     public void SetMaxHealth(int newMax)
     {
+        newMax = Mathf.Max(1, newMax);
+        // EditMode: Awake мог не вызваться (AddComponent без сцены) → Current==0. Инициализируем как полный старый max.
+        if (Current == 0 && !dead) Current = maxHealth;
         int delta = newMax - maxHealth;
-        maxHealth = Mathf.Max(1, newMax);
+        maxHealth = newMax;
         Current = Mathf.Clamp(Current + delta, 1, maxHealth);
     }
 
@@ -67,6 +75,7 @@ public class Health : MonoBehaviour
     public void Heal(int amount)
     {
         if (dead || amount <= 0) return;
+        if (Current == 0) Current = maxHealth;
         Current = Mathf.Min(maxHealth + OverhealCap, Current + amount); // вампиризм может уйти свыше макс. (temp HP)
     }
 
@@ -86,6 +95,7 @@ public class Health : MonoBehaviour
     public void TakeDamage(int amount, bool ignoreInvuln)
     {
         if (dead || amount <= 0) return;
+        if (Current == 0) Current = maxHealth;
         if (Invulnerable && !ignoreInvuln) return;
         LastRawDamage = amount; // до брони — по нему судят «это был УДАР» (укус 8) или «тик» (яд 3)
 
