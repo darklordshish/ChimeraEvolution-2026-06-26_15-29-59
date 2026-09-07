@@ -21,7 +21,12 @@
 ландмарок — те же два узла «затылок → кончик морды», просто вложенные по-разному. Значит смесь
 волка с человеком даст морду, непрерывно укорачивающуюся и поворачивающуюся вниз, — ровно то
 поведение, которого мы хотим от химеры.
+
+ПРОВЕРКА — ДЕТЕКТОР: `check(sp)` пуст только если каждый обязательный узел указывает на точку из
+`sp.P`. None разрешён лишь на узлах, все рёбра которых лежат в OPTIONAL (подграф, не нулевая длина).
+Пустой GRAPH — это не «всё опционально», а дыра: смешение было бы неопределённым молча.
 """
+from collections import defaultdict
 
 # ── УЗЛЫ. Имя → что это анатомически. Порядок не важен, важна полнота
 NODES = {
@@ -72,7 +77,15 @@ EDGES = [
 
 # ── ОТСУТСТВИЕ ЧАСТИ — ЭТО ПОДГРАФ, а не ребро нулевой длины. Вид помечает, чего у него нет;
 # смешивать можно только по общему подграфу, присутствие разрешается ДО чисел
-OPTIONAL = {'Хвост', 'Чутьё'}
+# Вторая топология (змея, безногая) — хребет/конечности отсутствуют: они тоже подграф
+OPTIONAL = {'Хвост', 'Чутьё', 'Руки', 'Ноги', 'хребет', 'Тело'}
+
+# Оболочка замкнута сама на себе и движется своей костью: общего порта с черепом НЕТ
+SEPARATE_SHELLS = {'Пасть'}
+
+# Первый узел, на котором доказываем общие порты (степень ≥3 у волка: шея-цепи нет, есть
+# поясница + бедро + хвост). Человек без хвоста — степень 2, порт всё равно штампуется на Ноги.
+PROOF_HUB = 'крестец'
 
 
 def degree():
@@ -89,20 +102,160 @@ def kind(n):
     return 'кончик' if k == 1 else ('сустав' if k == 2 else 'УЗЕЛ×%d' % k)
 
 
+def node_slots(n):
+    return tuple(sorted({s for a, b, s in EDGES if a == n or b == n}))
+
+
+def node_optional(n):
+    """None в GRAPH законен, только если у узла нет ни одного обязательного ребра."""
+    slots = node_slots(n)
+    return bool(slots) and all(s in OPTIONAL for s in slots)
+
+
+def present_nodes(sp):
+    """Узлы, у которых есть точка в P. Подграф вида."""
+    g = getattr(sp, 'GRAPH', {}) or {}
+    P = getattr(sp, 'P', {}) or {}
+    out = []
+    for n in NODES:
+        p = g.get(n)
+        if p is not None and p in P:
+            out.append(n)
+    return out
+
+
 def check(sp):
-    """Покрывает ли вид общий граф. Возвращает список непокрытых узлов.
+    """Покрывает ли вид общий граф. Пустой список — чисто, иначе пары (узел, причина).
 
     ДЕТЕКТОР, А НЕ ОТЧЁТ: если вид не покрывает граф, его меш не будет одним комплексом с чужим, и
     смешение окажется неопределённым — молча, потому что размерности таблиц совпадают по M и N."""
-    g = getattr(sp, 'GRAPH', {})
+    g = getattr(sp, 'GRAPH', None)
+    P = getattr(sp, 'P', {}) or {}
     bad = []
-    for n in NODES:
-        p = g.get(n)
-        if p is None:
-            continue                      # часть отсутствует у вида — это подграф, а не ошибка
-        if p not in sp.P:
-            bad.append((n, p))
+    if not g:
+        for n in NODES:
+            bad.append((n, 'НЕ ОПИСАН'))
+        return bad
     for n in NODES:
         if n not in g:
             bad.append((n, 'НЕ ОПИСАН'))
+            continue
+        p = g[n]
+        if p is None:
+            if not node_optional(n):
+                bad.append((n, 'ПУСТ, А СЛОТ ОБЯЗАТЕЛЕН'))
+            continue
+        if p not in P:
+            bad.append((n, 'нет точки %r в P' % (p,)))
+    extra = [k for k in g if k not in NODES]
+    for k in extra:
+        bad.append((k, 'не узел общего графа'))
     return bad
+
+
+def ok(sp):
+    return not check(sp)
+
+
+def report(sp, name=''):
+    """Печать для консоли. Возвращает число дыр."""
+    bad = check(sp)
+    tag = name or getattr(sp, '__name__', '?')
+    print('ГРАФ %s: %s' % (tag, 'ЧИСТО' if not bad else 'ДЫР %d' % len(bad)))
+    for n, why in bad:
+        print('  %-12s %s' % (n, why))
+    if not bad:
+        for n in present_nodes(sp):
+            print('  %-12s %s → %s' % (n, kind(n), sp.GRAPH[n]))
+        missing = [n for n in NODES if n not in present_nodes(sp)]
+        if missing:
+            print('  подграф без: %s' % ', '.join(missing))
+    return len(bad)
+
+
+def slot_path(slot):
+    """Упорядоченные узлы слота (путь). Старт — конец, который в полном графе узел ветвления,
+    иначе любой лист подграфа слота."""
+    adj = defaultdict(list)
+    for a, b, s in EDGES:
+        if s != slot:
+            continue
+        adj[a].append(b)
+        adj[b].append(a)
+    if not adj:
+        return []
+    ends = [n for n, nb in adj.items() if len(nb) == 1]
+    deg = degree()
+    start = None
+    for n in ends:
+        if deg[n] >= 3:
+            start = n
+            break
+    if start is None:
+        start = ends[0] if ends else next(iter(adj))
+    path = [start]
+    prev = None
+    while True:
+        nxt = [x for x in adj[path[-1]] if x != prev]
+        if not nxt:
+            break
+        prev = path[-1]
+        path.append(nxt[0])
+        if len(path) > len(NODES):
+            break
+    return path
+
+
+def landmarks_for(sp, slot):
+    """Ландмарки слота, которые этот вид реально имеет (точки есть)."""
+    g = getattr(sp, 'GRAPH', {}) or {}
+    P = getattr(sp, 'P', {}) or {}
+    out = []
+    for n in slot_path(slot):
+        p = g.get(n)
+        if p is None or p not in P:
+            continue
+        out.append((n, P[p]))
+    return out
+
+
+def station_landmark_index(m, n_lm):
+    """Индексы станций 0..m-1, на которых стоят ландмарки. Между ними — доли отрезка, не оси."""
+    if m < 2 or n_lm < 1:
+        return [0] * max(1, m)
+    if n_lm == 1:
+        return [0] * m
+    idx = [int(round(k * (m - 1) / float(n_lm - 1))) for k in range(n_lm)]
+    # коллизии при малом M: раздвинуть
+    for i in range(1, len(idx)):
+        if idx[i] <= idx[i - 1]:
+            idx[i] = min(m - 1, idx[i - 1] + 1)
+    idx[-1] = m - 1
+    idx[0] = 0
+    return idx
+
+
+def hub_degree(sp, node=None):
+    """Степень узла в ПОДГРАФЕ вида (отсутствующие рёбра не считаются)."""
+    node = node or PROOF_HUB
+    have = set(present_nodes(sp))
+    if node not in have:
+        return 0
+    return sum(1 for a, b, _ in EDGES if (a == node and b in have) or (b == node and a in have))
+
+
+def attachments(node=None):
+    """Слоты, которые стыкуются в узле, кроме того, чья ось ЧЕРЕЗ узел просто проходит как середина.
+
+    Для крестца: хребет (ось через него), Ноги и Хвост (торчат портом). Порт штампуем на торчащих.
+    """
+    node = node or PROOF_HUB
+    slots = []
+    for a, b, s in EDGES:
+        if a != node and b != node:
+            continue
+        other = b if a == node else a
+        path = slot_path(s)
+        if path and path[0] == node:
+            slots.append((s, other))
+    return slots

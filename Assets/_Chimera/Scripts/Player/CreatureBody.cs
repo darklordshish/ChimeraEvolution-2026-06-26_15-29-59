@@ -435,7 +435,8 @@ public partial class CreatureBody : MonoBehaviour
         {
             var worn = new System.Collections.Generic.List<Organ>();
             foreach (var sl in slots) if (!sl.Empty && sl.Worn != null) worn.Add(sl.Worn); // слоты шасси раньше химерных → шасси-фёрст
-            MorphBuilder.Build(transform, chassis, worn); // ИГРОК СТРОИТСЯ ТАК ЖЕ: его тело — такая же химера, без исключений
+            var blendedPlan = GetBlendedPlan(); // Ф6: смешение по Identity с локальностью (Пасть→голова, Руки/Ноги→хребет исключён); null = тождественность
+            MorphBuilder.Build(transform, chassis, worn, blendedPlan); // ИГРОК СТРОИТСЯ ТАК ЖЕ: его тело — такая же химера, без исключений
             // ЧАСТИ НОВЫЕ — ВСЕ, КТО ДЕРЖИТ НА НИХ ССЫЛКИ, ПЕРЕ-СОБИРАЮТСЯ. Ссылка, снятая в Awake, к этому
             // моменту мертва: на этом уже сгорели телеграф (замах не красился) и камуфляж (змея перестала
             // исчезать — прятались префабные меши, которых нет)
@@ -445,6 +446,7 @@ public partial class CreatureBody : MonoBehaviour
             if (TryGetComponent<HitFlash>(out var hf)) hf.Rebuild();           // вспышка урона — иначе её нет вовсе
             if (TryGetComponent<HeatSignature>(out var hs)) hs.Rebuild();      // тепловая подпись — иначе термозрение слепо
             if (TryGetComponent<SnakeBodyChain>(out var chain)) chain.RebuildFromMorph(); // [ANIM] цепь тела берёт новые звенья (и заново гасит свои коллайдеры)
+            if (TryGetComponent<JawController>(out var jaw)) jaw.Rebind();     // Ф3: челюсть — своя кость, перепривязать после пересборки
             if (move != null) move.ReapplyFirstPerson(); // и своя голова снова спрятана от первого лица (части-то новые)
         }
 

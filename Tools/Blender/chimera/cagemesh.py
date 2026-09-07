@@ -49,7 +49,7 @@ def _clean(c):
     return rows
 
 
-def _bury(first, second, sink):
+def _bury(first, second, sink, slot=None):
     """Лишнее кольцо, УТОПЛЕННОЕ В РОДИТЕЛЕ: так закрывается стык.
 
     ЧАСТИ НЕ СШИВАЮТСЯ ОБЩИМ КОЛЬЦОМ, А ВХОДЯТ ДРУГ В ДРУГА. Попытка сшить была: корневое кольцо
@@ -59,19 +59,31 @@ def _bury(first, second, sink):
 
     Погружение же честно: слот кончается там, где кончается его плоть, а щели нет, потому что его
     начало лежит внутри соседа. Для низкополигонального стиля это ещё и дешевле шва — ни одной
-    лишней вершины на стыке, кроме одного кольца."""
+    лишней вершины на стыке, кроме одного кольца.
+
+    ИСКЛЮЧЕНИЕ ШЕИ (STATUS:72). В корне шеи свой обмер занижен хозяином плоти — мясо основания
+    принадлежит торсу. Радиусы корневой станции (0.04) дают спичку в груди 0.33. Правка: корневое
+    кольцо берёт радиусы СЛЕДУЮЩЕЙ станции, оставаясь на своём центре. Высота 0.206+0.128=0.334
+    сходится с грудью 0.172+0.160=0.332."""
     u, radii, ctr, dr = first
+    if slot == 'шея':
+        radii = second[1]
     step = math.sqrt(sum((second[2][k] - ctr[k]) ** 2 for k in range(3)))
     back = min(BURY * sum(radii) / len(radii), 0.9 * step, sink)
     return (u, radii, tuple(ctr[k] - dr[k] * back for k in range(3)), dr)
 
 
 def shell(slot, c, mirror=False):
-    """Оболочка одного слота: кольца по станциям, четырёхугольники между ними, торцы шапками."""
+    """Оболочка одного слота: кольца по станциям, четырёхугольники между ними, торцы шапками.
+
+    Пасть — намеренное исключение (SPEC §5): замкнута сама на себе, общего кольца с черепом/шеей
+    НЕТ, движется своей костью (челюсть). Поэтому для неё НЕ делаем _bury в родителя — оба торца
+    закрываются конусами, как у изолированной детали."""
     rows = _clean(c)
     if len(rows) < 2:
         return None
-    rows = [_bury(rows[0], rows[1], c.get('sink', 9.0))] + rows
+    if slot != 'Пасть':
+        rows = [_bury(rows[0], rows[1], c.get('sink', 9.0), slot)] + rows
     n = c['n']
     verts, faces = [], []
     # КАДР ВОССТАНАВЛИВАЕТСЯ ТЕМ ЖЕ ПЕРЕНОСОМ, что и при обмере, — иначе кольца сядут повёрнутыми
@@ -92,7 +104,13 @@ def shell(slot, c, mirror=False):
     #     Корневой торец вылета не получает: он и так утоплен в родителе, и высовывать его наружу
     # значило бы выпихнуть плечо из груди.
     caps = c.get('caps', (0.0, 0.0))
-    for base, rev, out in ((0, True, 0.0), ((len(rows) - 1) * n, False, caps[1])):
+    # Пасть — изолированная замкнутая оболочка (оба торца конусами); у остальных корневой
+    # торец утоплен и вылета не получает
+    if slot == 'Пасть':
+        cap_pairs = ((0, True, caps[0]), ((len(rows) - 1) * n, False, caps[1]))
+    else:
+        cap_pairs = ((0, True, 0.0), ((len(rows) - 1) * n, False, caps[1]))
+    for base, rev, out in cap_pairs:
         mid = len(verts)
         d = rows[-1][3] if not rev else rows[0][3]
         verts.append(tuple(sum(verts[base + j][k] for j in range(n)) / n + d[k] * out for k in range(3)))
@@ -108,7 +126,8 @@ def shell(slot, c, mirror=False):
     bm = bmesh.new(); bm.from_mesh(me)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     bm.to_mesh(me); bm.free()
-    me.shade_smooth()
+    for p in me.polygons:
+        p.use_smooth = False
     return ob
 
 

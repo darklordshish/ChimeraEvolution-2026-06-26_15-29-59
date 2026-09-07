@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -71,6 +72,26 @@ public class SpeciesSO : ScriptableObject
     // сперва утверждается конструкция скелета, потом объём мяса, и лишь потом морда
     public int buildLayers;
     public int BuildLayers => buildLayers > 0 ? buildLayers : 4;
+
+    // ── КЛЕТКА (Ф1 заглушка, SPEC-kletka-tela.md) ──────────────────────────────────────────
+    // Слот описан таблицей M станций × N секторов. Радиусы — ДОЛИ КАЛИБРА (Ratio), без метров:
+    // метры добавляются на выходе × калибр(носитель) (И4). M,N одинаковы у всех видов для
+    // одноимённого слота — иначе SameTopology в BodyRules ругается, а химера получается
+    // покомпонентным средним таблиц (И5 тождественность, И6 выпуклость Σ=1).
+    // 0/null = не настроено → фолбэк на кубы (MorphBuilder как сейчас). Старые ассеты
+    // грузятся с cages==null без поломки (гоча нового поля).
+    public CageTable[] cages;
+
+    /// <summary>Найти клетку слота. null/не настроена → фолбэк на кубы.</summary>
+    public CageTable GetCage(string slot)
+    {
+        if (cages == null || string.IsNullOrEmpty(slot)) return null;
+        foreach (var c in cages)
+            if (c != null && c.slot == slot && c.IsConfigured) return c;
+        return null;
+    }
+
+    public bool HasCage(string slot) => GetCage(slot) != null;
 }
 
 /// <summary>
@@ -262,4 +283,75 @@ public class BodySocket
     public Vector3 SizeForGraph => linkLength > 0f
                                  ? new Vector3(linkDiameter, linkDiameter, linkLength)
                                  : baseSize;   // цепь: диаметр может быть НЕ ЗАДАН (наследуется от родителя)
+}
+
+/// <summary>КЛЕТКА СЛОТА — таблица M×N радиусов (SPEC-kletka-tela.md §2, §11 Ф1 заглушка).
+/// Станция = положение вдоль оси (доля длины) + N радиусов (ДОЛИ КАЛИБРА, Ratio — без метров).
+/// M и N фиксированы на слот для всех видов — иначе химера невыразима покомпонентным средним.
+/// Ландмарки — именованные точки слота (таз→колено→…), общие для видов; станции ставятся
+/// долями МЕЖДУ ними, а не долями всей оси (решение 28.08). Пока Ф1: данные без геометрии,
+/// фолбэк на кубы в MorphBuilder когда клетки нет.</summary>
+[System.Serializable]
+public class CageTable
+{
+    public string slot;              // слот клетки (имя = BodySlots, как у сокета/органа)
+    public int M;                    // станций вдоль оси (0 = не настроено → фолбэк)
+    public int N;                    // секторов вокруг оси (0 = не настроено → фолбэк)
+    public string[] landmarks;       // именованные ландмарки слота (общие для видов), null/пусто = не заданы
+    public float[] radii;            // Ratio — ДОЛИ КАЛИБРА, без метров; размер M*N, 0 = не настроено
+
+    /// <summary>Настроена ли клетка (иначе фолбэк на кубы). 0/null = старый ассет без клеток.</summary>
+    public bool IsConfigured => M > 0 && N > 0 && radii != null && radii.Length == M * N;
+
+    /// <summary>Одинакова ли топология (M,N и число ландмарок) — условие смешения (SPEC §2).</summary>
+    public bool SameTopology(CageTable other)
+    {
+        if (other == null) return false;
+        if (M != other.M || N != other.N) return false;
+        int aL = landmarks != null ? landmarks.Length : 0;
+        int bL = other.landmarks != null ? other.landmarks.Length : 0;
+        // обе не заданы (Ф1 заглушка) — считаем топологию одинаковой по M×N
+        if (aL == 0 && bL == 0) return true;
+        return aL == bL;
+    }
+
+    /// <summary>Смешение таблиц по весам (выпуклое, Σ=1 → И5 тождественность, И6 между исходными).
+    /// Возвращает blended Ratio-массив M*N; калибр умножается на выходе × caliber(носитель) (И4).</summary>
+    public static float[] Blend(IReadOnlyList<CageTable> tables, IReadOnlyList<float> weights)
+    {
+        if (tables == null || weights == null || tables.Count == 0) return null;
+        if (tables.Count != weights.Count) return null;
+        var first = tables[0];
+        if (first == null || !first.IsConfigured) return null;
+        for (int i = 1; i < tables.Count; i++)
+        {
+            var t = tables[i];
+            if (t == null || !t.IsConfigured) return null;
+            if (!first.SameTopology(t)) return null;
+        }
+        float sum = 0f;
+        for (int i = 0; i < weights.Count; i++) sum += weights[i];
+        // Σ=1 не нормируем молча — требуем выпуклости по построению (CreatureBody.Identity уже Σ=1)
+        // но допускаем погрешность float
+        if (Mathf.Abs(sum - 1f) > 1e-4f) return null;
+
+        int len = first.M * first.N;
+        var outRadii = new float[len];
+        for (int i = 0; i < tables.Count; i++)
+        {
+            float w = weights[i];
+            var r = tables[i].radii;
+            for (int k = 0; k < len; k++) outRadii[k] += w * r[k];
+        }
+        return outRadii;
+    }
+
+    /// <summary>Удобный Blend с калибром носителя: Ratio → метры на выходе (И4).</summary>
+    public static float[] BlendWithCaliber(IReadOnlyList<CageTable> tables, IReadOnlyList<float> weights, float caliber)
+    {
+        var ratio = Blend(tables, weights);
+        if (ratio == null) return null;
+        for (int i = 0; i < ratio.Length; i++) ratio[i] *= caliber;
+        return ratio;
+    }
 }

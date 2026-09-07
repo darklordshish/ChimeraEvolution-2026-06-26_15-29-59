@@ -92,6 +92,7 @@ public class Telegraph : MonoBehaviour
     /// цвет (снят в Awake) и гасит замах В НЕГО, стирая тинт-по-составу. no-op до Awake (renderers ещё нет).</summary>
     public void Rebase()
     {
+        if (mpb == null) mpb = new MaterialPropertyBlock();
         if (renderers == null) return;
         for (int i = 0; i < renderers.Length; i++)
         {
@@ -109,8 +110,10 @@ public class Telegraph : MonoBehaviour
     const float UnknownLift = 0.45f;
 
     // применить текущее состояние: выкл → рест (эмоция НА ГОЛОВЕ, тело натуральное); градиент → лерп от реста; плоский → цвет
-    void Apply()
+     void Apply()
     {
+        if (mpb == null) mpb = new MaterialPropertyBlock();
+        if (renderers == null) return;
         // РАСПОЗНАВАНИЕ НАМЕРЕНИЯ — фича человеческого Чутья: без него замах виден (окно реакции то же),
         // но безымянным. С Чутьём проступает цвет приёма: укус, захват, таран, вой.
         // Гейт только на НАМЕРЕНИИ: стан и эмоции — факты, у них свои каналы, их не обезличиваем
