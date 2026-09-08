@@ -13,7 +13,10 @@ public class ChargeAbility : WindupAbility
     [SerializeField] float minRange = 4f;
     [SerializeField] float maxRange = 12f;
     [SerializeField] float chargeSpeed = 22f;  // быстрее волчьего бега ×5 и чуть быстрее рывка игрока: от тарана НЕ УБЕЖАТЬ —
-    [SerializeField] float duration = 0.85f;   // только уворот ВБОК (направление фиксируется в последний кадр замаха); покрытие ~19м
+    [SerializeField] float duration = 0.73f;   // только уворот ВБОК (направление фиксируется в последний кадр замаха)
+    // ЭТО ЛИШЬ ДЕФОЛТ ДЛЯ СВЕЖЕГО КОМПОНЕНТА. Боевые числа лося задаёт генератор префаба
+    // (`MoosePrefab.cs`), и правит их надо ТАМ: правка здесь молча не доедет до зверя, потому что
+    // PrefabConfig.Set перезапишет поле при пересборке. Проверено 08.09 — тюнинг тарана так и потерялся
     [SerializeField] int damage = 20;            // база удара копытами (вплотную ≈ рога)
     [SerializeField] float damagePerMeter = 1.5f; // ФИЗИКА РАЗГОНА: +урон за каждый метр разбега — длинная прямая сокрушает
     [SerializeField] float hitRadius = 1.8f;

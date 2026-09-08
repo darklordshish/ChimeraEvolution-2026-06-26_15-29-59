@@ -34,6 +34,13 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     [SerializeField, Range(0f, 1f)] float grazeSpeed = 0.5f;
     [SerializeField] float provokeRadius = 5f;   // вторжение ВПЛОТНУЮ на глазах — мгновенный максимум лесенки
     [SerializeField] float attackCooldown = 2.5f;
+    // У РОГОВ СВОЙ, КОРОТКИЙ ОТКАТ. Прежде оба приёма делили один: после лёгкого тычка вплотную лось
+    // ждал столько же, сколько после разгона через пол-арены, и вблизи почти не отвечал — а рога и
+    // заведены как ответ липнущим. Таран остаётся редким и страшным, рога — частым «не подходи»
+    [SerializeField] float antlerCooldown = 1.2f;
+    // Ноль = «не настроено»: поле новое, а компонент уже лежит в префабе, куда инициализатор не
+    // доедет (гоча проекта). Без обёртки лось на старом префабе бил бы рогами КАЖДЫЙ КАДР
+    float AntlerCd => antlerCooldown > 0f ? antlerCooldown : 1.2f;
 
     [Header("Лесенка предупреждений + берсерк (срез C)")]
     [SerializeField] float warnRadius = 10f;         // видимый провокатор ближе — раздражение растёт (ближе = быстрее)
@@ -305,7 +312,10 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
             // продолжает идти за целью, пока рога заведены, — тем же RotateTowards, что и в остальных ветках.
             //     Тарану доворот НЕ ДАЁМ намеренно: разгон по прямой уклоняем, в этом вся его механика.
             // Самонаводящийся таран отнял бы у игрока единственный ответ на него.
-            if (activeAbility == antler && target != null)
+            //     ДОВОРОТ ЖИВЁТ ТОЛЬКО В ФАЗЕ ЗАМАХА (`InWindup`). На кадре удара рога уже закоммичены и
+            // летят туда, куда были заведены, — иначе уворот перестал бы быть навыком: удар следовал бы
+            // за целью, и уйти было бы нельзя вовсе. Границу держит база, а не эта психика
+            if (activeAbility == antler && antler.InWindup && target != null)
             {
                 Vector3 toA = target.position - transform.position; toA.y = 0f;
                 if (toA.sqrMagnitude > 0.0001f)
@@ -318,8 +328,10 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
             // выключал лося на весь откат: стрейфом его удерживали в цикле «замахнулся — отменил — ждёт».
             // Доворот выше делает срыв редким, но когда он всё же случился — это НЕ состоявшийся удар,
             // и платить за него как за удар не за что. Четверть отката: пауза видна, беспомощности нет
+            bool wasAntler = activeAbility == antler;   // запомнить ДО обнуления: откат зависит от приёма
             activeAbility = null;
-            nextAttackTime = Time.time + (st == AbilityRun.Cancelled ? attackCooldown * 0.25f : attackCooldown);
+            float cd = wasAntler ? AntlerCd : attackCooldown;
+            nextAttackTime = Time.time + (st == AbilityRun.Cancelled ? cd * 0.25f : cd);
             return;
         }
 
