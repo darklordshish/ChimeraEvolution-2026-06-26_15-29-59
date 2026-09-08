@@ -31,12 +31,20 @@ public class AntlerAbility : WindupAbility
     {
         float dist = DistToTarget();
         bool inCone = Vector3.Angle(transform.forward, DirToTarget()) <= Cone;
-        if (!(dist <= range && inCone))
+
+        // ФАЗА ЗАМАХА: цель вышла из зоны или из конуса — лось ПЕРЕДУМАЛ, замах сорван.
+        if (Time.time < windupEnd)
         {
-            return AbilityRun.Cancelled; // увернулся из зоны/конуса — замах сорван (как BiteAbility:56)
+            if (!(dist <= range && inCone)) return AbilityRun.Cancelled;
+            SettleInPlace();
+            return AbilityRun.Running;
         }
-        if (Time.time < windupEnd) { SettleInPlace(); return AbilityRun.Running; }
-        if (targetHealth != null)
+
+        // КАДР УДАРА: приём закоммичен и бьёт ТУДА, КУДА БЫЛ ЗАВЕДЁН. Ушёл вовремя — рога проходят мимо,
+        // и это ПРОМАХ, а не отмена. Разница не косметическая: отмена возвращает лося в готовность драться
+        // и уворот ничего игроку не даёт, а промах оставляет зверя раскрытым — ровно та награда за тайминг,
+        // ради которой уворот и существует. Прежняя проверка стояла ДО этой развилки и била по обеим фазам
+        if (dist <= range && inCone && targetHealth != null)
         {
             // единый паёк рогов (см. MeleeBlow) — тот же удар льёт и игрок; мощь NPC масштабирует урон
             var blow = new MeleeBlow { Damage = damage, KnockForce = knockForce, BleedStacks = bleedStacks };
