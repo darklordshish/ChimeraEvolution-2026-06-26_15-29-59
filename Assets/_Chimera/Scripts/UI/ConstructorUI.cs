@@ -255,6 +255,13 @@ public class ConstructorUI : MonoBehaviour
         for (int i = 0; i < body.SlotCount; i++)
         {
             var v = body.GetSlot(i);
+            // НЕСУЩИЕ СЛОТЫ В КОНСТРУКТОРЕ НЕ ПОКАЗЫВАЕМ. Хребет и Тело — род Chassis: их орган
+            // `chassisOnly`, аугументом не крадётся, поставить туда нечего. А раз имени «хребет» нет
+            // в SlotPlaces, SocketPos отправлял его в запасную координату — ту самую боковую колонку
+            // химерных гнёзд. Хребет садился в неё первым, и появление настоящего химерного слота
+            // читалось как «хребет вылез в химерные» (репорт пользователя 08.09).
+            //     Род берётся из BodySlots — словарь это знает, UI просто им не пользовался
+            if (BodySlots.All.TryGetValue(v.slot, out var kind) && kind == BodySlots.Kind.Chassis) continue;
             bool known = SlotPlaces.ContainsKey(v.slot);
             var pos = SocketPos(v.slot, known ? 0 : chimeraOrder++);
 
