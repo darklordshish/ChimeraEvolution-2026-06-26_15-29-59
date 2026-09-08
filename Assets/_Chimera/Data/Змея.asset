@@ -891,7 +891,364 @@ MonoBehaviour:
     formRole: 0
     linkLength: 0
     linkTaper: 0
-  bones: []
+  bones:
+  - name: "\u0447\u0435\u0440\u0435\u043F"
+    parent: 
+    layer: 0
+    origin: {x: 0, y: 0.095, z: 0.64}
+    socket: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    attach: 1
+    length: 0.14
+    endBone: 
+    endAttach: 1
+    dir: {x: 90, y: 0, z: 0}
+    r0: 0.054
+    r1: 0.038
+    section: 1.45
+    depth: 1.1
+    blend: 0
+    chain: 0
+    mirrorX: 0
+  - name: "\u0443\u0445\u043E.\u043F"
+    parent: 
+    layer: 2
+    origin: {x: 0.03, y: 0.105, z: 0.658}
+    socket: "\u0427\u0443\u0442\u044C\u0451"
+    attach: 1
+    length: 0.025
+    endBone: 
+    endAttach: 1
+    dir: {x: -106.93, y: 0, z: -11.75}
+    r0: 0.019
+    r1: 0.013
+    section: 0.45
+    depth: 0.7
+    blend: 0
+    chain: 0
+    mirrorX: 1
+  - name: "\u0433\u043B\u0430\u0437.\u043F"
+    parent: 
+    layer: 2
+    origin: {x: 0.032, y: 0.1, z: 0.7}
+    socket: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    attach: 1
+    length: 0
+    endBone: 
+    endAttach: 1
+    dir: {x: 0, y: 0, z: 0}
+    r0: 0.013
+    r1: 0.05
+    section: 1
+    depth: 1
+    blend: 0
+    chain: 0
+    mirrorX: 1
+  - name: "\u043D\u0447_\u043F\u043E\u0434\u0432\u0435\u0441"
+    parent: "\u0447\u0435\u0440\u0435\u043F"
+    layer: 0
+    origin: {x: 0, y: 0, z: 0}
+    socket: "\u041F\u0430\u0441\u0442\u044C"
+    attach: 0.08
+    length: 0.027
+    endBone: 
+    endAttach: 1
+    dir: {x: 127.48, y: 0, z: -55.5}
+    r0: 0.01
+    r1: 0.05
+    section: 1
+    depth: 1
+    blend: 0
+    chain: 0
+    mirrorX: 1
+  - name: "\u0448\u0435\u044F"
+    parent: "\u0447\u0435\u0440\u0435\u043F"
+    layer: 0
+    origin: {x: 0, y: 0, z: 0}
+    socket: "\u0448\u0435\u044F"
+    attach: 0
+    length: 0.08
+    endBone: 
+    endAttach: 1
+    dir: {x: 176.42, y: 0, z: 0}
+    r0: 0.048
+    r1: 0.045
+    section: 1.15
+    depth: 1.05
+    blend: 0
+    chain: 2
+    mirrorX: 0
+  - name: "\u0432\u0435\u0442\u0432\u044C"
+    parent: "\u043D\u0447_\u043F\u043E\u0434\u0432\u0435\u0441"
+    layer: 0
+    origin: {x: 0, y: 0, z: 0}
+    socket: "\u041F\u0430\u0441\u0442\u044C"
+    attach: 1
+    length: 0.024
+    endBone: 
+    endAttach: 1
+    dir: {x: 57.95, y: 0, z: 51.29}
+    r0: 0.022
+    r1: 0.018
+    section: 0.6
+    depth: 0.9
+    blend: 0
+    chain: 0
+    mirrorX: 1
+  - name: "\u0448\u0435\u044F_2"
+    parent: "\u0448\u0435\u044F"
+    layer: 0
+    origin: {x: 0, y: 0, z: 0}
+    socket: "\u0448\u0435\u044F"
+    attach: 0.999
+    length: 0.12
+    endBone: 
+    endAttach: 1
+    dir: {x: 1.2, y: 0, z: 0}
+    r0: 0.045
+    r1: 0.042
+    section: 1.15
+    depth: 1.05
+    blend: 0
+    chain: 2
+    mirrorX: 0
+  - name: "\u0447\u0435\u043B\u044E\u0441\u0442\u044C"
+    parent: "\u0432\u0435\u0442\u0432\u044C"
+    layer: 0
+    origin: {x: 0, y: 0, z: 0}
+    socket: "\u041F\u0430\u0441\u0442\u044C"
+    attach: 1.002
+    length: 0.153
+    endBone: 
+    endAttach: 1
+    dir: {x: -177.08, y: 0, z: 25.68}
+    r0: 0.019
+    r1: 0.013
+    section: 0.55
+    depth: 0.85
+    blend: 0
+    chain: 0
+    mirrorX: 1
+  - name: "\u0448\u0435\u044F_3"
+    parent: "\u0448\u0435\u044F_2"
+    layer: 0
+    origin: {x: 0, y: 0, z: 0}
+    socket: "\u0448\u0435\u044F"
+    attach: 1
+    length: 0.12
+    endBone: 
+    endAttach: 1
+    dir: {x: -0.01, y: 0, z: 0}
+    r0: 0.042
+    r1: 0.038
+    section: 1.15
+    depth: 1.05
+    blend: 0
+    chain: 2
+    mirrorX: 0
+  - name: "\u0448\u0435\u044F_\u0432"
+    parent: "\u0448\u0435\u044F_3"
+    layer: 0
+    origin: {x: 0, y: 0, z: 0}
+    socket: "\u0448\u0435\u044F"
+    attach: 1
+    length: 0.14
+    endBone: 
+    endAttach: 1
+    dir: {x: -0.88, y: 0, z: 0}
+    r0: 0.038
+    r1: 0.035
+    section: 1.15
+    depth: 1.05
+    blend: 0
+    chain: 2
+    mirrorX: 0
+  - name: "\u0442\u0435\u043B\u043E1"
+    parent: "\u0448\u0435\u044F_\u0432"
+    layer: 0
+    origin: {x: 0, y: 0, z: 0}
+    socket: "\u0422\u0435\u043B\u043E"
+    attach: 1
+    length: 0.16
+    endBone: 
+    endAttach: 1
+    dir: {x: 1.84, y: 0, z: 0}
+    r0: 0.045
+    r1: 0.051
+    section: 1
+    depth: 1
+    blend: 0
+    chain: 3
+    mirrorX: 0
+  - name: "\u0442\u0435\u043B\u043E2"
+    parent: "\u0442\u0435\u043B\u043E1"
+    layer: 0
+    origin: {x: 0, y: 0, z: 0}
+    socket: "\u0422\u0435\u043B\u043E"
+    attach: 1
+    length: 0.14
+    endBone: 
+    endAttach: 1
+    dir: {x: -0.21, y: 0, z: 0}
+    r0: 0.051
+    r1: 0.054
+    section: 1
+    depth: 1
+    blend: 0
+    chain: 3
+    mirrorX: 0
+  - name: "\u0442\u0435\u043B\u043E3"
+    parent: "\u0442\u0435\u043B\u043E2"
+    layer: 0
+    origin: {x: 0, y: 0, z: 0}
+    socket: "\u0422\u0435\u043B\u043E"
+    attach: 1
+    length: 0.16
+    endBone: 
+    endAttach: 1
+    dir: {x: 0.21, y: 0, z: 0}
+    r0: 0.054
+    r1: 0.048
+    section: 1
+    depth: 1
+    blend: 0
+    chain: 3
+    mirrorX: 0
+  - name: "\u0442\u0435\u043B\u043E4"
+    parent: "\u0442\u0435\u043B\u043E3"
+    layer: 0
+    origin: {x: 0, y: 0, z: 0}
+    socket: "\u0422\u0435\u043B\u043E"
+    attach: 1
+    length: 0.18
+    endBone: 
+    endAttach: 1
+    dir: {x: -0.16, y: 0, z: 0}
+    r0: 0.048
+    r1: 0.042
+    section: 1
+    depth: 1
+    blend: 0
+    chain: 3
+    mirrorX: 0
+  - name: "\u0442\u0435\u043B\u043E5"
+    parent: "\u0442\u0435\u043B\u043E4"
+    layer: 0
+    origin: {x: 0, y: 0, z: 0}
+    socket: "\u0422\u0435\u043B\u043E"
+    attach: 1
+    length: 0.08
+    endBone: 
+    endAttach: 1
+    dir: {x: -1.99, y: 0, z: 0}
+    r0: 0.042
+    r1: 0.035
+    section: 1
+    depth: 1
+    blend: 0
+    chain: 3
+    mirrorX: 0
+  - name: "\u0445\u0432\u043E\u0441\u04421"
+    parent: "\u0442\u0435\u043B\u043E5"
+    layer: 0
+    origin: {x: 0, y: 0, z: 0}
+    socket: "\u0425\u0432\u043E\u0441\u0442"
+    attach: 0.999
+    length: 0.08
+    endBone: 
+    endAttach: 1
+    dir: {x: 1.43, y: 0, z: 0}
+    r0: 0.035
+    r1: 0.03
+    section: 1
+    depth: 1
+    blend: 0
+    chain: 2
+    mirrorX: 0
+  - name: "\u0445\u0432\u043E\u0441\u04422"
+    parent: "\u0445\u0432\u043E\u0441\u04421"
+    layer: 0
+    origin: {x: 0, y: 0, z: 0}
+    socket: "\u0425\u0432\u043E\u0441\u0442"
+    attach: 0.999
+    length: 0.07
+    endBone: 
+    endAttach: 1
+    dir: {x: -1.12, y: 0, z: 0}
+    r0: 0.03
+    r1: 0.026
+    section: 1
+    depth: 1
+    blend: 0
+    chain: 2
+    mirrorX: 0
+  - name: "\u0445\u0432\u043E\u0441\u04423"
+    parent: "\u0445\u0432\u043E\u0441\u04422"
+    layer: 0
+    origin: {x: 0, y: 0, z: 0}
+    socket: "\u0425\u0432\u043E\u0441\u0442"
+    attach: 1
+    length: 0.06
+    endBone: 
+    endAttach: 1
+    dir: {x: 0.41, y: 0, z: 0}
+    r0: 0.026
+    r1: 0.021
+    section: 1
+    depth: 1
+    blend: 0
+    chain: 2
+    mirrorX: 0
+  - name: "\u0445\u0432\u043E\u0441\u04424"
+    parent: "\u0445\u0432\u043E\u0441\u04423"
+    layer: 0
+    origin: {x: 0, y: 0, z: 0}
+    socket: "\u0425\u0432\u043E\u0441\u0442"
+    attach: 1
+    length: 0.05
+    endBone: 
+    endAttach: 1
+    dir: {x: -1.72, y: 0, z: 0}
+    r0: 0.021
+    r1: 0.018
+    section: 1
+    depth: 1
+    blend: 0
+    chain: 2
+    mirrorX: 0
+  - name: "\u0445\u0432\u043E\u0441\u04425"
+    parent: "\u0445\u0432\u043E\u0441\u04424"
+    layer: 0
+    origin: {x: 0, y: 0, z: 0}
+    socket: "\u0425\u0432\u043E\u0441\u0442"
+    attach: 0.999
+    length: 0.04
+    endBone: 
+    endAttach: 1
+    dir: {x: -1.13, y: 0, z: 0}
+    r0: 0.018
+    r1: 0.014
+    section: 1
+    depth: 1
+    blend: 0
+    chain: 2
+    mirrorX: 0
+  - name: "\u0445\u0432\u043E\u0441\u04426"
+    parent: "\u0445\u0432\u043E\u0441\u04425"
+    layer: 0
+    origin: {x: 0, y: 0, z: 0}
+    socket: "\u0425\u0432\u043E\u0441\u0442"
+    attach: 1
+    length: 0.03
+    endBone: 
+    endAttach: 1
+    dir: {x: 1.9, y: 0, z: 0}
+    r0: 0.018
+    r1: 0.014
+    section: 1
+    depth: 1
+    blend: 0
+    chain: 2
+    mirrorX: 0
   skeletonHides: []
   skinCell: 0.02
   skinBlend: 0.05
