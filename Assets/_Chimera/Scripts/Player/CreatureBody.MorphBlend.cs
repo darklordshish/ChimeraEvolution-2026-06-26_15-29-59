@@ -97,6 +97,19 @@ public partial class CreatureBody
                 weights.Add(w);
                 sumW += w;
             }
+            // ШАССИ ВСЕГДА В СМЕСИ — иначе донор забирает пропорцию места ЦЕЛИКОМ. Прежде веса
+            // нормировались по одним донорам, и человек с волчьими Пастью и Чутьём получал голову
+            // на 100% волчью при Identity(Волк) ≈ 0.3. Спека 14.08: «идентичность — ВЕС формы,
+            // не переключатель и не супремум». Комментарий выше обещал, что шасси «уже в списке,
+            // если Pick.native» — но родной орган попадает туда лишь когда он ОСТАЛСЯ на этом месте
+            if (!speciesList.Contains(chassis))
+            {
+                float wOwn = Identity(chassis);
+                if (wOwn <= 0f) wOwn = 1e-6f;
+                speciesList.Add(chassis);
+                weights.Add(wOwn);
+                sumW += wOwn;
+            }
             if (speciesList.Count == 0 || sumW <= 0f) continue;
             // нормируем
             for (int i = 0; i < weights.Count; i++) weights[i] /= sumW;
@@ -218,8 +231,140 @@ public partial class CreatureBody
         return true;
     }
 
-    /// <summary>Бюджет: трис на существо и на 25 в кадре. 324 квада ≈ 648 трис (2 на квад) + диаманты/шапки ≈830 (было 310/800; ADR-1 хребет 8×10).
-    /// Проверяется детектором, а не глазом.</summary>
-    public static int BudgetTrisPerCreature => 830;
-    public static int BudgetTris25 => 20750;
+    /// <summary>Смешанные клетки для MorphBuilder. null = чистое шасси (нет влияния).
+    /// Логика как у GetBlendedPlan: форма слота — донорская, пропорция родителя — смесь по Identity,
+    /// калибр и топология — носитель. Хребет исключён (И3). Возвращает словарь slot→блендед CageTable.</summary>
+    public Dictionary<string, CageTable> GetBlendedCages()
+    {
+        if (chassis == null || slots == null || slots.Length == 0) return null;
+        bool hasBeast = false;
+        foreach (var sl in slots) if (sl.Installed) { hasBeast = true; break; }
+        if (!hasBeast) return null;
+        if (chassis.cages == null || chassis.cages.Length == 0) return null;
+
+        var parentOf = new Dictionary<string, string>();
+        foreach (var s in chassis.sockets)
+            if (s != null && !string.IsNullOrEmpty(s.name))
+                parentOf[s.name] = s.parent;
+
+        var affectedParents = new HashSet<string>();
+        foreach (var sl in slots)
+        {
+            if (sl.Empty) continue;
+            var organ = sl.Worn;
+            if (organ == null || string.IsNullOrEmpty(organ.slot)) continue;
+            string slotName = organ.slot;
+            parentOf.TryGetValue(slotName, out var par);
+            if (string.IsNullOrEmpty(par)) continue;
+            if (par == BodySlots.Spine) continue;
+            affectedParents.Add(par);
+        }
+
+        var blended = new Dictionary<string, CageTable>();
+        var chassisBySlot = new Dictionary<string, CageTable>();
+        foreach (var c in chassis.cages)
+            if (c != null && c.IsConfigured && !string.IsNullOrEmpty(c.slot))
+                chassisBySlot[c.slot] = c;
+
+        // 1) родители — смесь по Identity (локальность)
+        foreach (var target in affectedParents)
+        {
+            if (target == BodySlots.Spine) continue;
+            if (!chassisBySlot.TryGetValue(target, out var chassisCage)) continue;
+            // собрать влияющие виды
+            var influencing = new HashSet<string>();
+            foreach (var sl in slots)
+            {
+                if (sl.Empty) continue;
+                var organ = sl.Worn;
+                // ХРЕБЕТ НЕ УЧАСТВУЕТ ВОВСЕ (И3). Ниже отсекается родитель-хребет, но сам орган «Хребет»
+                // проходил и смешивал ШЕЮ: у человека `хребет.parent = "шея"` по единому плану тела.
+                // Сегодня безвредно (chassisOnly не крадётся, вариант всегда родной), но спека требует
+                // «хребет не участвует», а не «пока не мешает»
+                if (organ == null || string.IsNullOrEmpty(organ.slot) || organ.chassisOnly) continue;
+                parentOf.TryGetValue(organ.slot, out var par);
+                if (par != target) continue;
+                string spName = sl.Pick != null ? sl.Pick.species : null;
+                if (!string.IsNullOrEmpty(spName)) influencing.Add(spName);
+            }
+            if (influencing.Count == 0) continue;
+            var speciesList = new List<SpeciesSO>();
+            var weights = new List<float>();
+            float sumW = 0f;
+            foreach (var spName in influencing)
+            {
+                var sp = FindSpecies(spName);
+                if (sp == null) continue;
+                var c = sp.GetCage(target);
+                if (c == null || !c.IsConfigured) continue;
+                // топология должна совпасть, иначе химера невыразима — пропускаем (валидатор ругнётся)
+                if (!chassisCage.SameTopology(c)) continue;
+                float w = Identity(sp);
+                if (w <= 0f) w = 1e-6f;
+                speciesList.Add(sp);
+                // сохраняем веса параллельно списку cages позже
+                weights.Add(w);
+                sumW += w;
+            }
+            // ШАССИ ВСЕГДА УЧАСТВУЕТ В СМЕСИ — без этого донор забирал форму ЦЕЛИКОМ.
+            // Веса нормировались по одному лишь множеству доноров, и человек с волчьей Пастью и волчьим
+            // Чутьём получал голову на 100% волчью при Identity(Волк) ≈ 0.3. Спека 14.08 запрещает прямо:
+            // «идентичность — ВЕС формы… не переключатель и не супремум». Прежний код сам признавал дыру
+            // комментарием «если influencing не содержит chassis, добавляем chassis» — и не добавлял
+            if (!speciesList.Contains(chassis))
+            {
+                var ownCage = chassis.GetCage(target);
+                if (ownCage != null && ownCage.IsConfigured && chassisCage.SameTopology(ownCage))
+                {
+                    float wOwn = Identity(chassis);
+                    if (wOwn <= 0f) wOwn = 1e-6f;
+                    speciesList.Add(chassis);
+                    weights.Add(wOwn);
+                    sumW += wOwn;
+                }
+            }
+            if (speciesList.Count == 0 || sumW <= 0f) continue;
+            for (int i = 0; i < weights.Count; i++) weights[i] /= sumW;
+            var tables = new List<CageTable>();
+            var wList = new List<float>();
+            for (int i = 0; i < speciesList.Count; i++)
+            {
+                var c = speciesList[i].GetCage(target);
+                tables.Add(c);
+                wList.Add(weights[i]);
+            }
+            var blendedRadii = CageTable.Blend(tables, wList);
+            if (blendedRadii == null) continue;
+            blended[target] = new CageTable { slot = target, M = chassisCage.M, N = chassisCage.N, landmarks = chassisCage.landmarks, radii = blendedRadii };
+        }
+
+        // 2) форма самого слота — донорская целиком (как у GetBlendedPlan)
+        foreach (var sl in slots)
+        {
+            if (sl.Empty) continue;
+            var organ = sl.Worn;
+            if (organ == null || string.IsNullOrEmpty(organ.slot)) continue;
+            string slotName = organ.slot;
+            if (slotName == BodySlots.Spine) continue;
+            string spName = sl.Pick != null ? sl.Pick.species : null;
+            if (string.IsNullOrEmpty(spName) || spName == chassis.speciesName) continue;
+            var donor = FindSpecies(spName);
+            var donorCage = donor != null ? donor.GetCage(slotName) : null;
+            if (donorCage == null || !donorCage.IsConfigured) continue;
+            // ПЕРВЫЙ ЗАНЯВШИЙ ПОБЕЖДАЕТ — то же правило, что у MorphBuilder.organBySocket. Без проверки
+            // побеждал ПОСЛЕДНИЙ слот в массиве, то есть химерный, и получалась сборка, где форму рисует
+            // родной орган, а клетку слота даёт донор: два разных вида на одном месте
+            if (blended.ContainsKey(slotName)) continue;
+            // донорская целиком (И5 тождественность на родном уже)
+            blended[slotName] = new CageTable { slot = slotName, M = donorCage.M, N = donorCage.N, landmarks = donorCage.landmarks, radii = (float[])donorCage.radii.Clone() };
+        }
+
+        if (blended.Count == 0) return null;
+        return blended;
+    }
+
+    // ЧИСЛА БЮДЖЕТА ЖИВУТ В ОДНОМ МЕСТЕ — `BodyRules` (Editor). Здесь стояла их копия (830 / 20750),
+    // и читал её ровно один потребитель — дев-панель, которая сама редакторская и видит BodyRules напрямую.
+    // Два держателя одной константы — это второй источник правды: разойдутся молча, а спорить будут
+    // детектор и подпись под ним. Рантайму бюджет не нужен: он ничего по нему не решает.
 }
