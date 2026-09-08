@@ -298,11 +298,28 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
 
         if (activeAbility != null) // активный таран тикает сам
         {
+            // РОГА ДОВОРАЧИВАЮТСЯ ЗА ЦЕЛЬЮ, ТАРАН — НЕТ, и это разные вещи по смыслу.
+            //     У рогов появился конус (AntlerAbility, 50°), который проверяется КАЖДЫЙ тик. А замах
+            // запускается по одной дистанции, когда лось ещё доворачивается: он входил в радиус боком,
+            // первый же тик возвращал Cancelled, и вплотную лось не попадал вовсе. Здесь морда
+            // продолжает идти за целью, пока рога заведены, — тем же RotateTowards, что и в остальных ветках.
+            //     Тарану доворот НЕ ДАЁМ намеренно: разгон по прямой уклоняем, в этом вся его механика.
+            // Самонаводящийся таран отнял бы у игрока единственный ответ на него.
+            if (activeAbility == antler && target != null)
+            {
+                Vector3 toA = target.position - transform.position; toA.y = 0f;
+                if (toA.sqrMagnitude > 0.0001f)
+                    transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(toA), rotationSpeed * Time.deltaTime);
+            }
             if (stagger != null && stagger.IsStaggered) activeAbility.Abort(false); // таран закоммичен — игнорит мягкий срыв
             var st = activeAbility.Tick();
             if (st == AbilityRun.Running) return;
+            // СОРВАННЫЙ ЗАМАХ НЕ СТОИТ ПОЛНОГО КУЛДАУНА. Раньше Cancelled и Done жгли одинаково, и уворот
+            // выключал лося на весь откат: стрейфом его удерживали в цикле «замахнулся — отменил — ждёт».
+            // Доворот выше делает срыв редким, но когда он всё же случился — это НЕ состоявшийся удар,
+            // и платить за него как за удар не за что. Четверть отката: пауза видна, беспомощности нет
             activeAbility = null;
-            nextAttackTime = Time.time + attackCooldown;
+            nextAttackTime = Time.time + (st == AbilityRun.Cancelled ? attackCooldown * 0.25f : attackCooldown);
             return;
         }
 
