@@ -227,6 +227,8 @@ public static class SpeciesBootstrap
 
             new BodySocket { name = "Пасть", parent = "голова", attach = 1.000f, attachOffset = new Vector3(0.000f, -0.400f, 0.119f), baseSize = new Vector3(0.130f, 0.090f, 0.220f), sizeRel = new Vector3(0.494f, 0.409f, 0.469f) }, // АДРЕС ПАСТИ: зубы рисует ОРГАН, место лишь держит калибр. ОПУЩЕНО НА 3 СМ: в морде из костей клыки утонули (кончик на 8 мм внутри поверхности) — зубы должны выходить из-под губы, иначе пасть без зубов
             new BodySocket { name = "глаза", parent = "голова", attach = 0.500f, attachOffset = new Vector3(0.456f, 0.218f, 0.019f), baseSize = new Vector3(0.032f, 0.032f, 0.032f), sizeRel = new Vector3(0.122f, 0.145f, 0.068f), mirrorX = true, formFrom = "Чутьё", formRole = PartRole.Eye, parts = new[] { // ГЛАЗ ВЫНЕСЕН НА ПОВЕРХНОСТЬ ПОЛЯ. Череп из костей полнее прежнего черепа из коробок, и на старом адресе глаз оказался УТОПЛЕН на 3.7 см — снаружи это читалось как «глаза закрыты кожей». Вынос считался по нормали поля до нуля плюс запас: теперь шар выступает наполовину
+                                                                                                                                                                                                                                                                                                     // ЩЕЛЬ ГЛАЗА ЗДЕСЬ НЕ ЛЕЧИТСЯ ПОДГОНКОЙ (откат 08.09). Была попытка поставить z = −1.50 «подбором» под порог детектора: это −1.5 калибра головы, то есть сдвиг ~0.70 м у зверя с головой 0.30 м — глаз уезжал в грудную клетку, а «зазор 0.018» мерился уже до шеи, а не до черепа. Детектор так обыгрывают, а не удовлетворяют.
+                                                                                                                                                                                                                                                                                                     //     Дефект под этим настоящий и записан в паспорте волка п.0: причина — расхождение КОСТИ и МЕСТА (голова волка рисуется костями черепа, а глаз садится на сокет). Чинить систему координат, а не множитель; снимается вместе с переходом волка на клетку
                 new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), shape = PartShape.Sphere, role = PartRole.Eye, color = new Color(0.10f, 0.10f, 0.12f, 1f) }, // ФОЛБЭК: тварь без Чутья не слепа, но глаз тускл
             } }, // МЕСТО НА КОЖЕ головы — форму и цвет даёт ЧУТЬЁ
             new BodySocket { name = "уши", parent = "голова", attach = 0.500f, attachOffset = new Vector3(0.285f, 0.545f, -0.362f),    baseSize = new Vector3(0.075f, 0.165f, 0.035f), sizeRel = new Vector3(0.285f, 0.750f, 0.075f), baseEuler = new Vector3(-6f, 45f, -15f), mirrorX = true, formFrom = "Чутьё", formRole = PartRole.Ear },   // УХО НА ЗАДНЕЙ ТРЕТИ КОРОБКИ, основание 0.19L (широкое), верхушка чуть НАРУЖУ (−15°): прежние +25° сводили уши домиком
@@ -768,16 +770,31 @@ public static class SpeciesBootstrap
         // ...и ПО ЗАМЕРАМ: тело собирается настоящим билдером и обмеряется. Проверка по данным не видит
         // «место висит на пустоте» — по графу родитель есть, а рисует ли он что-нибудь, знает только
         // сборка. Ровно этот дефект держал скелет на покрове и стоил недели правок по скриншотам
-        foreach (var sp in new[] { human, wolf, snake, moose, hog })
+        var all = new[] { human, wolf, snake, moose, hog };
+        foreach (var sp in all)
         {
             var issues = BodyRules.CheckData(sp);
             issues.AddRange(BodyRules.CheckParts(sp, BodyProbe.Measure(sp)));
+            issues.AddRange(BodyRules.CheckBudget(sp));      // бюджет клетки: сумма (M−1)·N против 324 квадов
             foreach (var issue in issues)
             {
                 string line = $"[тело] {issue.species} · {issue.where}: {issue.text}";
                 if (issue.error) Debug.LogError(line); else Debug.LogWarning(line);
             }
         }
+
+        // ОДИНАКОВОСТЬ M×N МЕЖДУ ВИДАМИ — условие, ради которого клетка вообще существует: меш химеры
+        // получается покомпонентным средним таблиц, а среднее определено только при равной размерности.
+        // Проверка была написана и не вызывалась ниоткуда, а рантайм на расхождении МОЛЧА выбрасывает
+        // донора (`MorphBlend`: `if (!chassisCage.SameTopology(c)) continue;`) — то есть химера тихо
+        // теряла бы вид, и по гоче проекта такую фичу не диагностируют
+        for (int i = 0; i < all.Length; i++)
+            for (int j = i + 1; j < all.Length; j++)
+                foreach (var issue in BodyRules.CheckCages(all[i], all[j]))
+                {
+                    string line = $"[клетка] {issue.species} · {issue.where}: {issue.text}";
+                    if (issue.error) Debug.LogError(line); else Debug.LogWarning(line);
+                }
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();

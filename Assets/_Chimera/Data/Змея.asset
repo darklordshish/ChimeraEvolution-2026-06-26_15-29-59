@@ -897,3 +897,4 @@ MonoBehaviour:
   skinBlend: 0.05
   skinFur: 0
   buildLayers: 0
+  cages: []
