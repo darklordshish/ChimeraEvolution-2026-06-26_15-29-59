@@ -53,6 +53,7 @@ public class ConstructorUI : MonoBehaviour
     readonly List<Socket> sockets = new();
     readonly List<Star> stars = new();
     bool built;
+    int lastSlotCount = -1;   // сколько слотов было у тела на прошлой сборке гнёзд (см. Update)
 
     /// <summary>Гнездо на фигуре = слот тела. Позиция задаётся ТИПОМ слота, а не порядком: раскладка
     /// анатомична и не едет, когда выдают химерный слот.</summary>
@@ -114,7 +115,11 @@ public class ConstructorUI : MonoBehaviour
             // в SetOpen мало (стоит потерять/вернуть фокус окна — и указатель снова «прилипает» к персонажу)
             Cursor.lockState = CursorLockMode.None; Cursor.visible = true;
             if (!built || body == null) Rebuild();
-            else if (sockets.Count != body.SlotCount) Rebuild(); // выдали химерный слот — дострой гнездо
+            // ПЕРЕСБОРКА ПО ЧИСЛУ СЛОТОВ ТЕЛА, А НЕ ПО РАВЕНСТВУ СПИСКОВ. Здесь стояло
+            // `sockets.Count != body.SlotCount` — верно, пока гнездо строилось на каждый слот.
+            // Несущие слоты рисоваться перестали, гнёзд стало МЕНЬШЕ всегда, и это условие
+            // сделалось вечно истинным: конструктор пересобирался бы каждый кадр
+            else if (lastSlotCount != body.SlotCount) Rebuild(); // выдали химерный слот — дострой гнездо
             HandleRightClick();
             Refresh();
         }
@@ -249,6 +254,7 @@ public class ConstructorUI : MonoBehaviour
         var pc = FindAnyObjectByType<PlayerController>();
         body = pc != null ? pc.GetComponent<CreatureBody>() : null;
         if (body == null || body.SlotCount == 0) return;
+        lastSlotCount = body.SlotCount; // с этим числом слотов гнёзда и построены — по нему Update решает, пора ли пересобирать
 
         // ГНЁЗДА
         int chimeraOrder = 0;
@@ -287,6 +293,11 @@ public class ConstructorUI : MonoBehaviour
         var byKey = new Dictionary<string, Star>();
         for (int i = 0; i < body.SlotCount; i++)
         {
+            // НЕСУЩИЙ СЛОТ НЕ ДАЁТ И ЗВЕЗДЫ. Гнездо для него уже не рисуется (род Chassis), но орган
+            // «Хребет» продолжал висеть звездой в созвездии человека — тянуть её было некуда и незачем:
+            // chassisOnly аугументом не крадётся, а своё гнездо у неё скрыто. Звезда без посадочного
+            // места — обещание, которого интерфейс не может сдержать
+            if (BodySlots.All.TryGetValue(body.GetSlot(i).slot, out var k) && k == BodySlots.Kind.Chassis) continue;
             var variants = body.GetVariants(i);
             for (int v = 0; v < variants.Count; v++)
             {
@@ -441,14 +452,20 @@ public class ConstructorUI : MonoBehaviour
     {
         if (body == null) return;
 
-        for (int i = 0; i < sockets.Count && i < body.SlotCount; i++)
+        // ГНЕЗДО ЗНАЕТ СВОЙ СЛОТ ПО `index`, А НЕ ПО МЕСТУ В СПИСКЕ. Здесь стояло `GetSlot(i)` при
+        // `sockets[i]` — допущение «списки идут параллельно». Оно держалось, пока гнездо строилось на
+        // КАЖДЫЙ слот; как только несущие слоты перестали рисоваться, списки разъехались и каждое гнездо
+        // получило чужие данные — подписи съехали на одну позицию (репорт: «в химерный слот улетела кожа»).
+        // Остальной файл уже ходил через `s.index` (RevertOrEmpty, поиск гнезда) — это было единственное место
+        for (int i = 0; i < sockets.Count; i++)
         {
-            var v = body.GetSlot(i);
             var s = sockets[i];
+            if (s.index < 0 || s.index >= body.SlotCount) continue;
+            var v = body.GetSlot(s.index);
             string key = string.IsNullOrEmpty(v.hotkey) ? "" : $"[{v.hotkey}] ";
             // ГНЕЗДО НАЗЫВАЕТСЯ ПО РОДНОМУ ОРГАНУ (идентичность части тела: «Рот», «Кисть»); химерный слот
             // родного не имеет — он «Химерный». Имя надетого показываем стрелкой.
-            string head = key + (v.chimera ? "Химерный" : NativeName(i) ?? v.slot);
+            string head = key + (v.chimera ? "Химерный" : NativeName(s.index) ?? v.slot);
             string content;
             if (v.organName == "—") content = "— пусто —";                     // пустой химерный
             else if (v.chimera || v.installed) content = $"↳ {v.organName} ({v.cost})"; // химерный (в т.ч. родной графт) ИЛИ звериный графт — показываем ЧТО надето
@@ -470,7 +487,7 @@ public class ConstructorUI : MonoBehaviour
             else rest = SocketIdle;
             s.img.color = dragging == null
                 ? rest
-                : (FitsDragged(i, out bool ok) ? (ok ? SocketOk : SocketNo) : rest);
+                : (FitsDragged(s.index, out bool ok) ? (ok ? SocketOk : SocketNo) : rest);
         }
 
         foreach (var star in stars)
