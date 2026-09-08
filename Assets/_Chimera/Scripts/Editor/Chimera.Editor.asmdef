@@ -1,14 +1,25 @@
 ﻿{
     "name": "Chimera.Editor",
     "rootNamespace": "Chimera.Editor",
-    "references": ["Chimera.Runtime"],
-    "includePlatforms": ["Editor"],
+    "references": [
+        "Chimera.Runtime",
+        "Unity.Pipeline"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
     "defineConstraints": [],
-    "versionDefines": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.pipeline",
+            "expression": "",
+            "define": "CHIMERA_PIPELINE"
+        }
+    ],
     "noEngineReferences": false
 }
