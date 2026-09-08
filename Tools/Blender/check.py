@@ -38,38 +38,48 @@ def main():
     bones, out, warn = from_points(sp.DEFS, sp.P)
     by = {b.name: b for b in bones}
     bad = list(warn)
+    # Вторая топология (змея) — остеометрия волка и высоты млекопитающих неприменимы
+    is_chain = getattr(sp, 'CODE_DRIVEN', False) or getattr(sp, 'SECOND_TOPOLOGY', False) or SPECIES == 'snake'
 
     print('ВИД: %s · холка %.3f м · записей костей %d (из них зеркальных пар %d)'
           % (SPECIES, W, len(bones), sum(1 for b in bones if b.mirrorX)))
 
     print('\n── ДЛИНЫ ПРОТИВ ОСТЕОМЕТРИИ (доли холки) ──')
-    for n, (want, tol) in NORM.items():
-        if n not in by:
-            bad.append('  нет кости %r' % n); continue
-        got = by[n].length / W
-        ok = abs(got - want) <= tol
-        print('  %-13s %.3f  норма %.2f ±%.2f  %s' % (n, got, want, tol, 'ok' if ok else '← ВРЁТ'))
-        if not ok:
-            bad.append('  %s: %.3f против нормы %.2f' % (n, got, want))
+    if is_chain:
+        print('  (пропущено: вторая топология, нормы волка неприменимы)')
+    else:
+        for n, (want, tol) in NORM.items():
+            if n not in by:
+                bad.append('  нет кости %r' % n); continue
+            got = by[n].length / W
+            ok = abs(got - want) <= tol
+            print('  %-13s %.3f  норма %.2f ±%.2f  %s' % (n, got, want, tol, 'ok' if ok else '← ВРЁТ'))
+            if not ok:
+                bad.append('  %s: %.3f против нормы %.2f' % (n, got, want))
 
-    for gn, (names, want, tol) in GROUPS.items():
-        miss = [n for n in names if n not in by]
-        if miss:
-            bad.append('  %s: нет костей %s' % (gn, miss)); continue
-        got = sum(by[n].length for n in names) / W
-        ok = abs(got - want) <= tol
-        print('  %-14s %.3f  норма %.2f ±%.2f  %s  (%d звеньев)'
-              % (gn, got, want, tol, 'ok' if ok else '← ВРЁТ', len(names)))
-        if not ok:
-            bad.append('  %s: %.3f против нормы %.2f' % (gn, got, want))
+        for gn, (names, want, tol) in GROUPS.items():
+            miss = [n for n in names if n not in by]
+            if miss:
+                bad.append('  %s: нет костей %s' % (gn, miss)); continue
+            got = sum(by[n].length for n in names) / W
+            ok = abs(got - want) <= tol
+            print('  %-14s %.3f  норма %.2f ±%.2f  %s  (%d звеньев)'
+                  % (gn, got, want, tol, 'ok' if ok else '← ВРЁТ', len(names)))
+            if not ok:
+                bad.append('  %s: %.3f против нормы %.2f' % (gn, got, want))
 
     print('\n── ВЫСОТЫ СУСТАВОВ ПРОТИВ ФОТО (доли холки) ──')
-    for pt, (want, tol) in JOINTS.items():
-        got = sp.P[pt][1] / W
-        ok = abs(got - want) <= tol
-        print('  %-13s %.3f  с фото %.3f ±%.2f  %s' % (pt, got, want, tol, 'ok' if ok else '← ВРЁТ'))
-        if not ok:
-            bad.append('  сустав %s на %.3f, с фото %.3f' % (pt, got, want))
+    if is_chain:
+        print('  (пропущено: вторая топология)')
+    else:
+        for pt, (want, tol) in JOINTS.items():
+            if pt not in sp.P:
+                print('  %-13s — нет точки, пропуск' % pt); continue
+            got = sp.P[pt][1] / W
+            ok = abs(got - want) <= tol
+            print('  %-13s %.3f  с фото %.3f ±%.2f  %s' % (pt, got, want, tol, 'ok' if ok else '← ВРЁТ'))
+            if not ok:
+                bad.append('  сустав %s на %.3f, с фото %.3f' % (pt, got, want))
 
     print('\n── ГАБАРИТ И ПОСАДКА ──')
     lo = min(min(out[b.name][0][1], out[b.name][2][1]) - max(b.r0, b.r1) for b in bones)
