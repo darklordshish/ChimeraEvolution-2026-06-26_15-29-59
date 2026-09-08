@@ -387,9 +387,16 @@ public class ChimeraDevWindow : EditorWindow
         // считается и показывается, но форму ещё не двигает. Строка стоит здесь ЗАРАНЕЕ по гоче проекта —
         // молчащую фичу не диагностируют, и «почему морда не поехала» гадали бы по скриншотам
         var domSp = pb.MostKin(out _);
+        // СОСТОЯНИЕ СМЕШЕНИЯ ЧИТАЕТСЯ ПО СОСТАВУ, А НЕ ПОСТРОЕНИЕМ ПЛАНА. Здесь звался GetBlendedPlan(),
+        // а он клонирует весь массив сокетов и строит три словаря — на КАЖДЫЙ OnGUI, то есть каждый кадр
+        // в Play (Update зовёт Repaint). Ради одной подписи. Тот же ответ даёт наличие графта: план
+        // возвращает null ровно на родном составе, а родной состав — это отсутствие чужих органов
+        string mixState = pb.BeastSlots > 0 ? "ВКЛ (голова по весу, хребет искл.)" : "тождественность (родной состав)";
         EditorGUILayout.LabelField(domSp != null
-            ? $"Облик: {domSp.speciesName} {pb.Identity(domSp):P0} · смешение ВЫКЛ (инфраструктура)"
-            : "Облик: доминанты нет — истинная химера · смешение ВЫКЛ");
+            ? $"Облик: {domSp.speciesName} {pb.Identity(domSp):P0} · смешение {mixState}"
+            : $"Облик: доминанты нет — истинная химера · смешение {mixState}");
+        // Бюджет держит BodyRules — один источник на проект; панель только показывает
+        EditorGUILayout.LabelField($"Бюджет: {BodyRules.BudgetTrisPerCreature} трис/сущ. · 25 в кадре = {BodyRules.BudgetTris25} трис", EditorStyles.miniLabel);
         EditorGUILayout.LabelField("Слоты:", EditorStyles.boldLabel);
         EditorGUILayout.LabelField(pb.SlotsInfo, EditorStyles.wordWrappedLabel);
     }

@@ -75,6 +75,9 @@ public static class BodyRules
                 });
         }
 
+        // ── КЛЕТКА: валидация топологии и Ratio (Ф1) ───────────────────────────────────
+        list.AddRange(CheckCages(s));
+
         foreach (var k in s.sockets)
         {
             if (k == null || string.IsNullOrEmpty(k.name)) continue;
@@ -226,6 +229,127 @@ public static class BodyRules
                     text = $"внутреннее место больше носителя «{drawn}» по всем осям: " +
                            $"{me.size.x:F3}×{me.size.y:F3}×{me.size.z:F3} против {par.size.x:F3}×{par.size.y:F3}×{par.size.z:F3}"
                 });
+        }
+        return list;
+    }
+
+    // ── КЛЕТКА: SameTopology + Ratio без метров (SPEC-kletka-tela.md §2, §4 И4) ──────────
+
+    /// <summary>Одинакова ли топология клеток (M×N и число ландмарок) — условие покомпонентного среднего.</summary>
+    public static bool SameTopology(CageTable a, CageTable b)
+    {
+        if (a == null || b == null) return false;
+        // 0→дефолт: ненастроенная клетка не участвует в сравнении (фолбэк на кубы)
+        if (!a.IsConfigured || !b.IsConfigured) return false;
+        return a.SameTopology(b);
+    }
+
+    /// <summary>Кросс-видовая проверка: одноимённые слоты обязаны иметь одинаковую топологию M×N.</summary>
+    public static List<Issue> CheckCages(SpeciesSO a, SpeciesSO b)
+    {
+        var list = new List<Issue>();
+        if (a == null || b == null) return list;
+        if (a.cages == null || b.cages == null) return list;
+        var byA = new Dictionary<string, CageTable>();
+        foreach (var c in a.cages) if (c != null && c.IsConfigured && !string.IsNullOrEmpty(c.slot)) byA[c.slot] = c;
+        foreach (var c in b.cages)
+        {
+            if (c == null || !c.IsConfigured || string.IsNullOrEmpty(c.slot)) continue;
+            if (!byA.TryGetValue(c.slot, out var ca)) continue;
+            if (!SameTopology(ca, c))
+                list.Add(new Issue
+                {
+                    species = $"{a.speciesName}↔{b.speciesName}", where = c.slot, error = true,
+                    text = $"топология клетки слота «{c.slot}» разошлась: {a.speciesName} {ca.M}×{ca.N} vs {b.speciesName} {c.M}×{c.N} — химера невыразима покомпонентным средним (SPEC §2)"
+                });
+        }
+        return list;
+    }
+
+    // ── БЮДЖЕТ Ф6: 324 квада ≈830 трис/сущ. (ADR-1 хребет 8×10, было 310/800), 25 в кадре ≈20.7k. Общая вершинная нагрузка
+    public const int BudgetQuads = 324;
+    public const int BudgetTrisPerCreature = 830;
+    public const int BudgetTris25 = 20750;
+
+    /// <summary>Бюджет клетки: сумма M×N по всем слотам должна укладываться в BudgetQuads (Ф6).</summary>
+    public static List<Issue> CheckBudget(SpeciesSO s)
+    {
+        var list = new List<Issue>();
+        if (s == null || s.cages == null) return list;
+        int totalQuads = 0;
+        foreach (var c in s.cages)
+        {
+            if (c == null || !c.IsConfigured) continue;
+            // МЕЖДУ M СТАНЦИЯМИ ПРОЛЁТОВ M−1, А НЕ M. Квад натянут между СОСЕДНИМИ кольцами, поэтому
+            // ряд из M колец даёт (M−1)·N квадов. Формула M·N завышала счёт у каждого слота и при этом
+            // не совпадала ни с одной строкой таблицы SPEC §6: там 8×10 → 70, 4×8 → 24, 6×8 → 40.
+            int quads = (c.M - 1) * c.N;
+            // ПАРНЫЙ СЛОТ СТОИТ ВДВОЕ. Руки/Ноги/уши — ОДИН сокет с mirrorX, и клетка у него одна
+            // (дубли запрещены проверкой ниже). Итог 324 в спеке — уже удвоенный, значит удваивать надо здесь,
+            // иначе сумма выходит односторонней и показывает запас там, где бюджет уже выбран
+            if (IsMirrored(s, c.slot)) quads *= 2;
+            totalQuads += quads;
+        }
+        // пока клетки не у всех слотов — проверяем только заполненные, полный бюджет ждём волка целиком
+        if (totalQuads > BudgetQuads)
+            list.Add(new Issue { species = s.speciesName, where = "бюджет", error = true, text = $"бюджет клетки {totalQuads} квадов > {BudgetQuads} (на существо ≈{Mathf.RoundToInt(totalQuads * (BudgetTrisPerCreature / (float)BudgetQuads))} трис при бюджете {BudgetTrisPerCreature})" });
+        return list;
+    }
+
+    /// <summary>Слот парный? Клетка у зеркального сокета одна, а в кадре его две — бюджет это учитывает.</summary>
+    static bool IsMirrored(SpeciesSO s, string slot)
+    {
+        if (s.sockets == null || string.IsNullOrEmpty(slot)) return false;
+        foreach (var k in s.sockets)
+            if (k != null && k.name == slot) return k.mirrorX;
+        return false;
+    }
+
+    /// <summary>Внутривидовая валидация клеток: корректность полей и отсутствие дублей.</summary>
+    public static List<Issue> CheckCages(SpeciesSO s)
+    {
+        var list = new List<Issue>();
+        if (s == null || s.cages == null) return list;
+        var seen = new HashSet<string>();
+        foreach (var c in s.cages)
+        {
+            if (c == null) continue;
+            // пустая заглушка 0→дефолт — пропускаем (старый ассет или ненастроенный слот)
+            if (!c.IsConfigured && c.M == 0 && c.N == 0 && (c.radii == null || c.radii.Length == 0)) continue;
+            if (string.IsNullOrEmpty(c.slot))
+            {
+                list.Add(new Issue { species = s.speciesName, where = "(клетка)", error = true, text = "клетка без имени слота" });
+                continue;
+            }
+            if (!BodySlots.IsKnown(c.slot))
+                list.Add(new Issue { species = s.speciesName, where = c.slot, error = true, text = $"слот клетки «{c.slot}» не в словаре BodySlots" });
+            if (!seen.Add(c.slot))
+                list.Add(new Issue { species = s.speciesName, where = c.slot, error = true, text = $"дубль клетки слота «{c.slot}»" });
+            if (c.M <= 0 || c.N <= 0)
+                list.Add(new Issue { species = s.speciesName, where = c.slot, error = true, text = $"клетка «{c.slot}» с нулевым M×N ({c.M}×{c.N}) при заданных radii — размерность потеряна" });
+            else if (c.radii == null || c.radii.Length != c.M * c.N)
+                // ПРЕДУПРЕЖДЕНИЕ, А НЕ ОШИБКА: по SPEC §7 клетки заполняются ПО СЛОТУ на задачу, и пока
+                // вид набирается, недобранный слот — норма. Красное на нормальном ходу работы приучает
+                // не смотреть на красное вовсе, а это дороже пропущенной клетки
+                list.Add(new Issue { species = s.speciesName, where = c.slot, error = false, text = $"клетка «{c.slot}» radii {c.radii?.Length ?? 0} ≠ M×N {c.M * c.N} — ещё не заполнена?" });
+            else
+            {
+                // ОТРИЦАТЕЛЬНЫЙ РАДИУС — ошибка знака, и это ЖЁСТКО: наружу от оси нельзя на минус.
+                //     А вот проверки «> 5 калибров = метры» здесь БОЛЬШЕ НЕТ, и вот почему. Она заводилась
+                // ловить нарушение И4 (метры в данных донора), но метры у наших зверей лежат в 0.02…1.5 —
+                // то есть ЦЕЛИКОМ внутри её же коридора [0..5]. Сработать она могла лишь на радиусе от пяти
+                // метров, каких в игре нет: правило не способно поймать собственную мишень ни на одном
+                // мыслимом входе. Настоящая защита И4 структурная — радиус умножается на калибр носителя
+                // на выходе (CageTable.BlendWithCaliber), метру там просто негде появиться.
+                //     Порог по величине вернётся, когда наберётся распределение реальных клеток: тогда его
+                // выведут из фактов, как выведены GapWarn/OverlapWarn, а не назначат с потолка
+                for (int i = 0; i < c.radii.Length; i++)
+                    if (c.radii[i] < 0f)
+                    {
+                        list.Add(new Issue { species = s.speciesName, where = c.slot, error = true, text = $"клетка «{c.slot}» radii[{i}]={c.radii[i]:F2} — отрицательный радиус" });
+                        break;
+                    }
+            }
         }
         return list;
     }

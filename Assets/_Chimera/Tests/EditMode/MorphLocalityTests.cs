@@ -127,8 +127,10 @@ namespace Chimera.Tests.EditMode
         [Test]
         public void Budget_800PerCreature_20kFor25()
         {
-            Assert.AreEqual(830, CreatureBody.BudgetTrisPerCreature, "Бюджет на существо ≈830 трис (ADR-1 хребет 8×10)");
-            Assert.AreEqual(20750, CreatureBody.BudgetTris25, "25 в кадре ≈20.7k трис");
+            // Держатель бюджета ОДИН — BodyRules. Прежде тест сверял его с копией в CreatureBody, то есть
+            // существовал ровно потому, что копий было две; копию сняли, сверять больше нечего
+            Assert.AreEqual(830, BodyRules.BudgetTrisPerCreature, "Бюджет на существо ≈830 трис (ADR-1 хребет 8×10)");
+            Assert.AreEqual(20750, BodyRules.BudgetTris25, "25 в кадре ≈20.7k трис");
             Assert.AreEqual(324, BodyRules.BudgetQuads, "SPEC §6: 324 квада (было 310; хребет 70)");
             // 324 квада = 648 трис + сферы/шапки ≈830 — бюджет в трис больше квадов*2
             Assert.GreaterOrEqual(BodyRules.BudgetTrisPerCreature, BodyRules.BudgetQuads * 2);
