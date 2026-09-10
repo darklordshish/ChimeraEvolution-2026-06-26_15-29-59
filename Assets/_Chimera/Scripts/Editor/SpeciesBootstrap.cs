@@ -581,7 +581,7 @@ public static class SpeciesBootstrap
             // [ANIM] codeDriven ПОКА ОСТАЁТСЯ: без переписанного SnakeBodyChain морф построил бы статичное
             // тело ПОВЕРХ префабной цепи — на арене оказалось бы две змеи. Снимается вместе с ним
             new BodySocket { name = "ямки", parent = "голова", attach = 0.500f, attachOffset = new Vector3(0.26f, -0.06f, 0.28f), sizeRel = new Vector3(0.14f, 0.16f, 0.12f), mirrorX = true, formFrom = "Чутьё", formRole = PartRole.Pit }, // АДРЕС ТЕРМОЯМОК: единственный внешний признак термочувства — форма Пит-органа
-            new BodySocket { name = "голова", localPos = new Vector3(0.000f, 0.300f, 0.000f), baseSize = new Vector3(0.240f, 0.163f, 0.430f), codeDriven = true, solid = true, parts = new[] {
+            new BodySocket { name = "голова", parent = "шея", chainForward = true, attach = 0.861f, baseSize = new Vector3(0.240f, 0.163f, 0.430f), codeDriven = true, solid = true, parts = new[] {
                 // ТРЕУГОЛЬНЫЙ ЧЕРЕП ЯМКОГОЛОВОЙ: широкий затылок с ядовитыми железами → резкое сужение → тупая морда
                 new OrganPart { scale = new Vector3(1.00f, 1.00f, 0.46f), offset = new Vector3(0.00f, 0.00f, -0.22f), shape = PartShape.Sphere }, // затылок с железами — САМОЕ широкое место, шире шеи
                 new OrganPart { scale = new Vector3(0.86f, 0.34f, 0.52f), offset = new Vector3(0.00f, 0.26f, -0.14f) }, // ПЛОСКОЕ ТЕМЯ в щитках — кость гранёная
@@ -601,7 +601,7 @@ public static class SpeciesBootstrap
             new BodySocket { name = "глаза", parent = "голова", attach = 0.500f, attachOffset = new Vector3(0.400f, 0.180f, 0.000f), baseSize = new Vector3(0.056f, 0.056f, 0.056f), sizeRel = new Vector3(0.233f, 0.344f, 0.130f), mirrorX = true, formFrom = "Чутьё", formRole = PartRole.Eye, parts = new[] {
                 new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), shape = PartShape.Sphere, role = PartRole.Eye, color = new Color(0.10f, 0.10f, 0.12f, 1f) }, // ФОЛБЭК: тварь без Чутья не слепа, но глаз тускл
             } }, // МЕСТО НА КОЖЕ головы (посчитано лучом из её центра) — форму и цвет даёт ЧУТЬЁ
-            new BodySocket { name = "шея", parent = "голова", attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, 0.035f), codeDriven = true, solid = true, linkDiameter = 0.215f, linkLength = 0.360f, linkTaper = 1.118f, chain = 4 }, // шея: от толщины головы РАСТЁТ к телу (taper > 1) — последнее звено ровно в тело
+            new BodySocket { name = "шея", parent = "хребет", chainForward = true, attach = 0.200f, codeDriven = true, solid = true, linkDiameter = 0.215f, linkLength = 0.360f, linkTaper = 1.118f, chain = 4 }, // шея: от толщины головы РАСТЁТ к телу (taper > 1) — последнее звено ровно в тело
             // ДИАМЕТР НЕ ЗАДАН — наследуется: тело выходит из шеи (0.300), хвост из тела (0.266). Прежде числа
             // дублировались, и хвост стартовал с 0.300, то есть был ТОЛЩЕ туловища, из которого растёт
             // НЕСУЩЕЕ ЗМЕИ ЗОВЁТСЯ «хребет», КАК У ВСЕХ (спека 2026-09-11). Раньше звалось «Тело», и это имя
@@ -609,7 +609,9 @@ public static class SpeciesBootstrap
             // (хребет несёт, Ноги двигают), и ровно это расхождение требовало «исключения для змеи».
             // Цепь звеньев рисует САМО место — орган несущего у змеи формы не даёт, и это законно:
             // обмен работой идёт в обе стороны (см. архитектурные якоря)
-            new BodySocket { name = "хребет", parent = "шея", attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, 0.000f), codeDriven = true, solid = true, linkLength = 0.360f, linkTaper = 0.970f, chain = 5 }, // туловище: самое массивное, чуть сходит к хвосту
+            // КОРЕНЬ ЗМЕИ — ХРЕБЕТ, как у всех (спека 2026-09-11). Цепные поля остаются: несущее
+            // змеи и есть вереница звеньев, а `localPos` ставит её туда, где она стояла при корне-голове
+            new BodySocket { name = "хребет", localPos = new Vector3(0.000f, 0.300f, -1.640f), codeDriven = true, solid = true, linkDiameter = 0.300f, linkLength = 0.360f, linkTaper = 0.970f, chain = 5 }, // туловище: самое массивное, чуть сходит к хвосту
             // ЗВЕНЬЯ ХВОСТА МЕЛЬЧЕ ТЕЛЕСНЫХ (0.24 против 0.36) — как хвостовые позвонки у змей. При общей
             // длине звена 0.36 кончик выходил втрое длиннее своей толщины, то есть тонкой прямой палочкой:
             // суставов на метр столько же, что у туловища, а контур из длинных отрезков читается жёстким.

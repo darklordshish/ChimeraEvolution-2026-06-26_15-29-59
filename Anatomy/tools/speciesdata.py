@@ -155,10 +155,22 @@ def place(s, by, cache=None, depth=0):
         att = num(s, 'attach')
         links = max(1, int(num(par, 'chain')))
         if links > 1:
-            # ЦЕПЬ: доля отсчитывается от НАЧАЛА вереницы, длина — вся цепь
-            taper = num(par, 'linkTaper') or 1.0
-            total = sum(ln * (taper ** i) for i in range(links)) if taper != 1.0 else ln * links
-            local = tuple(ax[i] * ((1.0 - att) * total) + b[i] * off[i] for i in range(3))
+            # ЦЕПЬ: доля отсчитывается от НАЧАЛА вереницы, длина — вся цепь.
+            #     ЗВЕНО В МЕТРАХ (`linkLength`) СЧИТАЕТСЯ ИНАЧЕ, и порт этого не знал — отсюда 3.77 м
+            # расхождения на змее. У билдера (`MorphBuilder.ChainDir`/`ChainLength`) для такого звена
+            # направление задано ПО СМЫСЛУ — всегда `Vector3.back`, потому что вывод оси из габарита
+            # на звене врёт: кольцо погремушки короче своего диаметра. И длина там `linkLength × n`
+            # без прогрессии: `linkTaper` сужает только толщину, длину не трогает.
+            link_len = num(par, 'linkLength')
+            if link_len > 0:
+                # направление берётся из данных: `chainForward` разворачивает рост цепи вперёд
+                grow = (0.0, 0.0, 1.0) if str(s.get('chainForward', '0')).strip() in ('1', 'true') else (0.0, 0.0, -1.0)
+                total = link_len * links
+            else:
+                grow = ax
+                taper = num(par, 'linkTaper') or 1.0
+                total = sum(ln * (taper ** i) for i in range(links)) if taper != 1.0 else ln * links
+            local = tuple(grow[i] * ((1.0 - att) * total) + b[i] * off[i] for i in range(3))
         else:
             local = tuple(ax[i] * ((att - 0.5) * ln) + b[i] * off[i] for i in range(3))
         moved = _apply(prot, local)

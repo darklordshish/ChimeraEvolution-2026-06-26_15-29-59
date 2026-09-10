@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>МОРФОЛОГИЯ (ось 2): собирает КУБ-МОДЕЛЬ тела из данных — ОДНА система (без статичного BuildBlocky,
@@ -236,7 +236,7 @@ public static class MorphBuilder
                 // Поэтому доля отсчитывается от начала: attach 1 = у головы, 0 = кончик — и ноль даёт РОВНО
                 // конец вереницы. Прежняя поправка `− len/2` приводила в ЦЕНТР последнего звена, и вся ветка
                 // садилась внахлёст на ползвена: хвост тонул в туловище, погремушка — в хвосте
-                Vector3 grow = ChainDir(par, b);
+                Vector3 grow = ChainDir(par, b, s.chainForward);   // с какого конца цепи садится РЕБЁНОК
                 pos = ppos + prot * (grow * ((1f - s.attach) * ChainLength(par, len))
                                      + Vector3.Scale(s.attachOffset, b));
             }
@@ -454,7 +454,9 @@ public static class MorphBuilder
     /// <summary>Ось цепи. У ЗВЕНА В МЕТРАХ она задана по смыслу — вдоль хребта, всегда Z: звено бывает
     /// КОРОЧЕ своего диаметра (кольцо погремушки 0.09 при 0.15), и вывод оси из габарита увёл бы цепь вбок.
     /// Это та же мина, что разворачивала тело башней вверх, — здесь её просто нет.</summary>
-    static Vector3 ChainDir(BodySocket s, Vector3 size) => s.linkLength > 0f ? Vector3.back : ChainDir(size);
+    static Vector3 ChainDir(BodySocket s, Vector3 size, bool forward = false) => s.linkLength > 0f
+                                                        ? (forward ? Vector3.forward : Vector3.back)
+                                                        : ChainDir(size);
 
     /// <summary>Полная длина цепи — нужна `Place`, чтобы ребёнок сел на КОНЕЦ вереницы (хвост за туловищем).
     /// У ЗВЕНА В МЕТРАХ это просто длина × число: `linkTaper` сужает только толщину, длину не трогает —
