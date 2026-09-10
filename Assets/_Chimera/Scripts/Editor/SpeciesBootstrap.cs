@@ -529,7 +529,10 @@ public static class SpeciesBootstrap
         {
             new Organ { organName = "Ядовитые клыки",       slot = "Пасть",  hotkey = "5", cost = 5, damage = 24, enablesBite = true, venomStacks = 1 }, // укус игрока травит
             new Organ { organName = "Хладнокровное сердце", slot = "Сердце", hotkey = "3", cost = 5, hpBonus = 1.35f, staminaBonus = 0.3f, staminaRegenBonus = 0.2f, regen = 0f, regenOOC = 2f, atkCooldown = 0.5f, coldBlooded = true }, // ХОЛОДНЫЙ МЕТАБОЛИЗМ: в бою НЕ регенит (regen 0), вне боя восстанавливается ЛУЧШЕ человека (regenOOC 2 > 1). Кулдаун ОБЯЗАТЕЛЕН (0 в бленде = меч-пулемёт)
-            new Organ { organName = "Тело-хвост",           slot = "Тело",   hotkey = "7", cost = 5, moveSpeed = 10f, dashSpeed = 20f, chassisOnly = true, digestion = true }, // ходовая часть ШАССИ змеи: аугументом не крадётся (локомоция = свойство шасси) + ПЕРЕВАРИВАНИЕ (глотание целиком = свойство змеиного тела)
+            // ХОДОВАЯ ЗМЕИ — В СЛОТЕ ХОДОВОЙ, а не в несущем. Слот «Ноги» означает РОЛЬ (локомоция), а не
+            // анатомию: змея ползёт телом, сова полетит крыльями — имя слота будет переименовано в
+            // нейтральное отдельным заходом (решение пользователя 11.09), структура же верна уже сейчас
+            new Organ { organName = "Тело-хвост",           slot = "Ноги",   hotkey = "7", cost = 5, moveSpeed = 10f, dashSpeed = 20f, chassisOnly = true, digestion = true }, // ходовая часть ШАССИ змеи: аугументом не крадётся (локомоция = свойство шасси) + ПЕРЕВАРИВАНИЕ (глотание целиком = свойство змеиного тела)
             new Organ { organName = "Чешуя",                slot = "Шкура",  hotkey = "6", cost = 4, damageReduction = 0.25f, camo = true }, // лёгкая броня: стелс+яд+одиночная охота компенсируют (D-тюнинг)
             new Organ { organName = "Пит-орган",            slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.7f, enablesThermal = true, thermalRange = 14f, visualParts = new[] {
                 new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), shape = PartShape.Sphere, role = PartRole.Pit }, // термоямка
@@ -601,12 +604,17 @@ public static class SpeciesBootstrap
             new BodySocket { name = "шея", parent = "голова", attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, 0.035f), codeDriven = true, solid = true, linkDiameter = 0.215f, linkLength = 0.360f, linkTaper = 1.118f, chain = 4 }, // шея: от толщины головы РАСТЁТ к телу (taper > 1) — последнее звено ровно в тело
             // ДИАМЕТР НЕ ЗАДАН — наследуется: тело выходит из шеи (0.300), хвост из тела (0.266). Прежде числа
             // дублировались, и хвост стартовал с 0.300, то есть был ТОЛЩЕ туловища, из которого растёт
-            new BodySocket { name = "Тело", parent = "шея", attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, 0.000f), codeDriven = true, solid = true, linkLength = 0.360f, linkTaper = 0.970f, chain = 5 }, // туловище: самое массивное, чуть сходит к хвосту
+            // НЕСУЩЕЕ ЗМЕИ ЗОВЁТСЯ «хребет», КАК У ВСЕХ (спека 2026-09-11). Раньше звалось «Тело», и это имя
+            // несло ДВЕ роли сразу: несущую ось и слот ходовой части. У остальных четырёх роли разведены
+            // (хребет несёт, Ноги двигают), и ровно это расхождение требовало «исключения для змеи».
+            // Цепь звеньев рисует САМО место — орган несущего у змеи формы не даёт, и это законно:
+            // обмен работой идёт в обе стороны (см. архитектурные якоря)
+            new BodySocket { name = "хребет", parent = "шея", attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, 0.000f), codeDriven = true, solid = true, linkLength = 0.360f, linkTaper = 0.970f, chain = 5 }, // туловище: самое массивное, чуть сходит к хвосту
             // ЗВЕНЬЯ ХВОСТА МЕЛЬЧЕ ТЕЛЕСНЫХ (0.24 против 0.36) — как хвостовые позвонки у змей. При общей
             // длине звена 0.36 кончик выходил втрое длиннее своей толщины, то есть тонкой прямой палочкой:
             // суставов на метр столько же, что у туловища, а контур из длинных отрезков читается жёстким.
             // Теперь 6 звеньев вместо 4: длина хвоста та же 1.44, суставов на метр 4.2 против 2.8
-            new BodySocket { name = "Хвост", parent = "Тело", attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, 0.000f), codeDriven = true, solid = true, linkLength = 0.240f, linkTaper = 0.843f, chain = 6 }, // хвост: подхватывает толщину тела (0.266) и уходит на конус к 0.113
+            new BodySocket { name = "Хвост", parent = "хребет", attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, 0.000f), codeDriven = true, solid = true, linkLength = 0.240f, linkTaper = 0.843f, chain = 6 }, // хвост: подхватывает толщину тела (0.266) и уходит на конус к 0.113
             // ПОГРЕМУШКА — НЕ ЗВЕНО, и правильно, что не звено: другой орган (шасси-онли), цельный, со своим
             // смыслом — трещотка. Форму даёт ОРГАН (стопка роговых колец), место лишь держит калибр. Цепью
             // её описывать было ошибкой: кольца становились сегментами, и движок растаскивал их по пути
@@ -616,14 +624,18 @@ public static class SpeciesBootstrap
             // ВНИМАНИЕ: смещение задано в КАЛИБРАХ ХВОСТА, а его калибр вдоль хребта = длина звена. Мельчим
             // звено — надо пересчитать и это число: 0.75 × 0.24 = 0.18 (при звене 0.36 стояло 0.5)
             new BodySocket { name = "Погремушка", parent = "Хвост", attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, -0.750f), baseSize = new Vector3(0.130f, 0.130f, 0.130f), solid = true },
-            new BodySocket { name = "Шкура",  inner = true, parent = "Тело", attach = 0.500f, baseSize = new Vector3(0.300f, 0.300f, 1.200f) }, // чешуя — покров всей ЦЕПИ, своей детали нет. Но АДРЕС нужен под ЧУЖОЙ покров: Иглы ежа со своей формой сядут вдоль середины тела, а не метровым калибром в нуле. Раскладка игл по сегментам позвоночника — отдельная фича, не сейчас, и морф рисовал ей базовый куб в начале координат — тот самый ящик на голове
-            new BodySocket { name = "Сердце", inner = true, parent = "Тело", attach = 0.700f, baseSize = new Vector3(0.220f, 0.220f, 0.400f) },  // у змеи хребта нет — сердце сидит на ТЕЛЕ-цепи, ближе к голове (0.7) и вытянуто вдоль неё. Калибр свой: у цепного родителя он выводится из звена, долей от него не возьмёшь
+            new BodySocket { name = "Шкура",  inner = true, parent = "хребет", attach = 0.500f, baseSize = new Vector3(0.300f, 0.300f, 1.200f) }, // чешуя — покров всей ЦЕПИ, своей детали нет. Но АДРЕС нужен под ЧУЖОЙ покров: Иглы ежа со своей формой сядут вдоль середины тела, а не метровым калибром в нуле. Раскладка игл по сегментам позвоночника — отдельная фича, не сейчас, и морф рисовал ей базовый куб в начале координат — тот самый ящик на голове
+            new BodySocket { name = "Сердце", inner = true, parent = "хребет", attach = 0.700f, baseSize = new Vector3(0.220f, 0.220f, 0.400f) },  // сердце сидит на цепи хребта, ближе к голове (0.7) и вытянуто вдоль неё. Калибр свой: у цепного родителя он выводится из звена, долей от него не возьмёшь
             new BodySocket { name = "Чутьё",  inner = true, parent = "голова", attach = 0.500f, sizeRel = new Vector3(0.500f, 0.500f, 0.500f) },  // ЧУВСТВА ЖИВУТ В ГОЛОВЕ. Своей формы у места нет, и деталь не родится сама собой — но АДРЕС нужен заранее: дашь органу форму (термо-ямки), и без родителя с калибром она сядет метровым кубом в начало координат. Доля от головы — одна на все виды
             // ГРАФТЫ: змея, отрастившая лапы/рога/иглы — читается сразу
-            new BodySocket { name = "Руки",   parent = "Тело", attach = 0.880f, attachOffset = new Vector3(0.600f, -0.300f, 0.000f), baseSize = new Vector3(0.068f, 0.231f, 0.080f), mirrorX = true, graft = true }, // передняя пара — сразу за шеей
-            new BodySocket { name = "Ноги",   parent = "Тело", attach = 0.220f, attachOffset = new Vector3(0.600f, -0.300f, 0.000f), baseSize = new Vector3(0.068f, 0.231f, 0.080f), mirrorX = true, graft = true }, // задняя пара — у перехода в хвост
+            new BodySocket { name = "Руки",   parent = "хребет", attach = 0.880f, attachOffset = new Vector3(0.600f, -0.300f, 0.000f), baseSize = new Vector3(0.068f, 0.231f, 0.080f), mirrorX = true, graft = true }, // передняя пара — сразу за шеей
+            // `inner` У ХОДОВОЙ ЗМЕИ: место видно РОВНО ТОГДА, когда есть что показать. Орган «Тело-хвост»
+            // формы не даёт (змея ползёт цепью хребта, отдельной ходовой детали у неё нет) — без `inner`
+            // место проступало базовым примитивом, и у змеи вырастали два кубика-«ноги». Привитые ЧУЖИЕ
+            // ноги со своей формой покажутся как надо: у них есть что показать
+            new BodySocket { name = "Ноги",   inner = true, parent = "хребет", attach = 0.220f, attachOffset = new Vector3(0.600f, -0.300f, 0.000f), baseSize = new Vector3(0.068f, 0.231f, 0.080f), mirrorX = true, graft = true }, // задняя пара — у перехода в хвост
             new BodySocket { name = "Рога",   parent = "голова", attach = 0.700f, attachOffset = new Vector3(0.500f, 0.600f, -0.200f), baseSize = new Vector3(0.061f, 0.061f, 0.072f), mirrorX = true, graft = true }, // КАЛИБР; на черепе, как у рогатых
-            new BodySocket { name = "Игломёт",parent = "Тело", attach = 0.550f, attachOffset = new Vector3(0.000f, 0.600f, 0.000f),      baseSize = new Vector3(0.088f, 0.088f, 0.104f), baseEuler = new Vector3(-10f, 0f, 0f), graft = true }, // КАЛИБР; на спине, едет со звеном
+            new BodySocket { name = "Игломёт",parent = "хребет", attach = 0.550f, attachOffset = new Vector3(0.000f, 0.600f, 0.000f),      baseSize = new Vector3(0.088f, 0.088f, 0.104f), baseEuler = new Vector3(-10f, 0f, 0f), graft = true }, // КАЛИБР; на спине, едет со звеном
         };
 
         snake.bones = new[]
@@ -640,11 +652,11 @@ public static class SpeciesBootstrap
             new Bone { name = "челюсть", socket = "Пасть", parent = "ветвь", attach = 1.002f, length = 0.153f, dir = new Vector3(-177.08f, 0f, 25.68f), r0 = 0.019f, r1 = 0.013f, section = 0.55f, depth = 0.85f, mirrorX = true },   // тело челюсти, узкая вбок — пасть открывается
             new Bone { name = "шея_3", socket = "шея", parent = "шея_2", attach = 1f, length = 0.12f, dir = new Vector3(-0.01f, 0f, 0f), r0 = 0.042f, r1 = 0.038f, section = 1.15f, depth = 1.05f, chain = 2 },
             new Bone { name = "шея_в", socket = "шея", parent = "шея_3", attach = 1f, length = 0.14f, dir = new Vector3(-0.88f, 0f, 0f), r0 = 0.038f, r1 = 0.035f, section = 1.15f, depth = 1.05f, chain = 2 },   // последнее шейное — переходит в туловище без шва
-            new Bone { name = "тело1", socket = "Тело", parent = "шея_в", attach = 1f, length = 0.16f, dir = new Vector3(1.84f, 0f, 0f), r0 = 0.045f, r1 = 0.051f, chain = 3 },
-            new Bone { name = "тело2", socket = "Тело", parent = "тело1", attach = 1f, length = 0.14f, dir = new Vector3(-0.21f, 0f, 0f), r0 = 0.051f, r1 = 0.054f, chain = 3 },
-            new Bone { name = "тело3", socket = "Тело", parent = "тело2", attach = 1f, length = 0.16f, dir = new Vector3(0.21f, 0f, 0f), r0 = 0.054f, r1 = 0.048f, chain = 3 },
-            new Bone { name = "тело4", socket = "Тело", parent = "тело3", attach = 1f, length = 0.18f, dir = new Vector3(-0.16f, 0f, 0f), r0 = 0.048f, r1 = 0.042f, chain = 3 },
-            new Bone { name = "тело5", socket = "Тело", parent = "тело4", attach = 1f, length = 0.08f, dir = new Vector3(-1.99f, 0f, 0f), r0 = 0.042f, r1 = 0.035f, chain = 3 },   // последнее туловищное — стык с хвостом
+            new Bone { name = "тело1", socket = "хребет", parent = "шея_в", attach = 1f, length = 0.16f, dir = new Vector3(1.84f, 0f, 0f), r0 = 0.045f, r1 = 0.051f, chain = 3 },
+            new Bone { name = "тело2", socket = "хребет", parent = "тело1", attach = 1f, length = 0.14f, dir = new Vector3(-0.21f, 0f, 0f), r0 = 0.051f, r1 = 0.054f, chain = 3 },
+            new Bone { name = "тело3", socket = "хребет", parent = "тело2", attach = 1f, length = 0.16f, dir = new Vector3(0.21f, 0f, 0f), r0 = 0.054f, r1 = 0.048f, chain = 3 },
+            new Bone { name = "тело4", socket = "хребет", parent = "тело3", attach = 1f, length = 0.18f, dir = new Vector3(-0.16f, 0f, 0f), r0 = 0.048f, r1 = 0.042f, chain = 3 },
+            new Bone { name = "тело5", socket = "хребет", parent = "тело4", attach = 1f, length = 0.08f, dir = new Vector3(-1.99f, 0f, 0f), r0 = 0.042f, r1 = 0.035f, chain = 3 },   // последнее туловищное — стык с хвостом
             new Bone { name = "хвост1", socket = "Хвост", parent = "тело5", attach = 0.999f, length = 0.08f, dir = new Vector3(1.43f, 0f, 0f), r0 = 0.035f, r1 = 0.03f, chain = 2 },
             new Bone { name = "хвост2", socket = "Хвост", parent = "хвост1", attach = 0.999f, length = 0.07f, dir = new Vector3(-1.12f, 0f, 0f), r0 = 0.03f, r1 = 0.026f, chain = 2 },
             new Bone { name = "хвост3", socket = "Хвост", parent = "хвост2", attach = 1f, length = 0.06f, dir = new Vector3(0.41f, 0f, 0f), r0 = 0.026f, r1 = 0.021f, chain = 2 },
