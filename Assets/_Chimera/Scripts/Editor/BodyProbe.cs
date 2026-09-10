@@ -63,12 +63,28 @@ public static class BodyProbe
                 int cut = sock.IndexOf('~');
                 if (cut > 0) sock = sock.Substring(0, cut);
 
+                // ГАБАРИТ СКЕЛЕТНОЙ ОБОЛОЧКИ БЕРЁТСЯ ИЗ МЕША, А НЕ ИЗ РЕНДЕРЕРА (11.09). У
+                // `SkinnedMeshRenderer` поле `bounds` вычисляется ЛЕНИВО — при скиннинге, то есть при
+                // отрисовке. Здесь тело строится и сносится `DestroyImmediate` в одном вызове, кадра не
+                // случается, и оболочка отдаёт НОЛЬ. Ловилось это отвратительно: счётчик «деталей
+                // построено» не менялся (рендереры-то есть), просто у девяти мест из карты пропадали
+                // габариты, а с ними стыки и перекрытия — треть отчёта. Причём непостоянно: в
+                // долгоживущем редакторе Scene View успевал отрисовать, и числа появлялись. Детектор,
+                // который врёт в зависимости от того, давно ли открыт редактор, хуже отсутствующего
+                var box = r.bounds;
+                if (box.size == Vector3.zero && r is SkinnedMeshRenderer smr && smr.sharedMesh != null)
+                {
+                    var mb = smr.sharedMesh.bounds;                 // bind-поза, система rootBone
+                    var root = smr.rootBone != null ? smr.rootBone : t;
+                    box = new Bounds(root.TransformPoint(mb.center), Vector3.Scale(mb.size, root.lossyScale));
+                }
+
                 parts.Add(new Part
                 {
                     name = t.name,
                     parent = socketParent.TryGetValue(sock, out var par) ? par : "(вне графа)",
-                    center = r.bounds.center,
-                    size = r.bounds.size,
+                    center = box.center,
+                    size = box.size,
                     hasRenderer = true,
                 });
             }
