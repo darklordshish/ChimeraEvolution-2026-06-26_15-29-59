@@ -5,14 +5,15 @@ using UnityEngine;
 /// Dev-утилита: собирает префаб волка (визуал + компоненты). Меню: Chimera → Создать префаб Волка.
 /// Тело на шасси Волк (`CreatureBody`: органы × экспрессия 0.45 → природная особь). Editor-only.
 ///
-/// ВИЗУАЛ: если в `Models/Wolf.fbx` лежит модель из Blender — берём её, иначе строим кубы-плейсхолдеры.
+/// ВИЗУАЛ: тело собирает морфология из сокетов. Ветка «подхватить цельный `Wolf.fbx`» УДАЛЕНА 11.09:
+/// файл вынесен в архив 22.08, метод с тех пор никем не звался, а новые модели идут ЧАСТЯМИ по слотам
+/// (`Docs/models/SPEC-konstruktor-formy.md`) — цельный зверь в префабе больше не предусмотрен.
 /// Кубовая сборка НЕ удалена намеренно: её голову надевает вервольф (`AttachWolfHead`), и она же
 /// страхует, если модель не найдётся — префаб без визуала отлаживать невозможно.
 /// </summary>
 public static class WolfPrefab
 {
     public const string Path = "Assets/_Chimera/Prefabs/Wolf.prefab";
-    const string ModelPath = "Assets/_Chimera/Models/Wolf.fbx";
 
     const string FurMatPath = "Assets/_Chimera/Materials/WolfBody.mat";
     const string NoseMatPath = "Assets/_Chimera/Materials/WolfNose.mat";
@@ -95,29 +96,6 @@ public static class WolfPrefab
         go.AddComponent<WolfPsyche>();
         return go;
     }
-
-    /// <summary>Модель из Blender. Вставляем как ВЛОЖЕННЫЙ префаб (`InstantiatePrefab`, не `Instantiate`):
-    /// связь с FBX живая, и перегенерация модели в соседней линии работ подхватится сама, без пересборки
-    /// префаба руками.
-    ///
-    /// ПОВОРОТ КОРНЯ (−90,0,0) НЕ ТРОГАТЬ. Так экспортёр Blender записывает конвертацию осей у любой
-    /// модели с арматурой. Пока он на месте — волк стоит правильно; обнулить его = поставить волка на нос
-    /// (README моделей, раздел «Ориентация»).</summary>
-    static bool TryAttachModel(GameObject go)
-    {
-        var fbx = AssetDatabase.LoadAssetAtPath<GameObject>(ModelPath);
-        if (fbx == null)
-        {
-            Debug.LogWarning($"WolfPrefab: модель {ModelPath} не найдена — собираю кубы-плейсхолдеры.");
-            return false;
-        }
-
-        var inst = (GameObject)PrefabUtility.InstantiatePrefab(fbx);
-        inst.name = "Model";
-        inst.transform.SetParent(go.transform, false); // локальный трансформ модели остаётся КАК В ФАЙЛЕ
-        return true;
-    }
-
     /// <summary>КУБЫ-ПЛЕЙСХОЛДЕРЫ (запасной визуал): корпус двумя блоками — грудь выше и шире, круп ниже
     /// и уже, — шея-брус, ноги с «собачьим» изломом сзади и хвост-полено.</summary>
     static void BuildBlocky(GameObject go)

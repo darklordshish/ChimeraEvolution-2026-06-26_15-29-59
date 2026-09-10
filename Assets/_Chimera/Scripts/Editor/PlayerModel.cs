@@ -16,11 +16,8 @@ public static class PlayerModel
         { "Capsule", "Body", "Chest", "Neck", "Pelvis", "Head", "Nose", "ArmL", "ArmR", "HandL", "HandR", "LegL", "LegR",
           "EyeL", "EyeR", "BrowL", "BrowR", "Beard", "Model" };
 
-    const string ModelPath = "Assets/_Chimera/Models/Player.fbx";
     const string EyeMatPath = "Assets/_Chimera/Materials/PlayerEyes.mat";
     const string BeardMatPath = "Assets/_Chimera/Materials/PlayerBeard.mat";
-    const string TeethMatPath = "Assets/_Chimera/Materials/PlayerTeeth.mat";
-    const string SkinMatPath = "Assets/_Chimera/Materials/PlayerSkin.mat";
 
     [MenuItem("Chimera/Собрать модель игрока")]
     public static void Rebuild()
@@ -46,15 +43,10 @@ public static class PlayerModel
             if (System.Array.IndexOf(Known, c.name) >= 0) Object.DestroyImmediate(c.gameObject);
         }
 
-        // FBX ОТКЛЮЧЁН (запрос): кубическая модель игрока — единый стиль с волком (морфология-детали лягут поверх кубов).
-        // Вернуть FBX — раскомментировать блок ниже.
-        // if (TryAttachModel(t, footY))
-        // {
-        //     EditorSceneManager.MarkSceneDirty(t.gameObject.scene);
-        //     Debug.Log("Модель игрока подключена из " + ModelPath + ". Сохрани сцену (Ctrl+S). "
-        //             + "Тинт состава и FPS-скрытие работают по именам деталей — они совпадают с контрактом.");
-        //     return;
-        // }
+        // ЦЕЛЬНЫЙ FBX УДАЛЁН 11.09. Здесь лежал закомментированный вызов `TryAttachModel` с пометкой
+        // «вернуть — раскомментировать»: он ждал `Models/Player.fbx`, вынесенного в архив 22.08, то есть
+        // возвращать было уже нечего. Новые модели идут ЧАСТЯМИ по слотам, а не цельным зверем
+        // (`Docs/models/SPEC-konstruktor-formy.md`), и покраска по именам деталей переехала в тинт состава.
 
         // ── СТАТИЧНАЯ СБОРКА ОТКЛЮЧЕНА ─────────────────────────────────────────────────────────────────
         // Тело игрока — ТАКАЯ ЖЕ ХИМЕРА, как у любого существа: его собирает МОРФОЛОГИЯ из состава
@@ -109,43 +101,6 @@ public static class PlayerModel
         EditorSceneManager.MarkSceneDirty(t.gameObject.scene);
         Debug.Log("Статичная модель игрока СНЕСЕНА — тело собирает МОРФОЛОГИЯ из состава (видно в Play). Сохрани сцену (Ctrl+S).");
     }
-
-    /// <summary>Модель из Blender: вставляем ВЛОЖЕННЫМ префабом (`InstantiatePrefab`, не `Instantiate`) —
-    /// связь с FBX живая, и перегенерация модели в соседней линии работ подхватится сама.
-    ///
-    /// ПОВОРОТ КОРНЯ, приходящий из файла, НЕ ТРОГАЕМ (README моделей: обнуление кладёт фигуру на нос).
-    /// Двигаем только по вертикали: модель построена от нуля, а корень игрока — ЦЕНТР капсулы
-    /// контроллера, поэтому её надо опустить к подошвам.
-    ///
-    /// Материалы красим ПО ИМЕНАМ: кожа отдельно от лица не случайно — тинт состава (`CreatureBody`)
-    /// перекрашивает тело по мере озверения, но обходит глаза, брови, бороду и зубы. Борода учёного на
-    /// озверевшем теле — намеренный образ, а не недосмотр.</summary>
-    static bool TryAttachModel(Transform parent, float footY)
-    {
-        var fbx = AssetDatabase.LoadAssetAtPath<GameObject>(ModelPath);
-        if (fbx == null) return false;
-
-        var inst = (GameObject)PrefabUtility.InstantiatePrefab(fbx);
-        inst.name = "Model";
-        inst.transform.SetParent(parent, false);
-        inst.transform.localPosition = new Vector3(0f, footY, 0f);
-
-        var skin = GetOrCreateMat(SkinMatPath, new Color(0.70f, 0.56f, 0.46f), 0.75f);
-        var eyes = GetOrCreateMat(EyeMatPath, new Color(0.10f, 0.10f, 0.12f), 0.25f);
-        var hair = GetOrCreateMat(BeardMatPath, new Color(0.38f, 0.33f, 0.27f), 0.85f);
-        var teeth = GetOrCreateMat(TeethMatPath, new Color(0.88f, 0.86f, 0.79f), 0.45f);
-
-        foreach (var r in inst.GetComponentsInChildren<Renderer>())
-        {
-            string n = r.gameObject.name;
-            r.sharedMaterial = n == "EyeL" || n == "EyeR" ? eyes
-                             : n == "BrowL" || n == "BrowR" || n == "Beard" ? hair
-                             : n == "Teeth" ? teeth
-                             : skin;
-        }
-        return true;
-    }
-
     // материал по пути: загрузить или создать с цветом (идемпотентно, как у других генераторов)
     static Material GetOrCreateMat(string path, Color color, float smoothness = -1f)
     {
