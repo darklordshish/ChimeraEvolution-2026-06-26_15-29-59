@@ -20,7 +20,7 @@ namespace Chimera.Tests.EditMode
             // проверяем что все константы покрыты
             Assert.IsTrue(BodySlots.All.ContainsKey(BodySlots.Spine));
             Assert.IsTrue(BodySlots.All.ContainsKey(BodySlots.Body));
-            Assert.IsTrue(BodySlots.All.ContainsKey(BodySlots.Rattle));
+            Assert.IsTrue(BodySlots.All.ContainsKey(BodySlots.TailTip));
             Assert.IsTrue(BodySlots.All.ContainsKey(BodySlots.Maw));
             Assert.IsTrue(BodySlots.All.ContainsKey(BodySlots.Sense));
             Assert.IsTrue(BodySlots.All.ContainsKey(BodySlots.Heart));

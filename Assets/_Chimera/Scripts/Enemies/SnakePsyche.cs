@@ -153,13 +153,15 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
             nextRattleScan = Time.time + 0.5f;
             // ИМЯ ПО СОКЕТУ, и ищем В ГЛУБИНУ: морф сажает кольца потомками последнего звена хвоста,
             // корневыми детьми их нет. Прежнее "Rattle" — имя снесённого префаба, мигание молчало
+            // СОКЕТ ЗОВЁТСЯ «Наконечник» (11.09): слот описывает РОЛЬ — наконечник хвоста, — а
+            // погремушка это лишь его змеиное наполнение. Орган имя сохранил, место сменило
             // РЕНДЕРЕР САМОГО КОЛЬЦА, А НЕ ВСЁ, ЧТО ВНУТРИ НЕГО. `HeatSignature` вешает тепловые дубли
             // ДЕТЬМИ мешей тела, поэтому «все рендереры в глубину» захватывали и `HeatGhost` — и мы
             // включали его каждый кадр: погремушка светилась термо-контуром, хотя змея холоднокровна и
             // её подпись погашена. Чужой слой не наш, чтобы им распоряжаться
             var found = new System.Collections.Generic.List<Renderer>();
             foreach (var t in GetComponentsInChildren<Transform>(true))
-                if (t.name == "Погремушка" && t.TryGetComponent<Renderer>(out var rr)) found.Add(rr);
+                if (t.name == "Наконечник" && t.TryGetComponent<Renderer>(out var rr)) found.Add(rr);
             rattleRenderers = found.ToArray();
             return rattleRenderers;
         }

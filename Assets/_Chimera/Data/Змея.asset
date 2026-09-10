@@ -128,7 +128,7 @@ MonoBehaviour:
     visualSegments: 0
     visualTaper: 0
   - organName: "\u0422\u0435\u043B\u043E-\u0445\u0432\u043E\u0441\u0442"
-    slot: "\u0422\u0435\u043B\u043E"
+    slot: "\u041D\u043E\u0433\u0438"
     hotkey: 7
     cost: 5
     damage: 0
@@ -305,7 +305,7 @@ MonoBehaviour:
     visualSegments: 0
     visualTaper: 0
   - organName: "\u041F\u043E\u0433\u0440\u0435\u043C\u0443\u0448\u043A\u0430"
-    slot: "\u041F\u043E\u0433\u0440\u0435\u043C\u0443\u0448\u043A\u0430"
+    slot: "\u041D\u0430\u043A\u043E\u043D\u0435\u0447\u043D\u0438\u043A"
     hotkey: 9
     cost: 2
     damage: 0
@@ -524,6 +524,7 @@ MonoBehaviour:
     codeDriven: 0
     solid: 0
     inner: 0
+    chainForward: 0
     graft: 0
     parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
     attach: 0.5
@@ -538,16 +539,17 @@ MonoBehaviour:
     linkLength: 0
     linkTaper: 0
   - name: "\u0433\u043E\u043B\u043E\u0432\u0430"
-    localPos: {x: 0, y: 0.3, z: 0}
+    localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.24, y: 0.163, z: 0.43}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
     codeDriven: 1
     solid: 1
     inner: 0
+    chainForward: 1
     graft: 0
-    parent: 
-    attach: 1
+    parent: "\u0448\u0435\u044F"
+    attach: 0.861
     attachOffset: {x: 0, y: 0, z: 0}
     parts:
     - scale: {x: 1, y: 1, z: 0.46}
@@ -614,6 +616,7 @@ MonoBehaviour:
     codeDriven: 1
     solid: 1
     inner: 0
+    chainForward: 0
     graft: 0
     parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
     attach: 1
@@ -641,6 +644,7 @@ MonoBehaviour:
     codeDriven: 0
     solid: 0
     inner: 0
+    chainForward: 0
     graft: 0
     parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
     attach: 0.5
@@ -668,10 +672,11 @@ MonoBehaviour:
     codeDriven: 1
     solid: 1
     inner: 0
+    chainForward: 1
     graft: 0
-    parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
-    attach: 0
-    attachOffset: {x: 0, y: 0, z: 0.035}
+    parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
+    attach: 0.2
+    attachOffset: {x: 0, y: 0, z: 0}
     parts: []
     chain: 4
     chainTaper: 0
@@ -681,22 +686,23 @@ MonoBehaviour:
     formRole: 0
     linkLength: 0.36
     linkTaper: 1.118
-  - name: "\u0422\u0435\u043B\u043E"
-    localPos: {x: 0, y: 0, z: 0}
+  - name: "\u0445\u0440\u0435\u0431\u0435\u0442"
+    localPos: {x: 0, y: 0.3, z: -1.64}
     baseSize: {x: 1, y: 1, z: 1}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
     codeDriven: 1
     solid: 1
     inner: 0
+    chainForward: 0
     graft: 0
-    parent: "\u0448\u0435\u044F"
-    attach: 0
+    parent: 
+    attach: 1
     attachOffset: {x: 0, y: 0, z: 0}
     parts: []
     chain: 5
     chainTaper: 0
-    linkDiameter: 0
+    linkDiameter: 0.3
     sizeRel: {x: 0, y: 0, z: 0}
     formFrom: 
     formRole: 0
@@ -710,8 +716,9 @@ MonoBehaviour:
     codeDriven: 1
     solid: 1
     inner: 0
+    chainForward: 0
     graft: 0
-    parent: "\u0422\u0435\u043B\u043E"
+    parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     attach: 0
     attachOffset: {x: 0, y: 0, z: 0}
     parts: []
@@ -723,7 +730,7 @@ MonoBehaviour:
     formRole: 0
     linkLength: 0.24
     linkTaper: 0.843
-  - name: "\u041F\u043E\u0433\u0440\u0435\u043C\u0443\u0448\u043A\u0430"
+  - name: "\u041D\u0430\u043A\u043E\u043D\u0435\u0447\u043D\u0438\u043A"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.13, y: 0.13, z: 0.13}
     baseEuler: {x: 0, y: 0, z: 0}
@@ -731,6 +738,7 @@ MonoBehaviour:
     codeDriven: 0
     solid: 1
     inner: 0
+    chainForward: 0
     graft: 0
     parent: "\u0425\u0432\u043E\u0441\u0442"
     attach: 0
@@ -752,8 +760,9 @@ MonoBehaviour:
     codeDriven: 0
     solid: 0
     inner: 1
+    chainForward: 0
     graft: 0
-    parent: "\u0422\u0435\u043B\u043E"
+    parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     attach: 0.5
     attachOffset: {x: 0, y: 0, z: 0}
     parts: []
@@ -773,8 +782,9 @@ MonoBehaviour:
     codeDriven: 0
     solid: 0
     inner: 1
+    chainForward: 0
     graft: 0
-    parent: "\u0422\u0435\u043B\u043E"
+    parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     attach: 0.7
     attachOffset: {x: 0, y: 0, z: 0}
     parts: []
@@ -794,6 +804,7 @@ MonoBehaviour:
     codeDriven: 0
     solid: 0
     inner: 1
+    chainForward: 0
     graft: 0
     parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
     attach: 0.5
@@ -815,8 +826,9 @@ MonoBehaviour:
     codeDriven: 0
     solid: 0
     inner: 0
+    chainForward: 0
     graft: 1
-    parent: "\u0422\u0435\u043B\u043E"
+    parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     attach: 0.88
     attachOffset: {x: 0.6, y: -0.3, z: 0}
     parts: []
@@ -835,9 +847,10 @@ MonoBehaviour:
     mirrorX: 1
     codeDriven: 0
     solid: 0
-    inner: 0
+    inner: 1
+    chainForward: 0
     graft: 1
-    parent: "\u0422\u0435\u043B\u043E"
+    parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     attach: 0.22
     attachOffset: {x: 0.6, y: -0.3, z: 0}
     parts: []
@@ -857,6 +870,7 @@ MonoBehaviour:
     codeDriven: 0
     solid: 0
     inner: 0
+    chainForward: 0
     graft: 1
     parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
     attach: 0.7
@@ -878,8 +892,9 @@ MonoBehaviour:
     codeDriven: 0
     solid: 0
     inner: 0
+    chainForward: 0
     graft: 1
-    parent: "\u0422\u0435\u043B\u043E"
+    parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     attach: 0.55
     attachOffset: {x: 0, y: 0.6, z: 0}
     parts: []
@@ -1066,7 +1081,7 @@ MonoBehaviour:
     parent: "\u0448\u0435\u044F_\u0432"
     layer: 0
     origin: {x: 0, y: 0, z: 0}
-    socket: "\u0422\u0435\u043B\u043E"
+    socket: "\u0445\u0440\u0435\u0431\u0435\u0442"
     attach: 1
     length: 0.16
     endBone: 
@@ -1083,7 +1098,7 @@ MonoBehaviour:
     parent: "\u0442\u0435\u043B\u043E1"
     layer: 0
     origin: {x: 0, y: 0, z: 0}
-    socket: "\u0422\u0435\u043B\u043E"
+    socket: "\u0445\u0440\u0435\u0431\u0435\u0442"
     attach: 1
     length: 0.14
     endBone: 
@@ -1100,7 +1115,7 @@ MonoBehaviour:
     parent: "\u0442\u0435\u043B\u043E2"
     layer: 0
     origin: {x: 0, y: 0, z: 0}
-    socket: "\u0422\u0435\u043B\u043E"
+    socket: "\u0445\u0440\u0435\u0431\u0435\u0442"
     attach: 1
     length: 0.16
     endBone: 
@@ -1117,7 +1132,7 @@ MonoBehaviour:
     parent: "\u0442\u0435\u043B\u043E3"
     layer: 0
     origin: {x: 0, y: 0, z: 0}
-    socket: "\u0422\u0435\u043B\u043E"
+    socket: "\u0445\u0440\u0435\u0431\u0435\u0442"
     attach: 1
     length: 0.18
     endBone: 
@@ -1134,7 +1149,7 @@ MonoBehaviour:
     parent: "\u0442\u0435\u043B\u043E4"
     layer: 0
     origin: {x: 0, y: 0, z: 0}
-    socket: "\u0422\u0435\u043B\u043E"
+    socket: "\u0445\u0440\u0435\u0431\u0435\u0442"
     attach: 1
     length: 0.08
     endBone: 

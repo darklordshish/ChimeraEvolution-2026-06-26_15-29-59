@@ -12,7 +12,7 @@ namespace Chimera.Tests.EditMode
         public void All_ContainsEveryOrganSlot()
         {
             // любой Organ.slot из конструктора должен быть в словаре
-            string[] probed = new[] { "Пасть", "Чутьё", "Сердце", "Шкура", "Руки", "Ноги", "Хвост", "Рога", "Игломёт", "хребет", "Тело", "Погремушка" };
+            string[] probed = new[] { "Пасть", "Чутьё", "Сердце", "Шкура", "Руки", "Ноги", "Хвост", "Рога", "Игломёт", "хребет", "Тело", "Наконечник" };
             foreach (var s in probed)
                 Assert.IsTrue(BodySlots.All.ContainsKey(s), $"BodySlots.All должен содержать слот '{s}'");
         }

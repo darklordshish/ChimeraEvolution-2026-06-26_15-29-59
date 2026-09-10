@@ -25,7 +25,7 @@ namespace Chimera.Tests.PlayMode
                 new BodySocket { name = "шея", parent = "голова", attach = 0f, baseSize = Vector3.one, linkDiameter = 0.22f, linkLength = 0.36f, chain = 3 },
                 new BodySocket { name = "Тело", parent = "шея", attach = 0f, baseSize = Vector3.one, linkDiameter = 0f, linkLength = 0.36f, chain = 3 },
                 new BodySocket { name = "Хвост", parent = "Тело", attach = 0f, baseSize = Vector3.one, linkDiameter = 0f, linkLength = 0.24f, chain = 4 },
-                new BodySocket { name = "Погремушка", parent = "Хвост", attach = 0f, baseSize = new Vector3(0.12f,0.12f,0.12f) },
+                new BodySocket { name = "Наконечник", parent = "Хвост", attach = 0f, baseSize = new Vector3(0.12f,0.12f,0.12f) },
             };
             so.organs = new[]
             {
@@ -76,28 +76,28 @@ namespace Chimera.Tests.PlayMode
             float totalLen = 0f;
             foreach (Transform ch in container) if (ch.name=="шея") totalLen += 0.36f; // упрощённо
 
-            // Погремушка — потомок последнего звена Хвоста, не сосед: hierarchy, а не список имён
+            // Наконечник — потомок последнего звена Хвоста, не сосед: hierarchy, а не список имён
             Transform rattle = null;
-            foreach (Transform ch in container) if (ch.name=="Погремушка") rattle = ch;
+            foreach (Transform ch in container) if (ch.name=="Наконечник") rattle = ch;
             if (rattle == null)
             {
                 // может быть внутри последнего звена хвоста
                 if (tailNode != null)
-                    foreach (Transform ch in tailNode) if (ch.name=="Погремушка") rattle = ch;
+                    foreach (Transform ch in tailNode) if (ch.name=="Наконечник") rattle = ch;
                 // также проверяем через GetComponentsInChildren
                 if (rattle==null)
                     foreach (var r in go.GetComponentsInChildren<Renderer>())
-                        if (r.name=="Погремушка") rattle = r.transform;
+                        if (r.name=="Наконечник") rattle = r.transform;
             }
             // погремушка должна быть потомком звена, а не соседом звеньев (фикс SnakeBodyChain: иерархия, не список)
             if (rattle != null)
             {
-                Assert.AreNotEqual(container, rattle.parent, "Погремушка не должна быть прямым ребёнком Morph — она потомок звена (иначе цепь тащит её списком)");
+                Assert.AreNotEqual(container, rattle.parent, "Наконечник не должен быть прямым ребёнком Morph — он потомок звена (иначе цепь тащит его списком)");
                 // её предок должен быть узлом Хвоста
                 Transform p = rattle.parent;
                 bool hasTailAncestor = false;
                 while (p!=null && p!=container) { if (p.name=="Хвост") hasTailAncestor=true; p=p.parent; }
-                Assert.IsTrue(hasTailAncestor, "Погремушка должна сидеть на звене Хвоста (chainLinks потомок)");
+                Assert.IsTrue(hasTailAncestor, "Наконечник должен сидеть на звене Хвоста (chainLinks потомок)");
             }
 
             Object.Destroy(go);

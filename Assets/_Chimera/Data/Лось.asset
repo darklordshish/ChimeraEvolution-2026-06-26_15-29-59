@@ -685,17 +685,18 @@ MonoBehaviour:
   baseStaminaRegen: 5
   sockets:
   - name: "\u0445\u0440\u0435\u0431\u0435\u0442"
-    localPos: {x: 0, y: 0, z: 0}
+    localPos: {x: 0, y: 2.36, z: 0.552}
     baseSize: {x: 0.521, y: 0.791, z: 2.284}
-    baseEuler: {x: 38, y: 0, z: 0}
+    baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
     codeDriven: 0
     solid: 0
     inner: 0
+    chainForward: 0
     graft: 0
-    parent: "\u0448\u0435\u044F"
+    parent: 
     attach: 1
-    attachOffset: {x: 0, y: 0.922, z: -0.909}
+    attachOffset: {x: 0, y: 0, z: 0}
     parts: []
     chain: 0
     chainTaper: 0
@@ -713,6 +714,7 @@ MonoBehaviour:
     codeDriven: 0
     solid: 0
     inner: 0
+    chainForward: 0
     graft: 0
     parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
     attach: 0.5
@@ -727,17 +729,18 @@ MonoBehaviour:
     linkLength: 0
     linkTaper: 0
   - name: "\u0433\u043E\u043B\u043E\u0432\u0430"
-    localPos: {x: 0, y: 2.379, z: 1.474}
-    baseSize: {x: 0.284, y: 0.442, z: 0.711}
-    baseEuler: {x: 2, y: 0, z: 0}
+    localPos: {x: 0, y: 0, z: 0}
+    baseSize: {x: 1, y: 1, z: 1}
+    baseEuler: {x: 40, y: 0, z: 0}
     mirrorX: 0
     codeDriven: 0
     solid: 0
     inner: 0
+    chainForward: 0
     graft: 0
-    parent: 
-    attach: 1
-    attachOffset: {x: 0, y: 0, z: 0}
+    parent: "\u0448\u0435\u044F"
+    attach: 0
+    attachOffset: {x: 0, y: -0.065, z: 1.149}
     parts:
     - scale: {x: 1, y: 0.64, z: 0.34}
       offset: {x: 0, y: 0.14, z: -0.33}
@@ -772,7 +775,7 @@ MonoBehaviour:
     chain: 0
     chainTaper: 0
     linkDiameter: 0
-    sizeRel: {x: 0, y: 0, z: 0}
+    sizeRel: {x: 0.677, y: 0.789, z: 1.018}
     formFrom: 
     formRole: 0
     linkLength: 0
@@ -785,6 +788,7 @@ MonoBehaviour:
     codeDriven: 0
     solid: 0
     inner: 0
+    chainForward: 0
     graft: 0
     parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
     attach: 1
@@ -812,6 +816,7 @@ MonoBehaviour:
     codeDriven: 0
     solid: 0
     inner: 0
+    chainForward: 0
     graft: 0
     parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
     attach: 0.5
@@ -839,6 +844,7 @@ MonoBehaviour:
     codeDriven: 0
     solid: 0
     inner: 0
+    chainForward: 0
     graft: 0
     parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
     attach: 0.7
@@ -855,15 +861,16 @@ MonoBehaviour:
   - name: "\u0448\u0435\u044F"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.42, y: 0.56, z: 0.7}
-    baseEuler: {x: -40, y: 0, z: 0}
+    baseEuler: {x: -38, y: 0, z: 0}
     mirrorX: 0
     codeDriven: 0
     solid: 0
     inner: 0
+    chainForward: 0
     graft: 0
-    parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     attach: 0
-    attachOffset: {x: 0, y: -0.595, z: -0.021}
+    attachOffset: {x: 0, y: -0.292, z: 0.738}
     parts:
     - scale: {x: 0.94, y: 1.2, z: 0.77}
       offset: {x: 0, y: 0, z: 0}
@@ -880,7 +887,7 @@ MonoBehaviour:
     chain: 0
     chainTaper: 0
     linkDiameter: 0
-    sizeRel: {x: 1.477, y: 1.267, z: 0.982}
+    sizeRel: {x: 0.805, y: 0.708, z: 0.306}
     formFrom: 
     formRole: 0
     linkLength: 0
@@ -893,6 +900,7 @@ MonoBehaviour:
     codeDriven: 0
     solid: 0
     inner: 0
+    chainForward: 0
     graft: 0
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     attach: 0.735
@@ -938,6 +946,7 @@ MonoBehaviour:
     codeDriven: 0
     solid: 0
     inner: 0
+    chainForward: 0
     graft: 0
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     attach: 0.5
@@ -965,6 +974,7 @@ MonoBehaviour:
     codeDriven: 0
     solid: 0
     inner: 0
+    chainForward: 0
     graft: 0
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     attach: 0.78
@@ -986,6 +996,7 @@ MonoBehaviour:
     codeDriven: 0
     solid: 0
     inner: 0
+    chainForward: 0
     graft: 0
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     attach: 0.22
@@ -1007,6 +1018,7 @@ MonoBehaviour:
     codeDriven: 0
     solid: 0
     inner: 0
+    chainForward: 0
     graft: 0
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     attach: 0
@@ -1052,6 +1064,7 @@ MonoBehaviour:
     codeDriven: 0
     solid: 0
     inner: 0
+    chainForward: 0
     graft: 0
     parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
     attach: 0.7
@@ -1073,6 +1086,7 @@ MonoBehaviour:
     codeDriven: 0
     solid: 0
     inner: 1
+    chainForward: 0
     graft: 0
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     attach: 0.5
@@ -1094,10 +1108,33 @@ MonoBehaviour:
     codeDriven: 0
     solid: 0
     inner: 1
+    chainForward: 0
     graft: 0
     parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
     attach: 0.5
     attachOffset: {x: 0, y: 0, z: 0}
+    parts: []
+    chain: 0
+    chainTaper: 0
+    linkDiameter: 0
+    sizeRel: {x: 0.5, y: 0.5, z: 0.5}
+    formFrom: 
+    formRole: 0
+    linkLength: 0
+    linkTaper: 0
+  - name: "\u041D\u0430\u043A\u043E\u043D\u0435\u0447\u043D\u0438\u043A"
+    localPos: {x: 0, y: 0, z: 0}
+    baseSize: {x: 1, y: 1, z: 1}
+    baseEuler: {x: 0, y: 0, z: 0}
+    mirrorX: 0
+    codeDriven: 0
+    solid: 0
+    inner: 0
+    chainForward: 0
+    graft: 1
+    parent: "\u0425\u0432\u043E\u0441\u0442"
+    attach: 0
+    attachOffset: {x: 0, y: 0, z: -0.456}
     parts: []
     chain: 0
     chainTaper: 0
@@ -1115,6 +1152,7 @@ MonoBehaviour:
     codeDriven: 0
     solid: 0
     inner: 0
+    chainForward: 0
     graft: 1
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     attach: 0.55

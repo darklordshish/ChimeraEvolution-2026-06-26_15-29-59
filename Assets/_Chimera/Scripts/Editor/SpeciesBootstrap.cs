@@ -134,6 +134,7 @@ public static class SpeciesBootstrap
             // змеиный Хвост / лосиные Рога / ежиный Игломёт — и они проступают на теле
             new BodySocket { name = "Хвост", parent = "хребет", attach = 0.100f, attachOffset = new Vector3(0.000f, -0.033f, -0.563f),   baseSize = new Vector3(0.120f, 0.120f, 0.120f), sizeRel = new Vector3(0.255f, 0.200f, 0.500f), baseEuler = new Vector3(25.00f, 0.00f, 0.00f), graft = true },  // КАЛИБР места; форму (сегментность) несёт орган
             new BodySocket { name = "Рога", parent = "голова", attach = 0.750f, attachOffset = new Vector3(0.405f, -0.029f, 0.044f),    baseSize = new Vector3(0.100f, 0.100f, 0.100f), sizeRel = new Vector3(0.562f, 0.370f, 0.463f), mirrorX = true, graft = true }, // КАЛИБР: НАД макушкой (верх головы 1.88) и наружу — лопасть не врастает в череп
+            new BodySocket { name = "Наконечник", parent = "Хвост", attach = 0.000f, sizeRel = new Vector3(0.500f, 0.500f, 0.500f), graft = true }, // КАЛИБР от хвоста. Смещения нет: хвост человека сам графт, формы у него не бывает — доводить не по чему
             new BodySocket { name = "Игломёт", parent = "хребет", attach = 0.650f, attachOffset = new Vector3(0.000f, 0.217f, -0.521f), baseSize = new Vector3(0.160f, 0.160f, 0.160f), sizeRel = new Vector3(0.340f, 0.267f, 0.667f), baseEuler = new Vector3(-135.00f, 0.00f, 0.00f), graft = true }, // КАЛИБР + ОРИЕНТАЦИЯ: батарея растёт СО СПИНЫ веером ВВЕРХ-НАЗАД (поворот −135° разворачивает форму целиком). Уровень ЛОПАТОК и калибр крупнее — ниже она терялась за гребнем игл
         };
 
@@ -343,6 +344,7 @@ public static class SpeciesBootstrap
             new BodySocket { name = "Чутьё",  inner = true, parent = "голова", attach = 0.500f, sizeRel = new Vector3(0.500f, 0.500f, 0.500f) },  // ЧУВСТВА ЖИВУТ В ГОЛОВЕ. Своей формы у места нет, и деталь не родится сама собой — но АДРЕС нужен заранее: дашь органу форму (термо-ямки), и без родителя с калибром она сядет метровым кубом в начало координат. Доля от головы — одна на все виды
             // закрытые места (пустыми не рисуются): волк с лосиными рогами / ежиным игломётом читается сразу
             new BodySocket { name = "Рога", parent = "голова", attach = 0.600f, attachOffset = new Vector3(0.285f, 0.591f, -0.228f),    baseSize = new Vector3(0.101f, 0.127f, 0.142f), sizeRel = new Vector3(0.384f, 0.577f, 0.303f), mirrorX = true, graft = true }, // КАЛИБР: над мозговой коробкой и наружу — лопасть не врастает в череп
+            new BodySocket { name = "Наконечник", parent = "Хвост", attach = 0.000f, sizeRel = new Vector3(0.500f, 0.500f, 0.500f), graft = true }, // КАЛИБР от звена хвоста. Смещения нет НАМЕРЕННО: у волка место «Хвост» (цепь на кости крестца) уходит вверх-вперёд, а нарисованный хвост — вниз-назад, врозь на 0.9 м. Доводкой это лечить нельзя: почини хвост — и наконечник уедет следом. Дефект найден 11.09 пробой билдера
             new BodySocket { name = "Игломёт", parent = "грудной", attach = 0.500f, attachOffset = new Vector3(0.000f, 0.191f, 0.001f),    baseSize = new Vector3(0.198f, 0.198f, 0.198f), sizeRel = new Vector3(0.591f, 0.408f, 0.153f), baseEuler = new Vector3(-8.1f, 0.00f, 0.00f), graft = true }, // КАЛИБР; сидит на середине грудного отдела и выступает над спиной на 0.16
         };
         // СКЕЛЕТ (спека 2026-08-18): НЕСУЩАЯ ОСЬ И ЧЕТЫРЕ НОГИ. Череп пока остаётся местом и переезжает
@@ -538,7 +540,7 @@ public static class SpeciesBootstrap
                 new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), shape = PartShape.Sphere, role = PartRole.Pit }, // термоямка
                 new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), shape = PartShape.Sphere, role = PartRole.Eye, color = new Color(1.00f, 0.45f, 0.12f, 1f) }, // ЦВЕТ ГЛАЗА = КАНАЛ: термо — видит тепло сквозь стены
             } }, // тепло сквозь стены; dashCd обязателен (0 = спам рывка)
-            new Organ { organName = "Погремушка",          slot = "Погремушка", hotkey = "9", cost = 2, chassisOnly = true, visualParts = new[] {
+            new Organ { organName = "Погремушка",          slot = "Наконечник", hotkey = "9", cost = 2, chassisOnly = true, visualParts = new[] {
                 // СТОПКА РОГОВЫХ КОЛЕЦ вдоль хребта: шайбы-цилиндры с плоскими торцами (они и гремят стуком
                 // друг о друга), доворот 90° кладёт ось цилиндра из Y в Z. Шаг 0.6 калибра = 0.09 м, толщина
                 // та же — кольца стоят вплотную; сужение к кончику 1 → 0.61. Прежние доли раскладывали их
@@ -625,7 +627,7 @@ public static class SpeciesBootstrap
             // Сдвиг на полустопки (0.18 м) — место центрирует её, а начинаться она должна от конца хвоста.
             // ВНИМАНИЕ: смещение задано в КАЛИБРАХ ХВОСТА, а его калибр вдоль хребта = длина звена. Мельчим
             // звено — надо пересчитать и это число: 0.75 × 0.24 = 0.18 (при звене 0.36 стояло 0.5)
-            new BodySocket { name = "Погремушка", parent = "Хвост", attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, -0.750f), baseSize = new Vector3(0.130f, 0.130f, 0.130f), solid = true },
+            new BodySocket { name = "Наконечник", parent = "Хвост", attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, -0.750f), baseSize = new Vector3(0.130f, 0.130f, 0.130f), solid = true },
             new BodySocket { name = "Шкура",  inner = true, parent = "хребет", attach = 0.500f, baseSize = new Vector3(0.300f, 0.300f, 1.200f) }, // чешуя — покров всей ЦЕПИ, своей детали нет. Но АДРЕС нужен под ЧУЖОЙ покров: Иглы ежа со своей формой сядут вдоль середины тела, а не метровым калибром в нуле. Раскладка игл по сегментам позвоночника — отдельная фича, не сейчас, и морф рисовал ей базовый куб в начале координат — тот самый ящик на голове
             new BodySocket { name = "Сердце", inner = true, parent = "хребет", attach = 0.700f, baseSize = new Vector3(0.220f, 0.220f, 0.400f) },  // сердце сидит на цепи хребта, ближе к голове (0.7) и вытянуто вдоль неё. Калибр свой: у цепного родителя он выводится из звена, долей от него не возьмёшь
             new BodySocket { name = "Чутьё",  inner = true, parent = "голова", attach = 0.500f, sizeRel = new Vector3(0.500f, 0.500f, 0.500f) },  // ЧУВСТВА ЖИВУТ В ГОЛОВЕ. Своей формы у места нет, и деталь не родится сама собой — но АДРЕС нужен заранее: дашь органу форму (термо-ямки), и без родителя с калибром она сядет метровым кубом в начало координат. Доля от головы — одна на все виды
@@ -778,6 +780,7 @@ public static class SpeciesBootstrap
             new BodySocket { name = "Рога", parent = "голова", attach = 0.700f, attachOffset = new Vector3(0.500f, 0.560f, -0.100f),   baseSize = new Vector3(0.415f, 0.416f, 0.416f), sizeRel = new Vector3(1.461f, 0.941f, 0.584f), baseEuler = new Vector3(-2f, 0f, 0f), mirrorX = true }, // СВОИ рога: −2 гасит наклон ветки «шея→голова» (+2) до нуля — лопата горизонтальна: КАЛИБР крупный. В ВИСКАХ (верх черепа 2.17) и ВБОК за габарит головы — раньше лопасти врастали в макушку и торчали из висков
             new BodySocket { name = "Сердце", inner = true, parent = "хребет", attach = 0.500f, attachOffset = new Vector3(0.000f, 0.040f, 0.000f), baseSize = new Vector3(0.375f, 0.617f, 0.731f), sizeRel = new Vector3(0.720f, 0.780f, 0.320f) }, // ГРУДНАЯ КОРОБКА лося: самая объёмная // внутреннее место: форму (грудную клетку) даёт орган
             new BodySocket { name = "Чутьё",  inner = true, parent = "голова", attach = 0.500f, sizeRel = new Vector3(0.500f, 0.500f, 0.500f) },  // ЧУВСТВА ЖИВУТ В ГОЛОВЕ. Своей формы у места нет, и деталь не родится сама собой — но АДРЕС нужен заранее: дашь органу форму (термо-ямки), и без родителя с калибром она сядет метровым кубом в начало координат. Доля от головы — одна на все виды
+            new BodySocket { name = "Наконечник", parent = "Хвост", attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, -0.456f), sizeRel = new Vector3(0.500f, 0.500f, 0.500f), graft = true }, // КАЛИБР от хвоста; смещение = 0.155 м за торец нарисованного хвоста (0.340 длины места), проверено пробой
             new BodySocket { name = "Игломёт", parent = "хребет", attach = 0.550f, attachOffset = new Vector3(0.000f, 0.411f, -0.050f), baseSize = new Vector3(0.281f, 0.281f, 0.281f), sizeRel = new Vector3(0.539f, 0.355f, 0.123f), baseEuler = new Vector3(-10.00f, 0.00f, 0.00f), graft = true }, // КАЛИБР (крупная туша): НА спине (верх туши 2.10) — основания шипов входят в корпус; сдвинут назад, не спорит с горбом
         };
 
@@ -1055,6 +1058,7 @@ public static class SpeciesBootstrap
                 new OrganPart { scale = new Vector3(1.00f, 1.00f, 0.60f), offset = new Vector3(0.00f, 0.00f, -0.10f) }, // сегмент
                 new OrganPart { scale = new Vector3(0.72f, 0.72f, 0.40f), offset = new Vector3(0.00f, 0.00f, -0.60f) }, // кончик
             } }, // КАЛИБР
+            new BodySocket { name = "Наконечник", parent = "Хвост", attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, -0.370f), sizeRel = new Vector3(0.500f, 0.500f, 0.500f), graft = true }, // КАЛИБР от хвоста; смещение = 0.055 м за торец нарисованного хвоста (0.150 длины места), проверено пробой
             new BodySocket { name = "Рога", parent = "голова", attach = 0.700f, attachOffset = new Vector3(0.233f, 0.429f, -0.263f),   baseSize = new Vector3(0.10f, 0.10f, 0.10f), sizeRel = new Vector3(0.476f, 0.446f, 0.312f), mirrorX = true, graft = true }, // КАЛИБР
         };
 
