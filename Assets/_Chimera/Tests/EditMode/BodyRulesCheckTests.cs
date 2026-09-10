@@ -302,5 +302,53 @@ namespace Chimera.Tests.EditMode
             }
             finally { Object.DestroyImmediate(so); }
         }
+
+        // ── СЛОТ ПРОТИВ ТЕЛЕСНОГО МЕСТА ───────────────────────────────────────────────────────
+        // Две сущности, которые нельзя путать: слот — место ПОД ОРГАН (туда надевают, бывает
+        // графтом), телесное место — только адрес и калибр для детей (`голова`, `шея`, `горб`,
+        // `ямки`…). Надеть туда нечего, и флаг `graft` бессмыслен: открывать графтом нечего.
+        //     Тесты заведены 11.09 после того, как это перепутал я сам — предложил завести графтами
+        // `горб` и `ямки`. Данные оказались чисты, а вот валидатор ловил только ОДНУ сторону
+        // (орган на телесном месте) и молчал на другой. Обе стороны теперь под тестом.
+
+        SpeciesSO MakeBare(string name, BodySocket[] sockets, Organ[] organs)
+        {
+            var so = ScriptableObject.CreateInstance<SpeciesSO>();
+            so.speciesName = name;
+            so.sockets = sockets ?? new BodySocket[0];
+            so.organs = organs ?? new Organ[0];
+            so.bones = new Bone[0];
+            so.cages = new CageTable[0];
+            return so;
+        }
+
+        [Test]
+        public void Graft_НаТелесномМесте_ЭтоОшибка()
+        {
+            var so = MakeBare("тест", new[] { new BodySocket { name = "голова", graft = true } }, null);
+            var issues = BodyRules.CheckData(so);
+            Assert.IsTrue(issues.Exists(i => i.error && i.where == "голова" && i.text.Contains("graft")),
+                          "графт у телесного места обязан быть ошибкой — открывать графтом нечего");
+        }
+
+        [Test]
+        public void Graft_НаСлоте_ЭтоНорма()
+        {
+            // Хвост у человека именно так и заведён: место есть, пустым не рисуется, графтом проступает
+            var so = MakeBare("тест", new[] { new BodySocket { name = "Хвост", graft = true } }, null);
+            var issues = BodyRules.CheckData(so);
+            Assert.IsFalse(issues.Exists(i => i.error && i.where == "Хвост"),
+                           "графт у слота — законный приём, ошибкой быть не должен");
+        }
+
+        [Test]
+        public void Орган_НаТелесномМесте_ЭтоОшибка()
+        {
+            // Обратная сторона того же правила, она в BodyRules была и до 11.09
+            var so = MakeBare("тест", null, new[] { new Organ { organName = "Нечто", slot = "горб" } });
+            var issues = BodyRules.CheckData(so);
+            Assert.IsTrue(issues.Exists(i => i.error && i.text.Contains("ТЕЛЕСНОМ МЕСТЕ")),
+                          "орган на адресе обязан быть ошибкой — надеть туда нечего");
+        }
     }
 }
