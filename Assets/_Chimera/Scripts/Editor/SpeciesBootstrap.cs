@@ -69,13 +69,13 @@ public static class SpeciesBootstrap
         // mirrorX — парное место (2 руки/ноги); inner — внутреннее (видно только формой органа); graft — закрытое место
         human.sockets = new[]
         {
-            new BodySocket { name = "хребет", baseEuler = new Vector3(-10.000f, 0.000f, 0.000f), attachOffset = new Vector3(0.000f, -1.977f, 0.383f), parent = "шея", attach = 1.000f, baseSize = new Vector3(0.470f, 0.600f, 0.240f) }, // НЕСУЩИЙ ЦЕНТР: форму даёт орган «Хребет» (chassisOnly), поэтому место больше не служебное  // ЕДИНЫЙ ПЛАН ТЕЛА (спека 2026-08-27): ось от головы назад. Числа посчитаны Anatomy/tools/reroot.py и самопроверены — тело осталось на месте
+            new BodySocket { name = "хребет", localPos = new Vector3(0.000f, 1.371f, 0.023f), baseEuler = new Vector3(0.000f, 0.000f, 0.000f), baseSize = new Vector3(0.470f, 0.600f, 0.240f) }, // НЕСУЩИЙ ЦЕНТР: форму даёт орган «Хребет» (chassisOnly), поэтому место больше не служебное  // ЕДИНЫЙ ПЛАН ТЕЛА (спека 2026-08-27): ось от головы назад. Числа посчитаны Anatomy/tools/reroot.py и самопроверены — тело осталось на месте
             // ГОЛОВА БАЛАНСИРУЕТ НА ПОЗВОНОЧНИКЕ, а не стоит на нём сверху: позвонок входит в затылочное
             // отверстие — точка опоры лежит ПОД УШАМИ, лицо висит впереди неё, затылок нависает сзади.
             // Пока голова крепилась геометрическим низом, она садилась «шапкой на палку» (attachOffset.z был
             // −0.076, то есть ещё и назад). baseEuler −10 гасит наклон шеи: взгляд остаётся горизонтальным
             new BodySocket { name = "нос", parent = "голова", attach = 0.500f, attachOffset = new Vector3(0.00f, -0.10f, 0.36f), sizeRel = new Vector3(0.20f, 0.22f, 0.18f), formFrom = "Чутьё", formRole = PartRole.Nose }, // АДРЕС НОСА: форму даёт орган Чутья — сменил его, сменился и нос
-            new BodySocket { name = "голова", localPos = new Vector3(0.000f, 1.698f, 0.029f), baseSize = new Vector3(0.178f, 0.270f, 0.216f), baseEuler = new Vector3(0.000f, 0.000f, 0.000f), parts = new[] {
+            new BodySocket { name = "голова", parent = "шея", attach = 0.000f, attachOffset = new Vector3(0.000f, 1.436f, -0.021f), baseEuler = new Vector3(-10.000f, 0.000f, 0.000f), sizeRel = new Vector3(1.412f, 2.016f, 1.715f), parts = new[] {
                 // ЭТЮД ГОЛОВЫ (Лумис): шар мозгового черепа + челюстной блок, между ними — плоскости лица.
                 // Череп ОКРУГЛЫЙ (кость свода), лицевые плоскости ГРАНЁНЫЕ — то же правило «плоть/кость», что у зверей
                 new OrganPart { scale = new Vector3(1.00f, 0.64f, 0.90f), offset = new Vector3(0.00f, 0.19f, -0.05f), shape = PartShape.Sphere }, // мозговой череп
@@ -101,7 +101,7 @@ public static class SpeciesBootstrap
             } }, // МЕСТО НА КОЖЕ головы (посчитано лучом из её центра) — форму и цвет даёт ЧУТЬЁ
             new BodySocket { name = "уши", parent = "голова", attach = 0.500f, attachOffset = new Vector3(0.480f, -0.020f, -0.100f),  baseSize = new Vector3(0.022f, 0.062f, 0.032f), sizeRel = new Vector3(0.124f, 0.230f, 0.148f), baseEuler = new Vector3(-15f, 0f, 0f), mirrorX = true, formFrom = "Чутьё", formRole = PartRole.Ear },   // АДРЕС УХА: раковину рисует орган слуха, а не шасси — привил чужое Чутьё, и ухо стало чужим
 
-            new BodySocket { name = "шея", parent = "голова", attach = 0.000f, attachOffset = new Vector3(0.000f, 0.041f, -0.089f),    baseSize = new Vector3(0.126f, 0.134f, 0.126f), sizeRel = new Vector3(0.708f, 0.496f, 0.583f), baseEuler = new Vector3(10.000f, 0.000f, 0.000f), parts = new[] {
+            new BodySocket { name = "шея", parent = "хребет", attach = 0.000f, attachOffset = new Vector3(0.000f, 0.839f, -0.055f), baseSize = new Vector3(0.126f, 0.134f, 0.126f), sizeRel = new Vector3(0.268f, 0.223f, 0.525f), baseEuler = new Vector3(10.000f, 0.000f, 0.000f), parts = new[] {
                 new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), offset = new Vector3(0.00f, 0.00f, 0.00f), shape = PartShape.Capsule }, // шея — ЦИЛИНДР, а не шар
                 new OrganPart { scale = new Vector3(1.05f, 0.55f, 0.85f), offset = new Vector3(0.00f, 0.46f, -0.14f), shape = PartShape.Sphere }, // ЗАТЫЛОЧНО-ШЕЙНЫЙ ПЕРЕХОД: спереди череп накрывала челюсть, а СЗАДИ под нависающим затылком зияло 3 см пустоты. У человека там мышечный массив (полуостистая + верх трапеции) — им и закрываем
                 new OrganPart { scale = new Vector3(1.10f, 0.42f, 1.20f), offset = new Vector3(0.00f, -0.44f, -0.06f), shape = PartShape.Sphere }, // переход к трапеции — шея не втыкается в грудь торцом
@@ -734,9 +734,9 @@ public static class SpeciesBootstrap
         // Числа перенесены из статичной сборки MoosePrefab (ходульность lift=0.5 уже вживлена в координаты)
         moose.sockets = new[]
         {
-            new BodySocket { name = "хребет", baseEuler = new Vector3(38.000f, 0.000f, 0.000f), attachOffset = new Vector3(0.000f, 0.922f, -0.909f), parent = "шея", attach = 1.000f, baseSize = new Vector3(0.521f, 0.791f, 2.284f) }, // НЕСУЩИЙ ЦЕНТР: форму даёт орган «Хребет» (chassisOnly), поэтому место больше не служебное  // ЕДИНЫЙ ПЛАН ТЕЛА (спека 2026-08-27): ось от головы назад. Числа посчитаны Anatomy/tools/reroot.py и самопроверены — тело осталось на месте
+            new BodySocket { name = "хребет", localPos = new Vector3(0.000f, 2.360f, 0.552f), baseEuler = new Vector3(0.000f, 0.000f, 0.000f), baseSize = new Vector3(0.521f, 0.791f, 2.284f) }, // НЕСУЩИЙ ЦЕНТР: форму даёт орган «Хребет» (chassisOnly), поэтому место больше не служебное  // ЕДИНЫЙ ПЛАН ТЕЛА (спека 2026-08-27): ось от головы назад. Числа посчитаны Anatomy/tools/reroot.py и самопроверены — тело осталось на месте
             new BodySocket { name = "нос", parent = "голова", attach = 0.500f, attachOffset = new Vector3(0.00f, -0.12f, 0.42f), sizeRel = new Vector3(0.54f, 0.36f, 0.16f), formFrom = "Чутьё", formRole = PartRole.Nose }, // АДРЕС НОСА: мочку рисует орган Чутья
-            new BodySocket { name = "голова", localPos = new Vector3(0.000f, 2.379f, 1.474f), baseSize = new Vector3(0.284f, 0.442f, 0.711f), baseEuler = new Vector3(2.000f, 0.000f, 0.000f), parts = new[] {
+            new BodySocket { name = "голова", parent = "шея", attach = 0.000f, attachOffset = new Vector3(0.000f, -0.065f, 1.149f), sizeRel = new Vector3(0.677f, 0.789f, 1.018f), baseEuler = new Vector3(40.000f, 0.000f, 0.000f), parts = new[] {
                 new OrganPart { scale = new Vector3(1.00f, 0.64f, 0.34f), offset = new Vector3(0.00f, 0.14f, -0.33f), shape = PartShape.Sphere }, // КРУГ: мозговой отдел — у лося МАЛЫЙ и сдвинут назад
                 new OrganPart { scale = new Vector3(0.74f, 0.54f, 0.66f), offset = new Vector3(0.00f, -0.04f, 0.12f), shape = PartShape.Sphere }, // КЛИН: морда — три четверти длины головы
                 new OrganPart { scale = new Vector3(0.68f, 0.32f, 0.34f), offset = new Vector3(0.00f, 0.15f, 0.00f), shape = PartShape.Sphere }, // горбинка переносицы — римский профиль лося
@@ -751,7 +751,7 @@ public static class SpeciesBootstrap
             } }, // МЕСТО НА КОЖЕ головы (посчитано лучом из её центра) — форму и цвет даёт ЧУТЬЁ
             new BodySocket { name = "уши", parent = "голова", attach = 0.700f, attachOffset = new Vector3(0.590f, 0.341f, -0.511f),    baseSize = new Vector3(0.149f, 0.390f, 0.129f), sizeRel = new Vector3(0.525f, 0.882f, 0.182f), baseEuler = new Vector3(-24f, 0f, 26f), mirrorX = true, formFrom = "Чутьё", formRole = PartRole.Ear },   // АДРЕС УХА: раковину рисует орган слуха, а не шасси — привил чужое Чутьё, и ухо стало чужим
 
-            new BodySocket { name = "шея", parent = "голова", attach = 0.000f, attachOffset = new Vector3(0.000f, -0.595f, -0.021f),    baseSize = new Vector3(0.420f, 0.560f, 0.700f), sizeRel = new Vector3(1.477f, 1.267f, 0.982f), baseEuler = new Vector3(-40.000f, 0.000f, 0.000f), parts = new[] {
+            new BodySocket { name = "шея", parent = "хребет", attach = 0.000f, attachOffset = new Vector3(0.000f, -0.292f, 0.738f), baseSize = new Vector3(0.420f, 0.560f, 0.700f), sizeRel = new Vector3(0.805f, 0.708f, 0.306f), baseEuler = new Vector3(-38.000f, 0.000f, 0.000f), parts = new[] {
                 new OrganPart { scale = new Vector3(0.94f, 1.20f, 0.77f), offset = new Vector3(0.00f, 0.00f, 0.00f), euler = new Vector3(90f, 0f, 0f), shape = PartShape.Capsule }, // шея одной массой
                 new OrganPart { scale = new Vector3(0.54f, 0.64f, 0.32f), offset = new Vector3(0.00f, -0.34f, 0.32f), euler = new Vector3(20f, 0f, 0f), shape = PartShape.Sphere }, // ПОДГРУДОК (висячая складка). Прошлый заход убрал «торпеду», но заодно срезал свес до 5 см — складка пропала. Свес вернул (10 см), а торпеду снимает УЗОСТЬ (0.23 при шее 0.40) и сдвиг ВПЕРЁД, к голове: у лося складка висит под челюстью, а не тянется вдоль всей шеи
             } },
@@ -1005,7 +1005,7 @@ public static class SpeciesBootstrap
             // стыках: центр места = центр родителя + (attach−0.5)×длина_родителя_по_оси +
             // attachOffset × калибр родителя. Целевые центры взяты прежние — разворот не должен
             // двигать то, что уже стоит (инвариант И5)
-            new BodySocket { name = "хребет", parent = "шея", attach = 0.000f, attachOffset = new Vector3(0.000f, 0.556f, -1.850f), baseSize = new Vector3(0.76f, 0.60f, 1.05f) }, // НЕСУЩИЙ ЦЕНТР: форму даёт орган «Хребет» (chassisOnly), поэтому место больше не служебное
+            new BodySocket { name = "хребет", localPos = new Vector3(0.000f, 0.500f, -0.050f), baseEuler = new Vector3(0.000f, 0.000f, 0.000f), baseSize = new Vector3(0.760f, 0.600f, 1.050f) }, // НЕСУЩИЙ ЦЕНТР: форму даёт орган «Хребет» (chassisOnly), поэтому место больше не служебное
             // ШЕЯ У ЕЖА ЕСТЬ. Её отсутствие было не анатомией, а недоделкой: ежом занимались мало,
             // и голова садилась прямо на хребет. У настоящего ежа шея короткая и утоплена в иглы,
             // но она есть — и без неё голова не может ни опускаться к земле (кормёжка), ни
@@ -1017,11 +1017,11 @@ public static class SpeciesBootstrap
             // должна удлинять зверя. Число не угадано, а выведено из замера карты: центр места =
             // конец родителя + attachOffset × калибр родителя. Конец хребта 0.475, нужен конец шеи
             // 0.520 (там стояла голова) → центр шеи 0.420 → (0.420−0.475)/1.05 = −0.052
-            new BodySocket { name = "шея", parent = "голова", attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, 0.187f), baseSize = new Vector3(0.170f, 0.180f, 0.200f), sizeRel = new Vector3(0.810f, 0.804f, 0.625f), parts = new[] { // ДОЛЯ ОТ ГОЛОВЫ (была от хребта): sizeRel считается от родителя, и при развороте её надо пересчитывать — иначе место схлопнется
+            new BodySocket { name = "шея", parent = "хребет", attach = 0.000f, attachOffset = new Vector3(0.000f, -0.167f, 0.948f), baseSize = new Vector3(0.170f, 0.180f, 0.200f), sizeRel = new Vector3(0.224f, 0.300f, 0.190f), baseEuler = new Vector3(0.000f, 0.000f, 0.000f), parts = new[] { // ДОЛЯ ОТ ГОЛОВЫ (была от хребта): sizeRel считается от родителя, и при развороте её надо пересчитывать — иначе место схлопнется
                 new OrganPart { scale = new Vector3(1.00f, 1.15f, 0.80f), offset = new Vector3(0.00f, 0.00f, 0.00f), euler = new Vector3(90f, 0f, 0f), shape = PartShape.Capsule }, // шея одной капсулой вдоль оси
                 new OrganPart { scale = new Vector3(1.15f, 0.50f, 0.70f), offset = new Vector3(0.00f, 0.16f, -0.32f), shape = PartShape.Sphere }, // ЗАГРИВОК уходит под иглы: у ежа шея не читается снаружи, она скрыта покровом
             } }, // короткая шея: несёт голову, утоплена в иглы
-            new BodySocket { name = "голова", localPos = new Vector3(0.000f, 0.400f, 0.520f), baseSize = new Vector3(0.210f, 0.224f, 0.320f), parts = new[] { // КОРЕНЬ ГРАФА: доли больше нет — у корня нет родителя, габарит читается из baseSize // ДОЛЯ ПЕРЕСЧИТАНА ПОД ШЕЮ (была 0.276/0.373/0.305 от хребта): sizeRel считается от РОДИТЕЛЯ, и при пересадке места на другого родителя старая доля схлопывает деталь — голова ужалась вчетверо вместе с пастью, носом, глазами и ушами
+            new BodySocket { name = "голова", parent = "шея", attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, 1.001f), sizeRel = new Vector3(1.235f, 1.244f, 1.600f), baseEuler = new Vector3(0.000f, 0.000f, 0.000f), parts = new[] { // КОРЕНЬ ГРАФА: доли больше нет — у корня нет родителя, габарит читается из baseSize // ДОЛЯ ПЕРЕСЧИТАНА ПОД ШЕЮ (была 0.276/0.373/0.305 от хребта): sizeRel считается от РОДИТЕЛЯ, и при пересадке места на другого родителя старая доля схлопывает деталь — голова ужалась вчетверо вместе с пастью, носом, глазами и ушами
                 new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), offset = new Vector3(0.00f, 0.00f, 0.00f), shape = PartShape.Sphere }, // череп
             } },
             new BodySocket { name = "нос", parent = "Пасть", attach = 0.500f, attachOffset = new Vector3(0.00f, -0.10f, 0.42f), sizeRel = new Vector3(0.24f, 0.22f, 0.18f), formFrom = "Чутьё", formRole = PartRole.Nose }, // АДРЕС НОСА: пятак рисует одноимённый орган, а не пасть
