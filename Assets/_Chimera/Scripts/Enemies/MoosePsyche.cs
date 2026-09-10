@@ -14,6 +14,7 @@ using UnityEngine;
 [RequireComponent(typeof(NavLocomotion))]
 [RequireComponent(typeof(ChargeAbility))]
 [RequireComponent(typeof(AntlerAbility))]
+[RequireComponent(typeof(LimbStrikeAbility))]
 [RequireComponent(typeof(Rage))]
 [RequireComponent(typeof(SpawnVariance))]
 public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
@@ -34,13 +35,15 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     [SerializeField, Range(0f, 1f)] float grazeSpeed = 0.5f;
     [SerializeField] float provokeRadius = 5f;   // вторжение ВПЛОТНУЮ на глазах — мгновенный максимум лесенки
     [SerializeField] float attackCooldown = 2.5f;
-    // У РОГОВ СВОЙ, КОРОТКИЙ ОТКАТ. Прежде оба приёма делили один: после лёгкого тычка вплотную лось
-    // ждал столько же, сколько после разгона через пол-арены, и вблизи почти не отвечал — а рога и
-    // заведены как ответ липнущим. Таран остаётся редким и страшным, рога — частым «не подходи»
-    [SerializeField] float antlerCooldown = 1.2f;
+    // У РОГОВ СВОЙ ОТКАТ, И ОН БОЛЬШОЙ (2.5). Короткий (1.2) был поставлен 08.09, когда рога были
+    // ЕДИНСТВЕННЫМ ближним приёмом лося и вблизи он почти не отвечал. Теперь вплотную работает копыто,
+    // и рога вернулись к своей роли: редкий сильный удар, который надо переждать. Частым «не подходи»
+    // служит копыто — оно слабее и без кровотечения
+    [SerializeField] float antlerCooldown = 2.5f;
+    [SerializeField] float hoofCooldown = 1.1f;   // копыто — частый ближний ответ
     // Ноль = «не настроено»: поле новое, а компонент уже лежит в префабе, куда инициализатор не
     // доедет (гоча проекта). Без обёртки лось на старом префабе бил бы рогами КАЖДЫЙ КАДР
-    float AntlerCd => antlerCooldown > 0f ? antlerCooldown : 1.2f;
+    float AntlerCd => antlerCooldown > 0f ? antlerCooldown : 2.5f;
 
     [Header("Лесенка предупреждений + берсерк (срез C)")]
     [SerializeField] float warnRadius = 10f;         // видимый провокатор ближе — раздражение растёт (ближе = быстрее)
@@ -68,6 +71,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     NavLocomotion nav;
     ChargeAbility charge;
     AntlerAbility antler;
+    LimbStrikeAbility hoof;   // удар копытом: слот «Руки» лося держит оружие, а не руку
     Rage rage;
     Morale morale;         // ШКАЛА духа (универсальная, от тела): рёв/провокация вливают ЯРОСТЬ высокую — морда красится градусником
     SpawnVariance variance;
@@ -86,7 +90,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     CameraFollow cam;      // рёв рядом с игроком встряхивает камеру (вес туши)
     Health playerHealth;   // игрок — фолбэк-угроза (кэш)
     CreatureBody body;     // своё тело — кин-проверка (мой вид = шасси)
-    float nextAttackTime, nextBellow, bellowCueUntil, nextThreatScan; // вертикаль/гравитация — в NavLocomotion
+    float nextAttackTime, nextHoofTime, nextBellow, bellowCueUntil, nextThreatScan; // вертикаль/гравитация — в NavLocomotion
     bool provoked, playerKinNow; // кин-игрок: не провоцирует лесенку (даже когда других угроз нет и цель — он)
     float irritation;      // ЛЕСЕНКА 0..1: копится от видимого провокатора, спадает без него
     float calmSince = -1f;    // разъярён: с какого момента сцена «рассосалась» (не видит/далеко)
@@ -136,7 +140,15 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
 
     // тело-на-шасси кормит скорость; урон тарана остаётся на ChargeAbility (как урон прыжка у волка);
     // голос (howlRange) — задел: РЁВ пока фирменный (bellowRadius), переведём на данные Глотки при тюнинге
-    public void OnBodyStats(int damage, float bodyMoveSpeed, int venom, int bleed, float howlRange) => moveSpeed = bodyMoveSpeed;
+    public void OnBodyStats(int damage, float bodyMoveSpeed, int venom, int bleed, float howlRange)
+    {
+        moveSpeed = bodyMoveSpeed;
+        // УРОН КОПЫТА ЖИВЁТ В ОРГАНЕ, А НЕ В ДОСТАВКЕ. У лося единственный орган с уроном — «Копыто»
+        // (22), Глотка и прочие молчат, поэтому `damage` тела и есть урон конечности. Держать число
+        // ещё и в префабе значило бы завести второй источник правды — на этом уже потерялся тюнинг
+        // тарана, когда правка дефолта не доехала до зверя
+        if (hoof != null) hoof.SetDamage(damage);
+    }
 
     void Awake()
     {
@@ -146,6 +158,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
         if (!TryGetComponent(out nav)) nav = gameObject.AddComponent<NavLocomotion>();
         if (!TryGetComponent(out charge)) charge = gameObject.AddComponent<ChargeAbility>();
         if (!TryGetComponent(out antler)) antler = gameObject.AddComponent<AntlerAbility>();
+        if (!TryGetComponent(out hoof)) hoof = gameObject.AddComponent<LimbStrikeAbility>();
         if (!TryGetComponent(out rage)) rage = gameObject.AddComponent<Rage>();
         if (!TryGetComponent(out variance)) variance = gameObject.AddComponent<SpawnVariance>();
         if (!TryGetComponent(out alert)) alert = gameObject.AddComponent<AlertState>();
@@ -414,6 +427,17 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
                 // условие не выполнится, и он просто пойдёт догонять шагом: угроза осталась, разгон кончился
                 if (dist >= charge.MinRange && dist <= charge.MaxRange && (Breath == null || Breath.Has(ChargeCost)))
                 { if (charge.TryUse()) { Breath?.TrySpend(ChargeCost); activeAbility = charge; } Settle(Vector3.zero); return; }
+            }
+            // КОПЫТО — СВОЙ ТАЙМЕР, И ЭТО ГЛАВНОЕ ОРУЖИЕ ЛОСЯ ВБЛИЗИ. Стоит ОТДЕЛЬНО от общего отката
+            // намеренно: пока рога перезаряжаются (2.5 с), зверь вплотную не должен становиться
+            // безобидным — иначе его держат в упор и бьют безнаказанно, что и было до 11.09.
+            //     Природа тут заодно с механикой: лось отбивается от хищника передними ногами, а
+            // рогами бодает соперников. Урон копыта приходит из органа (см. OnBodyStats)
+            else if (sees && hoof != null && dist <= hoof.Range && Time.time >= nextHoofTime)
+            {
+                if (hoof.TryUse()) { activeAbility = hoof; nextHoofTime = Time.time + hoofCooldown; }
+                Settle(Vector3.zero);
+                return;
             }
             // ПОВОДОК: ушёл от места вспышки дальше leashRange — ВКОПАЛСЯ. Мордой к цели, бью что подойдёт
             // (проверка приёмов выше уже отработала), но дальше за ускользающей целью не иду — иначе стая-«тень»
