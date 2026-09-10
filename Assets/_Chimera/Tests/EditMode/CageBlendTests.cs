@@ -112,22 +112,17 @@ namespace Chimera.Tests.EditMode
             var meters = CageTable.BlendWithCaliber(tables, weights, caliber);
             Assert.IsNotNull(meters);
             Assert.AreEqual(0.06f, meters[0], 1e-5f);
-            // эвристика BodyRules: radii вне [0..5] — похоже, метры
-            var bad = MakeCage("Ноги", 4, 6, 10f); // 10 калибров — явно метр
-            var so = ScriptableObject.CreateInstance<SpeciesSO>();
-            try
-            {
-                so.speciesName = "ТестМетры";
-                so.sockets = new BodySocket[0];
-                so.organs = new Organ[0];
-                so.bones = new Bone[0];
-                so.cages = new[] { bad };
-                var issues = BodyRules.CheckCages(so);
-                bool found = false;
-                foreach (var iss in issues) if (iss.text.Contains("Ratio")) found = true;
-                Assert.IsTrue(found, "радиус 10 вне [0..5] должен триггерить И4-проверку на метры");
-            }
-            finally { Object.DestroyImmediate(so); }
+            // ЗАЩИТА И4 СТРУКТУРНАЯ, А НЕ ПОРОГОВАЯ (переписано 11.09). Здесь стояла проверка эвристики
+            // BodyRules «radii вне [0..5] — похоже, метры». Эвристику сняли намеренно и с разбором: метры
+            // у наших зверей лежат в 0.02…1.5, то есть ЦЕЛИКОМ внутри коридора [0..5], и сработать правило
+            // могло лишь на радиусе от пяти метров — таких в игре нет. Оно не способно поймать собственную
+            // мишень ни на одном мыслимом входе. Сторож остался, правило ушло, и тест с тех пор горел.
+            //     Настоящая защита — в том, что радиус ВООБЩЕ не может быть метром: он умножается на калибр
+            // носителя на выходе. Её и сторожим: один и тот же радиус на разных калибрах обязан дать разные
+            // метры, пропорционально. Если кто-то вернёт в таблицу метры, это сломает пропорцию.
+            var far = CageTable.BlendWithCaliber(tables, weights, caliber * 3f);
+            Assert.AreEqual(0.18f, far[0], 1e-5f, "радиус — ДОЛЯ: втрое больший калибр даёт втрое больший метр");
+            Assert.AreEqual(meters[0] * 3f, far[0], 1e-5f, "пропорция строгая — метру в таблице взяться неоткуда");
         }
 
         [Test]

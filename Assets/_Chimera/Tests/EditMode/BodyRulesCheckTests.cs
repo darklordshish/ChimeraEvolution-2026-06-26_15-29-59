@@ -59,11 +59,10 @@ namespace Chimera.Tests.EditMode
         public void Budget_310Old_Negative_Now324()
         {
             // Исторический негатив >310→error (план 05.09). Сейчас порог 324 (ADR-1 +14 за хребет N=10).
-            // 311 (>310) было бы ошибкой на старом бюджете, на новом 311 <324 — проходит.
-            // Проверяем оба смысла: старый порог упомянут, новый действует.
-            var so311 = MakeSpeciesWithCages("Старый310_311", MakeCage("Тело", 311, 1));
-            var so324 = MakeSpeciesWithCages("Новый324", MakeCage("хребет", 18, 18));
-            var so325 = MakeSpeciesWithCages("Новый325", MakeCage("хребет", 25, 13)); // 25*13=325 >324
+            // ЧИСЛА ПЕРЕСЧИТАНЫ 11.09 под формулу (M−1)×N: между M станциями пролётов M−1 (см. ниже).
+            var so311 = MakeSpeciesWithCages("Старый310_311", MakeCage("Тело", 312, 1));   // (312−1)×1 = 311
+            var so324 = MakeSpeciesWithCages("Новый324", MakeCage("хребет", 19, 18));      // (19−1)×18 = 324 ровно
+            var so325 = MakeSpeciesWithCages("Новый325", MakeCage("хребет", 26, 13));      // (26−1)×13 = 325 >324
             try
             {
                 Assert.AreEqual(0, BodyRules.CheckBudget(so311).Count, "311 квадов <324 — на новом бюджете проходит (на старом 310 было бы error)");
@@ -80,8 +79,8 @@ namespace Chimera.Tests.EditMode
         [Test]
         public void Budget_Negative_Over324_Error()
         {
-            // Явный негатив: сумма M×N >324 должна дать error
-            var so = MakeSpeciesWithCages("Перебор325", MakeCage("хребет", 25, 13)); // 325
+            // Явный негатив: сумма квадов >324 должна дать error
+            var so = MakeSpeciesWithCages("Перебор325", MakeCage("хребет", 26, 13)); // (26−1)×13 = 325
             try
             {
                 var issues = BodyRules.CheckBudget(so);
@@ -93,24 +92,30 @@ namespace Chimera.Tests.EditMode
         }
 
         [Test]
-        public void Budget_MxN_Not_Mminus1xN()
+        public void Budget_Mminus1xN_Not_MxN()
         {
-            // Проверка что бюджет считается как M×N, а не (M-1)×N.
-            // Подбираем 3 слота по 11×10 =110 каждый → M×N=330 >324, но (M-1)×N=100*3=300 <324.
-            // Если бы считали (M-1)×N, ошибки бы не было — ловим регрессию.
+            // СТОРОЖ ФОРМУЛЫ, ПЕРЕВЁРНУТЫЙ 11.09. Тест назывался `Budget_MxN_Not_Mminus1xN` и требовал
+            // ровно обратного — считать M×N. Формулу исправили позже (`f1172dc`), а сторожа не тронули,
+            // и он с тех пор горел красным, сторожа отменённое правило.
+            //     Прав КОД: между M станциями пролётов M−1, квад натянут между СОСЕДНИМИ кольцами.
+            // Сверено с таблицей `SPEC-kletka-tela.md` §6 построчно, и она сходится только так:
+            // хребет 8×10 → 70, шея 4×8 → 24, голова 6×8 → 40, Пасть 4×6 → 18, Руки 6×6 ×2 → 60,
+            // Ноги 7×6 ×2 → 72, Хвост 5×6 → 24, уши 3×4 ×2 → 16. Сумма ровно 324. По M×N хребет дал
+            // бы 80 вместо 70, и ни одна строка не совпала бы.
+            //     Ловим возврат к M×N: три слота по 11×10 дают (M−1)×N = 300 (<324, ошибки нет), а
+            // M×N = 330 (>324, была бы ошибка). Красное здесь означает «формулу откатили».
             var a = MakeCage("хребет", 11, 10);
             var b = MakeCage("голова", 11, 10);
             var c = MakeCage("шея", 11, 10);
-            var so = MakeSpeciesWithCages("MxNvsMminus1", a, b, c);
+            var so = MakeSpeciesWithCages("Mminus1vsMxN", a, b, c);
             try
             {
-                int totalMxN = a.M * a.N + b.M * b.N + c.M * c.N; // 330
-                int totalMinus = (a.M - 1) * a.N + (b.M - 1) * b.N + (c.M - 1) * c.N; // 300
+                int totalMxN = a.M * a.N + b.M * b.N + c.M * c.N;                        // 330
+                int totalMinus = (a.M - 1) * a.N + (b.M - 1) * b.N + (c.M - 1) * c.N;    // 300
                 Assert.AreEqual(330, totalMxN);
                 Assert.AreEqual(300, totalMinus);
-                var issues = BodyRules.CheckBudget(so);
-                Assert.AreEqual(1, issues.Count, "M×N=330 >324 → error, (M-1)×N=300 прошёл бы — проверяем формулу M×N");
-                StringAssert.Contains("330", issues[0].text);
+                Assert.AreEqual(0, BodyRules.CheckBudget(so).Count,
+                    "(M−1)×N=300 <324 → ошибки быть не должно; красное = формулу откатили к M×N (330)");
             }
             finally { Object.DestroyImmediate(so); }
         }

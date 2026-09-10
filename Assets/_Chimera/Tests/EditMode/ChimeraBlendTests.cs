@@ -197,13 +197,22 @@ namespace Chimera.Tests.EditMode
             Assert.IsFalse(a.SameTopology(b));
             Assert.IsNull(CageTable.Blend(new[] { a, b }, new[] { 0.5f, 0.5f }), "разная топология → Blend null");
 
-            // И4: радиус >5 — похоже, записаны метры, а не Ratio
-            var bad = MakeCage("Ноги", 4, 6, 10f);
-            var so = MakeSpecies("ТестМетры", new[] { bad }, HumanWolfSockets(), OrgansFor("ТестМетры"));
-            var issues = BodyRules.CheckCages(so);
-            bool found = false;
-            foreach (var iss in issues) if (iss.text.Contains("Ratio")) found = true;
-            Assert.IsTrue(found, "радиус 10 вне [0..5] должен триггерить И4-проверку на метры");
+            // И4 СТОРОЖИТСЯ СТРУКТУРНО (переписано 11.09; подробный разбор — в `CageBlendTests`). Порог
+            // «радиус >5 — это метры» снят намеренно: метры зверей лежат в 0.02…1.5, внутри самого
+            // коридора, и правило не могло сработать ни на одном реальном входе. Сторожим то, что
+            // действует: радиус — ДОЛЯ, метр появляется только умножением на калибр носителя
+            var ratio = MakeCage("Ноги", 4, 6, 0.30f);
+            var m1 = CageTable.BlendWithCaliber(new[] { ratio }, new[] { 1f }, 0.20f);
+            var m2 = CageTable.BlendWithCaliber(new[] { ratio }, new[] { 1f }, 0.60f);
+            Assert.AreEqual(0.06f, m1[0], 1e-5f);
+            Assert.AreEqual(m1[0] * 3f, m2[0], 1e-5f, "втрое больший калибр — втрое больший метр: доля, а не метр");
+
+            // отрицательный радиус остаётся ЖЁСТКОЙ ошибкой: наружу от оси на минус нельзя
+            var neg = MakeCage("Ноги", 4, 6, -0.20f);
+            var soNeg = MakeSpecies("ТестМинус", new[] { neg }, HumanWolfSockets(), OrgansFor("ТестМинус"));
+            bool foundNeg = false;
+            foreach (var iss in BodyRules.CheckCages(soNeg)) if (iss.error) foundNeg = true;
+            Assert.IsTrue(foundNeg, "отрицательный радиус — ошибка знака, должна быть error");
 
             // 0→дефолт фолбэк — старый ассет с cages==null не ломается
             var old = MakeSpecies("Старый", null, HumanWolfSockets(), OrgansFor("Старый"));
