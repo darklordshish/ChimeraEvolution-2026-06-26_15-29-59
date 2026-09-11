@@ -5,151 +5,11 @@ using UnityEngine;
 namespace Chimera.Tests.EditMode
 {
     /// <summary>
-    /// BodyRules CheckParts + CheckBudget: негатив >324→error, M×N проверка, 324 не превышен.
-    /// Закрывает дыру из плана 2026-09-05 mustfix п.8 (BodyRules.cs:182 CheckParts + бюджет).
-    /// SPEC-kletka-tela.md §6: 324 квада = (M-1)×N сумма, но BodyRules.CheckBudget считает M×N как в комменте §6.
-    /// Тесты проверяют реальную формулу M×N, а не (M-1)×N, и границу 324.
+    /// BodyRules CheckParts и CheckData: вложенность мест по замеру и слот против телесного места.
+    /// Бюджет клетки (324 квада) сторожился здесь до 12.09 — клетка отменена 10.09 и снята из кода вместе с ним.
     /// </summary>
     public class BodyRulesCheckTests
     {
-        CageTable MakeCage(string slot, int m, int n, float fill = 0.3f)
-        {
-            int len = m * n;
-            var radii = new float[len];
-            for (int i = 0; i < len; i++) radii[i] = fill;
-            return new CageTable { slot = slot, M = m, N = n, landmarks = new[] { "a", "b", "c" }, radii = radii };
-        }
-
-        SpeciesSO MakeSpeciesWithCages(string name, params CageTable[] cages)
-        {
-            var so = ScriptableObject.CreateInstance<SpeciesSO>();
-            so.speciesName = name;
-            so.sockets = new BodySocket[0];
-            so.organs = new Organ[0];
-            so.bones = new Bone[0];
-            so.cages = cages;
-            return so;
-        }
-
-        // ── Бюджет: константы ──────────────────────────────────────────────────
-
-        [Test]
-        public void Budget_Quads_Is324_And_TrisConsistent()
-        {
-            Assert.AreEqual(324, BodyRules.BudgetQuads, "SPEC §6 + ADR-1: 324 квада (было 310; хребет 8×10=70)");
-            Assert.AreEqual(830, BodyRules.BudgetTrisPerCreature);
-            Assert.AreEqual(20750, BodyRules.BudgetTris25);
-            Assert.GreaterOrEqual(BodyRules.BudgetTrisPerCreature, BodyRules.BudgetQuads * 2, "трис ≥ квадов*2 (2 трис на квад + шапки)");
-        }
-
-        [Test]
-        public void Budget_Exactly324_NoError()
-        {
-            // 18×18 =324 ровно — граница, не должна ругаться
-            var so = MakeSpeciesWithCages("Граница324", MakeCage("хребет", 18, 18));
-            try
-            {
-                var issues = BodyRules.CheckBudget(so);
-                Assert.AreEqual(0, issues.Count, "324 квада ровно — бюджет не превышен");
-            }
-            finally { Object.DestroyImmediate(so); }
-        }
-
-        [Test]
-        public void Budget_310Old_Negative_Now324()
-        {
-            // Исторический негатив >310→error (план 05.09). Сейчас порог 324 (ADR-1 +14 за хребет N=10).
-            // ЧИСЛА ПЕРЕСЧИТАНЫ 11.09 под формулу (M−1)×N: между M станциями пролётов M−1 (см. ниже).
-            var so311 = MakeSpeciesWithCages("Старый310_311", MakeCage("Тело", 312, 1));   // (312−1)×1 = 311
-            var so324 = MakeSpeciesWithCages("Новый324", MakeCage("хребет", 19, 18));      // (19−1)×18 = 324 ровно
-            var so325 = MakeSpeciesWithCages("Новый325", MakeCage("хребет", 26, 13));      // (26−1)×13 = 325 >324
-            try
-            {
-                Assert.AreEqual(0, BodyRules.CheckBudget(so311).Count, "311 квадов <324 — на новом бюджете проходит (на старом 310 было бы error)");
-                Assert.AreEqual(0, BodyRules.CheckBudget(so324).Count, "324 ровно — не error");
-                var over = BodyRules.CheckBudget(so325);
-                Assert.AreEqual(1, over.Count, "325 >324 — должен быть error (негатив)");
-                Assert.IsTrue(over[0].error);
-                StringAssert.Contains("325", over[0].text, "текст должен содержать фактический totalQuads");
-                StringAssert.Contains("324", over[0].text, "текст должен содержать лимит BudgetQuads");
-            }
-            finally { Object.DestroyImmediate(so311); Object.DestroyImmediate(so324); Object.DestroyImmediate(so325); }
-        }
-
-        [Test]
-        public void Budget_Negative_Over324_Error()
-        {
-            // Явный негатив: сумма квадов >324 должна дать error
-            var so = MakeSpeciesWithCages("Перебор325", MakeCage("хребет", 26, 13)); // (26−1)×13 = 325
-            try
-            {
-                var issues = BodyRules.CheckBudget(so);
-                Assert.AreEqual(1, issues.Count);
-                Assert.IsTrue(issues[0].error);
-                Assert.AreEqual("бюджет", issues[0].where);
-            }
-            finally { Object.DestroyImmediate(so); }
-        }
-
-        [Test]
-        public void Budget_Mminus1xN_Not_MxN()
-        {
-            // СТОРОЖ ФОРМУЛЫ, ПЕРЕВЁРНУТЫЙ 11.09. Тест назывался `Budget_MxN_Not_Mminus1xN` и требовал
-            // ровно обратного — считать M×N. Формулу исправили позже (`f1172dc`), а сторожа не тронули,
-            // и он с тех пор горел красным, сторожа отменённое правило.
-            //     Прав КОД: между M станциями пролётов M−1, квад натянут между СОСЕДНИМИ кольцами.
-            // Сверено с таблицей `SPEC-kletka-tela.md` §6 построчно, и она сходится только так:
-            // хребет 8×10 → 70, шея 4×8 → 24, голова 6×8 → 40, Пасть 4×6 → 18, Руки 6×6 ×2 → 60,
-            // Ноги 7×6 ×2 → 72, Хвост 5×6 → 24, уши 3×4 ×2 → 16. Сумма ровно 324. По M×N хребет дал
-            // бы 80 вместо 70, и ни одна строка не совпала бы.
-            //     Ловим возврат к M×N: три слота по 11×10 дают (M−1)×N = 300 (<324, ошибки нет), а
-            // M×N = 330 (>324, была бы ошибка). Красное здесь означает «формулу откатили».
-            var a = MakeCage("хребет", 11, 10);
-            var b = MakeCage("голова", 11, 10);
-            var c = MakeCage("шея", 11, 10);
-            var so = MakeSpeciesWithCages("Mminus1vsMxN", a, b, c);
-            try
-            {
-                int totalMxN = a.M * a.N + b.M * b.N + c.M * c.N;                        // 330
-                int totalMinus = (a.M - 1) * a.N + (b.M - 1) * b.N + (c.M - 1) * c.N;    // 300
-                Assert.AreEqual(330, totalMxN);
-                Assert.AreEqual(300, totalMinus);
-                Assert.AreEqual(0, BodyRules.CheckBudget(so).Count,
-                    "(M−1)×N=300 <324 → ошибки быть не должно; красное = формулу откатили к M×N (330)");
-            }
-            finally { Object.DestroyImmediate(so); }
-        }
-
-        [Test]
-        public void Budget_NullOrUnconfigured_NoError()
-        {
-            var so = ScriptableObject.CreateInstance<SpeciesSO>();
-            try
-            {
-                so.speciesName = "Пустой";
-                so.cages = null;
-                Assert.AreEqual(0, BodyRules.CheckBudget(so).Count);
-                so.cages = new[] { new CageTable { slot = "хребет", M = 0, N = 0, radii = null } };
-                Assert.AreEqual(0, BodyRules.CheckBudget(so).Count, "M=N=0 не настроено → фолбэк, не error");
-            }
-            finally { Object.DestroyImmediate(so); }
-        }
-
-        [Test]
-        public void Budget_SPEC_Slots_NotExceeded_WhenUsing_MxN_Equivalent()
-        {
-            // Проверяем что суммарный (M-1)×N по SPEC таблице =324 не превышен.
-            // BodyRules считает M×N, поэтому эквивалентная проверка — что (M-1)×N=324,
-            // а M×N=394 >324. Этот тест документирует расхождение и проверяет что
-            // хотя бы (M-1)×N версия укладывается. Если BodyRules перейдёт на (M-1)×N,
-            // этот тест останется зелёным.
-            // SPEC §6 таблица: хребет 8×10=70, шея 4×8=24, голова 6×8=40, Пасть 4×6=18,
-            // Руки×2 6×6=60, Ноги×2 7×6=72, Хвост 5×6=24, Чутьё×2 3×4=16 → 324
-            int specQuadsMinus = 70 + 24 + 40 + 18 + 60 + 72 + 24 + 16;
-            Assert.AreEqual(324, specQuadsMinus, "SPEC §6 (M-1)×N сумма =324");
-            Assert.AreEqual(BodyRules.BudgetQuads, specQuadsMinus, "BudgetQuads должен совпадать с SPEC суммой");
-        }
-
         // ── CheckParts ─────────────────────────────────────────────────────────
 
         SpeciesSO MakeSpeciesForParts(params BodySocket[] sockets)
@@ -323,7 +183,6 @@ namespace Chimera.Tests.EditMode
             so.sockets = sockets ?? new BodySocket[0];
             so.organs = organs ?? new Organ[0];
             so.bones = new Bone[0];
-            so.cages = new CageTable[0];
             return so;
         }
 

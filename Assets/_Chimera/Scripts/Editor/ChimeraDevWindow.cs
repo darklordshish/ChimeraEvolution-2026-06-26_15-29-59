@@ -406,8 +406,6 @@ public class ChimeraDevWindow : EditorWindow
         EditorGUILayout.LabelField(domSp != null
             ? $"Облик: {domSp.speciesName} {pb.Identity(domSp):P0} · смешение {mixState}"
             : $"Облик: доминанты нет — истинная химера · смешение {mixState}");
-        // Бюджет держит BodyRules — один источник на проект; панель только показывает
-        EditorGUILayout.LabelField($"Бюджет: {BodyRules.BudgetTrisPerCreature} трис/сущ. · 25 в кадре = {BodyRules.BudgetTris25} трис", EditorStyles.miniLabel);
         EditorGUILayout.LabelField("Слоты:", EditorStyles.boldLabel);
         EditorGUILayout.LabelField(pb.SlotsInfo, EditorStyles.wordWrappedLabel);
     }

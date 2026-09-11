@@ -38,7 +38,6 @@ namespace Chimera.Tests.EditMode
                 new Organ { organName = "Нюх", slot = "Чутьё", cost = 3 },
                 new Organ { organName = "Шкура", slot = "Шкура", cost = 3 },
             };
-            so.cages = null;
             return so;
         }
 
@@ -122,18 +121,6 @@ namespace Chimera.Tests.EditMode
                 Assert.AreEqual("Человек", dom.speciesName);
             }
             finally { Object.DestroyImmediate(go); Object.DestroyImmediate(human); Object.DestroyImmediate(wolf); }
-        }
-
-        [Test]
-        public void Budget_800PerCreature_20kFor25()
-        {
-            // Держатель бюджета ОДИН — BodyRules. Прежде тест сверял его с копией в CreatureBody, то есть
-            // существовал ровно потому, что копий было две; копию сняли, сверять больше нечего
-            Assert.AreEqual(830, BodyRules.BudgetTrisPerCreature, "Бюджет на существо ≈830 трис (ADR-1 хребет 8×10)");
-            Assert.AreEqual(20750, BodyRules.BudgetTris25, "25 в кадре ≈20.7k трис");
-            Assert.AreEqual(324, BodyRules.BudgetQuads, "SPEC §6: 324 квада (было 310; хребет 70)");
-            // 324 квада = 648 трис + сферы/шапки ≈830 — бюджет в трис больше квадов*2
-            Assert.GreaterOrEqual(BodyRules.BudgetTrisPerCreature, BodyRules.BudgetQuads * 2);
         }
 
         [Test]

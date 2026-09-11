@@ -1212,7 +1212,6 @@ public static class SpeciesBootstrap
         {
             var issues = BodyRules.CheckData(sp);
             issues.AddRange(BodyRules.CheckParts(sp, BodyProbe.Measure(sp)));
-            issues.AddRange(BodyRules.CheckBudget(sp));      // бюджет клетки: сумма (M−1)·N против 324 квадов
             foreach (var issue in issues)
             {
                 string line = $"[тело] {issue.species} · {issue.where}: {issue.text}";
@@ -1220,18 +1219,6 @@ public static class SpeciesBootstrap
             }
         }
 
-        // ОДИНАКОВОСТЬ M×N МЕЖДУ ВИДАМИ — условие, ради которого клетка вообще существует: меш химеры
-        // получается покомпонентным средним таблиц, а среднее определено только при равной размерности.
-        // Проверка была написана и не вызывалась ниоткуда, а рантайм на расхождении МОЛЧА выбрасывает
-        // донора (`MorphBlend`: `if (!chassisCage.SameTopology(c)) continue;`) — то есть химера тихо
-        // теряла бы вид, и по гоче проекта такую фичу не диагностируют
-        for (int i = 0; i < all.Length; i++)
-            for (int j = i + 1; j < all.Length; j++)
-                foreach (var issue in BodyRules.CheckCages(all[i], all[j]))
-                {
-                    string line = $"[клетка] {issue.species} · {issue.where}: {issue.text}";
-                    if (issue.error) Debug.LogError(line); else Debug.LogWarning(line);
-                }
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();

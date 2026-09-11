@@ -5,26 +5,12 @@ using UnityEngine;
 namespace Chimera.Tests.EditMode
 {
     /// <summary>
-    /// Ф3 Пасть: 1) клетка 4×6 без общего кольца 2) челюсть кость + зубы FEATURE 3) Bite конус 55° 4) Telegraph 5) audit 0
+    /// Ф3 Пасть: челюсть кость + зубы FEATURE, Bite конус 55°, Telegraph, audit 0. Тесты клетки Пасти (4×6 без общего
+    /// кольца) сняты 12.09 вместе с отменённой клеткой: они парсили `cage.py` модельной линии и при его отсутствии
+    /// сами подставляли ожидаемое
     /// </summary>
     public class MawF3Tests
     {
-        // ── 1) Клетка Пасть 4×6 без общего кольца ────────────────────────────────────
-        [Test]
-        public void Cage_Maw_Is4x6()
-        {
-            Assert.AreEqual((4, 6), ChimeraCage.Paw4x6(), "Пасть должна быть 4×6 (SPEC §6 заморожено v0.4)");
-            // Прямая проверка через CAGE словарь
-            Assert.IsTrue(Tools.Blender_Chimera_Cage_CageContains("Пасть", 4, 6), "CAGE[Пасть] != 4×6");
-        }
-
-        [Test]
-        public void Cage_Maw_HasNoSharedRing()
-        {
-            // Пасть — намеренное исключение SPEC §5: общего кольца НЕТ
-            Assert.IsTrue(Tools.Blender_Chimera_Cage_MawIsIsolated(), "Пасть должна быть изолирована (без общего кольца)");
-        }
-
         // ── 2) Челюсть кость + зубы FEATURE ──────────────────────────────────────────
         [Test]
         public void Wolf_Jaw_IsOwnBone()
@@ -164,41 +150,8 @@ namespace Chimera.Tests.EditMode
     }
 
     // ── Вспомогательные стабы для доступа к данным без Blender ───────────────────────
-    static class ChimeraCage
-    {
-        public static (int, int) Paw4x6() => (4, 6);
-    }
     static class Tools
     {
-        public static bool Blender_Chimera_Cage_CageContains(string slot, int m, int n)
-        {
-            // Парсит chimera/cage.py — проверяем что CAGE[slot] == (m,n)
-            try
-            {
-                var root = FindRepoRoot();
-                var p = System.IO.Path.Combine(root, "Tools", "Blender", "chimera", "cage.py");
-                var txt = System.IO.File.ReadAllText(p);
-                var needle = $"'{slot}'";
-                int idx = txt.IndexOf(needle);
-                if (idx < 0) return false;
-                var snippet = txt.Substring(idx, System.Math.Min(80, txt.Length - idx));
-                return snippet.Contains($"{m}, {n}") || snippet.Contains($"{m},{n}");
-            }
-            catch { return slot == "Пасть" && m == 4 && n == 6; }
-        }
-        public static bool Blender_Chimera_Cage_MawIsIsolated()
-        {
-            // cagemesh.py должен содержать ветку if slot != 'Пасть' / изолирована
-            try
-            {
-                var root = FindRepoRoot();
-                var p = System.IO.Path.Combine(root, "Tools", "Blender", "chimera", "cagemesh.py");
-                var txt = System.IO.File.ReadAllText(p);
-                return txt.Contains("Пасть") && txt.Contains("_bury") && txt.Contains("slot != 'Пасть'");
-            }
-            catch { return false; }
-        }
-
         static string FindRepoRoot()
         {
             // EditMode: Application.dataPath = .../Assets
