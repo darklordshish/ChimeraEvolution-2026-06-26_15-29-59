@@ -1,10 +1,13 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>БОССОВОСТЬ — отдельный модуль поверх обычной химеры (слайс #4b-4). Босс собирается ТЕМ ЖЕ
 /// конструктором, что все (`ChimeraFactory`), а модуль тело не строит — он его РАСШИРЯЕТ:
 ///   • химерными слотами сверх нормы, в которые чужие органы ставятся тем же `Install`, что у игрока;
 ///   • раскрытием генов органов (экспрессия) до потолка игрока;
-///   • чертами туши (масса, ярость), размером и наградой за первое убийство.
+///   • чертами туши (масса, ярость), размером и наградой за первое убийство;
+///   • АТАВИЗМАМИ ВЕРВОЛЬФА — вампиризмом, временными HP и приказом вожака. Жили в общих системах без носителя;
+///     геймдизайнер 11.09: «механики обдумаем, когда будут виды». По умолчанию выключены.
 /// То, что органом не выражается (множители HP и урона), живёт здесь же, а тело и доставки опрашивают модуль,
 /// как статус — поэтому бонус переживает любой `Recompute`, а не стирается следующей прививкой.
 ///     Сценарный закон (геймдизайнер, 11.09): босс — всегда химера ЧЕЛОВЕКА с кем-то. Шасси выбирает спавнер.</summary>
@@ -32,6 +35,10 @@ public class Bossness : MonoBehaviour
         [Min(0)] public int poolReward = 4;
         [Tooltip("Награда за первое убийство: химерный слот игроку")]
         public bool grantsChimeraSlot = true;
+        [Tooltip("Вампиризм: HP за каждое попадание любым приёмом. 0 — выключен (атавизм вервольфа, механика не решена)")]
+        [Min(0)] public int lifeSteal;
+        [Tooltip("Временные HP: на сколько вампиризм может поднять свыше максимума. 0 — не выше максимума")]
+        [Min(0)] public int overheal;
     }
 
     [SerializeField] Settings settings = new();
@@ -39,6 +46,7 @@ public class Bossness : MonoBehaviour
     // 0-гоча сериализации: ноль в старом объекте читаем как «не настроено», а не как «убить множителем»
     public float HpMult => settings.hpMult > 0f ? settings.hpMult : 1f;
     public float DamageMult => settings.damageMult > 0f ? settings.damageMult : 1f;
+    public int LifeSteal => settings.lifeSteal; // доставки опрашивают, как множитель урона
     public string TypeId { get; private set; } = "Суперхимера";
 
     /// <summary>ШАГ 1 — до доставок и тела: сам модуль и черты, которые доставки кэшируют в Awake (ярость).
@@ -71,6 +79,23 @@ public class Bossness : MonoBehaviour
         if (settings.eternalRage && TryGetComponent<Rage>(out var rage)) rage.Enrage(float.PositiveInfinity);
         if (!TryGetComponent<SuperBossReward>(out var reward)) reward = gameObject.AddComponent<SuperBossReward>();
         reward.Configure(TypeId, settings.poolReward, settings.grantsChimeraSlot);
+        if (settings.overheal > 0 && TryGetComponent<Health>(out var hp)) hp.OverhealCap = settings.overheal;
+    }
+
+    /// <summary>ПРИКАЗ ВОЖАКА — задел механики босса, вызывать пока некому. Своих рядом узнаёт по составу, тем же
+    /// голосом кина, что у игрока (`KinVoice`): сильное признание даёт +5 духа и снимает бегство. Жил в
+    /// `PackCoordinator.Rally` вместе с окном «наваливается вся стая» и после удаления вервольфа не вызывался.</summary>
+    public int OrderKin(float radius)
+    {
+        if (!TryGetComponent<CreatureBody>(out var body)) return 0;
+        var heard = new HashSet<Health>(); // у существа несколько коллайдеров — приказ слышат один раз
+        foreach (var col in Physics.OverlapSphere(transform.position, radius, ~0, QueryTriggerInteraction.Ignore))
+        {
+            var hp = col.GetComponentInParent<Health>();
+            if (hp == null || hp.gameObject == gameObject || !heard.Add(hp)) continue;
+            KinVoice.TryRallyKin(body, hp, transform.position);
+        }
+        return heard.Count;
     }
 
     public float SizeScale => settings.sizeScale > 0f ? settings.sizeScale : 1f;

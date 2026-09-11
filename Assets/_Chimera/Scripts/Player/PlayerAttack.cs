@@ -20,7 +20,6 @@ public class PlayerAttack : MonoBehaviour, IAbility
     float nextTime;
     CameraFollow cam;
     Health ownHealth;
-    int lifeSteal;
 
     void Start()
     {
@@ -41,7 +40,7 @@ public class PlayerAttack : MonoBehaviour, IAbility
     {
         // призрака раскрывает ПОПАДАНИЕ (Hit.Apply), не замах — холостой взмах безопасен
         var hit = new Hit(ownHealth, transform.position);
-        var blow = new MeleeBlow { Damage = damage, LifeSteal = lifeSteal }; // единый паёк удара (см. MeleeBlow)
+        var blow = new MeleeBlow { Damage = damage }; // единый паёк удара (см. MeleeBlow)
         var targets = TargetScan.Healths(AttackCenter(), radius, transform);
         foreach (var hp in targets) blow.Deliver(hit, hp); // урон + вампиризм; эрозия по кину — внутри Hit.Apply
 
@@ -63,7 +62,6 @@ public class PlayerAttack : MonoBehaviour, IAbility
     public void SetCooldown(float newCooldown) => cooldown = newCooldown;
 
     // слот «Пасть»: вампиризм (лечение при попадании)
-    public void SetLifeSteal(int v) => lifeSteal = v;
 
     Vector3 AttackCenter() => transform.position + transform.forward * range + Vector3.up * 0.3f; // грудь (корень игрока — ЦЕНТР капсулы CC)
 

@@ -14,7 +14,6 @@ public class LeapAbility : WindupAbility
     [SerializeField] float up = 5f;
     [SerializeField] float duration = 0.5f;
     [SerializeField] int damage = 12;
-    [SerializeField] int lifeSteal = 0;   // вервольф лечится и наскоком
     [SerializeField] float hitRadius = 1.3f;
 
     public float MinRange => minRange; // психика читает окно дистанций для решения
@@ -48,7 +47,7 @@ public class LeapAbility : WindupAbility
         if (targetHealth != null && DistToTarget() <= hitRadius) // приземлили наскок — кусаем
         {
             // единый паёк (см. MeleeBlow) — тот же укус на приземлении; мощь масштабирует урон
-            var blow = new MeleeBlow { Damage = damage, LifeSteal = lifeSteal };
+            var blow = new MeleeBlow { Damage = damage, LifeSteal = BossLifeSteal };
             blow.Deliver(new Hit(ownHealth, transform.position), targetHealth, DamageMult);
         }
         return AbilityRun.Done;

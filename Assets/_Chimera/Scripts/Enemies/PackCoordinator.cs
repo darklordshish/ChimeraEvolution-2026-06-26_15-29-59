@@ -43,7 +43,6 @@ public class PackCoordinator : MonoBehaviour
     void EnsureRing() { if (ring == null || ring.Length != Mathf.Max(1, ringSlots)) ring = new WolfPsyche[Mathf.Max(1, ringSlots)]; }
     Transform player;
     Health playerHealth;
-    float fearlessUntil;
 
     public int AttackerCount => attackers.Count;
     public int MaxAttackers => maxAttackers;
@@ -53,7 +52,7 @@ public class PackCoordinator : MonoBehaviour
     [SerializeField] float packHowlGap = 7f; // стая не воет ХОРОМ: один голос раз в столько секунд (фон морали ≈ +1)
     float lastHowlAt = -999f;
 
-    // волк просит право голоса: занято — молчит (перекличка, не сирена). Вой вервольфа-вожака вне очереди
+    // волк просит право голоса: занято — молчит (перекличка, не сирена)
     public bool TryClaimHowl()
     {
         if (Time.time < lastHowlAt + packHowlGap) return false;
@@ -72,17 +71,7 @@ public class PackCoordinator : MonoBehaviour
             }
     }
 
-    // вой ВОЖАКА — тоже ЛОКАЛЕН (на арене 200 «вся карта» была мега-навалом всех 30+): ближние узнают
-    // точку сбора и сходятся, дальние живут своей жизнью — лес не схлопывается в одну кучу
-    public void AlertAround(Vector3 origin, float radius, Vector3 target)
-    {
-        float r2 = radius * radius;
-        foreach (var w in wolves)
-            if (w != null && (w.transform.position - origin).sqrMagnitude <= r2) w.Hear(target);
-    }
-
-    // мораль: страх/бегство — ЛИЧНОЕ у каждого волка (WolfPsyche). Пул задаёт лишь параметры; ярость вожака гасит страх.
-    public bool Fearless => Time.time < fearlessUntil;
+    // мораль: страх/бегство — ЛИЧНОЕ у каждого волка (WolfPsyche). Пул задаёт лишь параметры.
     // пороги храбрости и длительность паники живут теперь в Morale/Personality (шкала стаков, спека 2026-07-17)
 
     public bool AnyRouting()
@@ -94,21 +83,11 @@ public class PackCoordinator : MonoBehaviour
     // смерть волка пугает ТОЛЬКО ближних участников боя (у места гибели) — каждому +1 к его личному страху
     public void ReportKill(Vector3 deathPos)
     {
-        // гейт Fearless не нужен: приказ вожака (+5) перевешивает −1 смерти АРИФМЕТИЧЕСКИ (шкала сама решает)
+        // гейтов нет: голос сильного кина (+5, KinVoice) перевешивает −1 смерти АРИФМЕТИЧЕСКИ (шкала сама решает)
         float r2 = routRadius * routRadius;
         foreach (var w in wolves)
             if (w != null && w.Engaged && (w.transform.position - deathPos).sqrMagnitude <= r2)
                 w.AddFear();
-    }
-
-    // приказ вожака (вой): ЛОКАЛЬНО — +5 духа ближним (мораль над любым порогом → коммит → ярость сама)
-    // + стирает страхи; приказное окно (кап атакующих снят) остаётся глобальным флагом координатора
-    public void Rally(Vector3 origin, float radius, float duration)
-    {
-        fearlessUntil = Time.time + duration;
-        float r2 = radius * radius;
-        foreach (var w in wolves)
-            if (w != null && (w.transform.position - origin).sqrMagnitude <= r2) { w.CalmRout(); w.Cheer(5f); }
     }
 
     Transform Player
@@ -172,8 +151,7 @@ public class PackCoordinator : MonoBehaviour
     public bool TryAcquireAttack(WolfPsyche w)
     {
         if (attackers.Contains(w)) return true;
-        int cap = Fearless ? Mathf.Max(maxAttackers, wolves.Count) : maxAttackers; // ярость: наваливается вся стая
-        if (attackers.Count >= cap) return false;
+        if (attackers.Count >= maxAttackers) return false;
         attackers.Add(w); // first-come среди готовых в зоне; «ближайший-гейт» пробовали — голодание жетонов (кусал один)
         ReleaseRingSlot(w); // ушёл в упор → слот на кольце свободен (ротация: ближайший из рыхлой стаи займёт)
         return true;

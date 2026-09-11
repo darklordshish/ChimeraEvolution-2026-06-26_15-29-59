@@ -21,7 +21,7 @@ public class Health : MonoBehaviour
     float combatUntil;
     public bool InCombat => Time.time < combatUntil;
     public void MarkInCombat(float seconds = 1f) => combatUntil = Mathf.Max(combatUntil, Time.time + seconds);
-    public int OverhealCap { get; set; }         // на сколько можно перелечиться свыше макс. (temp HP боссa; не регенится)
+    public int OverhealCap { get; set; }         // на сколько можно перелечиться свыше макс. (temp HP — задаёт модуль боссовости; не регенится)
     public Health LastAttacker { get; set; }     // кто ударил последним: родство за смерть — УБИЙЦЕ (ставят Hit.Apply/яд/удушение)
     public int LastRawDamage { get; private set; } // сила последнего удара ДО брони/множителей: правила «сбил ли меня удар»
                                                    // (срыв захвата) не должны зависеть от МОЕЙ брони — иначе толстая шкура «помогает» держать
@@ -85,8 +85,6 @@ public class Health : MonoBehaviour
         regenSuppressFactor = Mathf.Clamp01(factor);
         regenSuppressUntil = Time.time + duration;
     }
-
-    public void ClearOverheal() { if (Current > maxHealth) Current = maxHealth; } // сброс temp HP (босс потерял цель)
 
     public void TakeDamage(int amount) => TakeDamage(amount, false);
 

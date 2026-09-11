@@ -106,7 +106,7 @@ public class Organ
     public string hotkey = "1";    // временный бинд клавиши (MVP-конструктор)
     public int cost;               // цена в пуле
 
-    public int damage, lifeSteal;
+    public int damage;
     public float staminaBonus;      // прибавка к БАКУ стамины, долей базы шасси (та же модель, что hpBonus)
     public float staminaRegenBonus; // прибавка к РЕГЕНУ стамины, долей базы шасси
     public float hpBonus;          // ПРИБАВКА К ВИТАЛЬНОСТИ ДОЛЕЙ базы шасси (0.5 = +50%), не абсолют.

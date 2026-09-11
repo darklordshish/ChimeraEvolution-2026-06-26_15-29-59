@@ -10,7 +10,7 @@ public partial class CreatureBody
     // вклад одного надетого органа в статы тела (после бленда/экспрессии)
     struct Contribution
     {
-        public float dmg, hpBonus, stam, stamRegen, life, rng, atkCd, mv, dash, dashDur, dashCd, reduce, regen, regenOOC, thermal, howlR, howlStunAt;
+        public float dmg, hpBonus, stam, stamRegen, rng, atkCd, mv, dash, dashDur, dashCd, reduce, regen, regenOOC, thermal, howlR, howlStunAt;
         public int venom, bleed;
         public bool bite, scent, kick, howl, cold, camo, thermalOn, constrict, digest, bellow, antler, charge, roll, curl, scream;
         public bool thorns, venomResist, quillVolley; // иглы-ответка, ядоупорность, залп (ёж)
@@ -25,7 +25,7 @@ public partial class CreatureBody
         // Дубль оси силу НЕ растит (второе сердце ≠ ×2 регена) — окупается только НОВЫМ направлением.
         public static Contribution Sup(Contribution a, Contribution b) => new()
         {
-            dmg = Mathf.Max(a.dmg, b.dmg), hpBonus = Mathf.Max(a.hpBonus, b.hpBonus), life = Mathf.Max(a.life, b.life),
+            dmg = Mathf.Max(a.dmg, b.dmg), hpBonus = Mathf.Max(a.hpBonus, b.hpBonus),
             stam = Mathf.Max(a.stam, b.stam), stamRegen = Mathf.Max(a.stamRegen, b.stamRegen),
             rng = Mathf.Max(a.rng, b.rng), atkCd = Mathf.Min(a.atkCd, b.atkCd),
             mv = Mathf.Max(a.mv, b.mv), dash = Mathf.Max(a.dash, b.dash), dashDur = Mathf.Max(a.dashDur, b.dashDur), dashCd = Mathf.Min(a.dashCd, b.dashCd),
@@ -87,7 +87,6 @@ public partial class CreatureBody
             hpBonus = Scaled(h.hpBonus, w.hpBonus), // ДОЛЯ базы шасси — экспрессия раскрывает бонус, не тело
             stam = Scaled(h.staminaBonus, w.staminaBonus),
             stamRegen = Scaled(h.staminaRegenBonus, w.staminaRegenBonus),
-            life = Scaled(h.lifeSteal, w.lifeSteal),
             atkCd = Timed(h.atkCooldown, w.atkCooldown),
             mv = Scaled(h.moveSpeed, w.moveSpeed),
             dash = Scaled(h.dashSpeed, w.dashSpeed),

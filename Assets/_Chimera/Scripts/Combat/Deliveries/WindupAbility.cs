@@ -46,7 +46,7 @@ public abstract class WindupAbility : MonoBehaviour, IAbility
 
     Morale morale;   // шкала духа стайных (вешает психика ПОСЛЕ нашего Awake — берём лениво)
     Satiety satiety; // шкала сытости-голода (тело вешает в Awake): истощённый бьёт слабее
-    Bossness bossness; // модуль боссовости: множитель урона всех приёмов (лениво — порядок навески не важен)
+    Bossness bossness; // модуль боссовости: множитель урона и вампиризм всех приёмов (лениво — порядок навески не важен)
 
     // урон доставки: ярость × разброс особи × ДУХ (раскачанная мораль бьёт больнее) × ВИГОР (истощённый — слабее)
     protected float DamageMult
@@ -59,6 +59,16 @@ public abstract class WindupAbility : MonoBehaviour, IAbility
             return (rage != null ? rage.DamageMult : 1f) * (variance != null ? variance.DamageMult : 1f)
                  * (morale != null ? morale.DamageMult : 1f) * (satiety != null ? satiety.Vigor : 1f)
                  * (bossness != null ? bossness.DamageMult : 1f);
+        }
+    }
+
+    // ВАМПИРИЗМ — не черта приёма, а модуля боссовости: у приёмов было своё поле, и ставил его только вервольф
+    protected int BossLifeSteal
+    {
+        get
+        {
+            if (bossness == null) TryGetComponent(out bossness);
+            return bossness != null ? bossness.LifeSteal : 0;
         }
     }
 

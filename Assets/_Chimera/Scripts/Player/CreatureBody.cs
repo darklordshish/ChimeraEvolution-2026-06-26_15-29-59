@@ -306,7 +306,7 @@ public partial class CreatureBody : MonoBehaviour
         }
 
         // суммирование групп; урон группы «Пасть» принадлежит УКУСУ, не мечу
-        float dmgF = 0f, dmgBiteF = 0f, hpBonusF = 0f, stamF = 0f, stamRegF = 0f, lifeF = 0f;
+        float dmgF = 0f, dmgBiteF = 0f, hpBonusF = 0f, stamF = 0f, stamRegF = 0f;
         float rng = 0f, atkCd = 0f, mv = 0f, dash = 0f, dashDur = 0f, dashCd = 0f, reduce = 0f, regen = 0f, regenOOC = 0f, thermal = 0f, howlR = 0f, howlStunAt = 0f;
         int venom = 0, bleed = 0;
         bool biteOn = false, scentOn = false, kickOn = false, howlOn = false, coldOn = false, camoOn = false,
@@ -320,7 +320,7 @@ public partial class CreatureBody : MonoBehaviour
         {
             var c = kv.Value;
             if (kv.Key == "Пасть") dmgBiteF += c.dmg; else dmgF += c.dmg;
-            hpBonusF += c.hpBonus; stamF += c.stam; stamRegF += c.stamRegen; lifeF += c.life; venom += c.venom; bleed += c.bleed;
+            hpBonusF += c.hpBonus; stamF += c.stam; stamRegF += c.stamRegen; venom += c.venom; bleed += c.bleed;
             rng += c.rng; atkCd += c.atkCd; mv += c.mv; dash += c.dash; dashDur += c.dashDur; dashCd += c.dashCd;
             reduce += c.reduce; regen += c.regen; regenOOC += c.regenOOC; thermal += c.thermal;
             howlR = Mathf.Max(howlR, c.howlR);
@@ -335,7 +335,6 @@ public partial class CreatureBody : MonoBehaviour
             volleyMult = Mathf.Max(volleyMult, c.volleyMult);
         }
         int dmg = Mathf.RoundToInt(dmgF), dmgBite = Mathf.RoundToInt(dmgBiteF);
-        int life = Mathf.RoundToInt(lifeF);
 
         if (bite != null)
         {
@@ -407,7 +406,6 @@ public partial class CreatureBody : MonoBehaviour
         {
             attack.SetMelee(dmg, Mathf.Max(0.5f, rng));
             attack.SetCooldown(Mathf.Max(minAtkCooldown, atkCd)); // пол — глушим овершут скорострельности
-            attack.SetLifeSteal(life);
         }
         if (move != null)
         {

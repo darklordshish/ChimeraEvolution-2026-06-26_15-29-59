@@ -16,7 +16,7 @@ public struct MeleeBlow
     public int BleedStacks;          // протыкание — кровь стаками (рога/клыки)
     public int VenomStacks;          // яд стаками (клыки змеи)
     public int SlowStacks;           // замедление стаками (иглы ежа — снаряд тянет цель вниз)
-    public int LifeSteal;            // вампиризм при попадании (слот «Пасть»)
+    public int LifeSteal;            // вампиризм при попадании (укус игрока; у NPC — модуль боссовости)
     public float RegenDebuffFactor;  // в (0;1) — сбить реген цели (укус против сустейна босса); 0 = не трогать
     public float RegenDebuffTime;    // на сколько держится сбив регена
     public float StaggerTime;        // явный сбив (0 = урон сам даст короткий стаггер через onDamaged)

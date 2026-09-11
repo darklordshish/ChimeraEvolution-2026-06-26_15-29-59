@@ -11,7 +11,6 @@ public class BiteAbility : WindupAbility
     [SerializeField] float range = 2.0f;
     [SerializeField] float halfAngle = 55f;
     [SerializeField] int damage = 8;
-    [SerializeField] int lifeSteal = 0;                      // вервольф лечится укусом (может уйти в temp HP)
     [SerializeField, Range(0f, 1f)] float regenDebuff = 1f;  // <1 — сбивает реген цели
     [SerializeField] float regenDebuffTime = 0f;
     [SerializeField] int venomStacks = 0;                   // >0 — укус впрыскивает яд (змея)
@@ -50,7 +49,7 @@ public class BiteAbility : WindupAbility
     /// Один источник правды: и замаховый укус, и укус без замаха (BiteNow) льют одно и то же.</summary>
     public MeleeBlow Payload() => new()
     {
-        Damage = damage, LifeSteal = lifeSteal, VenomStacks = venomStacks, BleedStacks = bleedStacks,
+        Damage = damage, LifeSteal = BossLifeSteal, VenomStacks = venomStacks, BleedStacks = bleedStacks,
         RegenDebuffFactor = regenDebuff, RegenDebuffTime = regenDebuffTime,
     };
 

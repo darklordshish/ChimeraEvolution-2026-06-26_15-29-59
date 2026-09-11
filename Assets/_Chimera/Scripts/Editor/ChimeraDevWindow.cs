@@ -360,7 +360,7 @@ public class ChimeraDevWindow : EditorWindow
         if (!showWatch) return;
 
         var pack = PackCoordinator.Instance;
-        string packMorale = pack.AnyRouting() ? "БЕГСТВО" : pack.Fearless ? "ЯРОСТЬ" : "норма";
+        string packMorale = pack.AnyRouting() ? "БЕГСТВО" : "норма";
         EditorGUILayout.LabelField($"Стая: атакуют {pack.AttackerCount}/{pack.MaxAttackers}", EditorStyles.wordWrappedLabel);
         EditorGUILayout.LabelField($"захват: {(pack.GrabActive ? "да" : "нет")}   мораль: {packMorale}");
 
