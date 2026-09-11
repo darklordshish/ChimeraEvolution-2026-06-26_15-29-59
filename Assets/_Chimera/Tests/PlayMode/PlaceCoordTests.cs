@@ -19,12 +19,16 @@ namespace Chimera.Tests.PlayMode
             so.tint = Color.green;
             so.mutagenPool = 10;
             so.baseHp = 50;
+            // СРЕДНЯЯ ЦЕПЬ ЗОВЁТСЯ «хребет», а не «Тело» (11.09): `SnakeBodyChain.ChainNames` — контракт с
+            // сокет-планом, и коммит 5557d92 сменил имя в коде, но не здесь. Звенья «Тело» цепь пропускала
+            // целиком, и SnakeChain_Dist падал скачком 1.38 = 3×0.36 + полузвенья — только PlayMode тогда
+            // не гоняли ни разу, и протухший сторож молчал
             so.sockets = new[]
             {
                 new BodySocket { name = "голова", localPos = new Vector3(0f,0.4f,0f), baseSize = new Vector3(0.26f,0.22f,0.46f) },
                 new BodySocket { name = "шея", parent = "голова", attach = 0f, baseSize = Vector3.one, linkDiameter = 0.22f, linkLength = 0.36f, chain = 3 },
-                new BodySocket { name = "Тело", parent = "шея", attach = 0f, baseSize = Vector3.one, linkDiameter = 0f, linkLength = 0.36f, chain = 3 },
-                new BodySocket { name = "Хвост", parent = "Тело", attach = 0f, baseSize = Vector3.one, linkDiameter = 0f, linkLength = 0.24f, chain = 4 },
+                new BodySocket { name = "хребет", parent = "шея", attach = 0f, baseSize = Vector3.one, linkDiameter = 0f, linkLength = 0.36f, chain = 3 },
+                new BodySocket { name = "Хвост", parent = "хребет", attach = 0f, baseSize = Vector3.one, linkDiameter = 0f, linkLength = 0.24f, chain = 4 },
                 new BodySocket { name = "Наконечник", parent = "Хвост", attach = 0f, baseSize = new Vector3(0.12f,0.12f,0.12f) },
             };
             so.organs = new[]
@@ -57,14 +61,14 @@ namespace Chimera.Tests.PlayMode
             Assert.AreEqual(footY, container.localPosition.y, 1e-5f);
 
             // Place для головы и шеи: шея должна быть на расстоянии ровно attach*длина родителя.
-            // Найдём узлы цепи (BuildLinks создал узлы с именем "шея", "Тело", "Хвост" как прямые дети контейнера)
+            // Найдём узлы цепи (BuildLinks создал узлы с именем "шея", "хребет", "Хвост" как прямые дети контейнера)
             Transform FindInContainer(string name)
             {
                 foreach (Transform ch in container) if (ch.name == name) return ch;
                 return null;
             }
             var neckNode = FindInContainer("шея");
-            var bodyNode = FindInContainer("Тело");
+            var bodyNode = FindInContainer("хребет");
             var tailNode = FindInContainer("Хвост");
             Assert.IsNotNull(neckNode, "узел шея должен быть прямым ребёнком Morph");
             // локальные позиции звеньев вдоль -Z (ChainDir для цепи всегда back): мировые и локальные не смешиваем
@@ -164,7 +168,7 @@ namespace Chimera.Tests.PlayMode
             Assert.IsNotNull(container);
             foreach (Transform child in container)
             {
-                if (child.name=="шея" || child.name=="Тело" || child.name=="Хвост")
+                if (child.name=="шея" || child.name=="хребет" || child.name=="Хвост")
                 {
                     Assert.AreEqual(1f, child.localScale.x, 1e-5f, $"узел {child.name} должен иметь масштаб 1 (иначе капсула плющит сустав в диск)");
                     Assert.AreEqual(1f, child.localScale.y, 1e-5f);
