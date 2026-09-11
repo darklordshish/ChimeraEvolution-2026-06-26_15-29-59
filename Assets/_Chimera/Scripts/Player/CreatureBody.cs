@@ -179,7 +179,14 @@ public partial class CreatureBody : MonoBehaviour
         if (mixer == null) mixer = gameObject.AddComponent<TintMixer>();
     }
 
-    void Start() => Recompute();
+    void Start()
+    {
+        // ШАССИ ПРОВЕРЯЕМ НА ПЕРВОМ КАДРЕ, А НЕ В AWAKE: рождённого составом (`ChimeraFactory`) Awake застаёт ещё без
+        // шасси — его отдаёт `Configure` следующей строкой после `AddComponent`. Тревога — только если так никто и не дал
+        if (chassis == null || chassis.organs == null)
+            Debug.LogWarning("CreatureBody: не назначено шасси (SpeciesSO). Конструктор спит — компоненты работают на своих значениях.", this);
+        Recompute();
+    }
 
     /// <summary>РАНТАЙМ-СБОРКА (тест-химера / будущая стохастическая химеризация NPC): задать шасси+доноров и
     /// пересобрать. Обычные тела конфигурятся сериализацией (префаб/бутстрап); это — для рождённых на лету.

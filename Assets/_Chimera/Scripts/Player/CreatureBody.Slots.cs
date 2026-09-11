@@ -274,8 +274,7 @@ public partial class CreatureBody
     {
         if (chassis == null || chassis.organs == null)
         {
-            slots = new Slot[0];
-            Debug.LogWarning("CreatureBody: не назначено шасси (SpeciesSO). Конструктор спит — компоненты работают на своих значениях.");
+            slots = new Slot[0]; // молча: шасси может прийти позже через Configure — тревогу поднимает Start
             return;
         }
 
