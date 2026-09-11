@@ -25,8 +25,6 @@ public partial class CreatureBody : MonoBehaviour
 
     // — ХИМЕРНЫЕ СЛОТЫ (chimeraSlots/chimeraSlotMult) вынесены в CreatureBody.Slots.cs (partial-split #5) —
 
-    [Header("NPC-режим (тело как данные)")]
-    [SerializeField] bool installAllBeast;    // все звериные органы надеты с рождения (вервольф — застывшая химера)
     [FormerlySerializedAs("fixedBonusMult")]
     [Header("Чувства игрока (профиль Senses; у NPC — на префабе)")]
     [SerializeField] float sightRange = 30f;   // ЗРЕНИЕ игрока: глаза при нём всегда, органом не выдаётся
@@ -48,7 +46,7 @@ public partial class CreatureBody : MonoBehaviour
     float BaseStaminaRegen => chassis != null && chassis.baseStaminaRegen > 0f ? chassis.baseStaminaRegen : 12f;
 
     [SerializeField] float expression;        // ЭКСПРЕССИЯ: насколько раскрыты гены зверя. 0 = авто (кривая родства);
-                                              // >0 фикс: вервольф 2 (= потолок игрока), природный волк ~0.45 (без сыворотки)
+                                              // >0 фикс: природный волк ~0.45 (без сыворотки); 2 = потолок игрока
     [SerializeField] bool applyVitals = true; // false: HP/броня/реген — «конституция» психики, тело их не трогает
 
     // — ТИПЫ Slot/Variant + поле slots вынесены в CreatureBody.Slots.cs (partial-split #5) —
@@ -221,7 +219,7 @@ public partial class CreatureBody : MonoBehaviour
         {
             Feed(killer, killer.DigestsWhole ? 1f : KillMeal); // глотающий целиком (змея) наедается на всю шкалу
 
-            // МАССИВНАЯ добыча (лось, вервольф) велика — кормит и СТАЮ: кины, участвовавшие в бою (рядом
+            // МАССИВНАЯ добыча (лось) велика — кормит и СТАЮ: кины, участвовавшие в бою (рядом
             // с тушей), получают половину. Мелкую жертву делить нечего — ест только убийца
             if (GetComponent<Massive>() != null)
                 foreach (var col in Physics.OverlapSphere(killer.transform.position, assistFeedRadius, ~0, QueryTriggerInteraction.Ignore))
@@ -331,11 +329,11 @@ public partial class CreatureBody : MonoBehaviour
         }
         if (kick != null) kick.KickEnabled = kickOn; // пинок — фича человеческих ног: с волчьими пропадает
         // ГОЛОС — от данных: радиус = органная база × МОЩЬ-превосходство (игрок BonusMult ×1..2;
-        // NPC max(1, Э) — норму вниз не штрафуем: взрослый волк воет как волк, вервольф Э2 — вдвое)
+        // NPC max(1, Э) — норму вниз не штрафуем: взрослый волк воет как волк)
         float voiceMult = Mathf.Max(1f, Power); // радиус: норму вниз не штрафуем (взрослый волк воет как волк)
         float howlReach = howlR * voiceMult;
         // ПОРОГ-ФИЧА (3-я ось экспрессии): стан открывается, только если МОЩЬ носителя доросла до порога органа.
-        // Рядовой волк (Э 0.45) лишь зовёт стаю; вервольф (Э 2) и игрок на 100 родства — глушат. Через данные,
+        // Рядовой волк (Э 0.45) лишь зовёт стаю; игрок на 100 родства — глушит. Через данные,
         // без флагов «это игрок»: один вой на всех, разница — в составе носителя
         HowlStuns = howlStunAt > 0f && Power >= howlStunAt;
         if (howl != null) { howl.HowlEnabled = howlOn; howl.SetReach(howlReach); howl.StunUnlocked = HowlStuns; }
@@ -430,8 +428,7 @@ public partial class CreatureBody : MonoBehaviour
         // пере-собрать renderers (морф-части новые), чтобы тинт их покрасил. Только у видов со скелетом (Волк/Человек)
         // МОРФОЛОГИЯ: NPC/химеры собираются кубами из состава; игрок — своя PlayerModel (worn=null → Build лишь
         // СНОСИТ старый Morph, если остался от прежнего билда, и не строит). Гейт по скелету (Волк/Человек).
-        // !installAllBeast: вервольф-босс остаётся при своей РУЧНОЙ детальной модели (WerewolfPrefab), не морфим
-        if (!installAllBeast && chassis != null && chassis.sockets != null && chassis.sockets.Length > 0)
+        if (chassis != null && chassis.sockets != null && chassis.sockets.Length > 0)
         {
             var worn = new System.Collections.Generic.List<Organ>();
             foreach (var sl in slots) if (!sl.Empty && sl.Worn != null) worn.Add(sl.Worn); // слоты шасси раньше химерных → шасси-фёрст
@@ -513,8 +510,8 @@ public partial class CreatureBody : MonoBehaviour
     }
 
     // МАССА как маркер: тело ДОБАВЛЯЕТ Massive по флагу шасси (лось). ADD-ONLY, НЕ снимает: масса — статичное
-    // свойство шасси (в MVP не меняется), а на боссах с ОБЩИМ шасси (вервольф на человечьем) Massive висит с
-    // ПРЕФАБА — снятие по флагу=false сорвало бы его. Потребители (Knockback/Constrict/RequiredPack/змея) уже чекают GetComponent<Massive>
+    // свойство шасси (в MVP не меняется). Add-only досталось от вервольфа (нёс Massive с префаба на человечьем
+    // шасси); он удалён 11.09, но снимать по флагу по-прежнему незачем. Потребители (Knockback/Constrict/RequiredPack/змея) уже чекают GetComponent<Massive>
     void SetMassive(bool on)
     {
         if (on && !TryGetComponent<Massive>(out _)) gameObject.AddComponent<Massive>();

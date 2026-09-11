@@ -223,25 +223,6 @@ public class ChimeraDevWindow : EditorWindow
         // Человек — полноценный вид со своим родством, но в сцене не водится: только левая половина строки
         SpeciesRow(pb, "Человек", -1, null, null, null, null, null);
 
-        // босс — отдельная строка: спавнится в одном экземпляре, плюс тумблер автоспавна
-        var boss = Object.FindAnyObjectByType<WerewolfPsyche>();
-        using (new EditorGUILayout.HorizontalScope(EditorStyles.helpBox))
-        {
-            EditorGUILayout.LabelField("Вервольф", EditorStyles.boldLabel, GUILayout.Width(62));
-            string bossHp = boss != null && boss.TryGetComponent<Health>(out var bh)
-                ? $"HP {bh.Current}/{bh.Max}{(bh.Current > bh.Max ? $" +{bh.Current - bh.Max}t" : "")}" : "нет в сцене";
-            EditorGUILayout.LabelField(bossHp, GUILayout.Width(150));
-            using (new EditorGUI.DisabledScope(boss != null))
-                if (GUILayout.Button("спавн", GUILayout.Width(56))) SpawnWerewolf();
-            using (new EditorGUI.DisabledScope(boss == null))
-                if (GUILayout.Button("убить", GUILayout.Width(56)) && boss.TryGetComponent<Health>(out var bk))
-                    bk.TakeDamage(999999, true);
-            var wwSpawner = Object.FindAnyObjectByType<WerewolfSpawner>();
-            using (new EditorGUI.DisabledScope(wwSpawner == null))
-                if (GUILayout.Button(wwSpawner != null && wwSpawner.AutoSpawn ? "авто: ВКЛ" : "авто: выкл"))
-                    wwSpawner.AutoSpawn = !wwSpawner.AutoSpawn;
-        }
-
         // ТЕСТ-ХИМЕРА (#4b-1): спавн носителя со СЛУЧАЙНЫМ составом + ридаут идентичности (MostKin)
         var tcSpawner = Object.FindAnyObjectByType<TestChimeraSpawner>();
         using (new EditorGUILayout.HorizontalScope(EditorStyles.helpBox))
@@ -511,18 +492,6 @@ public class ChimeraDevWindow : EditorWindow
         if (NavMesh.SamplePosition(pos, out var hit, 10f, NavMesh.AllAreas)) pos = hit.position;
         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(HedgehogPrefab.Path);
         var go = prefab != null ? Object.Instantiate(prefab) : HedgehogPrefab.BuildHedgehog();
-        Place(go, pos);
-    }
-
-    static void SpawnWerewolf()
-    {
-        var pc = Object.FindAnyObjectByType<PlayerController>();
-        Vector3 pos = (pc != null ? pc.transform.position : Vector3.zero) + new Vector3(14f, 0f, 0f);
-        if (NavMesh.SamplePosition(pos, out var hit, 10f, NavMesh.AllAreas)) pos = hit.position;
-
-        // префаб (с твоим тюнингом), если создан через «Chimera → Создать префаб Вервольфа»; иначе — сборка с нуля
-        var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(WerewolfPrefab.Path);
-        var go = prefab != null ? Object.Instantiate(prefab) : WerewolfPrefab.BuildWerewolf();
         Place(go, pos);
     }
 }

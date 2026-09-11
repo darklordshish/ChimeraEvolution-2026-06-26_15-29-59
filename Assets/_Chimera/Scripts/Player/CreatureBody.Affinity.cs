@@ -42,7 +42,8 @@ public partial class CreatureBody
     public IEnumerable<KeyValuePair<string, int>> AllAffinity => affinity;
 
     // ВСЕ ДОНОРСКИЕ виды набраны ДО порога (шасси-человек всегда на капе — не в счёт; доноры и есть «лес»).
-    // Пороги прогрессии: ≥75 по всем → босс-суперхимера (WerewolfSpawner), ≥100 → химерный слот (ChimeraSlotReward).
+    // Пороги прогрессии: ≥100 → химерный слот (ChimeraSlotReward). Порог 75 держал спавн вервольфа — он удалён 11.09,
+    // босс-суперхимера будет собираться из конструктора, а не отдельным видом.
     // Нет доноров → false (мастерить нечего)
     public bool AllDonorsAffinityAtLeast(int threshold)
     {

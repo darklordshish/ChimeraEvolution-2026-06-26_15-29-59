@@ -4,7 +4,7 @@ using UnityEngine;
 // PARTIAL-SPLIT #5 (рефактор ядра): СЛОТЫ/КОНСТРУКТОР вынесены сюда из CreatureBody.cs — тот же класс,
 // НОЛЬ изменений поведения. Концерн: «из чего собирается тело» — типы Slot/Variant, сборка слотов из шасси+
 // доноров (BuildSlots), экономика пула (Pool/SlotCost/EffectiveCost), публичный API конструктора (GetSlot/
-// GetVariants/Install/Remove/цикл), химерные слоты (мета-награда). Читает chassis/donors/installAllBeast и
+// GetVariants/Install/Remove/цикл), химерные слоты (мета-награда). Читает chassis/donors и
 // зовёт Recompute() — всё в CreatureBody.cs (partial-доступ); скидку родства берёт из CreatureBody.Affinity.cs.
 public partial class CreatureBody
 {
@@ -294,13 +294,6 @@ public partial class CreatureBody
         for (int i = 0; i < chimeraSlots; i++) list.Add(MakeChimeraSlot(list.Count)); // выданные химерные слоты
         slots = list.ToArray();
 
-        if (installAllBeast) // застывшая химера (вервольф): весь лоадаут ПЕРВОГО донора надет с рождения
-            foreach (var sl in slots)
-            {
-                if (sl.chimera) continue;
-                for (int i = 0; i < sl.variants.Count; i++)
-                    if (!sl.variants[i].native) { sl.current = i; break; } // первый ЗВЕРИНЫЙ вариант
-            }
     }
 
     // цикл слота (хоткеи 1–6): родной → доноры по кругу → родной (не по карману — пропускаются).

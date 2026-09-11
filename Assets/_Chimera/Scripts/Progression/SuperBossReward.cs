@@ -6,14 +6,16 @@ using UnityEngine;
 /// игрок получает +пул мутагена и химерный слот; повторные убийства того же типа дают только обычное
 /// родство (его начисляет само тело — SuperBossReward к родству не касается). Реестр полученных
 /// типов — статик на сессию (перманентность придёт с мета-сейвом).
-/// Вешает генератор префаба босса (WerewolfPrefab).
+/// НОСИТЕЛЯ СЕЙЧАС НЕТ. Жил на префабе вервольфа, удалённом 11.09 («он не нужен как выделенная единица»):
+/// босс-суперхимера будет собираться из конструктора. Компонент оставлен — награда за ТИП босса не
+/// привязана к вервольфу, и тот, кто соберёт химеру-босса, повесит его заново.
 /// </summary>
 [RequireComponent(typeof(Health))]
 public class SuperBossReward : MonoBehaviour
 {
     static readonly HashSet<string> claimed = new(); // типы, за которые награда уже выдана (сбрасывается при входе в Play)
 
-    [SerializeField] string typeId = "Вервольф";
+    [SerializeField] string typeId = "Суперхимера";
     [SerializeField] int poolBonus = 4;
     [SerializeField] bool grantsChimeraSlot = true;
 
