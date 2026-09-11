@@ -520,8 +520,8 @@ public partial class CreatureBody : MonoBehaviour
     }
 
     // МАССА как маркер: тело ДОБАВЛЯЕТ Massive по флагу шасси (лось). ADD-ONLY, НЕ снимает: масса — статичное
-    // свойство шасси (в MVP не меняется). Add-only досталось от вервольфа (нёс Massive с префаба на человечьем
-    // шасси); он удалён 11.09, но снимать по флагу по-прежнему незачем. Потребители (Knockback/Constrict/RequiredPack/змея) уже чекают GetComponent<Massive>
+    // свойство шасси (в MVP не меняется). Add-only нужен и сейчас: босс на человечьем шасси
+    // получает Massive от модуля боссовости — снятие по флагу шасси сорвало бы его. Потребители (Knockback/Constrict/RequiredPack/змея) уже чекают GetComponent<Massive>
     void SetMassive(bool on)
     {
         if (on && !TryGetComponent<Massive>(out _)) gameObject.AddComponent<Massive>();

@@ -42,7 +42,7 @@ public class EmotionTint : MonoBehaviour
         else { c = moodColor; t = moodT; }
 
         // БЕРСЕРК/вечная ярость → полный красный, но ТОЛЬКО когда своего градусника нет (лось-берсерк,
-        // вервольф): у волков шкала ведёт сама — не сбиваем плавность в полный
+        // босс с вечной яростью): у волков шкала ведёт сама — не сбиваем плавность в полный
         if (rage != null && rage.IsEnraged && moraleT < 0.05f) { c = TelegraphColors.RageTint; t = statusStrength; }
 
         if (t == lastT && c == lastColor) return; // рест трогаем только на изменение

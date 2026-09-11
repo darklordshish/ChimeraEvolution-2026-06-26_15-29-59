@@ -60,12 +60,12 @@ public static class SpeciesBootstrap
                 new OrganPart { scale = new Vector3(0.80f, 0.42f, 0.60f), offset = new Vector3(0.00f, -0.40f, 0.06f), role = PartRole.Ear, shape = PartShape.Sphere }, // мочка
                 new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), shape = PartShape.Sphere, role = PartRole.Eye, color = new Color(0.35f, 0.65f, 0.95f, 1f) }, // ЦВЕТ ГЛАЗА = КАНАЛ: прозрение — читает числа и намерения
             } }, // внутренний: сокет `inner` — своей детали нет, но форма органа проступает (цвет глаза = канал восприятия)
-            new Organ { organName = "Рот",    slot = "Пасть",  hotkey = "5", cost = 3, enablesBite = false, enablesScream = true }, // лицо/пасть — ОТДЕЛЬНО от черепа: волчья Пасть сядет сюда же → морда вервольфа.
+            new Organ { organName = "Рот",    slot = "Пасть",  hotkey = "5", cost = 3, enablesBite = false, enablesScream = true }, // лицо/пасть — ОТДЕЛЬНО от черепа: волчья Пасть сядет сюда же → морда оборотня-волка.
             //     БОЕВОЙ КЛИЧ: слот больше не мёртвый. Кусать человек не умеет, но кричит — ярость по своей крови (PlayerScream)
             new Organ { organName = "Кожа",   slot = "Шкура",  hotkey = "6", cost = 3, damageReduction = 0f },
         };
         // СОКЕТ-ПЛАН человека (прямоходящий). ИМЯ СОКЕТА = Organ.slot — одно и то же имя держит механику и
-        // визуал, разойтись не могут. Те же имена у зверей → волчьи органы садятся на человечьи места (вервольф).
+        // визуал, разойтись не могут. Те же имена у зверей → волчьи органы садятся на человечьи места (оборотень).
         // mirrorX — парное место (2 руки/ноги); inner — внутреннее (видно только формой органа); graft — закрытое место
         human.sockets = new[]
         {
@@ -264,7 +264,7 @@ public static class SpeciesBootstrap
             new Organ { organName = "Волчье сердце", slot = "Сердце", hotkey = "3", cost = 6, atkCooldown = 0.30f, hpBonus = 1.75f, staminaBonus = 0.5f, staminaRegenBonus = 0.25f, regen = 3f, regenOOC = 0f, visualParts = new[] {
                 new OrganPart { scale = new Vector3(1.000f, 0.750f, 1.000f), offset = new Vector3(0.000f, 0.116f, 0.000f), shape = PartShape.Sphere }, // грудная клетка ВОЛКА, ВЕРХ: рёберный свод 0.27 шириной при 0.42 глубины — СЕЧЕНИЕ ОВАЛ 1:2, анфас волк почти плоский
                 new OrganPart { scale = new Vector3(0.760f, 0.895f, 0.983f), offset = new Vector3(0.000f, -0.613f, 0.702f), shape = PartShape.Sphere }, // ...и КИЛЬ к подреберью: низ груди 0.575 — НИЖЕ ЛОКТЯ (0.585), у бегуна рёбра сходятся книзу за локтем
-            } }, // «заживает как на собаке»: реген 2→3, чтобы босс вернул свои 6/с (Blend на Э=2), а волки затягивали раны на глазах. +175%: лёгкое тело, огромный мотор → волк-NPC 68 HP, вервольф ровно 300. Постоянный реген ВМЕСТО тихого в покое (вне-боя — фича человеческого сердца)
+            } }, // «заживает как на собаке»: реген 2→3, чтобы босс вернул свои 6/с (Blend на Э=2), а волки затягивали раны на глазах. +175%: лёгкое тело, огромный мотор → волк-NPC 68 HP. Постоянный реген ВМЕСТО тихого в покое (вне-боя — фича человеческого сердца)
             new Organ { organName = "Нюх",           slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.45f, enablesScent = true, visualParts = new[] {
                 new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), shape = PartShape.Sphere, role = PartRole.Nose }, // нос
                 new OrganPart { scale = new Vector3(1.00f, 0.42f, 0.90f), offset = new Vector3(0.00f, -0.30f, 0.00f), euler = new Vector3(-6f, 0f, -7f), role = PartRole.Ear, shape = PartShape.Sphere }, // основание уха — широкое
@@ -281,7 +281,7 @@ public static class SpeciesBootstrap
                 new OrganPart { scale = new Vector3(0.108f, 0.378f, 0.118f), offset = new Vector3(-0.385f, -0.133f, -0.114f), color = new Color(0.92f, 0.90f, 0.84f, 1f) }, // щёчный хищнический (лев)
                 new OrganPart { scale = new Vector3(0.092f, 0.311f, 0.100f), offset = new Vector3(0.377f, -0.111f, -0.364f), color = new Color(0.92f, 0.90f, 0.84f, 1f) }, // щёчный задний (пр)
                 new OrganPart { scale = new Vector3(0.092f, 0.311f, 0.100f), offset = new Vector3(-0.377f, -0.111f, -0.364f), color = new Color(0.92f, 0.90f, 0.84f, 1f) }, // щёчный задний (лев)
-            } }, // укус + кровь + ГОЛОС + ХВАТ пастью; МОРДА: на человечьем шасси садится на его «лицо» → морда вервольфа.
+            } }, // укус + кровь + ГОЛОС + ХВАТ пастью; МОРДА: на человечьем шасси садится на его «лицо» → морда оборотня-волка.
                  // РЕЗЦЫ НЕ РИСУЕМ: при сомкнутой пасти они целиком внутри морды — деталь, которой не видно ни с одного ракурса
             new Organ { organName = "Шкура",         slot = "Шкура",  hotkey = "6", cost = 4, damageReduction = 0.3f },
         };
@@ -574,16 +574,16 @@ public static class SpeciesBootstrap
         //  • туловище и хвост — ЦЕПЬ СЕГМЕНТОВ (`SnakeBodyChain` расставляет их в МИРОВЫХ координатах каждый
         //    кадр, они ползут следом и лезут по стенам) — это локомоция, планом тела не выразить;
         //  • голова — статичные дети с ВКЛЮЧЁННЫМ коллайдером (поверхность попаданий), сносить нельзя.
-        // Поэтому всё родное ведёт КОД (`codeDriven`), а морфология даёт химере на змеином шасси ВИДИМЫЕ конечности
+        // Поэтому позицию родного ведёт КОД (`SnakeBodyChain`), а морфология даёт химере на змеином шасси ВИДИМЫЕ конечности
         snake.sockets = new[]
         {
             // ── ГРАФ ЗМЕИ: голова — корень, дальше хребет цепью звеньев (спека 4.1: трети шея/туловище/хвост;
             // змея ДРЕВЕСНАЯ, её хвост длинный и цепкий — им же работает Constrict). Числа согласованы
             // с SnakePrefab (сегменты 0.55→0.42, шаг 0.62), чтобы новое тело совпало с уже ползающим.
-            // [ANIM] codeDriven ПОКА ОСТАЁТСЯ: без переписанного SnakeBodyChain морф построил бы статичное
-            // тело ПОВЕРХ префабной цепи — на арене оказалось бы две змеи. Снимается вместе с ним
+            // ДВУХ ЗМЕЙ НА АРЕНЕ НЕТ не из-за флага: префабную геометрию сносит SnakeBodyChain.RebuildFromMorph.
+            // Флаг codeDriven, который это якобы обещал, не читался ни одним местом и снят 12.09
             new BodySocket { name = "ямки", parent = "голова", attach = 0.500f, attachOffset = new Vector3(0.26f, -0.06f, 0.28f), sizeRel = new Vector3(0.14f, 0.16f, 0.12f), mirrorX = true, formFrom = "Чутьё", formRole = PartRole.Pit }, // АДРЕС ТЕРМОЯМОК: единственный внешний признак термочувства — форма Пит-органа
-            new BodySocket { name = "голова", parent = "шея", chainForward = true, attach = 0.861f, baseSize = new Vector3(0.240f, 0.163f, 0.430f), codeDriven = true, solid = true, parts = new[] {
+            new BodySocket { name = "голова", parent = "шея", chainForward = true, attach = 0.861f, baseSize = new Vector3(0.240f, 0.163f, 0.430f), solid = true, parts = new[] {
                 // ТРЕУГОЛЬНЫЙ ЧЕРЕП ЯМКОГОЛОВОЙ: широкий затылок с ядовитыми железами → резкое сужение → тупая морда
                 new OrganPart { scale = new Vector3(1.00f, 1.00f, 0.46f), offset = new Vector3(0.00f, 0.00f, -0.22f), shape = PartShape.Sphere }, // затылок с железами — САМОЕ широкое место, шире шеи
                 new OrganPart { scale = new Vector3(0.86f, 0.34f, 0.52f), offset = new Vector3(0.00f, 0.26f, -0.14f) }, // ПЛОСКОЕ ТЕМЯ в щитках — кость гранёная
@@ -594,7 +594,7 @@ public static class SpeciesBootstrap
                 new OrganPart { scale = new Vector3(0.10f, 0.10f, 0.08f), offset = new Vector3(0.16f, 0.02f, 0.44f), shape = PartShape.Sphere }, // ноздря (пр)
                 new OrganPart { scale = new Vector3(0.10f, 0.10f, 0.08f), offset = new Vector3(-0.16f, 0.02f, 0.44f), shape = PartShape.Sphere }, // ноздря (лев)
             } },
-            new BodySocket { name = "Пасть",  parent = "голова", attach = 1.000f, attachOffset = new Vector3(0.000f, -0.150f, 0.120f), baseSize = new Vector3(0.170f, 0.080f, 0.240f), sizeRel = new Vector3(0.708f, 0.491f, 0.558f), codeDriven = true, solid = true, parts = new[] {
+            new BodySocket { name = "Пасть",  parent = "голова", attach = 1.000f, attachOffset = new Vector3(0.000f, -0.150f, 0.120f), baseSize = new Vector3(0.170f, 0.080f, 0.240f), sizeRel = new Vector3(0.708f, 0.491f, 0.558f), solid = true, parts = new[] {
                 new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), offset = new Vector3(0.00f, 0.00f, 0.00f), shape = PartShape.Sphere }, // челюсть — ТЕПЕРЬ МЕСТО С ФОРМОЙ: змеиная морда наконец участвует в морфе
             } },
             // ЩЕЛЬ ЗА ГОЛОВОЙ: место головы 0.43 длиной, но НАРИСОВАННЫЙ затылок кончается на 0.194 от центра
@@ -603,7 +603,7 @@ public static class SpeciesBootstrap
             new BodySocket { name = "глаза", parent = "голова", attach = 0.500f, attachOffset = new Vector3(0.400f, 0.180f, 0.000f), baseSize = new Vector3(0.056f, 0.056f, 0.056f), sizeRel = new Vector3(0.233f, 0.344f, 0.130f), mirrorX = true, formFrom = "Чутьё", formRole = PartRole.Eye, parts = new[] {
                 new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), shape = PartShape.Sphere, role = PartRole.Eye, color = new Color(0.10f, 0.10f, 0.12f, 1f) }, // ФОЛБЭК: тварь без Чутья не слепа, но глаз тускл
             } }, // МЕСТО НА КОЖЕ головы (посчитано лучом из её центра) — форму и цвет даёт ЧУТЬЁ
-            new BodySocket { name = "шея", parent = "хребет", chainForward = true, attach = 0.200f, codeDriven = true, solid = true, linkDiameter = 0.215f, linkLength = 0.360f, linkTaper = 1.118f, chain = 4 }, // шея: от толщины головы РАСТЁТ к телу (taper > 1) — последнее звено ровно в тело
+            new BodySocket { name = "шея", parent = "хребет", chainForward = true, attach = 0.200f, solid = true, linkDiameter = 0.215f, linkLength = 0.360f, linkTaper = 1.118f, chain = 4 }, // шея: от толщины головы РАСТЁТ к телу (taper > 1) — последнее звено ровно в тело
             // ДИАМЕТР НЕ ЗАДАН — наследуется: тело выходит из шеи (0.300), хвост из тела (0.266). Прежде числа
             // дублировались, и хвост стартовал с 0.300, то есть был ТОЛЩЕ туловища, из которого растёт
             // НЕСУЩЕЕ ЗМЕИ ЗОВЁТСЯ «хребет», КАК У ВСЕХ (спека 2026-09-11). Раньше звалось «Тело», и это имя
@@ -613,12 +613,12 @@ public static class SpeciesBootstrap
             // обмен работой идёт в обе стороны (см. архитектурные якоря)
             // КОРЕНЬ ЗМЕИ — ХРЕБЕТ, как у всех (спека 2026-09-11). Цепные поля остаются: несущее
             // змеи и есть вереница звеньев, а `localPos` ставит её туда, где она стояла при корне-голове
-            new BodySocket { name = "хребет", localPos = new Vector3(0.000f, 0.300f, -1.640f), codeDriven = true, solid = true, linkDiameter = 0.300f, linkLength = 0.360f, linkTaper = 0.970f, chain = 5 }, // туловище: самое массивное, чуть сходит к хвосту
+            new BodySocket { name = "хребет", localPos = new Vector3(0.000f, 0.300f, -1.640f), solid = true, linkDiameter = 0.300f, linkLength = 0.360f, linkTaper = 0.970f, chain = 5 }, // туловище: самое массивное, чуть сходит к хвосту
             // ЗВЕНЬЯ ХВОСТА МЕЛЬЧЕ ТЕЛЕСНЫХ (0.24 против 0.36) — как хвостовые позвонки у змей. При общей
             // длине звена 0.36 кончик выходил втрое длиннее своей толщины, то есть тонкой прямой палочкой:
             // суставов на метр столько же, что у туловища, а контур из длинных отрезков читается жёстким.
             // Теперь 6 звеньев вместо 4: длина хвоста та же 1.44, суставов на метр 4.2 против 2.8
-            new BodySocket { name = "Хвост", parent = "хребет", attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, 0.000f), codeDriven = true, solid = true, linkLength = 0.240f, linkTaper = 0.843f, chain = 6 }, // хвост: подхватывает толщину тела (0.266) и уходит на конус к 0.113
+            new BodySocket { name = "Хвост", parent = "хребет", attach = 0.000f, attachOffset = new Vector3(0.000f, 0.000f, 0.000f), solid = true, linkLength = 0.240f, linkTaper = 0.843f, chain = 6 }, // хвост: подхватывает толщину тела (0.266) и уходит на конус к 0.113
             // ПОГРЕМУШКА — НЕ ЗВЕНО, и правильно, что не звено: другой орган (шасси-онли), цельный, со своим
             // смыслом — трещотка. Форму даёт ОРГАН (стопка роговых колец), место лишь держит калибр. Цепью
             // её описывать было ошибкой: кольца становились сегментами, и движок растаскивал их по пути

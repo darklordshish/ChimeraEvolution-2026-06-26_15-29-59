@@ -74,7 +74,7 @@ public abstract class WindupAbility : MonoBehaviour, IAbility
 
     protected virtual void Start()
     {
-        // дефолтная цель — игрок (волк/вервольф охотятся только на него); психика змеи переключает
+        // дефолтная цель — игрок (волк охотится только на него); психика змеи переключает
         // цель на ЛЮБУЮ тёплую жертву через SetTarget (NPC-против-NPC)
         if (target == null)
         {
@@ -128,7 +128,7 @@ public abstract class WindupAbility : MonoBehaviour, IAbility
     //    Наследник задаёт дальность/угол; в эдит-режиме читает сериализованные поля (Awake не нужен).
     protected virtual float GizmoRange => 2f;
     protected virtual float GizmoHalfAngle => 45f;
-    [SerializeField] float gizmoHeight = 0.5f; // высота отрисовки хитбокса: низким (волк/змея) 0.5, высоким (лось/вервольф) ставит префаб
+    [SerializeField] float gizmoHeight = 0.5f; // высота отрисовки хитбокса: низким (волк/змея) 0.5, высоким (лось) ставит префаб
 
     void OnDrawGizmos()
     {

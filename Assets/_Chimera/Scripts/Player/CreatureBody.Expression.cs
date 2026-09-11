@@ -109,7 +109,7 @@ public partial class CreatureBody
             // КЛУБОК ТОЛЬКО ДОМА. Перекат и клубок — одна способность ежиных ног на двух глубинах: рывок
             // «в клубке» (кувырок с i-frames) открыт всем, полный шар с бронёй и катанием — лишь на ежином
             // шасси. Гейт точечный, а НЕ на все дискретные флаги: у волчьей Пасти тоже `nativeChassis`, и
-            // загейти мы всё подряд — вервольф остался бы без укуса на человечьем теле
+            // загейти мы всё подряд — оборотень-волк остался бы без укуса на человечьем теле
             curl = w.enablesCurl && (string.IsNullOrEmpty(w.nativeChassis) || cNative),
             keenEar = w.keenHearing, earMult = w.hearingMult,
             thorns = w.thorns, venomResist = w.venomResist, quillVolley = w.enablesQuillVolley,

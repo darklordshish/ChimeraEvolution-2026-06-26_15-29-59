@@ -57,7 +57,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     [SerializeField] float mooseSpotRange = 22f;  // видит тушу — интерес стаи (дальше мутного лосиного зрения!)
     [SerializeField] float shadowRange = 12f;     // дистанция ТЕНИ: сразу ЗА границей лесенки лося (~10) — умно не провоцируем
     [SerializeField] int normalPack = 2;          // ОБЫЧНАЯ добыча (змея, ёж): нападаем стаей от стольких — одиночка не лезет, зовёт
-    [SerializeField] int massivePack = 5;         // МАССИВНАЯ (Massive: лось, вервольф): туша опаснее — нужно больше
+    [SerializeField] int massivePack = 5;         // МАССИВНАЯ (Massive: лось, босс): туша опаснее — нужно больше
     [SerializeField] float packCountRadius = 15f; // «стая рядом» для решения о тени
 
     [Header("Кулдаун")]
@@ -553,7 +553,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     }
 
     // СКОЛЬКО НАС НУЖНО для атаки на цель — по МАССИВНОСТИ (общий принцип, не исключения на вид):
-    // обычная добыча берётся стаей от normalPack, массивная (Massive: лось/вервольф) — от massivePack.
+    // обычная добыча берётся стаей от normalPack, массивная (Massive: лось/босс) — от massivePack.
     // Так «одиночка не суётся, зовёт стаю» едино для змеи, ежа и туши — без веток «если ёж… если лось…»
     int RequiredPack(Health target) =>
         target != null && target.GetComponent<Massive>() != null ? massivePack : normalPack;

@@ -187,7 +187,6 @@ public partial class CreatureBody
             baseSize = s.baseSize,
             baseEuler = s.baseEuler,
             mirrorX = s.mirrorX,
-            codeDriven = s.codeDriven,
             solid = s.solid,
             inner = s.inner,
             graft = s.graft,

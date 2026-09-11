@@ -17,7 +17,7 @@ public class Knockback : MonoBehaviour
 
     public void Push(Vector3 velocity)
     {
-        if (GetComponent<Massive>() != null) return; // массивную тушу не откинуть (вервольф, лось) — один механизм для всех источников
+        if (GetComponent<Massive>() != null) return; // массивную тушу не откинуть (лось, босс) — один механизм для всех источников
         velocity.y = 0f;
         vel = velocity;
     }
