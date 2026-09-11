@@ -13,7 +13,6 @@ using UnityEngine;
 [RequireComponent(typeof(BiteAbility))]
 [RequireComponent(typeof(LeapAbility))]
 [RequireComponent(typeof(Rage))]
-[RequireComponent(typeof(SpawnVariance))]
 public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
 {
     [Header("Погоня")]
@@ -219,7 +218,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         if (!TryGetComponent(out bite)) bite = gameObject.AddComponent<BiteAbility>();
         if (!TryGetComponent(out leap)) leap = gameObject.AddComponent<LeapAbility>();
         if (!TryGetComponent(out rage)) rage = gameObject.AddComponent<Rage>();
-        if (!TryGetComponent(out variance)) variance = gameObject.AddComponent<SpawnVariance>();
+        TryGetComponent(out variance); // разброс особи вешает тело (CreatureBody.Awake) — психика только читает
         if (!TryGetComponent(out alert)) alert = gameObject.AddComponent<AlertState>(); // общая машина восприятия (S1)
         if (!TryGetComponent(out senses)) senses = gameObject.AddComponent<Senses>(); // сенсорный профиль (S1)
         senses.Seed(SenseKind.Sight, sightRange);   // сид базовых дальностей из полей психики (если профиль не задан на префабе)

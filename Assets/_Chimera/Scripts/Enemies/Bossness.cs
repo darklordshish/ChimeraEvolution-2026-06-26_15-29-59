@@ -64,8 +64,8 @@ public class Bossness : MonoBehaviour
     public void Finish(CreatureBody body, string typeId)
     {
         TypeId = string.IsNullOrEmpty(typeId) ? TypeId : typeId;
-        // ШТУЧНЫЙ: разброс особи приносит видовая психика (у волчьей он RequireComponent), а решение Ф6 — босс, как
-        // игрок, без разброса. Без этого два одинаковых босса расходились по HP, урону и скорости на ±15%
+        // ШТУЧНЫЙ: разброс особи тело вешает каждому NPC, а решение Ф6 — босс, как игрок, без разброса. Без этого
+        // два одинаковых босса расходились по HP, урону и скорости на ±15%
         if (TryGetComponent<SpawnVariance>(out var variance)) { variance.MakeUnique(); body.Refeed(); }
         if (!Mathf.Approximately(settings.sizeScale, 1f)) transform.localScale = Vector3.one * settings.sizeScale;
         if (settings.eternalRage && TryGetComponent<Rage>(out var rage)) rage.Enrage(float.PositiveInfinity);

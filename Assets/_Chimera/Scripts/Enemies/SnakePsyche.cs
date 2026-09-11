@@ -21,7 +21,6 @@ using UnityEngine;
 [RequireComponent(typeof(NavLocomotion))]
 [RequireComponent(typeof(BiteAbility))]
 [RequireComponent(typeof(LeapAbility))]
-[RequireComponent(typeof(SpawnVariance))]
 public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
 {
     [Header("Засада / термочутьё / выбор жертвы")]
@@ -177,7 +176,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         if (!TryGetComponent(out bite)) bite = gameObject.AddComponent<BiteAbility>();
         if (!TryGetComponent(out leap)) leap = gameObject.AddComponent<LeapAbility>();
         if (!TryGetComponent(out constrictM)) constrictM = gameObject.AddComponent<Constrict>(); // единая машина хвата; кап стадии теперь всегда даёт ТЕЛО из данных (Хвост constrictStage=3 на змеином шасси → ст.3), не дефолт машины
-        if (!TryGetComponent(out variance)) variance = gameObject.AddComponent<SpawnVariance>();
+        TryGetComponent(out variance); // разброс особи вешает тело (CreatureBody.Awake) — психика только читает
         if (!TryGetComponent(out alert)) alert = gameObject.AddComponent<AlertState>(); // общая машина восприятия (S1)
         if (!TryGetComponent(out senses)) senses = gameObject.AddComponent<Senses>(); // сенсорный профиль (S1)
         senses.Seed(SenseKind.Thermal, thermalRange); // сид базовой термо-дальности (если профиль не задан на префабе)

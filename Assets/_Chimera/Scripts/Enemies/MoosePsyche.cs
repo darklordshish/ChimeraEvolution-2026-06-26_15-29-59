@@ -16,7 +16,6 @@ using UnityEngine;
 [RequireComponent(typeof(AntlerAbility))]
 [RequireComponent(typeof(LimbStrikeAbility))]
 [RequireComponent(typeof(Rage))]
-[RequireComponent(typeof(SpawnVariance))]
 public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
 {
     [Header("Восприятие")]
@@ -160,7 +159,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
         if (!TryGetComponent(out antler)) antler = gameObject.AddComponent<AntlerAbility>();
         if (!TryGetComponent(out hoof)) hoof = gameObject.AddComponent<LimbStrikeAbility>();
         if (!TryGetComponent(out rage)) rage = gameObject.AddComponent<Rage>();
-        if (!TryGetComponent(out variance)) variance = gameObject.AddComponent<SpawnVariance>();
+        TryGetComponent(out variance); // разброс особи вешает тело (CreatureBody.Awake) — психика только читает
         if (!TryGetComponent(out alert)) alert = gameObject.AddComponent<AlertState>();
         if (!TryGetComponent(out senses)) senses = gameObject.AddComponent<Senses>();
         senses.Seed(SenseKind.Sight, sightRange);

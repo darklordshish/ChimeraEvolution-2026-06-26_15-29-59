@@ -29,6 +29,8 @@ public class ChimeraAlphaPsyche : MonoBehaviour, IBodyStatConsumer
     float RotationSpeed => rotationSpeed > 0f ? rotationSpeed : 240f;
 
     float moveSpeed = 4f;
+    SpawnVariance variance; // разброс особи (вешает тело): у альфы тоже своя скорость у каждой особи
+    float Speed => moveSpeed * (variance != null ? variance.SpeedMult : 1f);
     CreatureBody body;
     Health ownHealth;
     NavLocomotion nav;
@@ -55,6 +57,7 @@ public class ChimeraAlphaPsyche : MonoBehaviour, IBodyStatConsumer
         ownHealth = GetComponent<Health>();
         nav = GetComponent<NavLocomotion>();
         TryGetComponent(out body);
+        TryGetComponent(out variance);
         TryGetComponent(out stagger);
         TryGetComponent(out knockback);
         TryGetComponent(out bite);
@@ -84,7 +87,7 @@ public class ChimeraAlphaPsyche : MonoBehaviour, IBodyStatConsumer
 
         if (target == null || targetHealth == null || targetHealth.Current <= 0)
         {
-            nav.Move(nav.Arrive(nav.Wander(WanderRadius), moveSpeed)); // никого — бродим по навмешу
+            nav.Move(nav.Arrive(nav.Wander(WanderRadius), Speed)); // никого — бродим по навмешу
             return;
         }
 
@@ -109,7 +112,7 @@ public class ChimeraAlphaPsyche : MonoBehaviour, IBodyStatConsumer
                 if (bite.TryUse()) { active = bite; return; }
             }
         }
-        nav.Move(nav.Arrive(target.position, moveSpeed, stopAt: MeleeRange * 0.9f)); // преследуем
+        nav.Move(nav.Arrive(target.position, Speed, stopAt: MeleeRange * 0.9f)); // преследуем
     }
 
     // ближайший НЕ-кин (кого Я не признаю своим по составу). Истинная химера размыта → не признаёт никого → бьёт всех

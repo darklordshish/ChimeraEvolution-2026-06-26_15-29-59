@@ -267,10 +267,12 @@ public class ChimeraDevWindow : EditorWindow
             EditorGUILayout.LabelField("  " + ChimeraFactory.Describe(bossBody), EditorStyles.wordWrappedMiniLabel);
         }
 
-        // разброс особей: множители/личность живут в get-only свойствах (в инспекторе НЕ видны) — дамп в консоль
-        if (GUILayout.Button("Разброс волков → консоль"))
-            foreach (var w in wolves)
+        // разброс особей: множители/личность живут в get-only свойствах (в инспекторе НЕ видны) — дамп в консоль.
+        // По ВСЕМ NPC, а не по одним волкам: разброс и личность вешает тело каждой особи
+        if (GUILayout.Button("Разброс особей → консоль"))
+            foreach (var w in Object.FindObjectsByType<CreatureBody>())
             {
+                if (w == pb) continue;
                 string t = w.name;
                 if (w.TryGetComponent<Health>(out var h)) t += $"  HP {h.Current}/{h.Max}";
                 if (w.TryGetComponent<SpawnVariance>(out var v)) t += $"  hp×{v.HpMult:0.00} ск×{v.SpeedMult:0.00} ур×{v.DamageMult:0.00}";

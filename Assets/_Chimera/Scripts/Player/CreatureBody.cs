@@ -99,6 +99,9 @@ public partial class CreatureBody : MonoBehaviour
         // авто-РАЗБРОС ПОВЕДЕНИЯ: любой NPC-вид (не игрок) получает Личность от ТЕЛА — психики её только ЧИТАЮТ
         // (в Start, после этого Awake). Новый вид разбрасывается сам, без ручной проводки в каждой психике.
         if (move == null && !TryGetComponent<Personality>(out _)) gameObject.AddComponent<Personality>();
+        // РАЗБРОС ОСОБИ — тоже от тела, каждому NPC, а не тем психикам, что про него помнят: раньше его тянули волчья,
+        // лосиная и змеиная, а ёж из диспатча и истинные химеры оставались клонами. Босса делает штучным Bossness
+        if (move == null && !TryGetComponent<SpawnVariance>(out _)) gameObject.AddComponent<SpawnVariance>();
         // МОРАЛЬ — УНИВЕРСАЛЬНАЯ механика (шкала страх↔ярость): тело даёт её любому NPC (волк/лось/будущие
         // стадные). Холоднокровные (сердце змеи) имеют компонент, но ColdBlooded делает его инертным — вне морали
         if (move == null && !TryGetComponent<Morale>(out _)) gameObject.AddComponent<Morale>();

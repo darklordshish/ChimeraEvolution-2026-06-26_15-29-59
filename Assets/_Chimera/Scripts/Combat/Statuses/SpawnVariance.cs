@@ -2,8 +2,8 @@ using UnityEngine;
 
 /// <summary>
 /// Индивидуальный разброс особи (Ф6): при спавне ОДИН раз катает множители HP/урона/скорости —
-/// стая из «30±5» вместо клонов. Вешается на рядовых мобов (RequireComponent у WolfPsyche);
-/// босс и игрок — штучные, без разброса (детерминированная база).
+/// стая из «30±5» вместо клонов. Вешает ТЕЛО каждому NPC (`CreatureBody.Awake`, как `Personality`) — любому
+/// виду и химере, какая бы психика ни встала; босса делает штучным `Bossness`, игроку не вешается.
 /// Потребители множителей — те же точки, что у Rage: доставки (урон), психика (скорость); HP применяется сам.
 /// </summary>
 public class SpawnVariance : MonoBehaviour
@@ -31,8 +31,8 @@ public class SpawnVariance : MonoBehaviour
             hp.SetMaxHealth(Mathf.Max(1, Mathf.RoundToInt(hp.Max * HpMult)));
     }
 
-    /// <summary>ШТУЧНАЯ ОСОБЬ — разброс снят. Нужна боссу: видовая психика тянет разброс за собой (RequireComponent),
-    /// а босс, как и игрок, — детерминированная база. Зовёт `Bossness`; HP после этого пересчитывает тело.</summary>
+    /// <summary>ШТУЧНАЯ ОСОБЬ — разброс снят. Нужна боссу: тело вешает разброс каждому NPC, а босс, как и игрок, —
+    /// детерминированная база. Зовёт `Bossness`; HP после этого пересчитывает тело.</summary>
     public void MakeUnique() { DamageMult = 1f; SpeedMult = 1f; HpMult = 1f; }
 
     static float Roll(float spread) => 1f + Random.Range(-spread, spread);
