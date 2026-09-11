@@ -31,5 +31,9 @@ public class SpawnVariance : MonoBehaviour
             hp.SetMaxHealth(Mathf.Max(1, Mathf.RoundToInt(hp.Max * HpMult)));
     }
 
+    /// <summary>ШТУЧНАЯ ОСОБЬ — разброс снят. Нужна боссу: видовая психика тянет разброс за собой (RequireComponent),
+    /// а босс, как и игрок, — детерминированная база. Зовёт `Bossness`; HP после этого пересчитывает тело.</summary>
+    public void MakeUnique() { DamageMult = 1f; SpeedMult = 1f; HpMult = 1f; }
+
     static float Roll(float spread) => 1f + Random.Range(-spread, spread);
 }

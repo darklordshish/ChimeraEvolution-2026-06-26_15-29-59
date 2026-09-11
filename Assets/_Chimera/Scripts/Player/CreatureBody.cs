@@ -59,6 +59,7 @@ public partial class CreatureBody : MonoBehaviour
     PlayerHowl howl;
     PlayerConstrict constrictAb;
     SpawnVariance variance; // разброс особи: HP учитываем при раздаче витальности (иначе гонка Start'ов)
+    Bossness bossness;      // модуль боссовости: множитель HP опрашиваем так же, как разброс
     ColdBlooded cold;       // холоднокровность (Сердце змеи) — компонент-маркер, вешаем/снимаем по сборке
     Camouflage camoComp;    // камуфляж-в-неподвижности (Чешуя змеи) — вешаем/снимаем по сборке
     Thorns thornsComp;      // иглы-ответка (Шкура ежа) — тем же паттерном
@@ -82,6 +83,7 @@ public partial class CreatureBody : MonoBehaviour
     const float KillMeal = 0.7f;                   // насколько убийство наполняет ШКАЛУ сытости (0..1); глотающий целиком — на всю (1)
 
     public static CreatureBody PlayerBody { get; private set; } // тело ИГРОКА: HUD/dev/спавнеры читают его родство
+    public SpeciesSO[] Donors => donors; // из кого собираются химеры «такие же, как игрок» (босс: Человек + его доноры)
 
     /// <summary>Дорос ли носитель до СТАНА в вое (порог задан органом Пасти, см. Organ.howlStunAt).</summary>
     public bool HowlStuns { get; private set; }
@@ -191,6 +193,10 @@ public partial class CreatureBody : MonoBehaviour
         Recompute();
     }
 
+    /// <summary>ЭКСПРЕССИЯ ИЗВНЕ — для модуля боссовости: босс раскрывает гены органов до потолка игрока, не заводя
+    /// своего пути сборки. Ноль — «как задано по умолчанию» (у NPC — рядовая особь).</summary>
+    public void SetExpression(float value) { expression = Mathf.Max(0f, value); Recompute(); }
+
     /// <summary>Пере-раздать статы компонентам (урон/скорость через OnBodyStats, HP и т.д.). Для психики,
     /// НАВЕШЕННОЙ В РАНТАЙМЕ ПОСЛЕ сборки (диспатч добавляет её после Recompute — Feed→OnBodyStats до неё
     /// не дошёл, урон/скорость не получены). Идемпотентно (просто пересчёт).</summary>
@@ -269,6 +275,7 @@ public partial class CreatureBody : MonoBehaviour
         if (howl == null) TryGetComponent(out howl);
         if (constrictAb == null) TryGetComponent(out constrictAb);
         if (variance == null) TryGetComponent(out variance);
+        if (bossness == null) TryGetComponent(out bossness);
         if (cold == null) TryGetComponent(out cold);
         if (camoComp == null) TryGetComponent(out camoComp);
         if (mixer == null) mixer = GetComponent<TintMixer>();
@@ -403,7 +410,10 @@ public partial class CreatureBody : MonoBehaviour
             // База — «тело как таковое», её экспрессия НЕ трогает: раньше всё было абсолютами и
             // масштабировалось целиком, отчего «Э 0.45» значило «волк на 45% статов» (полудохлый),
             // а числа органов подбирались, лишь бы это скомпенсировать. Теперь Э честно раскрывает БОНУС
-            int hp = Mathf.RoundToInt(BaseHp * (1f + hpBonusF) * (variance != null ? variance.HpMult : 1f));
+            // × БОССОВОСТЬ: модуль опрашивается при КАЖДОМ пересчёте, а не вписывается в HP разово — иначе первая
+            // же прививка или выданный химерный слот стирали бы бонус молча
+            int hp = Mathf.RoundToInt(BaseHp * (1f + hpBonusF) * (variance != null ? variance.HpMult : 1f)
+                                      * (bossness != null ? bossness.HpMult : 1f));
             health.SetMaxHealth(Mathf.Max(1, hp));
             health.DamageReduction = Mathf.Min(maxDamageReduction, Mathf.Clamp01(reduce)); // потолок — глушим овершут брони
             health.RegenPerSecond = regen;

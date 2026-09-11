@@ -239,6 +239,34 @@ public class ChimeraDevWindow : EditorWindow
             EditorGUILayout.LabelField(dom != null ? $"  доминанта: {dom.speciesName} ({tier})" : "  ИСТИННАЯ ХИМЕРА (кин ни к кому)");
         }
 
+        // БОСС-ХИМЕРА (#4b-4): химера ЧЕЛОВЕКА с кем-то, собранная конструктором, + модуль боссовости
+        var bossSpawner = Object.FindAnyObjectByType<BossChimeraSpawner>();
+        var bossBody = bossSpawner != null ? bossSpawner.Current : null;
+        using (new EditorGUILayout.HorizontalScope(EditorStyles.helpBox))
+        {
+            EditorGUILayout.LabelField("Босс-химера", EditorStyles.boldLabel, GUILayout.Width(90));
+            string bossHp = bossSpawner == null ? "нет BossChimeraSpawner в сцене"
+                : bossBody != null && bossBody.TryGetComponent<Health>(out var bh) ? $"HP {bh.Current}/{bh.Max}" : "нет в сцене";
+            EditorGUILayout.LabelField(bossHp, GUILayout.Width(170));
+            using (new EditorGUI.DisabledScope(bossSpawner == null || !Application.isPlaying))
+            {
+                if (GUILayout.Button("оборотень", GUILayout.Width(80))) bossSpawner.SpawnNearPlayer(BossChimeraSpawner.Recipe.Werebeast);
+                if (GUILayout.Button("случайная", GUILayout.Width(80))) bossSpawner.SpawnNearPlayer(BossChimeraSpawner.Recipe.RandomBeasts);
+            }
+            using (new EditorGUI.DisabledScope(bossBody == null))
+                if (GUILayout.Button("убить", GUILayout.Width(56)) && bossBody.TryGetComponent<Health>(out var bk))
+                    bk.TakeDamage(999999, true);
+            using (new EditorGUI.DisabledScope(bossSpawner == null))
+                if (GUILayout.Button(bossSpawner != null && bossSpawner.AutoSpawn ? "авто: ВКЛ" : "авто: выкл"))
+                    bossSpawner.AutoSpawn = !bossSpawner.AutoSpawn;
+        }
+        if (bossBody != null)
+        {
+            var bdom = bossBody.MostKin(out var btier);
+            EditorGUILayout.LabelField($"  {(bdom != null ? $"доминанта: {bdom.speciesName} ({btier})" : "ИСТИННАЯ ХИМЕРА")} · химерных слотов: {bossBody.ChimeraSlots}");
+            EditorGUILayout.LabelField("  " + ChimeraFactory.Describe(bossBody), EditorStyles.wordWrappedMiniLabel);
+        }
+
         // разброс особей: множители/личность живут в get-only свойствах (в инспекторе НЕ видны) — дамп в консоль
         if (GUILayout.Button("Разброс волков → консоль"))
             foreach (var w in wolves)

@@ -6,9 +6,8 @@ using UnityEngine;
 /// игрок получает +пул мутагена и химерный слот; повторные убийства того же типа дают только обычное
 /// родство (его начисляет само тело — SuperBossReward к родству не касается). Реестр полученных
 /// типов — статик на сессию (перманентность придёт с мета-сейвом).
-/// НОСИТЕЛЯ СЕЙЧАС НЕТ. Жил на префабе вервольфа, удалённом 11.09 («он не нужен как выделенная единица»):
-/// босс-суперхимера будет собираться из конструктора. Компонент оставлен — награда за ТИП босса не
-/// привязана к вервольфу, и тот, кто соберёт химеру-босса, повесит его заново.
+/// Вешает модуль боссовости (`Bossness.Finish`) и через `Configure` задаёт, за какой тип и что давать. До 11.09
+/// жил на префабе вервольфа; вид удалён, а награда за ТИП босса к нему и не была привязана — переехала как есть.
 /// </summary>
 [RequireComponent(typeof(Health))]
 public class SuperBossReward : MonoBehaviour
@@ -20,6 +19,9 @@ public class SuperBossReward : MonoBehaviour
     [SerializeField] bool grantsChimeraSlot = true;
 
     void Awake() => GetComponent<Health>().onDeath.AddListener(Grant);
+
+    /// <summary>Настройка модулем боссовости: за первое убийство КАКОГО босса и что дать.</summary>
+    public void Configure(string type, int pool, bool slot) { typeId = type; poolBonus = pool; grantsChimeraSlot = slot; }
 
     void Grant()
     {

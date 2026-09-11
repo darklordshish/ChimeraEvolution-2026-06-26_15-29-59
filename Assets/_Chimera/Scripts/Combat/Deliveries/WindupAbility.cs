@@ -46,6 +46,7 @@ public abstract class WindupAbility : MonoBehaviour, IAbility
 
     Morale morale;   // шкала духа стайных (вешает психика ПОСЛЕ нашего Awake — берём лениво)
     Satiety satiety; // шкала сытости-голода (тело вешает в Awake): истощённый бьёт слабее
+    Bossness bossness; // модуль боссовости: множитель урона всех приёмов (лениво — порядок навески не важен)
 
     // урон доставки: ярость × разброс особи × ДУХ (раскачанная мораль бьёт больнее) × ВИГОР (истощённый — слабее)
     protected float DamageMult
@@ -54,8 +55,10 @@ public abstract class WindupAbility : MonoBehaviour, IAbility
         {
             if (morale == null) TryGetComponent(out morale);
             if (satiety == null) TryGetComponent(out satiety);
+            if (bossness == null) TryGetComponent(out bossness);
             return (rage != null ? rage.DamageMult : 1f) * (variance != null ? variance.DamageMult : 1f)
-                 * (morale != null ? morale.DamageMult : 1f) * (satiety != null ? satiety.Vigor : 1f);
+                 * (morale != null ? morale.DamageMult : 1f) * (satiety != null ? satiety.Vigor : 1f)
+                 * (bossness != null ? bossness.DamageMult : 1f);
         }
     }
 
