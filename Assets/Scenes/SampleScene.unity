@@ -119,6 +119,52 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &77689570
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 77689572}
+  - component: {fileID: 77689571}
+  m_Layer: 0
+  m_Name: ChimeraSlotReward
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &77689571
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 77689570}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9885a78feae35544f8f13641967e2dec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Chimera.Runtime::ChimeraSlotReward
+  triggerAffinity: 100
+  slotsToGrant: 1
+--- !u!4 &77689572
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 77689570}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &231173473
 GameObject:
   m_ObjectHideFlags: 0
@@ -960,6 +1006,8 @@ MonoBehaviour:
     eternalRage: 0
     poolReward: 4
     grantsChimeraSlot: 1
+    lifeSteal: 0
+    overheal: 0
   autoSpawn: 0
   affinityThreshold: 75
   respawnDelay: 120
@@ -1232,6 +1280,59 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1705119177
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1705119179}
+  - component: {fileID: 1705119178}
+  m_Layer: 0
+  m_Name: EvolutionConfig
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1705119178
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1705119177}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c574bc246f9743042b6b8dedda400aad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Chimera.Runtime::EvolutionConfig
+  allSpecies:
+  - {fileID: 11400000, guid: 0c6b11574869a6b44a321162414452d6, type: 2}
+  - {fileID: 11400000, guid: dab52963bf459da4b934b85751aeac96, type: 2}
+  - {fileID: 11400000, guid: 7da515edc0cffd54d8872e9a26ca33e1, type: 2}
+  - {fileID: 11400000, guid: 0b9f3325f2a7256489e3375ccca88401, type: 2}
+  evolveNpc: 1
+  startAffinity: 100
+  chimerizeMultiplier: 1
+  verboseLog: 0
+--- !u!4 &1705119179
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1705119177}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1779511324
 GameObject:
   m_ObjectHideFlags: 0
@@ -1332,6 +1433,55 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2013181513
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2013181515}
+  - component: {fileID: 2013181514}
+  m_Layer: 0
+  m_Name: ForageSpawner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &2013181514
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2013181513}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3bf52e78b96c37d4a83e8f24cfee7aa8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Chimera.Runtime::ForageSpawner
+  count: 18
+  mapHalfExtent: 46
+  spacing: 8
+  bushSize: 1.3
+  blobs: 6
+--- !u!4 &2013181515
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2013181513}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2131734543
 GameObject:
   m_ObjectHideFlags: 0
@@ -1402,3 +1552,6 @@ SceneRoots:
   - {fileID: 1993741891}
   - {fileID: 1181631188}
   - {fileID: 1582103870}
+  - {fileID: 1705119179}
+  - {fileID: 2013181515}
+  - {fileID: 77689572}
