@@ -1,29 +1,30 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>ХИМЕРА-АЛЬФА (#4b-2): универсальная психика-фолбэк для существ без доминантного вида
 /// (истинная химера — кин ни к кому). Агрессивный апекс: охотится на ВСЁ живое, бьёт ЛЮБОЙ доставкой,
-/// что дало тело (арсенал от состава). Дженерик — не знает видов, опрашивает тело (как ёж берёт bite/volley
-/// «если орган дал»). Подход A брейншторма #4b-2: компактный автомат, БЕЗ базы-класса (её извлечём в #4b-3,
-/// когда появятся видовые модули). Восприятие — радиус-скан (конусы зрения/слуха — #4b-3+).
+/// что дало тело (арсенал от состава). Дженерик — не знает видов: чем бить и откуда подходить, решает
+/// <see cref="Arsenal"/> по окнам из записей органов — босс с лосиными ногами таранит, химера без Пасти бьёт
+/// конечностью. Подход A брейншторма #4b-2: компактный автомат, БЕЗ базы-класса. Восприятие — радиус-скан
+/// (конусы зрения/слуха — #4b-3+).
 /// Кин-фильтр — «признаю ли Я его» (Regard(me,other) = его вид ВО мне): доминанта-волк волков не бьёт;
-/// истинная химера размыта → не признаёт никого → бьёт всех. «Монстр для всех» ВЫПАДАЕТ из состава, не хардкод.</summary>
+/// истинная химера размыта → не признаёт никого → бьёт всех. «Монстр для всех» ВЫПАДАЕТ из состава, не хардкод.
+/// Захват (`Constrict`, отдельный канал 4b-2 §2.2) альфа пока не водит: машине нужен драйвер «когда хватать и отпускать».</summary>
 [RequireComponent(typeof(Health))]
 [RequireComponent(typeof(NavLocomotion))]
 public class ChimeraAlphaPsyche : MonoBehaviour, IBodyStatConsumer
 {
-    [SerializeField] float scanRadius = 16f;       // радиус обнаружения живых
-    [SerializeField] float meleeRange = 2f;        // ближе — ближняя атака
-    [SerializeField] float rangedRange = 12f;      // дальше meleeRange, но в этом радиусе → дальняя (если есть)
-    [SerializeField] float attackCooldown = 1.1f;
+    [SerializeField] float scanRadius = 16f;        // радиус обнаружения живых
+    [SerializeField] float attackCooldown = 1.1f;   // ритм атак — решение психики, не свойство доставки
+    [SerializeField] float emptyArsenalStop = 1.8f; // бить нечем — на сколько подходить к цели (тактика; дальности приёмов — в записях органов)
     [SerializeField] float wanderRadius = 10f;
     [SerializeField] float retargetInterval = 0.5f;
-    [SerializeField] float rotationSpeed = 240f;   // доворот морды к цели: укус/залп бьют в конус ВПЕРЁД — без доворота мажут
+    [SerializeField] float rotationSpeed = 240f;    // доворот морды к цели: укус/залп бьют в конус ВПЕРЁД — без доворота мажут
 
     // 0-гоча (сериализация): читаем 0 как «не настроено»
     float ScanRadius => scanRadius > 0f ? scanRadius : 16f;
-    float MeleeRange => meleeRange > 0f ? meleeRange : 2f;
-    float RangedRange => rangedRange > 0f ? rangedRange : 12f;
     float AttackCooldown => attackCooldown > 0f ? attackCooldown : 1.1f;
+    float EmptyArsenalStop => emptyArsenalStop > 0f ? emptyArsenalStop : 1.8f;
     float WanderRadius => wanderRadius > 0f ? wanderRadius : 10f;
     float RetargetInterval => retargetInterval > 0f ? retargetInterval : 0.5f;
     float RotationSpeed => rotationSpeed > 0f ? rotationSpeed : 240f;
@@ -36,8 +37,9 @@ public class ChimeraAlphaPsyche : MonoBehaviour, IBodyStatConsumer
     NavLocomotion nav;
     Stagger stagger;
     Knockback knockback;
-    BiteAbility bite;      // базовая ближняя (гарантирует спавнер при оживлении)
-    QuillVolley volley;    // дальняя — только если орган Иглы дал (может не быть)
+    // АРСЕНАЛ — не поля «укус/залп», а всё, что тело завело по записям органов. Собирается каждый кадр решения:
+    // доставки появляются и гаснут с прививкой, кэш из Awake ослеп бы (тело заводит их позже нашего Awake)
+    readonly List<WindupAbility> arsenal = new();
     WindupAbility active;
     Transform target;
     Health targetHealth;
@@ -45,7 +47,7 @@ public class ChimeraAlphaPsyche : MonoBehaviour, IBodyStatConsumer
 
     static readonly Collider[] scanHits = new Collider[32];
 
-    // тело кормит числами (урон/скорость) — как ёж; base-укус получает урон/яд/кровь
+    // тело кормит скоростью хода; числа приёмов доставки берут из записей органов сами
     public void OnBodyStats(float bodyMoveSpeed)
     {
         moveSpeed = bodyMoveSpeed;
@@ -59,8 +61,6 @@ public class ChimeraAlphaPsyche : MonoBehaviour, IBodyStatConsumer
         TryGetComponent(out variance);
         TryGetComponent(out stagger);
         TryGetComponent(out knockback);
-        TryGetComponent(out bite);
-        TryGetComponent(out volley); // нет органа-залпа → только ближний бой
     }
 
     void Update()
@@ -95,23 +95,37 @@ public class ChimeraAlphaPsyche : MonoBehaviour, IBodyStatConsumer
         if (toT.sqrMagnitude > 0.001f)
             transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(toT), RotationSpeed * Time.deltaTime);
 
+        Arsenal.Collect(gameObject, arsenal);
         float dist = Vector3.Distance(transform.position, target.position);
         if (Time.time >= nextAttackTime)
         {
-            // дальняя, если цель далеко и залп есть
-            if (volley != null && dist > MeleeRange && dist <= RangedRange)
+            var pick = Arsenal.Pick(arsenal, dist); // дальняя, если цель в её окне; вплотную — ближняя
+            if (pick != null)
             {
-                volley.SetTarget(targetHealth);
-                if (volley.TryUse()) { active = volley; return; }
-            }
-            // ближняя вплотную
-            if (dist <= MeleeRange && bite != null)
-            {
-                bite.SetTarget(targetHealth);
-                if (bite.TryUse()) { active = bite; return; }
+                pick.SetTarget(targetHealth);
+                if (pick.TryUse()) { active = pick; return; }
             }
         }
-        nav.Move(nav.Arrive(target.position, Speed, stopAt: MeleeRange * 0.9f)); // преследуем
+        nav.Move(Approach(dist, toT));
+    }
+
+    // КАК ПОДХОДИТЬ — тоже из окон арсенала: есть ближний приём — к его досягаемости; только дальние — в их окно,
+    // а слишком близко — отступить (так ёж держит окно залпа); бить нечем — просто сближение
+    Vector3 Approach(float dist, Vector3 toTarget)
+    {
+        float melee = 0f, farMin = float.MaxValue, farMax = 0f;
+        foreach (var a in arsenal)
+        {
+            if (a.WindowMin <= 0f) melee = Mathf.Max(melee, a.WindowMax);
+            else { farMin = Mathf.Min(farMin, a.WindowMin); farMax = Mathf.Max(farMax, a.WindowMax); }
+        }
+        if (melee > 0f) return nav.Arrive(target.position, Speed, stopAt: melee * 0.9f);
+        if (farMax > 0f)
+        {
+            if (dist < farMin) return toTarget.sqrMagnitude > 0.001f ? -toTarget.normalized * Speed : Vector3.zero;
+            return nav.Arrive(target.position, Speed, stopAt: (farMin + farMax) * 0.5f);
+        }
+        return nav.Arrive(target.position, Speed, stopAt: EmptyArsenalStop);
     }
 
     // ближайший НЕ-кин (кого Я не признаю своим по составу). Истинная химера размыта → не признаёт никого → бьёт всех

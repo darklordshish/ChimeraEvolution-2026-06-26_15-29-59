@@ -30,7 +30,8 @@ public static class ChimeraFactory
 
         beforeBody?.Invoke(go);
 
-        go.AddComponent<BiteAbility>();     // доставка укуса; доступна, только если в составе есть Пасть с записью укуса
+        // ДОСТАВКИ заводит тело по записям органов (провизия в Recompute) — уже после beforeBody, ярость им видна.
+        // Гарантийного укуса нет: альфа бьёт тем, что дало тело (Arsenal), а без записей удара — только сближается
         var body = go.AddComponent<CreatureBody>();
         body.Configure(chassis, donors, tintFromComposition: true);
         // ЭКОНОМИКА ПУЛА — ИГРОКУ, А НЕ РОЖДЁННОМУ СОСТАВОМ. Холодная химера родится с родством 0 → без скидки

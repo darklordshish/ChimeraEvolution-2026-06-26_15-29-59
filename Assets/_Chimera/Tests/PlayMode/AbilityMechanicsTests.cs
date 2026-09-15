@@ -836,5 +836,44 @@ namespace Chimera.Tests.PlayMode
             Teleport(target, new Vector3(0f, 0f, rec.grabRange * 0.5f));
             Assert.IsTrue(grip.TryUse(), "перезарядка записи прошла, а захват не берёт");
         }
+
+        // ── АРБИТР АРСЕНАЛА ХИМЕРЫ-АЛЬФЫ ────────────────────────────────────────────────
+
+        static IEnumerator Until(System.Func<bool> condition, float timeout)
+        {
+            float end = Time.time + timeout;
+            while (!condition() && Time.time < end) yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator Alpha_WithLegsRecord_ChargesFromDistance()
+        {
+            var rec = Charge();
+            var body = Npc(Species("Человек", OrganWith("Лосиные ноги", "Ноги", rec)), expression: 1f);
+            Dummy(new Vector3(0f, 0f, (rec.minRange + rec.maxRange) * 0.5f));
+            yield return null;
+
+            var charge = body.GetComponent<ChargeAbility>();
+            Assert.IsNotNull(charge, "тело не завело таран по записи ног");
+            body.gameObject.AddComponent<ChimeraAlphaPsyche>();
+            bool charged = false;
+            yield return Until(() => charged |= charge.Busy, 3f);
+            Assert.IsTrue(charged, "альфа с записью ног не таранила цель в окне разбега");
+        }
+
+        [UnityTest]
+        public IEnumerator Alpha_WithoutMaw_StrikesWithLimbRecord()
+        {
+            var rec = Limb();
+            var body = Npc(Species("Человек", OrganWith("Кисть", "Руки", rec)), expression: 1f);
+            var target = Dummy(new Vector3(0f, 0f, rec.range * 0.6f));
+            yield return null;
+
+            Assert.IsNull(body.GetComponent<BiteAbility>(), "без Пасти укуса быть не должно");
+            body.gameObject.AddComponent<ChimeraAlphaPsyche>();
+            int before = target.Current;
+            yield return Until(() => target.Current < before, 3f);
+            Assert.AreEqual(rec.damage, before - target.Current, "альфа без Пасти не ударила конечностью по записи");
+        }
     }
 }

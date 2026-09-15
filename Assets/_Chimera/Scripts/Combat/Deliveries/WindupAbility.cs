@@ -94,6 +94,12 @@ public abstract class WindupAbility : MonoBehaviour, IAbility, IAbilityCarrier
     protected abstract bool Ready { get; }
     protected abstract float WindupTime { get; }
 
+    /// <summary>ОКНО СРАБАТЫВАНИЯ по дистанции до цели — из записи органа: ближний приём бьёт от 0 до досягаемости,
+    /// разбег, наскок и залп — с минимальной дистанции. Нет записи — окно пустое (0). Читает арбитр арсенала
+    /// (`Arsenal`) у химеры-альфы. Верх абстрактный по той же причине, что замах: доставка без окна не скомпилируется.</summary>
+    public virtual float WindowMin => 0f;
+    public abstract float WindowMax { get; }
+
     // запуск замаха; false — если уже занят, нет цели или приём недоступен
     public bool TryUse()
     {

@@ -19,6 +19,7 @@ public class BiteAbility : WindupAbility, IOrganAbility
     protected override float WindupTime => data.windupTime;
 
     // психика читает для решений (дистанция атаки/удержания, прицельный конус); нет укуса — 0: в зону не заманит
+    public override float WindowMax => Range;               // окно арсенала: вплотную — до досягаемости записи
     public float Range => data != null ? data.range : 0f;
     public float HalfAngle => data != null ? data.halfAngle : 0f;
 

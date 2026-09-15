@@ -24,6 +24,8 @@ public class QuillVolley : WindupAbility, IOrganAbility
     // психика читает окно дистанций; нет залпа — пустое окно [0, 0]
     public float MinRange => data != null ? data.minRange : 0f;
     public float MaxRange => data != null ? data.maxRange : 0f;
+    public override float WindowMin => MinRange;            // окно арсенала: с минимальной дистанции записи
+    public override float WindowMax => MaxRange;
 
     /// <summary>СТРЕЛЬБА ПО НЮХУ: цель чуется, но не видна (камуфляж) — бьём ПРИМЕРНО туда, прицел уводит на
     /// blindAimError записи. Камуфляж не отменяет залп, а сбивает точность; задел попал → урон раскрывает цель

@@ -22,6 +22,8 @@ public class ChargeAbility : WindupAbility, IOrganAbility
     // психика читает окно дистанций тарана; нет тарана — пустое окно [0, 0]
     public float MinRange => data != null ? data.minRange : 0f;
     public float MaxRange => data != null ? data.maxRange : 0f;
+    public override float WindowMin => MinRange;            // окно арсенала: с минимальной дистанции записи
+    public override float WindowMax => MaxRange;
 
     protected override float GizmoRange => MaxRange; // хитбокс — дальность разбега тарана
     protected override float GizmoHalfAngle => 30f;
