@@ -30,7 +30,7 @@ public static class ChimeraFactory
 
         beforeBody?.Invoke(go);
 
-        go.AddComponent<BiteAbility>();     // гарантия хотя бы одной атаки
+        go.AddComponent<BiteAbility>();     // доставка укуса; доступна, только если в составе есть Пасть с записью укуса
         var body = go.AddComponent<CreatureBody>();
         body.Configure(chassis, donors, tintFromComposition: true);
         // ЭКОНОМИКА ПУЛА — ИГРОКУ, А НЕ РОЖДЁННОМУ СОСТАВОМ. Холодная химера родится с родством 0 → без скидки

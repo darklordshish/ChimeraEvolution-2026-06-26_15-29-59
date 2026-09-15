@@ -191,12 +191,9 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
 
     // тело-на-шасси (CreatureBody: органы Волка × экспрессия ~0.45) кормит деривированное.
     // Урон прыжка и ритм атак остаются фирменными (сериализованы здесь/на LeapAbility).
-    public void OnBodyStats(int damage, float bodyMoveSpeed, int venom, int bleed, float howlRange)
+    public void OnBodyStats(int damage, float bodyMoveSpeed, float howlRange)
     {
         moveSpeed = bodyMoveSpeed;
-        bite.SetDamage(damage);
-        bite.SetVenom(venom); // эффекты укуса из органа Пасти (data-driven): волчьи клыки → кровотечение
-        bite.SetBleed(bleed);
         if (howlRange > 0.01f) howlRadius = howlRange; // ГОЛОС — от данных Пасти (природная норма ×1)
     }
 

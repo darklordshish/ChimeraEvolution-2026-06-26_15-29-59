@@ -128,7 +128,7 @@ public class PlayerInputDriver : MonoBehaviour
         if (ConstructorUI.IsOpen) return; // в конструкторе не деремся (иначе хитстоп сбивает замедление)
 
         if (attackAction.WasPressedThisFrame()) melee.TryUse();
-        if (bite != null && biteAction.WasPressedThisFrame()) bite.TryUse();
+        if (biteAction.WasPressedThisFrame()) { if (bite == null) bite = GetComponent<PlayerBite>(); if (bite != null) bite.TryUse(); } // грань укуса заводит тело по записи органа — берём лениво
         // E = ПИНОК (человечьи ноги). Рога вынесены на отдельную R (ниже) — чтобы не делить кнопку с пинком
         if (kickAction.WasPressedThisFrame()) kick?.TryUse();
         // R = УДАР РОГАМИ (придаток лося, химерный слот). Сам гейтит Enabled/кулдаун

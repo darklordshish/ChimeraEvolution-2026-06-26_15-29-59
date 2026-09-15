@@ -1,39 +1,37 @@
+using System;
 using UnityEngine;
 
 /// <summary>
-/// Доставка «укус»: фронтальный конус с замахом; отменяется уворотом из зоны/конуса (и стаггером).
-/// Эффекты на попадании — урон + опц. вампиризм + опц. сбив регена (словарь Hit).
-/// Дефолты = волк; вампиризм приёмов — у модуля боссовости. Одна доставка — разные носители.
+/// Доставка «укус» NPC: фронтальный конус с замахом; отменяется уворотом из зоны/конуса (и стаггером).
+/// ВСЕ ЧИСЛА — ИЗ ЗАПИСИ ОРГАНА (<see cref="BiteData"/>, спека «данные в органах»): тело раскрывает запись надетой
+/// Пасти и кормит ею доставку через <see cref="Configure"/>. Своих чисел у доставки нет: нет записи — нет укуса
+/// (компонент остаётся, чтобы не рвать ссылку психики, но приём недоступен). У индивида — только модификаторы:
+/// ярость, мораль, сытость, разброс особи, боссовость (см. DamageMult).
 /// </summary>
-public class BiteAbility : WindupAbility
+public class BiteAbility : WindupAbility, IOrganAbility
 {
-    [Header("Укус")]
-    [SerializeField] float range = 2.0f;
-    [SerializeField] float halfAngle = 55f;
-    [SerializeField] int damage = 8;
-    [SerializeField, Range(0f, 1f)] float regenDebuff = 1f;  // <1 — сбивает реген цели
-    [SerializeField] float regenDebuffTime = 0f;
-    [SerializeField] int venomStacks = 0;                   // >0 — укус впрыскивает яд (змея)
-    [SerializeField] int bleedStacks = 0;                   // >0 — укус пускает кровь (волчьи клыки)
+    BiteData data; // раскрытая запись надетой Пасти; null — укуса нет
 
-    public float Range => range;         // психика читает для решений (дистанция атаки/удержания)
-    public float HalfAngle => halfAngle; // и для прицельного конуса
+    public Type DataType => typeof(BiteData);
+    public void Configure(AbilityData d) => data = d as BiteData;
+    public bool Available => data != null;
+    protected override bool Ready => data != null;
+    protected override float WindupTime => data.windupTime;
 
-    protected override float GizmoRange => range;         // хитбокс = реальный конус укуса
-    protected override float GizmoHalfAngle => halfAngle;
+    // психика читает для решений (дистанция атаки/удержания, прицельный конус); нет укуса — 0: в зону не заманит
+    public float Range => data != null ? data.range : 0f;
+    public float HalfAngle => data != null ? data.halfAngle : 0f;
 
-    // тело-на-шасси (CreatureBody, NPC-режим) кормит урон И ЭФФЕКТЫ укуса из органов (data-driven, как у игрока)
-    public void SetDamage(int v) => damage = v;
-    public void SetVenom(int v) => venomStacks = v;
-    public void SetBleed(int v) => bleedStacks = v;
+    protected override float GizmoRange => Range;         // хитбокс = реальный конус укуса
+    protected override float GizmoHalfAngle => HalfAngle;
 
     protected override Color TelegraphColor => TelegraphColors.Bite;
 
     protected override AbilityRun OnTick()
     {
         float dist = DistToTarget();
-        bool inCone = Vector3.Angle(transform.forward, DirToTarget()) <= halfAngle;
-        if (!(dist <= range && inCone)) return AbilityRun.Cancelled; // увернулся — замах сорван
+        bool inCone = Vector3.Angle(transform.forward, DirToTarget()) <= data.halfAngle;
+        if (!(dist <= data.range && inCone)) return AbilityRun.Cancelled; // увернулся — замах сорван
 
         if (Time.time >= windupEnd)
         {
@@ -45,19 +43,19 @@ public class BiteAbility : WindupAbility
         return AbilityRun.Running;
     }
 
-    /// <summary>Паёк укуса — ЧИСЛА ИЗ ОРГАНА (яд/кровь/вампиризм тело кормит через SetVenom/SetBleed/SetDamage).
-    /// Один источник правды: и замаховый укус, и укус без замаха (BiteNow) льют одно и то же.</summary>
+    /// <summary>Паёк укуса из записи органа. Один источник: и замаховый укус, и укус без замаха (BiteNow).
+    /// Вампиризм — не черта укуса, а модуля боссовости (BossLifeSteal).</summary>
     public MeleeBlow Payload() => new()
     {
-        Damage = damage, LifeSteal = BossLifeSteal, VenomStacks = venomStacks, BleedStacks = bleedStacks,
-        RegenDebuffFactor = regenDebuff, RegenDebuffTime = regenDebuffTime,
+        Damage = data.damage, LifeSteal = BossLifeSteal, VenomStacks = data.venomStacks, BleedStacks = data.bleedStacks,
+        RegenDebuffFactor = data.regenDebuff, RegenDebuffTime = data.regenDebuffTime,
     };
 
     /// <summary>Укусить цель ПРЯМО СЕЙЧАС, без замаха и конуса: змея в хвате грызёт то, что держит
-    /// (реальные констрикторы держат зубами). Яд/кровь — из органа, как в обычном укусе.</summary>
+    /// (реальные констрикторы держат зубами). Числа — из записи Пасти, как в обычном укусе.</summary>
     public void BiteNow(Health victim)
     {
-        if (victim == null) return;
+        if (victim == null || data == null) return; // нет Пасти с укусом — грызть нечем
         Payload().Deliver(new Hit(ownHealth, transform.position), victim, DamageMult);
     }
 }

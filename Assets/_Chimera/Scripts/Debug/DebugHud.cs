@@ -57,7 +57,7 @@ public class DebugHud : MonoBehaviour
         // ── ЧТО ДАЁТ СБОРКА: «пианино» растёт с химеризацией ─────────────────
         var abil = new List<string> { "меч ЛКМ" };
         if (kick != null && kick.KickEnabled) abil.Add("пинок E");
-        if (bite != null && bite.BiteEnabled) abil.Add("укус Q");
+        if (bite != null && bite.Available) abil.Add("укус Q");
         if (howl != null && howl.HowlEnabled) abil.Add("вой Alt");
         if (constrict != null && constrict.ConstrictEnabled) abil.Add("обхват F");
         if (bellow == null && player != null) player.TryGetComponent(out bellow); // тело до-создаёт после нашего Start

@@ -19,11 +19,6 @@ namespace Chimera.Tests.EditMode
         // ДОЛГ: «Класс.поле» — числа приёмов, ещё не переехавшие в запись органа
         static readonly HashSet<string> Debt = new(StringComparer.Ordinal)
         {
-            // задача 2 — укус
-            "BiteAbility.bleedStacks", "BiteAbility.damage", "BiteAbility.halfAngle", "BiteAbility.range",
-            "BiteAbility.regenDebuff", "BiteAbility.regenDebuffTime", "BiteAbility.venomStacks",
-            "PlayerBite.cooldown", "PlayerBite.radius", "PlayerBite.range", "PlayerBite.regenDebuff",
-            "PlayerBite.regenDebuffTime",
             // задача 3 — рога и таран
             "AntlerAbility.bleedStacks", "AntlerAbility.damage", "AntlerAbility.halfAngle",
             "AntlerAbility.knockForce", "AntlerAbility.range", "ChargeAbility.chargeSpeed", "ChargeAbility.damage",

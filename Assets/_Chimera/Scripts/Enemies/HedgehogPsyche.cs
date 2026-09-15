@@ -125,13 +125,9 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
                              * (variance != null ? variance.SpeedMult : 1f)
                              * (Breath != null ? Breath.MoveMult : 1f);
 
-    public void OnBodyStats(int damage, float bodyMoveSpeed, int venom, int bleed, float howlRange)
+    public void OnBodyStats(int damage, float bodyMoveSpeed, float howlRange)
     {
-        moveSpeed = bodyMoveSpeed;
-        if (bite == null) return;
-        bite.SetDamage(damage);
-        bite.SetVenom(venom);
-        bite.SetBleed(bleed);
+        moveSpeed = bodyMoveSpeed; // урон, яд и кровь укуса тело кормит доставке напрямую из записи органа (BiteData)
     }
 
     void Awake()

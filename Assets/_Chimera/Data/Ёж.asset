@@ -24,8 +24,6 @@ MonoBehaviour:
     staminaBonus: 0
     staminaRegenBonus: 0
     hpBonus: 0
-    venomStacks: 0
-    bleedStacks: 0
     range: 0
     atkCooldown: 0
     moveSpeed: 0
@@ -38,7 +36,6 @@ MonoBehaviour:
     thermalRange: 0
     howlStunAt: 0
     howlRadius: 0
-    enablesBite: 0
     enablesScent: 0
     enablesKick: 0
     enablesHowl: 0
@@ -63,6 +60,7 @@ MonoBehaviour:
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 0
+    abilities: []
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -126,8 +124,6 @@ MonoBehaviour:
     staminaBonus: 0
     staminaRegenBonus: 0
     hpBonus: 0
-    venomStacks: 0
-    bleedStacks: 0
     range: 0
     atkCooldown: 0
     moveSpeed: 0
@@ -140,7 +136,6 @@ MonoBehaviour:
     thermalRange: 0
     howlStunAt: 0
     howlRadius: 0
-    enablesBite: 0
     enablesScent: 0
     enablesKick: 0
     enablesHowl: 0
@@ -165,6 +160,7 @@ MonoBehaviour:
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 0
+    abilities: []
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -204,8 +200,6 @@ MonoBehaviour:
     staminaBonus: 0
     staminaRegenBonus: 0
     hpBonus: 0
-    venomStacks: 0
-    bleedStacks: 0
     range: 0
     atkCooldown: 0
     moveSpeed: 0
@@ -218,7 +212,6 @@ MonoBehaviour:
     thermalRange: 0
     howlStunAt: 0
     howlRadius: 0
-    enablesBite: 0
     enablesScent: 0
     enablesKick: 0
     enablesHowl: 0
@@ -243,6 +236,7 @@ MonoBehaviour:
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 0
+    abilities: []
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -378,8 +372,6 @@ MonoBehaviour:
     staminaBonus: 0
     staminaRegenBonus: 0
     hpBonus: 0
-    venomStacks: 0
-    bleedStacks: 0
     range: 0
     atkCooldown: 0
     moveSpeed: 6
@@ -392,7 +384,6 @@ MonoBehaviour:
     thermalRange: 0
     howlStunAt: 0
     howlRadius: 0
-    enablesBite: 0
     enablesScent: 0
     enablesKick: 0
     enablesHowl: 0
@@ -417,6 +408,7 @@ MonoBehaviour:
     nativeChassis: "\u0401\u0436"
     constrictStage: 0
     enablesCurl: 1
+    abilities: []
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -452,12 +444,10 @@ MonoBehaviour:
     slot: "\u041F\u0430\u0441\u0442\u044C"
     hotkey: 5
     cost: 4
-    damage: 22
+    damage: 0
     staminaBonus: 0
     staminaRegenBonus: 0
     hpBonus: 0
-    venomStacks: 0
-    bleedStacks: 0
     range: 0
     atkCooldown: 0
     moveSpeed: 0
@@ -470,7 +460,6 @@ MonoBehaviour:
     thermalRange: 0
     howlStunAt: 0
     howlRadius: 0
-    enablesBite: 1
     enablesScent: 0
     enablesKick: 0
     enablesHowl: 0
@@ -495,6 +484,8 @@ MonoBehaviour:
     nativeChassis: "\u0401\u0436"
     constrictStage: 1
     enablesCurl: 0
+    abilities:
+    - rid: 4402482292869300225
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -510,8 +501,6 @@ MonoBehaviour:
     staminaBonus: 0.4
     staminaRegenBonus: 0.3
     hpBonus: 1.2
-    venomStacks: 0
-    bleedStacks: 0
     range: 0
     atkCooldown: 0.5
     moveSpeed: 0
@@ -524,7 +513,6 @@ MonoBehaviour:
     thermalRange: 0
     howlStunAt: 0
     howlRadius: 0
-    enablesBite: 0
     enablesScent: 0
     enablesKick: 0
     enablesHowl: 0
@@ -549,6 +537,7 @@ MonoBehaviour:
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 0
+    abilities: []
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -564,8 +553,6 @@ MonoBehaviour:
     staminaBonus: 0
     staminaRegenBonus: 0
     hpBonus: 0
-    venomStacks: 0
-    bleedStacks: 0
     range: 0
     atkCooldown: 0
     moveSpeed: 0
@@ -578,7 +565,6 @@ MonoBehaviour:
     thermalRange: 0
     howlStunAt: 0
     howlRadius: 0
-    enablesBite: 0
     enablesScent: 1
     enablesKick: 0
     enablesHowl: 0
@@ -603,6 +589,7 @@ MonoBehaviour:
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 0
+    abilities: []
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -3282,3 +3269,18 @@ MonoBehaviour:
   skinBlend: 0.05
   skinFur: 0
   buildLayers: 0
+  references:
+    version: 2
+    RefIds:
+    - rid: 4402482292869300225
+      type: {class: BiteData, ns: , asm: Chimera.Runtime}
+      data:
+        damage: 22
+        bleedStacks: 0
+        venomStacks: 0
+        regenDebuff: 0.5
+        regenDebuffTime: 3
+        range: 1.7
+        halfAngle: 60
+        windupTime: 0.4
+        cooldown: 0.7

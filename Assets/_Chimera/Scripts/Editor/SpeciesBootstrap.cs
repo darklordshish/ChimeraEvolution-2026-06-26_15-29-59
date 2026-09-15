@@ -60,7 +60,7 @@ public static class SpeciesBootstrap
                 new OrganPart { scale = new Vector3(0.80f, 0.42f, 0.60f), offset = new Vector3(0.00f, -0.40f, 0.06f), role = PartRole.Ear, shape = PartShape.Sphere }, // мочка
                 new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), shape = PartShape.Sphere, role = PartRole.Eye, color = new Color(0.35f, 0.65f, 0.95f, 1f) }, // ЦВЕТ ГЛАЗА = КАНАЛ: прозрение — читает числа и намерения
             } }, // внутренний: сокет `inner` — своей детали нет, но форма органа проступает (цвет глаза = канал восприятия)
-            new Organ { organName = "Рот",    slot = "Пасть",  hotkey = "5", cost = 3, enablesBite = false, enablesScream = true }, // лицо/пасть — ОТДЕЛЬНО от черепа: волчья Пасть сядет сюда же → морда оборотня-волка.
+            new Organ { organName = "Рот",    slot = "Пасть",  hotkey = "5", cost = 3, enablesScream = true }, // лицо/пасть — ОТДЕЛЬНО от черепа: волчья Пасть сядет сюда же → морда оборотня-волка.
             //     БОЕВОЙ КЛИЧ: слот больше не мёртвый. Кусать человек не умеет, но кричит — ярость по своей крови (PlayerScream)
             new Organ { organName = "Кожа",   slot = "Шкура",  hotkey = "6", cost = 3, damageReduction = 0f },
         };
@@ -272,7 +272,7 @@ public static class SpeciesBootstrap
                 new OrganPart { scale = new Vector3(0.50f, 0.36f, 0.40f), offset = new Vector3(0.04f, 0.32f, -0.04f), euler = new Vector3(-6f, 0f, -7f), role = PartRole.Ear, shape = PartShape.Sphere }, // ВЕРХУШКА ЗАКРУГЛЁННАЯ (0.36→0.50): у волка ухо треугольник с тупым концом, а не остриё
                 new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), shape = PartShape.Sphere, role = PartRole.Eye, color = new Color(0.45f, 0.30f, 0.12f, 1f) }, // ЦВЕТ ГЛАЗА = КАНАЛ: нюх
             } },
-            new Organ { organName = "Пасть",         slot = "Пасть",  hotkey = "5", cost = 5, damage = 14, enablesBite = true, enablesHowl = true, bleedStacks = 2, howlRadius = 14f, howlStunAt = 2f, enablesConstrict = true, constrictStage = 1, nativeChassis = "Волк", visualParts = new[] {
+            new Organ { organName = "Пасть",         slot = "Пасть",  hotkey = "5", cost = 5, abilities = new AbilityData[] { new BiteData { damage = 14, bleedStacks = 2, regenDebuff = 0.5f, regenDebuffTime = 3f, range = 2f, halfAngle = 55f, windupTime = 0.45f, cooldown = 0.7f } }, enablesHowl = true, howlRadius = 14f, howlStunAt = 2f, enablesConstrict = true, constrictStage = 1, nativeChassis = "Волк", visualParts = new[] {
                 new OrganPart { scale = new Vector3(0.154f, 0.689f, 0.077f), offset = new Vector3(0.262f, -0.111f, 0.318f), color = new Color(0.95f, 0.94f, 0.90f, 1f) }, // КЛЫК верхний (пр): 0.13L, тип уходит НИЖЕ линии губы и НАРУЖУ от тела челюсти — иначе зуб тонет в морде
                 new OrganPart { scale = new Vector3(0.154f, 0.689f, 0.077f), offset = new Vector3(-0.262f, -0.111f, 0.318f), color = new Color(0.95f, 0.94f, 0.90f, 1f) }, // клык верхний (лев)
                 new OrganPart { scale = new Vector3(0.131f, 0.578f, 0.068f), offset = new Vector3(0.231f, -0.133f, 0.445f), color = new Color(0.95f, 0.94f, 0.90f, 1f) }, // клык нижний (пр): 0.11L, стоит ПЕРЕД верхним (снаружи), как в референсе черепа
@@ -529,7 +529,7 @@ public static class SpeciesBootstrap
         snake.baseStaminaRegen = 7f;
         snake.organs = new[]
         {
-            new Organ { organName = "Ядовитые клыки",       slot = "Пасть",  hotkey = "5", cost = 5, damage = 24, enablesBite = true, venomStacks = 1 }, // укус игрока травит
+            new Organ { organName = "Ядовитые клыки",       slot = "Пасть",  hotkey = "5", cost = 5, abilities = new AbilityData[] { new BiteData { damage = 24, venomStacks = 1, regenDebuff = 0.5f, regenDebuffTime = 3f, range = 2f, halfAngle = 55f, windupTime = 0.4f, cooldown = 0.7f } } }, // укус игрока травит
             new Organ { organName = "Хладнокровное сердце", slot = "Сердце", hotkey = "3", cost = 5, hpBonus = 1.35f, staminaBonus = 0.3f, staminaRegenBonus = 0.2f, regen = 0f, regenOOC = 2f, atkCooldown = 0.5f, coldBlooded = true }, // ХОЛОДНЫЙ МЕТАБОЛИЗМ: в бою НЕ регенит (regen 0), вне боя восстанавливается ЛУЧШЕ человека (regenOOC 2 > 1). Кулдаун ОБЯЗАТЕЛЕН (0 в бленде = меч-пулемёт)
             // ХОДОВАЯ ЗМЕИ — В СЛОТЕ ХОДОВОЙ, а не в несущем. Слот «Ноги» означает РОЛЬ (локомоция), а не
             // анатомию: змея ползёт телом, сова полетит крыльями — имя слота будет переименовано в
@@ -990,7 +990,7 @@ public static class SpeciesBootstrap
             //     КЛУБОК ЗДЕСЬ ЖЕ, ЧЕРЕЗ nativeChassis. Перекат и клубок — одна способность на двух глубинах: рывок «в клубке» (кувырок с i-frames) и полный шар (броня + катание-таран).
             //     Раньше клубок жил отдельным органом «Игольчатое тело» на фиктивном месте `Тело` (hidden, без единой детали) — место существовало только чтобы флагу было куда сесть.
             //     Теперь: украл ежиные ноги на человечьем шасси → перекат есть, шара нет; ноги дома → раскрываются целиком. Локомоция и есть свойство шасси (тот же закон, что у chassisOnly)
-            new Organ { organName = "Цепкая пасть",      slot = "Пасть",  hotkey = "5", cost = 4, damage = 22, enablesBite = true, enablesConstrict = true, constrictStage = 1, nativeChassis = "Ёж" }, // ДОБИВАНИЕ + ПИН пастью (ст.1): та же челюсть грабит и кусает прижатую добычу. 22 (≈11 на Э 0.5) даёт ежу грабнуть-и-добить
+            new Organ { organName = "Цепкая пасть",      slot = "Пасть",  hotkey = "5", cost = 4, abilities = new AbilityData[] { new BiteData { damage = 22, regenDebuff = 0.5f, regenDebuffTime = 3f, range = 1.7f, halfAngle = 60f, windupTime = 0.4f, cooldown = 0.7f } }, enablesConstrict = true, constrictStage = 1, nativeChassis = "Ёж" }, // ДОБИВАНИЕ + ПИН пастью (ст.1): та же челюсть грабит и кусает прижатую добычу. 22 (≈11 на Э 0.5) даёт ежу грабнуть-и-добить
             new Organ { organName = "Ядоупорное сердце", slot = "Сердце", hotkey = "3", cost = 6, hpBonus = 1.2f, staminaBonus = 0.4f, staminaRegenBonus = 0.3f, regen = 0.5f, atkCooldown = 0.5f, venomResist = true }, // РЕЗИСТ ЯДА (медоед-конституция) — делает ежа контр-видом змеи
             new Organ { organName = "Пятак",             slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.5f, enablesScent = true, keenHearing = true, hearingMult = 1.6f, visualParts = new[] {
                 new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), shape = PartShape.Sphere, role = PartRole.Nose }, // нос

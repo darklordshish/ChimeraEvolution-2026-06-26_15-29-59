@@ -46,10 +46,9 @@ public class ChimeraAlphaPsyche : MonoBehaviour, IBodyStatConsumer
     static readonly Collider[] scanHits = new Collider[32];
 
     // тело кормит числами (урон/скорость) — как ёж; base-укус получает урон/яд/кровь
-    public void OnBodyStats(int damage, float bodyMoveSpeed, int venom, int bleed, float howlRange)
+    public void OnBodyStats(int damage, float bodyMoveSpeed, float howlRange)
     {
         moveSpeed = bodyMoveSpeed;
-        if (bite != null) { bite.SetDamage(damage); bite.SetVenom(venom); bite.SetBleed(bleed); }
     }
 
     void Awake()

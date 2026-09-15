@@ -74,7 +74,7 @@ public static class WolfPrefab
 
         // укус и прыжок — общие доставки с числами волка (урон укуса приходит из органов через CreatureBody)
         var bite = go.AddComponent<BiteAbility>();
-        PrefabConfig.Set(bite, ("windupTime", 0.45f), ("range", 2f), ("halfAngle", 55f));
+        // числа укуса — в записи органа Пасти (BiteData): доставке их не задаём, тело кормит её само
         var leap = go.AddComponent<LeapAbility>();
         PrefabConfig.Set(leap, ("windupTime", 0.5f), ("minRange", 5f), ("maxRange", 6.5f), ("speed", 13f),
                                        ("up", 5f), ("duration", 0.5f), ("damage", 12), ("hitRadius", 1.3f));

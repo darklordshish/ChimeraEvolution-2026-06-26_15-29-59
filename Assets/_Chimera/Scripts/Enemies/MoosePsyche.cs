@@ -139,7 +139,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
 
     // тело-на-шасси кормит скорость; урон тарана остаётся на ChargeAbility (как урон прыжка у волка);
     // голос (howlRange) — задел: РЁВ пока фирменный (bellowRadius), переведём на данные Глотки при тюнинге
-    public void OnBodyStats(int damage, float bodyMoveSpeed, int venom, int bleed, float howlRange)
+    public void OnBodyStats(int damage, float bodyMoveSpeed, float howlRange)
     {
         moveSpeed = bodyMoveSpeed;
         // УРОН КОПЫТА ЖИВЁТ В ОРГАНЕ, А НЕ В ДОСТАВКЕ. У лося единственный орган с уроном — «Копыто»

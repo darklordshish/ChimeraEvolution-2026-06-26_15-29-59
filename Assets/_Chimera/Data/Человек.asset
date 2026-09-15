@@ -24,8 +24,6 @@ MonoBehaviour:
     staminaBonus: 0
     staminaRegenBonus: 0
     hpBonus: 0
-    venomStacks: 0
-    bleedStacks: 0
     range: 0
     atkCooldown: 0
     moveSpeed: 0
@@ -38,7 +36,6 @@ MonoBehaviour:
     thermalRange: 0
     howlStunAt: 0
     howlRadius: 0
-    enablesBite: 0
     enablesScent: 0
     enablesKick: 0
     enablesHowl: 0
@@ -63,6 +60,7 @@ MonoBehaviour:
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 0
+    abilities: []
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -90,8 +88,6 @@ MonoBehaviour:
     staminaBonus: 0
     staminaRegenBonus: 0
     hpBonus: 0
-    venomStacks: 0
-    bleedStacks: 0
     range: 1.6
     atkCooldown: 0
     moveSpeed: 0
@@ -104,7 +100,6 @@ MonoBehaviour:
     thermalRange: 0
     howlStunAt: 0
     howlRadius: 0
-    enablesBite: 0
     enablesScent: 0
     enablesKick: 0
     enablesHowl: 0
@@ -129,6 +124,7 @@ MonoBehaviour:
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 0
+    abilities: []
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -174,8 +170,6 @@ MonoBehaviour:
     staminaBonus: 0
     staminaRegenBonus: 0
     hpBonus: 0
-    venomStacks: 0
-    bleedStacks: 0
     range: 0
     atkCooldown: 0
     moveSpeed: 4.5
@@ -188,7 +182,6 @@ MonoBehaviour:
     thermalRange: 0
     howlStunAt: 0
     howlRadius: 0
-    enablesBite: 0
     enablesScent: 0
     enablesKick: 1
     enablesHowl: 0
@@ -213,6 +206,7 @@ MonoBehaviour:
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 0
+    abilities: []
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -264,8 +258,6 @@ MonoBehaviour:
     staminaBonus: 0.5
     staminaRegenBonus: 0.5
     hpBonus: 0.5
-    venomStacks: 0
-    bleedStacks: 0
     range: 0
     atkCooldown: 0.45
     moveSpeed: 0
@@ -278,7 +270,6 @@ MonoBehaviour:
     thermalRange: 0
     howlStunAt: 0
     howlRadius: 0
-    enablesBite: 0
     enablesScent: 0
     enablesKick: 0
     enablesHowl: 0
@@ -303,6 +294,7 @@ MonoBehaviour:
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 0
+    abilities: []
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -324,8 +316,6 @@ MonoBehaviour:
     staminaBonus: 0
     staminaRegenBonus: 0
     hpBonus: 0
-    venomStacks: 0
-    bleedStacks: 0
     range: 0
     atkCooldown: 0
     moveSpeed: 0
@@ -338,7 +328,6 @@ MonoBehaviour:
     thermalRange: 0
     howlStunAt: 0
     howlRadius: 0
-    enablesBite: 0
     enablesScent: 0
     enablesKick: 0
     enablesHowl: 0
@@ -363,6 +352,7 @@ MonoBehaviour:
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 0
+    abilities: []
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -402,8 +392,6 @@ MonoBehaviour:
     staminaBonus: 0
     staminaRegenBonus: 0
     hpBonus: 0
-    venomStacks: 0
-    bleedStacks: 0
     range: 0
     atkCooldown: 0
     moveSpeed: 0
@@ -416,7 +404,6 @@ MonoBehaviour:
     thermalRange: 0
     howlStunAt: 0
     howlRadius: 0
-    enablesBite: 0
     enablesScent: 0
     enablesKick: 0
     enablesHowl: 0
@@ -441,6 +428,7 @@ MonoBehaviour:
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 0
+    abilities: []
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -456,8 +444,6 @@ MonoBehaviour:
     staminaBonus: 0
     staminaRegenBonus: 0
     hpBonus: 0
-    venomStacks: 0
-    bleedStacks: 0
     range: 0
     atkCooldown: 0
     moveSpeed: 0
@@ -470,7 +456,6 @@ MonoBehaviour:
     thermalRange: 0
     howlStunAt: 0
     howlRadius: 0
-    enablesBite: 0
     enablesScent: 0
     enablesKick: 0
     enablesHowl: 0
@@ -495,6 +480,7 @@ MonoBehaviour:
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 0
+    abilities: []
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -2223,3 +2209,6 @@ MonoBehaviour:
   skinBlend: 0.05
   skinFur: 0
   buildLayers: 0
+  references:
+    version: 2
+    RefIds: []

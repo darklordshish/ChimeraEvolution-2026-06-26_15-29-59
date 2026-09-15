@@ -90,12 +90,17 @@ public abstract class WindupAbility : MonoBehaviour, IAbility, IAbilityCarrier
         target = h != null ? h.transform : null;
     }
 
-    // запуск замаха; false — если уже занят или нет цели
+    // ГОТОВНОСТЬ: доставка, переехавшая на запись органа, говорит «нет записи — нет приёма»
+    protected virtual bool Ready => true;
+    // ЗАМАХ: переехавшие доставки берут его из записи органа, остальные — из поля windupTime (долг детектора)
+    protected virtual float WindupTime => windupTime;
+
+    // запуск замаха; false — если уже занят, нет цели или приём недоступен
     public bool TryUse()
     {
-        if (Busy || target == null) return false;
+        if (Busy || target == null || !Ready) return false;
         Busy = true;
-        windupEnd = Time.time + windupTime;
+        windupEnd = Time.time + WindupTime;
         telegraph.Set(true, TelegraphColor, intent: true); // ЗАМАХ = намерение: цвет приёма читает лишь Чутьё
         OnBegin();
         return true;
@@ -105,6 +110,7 @@ public abstract class WindupAbility : MonoBehaviour, IAbility, IAbilityCarrier
     public AbilityRun Tick()
     {
         if (!Busy) return AbilityRun.Cancelled; // сорван извне (Abort) — психика уйдёт в короткий откат
+        if (!Ready) { Busy = false; telegraph.Clear(); return AbilityRun.Cancelled; } // орган сняли посреди замаха — приёма больше нет
         if (target == null || targetHealth == null) { Busy = false; telegraph.Clear(); return AbilityRun.Cancelled; } // цель умерла посреди приёма (NPC-жертва)
         var st = OnTick();
         if (st != AbilityRun.Running) { Busy = false; telegraph.Clear(); }

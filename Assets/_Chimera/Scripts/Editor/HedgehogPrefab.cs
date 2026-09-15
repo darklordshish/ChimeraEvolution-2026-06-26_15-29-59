@@ -99,7 +99,7 @@ public static class HedgehogPrefab
         go.AddComponent<HitFlash>();
 
         var bite = go.AddComponent<BiteAbility>();
-        PrefabConfig.Set(bite, ("windupTime", 0.4f), ("range", 1.7f), ("halfAngle", 60f));
+        // числа укуса — в записи органа Пасти (BiteData): доставке их не задаём, тело кормит её само
 
         // ЗАЛП ИГЛАМИ — дальняя грань (первый ranged в игре). Компонент на префабе = психика видит его и
         // стреляет; нет его — ёж чисто ближний. gizmoHeight низкий (ёж приземист)

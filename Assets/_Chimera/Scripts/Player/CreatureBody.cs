@@ -54,7 +54,6 @@ public partial class CreatureBody : MonoBehaviour
     PlayerController move;
     Health health;
     Stamina stamina;   // бак дыхалки — кор-механика у ВСЕХ тел, как и Health
-    PlayerBite bite;
     PlayerKick kick;
     PlayerHowl howl;
     PlayerConstrict constrictAb;
@@ -123,7 +122,6 @@ public partial class CreatureBody : MonoBehaviour
         // ЭМОЦ-ИНДИКАЦИЯ — тоже тело: ярость/страх подкрашивают (у холоднокровных эмоций нет — тинт молчит сам)
         if (!TryGetComponent<EmotionTint>(out _)) gameObject.AddComponent<EmotionTint>();
         TryGetComponent(out health);
-        TryGetComponent(out bite);
         TryGetComponent(out kick);
         TryGetComponent(out howl);
         TryGetComponent(out constrictAb);
@@ -280,7 +278,6 @@ public partial class CreatureBody : MonoBehaviour
         if (health == null) TryGetComponent(out health);
         if (attack == null) TryGetComponent(out attack);
         if (move == null) TryGetComponent(out move);
-        if (bite == null) TryGetComponent(out bite);
         if (kick == null) TryGetComponent(out kick);
         if (howl == null) TryGetComponent(out howl);
         if (constrictAb == null) TryGetComponent(out constrictAb);
@@ -306,10 +303,9 @@ public partial class CreatureBody : MonoBehaviour
         }
 
         // суммирование групп; урон группы «Пасть» принадлежит УКУСУ, не мечу
-        float dmgF = 0f, dmgBiteF = 0f, hpBonusF = 0f, stamF = 0f, stamRegF = 0f;
+        float dmgF = 0f, hpBonusF = 0f, stamF = 0f, stamRegF = 0f;
         float rng = 0f, atkCd = 0f, mv = 0f, dash = 0f, dashDur = 0f, dashCd = 0f, reduce = 0f, regen = 0f, regenOOC = 0f, thermal = 0f, howlR = 0f, howlStunAt = 0f;
-        int venom = 0, bleed = 0;
-        bool biteOn = false, scentOn = false, kickOn = false, howlOn = false, coldOn = false, camoOn = false,
+        bool scentOn = false, kickOn = false, howlOn = false, coldOn = false, camoOn = false,
              thermalOn = false, constrictOn = false, digestOn = false, bellowOn = false, antlerOn = false, chargeOn = false, rollOn = false, screamOn = false,
              insightOn = false, keenEarOn = false,
              thornsOn = false, venomResistOn = false, quillVolleyOn = false, bleedResistOn = false, curlOn = false;
@@ -319,13 +315,13 @@ public partial class CreatureBody : MonoBehaviour
         foreach (var kv in groups)
         {
             var c = kv.Value;
-            if (kv.Key == "Пасть") dmgBiteF += c.dmg; else dmgF += c.dmg;
-            hpBonusF += c.hpBonus; stamF += c.stam; stamRegF += c.stamRegen; venom += c.venom; bleed += c.bleed;
+            dmgF += c.dmg; // урон укуса — не число органа, а запись BiteData: в меч он не течёт по построению
+            hpBonusF += c.hpBonus; stamF += c.stam; stamRegF += c.stamRegen;
             rng += c.rng; atkCd += c.atkCd; mv += c.mv; dash += c.dash; dashDur += c.dashDur; dashCd += c.dashCd;
             reduce += c.reduce; regen += c.regen; regenOOC += c.regenOOC; thermal += c.thermal;
             howlR = Mathf.Max(howlR, c.howlR);
             howlStunAt = Mathf.Max(howlStunAt, c.howlStunAt);
-            biteOn |= c.bite; scentOn |= c.scent; kickOn |= c.kick; howlOn |= c.howl;
+            scentOn |= c.scent; kickOn |= c.kick; howlOn |= c.howl;
             coldOn |= c.cold; camoOn |= c.camo; thermalOn |= c.thermalOn; constrictOn |= c.constrict;
             digestOn |= c.digest; bellowOn |= c.bellow; antlerOn |= c.antler; chargeOn |= c.charge; rollOn |= c.roll; curlOn |= c.curl; screamOn |= c.scream;
             constrictCap = Mathf.Max(constrictCap, c.constrictCap); insightOn |= c.insight;
@@ -334,15 +330,11 @@ public partial class CreatureBody : MonoBehaviour
             bleedResistOn |= c.bleedResist;
             volleyMult = Mathf.Max(volleyMult, c.volleyMult);
         }
-        int dmg = Mathf.RoundToInt(dmgF), dmgBite = Mathf.RoundToInt(dmgBiteF);
+        int dmg = Mathf.RoundToInt(dmgF);
 
-        if (bite != null)
-        {
-            bite.BiteEnabled = biteOn;
-            bite.SetDamage(dmgBite); // 0 = органы молчат → PlayerBite остаётся на своём дефолте
-            bite.SetVenom(venom);    // яд змеиных клыков на укусе игрока
-            bite.SetBleed(bleed);    // кровотечение волчьих клыков на укусе игрока
-        }
+        // ПРИЁМЫ ИЗ ЗАПИСЕЙ ОРГАНОВ (спека 12.09): раскрыть, свести дубли, накормить носителей — один путь игроку и NPC.
+        // Переехал укус; рога, таран, залп, наскок, голос и захват едут следом и пока раздаются ниже по-старому
+        ProvisionAbilities();
         if (kick != null) kick.KickEnabled = kickOn; // пинок — фича человеческих ног: с волчьими пропадает
         // ГОЛОС — от данных: радиус = органная база × МОЩЬ-превосходство (игрок BonusMult ×1..2;
         // NPC max(1, Э) — норму вниз не штрафуем: взрослый волк воет как волк)
@@ -438,9 +430,9 @@ public partial class CreatureBody : MonoBehaviour
             stamina.RegenPerSecond = BaseStaminaRegen * (1f + stamRegF);
         }
 
-        // НПС-потребители (психика): тело отдаёт деривированное — урон (суммарный: их мили и есть укус), скорость,
-        // ЭФФЕКТЫ УКУСА (яд/кровь из Пасти) и ГОЛОС (радиус воя, уже × мощь) — всё data-driven как у игрока
-        foreach (var c in GetComponents<IBodyStatConsumer>()) c.OnBodyStats(dmg + dmgBite, mv, venom, bleed, howlReach);
+        // НПС-потребители (психика): тело отдаёт деривированное — урон конечности (у лося копыто), скорость хода
+        // и ГОЛОС (радиус воя, уже × мощь). Числа УКУСА психике больше не идут: доставку кормит запись органа
+        foreach (var c in GetComponents<IBodyStatConsumer>()) c.OnBodyStats(dmg, mv, howlReach);
 
         // МОРФОЛОГИЯ (ось 2): пересобрать куб-модель из состава (слоты шасси раньше химерных → шасси-фёрст) +
         // пере-собрать renderers (морф-части новые), чтобы тинт их покрасил. Только у видов со скелетом (Волк/Человек)
@@ -566,5 +558,5 @@ public partial class CreatureBody : MonoBehaviour
 /// </summary>
 public interface IBodyStatConsumer
 {
-    void OnBodyStats(int damage, float moveSpeed, int venom, int bleed, float howlRange);
+    void OnBodyStats(int damage, float moveSpeed, float howlRange);
 }

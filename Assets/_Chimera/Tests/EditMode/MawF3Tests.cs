@@ -5,7 +5,7 @@ using UnityEngine;
 namespace Chimera.Tests.EditMode
 {
     /// <summary>
-    /// Ф3 Пасть: челюсть кость + зубы FEATURE, Bite конус 55°, Telegraph, audit 0. Тесты клетки Пасти (4×6 без общего
+    /// Ф3 Пасть: челюсть кость + зубы FEATURE, конус укуса из записи органа, Telegraph, audit 0. Тесты клетки Пасти (4×6 без общего
     /// кольца) сняты 12.09 вместе с отменённой клеткой: они парсили `cage.py` модельной линии и при его отсутствии
     /// сами подставляли ожидаемое
     /// </summary>
@@ -38,51 +38,37 @@ namespace Chimera.Tests.EditMode
             Assert.AreEqual("череп", bones["клык_в"].parent, "верхний клык на черепе");
         }
 
-        // ── 3) Bite конус 55° вне конуса не дамажит ─────────────────────────────────
+        // ── 3) Укус: конус из ЗАПИСИ органа — вне конуса мимо, внутри урон записи ──────────────
+        // До 15.09 тест сторожил полуугол 55° как дефолт поля доставки. Правило сменилось (спека 12.09 «данные
+        // в органах»): числа укуса живут в записи BiteData, у доставки их нет. Сторож переведён тем же заходом,
+        // и геометрия проверяется относительно числа записи, а не литерала: повернули ручку — тест не краснеет
         [Test]
-        public void Bite_Cone55_OutsideDoesNotDamage()
+        public void Bite_ConeFromRecord_OutsideDoesNotDamage()
         {
             var srcGo = new GameObject("BiteSrc");
             var tgtGo = new GameObject("BiteTgt");
             try
             {
-                srcGo.transform.position = Vector3.zero;
-                srcGo.transform.rotation = Quaternion.identity; // forward +Z
-                tgtGo.transform.position = new Vector3(0, 0, 1.5f); // внутри дальности
                 var srcH = srcGo.AddComponent<Health>(); srcH.SetMaxHealth(100);
                 var tgtH = tgtGo.AddComponent<Health>(); tgtH.SetMaxHealth(100);
                 var bite = srcGo.AddComponent<BiteAbility>();
-                // halfAngle по дефолту 55 из инспектора — проверим рефлексией
-                var halfAngle = (float)typeof(BiteAbility).GetField("halfAngle", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(bite);
-                Assert.AreEqual(55f, halfAngle, 0.01f, "Bite halfAngle должен быть 55°");
+                Assert.IsFalse(bite.Available, "укус без записи органа должен быть недоступен");
 
-                // цель прямо впереди — должна попасть (если бы вызывали OnTick, но тестируем геометрию)
+                var rec = new BiteData { damage = 8, range = 2f, halfAngle = 55f, windupTime = 0.4f, cooldown = 0.7f };
+                bite.Configure(rec);
+                Assert.IsTrue(bite.Available, "запись есть — укус должен быть доступен");
+                Assert.AreEqual(rec.halfAngle, bite.HalfAngle, 1e-5f, "полуугол укуса должен браться из записи");
+                Assert.AreEqual(rec.range, bite.Range, 1e-5f, "досягаемость укуса должна браться из записи");
+
                 Vector3 fwd = srcGo.transform.forward;
-                Vector3 dirInside = (tgtGo.transform.position - srcGo.transform.position); dirInside.y = 0;
-                float angInside = Vector3.Angle(fwd, dirInside.normalized);
-                Assert.LessOrEqual(angInside, 55f, "цель впереди должна быть внутри конуса");
+                Vector3 outside = Quaternion.AngleAxis(rec.halfAngle + 5f, Vector3.up) * Vector3.forward;
+                Assert.Greater(Vector3.Angle(fwd, outside), bite.HalfAngle, "цель за краем конуса записи должна быть вне");
+                Vector3 inside = Quaternion.AngleAxis(rec.halfAngle - 5f, Vector3.up) * Vector3.forward;
+                Assert.LessOrEqual(Vector3.Angle(fwd, inside), bite.HalfAngle, "цель у края конуса записи должна быть внутри");
 
-                // цель сбоку 60° — вне конуса, урон не должен пройти через проверку Deliver
-                tgtGo.transform.position = Quaternion.AngleAxis(60f, Vector3.up) * Vector3.forward * 1.5f;
-                Vector3 dirOutside = (tgtGo.transform.position - srcGo.transform.position); dirOutside.y = 0;
-                float angOutside = Vector3.Angle(fwd, dirOutside.normalized);
-                Assert.Greater(angOutside, 55f, "60° должно быть вне конуса 55°");
-
-                // Эмулируем логику BiteAbility.OnTick: вне конуса → Cancelled, Deliver не зовётся → HP не меняется
-                bool inCone = angOutside <= halfAngle;
-                Assert.IsFalse(inCone, "вне конуса inCone=false");
-                int hpBefore = tgtH.Current;
-                // не вызываем Deliver — это и есть проверка что вне конуса не дамажит
-                Assert.AreEqual(hpBefore, tgtH.Current, "вне конуса урон не наносится");
-
-                // внутри конуса — дамажит
-                tgtGo.transform.position = Vector3.forward * 1.0f;
-                dirInside = (tgtGo.transform.position - srcGo.transform.position); dirInside.y = 0;
-                angInside = Vector3.Angle(fwd, dirInside.normalized);
-                Assert.LessOrEqual(angInside, halfAngle);
-                var blow = bite.Payload();
-                blow.Deliver(new Hit(srcH, srcGo.transform.position), tgtH, 1f);
-                Assert.Less(tgtH.Current, hpBefore, "внутри конуса урон проходит");
+                int before = tgtH.Current;
+                bite.Payload().Deliver(new Hit(srcH, srcGo.transform.position), tgtH, 1f);
+                Assert.AreEqual(rec.damage, before - tgtH.Current, "паёк укуса должен бить уроном записи");
             }
             finally
             {

@@ -11,8 +11,7 @@ public partial class CreatureBody
     struct Contribution
     {
         public float dmg, hpBonus, stam, stamRegen, rng, atkCd, mv, dash, dashDur, dashCd, reduce, regen, regenOOC, thermal, howlR, howlStunAt;
-        public int venom, bleed;
-        public bool bite, scent, kick, howl, cold, camo, thermalOn, constrict, digest, bellow, antler, charge, roll, curl, scream;
+        public bool scent, kick, howl, cold, camo, thermalOn, constrict, digest, bellow, antler, charge, roll, curl, scream;
         public bool thorns, venomResist, quillVolley; // иглы-ответка, ядоупорность, залп (ёж)
         public bool bleedResist;  // кровеупорность (лосиное сердце)
         public float volleyMult; // мощь залпа от родства с ежом (0 = залпа нет)
@@ -33,8 +32,7 @@ public partial class CreatureBody
             regenOOC = Mathf.Max(a.regenOOC, b.regenOOC), thermal = Mathf.Max(a.thermal, b.thermal),
             howlR = Mathf.Max(a.howlR, b.howlR),
             howlStunAt = Mathf.Max(a.howlStunAt, b.howlStunAt),
-            venom = Mathf.Max(a.venom, b.venom), bleed = Mathf.Max(a.bleed, b.bleed),
-            bite = a.bite || b.bite, scent = a.scent || b.scent, kick = a.kick || b.kick,
+            scent = a.scent || b.scent, kick = a.kick || b.kick,
             howl = a.howl || b.howl, cold = a.cold || b.cold, camo = a.camo || b.camo,
             thermalOn = a.thermalOn || b.thermalOn, constrict = a.constrict || b.constrict,
             constrictCap = Mathf.Max(a.constrictCap, b.constrictCap),
@@ -97,10 +95,9 @@ public partial class CreatureBody
             // иначе человеческое сердце единственное не растёт с родством к своему виду
             regenOOC = own ? w.regenOOC * m : w.regenOOC,
             // ДИСКРЕТНОЕ — всегда у надетого как есть: фичи не «раскрываются», они либо есть, либо нет
-            venom = w.venomStacks, bleed = w.bleedStacks,
             rng = w.range, dashDur = w.dashDuration, thermal = w.thermalRange,
             howlR = w.howlRadius, howlStunAt = w.howlStunAt,
-            bite = w.enablesBite, scent = w.enablesScent, kick = w.enablesKick,
+            scent = w.enablesScent, kick = w.enablesKick,
             howl = w.enablesHowl, cold = w.coldBlooded, camo = w.camo, thermalOn = w.enablesThermal,
             constrict = w.enablesConstrict, digest = w.digestion, bellow = w.enablesBellow,
             antler = w.enablesAntler, charge = w.enablesCharge, roll = w.enablesRoll, insight = w.insight,

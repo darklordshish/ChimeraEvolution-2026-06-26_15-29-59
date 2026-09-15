@@ -4,7 +4,7 @@ using UnityEngine;
 /// <summary>
 /// Dev-утилита: собирает префаб змеи (капсула-плейсхолдер + компоненты). Меню: Chimera → Создать префаб Змеи.
 /// Тело на шасси Змея (`CreatureBody`: органы × экспрессия 0.5 → природная особь; Сердце даёт холоднокровность).
-/// Укус несёт яд (`BiteAbility.venomStacks`), рывок — фаст-страйк из засады. Dev-спавн берёт этот префаб. Editor-only.
+/// Укус несёт яд (запись укуса змеиных клыков, `BiteData.venomStacks`), рывок — фаст-страйк из засады. Dev-спавн берёт этот префаб. Editor-only.
 /// </summary>
 public static class SnakePrefab
 {
@@ -138,7 +138,7 @@ public static class SnakePrefab
 
         // укус с ЯДОМ; рывок — быстрый низкий страйк из засады
         var bite = go.AddComponent<BiteAbility>();
-        PrefabConfig.Set(bite, ("windupTime", 0.4f), ("range", 2f), ("halfAngle", 55f), ("venomStacks", 1));
+        // числа укуса — в записи органа Пасти (BiteData): доставке их не задаём, тело кормит её само
         var leap = go.AddComponent<LeapAbility>();
         PrefabConfig.Set(leap, ("windupTime", 0.35f), ("minRange", 4f), ("maxRange", 9f), ("speed", 20f),
                                        ("up", 2.5f), ("duration", 0.35f), ("damage", 8), ("hitRadius", 1.5f));

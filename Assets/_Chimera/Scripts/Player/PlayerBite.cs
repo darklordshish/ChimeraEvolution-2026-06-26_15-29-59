@@ -1,31 +1,28 @@
+using System;
 using UnityEngine;
 
 /// <summary>
-/// Укус — вторая атака (слот «Пасть»). Отдельная кнопка (Q / правый триггер):
-/// короткая дистанция, мощный единичный удар. Активен, только если слот «Пасть» надет
-/// (CreatureBody выставляет BiteEnabled).
+/// Укус игрока — вторая атака (слот «Пасть»), кнопка Q / правый триггер. ВСЕ ЧИСЛА — ИЗ ЗАПИСИ ОРГАНА
+/// (<see cref="BiteData"/>): та же запись, что кормит укус NPC (`BiteAbility`), — волчьей Пастью игрок кусает как волк.
+/// Нет записи — нет укуса. Грань держит только то, что принадлежит управлению игрока: кнопку и ощущение (тряска).
+///
+/// ГЕОМЕТРИЯ — ТОТ ЖЕ КОНУС, что у NPC: досягаемость и полуугол из записи, расстояние между центрами на плоскости.
+/// До 15.09 игрок кусал сферой перед собой; при общей записи двух геометрий быть не может.
+/// Замаха у игрока нет — нажатие и есть решение; `windupTime` записи читает только NPC (телеграф для уворота).
 /// </summary>
-public class PlayerBite : MonoBehaviour, IAbility, IAbilityCarrier
+public class PlayerBite : MonoBehaviour, IAbility, IOrganAbility
 {
-    [Header("Укус")]
-    [SerializeField] float range = 1.2f;   // короче когтя
-    [SerializeField] float radius = 0.9f;
-    [SerializeField] float cooldown = 0.7f;
     [SerializeField, NotOrganData("ощущение: тряска камеры игрока")] float shake = 0.2f;
-    [SerializeField, Range(0f, 1f)] float regenDebuff = 0.5f; // укус сбивает реген цели (×0.5)
-    [SerializeField] float regenDebuffTime = 3f;
 
-    public bool BiteEnabled { get; set; }  // включается слотом «Пасть»
+    // СКАН С ЗАПАСОМ: сфера ловит коллайдеры по поверхности, а конус меряет центры — берём шире досягаемости
+    // и отбираем по той же метрике, что у BiteAbility (DistToTarget/Angle). Запас — не число укуса, а допуск скана
+    const float ScanPad = 1.5f;
 
-    int organDamage;  // урон из данных органа Пасти — ЕДИНСТВЕННЫЙ источник силы укуса.
-    // Своих чисел силы грань игрока не заводит (решение 12.09): «способность от органа, у игрока только
-    // модификаторы». Ноль здесь = орган урона не даёт, а НЕ «не настроено» — дефолт подставлять нечем
-    int venomStacks;  // яд из данных органа (змеиные клыки)
-    int bleedStacks;  // кровь из данных органа (волчьи клыки)
+    BiteData data; // раскрытая запись надетой Пасти; null — укуса нет
 
-    public void SetDamage(int v) => organDamage = v;
-    public void SetVenom(int stacks) => venomStacks = stacks;
-    public void SetBleed(int stacks) => bleedStacks = stacks;
+    public Type DataType => typeof(BiteData);
+    public void Configure(AbilityData d) => data = d as BiteData;
+    public bool Available => data != null;
 
     float nextTime;
     CameraFollow cam;
@@ -37,45 +34,55 @@ public class PlayerBite : MonoBehaviour, IAbility, IAbilityCarrier
         ownHealth = GetComponent<Health>();
     }
 
-    // водитель зовёт по вводу; активен только с надетой Пастью; кулдаун проверяем сами
+    // водитель зовёт по вводу; перезарядка — из записи органа
     public bool TryUse()
     {
-        if (!BiteEnabled || Time.time < nextTime) return false;
-        nextTime = Time.time + cooldown;
+        if (data == null || Time.time < nextTime) return false;
+        nextTime = Time.time + data.cooldown;
         DoBite();
         return true;
     }
 
     void DoBite()
     {
+        if (ownHealth == null) ownHealth = GetComponent<Health>(); // укус до нашего Start (сборка тела в тот же кадр)
         // призрака раскрывает попадание (Hit.Apply), не замах
         var hit = new Hit(ownHealth, transform.position);
-        // единый паёк укуса (см. MeleeBlow): урон + сбив регена + яд/кровь по данным органа.
-        // ВАМПИРИЗМА У ИГРОКА НЕТ: сила приёма принадлежит ОРГАНУ, а грань игрока своих чисел силы
-        // не заводит (решение 12.09). Лечение укусом вернётся вместе с видом-носителем — полем органа.
-        // Канал доставки (MeleeBlow.LifeSteal) жив: им пользуется модуль боссовости
+        // единый паёк укуса (см. MeleeBlow) из записи органа. Вампиризма у приёмов нет — он у модуля боссовости
         var blow = new MeleeBlow
         {
-            Damage = organDamage,
-            VenomStacks = venomStacks, BleedStacks = bleedStacks,
-            RegenDebuffFactor = regenDebuff, RegenDebuffTime = regenDebuffTime,
+            Damage = data.damage,
+            VenomStacks = data.venomStacks, BleedStacks = data.bleedStacks,
+            RegenDebuffFactor = data.regenDebuff, RegenDebuffTime = data.regenDebuffTime,
         };
-        var targets = TargetScan.Healths(BiteCenter(), radius, transform);
-        foreach (var hp in targets) blow.Deliver(hit, hp); // эрозия по кину — внутри Hit.Apply
+        int bitten = 0;
+        foreach (var hp in TargetScan.Healths(transform.position, data.range + ScanPad, transform))
+        {
+            if (!InCone(hp.transform.position)) continue;
+            blow.Deliver(hit, hp); // эрозия по кину — внутри Hit.Apply
+            bitten++;
+        }
 
-        if (targets.Count > 0)
+        if (bitten > 0)
         {
             if (cam != null) cam.Shake(0.12f, shake);
             Hitstop.Do(0.05f);
         }
     }
 
-    Vector3 BiteCenter() => transform.position + transform.forward * range + Vector3.up * 0.3f; // пасть/грудь (корень игрока — центр капсулы)
+    bool InCone(Vector3 point)
+    {
+        Vector3 to = point - transform.position; to.y = 0f;
+        if (to.sqrMagnitude > data.range * data.range) return false;
+        return to.sqrMagnitude < 0.0001f || Vector3.Angle(transform.forward, to) <= data.halfAngle;
+    }
 
     void OnDrawGizmos()
     {
-        if (!BiteEnabled) return;
+        if (data == null) return;
+        Vector3 o = transform.position, f = transform.forward;
         Gizmos.color = TelegraphColors.Bite;
-        Gizmos.DrawWireSphere(BiteCenter(), radius);
+        Gizmos.DrawLine(o, o + Quaternion.AngleAxis(-data.halfAngle, Vector3.up) * f * data.range);
+        Gizmos.DrawLine(o, o + Quaternion.AngleAxis(data.halfAngle, Vector3.up) * f * data.range);
     }
 }
