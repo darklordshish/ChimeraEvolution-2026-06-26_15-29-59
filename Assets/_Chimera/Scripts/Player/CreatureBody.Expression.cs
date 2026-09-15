@@ -11,10 +11,9 @@ public partial class CreatureBody
     struct Contribution
     {
         public float dmg, hpBonus, stam, stamRegen, rng, atkCd, mv, dash, dashDur, dashCd, reduce, regen, regenOOC, thermal, howlR, howlStunAt;
-        public bool scent, kick, howl, cold, camo, thermalOn, constrict, digest, bellow, roll, curl, scream;
-        public bool thorns, venomResist, quillVolley; // иглы-ответка, ядоупорность, залп (ёж)
+        public bool scent, kick, howl, cold, camo, thermalOn, constrict, digest, bellow, scream;
+        public bool thorns, venomResist; // иглы-ответка, ядоупорность (ёж)
         public bool bleedResist;  // кровеупорность (лосиное сердце)
-        public float volleyMult; // мощь залпа от родства с ежом (0 = залпа нет)
         public bool insight; // ЧУТЬЁ УЧЁНОГО: распознавание намерений + числа состояний (человеческое Чутьё)
         public bool keenEar;  // ОСТРЫЙ СЛУХ: различение вида источника + волны звука на экране
         public float earMult; // множитель дальности слуха (супремум дублей)
@@ -37,10 +36,9 @@ public partial class CreatureBody
             thermalOn = a.thermalOn || b.thermalOn, constrict = a.constrict || b.constrict,
             constrictCap = Mathf.Max(a.constrictCap, b.constrictCap),
             digest = a.digest || b.digest, bellow = a.bellow || b.bellow, scream = a.scream || b.scream,
-            roll = a.roll || b.roll, curl = a.curl || b.curl, insight = a.insight || b.insight,
+            insight = a.insight || b.insight,
             keenEar = a.keenEar || b.keenEar, earMult = Mathf.Max(a.earMult, b.earMult),
             thorns = a.thorns || b.thorns, venomResist = a.venomResist || b.venomResist,
-            quillVolley = a.quillVolley || b.quillVolley, volleyMult = Mathf.Max(a.volleyMult, b.volleyMult),
             bleedResist = a.bleedResist || b.bleedResist,
         };
     }
@@ -100,17 +98,11 @@ public partial class CreatureBody
             scent = w.enablesScent, kick = w.enablesKick,
             howl = w.enablesHowl, cold = w.coldBlooded, camo = w.camo, thermalOn = w.enablesThermal,
             constrict = w.enablesConstrict, digest = w.digestion, bellow = w.enablesBellow,
-            roll = w.enablesRoll, insight = w.insight,
+            insight = w.insight,
             scream = w.enablesScream,   // КЛИЧ: гейта по шасси нет — человечий Рот кричит на любом теле,
                                         // цена (своя кровь) и так не даёт этим злоупотреблять
-            // КЛУБОК ТОЛЬКО ДОМА. Перекат и клубок — одна способность ежиных ног на двух глубинах: рывок
-            // «в клубке» (кувырок с i-frames) открыт всем, полный шар с бронёй и катанием — лишь на ежином
-            // шасси. Гейт точечный, а НЕ на все дискретные флаги: у волчьей Пасти тоже `nativeChassis`, и
-            // загейти мы всё подряд — оборотень-волк остался бы без укуса на человечьем теле
-            curl = w.enablesCurl && (string.IsNullOrEmpty(w.nativeChassis) || cNative),
             keenEar = w.keenHearing, earMult = w.hearingMult,
-            thorns = w.thorns, venomResist = w.venomResist, quillVolley = w.enablesQuillVolley,
-            volleyMult = w.enablesQuillVolley ? m : 0f, // мощь залпа = экспрессия органа-придатка (родство с ежом)
+            thorns = w.thorns, venomResist = w.venomResist,
             bleedResist = w.bleedResist,
             constrictCap = w.enablesConstrict ? (cNative ? cStage : Mathf.Min(2, cStage)) : 0,
         };

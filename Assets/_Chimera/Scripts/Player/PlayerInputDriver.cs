@@ -84,7 +84,7 @@ public class PlayerInputDriver : MonoBehaviour
     {
         body = GetComponent<CreatureBody>();
         constrict = GetComponent<PlayerConstrict>(); // после всех Awake — увидит и до-созданный телом
-        volley = GetComponent<PlayerQuillVolley>();  // до-создаёт тело в Awake
+        // залп берём лениво при нажатии: грань заводит тело по записи органа «Игломёт»
         BuildSlotHotkeys();
     }
 
@@ -150,7 +150,7 @@ public class PlayerInputDriver : MonoBehaviour
         }
         if (constrict != null && constrictAction.WasPressedThisFrame()) constrict.TryUse();
         if (constrict != null && presentAction.WasPressedThisFrame()) constrict.TogglePresent(); // C: ноша за спину/под удар
-        // ЗАЛП ИГЛАМИ (средняя кнопка) — сам гейтит VolleyEnabled/кулдаун
-        if (volley != null && volleyAction.WasPressedThisFrame()) volley.TryUse();
+        // ЗАЛП ИГЛАМИ (средняя кнопка) — доступность из записи органа и перезарядку гейтит сама грань
+        if (volleyAction.WasPressedThisFrame()) { if (volley == null) volley = GetComponent<PlayerQuillVolley>(); if (volley != null) volley.TryUse(); }
     }
 }

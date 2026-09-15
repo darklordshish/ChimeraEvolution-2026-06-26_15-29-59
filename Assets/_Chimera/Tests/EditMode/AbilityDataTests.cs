@@ -45,6 +45,16 @@ namespace Chimera.Tests.EditMode
             var rec = Rec(20, 2f, 0.7f);
             rec.Resolve(null, native: true, power: 2f);
             Assert.AreEqual(20, rec.damage, "раскрытие не должно менять запись в ассете");
+            Assert.AreEqual(1f, rec.power, 1e-5f, "мощь раскрытия не должна оседать в записи ассета");
+        }
+
+        [Test]
+        public void Resolve_CarriesOrganPower_SupKeepsStrongest()
+        {
+            var strong = Rec(20, 2f, 0.7f).Resolve(null, native: true, power: 1.5f);
+            var weak = Rec(20, 2f, 0.7f).Resolve(null, native: true, power: 0.5f);
+            Assert.AreEqual(1.5f, strong.power, 1e-5f, "раскрытая запись несёт мощь своего органа — модификатор для носителя");
+            Assert.AreEqual(1.5f, AbilityData.Sup(weak, strong).power, 1e-5f, "при дублях приёма — мощь сильнейшего органа");
         }
 
         [Test]

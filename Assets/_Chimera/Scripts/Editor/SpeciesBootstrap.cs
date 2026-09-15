@@ -951,7 +951,7 @@ public static class SpeciesBootstrap
                 new OrganPart { scale = new Vector3(0.30f, 0.46f, 0.30f), offset = new Vector3(0.28f, -0.28f, 0.26f), shape = PartShape.Sphere }, // плечо (пр)
                 new OrganPart { scale = new Vector3(0.30f, 0.46f, 0.30f), offset = new Vector3(-0.28f, -0.28f, 0.26f), shape = PartShape.Sphere }, // плечо (лев)
             } }, // СКЕЛЕТ: несущая структура шасси. chassisOnly — её не крадут графтом, как «Тело-хвост»
-            new Organ { organName = "Игломёт",           slot = "Игломёт", hotkey = "8", cost = 4, enablesQuillVolley = true, visualScale = new Vector3(1f, 1f, 1f), visualParts = new[] {
+            new Organ { organName = "Игломёт",           slot = "Игломёт", hotkey = "8", cost = 4, abilities = new AbilityData[] { new VolleyData { damagePerQuill = 4, bleedPerQuill = 1, slowPerQuill = 1, quills = 6, spreadAngle = 9f, speed = 22f, hitRadius = 0.35f, minRange = 6f, maxRange = 15f, windupTime = 0.5f, cooldown = 0.8f, blindAimError = 1.6f } }, visualScale = new Vector3(1f, 1f, 1f), visualParts = new[] {
                 // БАТАРЕЯ: длинные иглы ВПЕРЁД — куда смотрят стволы, туда и летит залп (читаемость
                 // важнее биологии: игрок сразу видит, что тварь плюётся иглами). Лёгкий веер
                 new OrganPart { scale = new Vector3(0.13f, 0.13f, 1.7f), offset = new Vector3(-0.42f, 0.12f, 0.55f), euler = new Vector3(-10f, -13.0f, 0f) },
@@ -981,7 +981,7 @@ public static class SpeciesBootstrap
                 new OrganPart { scale = new Vector3(0.07f, 0.62f, 0.07f), offset = new Vector3(0.09f, 0.42f, -0.40f), euler = new Vector3(-42f, 0f, 7f) }, // шип
                 new OrganPart { scale = new Vector3(0.07f, 0.62f, 0.07f), offset = new Vector3(0.26f, 0.33f, -0.40f), euler = new Vector3(-42f, 0f, 20f) }, // шип
             } }, // ОТВЕТКА: броня умеренная — иглы это ответ, а не панцирь
-            new Organ { organName = "Ежиные ноги",       slot = "Ноги",   hotkey = "2", cost = 4, moveSpeed = 6f, dashSpeed = 18f, dashDuration = 0.14f, dashCooldown = 0.35f, enablesRoll = true, enablesCurl = true, nativeChassis = "Ёж", visualParts = new[] {
+            new Organ { organName = "Ежиные ноги",       slot = "Ноги",   hotkey = "2", cost = 4, moveSpeed = 6f, dashSpeed = 18f, dashDuration = 0.14f, dashCooldown = 0.35f, abilities = new AbilityData[] { new RollData { damage = 10, bleedStacks = 1, knockForce = 8f, radius = 1.2f }, new CurlData { curlArmor = 0.6f, staminaDrain = 30f, rollSpeed = 9f, rollDrain = 40f, rollTurnSpeed = 90f, rollGravity = 20f } }, nativeChassis = "Ёж", visualParts = new[] {
                 new OrganPart { scale = new Vector3(0.95f, 0.44f, 0.95f), offset = new Vector3(0.00f, 0.27f, -0.06f), euler = new Vector3(-10f, 0f, 0f), shape = PartShape.Capsule }, // бедро
                 new OrganPart { scale = new Vector3(0.78f, 0.46f, 0.82f), offset = new Vector3(0.00f, -0.13f, 0.06f), euler = new Vector3(12f, 0f, 0f), shape = PartShape.Capsule }, // голень
                 new OrganPart { scale = new Vector3(1.06f, 0.64f, 1.06f), offset = new Vector3(0.00f, 0.08f, 0.00f), shape = PartShape.Sphere }, // колено

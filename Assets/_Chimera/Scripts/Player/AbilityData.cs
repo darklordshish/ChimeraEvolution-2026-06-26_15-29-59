@@ -27,6 +27,15 @@ public abstract class AbilityData
     /// <summary>Кто исполняет запись у игрока — грань управления. null — у игрока такого приёма нет.</summary>
     public abstract Type PlayerCarrier { get; }
 
+    /// <summary>ДОМАШНИЙ ПРИЁМ: открыт, только если орган надет на своё родное шасси (`Organ.nativeChassis`; пусто — гейта нет).
+    /// Гейт точечный, по приёму, а не по органу: у волчьей Пасти тоже есть родное шасси, и загейти всё подряд —
+    /// оборотень-волк остался бы без укуса на человечьем теле.</summary>
+    public virtual bool NativeOnly => false;
+
+    /// <summary>МОЩЬ органа в этом теле (экспрессия / родство) — ставит раскрытие. Это не число приёма, а модификатор
+    /// индивида: носитель применяет её сам, если его приём растёт с мастерством (залп игрока). В ассет не пишется.</summary>
+    [NonSerialized] public float power = 1f;
+
     /// <summary>РАСКРЫТИЕ: копия записи с числами после экспрессии; сама запись в ассете не меняется.
     /// `displaced` — запись того же приёма у вытесненного родного органа слота (нет её — бленд от нуля).</summary>
     public AbilityData Resolve(AbilityData displaced, bool native, float power)
@@ -39,6 +48,7 @@ public abstract class AbilityData
             float from = displaced != null ? Read(f, displaced) : 0f;
             Write(f, copy, native ? own * power : from + (own - from) * power);
         }
+        copy.power = power;
         return copy;
     }
 

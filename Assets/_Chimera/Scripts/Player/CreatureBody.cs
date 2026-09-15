@@ -67,8 +67,6 @@ public partial class CreatureBody : MonoBehaviour
     Satiety satietyComp;    // шкала сытости-голода — у любого тела; распад зависит от однородности (метаболизм химеры)
     PlayerBellow bellowAb;  // рёв (Глотка лося) — до-создаём игроку в Awake, включаем сборкой
     PlayerScream screamAb;  // клич (Рот человека) — тот же порядок: до-создание в Awake, включение сборкой
-    PlayerRoll rollAb;      // перекат (Ежиные ноги) — до-создаём игроку, включаем сборкой
-    PlayerQuillVolley volleyAb; // залп игл (придаток «Игломёт» ежа, химерный слот) — до-создаём игроку, включаем сборкой
     Betrayal betrayal;      // подрыв признания: удар по кину копит эрозию (только у игрока)
     Senses senses;          // профиль чувств ИГРОКА (каналы от сборки); у NPC он приходит с префаба
     // ГЛОТАЕТ ЦЕЛИКОМ (Тело-хвост змеи, chassisOnly): убитая добыча даёт ПОЛНУЮ сытость (крупная трапеза),
@@ -130,10 +128,6 @@ public partial class CreatureBody : MonoBehaviour
         if (move != null && bellowAb == null) bellowAb = gameObject.AddComponent<PlayerBellow>();
         TryGetComponent(out screamAb);
         if (move != null && screamAb == null) screamAb = gameObject.AddComponent<PlayerScream>();
-        TryGetComponent(out rollAb);
-        if (move != null && rollAb == null) rollAb = gameObject.AddComponent<PlayerRoll>();
-        TryGetComponent(out volleyAb);
-        if (move != null && volleyAb == null) volleyAb = gameObject.AddComponent<PlayerQuillVolley>();
         TryGetComponent(out betrayal);
         if (move != null && betrayal == null) betrayal = gameObject.AddComponent<Betrayal>(); // эрозия признания — только у игрока
         TryGetComponent(out variance);
@@ -300,10 +294,9 @@ public partial class CreatureBody : MonoBehaviour
         float dmgF = 0f, hpBonusF = 0f, stamF = 0f, stamRegF = 0f;
         float rng = 0f, atkCd = 0f, mv = 0f, dash = 0f, dashDur = 0f, dashCd = 0f, reduce = 0f, regen = 0f, regenOOC = 0f, thermal = 0f, howlR = 0f, howlStunAt = 0f;
         bool scentOn = false, kickOn = false, howlOn = false, coldOn = false, camoOn = false,
-             thermalOn = false, constrictOn = false, digestOn = false, bellowOn = false, rollOn = false, screamOn = false,
+             thermalOn = false, constrictOn = false, digestOn = false, bellowOn = false, screamOn = false,
              insightOn = false, keenEarOn = false,
-             thornsOn = false, venomResistOn = false, quillVolleyOn = false, bleedResistOn = false, curlOn = false;
-        float volleyMult = 0f;
+             thornsOn = false, venomResistOn = false, bleedResistOn = false;
         float earMult = 0f;
         int constrictCap = 0; // макс кап стадии захвата среди надетых грэпл-органов (0 = захвата нет)
         foreach (var kv in groups)
@@ -317,17 +310,16 @@ public partial class CreatureBody : MonoBehaviour
             howlStunAt = Mathf.Max(howlStunAt, c.howlStunAt);
             scentOn |= c.scent; kickOn |= c.kick; howlOn |= c.howl;
             coldOn |= c.cold; camoOn |= c.camo; thermalOn |= c.thermalOn; constrictOn |= c.constrict;
-            digestOn |= c.digest; bellowOn |= c.bellow; rollOn |= c.roll; curlOn |= c.curl; screamOn |= c.scream;
+            digestOn |= c.digest; bellowOn |= c.bellow; screamOn |= c.scream;
             constrictCap = Mathf.Max(constrictCap, c.constrictCap); insightOn |= c.insight;
             keenEarOn |= c.keenEar; earMult = Mathf.Max(earMult, c.earMult);
-            thornsOn |= c.thorns; venomResistOn |= c.venomResist; quillVolleyOn |= c.quillVolley;
+            thornsOn |= c.thorns; venomResistOn |= c.venomResist;
             bleedResistOn |= c.bleedResist;
-            volleyMult = Mathf.Max(volleyMult, c.volleyMult);
         }
         int dmg = Mathf.RoundToInt(dmgF);
 
         // ПРИЁМЫ ИЗ ЗАПИСЕЙ ОРГАНОВ (спека 12.09): раскрыть, свести дубли, накормить носителей — один путь игроку и NPC.
-        // Переехали укус, рога, таран; залп, наскок, голос и захват едут следом и пока раздаются ниже по-старому
+        // Переехали укус, рога, таран, залп, перекат, клубок; наскок, голос и захват едут следом и пока раздаются ниже по-старому
         ProvisionAbilities();
         if (kick != null) kick.KickEnabled = kickOn; // пинок — фича человеческих ног: с волчьими пропадает
         // ГОЛОС — от данных: радиус = органная база × МОЩЬ-превосходство (игрок BonusMult ×1..2;
@@ -353,17 +345,11 @@ public partial class CreatureBody : MonoBehaviour
         }
         if (bellowAb != null) bellowAb.BellowEnabled = bellowOn;             // РЁВ — фича Глотки лося (K2)
         if (screamAb != null) screamAb.ScreamEnabled = screamOn;             // КЛИЧ — фича Рта человека
-        // ПЕРЕКАТ — КРОСС-СЛОТ СЕТ (спека §0-бис «дожд-ролл с иглами»): Ноги дают ФОРМУ (кувырок+i-frames),
-        // Шкура-иглы дают ЖАЛО. Колется только при обоих; одни ноги = защитный уворот без урона (i-frames
-        // рывка и так у любых ног). У ежа-NPC иглы есть всегда → его перекат всегда колючий
-        if (rollAb != null) rollAb.RollEnabled = rollOn && thornsOn;
-        if (volleyAb != null) { volleyAb.VolleyEnabled = quillVolleyOn; volleyAb.SetPower(volleyMult); } // ЗАЛП — фича придатка «Игломёт»; мощь растёт с родством к ежу
         if (satietyComp != null) satietyComp.SetMetabolism(Homogeneity); // МЕТАБОЛИЗМ по тирам: чистый держит сытость дольше, химера сгорает
         SetColdBlooded(coldOn); // холоднокровность (Сердце змеи): невидимость для термозрения врагов
         SetCamouflage(camoOn);  // камуфляж (Чешуя змеи): невидимость в неподвижности
         DigestsWhole = digestOn; // «глотает целиком» (Тело-хвост змеи): убил → ПОЛНАЯ сытость (см. CreditKiller)
         SetThorns(thornsOn);          // иглы (Шкура ежа): ударил в упор — порезался
-        SetCurl(curlOn);              // клубок (chassisOnly-орган ежа): тело вешает CurlDefense, психика драйвит
         SetMassive(chassis != null && chassis.massive); // масса (физ.свойство шасси): тело ДОБАВЛЯЕТ Massive по флагу (add-only — не срывает префаб-массу боссов)
         SetVenomResist(venomResistOn); // ядоупорность (Сердце ежа): яд не накапливается
         SetBleedResist(bleedResistOn); // кровеупорность (Лосиное сердце): кровь не накапливается
@@ -493,14 +479,6 @@ public partial class CreatureBody : MonoBehaviour
     {
         if (on && thornsComp == null) thornsComp = gameObject.AddComponent<Thorns>();
         else if (!on && thornsComp != null) { Destroy(thornsComp); thornsComp = null; }
-    }
-
-    // КЛУБОК как компонент: тело вешает/снимает CurlDefense по флагу enablesCurl (chassisOnly-орган ежа).
-    // Провизия здесь, РЕШЕНИЯ (когда свернуться/катиться) — на психике ежа. Без кэш-поля: носитель один
-    void SetCurl(bool on)
-    {
-        if (on && !TryGetComponent<CurlDefense>(out _)) gameObject.AddComponent<CurlDefense>();
-        else if (!on && TryGetComponent<CurlDefense>(out var c)) Destroy(c);
     }
 
     // МАССА как маркер: тело ДОБАВЛЯЕТ Massive по флагу шасси (лось). ADD-ONLY, НЕ снимает: масса — статичное

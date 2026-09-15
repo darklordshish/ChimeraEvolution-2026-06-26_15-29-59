@@ -101,11 +101,10 @@ public static class HedgehogPrefab
         var bite = go.AddComponent<BiteAbility>();
         // числа укуса — в записи органа Пасти (BiteData): доставке их не задаём, тело кормит её само
 
-        // ЗАЛП ИГЛАМИ — дальняя грань (первый ranged в игре). Компонент на префабе = психика видит его и
-        // стреляет; нет его — ёж чисто ближний. gizmoHeight низкий (ёж приземист)
+        // ЗАЛП ИГЛАМИ — дальняя грань. Числа — в записи органа «Игломёт» (VolleyData): залп есть, пока надет орган.
+        // Доставку заводит и кормит тело; здесь только отладочная высота гизмо (ёж приземист)
         var volley = go.AddComponent<QuillVolley>();
-        PrefabConfig.Set(volley, ("windupTime", 0.5f), ("minRange", 6f), ("maxRange", 15f),
-                                 ("quills", 6), ("spreadAngle", 9f), ("speed", 22f), ("gizmoHeight", 0.5f)); // ПУЧОК (дробовик): узкий разлёт — иглы летят кучно, вблизи все в цель, вдаль расходятся сами
+        PrefabConfig.Set(volley, ("gizmoHeight", 0.5f));
 
         go.AddComponent<Rage>();          // теплокровный: ПРЕДЕЛ (страх → ярость) придёт слайсом D
         go.AddComponent<SpawnVariance>(); // разброс особи

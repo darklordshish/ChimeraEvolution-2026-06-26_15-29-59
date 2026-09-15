@@ -46,18 +46,15 @@ MonoBehaviour:
     thorns: 0
     venomResist: 0
     bleedResist: 0
-    enablesQuillVolley: 0
     keenHearing: 0
     hearingMult: 0
     insight: 0
     enablesBellow: 0
     enablesScream: 0
-    enablesRoll: 0
     chassisOnly: 1
     digestion: 0
     nativeChassis: 
     constrictStage: 0
-    enablesCurl: 0
     abilities: []
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
@@ -132,18 +129,15 @@ MonoBehaviour:
     thorns: 0
     venomResist: 0
     bleedResist: 0
-    enablesQuillVolley: 0
     keenHearing: 0
     hearingMult: 0
     insight: 0
     enablesBellow: 0
     enablesScream: 0
-    enablesRoll: 0
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
     constrictStage: 0
-    enablesCurl: 0
     abilities: []
     visualScale: {x: 1, y: 1, z: 1.2}
     visualOffset: {x: 0, y: 0, z: 0}
@@ -218,18 +212,15 @@ MonoBehaviour:
     thorns: 0
     venomResist: 0
     bleedResist: 0
-    enablesQuillVolley: 0
     keenHearing: 0
     hearingMult: 0
     insight: 0
     enablesBellow: 0
     enablesScream: 0
-    enablesRoll: 0
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
     constrictStage: 0
-    enablesCurl: 0
     abilities: []
     visualScale: {x: 1, y: 1, z: 1.2}
     visualOffset: {x: 0, y: 0, z: 0}
@@ -304,18 +295,15 @@ MonoBehaviour:
     thorns: 0
     venomResist: 0
     bleedResist: 0
-    enablesQuillVolley: 0
     keenHearing: 0
     hearingMult: 0
     insight: 0
     enablesBellow: 0
     enablesScream: 0
-    enablesRoll: 0
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
     constrictStage: 0
-    enablesCurl: 0
     abilities: []
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
@@ -366,18 +354,15 @@ MonoBehaviour:
     thorns: 0
     venomResist: 0
     bleedResist: 0
-    enablesQuillVolley: 0
     keenHearing: 0
     hearingMult: 0
     insight: 0
     enablesBellow: 0
     enablesScream: 0
-    enablesRoll: 0
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
     constrictStage: 0
-    enablesCurl: 0
     abilities: []
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
@@ -446,20 +431,17 @@ MonoBehaviour:
     thorns: 0
     venomResist: 0
     bleedResist: 0
-    enablesQuillVolley: 0
     keenHearing: 0
     hearingMult: 0
     insight: 0
     enablesBellow: 0
     enablesScream: 0
-    enablesRoll: 0
     chassisOnly: 0
     digestion: 0
     nativeChassis: "\u0412\u043E\u043B\u043A"
     constrictStage: 1
-    enablesCurl: 0
     abilities:
-    - rid: 4402482292869300231
+    - rid: 4402482292869300239
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -545,18 +527,15 @@ MonoBehaviour:
     thorns: 0
     venomResist: 0
     bleedResist: 0
-    enablesQuillVolley: 0
     keenHearing: 0
     hearingMult: 0
     insight: 0
     enablesBellow: 0
     enablesScream: 0
-    enablesRoll: 0
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
     constrictStage: 0
-    enablesCurl: 0
     abilities: []
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
@@ -3232,7 +3211,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4402482292869300231
+    - rid: 4402482292869300239
       type: {class: BiteData, ns: , asm: Chimera.Runtime}
       data:
         damage: 14

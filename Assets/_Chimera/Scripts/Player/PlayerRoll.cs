@@ -2,30 +2,29 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// ПЕРЕКАТ ежиных ног (орган «Ежиные ноги», enablesRoll): рывок игрока идёт «в клубке» —
-/// кого прокатил насквозь, тот РЕЖЕТСЯ (урон + `Bleed`), а сам ты неуязвим (i-frames рывка = броня клубка).
-/// Третий профиль рывка после лосиного ТАРАНА и волчьей СКОРОСТИ (§3-бис спеки ежа): «иду сквозь
-/// невредимым, и кто тронул — режется». Пассивный наездник на рывке PlayerController, как `PlayerCharge`.
+/// ПЕРЕКАТ ежиных ног: рывок игрока идёт «в клубке» — кого прокатил насквозь, тот РЕЖЕТСЯ (урон + кровь), а сам ты
+/// неуязвим (i-frames рывка = броня клубка). Третий профиль рывка после лосиного ТАРАНА и волчьей СКОРОСТИ (§3-бис спеки
+/// ежа). Пассивный наездник на рывке PlayerController, как `PlayerCharge`. Урон — раз на рывок.
 ///
-/// Отличие от тарана — паёк ИГЛАМИ, а не копытами: кровотечение есть (иглы протыкают), а откидывание
-/// слабое (катишься сквозь, не сносишь — «снося» это таран). Урон — раз на рывок (память чистится на новом).
+/// ВСЕ ЧИСЛА — ИЗ ЗАПИСИ ОРГАНА (<see cref="RollData"/>): та же запись и та же геометрия (сфера впереди на свой радиус),
+/// что у проката шара ежа (`CurlDefense`).
 ///
-/// КРОСС-СЛОТ СЕТ (§0-бис спеки, «дожд-ролл с иглами»): колючесть включает ТЕЛО только когда надеты
-/// И «Ежиные ноги» (форма-кувырок), И «Иглы» в Шкуре (жало) — гейт в CreatureBody.Recompute
-/// (`rollOn && thornsOn`). Одни ноги = защитный уворот без урона: этот компонент просто не активен,
-/// а i-frames рывка живут в PlayerController и остаются. Числа переката — свои (иглы работают как гейт).
+/// КРОСС-СЛОТ СЕТ (§0-бис спеки, «дожд-ролл с иглами»): колется, только когда надеты И «Ежиные ноги» (форма-кувырок,
+/// запись переката), И иглы в Шкуре (жало — тело вешает `Thorns`). Одни ноги — защитный уворот без урона: грань не
+/// активна, а i-frames рывка живут в PlayerController и остаются. У ежа-NPC иглы есть всегда.
 /// </summary>
-public class PlayerRoll : MonoBehaviour, IAbilityCarrier
+public class PlayerRoll : MonoBehaviour, IOrganAbility
 {
-    [Header("Перекат (на рывке)")]
-    [SerializeField] int damage = 12;
-    [SerializeField] int bleedStacks = 1;  // иглы протыкают — кровь тому, кого прокатил
-    [SerializeField] float force = 4f;      // лёгкий толчок вбок (катишься сквозь, не сносишь — это не таран)
-    [SerializeField] float radius = 1.2f;   // ширина клубка
-    [SerializeField] float reach = 0.9f;    // вынос центра вперёд
     [SerializeField, NotOrganData("ощущение: тряска камеры игрока")] float shake = 0.18f;
 
-    public bool RollEnabled { get; set; } // включается органом «Ежиные ноги»
+    RollData data; // раскрытая запись переката; null — ноги не ежиные
+
+    public System.Type DataType => typeof(RollData);
+    public void Configure(AbilityData d) => data = d as RollData;
+    public bool Available => data != null;
+
+    /// <summary>Колется ли перекат сейчас: запись ног есть И надеты иглы (кросс-слот сет).</summary>
+    public bool Active => data != null && TryGetComponent<Thorns>(out _);
 
     PlayerController move;
     Health ownHealth;
@@ -42,17 +41,16 @@ public class PlayerRoll : MonoBehaviour, IAbilityCarrier
 
     void Update()
     {
-        if (!RollEnabled || move == null) return;
+        if (!Active || move == null) return;
 
         bool dashing = move.IsDashing;
         if (dashing && !wasDashing) hitThisDash.Clear(); // новый рывок — цель-память с нуля
         wasDashing = dashing;
         if (!dashing) return;
 
-        Vector3 center = transform.position + transform.forward * reach + Vector3.up * 0.3f;
         var hit = new Hit(ownHealth, transform.position);
-        var blow = new MeleeBlow { Damage = damage, KnockForce = force, BleedStacks = bleedStacks }; // паёк игл: урон + кровь + лёгкий толчок
-        foreach (var hp in TargetScan.Healths(center, radius, transform))
+        var blow = new MeleeBlow { Damage = data.damage, KnockForce = data.knockForce, BleedStacks = data.bleedStacks }; // паёк игл
+        foreach (var hp in TargetScan.Healths(transform.position + transform.forward * data.radius, data.radius, transform))
         {
             if (!hitThisDash.Add(hp)) continue; // раз за рывок (память живёт весь дэш)
             blow.Deliver(hit, hp); // урон + кровотечение + толчок; эрозия по кину — внутри Hit.Apply
@@ -62,8 +60,8 @@ public class PlayerRoll : MonoBehaviour, IAbilityCarrier
 
     void OnDrawGizmos()
     {
-        if (!RollEnabled) return;
+        if (!Active) return;
         Gizmos.color = TelegraphColors.Roll;
-        Gizmos.DrawWireSphere(transform.position + transform.forward * reach + Vector3.up * 0.3f, radius);
+        Gizmos.DrawWireSphere(transform.position + transform.forward * data.radius, data.radius);
     }
 }

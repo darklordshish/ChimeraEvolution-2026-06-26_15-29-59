@@ -4,32 +4,31 @@ using UnityEngine;
 /// <summary>
 /// КЛУБОК ежа (слайс C) — оборонительная стойка последнего рубежа + КАТАНИЕ под давлением.
 ///
-/// C1 КЛУБОК: свернулся → БРОНЯ↑, залп молчит, ЖЖЁТ СТАМИНУ (`Drain`). Клубок про броню и цену, не про
-/// ответку — иглы (`Thorns`) и так наказывают удар в упор. Грабо-иммунитета нет намеренно (урон от жертвы
-/// расшатывает `Constrict`, иглы возвращают урон+кровь — кто вцепился, гибнет сам).
+/// C1 КЛУБОК: свернулся → БРОНЯ↑, залп молчит, ЖЖЁТ СТАМИНУ. Клубок про броню и цену, не про ответку — иглы
+/// (`Thorns`) и так наказывают удар в упор. Грабо-иммунитета нет намеренно (урон от жертвы расшатывает `Constrict`,
+/// иглы возвращают урон+кровь — кто вцепился, гибнет сам).
 ///
-/// C2 КАТАНИЕ: ПРОДАВИЛИ (дыхалка на исходе) → шар едет ТАРАНОМ сквозь угрозу, ПОДРУЛИВАЯ к ней
-/// (малоуправляемо), задевая всех на пути (урон + `Bleed` + `Knockback`). Броня клубка держится в катании
-/// сама. Жжёт стамину быстрее → выдох → окно «на спине» (C3). Катание — та же машина, не отдельный приём.
+/// C2 КАТАНИЕ: ПРОДАВИЛИ (дыхалка на исходе) → шар едет ТАРАНОМ сквозь угрозу, ПОДРУЛИВАЯ к ней (малоуправляемо),
+/// задевая всех на пути (урон + кровь + толчок). Броня клубка держится в катании сама. Жжёт стамину быстрее → выдох →
+/// окно «на спине» (C3). Катание — та же машина, не отдельный приём.
 ///
 /// РЕЖИМ, не приём: психика (лестница отчаяния, слайс D) решает КОГДА свернуться и КОГДА катить.
+///
+/// ВСЕ ЧИСЛА — ИЗ ЗАПИСЕЙ ОРГАНА «Ежиные ноги»: клубок и катание — <see cref="CurlData"/> (домашний приём, только на ежином
+/// шасси), урон проката — <see cref="RollData"/> того же органа, её машина берёт у тела. Нет записи клубка — клубка нет.
 /// </summary>
 [RequireComponent(typeof(Health))]
-public class CurlDefense : MonoBehaviour, IAbilityCarrier
+public class CurlDefense : MonoBehaviour, IOrganAbility
 {
-    [Header("Клубок")]
-    [SerializeField, Range(0f, 0.9f)] float curlArmor = 0.6f; // броня в клубке (МАКСИМУМ с базовой, не сумма)
-    [SerializeField] float staminaDrain = 30f;                // жжём бак пока свёрнуты — быстро, иначе катание не успевает проявиться (бой короче)
+    CurlData data; // раскрытая запись клубка; null — клубка нет (или ноги не на родном шасси)
 
-    [Header("Катание (продавили клубок)")]
-    [SerializeField] float rollSpeed = 9f;
-    [SerializeField] float rollDrain = 40f;      // жжёт БЫСТРЕЕ клубка — прорыв дорог, потому и последний рывок
-    [SerializeField] float rollTurnSpeed = 90f;  // МАЛОУПРАВЛЯЕМО: медленный доворот к цели (град/с)
-    [SerializeField] int rollDamage = 10;
-    [SerializeField] int rollBleed = 1;          // иглы протыкают на прокате
-    [SerializeField] float rollKnock = 8f;
-    [SerializeField] float rollRadius = 1.2f;    // ширина проката (кого задевает шар)
-    [SerializeField] float rollGravity = 20f;    // прижатие к земле в катании (двигаем controller напрямую)
+    public System.Type DataType => typeof(CurlData);
+    public void Configure(AbilityData d)
+    {
+        data = d as CurlData;
+        if (data == null) Uncurl(); // орган сняли посреди шара — развернуться: броню клубка нельзя оставить висеть
+    }
+    public bool Available => data != null;
 
     public bool Curled { get; private set; }
     public bool Rolling { get; private set; }
@@ -39,6 +38,8 @@ public class CurlDefense : MonoBehaviour, IAbilityCarrier
     // ЛЕНИВО: бак до-создаёт ТЕЛО (CreatureBody.Recompute) ПОЗЖЕ нашего Awake — привязка в Awake поймала бы null,
     // и клубок молча не жёг бы стамину (катание не наступало). Та же причина, что у Breath в психике
     Stamina Breath { get { if (stamina == null) TryGetComponent(out stamina); return stamina; } }
+    CreatureBody body; // ПРОКАТ бьёт записью переката того же органа — берём у тела лениво
+    RollData Roll { get { if (body == null) TryGetComponent(out body); return body != null ? body.Ability<RollData>() : null; } }
     Rage rage; // ЗАГНАН (ярость): на истощении НЕ разворачивается — держит клубок/катится ценой HP (ярость-на-HP)
     bool Raging { get { if (rage == null) TryGetComponent(out rage); return rage != null && rage.IsEnraged; } }
     Telegraph telegraph;
@@ -55,13 +56,13 @@ public class CurlDefense : MonoBehaviour, IAbilityCarrier
         TryGetComponent(out controller);
     }
 
-    /// <summary>Свернуться: поднять броню (не ниже базовой), зажечь телеграф клубка. Идемпотентно.</summary>
+    /// <summary>Свернуться: поднять броню (не ниже базовой), зажечь телеграф клубка. Идемпотентно. Нет записи — нечем.</summary>
     public void Curl()
     {
-        if (Curled) return;
+        if (Curled || data == null) return;
         Curled = true;
         baseArmor = health.DamageReduction;
-        health.DamageReduction = Mathf.Max(baseArmor, curlArmor);
+        health.DamageReduction = Mathf.Max(baseArmor, data.curlArmor);
         ShowTint(BallTint(false)); // серый клубок; ярый — бордовый (ярость виднее серого)
     }
 
@@ -78,12 +79,12 @@ public class CurlDefense : MonoBehaviour, IAbilityCarrier
     /// <summary>Держим клубок (не катясь): жжём стамину. Выдохся → развернулись, false психике.</summary>
     public bool Hold()
     {
-        if (!Curled || Rolling) return false;
+        if (!Curled || Rolling || data == null) return false;
         var s = Breath;
         if (s != null)
         {
-            s.Drain(staminaDrain * Time.deltaTime);                  // истощён+ярость → Drain сам жжёт HP (ярость-на-HP)
-            if (s.Exhausted) { Uncurl(); return false; } // выдохся → развернулся (окно на спине — C3)
+            s.Drain(data.staminaDrain * Time.deltaTime);   // истощён+ярость → Drain сам жжёт HP (ярость-на-HP)
+            if (s.Exhausted) { Uncurl(); return false; }   // выдохся → развернулся (окно на спине — C3)
         }
         ShowTint(BallTint(false)); // серый ↔ бордо: свернувшийся ярый ёж светится яростью, не серым
         return true;
@@ -93,7 +94,7 @@ public class CurlDefense : MonoBehaviour, IAbilityCarrier
     /// Жжём стамину быстрее клубка. Возвращает false, когда выдохлись — сигнал психике (окно «на спине» — C3).</summary>
     public bool RollTick(Vector3 aim)
     {
-        if (!Curled) return false;
+        if (!Curled || data == null) return false;
         if (!Rolling)
         {
             Rolling = true;
@@ -103,22 +104,26 @@ public class CurlDefense : MonoBehaviour, IAbilityCarrier
         ShowTint(BallTint(true)); // катящийся шар: серый (перекат) ↔ бордо (ярый прорыв)
 
         // ПОДРУЛИВАНИЕ к цели — медленно (малоуправляемо, но не строго по прямой)
-        rollDir = Vector3.RotateTowards(rollDir, Flat(aim, rollDir), rollTurnSpeed * Mathf.Deg2Rad * Time.deltaTime, 0f).normalized;
+        rollDir = Vector3.RotateTowards(rollDir, Flat(aim, rollDir), data.rollTurnSpeed * Mathf.Deg2Rad * Time.deltaTime, 0f).normalized;
         transform.rotation = Quaternion.LookRotation(rollDir);
 
         if (controller != null)
-            controller.Move((rollDir * rollSpeed + Vector3.down * rollGravity) * Time.deltaTime);
+            controller.Move((rollDir * data.rollSpeed + Vector3.down * data.rollGravity) * Time.deltaTime);
 
-        // ПРОКАТ СКВОЗЬ: задеваем всех на пути раз за прокат (урон + кровь + толчок)
-        var hit = new Hit(health, transform.position);
-        var blow = new MeleeBlow { Damage = rollDamage, BleedStacks = rollBleed, KnockForce = rollKnock };
-        foreach (var hp in TargetScan.Healths(transform.position + rollDir * rollRadius, rollRadius, transform))
-            if (rolledThis.Add(hp)) blow.Deliver(hit, hp);
+        // ПРОКАТ СКВОЗЬ: задеваем всех на пути раз за прокат — числами переката того же органа (RollData)
+        var roll = Roll;
+        if (roll != null)
+        {
+            var hit = new Hit(health, transform.position);
+            var blow = new MeleeBlow { Damage = roll.damage, BleedStacks = roll.bleedStacks, KnockForce = roll.knockForce };
+            foreach (var hp in TargetScan.Healths(transform.position + rollDir * roll.radius, roll.radius, transform))
+                if (rolledThis.Add(hp)) blow.Deliver(hit, hp);
+        }
 
         var s = Breath;
         if (s != null)
         {
-            s.Drain(rollDrain * Time.deltaTime);
+            s.Drain(data.rollDrain * Time.deltaTime);
             if (s.Exhausted) { Uncurl(); return false; } // выдохся — развернулся (C3: спина)
         }
         return true;
@@ -144,8 +149,9 @@ public class CurlDefense : MonoBehaviour, IAbilityCarrier
 
     void OnDrawGizmos()
     {
-        if (!Rolling) return;
+        var roll = Rolling ? Roll : null;
+        if (roll == null) return;
         Gizmos.color = TelegraphColors.Roll;
-        Gizmos.DrawWireSphere(transform.position + rollDir * rollRadius, rollRadius);
+        Gizmos.DrawWireSphere(transform.position + rollDir * roll.radius, roll.radius);
     }
 }

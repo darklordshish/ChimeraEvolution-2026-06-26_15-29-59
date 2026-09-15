@@ -57,7 +57,8 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
     PlayerController playerCtl;
     NavLocomotion nav;
     BiteAbility bite;
-    QuillVolley volley;   // залп — ДАЛЬНЯЯ грань (первый ranged в игре); есть только если орган Иглы даёт его
+    QuillVolley _volley; // залп — ДАЛЬНЯЯ грань (первый ranged в игре): доставку заводит ТЕЛО по записи органа «Игломёт»
+    QuillVolley volley { get { if (_volley == null) TryGetComponent(out _volley); return _volley != null && _volley.Available ? _volley : null; } } // лениво и только доступный: тело заводит залп в Recompute, ПОСЛЕ нашего Awake; нет органа — null, ёж ближний
     float nextVolleyAt;
     [SerializeField] float volleyCooldown = 2.5f;
     [SerializeField] float highTargetY = 1.6f;   // цель ВЫШЕ этого над ежом — ближним боем не достать (змея уползла на стену/насест)
@@ -71,8 +72,8 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
     WindupAbility activeAbility;
     float nextAttackTime, nextRetarget, nextGrabAt;
     bool huntingPrey, holding;
-    CurlDefense _curl; // КЛУБОК (слайс C): оборонительная стойка последнего рубежа. Тело вешает CurlDefense по флагу enablesCurl («Ежиные ноги» на ежином шасси)
-    CurlDefense curl { get { if (_curl == null) TryGetComponent(out _curl); return _curl; } } // лениво: тело до-создаёт в Recompute (после нашего Awake), как Quills
+    CurlDefense _curl; // КЛУБОК (слайс C): оборонительная стойка последнего рубежа. Доставку заводит ТЕЛО по записи CurlData («Ежиные ноги» на ежином шасси)
+    CurlDefense curl { get { if (_curl == null) TryGetComponent(out _curl); return _curl != null && _curl.Available ? _curl : null; } } // лениво и только доступный: запись клубка есть лишь на ежином шасси
     Thorns thornsComp; // иглы — гасим «на спине» (истощён), чтобы хватали безболезненно; ленивая (тело вешает их по флагу)
     Thorns Quills { get { if (thornsComp == null) TryGetComponent(out thornsComp); return thornsComp; } }
 
@@ -141,10 +142,10 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
         TryGetComponent(out variance);
         if (!TryGetComponent(out nav)) nav = gameObject.AddComponent<NavLocomotion>();
         if (!TryGetComponent(out bite)) bite = gameObject.AddComponent<BiteAbility>();
-        TryGetComponent(out volley); // залп — ТОЛЬКО с префаба (орган Иглы): нет компонента = ближний ёж
+        // залп берём лениво через свойство volley: тело заводит его по записи органа «Игломёт» ПОСЛЕ нашего Awake
         if (!TryGetComponent(out senses)) senses = gameObject.AddComponent<Senses>();
         if (!TryGetComponent(out alert)) alert = gameObject.AddComponent<AlertState>();
-        // клубок (CurlDefense) теперь вешает ТЕЛО по флагу enablesCurl (орган «Ежиные ноги», гейт nativeChassis); берём лениво через свойство curl
+        // клубок (CurlDefense) заводит ТЕЛО по записи CurlData («Ежиные ноги», только на ежином шасси); берём лениво через свойство curl
 
         // профиль чувств: зрение скупое и КОНУСОМ, слух и нюх щедрые и круговые
         senses.Seed(SenseKind.Sight, sightRange);

@@ -19,17 +19,6 @@ namespace Chimera.Tests.EditMode
         // ДОЛГ: «Класс.поле» — числа приёмов, ещё не переехавшие в запись органа
         static readonly HashSet<string> Debt = new(StringComparer.Ordinal)
         {
-            // задача 4 — залп, клубок, перекат
-            "CurlDefense.curlArmor", "CurlDefense.rollBleed", "CurlDefense.rollDamage", "CurlDefense.rollDrain",
-            "CurlDefense.rollGravity", "CurlDefense.rollKnock", "CurlDefense.rollRadius", "CurlDefense.rollSpeed",
-            "CurlDefense.rollTurnSpeed", "CurlDefense.staminaDrain", "PlayerQuillVolley.bleedPerQuill",
-            "PlayerQuillVolley.cooldown", "PlayerQuillVolley.damagePerQuill", "PlayerQuillVolley.hitRadius",
-            "PlayerQuillVolley.quills", "PlayerQuillVolley.range", "PlayerQuillVolley.slowPerQuill",
-            "PlayerQuillVolley.speed", "PlayerQuillVolley.spreadAngle", "PlayerRoll.bleedStacks", "PlayerRoll.damage",
-            "PlayerRoll.force", "PlayerRoll.radius", "PlayerRoll.reach", "QuillVolley.bleedPerQuill",
-            "QuillVolley.blindAimError", "QuillVolley.damagePerQuill", "QuillVolley.hitRadius",
-            "QuillVolley.maxRange", "QuillVolley.minRange", "QuillVolley.quills", "QuillVolley.slowPerQuill",
-            "QuillVolley.speed", "QuillVolley.spreadAngle",
             // задача 5 — наскок и удар конечностью (меч и пинок игрока — та же роль)
             "LeapAbility.damage", "LeapAbility.duration", "LeapAbility.hitRadius", "LeapAbility.maxRange",
             "LeapAbility.minRange", "LeapAbility.speed", "LeapAbility.up", "LimbStrikeAbility.bleedStacks",

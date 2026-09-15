@@ -60,11 +60,28 @@ namespace Chimera.Tests.PlayMode
             stompRadius = 4f, stompStagger = 0.4f, stompForce = 13f, plowForce = 6f, plowRadius = 1.6f,
         };
 
+        static VolleyData Volley() => new VolleyData
+        {
+            damagePerQuill = 4, slowPerQuill = 1, quills = 6, speed = 22f, hitRadius = 0.35f,
+            bleedPerQuill = 0,  // кровь обнулена: шесть стаков перешли бы порог кровопотери и доливали урон, а тест меряет урон игл
+            // разлёт почти нулевой: ёж стреляет у самой земли (вылет 0.5 м, игла толщиной 0.35), и игла с разлётом
+            // вниз гаснет о пол — это честная механика низкого стрелка, но тест меряет счёт урона игл, а не пол
+            spreadAngle = 0.01f,
+            minRange = 6f, maxRange = 15f, windupTime = 0.05f, cooldown = 0.8f, blindAimError = 1.6f,
+        };
+
+        static RollData Roll() => new RollData { damage = 10, bleedStacks = 1, knockForce = 8f, radius = 1.2f };
+
+        static CurlData Curl() => new CurlData
+        {
+            curlArmor = 0.6f, staminaDrain = 30f, rollSpeed = 9f, rollDrain = 40f, rollTurnSpeed = 90f, rollGravity = 20f,
+        };
+
         struct Case
         {
             public string name, slot;
             public System.Func<AbilityData> record;
-            public System.Type npc, player;
+            public System.Type npc, player; // null — у этой стороны своего носителя нет
         }
 
         static readonly Case[] Cases =
@@ -72,6 +89,9 @@ namespace Chimera.Tests.PlayMode
             new Case { name = "укус", slot = "Пасть", record = () => Bite(), npc = typeof(BiteAbility), player = typeof(PlayerBite) },
             new Case { name = "рога", slot = "Рога", record = Antler, npc = typeof(AntlerAbility), player = typeof(PlayerAntler) },
             new Case { name = "таран", slot = "Ноги", record = Charge, npc = typeof(ChargeAbility), player = typeof(PlayerCharge) },
+            new Case { name = "залп", slot = "Игломёт", record = Volley, npc = typeof(QuillVolley), player = typeof(PlayerQuillVolley) },
+            new Case { name = "перекат", slot = "Ноги ежа", record = Roll, npc = null, player = typeof(PlayerRoll) },
+            new Case { name = "клубок", slot = "Клубок", record = Curl, npc = typeof(CurlDefense), player = typeof(CurlDefense) },
         };
 
         static Organ OrganWith(string name, string slot, params AbilityData[] records) =>
@@ -111,7 +131,7 @@ namespace Chimera.Tests.PlayMode
         CreatureBody Npc(SpeciesSO chassis, float expression, SpeciesSO[] donors = null)
         {
             var go = new GameObject("NPC-" + chassis.speciesName);
-            Capsule(go);
+            Capsule(go, 2f);
             NoDestroy(go.AddComponent<Health>());
             var body = go.AddComponent<CreatureBody>();
             body.Configure(chassis, donors ?? new SpeciesSO[0]);
@@ -135,11 +155,11 @@ namespace Chimera.Tests.PlayMode
             return body;
         }
 
-        Health Dummy(Vector3 feet)
+        Health Dummy(Vector3 feet, float height = 2f)
         {
             var go = new GameObject("Манекен");
             go.transform.position = feet;
-            Capsule(go);
+            Capsule(go, height);
             var h = go.AddComponent<Health>();
             NoDestroy(h);
             h.SetMaxHealth(1000);
@@ -149,10 +169,10 @@ namespace Chimera.Tests.PlayMode
             return h;
         }
 
-        static void Capsule(GameObject go)
+        static void Capsule(GameObject go, float height)
         {
             var cc = go.AddComponent<CharacterController>();
-            cc.height = 2f; cc.radius = 0.4f; cc.center = Vector3.up;
+            cc.height = height; cc.radius = 0.4f; cc.center = Vector3.up * height * 0.5f;
         }
 
         static void NoDestroy(Health h) =>
@@ -167,6 +187,10 @@ namespace Chimera.Tests.PlayMode
             Physics.SyncTransforms();
         }
 
+        static void Dash(CreatureBody player, float seconds) =>
+            typeof(PlayerController).GetField("dashTimer", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(player.GetComponent<PlayerController>(), seconds); // рывок: перекат и таран — пассивные наездники на нём
+
         static IEnumerator Swing(WindupAbility ability, Health target, float timeout = 3f)
         {
             ability.SetTarget(target);
@@ -179,6 +203,7 @@ namespace Chimera.Tests.PlayMode
 
         static int BleedOf(Health h) => h.TryGetComponent<Bleed>(out var b) ? b.Stacks : 0;
         static int VenomOf(Health h) => h.TryGetComponent<Venom>(out var v) ? v.Stacks : 0;
+        static int SlowOf(Health h) => h.TryGetComponent<Slow>(out var s) ? s.Stacks : 0;
         static bool Knocked(Health h) => h.GetComponent<Knockback>().IsActive;
         static bool Staggered(Health h) => h.GetComponent<Stagger>().IsStaggered;
 
@@ -210,6 +235,7 @@ namespace Chimera.Tests.PlayMode
             foreach (var c in Cases)
             {
                 var type = player ? c.player : c.npc;
+                if (type == null) continue; // у этой стороны своего носителя нет
                 var carrier = CarrierOf(body, type);
                 Assert.IsTrue(carrier == null || !carrier.Available, $"{c.name}: у человечьего органа приёма нет, а носитель доступен");
 
@@ -233,16 +259,19 @@ namespace Chimera.Tests.PlayMode
             var (human, _) = HumanAndBeast();
             var body = Npc(human, expression: 1f);
             var hanging = new List<(Case c, IOrganAbility carrier)>();
-            foreach (var c in Cases) hanging.Add((c, (IOrganAbility)body.gameObject.AddComponent(c.npc))); // так вешает психика в Awake
+            foreach (var c in Cases)
+                if (c.npc != null) hanging.Add((c, (IOrganAbility)body.gameObject.AddComponent(c.npc))); // так вешает психика в Awake
             body.Refeed();
             yield return null;
 
             foreach (var (c, carrier) in hanging)
             {
                 Assert.IsFalse(carrier.Available, $"{c.name}: нет записи органа — приёма быть не должно");
-                var windup = (WindupAbility)carrier;
-                windup.SetTarget(Dummy(new Vector3(0f, 0f, 1.2f)));
-                Assert.IsFalse(windup.TryUse(), $"{c.name}: недоступный приём запустил замах");
+                if (carrier is WindupAbility windup)
+                {
+                    windup.SetTarget(Dummy(new Vector3(0f, 0f, 1.2f)));
+                    Assert.IsFalse(windup.TryUse(), $"{c.name}: недоступный приём запустил замах");
+                }
             }
         }
 
@@ -393,13 +422,135 @@ namespace Chimera.Tests.PlayMode
             Assert.IsTrue(charge.Available, "запись есть, а таран игрока недоступен");
 
             int before = target.Current;
-            // рывок: таран — пассивный наездник на нём, отдельной кнопки нет
-            typeof(PlayerController).GetField("dashTimer", BindingFlags.NonPublic | BindingFlags.Instance)
-                .SetValue(body.GetComponent<PlayerController>(), 0.3f);
+            Dash(body, 0.3f);
             yield return null;
             yield return null;
             Assert.AreEqual(rec.damage, before - target.Current, "таран игрока бьёт не записью органа (разгон в записи обнулён)");
             Assert.IsTrue(Staggered(target), "таран игрока не сбил цель — сбив из записи не доехал до грани");
+        }
+
+        // ── ЗАЛП ─────────────────────────────────────────────────────────────────────────
+
+        [UnityTest]
+        public IEnumerator Npc_Volley_QuillsHitWithOrganRecord()
+        {
+            var rec = Volley();
+            var body = Npc(Species("Ёж", OrganWith("Игломёт", "Игломёт", rec)), expression: 1f);
+            var target = Dummy(new Vector3(0f, 0f, 8f)); // в окне залпа записи [minRange, maxRange]
+            yield return null;
+
+            var volley = body.GetComponent<QuillVolley>();
+            Assert.IsNotNull(volley, "тело не завело доставку залпа по записи органа");
+            Assert.AreEqual(rec.minRange, volley.MinRange, 1e-5f, "психика читает окно залпа не из записи");
+            Assert.AreEqual(rec.maxRange, volley.MaxRange, 1e-5f, "психика читает окно залпа не из записи");
+
+            int before = target.Current;
+            yield return Swing(volley, target);
+            yield return new WaitForSeconds(8f / rec.speed + 0.3f); // долёт игл
+            Assert.AreEqual(rec.quills * rec.damagePerQuill, before - target.Current, "урон пучка ≠ число игл × урон иглы из записи");
+            Assert.Greater(SlowOf(target), 0, "иглы не замедлили цель — замедление из записи не доехало");
+        }
+
+        [UnityTest]
+        public IEnumerator Player_Volley_SameRecord_OrganPowerAsModifier()
+        {
+            if (Camera.main != null) Assert.Ignore("в тестовой сцене есть камера: залп игрока целится по ней, а тест — по взгляду тела");
+            var rec = Volley();
+            var body = Player(Species("Человек", OrganWith("Игломёт", "Игломёт", rec)));
+            var target = Dummy(new Vector3(0f, 0f, 8f), height: 5f); // игрок стреляет с груди — манекен повыше
+            yield return null;
+            Physics.SyncTransforms();
+
+            var volley = body.GetComponent<PlayerQuillVolley>();
+            Assert.IsNotNull(volley, "тело игрока не завело грань залпа по записи органа");
+            float power = Mathf.Max(1f, body.Ability<VolleyData>().power);
+            int perQuill = Mathf.Max(1, Mathf.RoundToInt(rec.damagePerQuill * power));
+
+            int before = target.Current;
+            Assert.IsTrue(volley.TryUse(), "залп игрока не сработал");
+            yield return new WaitForSeconds(8f / (rec.speed * power) + 0.3f);
+            Assert.AreEqual(rec.quills * perQuill, before - target.Current, "урон залпа игрока ≠ запись × мощь органа");
+        }
+
+        // ── ПЕРЕКАТ И КЛУБОК ─────────────────────────────────────────────────────────────
+
+        [UnityTest]
+        public IEnumerator Player_Roll_StingsOnlyWithThorns()
+        {
+            var rec = Roll();
+
+            var bare = Player(Species("Человек", OrganWith("Ежиные ноги", "Ноги", rec)));
+            var t1 = Dummy(new Vector3(0f, 0f, 1f));
+            yield return null;
+            Physics.SyncTransforms();
+            var roll = bare.GetComponent<PlayerRoll>();
+            Assert.IsNotNull(roll, "тело игрока не завело грань переката по записи органа");
+            Assert.IsTrue(roll.Available, "запись ног есть, а перекат недоступен");
+            Assert.IsFalse(roll.Active, "без игл в Шкуре перекат не должен колоться — кросс-слот сет");
+            int b1 = t1.Current;
+            Dash(bare, 0.3f);
+            yield return null;
+            yield return null;
+            Assert.AreEqual(b1, t1.Current, "перекат без игл ранил цель");
+            Object.Destroy(bare.gameObject);
+            Object.Destroy(t1.gameObject);
+            yield return null;
+
+            var skin = new Organ { organName = "Шкура ежа", slot = "Шкура", cost = 1, thorns = true };
+            var spiky = Player(Species("Человек", OrganWith("Ежиные ноги", "Ноги", rec), skin));
+            var t2 = Dummy(new Vector3(0f, 0f, 1f));
+            yield return null;
+            Physics.SyncTransforms();
+            var roll2 = spiky.GetComponent<PlayerRoll>();
+            Assert.IsTrue(roll2.Active, "ноги + иглы — перекат должен колоться");
+            int b2 = t2.Current;
+            Dash(spiky, 0.3f);
+            yield return null;
+            yield return null;
+            Assert.AreEqual(rec.damage, b2 - t2.Current, "перекат бьёт не записью органа");
+            Assert.AreEqual(rec.bleedStacks, BleedOf(t2), "кровь переката ≠ записи");
+        }
+
+        [UnityTest]
+        public IEnumerator Npc_Curl_ArmorFromCurlRecord_RollHitsWithRollRecord()
+        {
+            var roll = Roll();
+            var curlRec = Curl();
+            var body = Npc(Species("Ёж", OrganWith("Ежиные ноги", "Ноги", roll, curlRec)), expression: 1f);
+            var target = Dummy(new Vector3(0f, 0f, 2f));
+            yield return null;
+
+            var curl = body.GetComponent<CurlDefense>();
+            Assert.IsNotNull(curl, "тело не завело машину клубка по записи органа");
+            Assert.IsTrue(curl.Available, "запись клубка есть, а клубок недоступен");
+
+            var hp = body.GetComponent<Health>();
+            float baseArmor = hp.DamageReduction;
+            curl.Curl();
+            Assert.AreEqual(Mathf.Max(baseArmor, curlRec.curlArmor), hp.DamageReduction, 1e-5f, "броня клубка не из записи");
+
+            int before = target.Current;
+            float end = Time.time + 2f;
+            while (target.Current == before && Time.time < end)
+            {
+                curl.RollTick(target.transform.position - body.transform.position);
+                yield return null;
+            }
+            Assert.AreEqual(roll.damage, before - target.Current, "прокат шара бьёт не записью переката того же органа");
+            Assert.AreEqual(roll.bleedStacks, BleedOf(target), "кровь проката ≠ записи переката");
+        }
+
+        [UnityTest]
+        public IEnumerator Curl_IsHomeOnly_NotOnForeignChassis()
+        {
+            var legs = OrganWith("Ежиные ноги", "Ноги", Roll(), Curl());
+            legs.nativeChassis = "Ёж";
+            var body = Npc(Species("Волк", legs), expression: 1f);
+            yield return null;
+
+            var curl = body.GetComponent<CurlDefense>();
+            Assert.IsTrue(curl == null || !curl.Available, "клубок — домашний приём: на чужом шасси его быть не должно");
+            Assert.IsNotNull(body.Ability<RollData>(), "перекат тех же ног открыт на любом шасси");
         }
     }
 }

@@ -24,6 +24,9 @@ public partial class CreatureBody
             foreach (var record in sl.Worn.abilities)
             {
                 if (record == null) continue;                                             // пустой элемент массива в инспекторе
+                // ДОМАШНИЙ ПРИЁМ: открыт только на родном шасси органа (см. AbilityData.NativeOnly)
+                if (record.NativeOnly && !string.IsNullOrEmpty(sl.Worn.nativeChassis)
+                    && (chassis == null || sl.Worn.nativeChassis != chassis.speciesName)) continue;
                 var type = record.GetType();
                 var resolved = record.Resolve(RecordOf(displaced, type), pick.native, power);
                 abilities[type] = abilities.TryGetValue(type, out var prev) ? AbilityData.Sup(prev, resolved) : resolved;
