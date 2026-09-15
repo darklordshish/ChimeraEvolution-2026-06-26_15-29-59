@@ -3,23 +3,24 @@ using UnityEngine;
 /// <summary>
 /// Доставка «прыжок-наскок»: замах (хоуминг до последнего кадра) → полёт по дуге → укус на
 /// приземлении, если цель рядом (с приземления можно увернуться). Замах отменяется стаггером;
-/// ПОЛЁТ закоммичен — мягкий срыв игнорит, жёсткий (нокбэк) рвёт. Дефолты = волк.
+/// ПОЛЁТ закоммичен — мягкий срыв игнорит, жёсткий (нокбэк) рвёт.
+/// ВСЕ ЧИСЛА — ИЗ ЗАПИСИ ОРГАНА НОГ (<see cref="LeapData"/>, спека «данные в органах»): нет записи — наскока нет.
 /// </summary>
-public class LeapAbility : WindupAbility
+public class LeapAbility : WindupAbility, IOrganAbility
 {
-    [Header("Прыжок")]
-    [SerializeField] float minRange = 5.0f;
-    [SerializeField] float maxRange = 6.5f;
-    [SerializeField] float speed = 13f;
-    [SerializeField] float up = 5f;
-    [SerializeField] float duration = 0.5f;
-    [SerializeField] int damage = 12;
-    [SerializeField] float hitRadius = 1.3f;
+    LeapData data; // раскрытая запись наскока; null — наскока нет
 
-    public float MinRange => minRange; // психика читает окно дистанций для решения
-    public float MaxRange => maxRange;
+    public System.Type DataType => typeof(LeapData);
+    public void Configure(AbilityData d) => data = d as LeapData;
+    public bool Available => data != null;
+    protected override bool Ready => data != null;
+    protected override float WindupTime => data.windupTime;
 
-    protected override float GizmoRange => maxRange; // хитбокс — дальность наскока
+    // психика читает окно дистанций; нет наскока — пустое окно [0, 0]
+    public float MinRange => data != null ? data.minRange : 0f;
+    public float MaxRange => data != null ? data.maxRange : 0f;
+
+    protected override float GizmoRange => MaxRange; // хитбокс — дальность наскока
     protected override float GizmoHalfAngle => 20f;
 
     bool flying;
@@ -35,8 +36,8 @@ public class LeapAbility : WindupAbility
             if (Time.time < windupEnd) { SettleInPlace(); return AbilityRun.Running; }
             flying = true;              // взлёт: направление берём в последний кадр замаха
             telegraph.Clear();
-            flightEnd = Time.time + duration;
-            vel = DirToTarget() * speed + Vector3.up * up;
+            flightEnd = Time.time + data.duration;
+            vel = DirToTarget() * data.speed + Vector3.up * data.up;
         }
 
         vel.y += gravity * Time.deltaTime;
@@ -44,10 +45,10 @@ public class LeapAbility : WindupAbility
         if (Time.time < flightEnd) return AbilityRun.Running;
 
         flying = false;
-        if (targetHealth != null && DistToTarget() <= hitRadius) // приземлили наскок — кусаем
+        if (targetHealth != null && DistToTarget() <= data.hitRadius) // приземлили наскок — кусаем
         {
             // единый паёк (см. MeleeBlow) — тот же укус на приземлении; мощь масштабирует урон
-            var blow = new MeleeBlow { Damage = damage, LifeSteal = BossLifeSteal };
+            var blow = new MeleeBlow { Damage = data.damage, LifeSteal = BossLifeSteal };
             blow.Deliver(new Hit(ownHealth, transform.position), targetHealth, DamageMult);
         }
         return AbilityRun.Done;

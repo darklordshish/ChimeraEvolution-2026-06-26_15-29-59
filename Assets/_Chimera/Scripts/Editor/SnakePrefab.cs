@@ -140,8 +140,7 @@ public static class SnakePrefab
         var bite = go.AddComponent<BiteAbility>();
         // числа укуса — в записи органа Пасти (BiteData): доставке их не задаём, тело кормит её само
         var leap = go.AddComponent<LeapAbility>();
-        PrefabConfig.Set(leap, ("windupTime", 0.35f), ("minRange", 4f), ("maxRange", 9f), ("speed", 20f),
-                                       ("up", 2.5f), ("duration", 0.35f), ("damage", 8), ("hitRadius", 1.5f));
+        // числа наскока — в записи органа ног (LeapData): доставке их не задаём, тело кормит её само
 
         // тело на шасси Змея (природная особь: экспрессия 0.5; витальность из органов; холоднокровность от Сердца)
         var cbody = go.AddComponent<CreatureBody>();

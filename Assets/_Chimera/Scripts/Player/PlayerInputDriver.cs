@@ -130,7 +130,7 @@ public class PlayerInputDriver : MonoBehaviour
         if (attackAction.WasPressedThisFrame()) melee.TryUse();
         if (biteAction.WasPressedThisFrame()) { if (bite == null) bite = GetComponent<PlayerBite>(); if (bite != null) bite.TryUse(); } // грань укуса заводит тело по записи органа — берём лениво
         // E = ПИНОК (человечьи ноги). Рога вынесены на отдельную R (ниже) — чтобы не делить кнопку с пинком
-        if (kickAction.WasPressedThisFrame()) kick?.TryUse();
+        if (kickAction.WasPressedThisFrame()) { if (kick == null) kick = GetComponent<PlayerKick>(); if (kick != null) kick.TryUse(); } // грань пинка заводит тело по записи органа — берём лениво
         // R = УДАР РОГАМИ (придаток лося, химерный слот). Сам гейтит Enabled/кулдаун
         if (antlerAction.WasPressedThisFrame())
         {

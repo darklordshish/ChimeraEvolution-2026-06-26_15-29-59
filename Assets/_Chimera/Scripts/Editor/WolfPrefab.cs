@@ -72,12 +72,11 @@ public static class WolfPrefab
         go.AddComponent<Stagger>();
         go.AddComponent<HitFlash>();
 
-        // укус и прыжок — общие доставки с числами волка (урон укуса приходит из органов через CreatureBody)
+        // укус и прыжок — общие доставки; числа — в записях органов волка (BiteData у Пасти, LeapData у ног)
         var bite = go.AddComponent<BiteAbility>();
         // числа укуса — в записи органа Пасти (BiteData): доставке их не задаём, тело кормит её само
         var leap = go.AddComponent<LeapAbility>();
-        PrefabConfig.Set(leap, ("windupTime", 0.5f), ("minRange", 5f), ("maxRange", 6.5f), ("speed", 13f),
-                                       ("up", 5f), ("duration", 0.5f), ("damage", 12), ("hitRadius", 1.3f));
+        // числа наскока — в записи органа ног (LeapData): доставке их не задаём, тело кормит её само
         go.AddComponent<Rage>();          // может взбеситься от воя вожака
         go.AddComponent<SpawnVariance>(); // разброс особи
         // родство на смерть начисляет САМО тело (CreatureBody ниже): +1 за видо-флаг шасси «Волк»

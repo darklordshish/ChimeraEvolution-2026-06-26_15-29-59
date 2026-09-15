@@ -10,8 +10,8 @@ public partial class CreatureBody
     // вклад одного надетого органа в статы тела (после бленда/экспрессии)
     struct Contribution
     {
-        public float dmg, hpBonus, stam, stamRegen, rng, atkCd, mv, dash, dashDur, dashCd, reduce, regen, regenOOC, thermal, howlR, howlStunAt;
-        public bool scent, kick, howl, cold, camo, thermalOn, constrict, digest, bellow, scream;
+        public float hpBonus, stam, stamRegen, atkCd, mv, dash, dashDur, dashCd, reduce, regen, regenOOC, thermal, howlR, howlStunAt;
+        public bool scent, howl, cold, camo, thermalOn, constrict, digest, bellow, scream;
         public bool thorns, venomResist; // иглы-ответка, ядоупорность (ёж)
         public bool bleedResist;  // кровеупорность (лосиное сердце)
         public bool insight; // ЧУТЬЁ УЧЁНОГО: распознавание намерений + числа состояний (человеческое Чутьё)
@@ -23,15 +23,15 @@ public partial class CreatureBody
         // Дубль оси силу НЕ растит (второе сердце ≠ ×2 регена) — окупается только НОВЫМ направлением.
         public static Contribution Sup(Contribution a, Contribution b) => new()
         {
-            dmg = Mathf.Max(a.dmg, b.dmg), hpBonus = Mathf.Max(a.hpBonus, b.hpBonus),
+            hpBonus = Mathf.Max(a.hpBonus, b.hpBonus),
             stam = Mathf.Max(a.stam, b.stam), stamRegen = Mathf.Max(a.stamRegen, b.stamRegen),
-            rng = Mathf.Max(a.rng, b.rng), atkCd = Mathf.Min(a.atkCd, b.atkCd),
+            atkCd = Mathf.Min(a.atkCd, b.atkCd),
             mv = Mathf.Max(a.mv, b.mv), dash = Mathf.Max(a.dash, b.dash), dashDur = Mathf.Max(a.dashDur, b.dashDur), dashCd = Mathf.Min(a.dashCd, b.dashCd),
             reduce = Mathf.Max(a.reduce, b.reduce), regen = Mathf.Max(a.regen, b.regen),
             regenOOC = Mathf.Max(a.regenOOC, b.regenOOC), thermal = Mathf.Max(a.thermal, b.thermal),
             howlR = Mathf.Max(a.howlR, b.howlR),
             howlStunAt = Mathf.Max(a.howlStunAt, b.howlStunAt),
-            scent = a.scent || b.scent, kick = a.kick || b.kick,
+            scent = a.scent || b.scent,
             howl = a.howl || b.howl, cold = a.cold || b.cold, camo = a.camo || b.camo,
             thermalOn = a.thermalOn || b.thermalOn, constrict = a.constrict || b.constrict,
             constrictCap = Mathf.Max(a.constrictCap, b.constrictCap),
@@ -79,7 +79,6 @@ public partial class CreatureBody
 
         return new Contribution
         {
-            dmg = Scaled(h.damage, w.damage),
             hpBonus = Scaled(h.hpBonus, w.hpBonus), // ДОЛЯ базы шасси — экспрессия раскрывает бонус, не тело
             stam = Scaled(h.staminaBonus, w.staminaBonus),
             stamRegen = Scaled(h.staminaRegenBonus, w.staminaRegenBonus),
@@ -93,9 +92,9 @@ public partial class CreatureBody
             // иначе человеческое сердце единственное не растёт с родством к своему виду
             regenOOC = own ? w.regenOOC * m : w.regenOOC,
             // ДИСКРЕТНОЕ — всегда у надетого как есть: фичи не «раскрываются», они либо есть, либо нет
-            rng = w.range, dashDur = w.dashDuration, thermal = w.thermalRange,
+            dashDur = w.dashDuration, thermal = w.thermalRange,
             howlR = w.howlRadius, howlStunAt = w.howlStunAt,
-            scent = w.enablesScent, kick = w.enablesKick,
+            scent = w.enablesScent,
             howl = w.enablesHowl, cold = w.coldBlooded, camo = w.camo, thermalOn = w.enablesThermal,
             constrict = w.enablesConstrict, digest = w.digestion, bellow = w.enablesBellow,
             insight = w.insight,

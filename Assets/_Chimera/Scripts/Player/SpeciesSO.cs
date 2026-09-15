@@ -86,13 +86,12 @@ public class Organ
     public string hotkey = "1";    // временный бинд клавиши (MVP-конструктор)
     public int cost;               // цена в пуле
 
-    public int damage;
     public float staminaBonus;      // прибавка к БАКУ стамины, долей базы шасси (та же модель, что hpBonus)
     public float staminaRegenBonus; // прибавка к РЕГЕНУ стамины, долей базы шасси
     public float hpBonus;          // ПРИБАВКА К ВИТАЛЬНОСТИ ДОЛЕЙ базы шасси (0.5 = +50%), не абсолют.
                                    // Раньше было абсолютное `maxHp` — и оно не переносилось между телами
                                    // разного калибра: человеческое сердце в лосином шасси делало лося хилым
-    public float range, atkCooldown, moveSpeed, dashSpeed, dashCooldown, damageReduction, regen, regenOOC;
+    public float atkCooldown, moveSpeed, dashSpeed, dashCooldown, damageReduction, regen, regenOOC;
     public float dashDuration;     // своя длина рывка ног (0 = дефолт контроллера): лосиные — длинный таран, волчьи — короткий
     public float thermalRange;     // радиус термозрения (Пит-орган); фикс-фича, как range — не блендится
     public float howlStunAt;       // ПОРОГ-ФИЧА (3-я ось экспрессии): мощь носителя ≥ этого — вой ещё и СТАНИТ.
@@ -100,7 +99,7 @@ public class Organ
                                    // (Э 0.45) только зовёт стаю, босс (Э 2) и игрок на 100 родства — глушат
     public float howlRadius;       // ГОЛОС Пасти: база радиуса воя (0 = не воет). Итог = база × мощь-превосходство
                                    // (тело считает: игрок BonusMult ×1..2, NPC max(1, Э) — норму вниз не штрафуем)
-    public bool enablesScent, enablesKick, enablesHowl, coldBlooded, camo, enablesThermal, enablesConstrict;
+    public bool enablesScent, enablesHowl, coldBlooded, camo, enablesThermal, enablesConstrict;
     public bool thorns;            // ИГЛЫ (Шкура ежа): ответка на удар в упор + кровотечение обидчику
     public bool venomResist;       // ЯДОУПОРНОСТЬ (Сердце ежа): яд не накапливается — стак разлагается почти сразу
     public bool bleedResist;       // КРОВЕУПОРНОСТЬ (Лосиное сердце): кровь не накапливается — рана быстро затягивается

@@ -77,6 +77,18 @@ namespace Chimera.Tests.PlayMode
             curlArmor = 0.6f, staminaDrain = 30f, rollSpeed = 9f, rollDrain = 40f, rollTurnSpeed = 90f, rollGravity = 20f,
         };
 
+        static LimbStrikeData Limb() => new LimbStrikeData
+        {
+            damage = 18, knockForce = 4f, bleedStacks = 1, range = 1.8f, halfAngle = 60f, windupTime = 0.05f,
+        };
+
+        static KickData Kick() => new KickData { damage = 4, knockForce = 12f, reach = 1.8f, radius = 1.6f, cooldown = 1f };
+
+        static LeapData Leap() => new LeapData
+        {
+            damage = 12, minRange = 5f, maxRange = 6.5f, speed = 13f, up = 5f, duration = 0.5f, hitRadius = 1.3f, windupTime = 0.05f,
+        };
+
         struct Case
         {
             public string name, slot;
@@ -92,6 +104,9 @@ namespace Chimera.Tests.PlayMode
             new Case { name = "залп", slot = "Игломёт", record = Volley, npc = typeof(QuillVolley), player = typeof(PlayerQuillVolley) },
             new Case { name = "перекат", slot = "Ноги ежа", record = Roll, npc = null, player = typeof(PlayerRoll) },
             new Case { name = "клубок", slot = "Клубок", record = Curl, npc = typeof(CurlDefense), player = typeof(CurlDefense) },
+            new Case { name = "удар конечностью", slot = "Руки", record = Limb, npc = typeof(LimbStrikeAbility), player = typeof(PlayerAttack) },
+            new Case { name = "пинок", slot = "Ноги человека", record = Kick, npc = null, player = typeof(PlayerKick) },
+            new Case { name = "наскок", slot = "Ноги волка", record = Leap, npc = typeof(LeapAbility), player = null },
         };
 
         static Organ OrganWith(string name, string slot, params AbilityData[] records) =>
@@ -551,6 +566,89 @@ namespace Chimera.Tests.PlayMode
             var curl = body.GetComponent<CurlDefense>();
             Assert.IsTrue(curl == null || !curl.Available, "клубок — домашний приём: на чужом шасси его быть не должно");
             Assert.IsNotNull(body.Ability<RollData>(), "перекат тех же ног открыт на любом шасси");
+        }
+
+        // ── УДАР КОНЕЧНОСТЬЮ, ПИНОК, НАСКОК ─────────────────────────────────────────────
+
+        [UnityTest]
+        public IEnumerator Npc_LimbStrike_HitsWithOrganRecord()
+        {
+            var rec = Limb();
+            var body = Npc(Species("Лось", OrganWith("Копыто", "Руки", rec)), expression: 1f);
+            var target = Dummy(new Vector3(0f, 0f, 1.2f));
+            yield return null;
+
+            var hoof = body.GetComponent<LimbStrikeAbility>();
+            Assert.IsNotNull(hoof, "тело не завело удар конечностью по записи органа");
+            Assert.AreEqual(rec.range, hoof.Range, 1e-5f, "психика читает досягаемость удара не из записи");
+
+            int before = target.Current;
+            yield return Swing(hoof, target);
+            Assert.AreEqual(rec.damage, before - target.Current, "урон конечности ≠ записи органа (экспрессия 1)");
+            Assert.AreEqual(rec.bleedStacks, BleedOf(target), "кровь от удара конечностью ≠ записи");
+            Assert.IsTrue(Knocked(target), "удар конечностью не толкнул цель, хотя в записи есть толчок");
+        }
+
+        [UnityTest]
+        public IEnumerator Player_Attack_SameRecord_SameCone_TempoFromHeart()
+        {
+            var rec = Limb();
+            var heart = new Organ { organName = "Сердце", slot = "Сердце", cost = 1, atkCooldown = 0.6f };
+            var body = Player(Species("Человек", OrganWith("Коготь", "Руки", rec), heart));
+            var target = Dummy(new Vector3(0f, 0f, 1.2f));
+            yield return null;
+            Physics.SyncTransforms();
+
+            var attack = body.GetComponent<PlayerAttack>();
+            Assert.IsTrue(attack.Available, "запись конечности есть, а удар игрока недоступен");
+            var resolved = body.Ability<LimbStrikeData>();
+
+            int before = target.Current;
+            Assert.IsTrue(attack.TryUse(), "удар игрока не сработал");
+            Assert.AreEqual(resolved.damage, before - target.Current, "удар игрока бьёт не раскрытой записью органа");
+            Assert.IsFalse(attack.TryUse(), "темп атак от Сердца не соблюдён — удар повторился сразу");
+
+            yield return new WaitForSecondsRealtime(0.15f);           // отпустить хитстоп
+            yield return new WaitForSeconds(heart.atkCooldown + 0.05f); // дождаться темпа Сердца
+            Teleport(target, new Vector3(0f, 0f, -1.2f));             // за спину — вне конуса
+            int behind = target.Current;
+            Assert.IsTrue(attack.TryUse(), "удар игрока не восстановился по темпу Сердца");
+            Assert.AreEqual(behind, target.Current, "удар игрока задел цель за спиной — конус из записи не соблюдён");
+        }
+
+        [UnityTest]
+        public IEnumerator Player_Kick_WithOrganRecord()
+        {
+            var rec = Kick();
+            var body = Player(Species("Человек", OrganWith("Ноги", "Ноги", rec)));
+            var target = Dummy(new Vector3(0f, 0f, 1.5f));
+            yield return null;
+            Physics.SyncTransforms();
+
+            var kick = body.GetComponent<PlayerKick>();
+            Assert.IsNotNull(kick, "тело игрока не завело грань пинка по записи органа");
+            int before = target.Current;
+            Assert.IsTrue(kick.TryUse(), "пинок не сработал");
+            Assert.AreEqual(rec.damage, before - target.Current, "пинок бьёт не записью органа");
+            Assert.IsTrue(Knocked(target), "пинок не оттолкнул цель, хотя в записи есть отлёт");
+        }
+
+        [UnityTest]
+        public IEnumerator Npc_Leap_LandsWithOrganRecord()
+        {
+            var rec = Leap();
+            var body = Npc(Species("Волк", OrganWith("Волчьи ноги", "Ноги", rec)), expression: 1f);
+            var target = Dummy(new Vector3(0f, 0f, 6f)); // в окне наскока записи [minRange, maxRange]
+            yield return null;
+
+            var leap = body.GetComponent<LeapAbility>();
+            Assert.IsNotNull(leap, "тело не завело наскок по записи органа");
+            Assert.AreEqual(rec.minRange, leap.MinRange, 1e-5f, "психика читает окно наскока не из записи");
+            Assert.AreEqual(rec.maxRange, leap.MaxRange, 1e-5f, "психика читает окно наскока не из записи");
+
+            int before = target.Current;
+            yield return Swing(leap, target);
+            Assert.AreEqual(rec.damage, before - target.Current, "урон наскока ≠ записи органа");
         }
     }
 }

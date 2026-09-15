@@ -46,7 +46,7 @@ public class ChimeraAlphaPsyche : MonoBehaviour, IBodyStatConsumer
     static readonly Collider[] scanHits = new Collider[32];
 
     // тело кормит числами (урон/скорость) — как ёж; base-укус получает урон/яд/кровь
-    public void OnBodyStats(int damage, float bodyMoveSpeed, float howlRange)
+    public void OnBodyStats(float bodyMoveSpeed, float howlRange)
     {
         moveSpeed = bodyMoveSpeed;
     }

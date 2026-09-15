@@ -1,21 +1,31 @@
 using UnityEngine;
 
 /// <summary>
-/// Простой мечевой удар: по кнопке бьём сферой-хитбоксом перед игроком,
-/// наносим урон всем найденным Health (каждому — один раз за замах).
+/// УДАР КОНЕЧНОСТЬЮ игрока (левая кнопка, слот «Руки»): бьём конусом перед собой, каждому найденному — раз за замах.
 /// При попадании — сочность: хитстоп + тряска камеры.
+///
+/// ВСЕ ЧИСЛА — ИЗ ЗАПИСИ ОРГАНА (<see cref="LimbStrikeData"/>): та же запись и тот же конус, что у удара конечностью NPC
+/// (`LimbStrikeAbility`) — волчьим когтем игрок бьёт как волк. До 15.09 урон и досягаемость приходили суммой органов через
+/// `SetMelee`, а бил игрок сферой. У грани своё — ощущение и ТЕМП АТАК: он принадлежит Сердцу, тело задаёт его модификатором.
 /// </summary>
-public class PlayerAttack : MonoBehaviour, IAbility, IAbilityCarrier
+public class PlayerAttack : MonoBehaviour, IAbility, IOrganAbility
 {
-    [Header("Удар")]
-    [SerializeField] int damage = 10;
-    [SerializeField] float range = 1.6f;   // как далеко вперёд центр хитбокса
-    [SerializeField] float radius = 1.0f;  // радиус хитбокса
-    [SerializeField] float cooldown = 0.45f;
-
     [Header("Сочность")]
     [SerializeField, NotOrganData("ощущение: хитстоп удара игрока")] float hitstopDuration = 0.06f;
     [SerializeField, NotOrganData("ощущение: тряска камеры игрока")] float shakeMagnitude = 0.25f;
+
+    // СКАН С ЗАПАСОМ: сфера ловит коллайдеры по поверхности, конус меряет центры — допуск скана, не число удара
+    const float ScanPad = 1.5f;
+
+    LimbStrikeData data; // раскрытая запись конечности; null — бить нечем
+
+    public System.Type DataType => typeof(LimbStrikeData);
+    public void Configure(AbilityData d) => data = d as LimbStrikeData;
+    public bool Available => data != null;
+
+    // ТЕМП АТАК — свойство тела (Сердце), а не удара: тело задаёт его в Recompute. Начальное значение — лишь до первой сборки
+    float tempo = 0.45f;
+    public void SetTempo(float seconds) => tempo = seconds;
 
     float nextTime;
     CameraFollow cam;
@@ -27,46 +37,49 @@ public class PlayerAttack : MonoBehaviour, IAbility, IAbilityCarrier
         ownHealth = GetComponent<Health>();
     }
 
-    // водитель (PlayerInputDriver) зовёт по вводу; кулдаун проверяем сами
+    // водитель (PlayerInputDriver) зовёт по вводу; темп проверяем сами
     public bool TryUse()
     {
-        if (Time.time < nextTime) return false;
-        nextTime = Time.time + cooldown;
+        if (data == null || Time.time < nextTime) return false;
+        nextTime = Time.time + tempo;
         DoAttack();
         return true;
     }
 
     void DoAttack()
     {
+        if (ownHealth == null) ownHealth = GetComponent<Health>(); // удар до нашего Start
         // призрака раскрывает ПОПАДАНИЕ (Hit.Apply), не замах — холостой взмах безопасен
         var hit = new Hit(ownHealth, transform.position);
-        var blow = new MeleeBlow { Damage = damage }; // единый паёк удара (см. MeleeBlow)
-        var targets = TargetScan.Healths(AttackCenter(), radius, transform);
-        foreach (var hp in targets) blow.Deliver(hit, hp); // урон; эрозия по кину — внутри Hit.Apply
+        var blow = new MeleeBlow { Damage = data.damage, KnockForce = data.knockForce, BleedStacks = data.bleedStacks }; // единый паёк
+        int struck = 0;
+        foreach (var hp in TargetScan.Healths(transform.position, data.range + ScanPad, transform))
+        {
+            if (!InCone(hp.transform.position)) continue;
+            blow.Deliver(hit, hp); // урон; эрозия по кину — внутри Hit.Apply
+            struck++;
+        }
 
-        if (targets.Count > 0) // попали хотя бы по одному — сочность раз за замах
+        if (struck > 0) // попали хотя бы по одному — сочность раз за замах
         {
             if (hitstopDuration > 0f) Hitstop.Do(hitstopDuration); // 0 = выключить глобальный фриз
             if (cam != null) cam.Shake(0.12f, shakeMagnitude);
         }
     }
 
-    // конструктор меняет параметры удара при смене органа в слоте «Руки»
-    public void SetMelee(int newDamage, float newRange)
+    bool InCone(Vector3 point)
     {
-        damage = newDamage;
-        range = newRange;
+        Vector3 to = point - transform.position; to.y = 0f;
+        if (to.sqrMagnitude > data.range * data.range) return false;
+        return to.sqrMagnitude < 0.0001f || Vector3.Angle(transform.forward, to) <= data.halfAngle;
     }
 
-    // слот «Сердце»: скорость атак (кулдаун)
-    public void SetCooldown(float newCooldown) => cooldown = newCooldown;
-
-    Vector3 AttackCenter() => transform.position + transform.forward * range + Vector3.up * 0.3f; // грудь (корень игрока — ЦЕНТР капсулы CC)
-
-    // красная сфера — зона удара. Всегда видна; включи тумблер Gizmos в Game view, чтобы видеть и в игре
     void OnDrawGizmos()
     {
+        if (data == null) return;
+        Vector3 o = transform.position, f = transform.forward;
         Gizmos.color = TelegraphColors.Sword;
-        Gizmos.DrawWireSphere(AttackCenter(), radius);
+        Gizmos.DrawLine(o, o + Quaternion.AngleAxis(-data.halfAngle, Vector3.up) * f * data.range);
+        Gizmos.DrawLine(o, o + Quaternion.AngleAxis(data.halfAngle, Vector3.up) * f * data.range);
     }
 }

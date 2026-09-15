@@ -36,14 +36,14 @@ public static class SpeciesBootstrap
                 new OrganPart { scale = new Vector3(1.00f, 0.20f, 0.62f), offset = new Vector3(0.00f, 0.36f, 0.04f), shape = PartShape.Sphere }, // плечевой пояс («вешалка» ключиц) — размах 2H = 0.47
                 new OrganPart { scale = new Vector3(0.80f, 0.30f, 0.66f), offset = new Vector3(0.00f, -0.32f, 0.00f), shape = PartShape.Sphere }, // таз — клин 1.51H, снова шире талии (но уже плеч: мужской силуэт)
             } }, // СКЕЛЕТ: несущая структура шасси. chassisOnly — её не крадут графтом, как «Тело-хвост»
-            new Organ { organName = "Кисть",  slot = "Руки",   hotkey = "1", cost = 3, damage = 8, range = 1.6f, visualParts = new[] {
+            new Organ { organName = "Кисть",  slot = "Руки",   hotkey = "1", cost = 3, abilities = new AbilityData[] { new LimbStrikeData { damage = 8, knockForce = 0f, range = 1.6f, halfAngle = 60f, windupTime = 0.45f } }, visualParts = new[] {
                 new OrganPart { scale = new Vector3(1.55f, 0.22f, 1.45f), offset = new Vector3(0.00f, 0.44f, 0.00f), shape = PartShape.Sphere }, // дельта — шапка плеча, 18 см: она замыкает «вешалку» ключиц
                 new OrganPart { scale = new Vector3(0.86f, 0.40f, 0.86f), offset = new Vector3(0.00f, 0.26f, 0.00f), shape = PartShape.Capsule }, // плечо
                 new OrganPart { scale = new Vector3(1.15f, 0.18f, 1.10f), offset = new Vector3(0.00f, 0.28f, 0.04f), shape = PartShape.Sphere }, // бицепс
                 new OrganPart { scale = new Vector3(0.70f, 0.44f, 0.70f), offset = new Vector3(0.00f, -0.12f, 0.02f), shape = PartShape.Capsule }, // предплечье
                 new OrganPart { scale = new Vector3(0.68f, 0.17f, 0.98f), offset = new Vector3(0.00f, -0.42f, 0.04f) }, // кисть
             } },
-            new Organ { organName = "Ноги",   slot = "Ноги",   hotkey = "2", cost = 3, moveSpeed = 4.5f, dashSpeed = 15f, enablesKick = true, visualParts = new[] {
+            new Organ { organName = "Ноги",   slot = "Ноги",   hotkey = "2", cost = 3, moveSpeed = 4.5f, dashSpeed = 15f, abilities = new AbilityData[] { new KickData { damage = 4, knockForce = 12f, reach = 1.8f, radius = 1.6f, cooldown = 1f } }, visualParts = new[] {
                 new OrganPart { scale = new Vector3(0.98f, 0.24f, 0.94f), offset = new Vector3(0.00f, 0.28f, 0.02f), shape = PartShape.Sphere }, // квадрицепс
                 new OrganPart { scale = new Vector3(0.82f, 0.52f, 0.80f), offset = new Vector3(0.00f, 0.24f, 0.00f), shape = PartShape.Capsule }, // бедро
                 new OrganPart { scale = new Vector3(0.72f, 0.07f, 0.74f), offset = new Vector3(0.00f, -0.30f, 0.00f), shape = PartShape.Sphere }, // колено
@@ -245,7 +245,7 @@ public static class SpeciesBootstrap
             // с волчьими лапами дерётся ими осознанно, и это законная условность конструктора, а не ошибка данных.
             //     Захват волку даёт ПАСТЬ (`constrictStage = 1`), а не лапы: заводить лапам свой грэпл значило бы
             // дать одному зверю два захватывающих органа.
-            new Organ { organName = "Коготь",        slot = "Руки",   hotkey = "1", cost = 4, damage = 18, range = 1.5f, visualScale = new Vector3(1f, 1f, 1.2f), visualParts = new[] {
+            new Organ { organName = "Коготь",        slot = "Руки",   hotkey = "1", cost = 4, abilities = new AbilityData[] { new LimbStrikeData { damage = 18, knockForce = 0f, range = 1.5f, halfAngle = 60f, windupTime = 0.45f } }, visualScale = new Vector3(1f, 1f, 1.2f), visualParts = new[] {
                 new OrganPart { scale = new Vector3(0.850f, 0.221f, 0.900f), offset = new Vector3(0.000f, 0.410f, 0.059f), shape = PartShape.Sphere }, // лопаточная мышца
                 new OrganPart { scale = new Vector3(0.977f, 0.124f, 0.833f), offset = new Vector3(0.000f, 0.452f, 0.059f), euler = new Vector3(-21f, 0f, 0f), shape = PartShape.Capsule }, // лопатка→плечевой
                 new OrganPart { scale = new Vector3(0.859f, 0.124f, 0.745f), offset = new Vector3(0.000f, 0.342f, 0.018f), euler = new Vector3(23f, 0f, 0f), shape = PartShape.Capsule }, // плечевой→ЛОКОТЬ (0.585 = 0.50 холки)
@@ -253,7 +253,7 @@ public static class SpeciesBootstrap
                 new OrganPart { scale = new Vector3(0.547f, 0.221f, 0.441f), offset = new Vector3(0.000f, -0.266f, 0.088f), euler = new Vector3(-4f, 0f, 0f), shape = PartShape.Capsule }, // запястье→путовый
                 new OrganPart { scale = new Vector3(0.820f, 0.116f, 0.735f), offset = new Vector3(0.000f, -0.430f, 0.118f) }, // лапа с когтями: низ РОВНО на земле
             } }, // ПЕРЕДНЯЯ КОНЕЧНОСТЬ по референсу: колонна от земли (0.000) до плечевого сустава (0.725 = 0.62 холки)
-            new Organ { organName = "Волчьи ноги",   slot = "Ноги",   hotkey = "2", cost = 4, moveSpeed = 9f, dashSpeed = 30f, visualScale = new Vector3(1f, 1f, 1.2f), visualParts = new[] {
+            new Organ { organName = "Волчьи ноги",   slot = "Ноги",   hotkey = "2", cost = 4, moveSpeed = 9f, dashSpeed = 30f, abilities = new AbilityData[] { new LeapData { damage = 12, minRange = 5f, maxRange = 6.5f, speed = 13f, up = 5f, duration = 0.5f, hitRadius = 1.3f, windupTime = 0.5f } }, visualScale = new Vector3(1f, 1f, 1.2f), visualParts = new[] {
                 new OrganPart { scale = new Vector3(0.850f, 0.294f, 0.880f), offset = new Vector3(0.000f, 0.408f, -0.060f), shape = PartShape.Sphere }, // мышца бедра
                 new OrganPart { scale = new Vector3(0.950f, 0.320f, 0.762f), offset = new Vector3(0.000f, 0.381f, -0.060f), euler = new Vector3(-13f, 0f, 0f), shape = PartShape.Capsule }, // таз→колено (0.560)
                 new OrganPart { scale = new Vector3(0.700f, 0.374f, 0.578f), offset = new Vector3(0.000f, 0.074f, -0.141f), euler = new Vector3(23f, 0f, 0f), shape = PartShape.Capsule }, // колено→СКАКАТЕЛЬНЫЙ (0.300 = 0.26 холки)
@@ -534,7 +534,7 @@ public static class SpeciesBootstrap
             // ХОДОВАЯ ЗМЕИ — В СЛОТЕ ХОДОВОЙ, а не в несущем. Слот «Ноги» означает РОЛЬ (локомоция), а не
             // анатомию: змея ползёт телом, сова полетит крыльями — имя слота будет переименовано в
             // нейтральное отдельным заходом (решение пользователя 11.09), структура же верна уже сейчас
-            new Organ { organName = "Тело-хвост",           slot = "Ноги",   hotkey = "7", cost = 5, moveSpeed = 10f, dashSpeed = 20f, chassisOnly = true, digestion = true }, // ходовая часть ШАССИ змеи: аугументом не крадётся (локомоция = свойство шасси) + ПЕРЕВАРИВАНИЕ (глотание целиком = свойство змеиного тела)
+            new Organ { organName = "Тело-хвост",           slot = "Ноги",   hotkey = "7", cost = 5, moveSpeed = 10f, dashSpeed = 20f, chassisOnly = true, digestion = true, abilities = new AbilityData[] { new LeapData { damage = 8, minRange = 4f, maxRange = 9f, speed = 20f, up = 2.5f, duration = 0.35f, hitRadius = 1.5f, windupTime = 0.35f } } }, // ходовая часть ШАССИ змеи: аугументом не крадётся (локомоция = свойство шасси) + ПЕРЕВАРИВАНИЕ (глотание целиком = свойство змеиного тела)
             new Organ { organName = "Чешуя",                slot = "Шкура",  hotkey = "6", cost = 4, damageReduction = 0.25f, camo = true }, // лёгкая броня: стелс+яд+одиночная охота компенсируют (D-тюнинг)
             new Organ { organName = "Пит-орган",            slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.7f, enablesThermal = true, thermalRange = 14f, visualParts = new[] {
                 new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), shape = PartShape.Sphere, role = PartRole.Pit }, // термоямка
@@ -689,7 +689,7 @@ public static class SpeciesBootstrap
                 new OrganPart { scale = new Vector3(0.44f, 0.74f, 0.38f), offset = new Vector3(0.31f, -0.12f, 0.28f), shape = PartShape.Sphere }, // лопатка (пр)
                 new OrganPart { scale = new Vector3(0.44f, 0.74f, 0.38f), offset = new Vector3(-0.31f, -0.12f, 0.28f), shape = PartShape.Sphere }, // лопатка (лев)
             } }, // СКЕЛЕТ: несущая структура шасси. chassisOnly — её не крадут графтом, как «Тело-хвост»
-            new Organ { organName = "Копыто",         slot = "Руки",   hotkey = "1", cost = 5, damage = 22, range = 1.8f, visualParts = new[] {
+            new Organ { organName = "Копыто",         slot = "Руки",   hotkey = "1", cost = 5, abilities = new AbilityData[] { new LimbStrikeData { damage = 22, knockForce = 4f, range = 1.8f, halfAngle = 60f, windupTime = 0.45f } }, visualParts = new[] {
                 new OrganPart { scale = new Vector3(1.16f, 0.32f, 1.14f), offset = new Vector3(0.00f, 0.35f, 0.07f), euler = new Vector3(-19f, 0f, 0f), shape = PartShape.Capsule }, // лопатка→плечевой
                 new OrganPart { scale = new Vector3(1.00f, 0.18f, 1.02f), offset = new Vector3(0.00f, 0.11f, 0.08f), euler = new Vector3(24f, 0f, 0f), shape = PartShape.Capsule }, // плечевой→локоть
                 new OrganPart { scale = new Vector3(0.74f, 0.21f, 0.78f), offset = new Vector3(0.00f, -0.08f, 0.05f), euler = new Vector3(-6f, 0f, 0f), shape = PartShape.Capsule }, // локоть→запястье

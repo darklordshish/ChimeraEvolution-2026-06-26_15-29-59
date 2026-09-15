@@ -19,13 +19,6 @@ namespace Chimera.Tests.EditMode
         // ДОЛГ: «Класс.поле» — числа приёмов, ещё не переехавшие в запись органа
         static readonly HashSet<string> Debt = new(StringComparer.Ordinal)
         {
-            // задача 5 — наскок и удар конечностью (меч и пинок игрока — та же роль)
-            "LeapAbility.damage", "LeapAbility.duration", "LeapAbility.hitRadius", "LeapAbility.maxRange",
-            "LeapAbility.minRange", "LeapAbility.speed", "LeapAbility.up", "LimbStrikeAbility.bleedStacks",
-            "LimbStrikeAbility.damage", "LimbStrikeAbility.halfAngle", "LimbStrikeAbility.knockForce",
-            "LimbStrikeAbility.range", "PlayerAttack.cooldown", "PlayerAttack.damage", "PlayerAttack.radius",
-            "PlayerAttack.range", "PlayerKick.cooldown", "PlayerKick.damage", "PlayerKick.force", "PlayerKick.radius",
-            "PlayerKick.range",
             // задача 6 — голос: вой, рёв, клич
             "PlayerBellow.cooldown", "PlayerBellow.fearRadius", "PlayerBellow.rallyRadius", "PlayerHowl.cooldown",
             "PlayerHowl.fearMoraleHit", "PlayerHowl.fearRadius", "PlayerHowl.radius", "PlayerHowl.stunDuration",
@@ -39,8 +32,6 @@ namespace Chimera.Tests.EditMode
             "PlayerConstrict.cooldown", "PlayerConstrict.dragOffset", "PlayerConstrict.escapeKnock",
             "PlayerConstrict.escapeMax", "PlayerConstrict.escapeMin", "PlayerConstrict.grabRange",
             "PlayerConstrict.holdRange", "PlayerConstrict.selfSlow1", "PlayerConstrict.selfSlow2",
-            // база доставок — замах общий у всех, уходит последним
-            "WindupAbility.windupTime",
         };
 
         // носители, которых НЕ видно через IAbility: без явной проверки детектор мог бы молча ослепнуть на них

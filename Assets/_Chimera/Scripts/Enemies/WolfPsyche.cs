@@ -27,7 +27,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     [SerializeField] float scentRange = 16f;    // в каком радиусе берёт свежий след игрока
     [SerializeField] float hearRange = 28f;     // СЛУХ: приманку змеи (громкость 1.0) слышно с этой дальности, тихий гремок (~0.55) — с ~15м
 
-    // параметры укуса и прыжка теперь на компонентах-доставках BiteAbility/LeapAbility (тюнить там)
+    // числа укуса и прыжка — в записях органов (BiteData у Пасти, LeapData у ног): тюнить в SpeciesBootstrap
 
     [Header("Захват (удержание)")]
     [SerializeField] float grabWindupTime = 0.35f;
@@ -190,8 +190,8 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
                              * (variance != null ? variance.SpeedMult : 1f); // ярость ускоряет; разброс делает особей разными
 
     // тело-на-шасси (CreatureBody: органы Волка × экспрессия ~0.45) кормит деривированное.
-    // Урон прыжка и ритм атак остаются фирменными (сериализованы здесь/на LeapAbility).
-    public void OnBodyStats(int damage, float bodyMoveSpeed, float howlRange)
+    // Ритм атак — фирменная тактика психики; числа прыжка — в записи органа ног (LeapData).
+    public void OnBodyStats(float bodyMoveSpeed, float howlRange)
     {
         moveSpeed = bodyMoveSpeed;
         if (howlRange > 0.01f) howlRadius = howlRange; // ГОЛОС — от данных Пасти (природная норма ×1)

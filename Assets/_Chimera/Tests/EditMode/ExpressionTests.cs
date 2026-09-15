@@ -67,18 +67,19 @@ namespace Chimera.Tests.EditMode
             // ставим hpBonus 0.3 и 0.6
             contribType.GetField("hpBonus").SetValue(a, 0.3f);
             contribType.GetField("hpBonus").SetValue(b, 0.6f);
-            contribType.GetField("dmg").SetValue(a, 10f);
-            contribType.GetField("dmg").SetValue(b, 5f);
+            // урон конечности больше не вклад органа, а запись LimbStrikeData (спека 12.09) — скаляр для проверки взят другой
+            contribType.GetField("stam").SetValue(a, 10f);
+            contribType.GetField("stam").SetValue(b, 5f);
             contribType.GetField("atkCd").SetValue(a, 0.5f);
             contribType.GetField("atkCd").SetValue(b, 0.3f);
 
             var res = sup.Invoke(null, new[] { a, b });
             float hp = (float)contribType.GetField("hpBonus").GetValue(res);
-            float dmg = (float)contribType.GetField("dmg").GetValue(res);
+            float stam = (float)contribType.GetField("stam").GetValue(res);
             float cd = (float)contribType.GetField("atkCd").GetValue(res);
 
             Assert.AreEqual(0.6f, hp, 1e-5f, "Sup hpBonus должен быть max, не сумма");
-            Assert.AreEqual(10f, dmg, 1e-5f, "Sup dmg = max");
+            Assert.AreEqual(10f, stam, 1e-5f, "Sup stam = max");
             Assert.AreEqual(0.3f, cd, 1e-5f, "Sup atkCd = min (быстрее = лучше)");
             // сумма дала бы 0.9 / 15 / не min — ловим регрессию
             Assert.AreNotEqual(0.9f, hp, "Дубль не должен суммировать");

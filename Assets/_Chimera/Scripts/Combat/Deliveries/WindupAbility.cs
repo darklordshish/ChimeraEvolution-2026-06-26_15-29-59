@@ -11,7 +11,6 @@ public enum AbilityRun { Running, Done, Cancelled }
 /// </summary>
 public abstract class WindupAbility : MonoBehaviour, IAbility, IAbilityCarrier
 {
-    [SerializeField] protected float windupTime = 0.45f;
     [SerializeField, NotOrganData("физика тела: гравитация полёта одна у всех")] protected float gravity = -20f;
 
     protected CharacterController controller;
@@ -90,10 +89,10 @@ public abstract class WindupAbility : MonoBehaviour, IAbility, IAbilityCarrier
         target = h != null ? h.transform : null;
     }
 
-    // ГОТОВНОСТЬ: доставка, переехавшая на запись органа, говорит «нет записи — нет приёма»
-    protected virtual bool Ready => true;
-    // ЗАМАХ: переехавшие доставки берут его из записи органа, остальные — из поля windupTime (долг детектора)
-    protected virtual float WindupTime => windupTime;
+    // ГОТОВНОСТЬ И ЗАМАХ — ТОЛЬКО ИЗ ЗАПИСИ ОРГАНА (спека «данные в органах»): у базы своих чисел нет. Абстрактные
+    // намеренно — новая доставка без записи не скомпилируется, а не заработает молча на дефолте
+    protected abstract bool Ready { get; }
+    protected abstract float WindupTime { get; }
 
     // запуск замаха; false — если уже занят, нет цели или приём недоступен
     public bool TryUse()

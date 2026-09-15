@@ -139,14 +139,9 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
 
     // тело-на-шасси кормит скорость; урон тарана остаётся на ChargeAbility (как урон прыжка у волка);
     // голос (howlRange) — задел: РЁВ пока фирменный (bellowRadius), переведём на данные Глотки при тюнинге
-    public void OnBodyStats(int damage, float bodyMoveSpeed, float howlRange)
+    public void OnBodyStats(float bodyMoveSpeed, float howlRange)
     {
         moveSpeed = bodyMoveSpeed;
-        // УРОН КОПЫТА ЖИВЁТ В ОРГАНЕ, А НЕ В ДОСТАВКЕ. У лося единственный орган с уроном — «Копыто»
-        // (22), Глотка и прочие молчат, поэтому `damage` тела и есть урон конечности. Держать число
-        // ещё и в префабе значило бы завести второй источник правды — на этом уже потерялся тюнинг
-        // тарана, когда правка дефолта не доехала до зверя
-        if (hoof != null) hoof.SetDamage(damage);
     }
 
     void Awake()
@@ -431,7 +426,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
             // намеренно: пока рога перезаряжаются (2.5 с), зверь вплотную не должен становиться
             // безобидным — иначе его держат в упор и бьют безнаказанно, что и было до 11.09.
             //     Природа тут заодно с механикой: лось отбивается от хищника передними ногами, а
-            // рогами бодает соперников. Урон копыта приходит из органа (см. OnBodyStats)
+            // рогами бодает соперников. Урон копыта — из записи удара конечностью у органа «Копыто»
             else if (sees && hoof != null && dist <= hoof.Range && Time.time >= nextHoofTime)
             {
                 if (hoof.TryUse()) { activeAbility = hoof; nextHoofTime = Time.time + hoofCooldown; }

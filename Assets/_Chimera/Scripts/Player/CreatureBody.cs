@@ -54,7 +54,6 @@ public partial class CreatureBody : MonoBehaviour
     PlayerController move;
     Health health;
     Stamina stamina;   // бак дыхалки — кор-механика у ВСЕХ тел, как и Health
-    PlayerKick kick;
     PlayerHowl howl;
     PlayerConstrict constrictAb;
     SpawnVariance variance; // разброс особи: HP учитываем при раздаче витальности (иначе гонка Start'ов)
@@ -118,7 +117,6 @@ public partial class CreatureBody : MonoBehaviour
         // ЭМОЦ-ИНДИКАЦИЯ — тоже тело: ярость/страх подкрашивают (у холоднокровных эмоций нет — тинт молчит сам)
         if (!TryGetComponent<EmotionTint>(out _)) gameObject.AddComponent<EmotionTint>();
         TryGetComponent(out health);
-        TryGetComponent(out kick);
         TryGetComponent(out howl);
         TryGetComponent(out constrictAb);
         // обхват/рёв — новые способности: достраиваем скелет сами (руками не повесить = кнопка молча мертва).
@@ -266,7 +264,6 @@ public partial class CreatureBody : MonoBehaviour
         if (health == null) TryGetComponent(out health);
         if (attack == null) TryGetComponent(out attack);
         if (move == null) TryGetComponent(out move);
-        if (kick == null) TryGetComponent(out kick);
         if (howl == null) TryGetComponent(out howl);
         if (constrictAb == null) TryGetComponent(out constrictAb);
         if (variance == null) TryGetComponent(out variance);
@@ -291,9 +288,9 @@ public partial class CreatureBody : MonoBehaviour
         }
 
         // суммирование групп; урон группы «Пасть» принадлежит УКУСУ, не мечу
-        float dmgF = 0f, hpBonusF = 0f, stamF = 0f, stamRegF = 0f;
-        float rng = 0f, atkCd = 0f, mv = 0f, dash = 0f, dashDur = 0f, dashCd = 0f, reduce = 0f, regen = 0f, regenOOC = 0f, thermal = 0f, howlR = 0f, howlStunAt = 0f;
-        bool scentOn = false, kickOn = false, howlOn = false, coldOn = false, camoOn = false,
+        float hpBonusF = 0f, stamF = 0f, stamRegF = 0f;
+        float atkCd = 0f, mv = 0f, dash = 0f, dashDur = 0f, dashCd = 0f, reduce = 0f, regen = 0f, regenOOC = 0f, thermal = 0f, howlR = 0f, howlStunAt = 0f;
+        bool scentOn = false, howlOn = false, coldOn = false, camoOn = false,
              thermalOn = false, constrictOn = false, digestOn = false, bellowOn = false, screamOn = false,
              insightOn = false, keenEarOn = false,
              thornsOn = false, venomResistOn = false, bleedResistOn = false;
@@ -302,13 +299,12 @@ public partial class CreatureBody : MonoBehaviour
         foreach (var kv in groups)
         {
             var c = kv.Value;
-            dmgF += c.dmg; // урон укуса — не число органа, а запись BiteData: в меч он не течёт по построению
             hpBonusF += c.hpBonus; stamF += c.stam; stamRegF += c.stamRegen;
-            rng += c.rng; atkCd += c.atkCd; mv += c.mv; dash += c.dash; dashDur += c.dashDur; dashCd += c.dashCd;
+            atkCd += c.atkCd; mv += c.mv; dash += c.dash; dashDur += c.dashDur; dashCd += c.dashCd;
             reduce += c.reduce; regen += c.regen; regenOOC += c.regenOOC; thermal += c.thermal;
             howlR = Mathf.Max(howlR, c.howlR);
             howlStunAt = Mathf.Max(howlStunAt, c.howlStunAt);
-            scentOn |= c.scent; kickOn |= c.kick; howlOn |= c.howl;
+            scentOn |= c.scent; howlOn |= c.howl;
             coldOn |= c.cold; camoOn |= c.camo; thermalOn |= c.thermalOn; constrictOn |= c.constrict;
             digestOn |= c.digest; bellowOn |= c.bellow; screamOn |= c.scream;
             constrictCap = Mathf.Max(constrictCap, c.constrictCap); insightOn |= c.insight;
@@ -316,12 +312,10 @@ public partial class CreatureBody : MonoBehaviour
             thornsOn |= c.thorns; venomResistOn |= c.venomResist;
             bleedResistOn |= c.bleedResist;
         }
-        int dmg = Mathf.RoundToInt(dmgF);
 
         // ПРИЁМЫ ИЗ ЗАПИСЕЙ ОРГАНОВ (спека 12.09): раскрыть, свести дубли, накормить носителей — один путь игроку и NPC.
-        // Переехали укус, рога, таран, залп, перекат, клубок; наскок, голос и захват едут следом и пока раздаются ниже по-старому
+        // Переехали все удары: укус, рога, таран, залп, перекат, клубок, конечность, пинок, наскок; голос и захват едут следом
         ProvisionAbilities();
-        if (kick != null) kick.KickEnabled = kickOn; // пинок — фича человеческих ног: с волчьими пропадает
         // ГОЛОС — от данных: радиус = органная база × МОЩЬ-превосходство (игрок BonusMult ×1..2;
         // NPC max(1, Э) — норму вниз не штрафуем: взрослый волк воет как волк)
         float voiceMult = Mathf.Max(1f, Power); // радиус: норму вниз не штрафуем (взрослый волк воет как волк)
@@ -372,11 +366,9 @@ public partial class CreatureBody : MonoBehaviour
                 senses.Set(SenseKind.Thermal, thermalOn ? thermal : 0f);
             }
         }
-        if (attack != null)
-        {
-            attack.SetMelee(dmg, Mathf.Max(0.5f, rng));
-            attack.SetCooldown(Mathf.Max(minAtkCooldown, atkCd)); // пол — глушим овершут скорострельности
-        }
+        // ТЕМП АТАК от Сердца — свойство тела, модификатор к удару конечностью (числа удара — в записи органа «Руки»).
+        // Пол глушит овершут скорострельности
+        if (attack != null) attack.SetTempo(Mathf.Max(minAtkCooldown, atkCd));
         if (move != null)
         {
             move.SetLegs(mv, dash, dashDur);
@@ -408,9 +400,9 @@ public partial class CreatureBody : MonoBehaviour
             stamina.RegenPerSecond = BaseStaminaRegen * (1f + stamRegF);
         }
 
-        // НПС-потребители (психика): тело отдаёт деривированное — урон конечности (у лося копыто), скорость хода
-        // и ГОЛОС (радиус воя, уже × мощь). Числа УКУСА психике больше не идут: доставку кормит запись органа
-        foreach (var c in GetComponents<IBodyStatConsumer>()) c.OnBodyStats(dmg, mv, howlReach);
+        // НПС-потребители (психика): тело отдаёт деривированное — скорость хода
+        // и ГОЛОС (радиус воя, уже × мощь). Числа ПРИЁМОВ психике больше не идут: доставки кормят записи органов
+        foreach (var c in GetComponents<IBodyStatConsumer>()) c.OnBodyStats(mv, howlReach);
 
         // МОРФОЛОГИЯ (ось 2): пересобрать куб-модель из состава (слоты шасси раньше химерных → шасси-фёрст) +
         // пере-собрать renderers (морф-части новые), чтобы тинт их покрасил. Только у видов со скелетом (Волк/Человек)
@@ -528,5 +520,5 @@ public partial class CreatureBody : MonoBehaviour
 /// </summary>
 public interface IBodyStatConsumer
 {
-    void OnBodyStats(int damage, float moveSpeed, float howlRange);
+    void OnBodyStats(float moveSpeed, float howlRange);
 }
