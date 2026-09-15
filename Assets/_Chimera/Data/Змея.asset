@@ -36,7 +36,6 @@ MonoBehaviour:
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
-    enablesConstrict: 0
     thorns: 0
     venomResist: 0
     bleedResist: 0
@@ -46,9 +45,8 @@ MonoBehaviour:
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
-    constrictStage: 0
     abilities:
-    - rid: 4402482292869300257
+    - rid: 4402482292869300274
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -77,7 +75,6 @@ MonoBehaviour:
     coldBlooded: 1
     camo: 0
     enablesThermal: 0
-    enablesConstrict: 0
     thorns: 0
     venomResist: 0
     bleedResist: 0
@@ -87,7 +84,6 @@ MonoBehaviour:
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
-    constrictStage: 0
     abilities: []
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
@@ -116,7 +112,6 @@ MonoBehaviour:
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
-    enablesConstrict: 0
     thorns: 0
     venomResist: 0
     bleedResist: 0
@@ -126,9 +121,8 @@ MonoBehaviour:
     chassisOnly: 1
     digestion: 1
     nativeChassis: 
-    constrictStage: 0
     abilities:
-    - rid: 4402482292869300258
+    - rid: 4402482292869300275
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -156,7 +150,6 @@ MonoBehaviour:
     coldBlooded: 0
     camo: 1
     enablesThermal: 0
-    enablesConstrict: 0
     thorns: 0
     venomResist: 0
     bleedResist: 0
@@ -166,7 +159,6 @@ MonoBehaviour:
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
-    constrictStage: 0
     abilities: []
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
@@ -195,7 +187,6 @@ MonoBehaviour:
     coldBlooded: 0
     camo: 0
     enablesThermal: 1
-    enablesConstrict: 0
     thorns: 0
     venomResist: 0
     bleedResist: 0
@@ -205,7 +196,6 @@ MonoBehaviour:
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
-    constrictStage: 0
     abilities: []
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
@@ -246,7 +236,6 @@ MonoBehaviour:
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
-    enablesConstrict: 0
     thorns: 0
     venomResist: 0
     bleedResist: 0
@@ -256,7 +245,6 @@ MonoBehaviour:
     chassisOnly: 1
     digestion: 0
     nativeChassis: 
-    constrictStage: 0
     abilities: []
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
@@ -369,7 +357,6 @@ MonoBehaviour:
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
-    enablesConstrict: 1
     thorns: 0
     venomResist: 0
     bleedResist: 0
@@ -379,8 +366,8 @@ MonoBehaviour:
     chassisOnly: 0
     digestion: 0
     nativeChassis: "\u0417\u043C\u0435\u044F"
-    constrictStage: 3
-    abilities: []
+    abilities:
+    - rid: 4402482292869300276
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -1147,7 +1134,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4402482292869300257
+    - rid: 4402482292869300274
       type: {class: BiteData, ns: , asm: Chimera.Runtime}
       data:
         damage: 24
@@ -1159,7 +1146,7 @@ MonoBehaviour:
         halfAngle: 55
         windupTime: 0.4
         cooldown: 0.7
-    - rid: 4402482292869300258
+    - rid: 4402482292869300275
       type: {class: LeapData, ns: , asm: Chimera.Runtime}
       data:
         damage: 8
@@ -1170,3 +1157,33 @@ MonoBehaviour:
         duration: 0.35
         hitRadius: 1.5
         windupTime: 0.35
+    - rid: 4402482292869300276
+      type: {class: ConstrictData, ns: , asm: Chimera.Runtime}
+      data:
+        maxStage: 3
+        foreignMaxStage: 2
+        tightenRate: 1
+        stage2At: 1.5
+        stage3At: 3.5
+        loosenPerDamage: 0.12
+        chokeDamage: 4
+        chokeInterval: 0.5
+        grabSlow1: 0.35
+        grabSlow2: 0.15
+        grabSlow3: 0
+        npcLoosenPerDamage: 0.04
+        npcChokeDamage: 6
+        npcChokeInterval: 0.6
+        escapeMin: 2.6
+        escapeMax: 4
+        breakRawThreshold: 5
+        grabBleedStacks: 0
+        holdDrain: 3
+        wearInterval: 1.5
+        grabRange: 2.2
+        holdRange: 3.2
+        cooldown: 2.5
+        selfSlow1: 0.8
+        selfSlow2: 0.6
+        escapeKnock: 6
+        dragOffset: 1.1

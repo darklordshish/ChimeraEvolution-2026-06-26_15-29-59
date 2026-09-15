@@ -59,7 +59,8 @@ public class DebugHud : MonoBehaviour
         if (kick != null && kick.Available) abil.Add("пинок E");
         if (bite != null && bite.Available) abil.Add("укус Q");
         if (howl != null && howl.Available) abil.Add("вой Alt");
-        if (constrict != null && constrict.ConstrictEnabled) abil.Add("обхват F");
+        if (constrict == null && player != null) player.TryGetComponent(out constrict); // грань захвата тело заводит по записи органа
+        if (constrict != null && constrict.Available) abil.Add("обхват F");
         if (bellow == null && player != null) player.TryGetComponent(out bellow); // тело до-создаёт после нашего Start
         if (bellow != null && bellow.Available) abil.Add("РЁВ Alt");
         var antler = player != null ? player.GetComponent<PlayerAntler>() : null;

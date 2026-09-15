@@ -115,7 +115,6 @@ public class PlayerController : MonoBehaviour
     {
         groundY = transform.position.y;
         SetFirstPerson(false);
-        if (constrict == null) TryGetComponent(out constrict); // мог до-создаться в CreatureBody.Awake
     }
 
     void OnEnable() { moveAction.Enable(); lookAction.Enable(); dashAction.Enable(); toggleViewAction.Enable(); sneakAction.Enable(); sprintAction.Enable(); }
@@ -163,6 +162,7 @@ public class PlayerController : MonoBehaviour
         // захват режет И перемещение, И рывок (чем туже, тем короче рывок; на 3-й стадии — корень). Иммун снимает всё.
         // СВОЙ обхват (хвост) замедляет только ход — рывок остаётся полным (и сам рвёт хватку дистанцией).
         float grip = GrabImmune ? 1f : grabSlow;
+        if (constrict == null) TryGetComponent(out constrict); // грань захвата тело заводит по записи органа — позже нашего Awake
         float hold = constrict != null ? constrict.SelfSlow : 1f;
         float sneak = sneakAction.IsPressed() ? sneakMult : 1f; // тихий шаг: скорость ↓ → шум ↓ (Noise сам заметит)
         // СПРИНТ жжёт бак, пока держишь Shift и реально бежишь. На отдышке не включается — там своё

@@ -95,6 +95,15 @@ namespace Chimera.Tests.PlayMode
 
         static ScreamData Scream() => new ScreamData { cooldown = 0.1f, boostPerStack = 0.12f, maxBoost = 2f };
 
+        // захват: сжатие быстрое, окно вырывания и дыхалка с запасом — тест меряет стадии, кап и срыв, а не гонку
+        static ConstrictData Grip() => new ConstrictData
+        {
+            maxStage = 3, foreignMaxStage = 2, tightenRate = 20f, stage2At = 0.2f, stage3At = 0.4f,
+            npcChokeDamage = 6, npcChokeInterval = 0.1f, escapeMin = 60f, escapeMax = 60f,
+            breakRawThreshold = 10, grabBleedStacks = 0, holdDrain = 0.01f, wearInterval = 1.5f,
+            grabRange = 2.2f, holdRange = 3.2f, cooldown = 0.2f, selfSlow1 = 0.8f, selfSlow2 = 0.6f, dragOffset = 1.1f,
+        };
+
         struct Case
         {
             public string name, slot;
@@ -116,6 +125,7 @@ namespace Chimera.Tests.PlayMode
             new Case { name = "вой", slot = "Пасть волка", record = Howl, npc = null, player = typeof(PlayerHowl) },
             new Case { name = "рёв", slot = "Глотка", record = Bellow, npc = null, player = typeof(PlayerBellow) },
             new Case { name = "клич", slot = "Рот", record = Scream, npc = null, player = typeof(PlayerScream) },
+            new Case { name = "захват", slot = "Хвост", record = Grip, npc = typeof(Constrict), player = typeof(PlayerConstrict) },
         };
 
         static Organ OrganWith(string name, string slot, params AbilityData[] records) =>
@@ -296,6 +306,8 @@ namespace Chimera.Tests.PlayMode
                     windup.SetTarget(Dummy(new Vector3(0f, 0f, 1.2f)));
                     Assert.IsFalse(windup.TryUse(), $"{c.name}: недоступный приём запустил замах");
                 }
+                if (carrier is Constrict machine)
+                    Assert.IsFalse(machine.Begin(Dummy(new Vector3(0f, 0f, 1.2f))), $"{c.name}: без записи машина взяла жертву");
             }
         }
 
@@ -718,6 +730,111 @@ namespace Chimera.Tests.PlayMode
             Assert.IsTrue(scream.TryUse(), "клич не сработал");
             Assert.AreEqual(1, BleedOf(body.GetComponent<Health>()), "клич не пустил кровь кричащему");
             Assert.IsTrue(rage.IsEnraged, "клич не ввёл в ярость");
+        }
+
+        // ── ЗАХВАТ ───────────────────────────────────────────────────────────────────────
+
+        // у NPC тикает машину психика-драйвер, каждый кадр, пока держит. Тест делает то же
+        static IEnumerator Hold(Constrict machine, float seconds)
+        {
+            float end = Time.time + seconds;
+            while (Time.time < end)
+            {
+                yield return null;
+                if (machine.Tick() != GrabTick.Holding) yield break;
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator Npc_Constrict_StagesAndChokeFromRecord_CapOnForeignChassis()
+        {
+            var rec = Grip();
+            var tail = OrganWith("Хвост", "Хвост", rec);
+            tail.nativeChassis = "Удав";
+            var holder = Npc(Species("Удав", tail), expression: 1f);
+            var victim = Dummy(new Vector3(0f, 0f, 1.2f));
+            yield return null;
+
+            var machine = holder.GetComponent<Constrict>();
+            Assert.IsNotNull(machine, "тело не завело машину захвата по записи органа");
+            Assert.AreEqual(rec.maxStage, holder.Ability<ConstrictData>().maxStage, "дома кап стадии — родная сила органа");
+            Assert.IsTrue(machine.Begin(victim), "машина не взяла жертву");
+            int before = victim.Current;
+            yield return Hold(machine, 1f);
+            Assert.AreEqual(rec.maxStage, machine.Stage, "сжатие по записи не дошло до партера");
+            int choked = before - victim.Current;
+            Assert.Greater(choked, 0, "на партере нет удушения");
+            Assert.AreEqual(0, choked % rec.npcChokeDamage, "удушение бьёт не числом записи");
+            machine.End();
+
+            // тот же орган на чужом шасси — кап стадии из записи
+            var guestTail = OrganWith("Хвост", "Хвост", rec);
+            guestTail.nativeChassis = "Удав";
+            var guestBody = Npc(Species("Человек", guestTail), expression: 1f);
+            var victim2 = Dummy(new Vector3(3f, 0f, 1.2f));
+            yield return null;
+            var guest = guestBody.GetComponent<Constrict>();
+            Assert.AreEqual(rec.foreignMaxStage, guestBody.Ability<ConstrictData>().maxStage, "в гостях кап — foreignMaxStage записи");
+            Assert.IsTrue(guest.Begin(victim2), "машина гостя не взяла жертву");
+            yield return Hold(guest, 1f);
+            Assert.AreEqual(rec.foreignMaxStage, guest.Stage, "в гостях захват дожал выше капа записи");
+        }
+
+        [UnityTest]
+        public IEnumerator Npc_Constrict_RescuerBreaksFromRecordThreshold_BleedOnGrab()
+        {
+            var rec = Grip();
+            rec.stage2At = 100f; rec.stage3At = 200f; // держим на ст.1: там удар спасателя срывает хват разом
+            rec.grabBleedStacks = 2;
+            var holder = Npc(Species("Хищник", OrganWith("Пасть", "Пасть", rec)), expression: 1f);
+            var victim = Dummy(new Vector3(0f, 0f, 1.2f));
+            var rescuer = Dummy(new Vector3(0f, 0f, -1.2f));
+            yield return null;
+
+            var machine = holder.GetComponent<Constrict>();
+            Assert.IsTrue(machine.Begin(victim), "машина не взяла жертву");
+            Assert.AreEqual(rec.grabBleedStacks, BleedOf(victim), "кровь на входе в хват — не числом записи");
+
+            var own = holder.GetComponent<Health>();
+            yield return null;
+            own.LastAttacker = rescuer;
+            own.TakeDamage(rec.breakRawThreshold - 1, true);
+            Assert.AreEqual(GrabTick.Holding, machine.Tick(), "удар слабее порога записи сорвал хват");
+
+            yield return null;
+            own.LastAttacker = rescuer;
+            own.TakeDamage(rec.breakRawThreshold, true);
+            Assert.AreEqual(GrabTick.Broken, machine.Tick(), "удар в порог записи не сорвал хват на ст.1");
+        }
+
+        [UnityTest]
+        public IEnumerator Player_Constrict_SameRecord_GrabRangeSelfSlowCooldown()
+        {
+            var rec = Grip();
+            var body = Player(Species("Человек", OrganWith("Хвост", "Хвост", rec)));
+            var target = Dummy(new Vector3(0f, 0f, rec.grabRange * 0.5f));
+            yield return null;
+            Physics.SyncTransforms();
+
+            var grip = body.GetComponent<PlayerConstrict>();
+            Assert.IsNotNull(grip, "тело игрока не завело грань захвата по записи органа");
+            Assert.IsTrue(grip.TryUse(), "захват не взял цель в досягаемости записи");
+            Assert.AreEqual(1, grip.Stage, "захват начинается со ст.1");
+            Assert.AreEqual(rec.selfSlow1, grip.SelfSlow, 1e-5f, "своё замедление на ст.1 — не из записи");
+            yield return new WaitForSeconds(0.3f);
+            Assert.GreaterOrEqual(grip.Stage, 2, "машина игрока не дожала по записи");
+            Assert.AreEqual(rec.selfSlow2, grip.SelfSlow, 1e-5f, "своё замедление с ношей — не из записи");
+
+            Assert.IsTrue(grip.TryUse(), "повторное F не отпустило");
+            Assert.IsFalse(grip.Holding, "отпустили, а хват держится");
+            Teleport(target, new Vector3(0f, 0f, rec.grabRange * 0.5f));
+            Assert.IsFalse(grip.TryUse(), "захват сработал в перезарядке записи");
+            yield return new WaitForSeconds(rec.cooldown + 0.05f);
+
+            Teleport(target, new Vector3(0f, 0f, rec.grabRange + 1.5f));
+            Assert.IsFalse(grip.TryUse(), "захват взял цель за досягаемостью записи");
+            Teleport(target, new Vector3(0f, 0f, rec.grabRange * 0.5f));
+            Assert.IsTrue(grip.TryUse(), "перезарядка записи прошла, а захват не берёт");
         }
     }
 }

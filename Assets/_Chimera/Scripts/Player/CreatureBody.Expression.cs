@@ -11,13 +11,12 @@ public partial class CreatureBody
     struct Contribution
     {
         public float hpBonus, stam, stamRegen, atkCd, mv, dash, dashDur, dashCd, reduce, regen, regenOOC, thermal;
-        public bool scent, cold, camo, thermalOn, constrict, digest, bellow, scream;
+        public bool scent, cold, camo, thermalOn, digest;
         public bool thorns, venomResist; // иглы-ответка, ядоупорность (ёж)
         public bool bleedResist;  // кровеупорность (лосиное сердце)
         public bool insight; // ЧУТЬЁ УЧЁНОГО: распознавание намерений + числа состояний (человеческое Чутьё)
         public bool keenEar;  // ОСТРЫЙ СЛУХ: различение вида источника + волны звука на экране
         public float earMult; // множитель дальности слуха (супремум дублей)
-        public int constrictCap; // эффективный кап стадии захвата органа: native ? constrictStage : min(2, constrictStage); 0 = не грэпл
 
         // СУПРЕМУМ дублей одного типа слота: скаляры — max (кулдауны — min: меньше = лучше), флаги — OR.
         // Дубль оси силу НЕ растит (второе сердце ≠ ×2 регена) — окупается только НОВЫМ направлением.
@@ -31,8 +30,7 @@ public partial class CreatureBody
             regenOOC = Mathf.Max(a.regenOOC, b.regenOOC), thermal = Mathf.Max(a.thermal, b.thermal),
             scent = a.scent || b.scent,
             cold = a.cold || b.cold, camo = a.camo || b.camo,
-            thermalOn = a.thermalOn || b.thermalOn, constrict = a.constrict || b.constrict,
-            constrictCap = Mathf.Max(a.constrictCap, b.constrictCap),
+            thermalOn = a.thermalOn || b.thermalOn,
             digest = a.digest || b.digest,
             insight = a.insight || b.insight,
             keenEar = a.keenEar || b.keenEar, earMult = Mathf.Max(a.earMult, b.earMult),
@@ -70,11 +68,6 @@ public partial class CreatureBody
         float Scaled(float hv, float wv) => own ? wv * m : Blend(hv, wv, m);
         float Timed(float hv, float wv) => own ? wv : Blend(hv, wv, m); // СВОЁ время не растягиваем: ×2 на кулдаун = наказание за свой вид
 
-        // ЭФФЕКТИВНЫЙ КАП ЗАХВАТА: нативен для шасси → полная сила органа, чужой → min(2, сила).
-        // 0 у enablesConstrict-органа = «не настроено» → дефолт 3 (старое нативное); после бутстрапа не встречается
-        int cStage = w.constrictStage > 0 ? w.constrictStage : 3;
-        bool cNative = chassis != null && w.nativeChassis == chassis.speciesName;
-
         return new Contribution
         {
             hpBonus = Scaled(h.hpBonus, w.hpBonus), // ДОЛЯ базы шасси — экспрессия раскрывает бонус, не тело
@@ -93,12 +86,11 @@ public partial class CreatureBody
             dashDur = w.dashDuration, thermal = w.thermalRange,
             scent = w.enablesScent,
             cold = w.coldBlooded, camo = w.camo, thermalOn = w.enablesThermal,
-            constrict = w.enablesConstrict, digest = w.digestion,
+            digest = w.digestion,
             insight = w.insight,
             keenEar = w.keenHearing, earMult = w.hearingMult,
             thorns = w.thorns, venomResist = w.venomResist,
             bleedResist = w.bleedResist,
-            constrictCap = w.enablesConstrict ? (cNative ? cStage : Mathf.Min(2, cStage)) : 0,
         };
     }
 

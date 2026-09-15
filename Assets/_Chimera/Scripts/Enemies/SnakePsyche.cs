@@ -175,7 +175,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         if (!TryGetComponent(out nav)) nav = gameObject.AddComponent<NavLocomotion>();
         if (!TryGetComponent(out bite)) bite = gameObject.AddComponent<BiteAbility>();
         if (!TryGetComponent(out leap)) leap = gameObject.AddComponent<LeapAbility>();
-        if (!TryGetComponent(out constrictM)) constrictM = gameObject.AddComponent<Constrict>(); // единая машина хвата; кап стадии теперь всегда даёт ТЕЛО из данных (Хвост constrictStage=3 на змеином шасси → ст.3), не дефолт машины
+        if (!TryGetComponent(out constrictM)) constrictM = gameObject.AddComponent<Constrict>(); // единая машина хвата; все числа — запись ConstrictData Хвоста (её кормит тело); нет записи — Begin откажет
         TryGetComponent(out variance); // разброс особи вешает тело (CreatureBody.Awake) — психика только читает
         if (!TryGetComponent(out alert)) alert = gameObject.AddComponent<AlertState>(); // общая машина восприятия (S1)
         if (!TryGetComponent(out senses)) senses = gameObject.AddComponent<Senses>(); // сенсорный профиль (S1)

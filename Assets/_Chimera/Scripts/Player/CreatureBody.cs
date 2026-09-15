@@ -54,7 +54,6 @@ public partial class CreatureBody : MonoBehaviour
     PlayerController move;
     Health health;
     Stamina stamina;   // бак дыхалки — кор-механика у ВСЕХ тел, как и Health
-    PlayerConstrict constrictAb;
     SpawnVariance variance; // разброс особи: HP учитываем при раздаче витальности (иначе гонка Start'ов)
     Bossness bossness;      // модуль боссовости: множитель HP опрашиваем так же, как разброс
     ColdBlooded cold;       // холоднокровность (Сердце змеи) — компонент-маркер, вешаем/снимаем по сборке
@@ -112,10 +111,6 @@ public partial class CreatureBody : MonoBehaviour
         // ЭМОЦ-ИНДИКАЦИЯ — тоже тело: ярость/страх подкрашивают (у холоднокровных эмоций нет — тинт молчит сам)
         if (!TryGetComponent<EmotionTint>(out _)) gameObject.AddComponent<EmotionTint>();
         TryGetComponent(out health);
-        TryGetComponent(out constrictAb);
-        // обхват/рёв — новые способности: достраиваем скелет сами (руками не повесить = кнопка молча мертва).
-        // Крутилки видны на добавленном компоненте в рантайме; для перманентного тюнинга добавь в редакторе.
-        if (move != null && constrictAb == null) constrictAb = gameObject.AddComponent<PlayerConstrict>();
         TryGetComponent(out betrayal);
         if (move != null && betrayal == null) betrayal = gameObject.AddComponent<Betrayal>(); // эрозия признания — только у игрока
         TryGetComponent(out variance);
@@ -254,7 +249,6 @@ public partial class CreatureBody : MonoBehaviour
         if (health == null) TryGetComponent(out health);
         if (attack == null) TryGetComponent(out attack);
         if (move == null) TryGetComponent(out move);
-        if (constrictAb == null) TryGetComponent(out constrictAb);
         if (variance == null) TryGetComponent(out variance);
         if (bossness == null) TryGetComponent(out bossness);
         if (cold == null) TryGetComponent(out cold);
@@ -280,11 +274,10 @@ public partial class CreatureBody : MonoBehaviour
         float hpBonusF = 0f, stamF = 0f, stamRegF = 0f;
         float atkCd = 0f, mv = 0f, dash = 0f, dashDur = 0f, dashCd = 0f, reduce = 0f, regen = 0f, regenOOC = 0f, thermal = 0f;
         bool scentOn = false, coldOn = false, camoOn = false,
-             thermalOn = false, constrictOn = false, digestOn = false,
+             thermalOn = false, digestOn = false,
              insightOn = false, keenEarOn = false,
              thornsOn = false, venomResistOn = false, bleedResistOn = false;
         float earMult = 0f;
-        int constrictCap = 0; // макс кап стадии захвата среди надетых грэпл-органов (0 = захвата нет)
         foreach (var kv in groups)
         {
             var c = kv.Value;
@@ -292,29 +285,17 @@ public partial class CreatureBody : MonoBehaviour
             atkCd += c.atkCd; mv += c.mv; dash += c.dash; dashDur += c.dashDur; dashCd += c.dashCd;
             reduce += c.reduce; regen += c.regen; regenOOC += c.regenOOC; thermal += c.thermal;
             scentOn |= c.scent;
-            coldOn |= c.cold; camoOn |= c.camo; thermalOn |= c.thermalOn; constrictOn |= c.constrict;
+            coldOn |= c.cold; camoOn |= c.camo; thermalOn |= c.thermalOn;
             digestOn |= c.digest;
-            constrictCap = Mathf.Max(constrictCap, c.constrictCap); insightOn |= c.insight;
+            insightOn |= c.insight;
             keenEarOn |= c.keenEar; earMult = Mathf.Max(earMult, c.earMult);
             thornsOn |= c.thorns; venomResistOn |= c.venomResist;
             bleedResistOn |= c.bleedResist;
         }
 
         // ПРИЁМЫ ИЗ ЗАПИСЕЙ ОРГАНОВ (спека 12.09): раскрыть, свести дубли, накормить носителей — один путь игроку и NPC.
-        // Переехали все удары и голос (вой, рёв, клич); захват едет следом
+        // Все удары, голос и захват (у NPC носитель — машина Constrict, у игрока — драйвер PlayerConstrict над ней)
         ProvisionAbilities();
-        if (constrictAb != null) // ИГРОК: драйвер PlayerConstrict оборачивает машину
-        {
-            constrictAb.ConstrictEnabled = constrictOn;               // обхват — фича Хвоста (химерный слот)
-            constrictAb.SetMaxStage(Mathf.Max(1, constrictCap));      // кап из данных: constrictStage органа × nativeChassis (свой → полный, чужой → min 2)
-        }
-        // NPC-ПРОВИЗИЯ ЗАХВАТА: тело гарантирует машину и кап из данных (constrictStage×nativeChassis).
-        // Психика перестала капить — только драйвит; get-or-add робастен к порядку Awake/Start, чужеродной химере даёт хват по её органу
-        else if (move == null && constrictOn)
-        {
-            if (!TryGetComponent<Constrict>(out var grabM)) grabM = gameObject.AddComponent<Constrict>();
-            grabM.SetMaxStage(Mathf.Max(1, constrictCap));
-        }
         if (satietyComp != null) satietyComp.SetMetabolism(Homogeneity); // МЕТАБОЛИЗМ по тирам: чистый держит сытость дольше, химера сгорает
         SetColdBlooded(coldOn); // холоднокровность (Сердце змеи): невидимость для термозрения врагов
         SetCamouflage(camoOn);  // камуфляж (Чешуя змеи): невидимость в неподвижности

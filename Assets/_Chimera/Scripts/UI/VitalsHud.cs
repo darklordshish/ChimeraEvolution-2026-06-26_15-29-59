@@ -225,7 +225,7 @@ public class VitalsHud : MonoBehaviour
         // ЗАХВАТ, двусторонне: что делают со мной и что делаю я
         string grab = "";
         if (player != null && player.IsGrabbed) grab = "СХВАЧЕН — рывок или пинок!";
-        else if (constrict != null && constrict.Holding)
+        else if ((constrict != null || (player != null && player.TryGetComponent(out constrict))) && constrict.Holding)
         {
             grab = $"ОБХВАТ ст.{constrict.Stage}" +
                    (constrict.Stage >= 2 ? (constrict.Presenting ? " — ПОД УДАРОМ" : " — ЗАЩЁЛКНУТО") : " — держи, вырывается") +

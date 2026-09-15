@@ -36,7 +36,6 @@ MonoBehaviour:
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
-    enablesConstrict: 0
     thorns: 0
     venomResist: 0
     bleedResist: 0
@@ -46,7 +45,6 @@ MonoBehaviour:
     chassisOnly: 1
     digestion: 0
     nativeChassis: 
-    constrictStage: 0
     abilities: []
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
@@ -123,7 +121,6 @@ MonoBehaviour:
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
-    enablesConstrict: 0
     thorns: 0
     venomResist: 0
     bleedResist: 0
@@ -133,9 +130,8 @@ MonoBehaviour:
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
-    constrictStage: 0
     abilities:
-    - rid: 4402482292869300263
+    - rid: 4402482292869300281
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -187,7 +183,6 @@ MonoBehaviour:
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
-    enablesConstrict: 0
     thorns: 1
     venomResist: 0
     bleedResist: 0
@@ -197,7 +192,6 @@ MonoBehaviour:
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
-    constrictStage: 0
     abilities: []
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
@@ -346,7 +340,6 @@ MonoBehaviour:
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
-    enablesConstrict: 0
     thorns: 0
     venomResist: 0
     bleedResist: 0
@@ -356,10 +349,9 @@ MonoBehaviour:
     chassisOnly: 0
     digestion: 0
     nativeChassis: "\u0401\u0436"
-    constrictStage: 0
     abilities:
-    - rid: 4402482292869300264
-    - rid: 4402482292869300265
+    - rid: 4402482292869300282
+    - rid: 4402482292869300283
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -411,7 +403,6 @@ MonoBehaviour:
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
-    enablesConstrict: 1
     thorns: 0
     venomResist: 0
     bleedResist: 0
@@ -421,9 +412,9 @@ MonoBehaviour:
     chassisOnly: 0
     digestion: 0
     nativeChassis: "\u0401\u0436"
-    constrictStage: 1
     abilities:
-    - rid: 4402482292869300266
+    - rid: 4402482292869300284
+    - rid: 4402482292869300285
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -451,7 +442,6 @@ MonoBehaviour:
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
-    enablesConstrict: 0
     thorns: 0
     venomResist: 1
     bleedResist: 0
@@ -461,7 +451,6 @@ MonoBehaviour:
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
-    constrictStage: 0
     abilities: []
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
@@ -490,7 +479,6 @@ MonoBehaviour:
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
-    enablesConstrict: 0
     thorns: 0
     venomResist: 0
     bleedResist: 0
@@ -500,7 +488,6 @@ MonoBehaviour:
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
-    constrictStage: 0
     abilities: []
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
@@ -3184,7 +3171,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4402482292869300263
+    - rid: 4402482292869300281
       type: {class: VolleyData, ns: , asm: Chimera.Runtime}
       data:
         damagePerQuill: 4
@@ -3199,14 +3186,14 @@ MonoBehaviour:
         windupTime: 0.5
         cooldown: 0.8
         blindAimError: 1.6
-    - rid: 4402482292869300264
+    - rid: 4402482292869300282
       type: {class: RollData, ns: , asm: Chimera.Runtime}
       data:
         damage: 10
         bleedStacks: 1
         knockForce: 8
         radius: 1.2
-    - rid: 4402482292869300265
+    - rid: 4402482292869300283
       type: {class: CurlData, ns: , asm: Chimera.Runtime}
       data:
         curlArmor: 0.6
@@ -3215,7 +3202,7 @@ MonoBehaviour:
         rollDrain: 40
         rollTurnSpeed: 90
         rollGravity: 20
-    - rid: 4402482292869300266
+    - rid: 4402482292869300284
       type: {class: BiteData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
@@ -3227,3 +3214,33 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.4
         cooldown: 0.7
+    - rid: 4402482292869300285
+      type: {class: ConstrictData, ns: , asm: Chimera.Runtime}
+      data:
+        maxStage: 1
+        foreignMaxStage: 2
+        tightenRate: 1
+        stage2At: 1.5
+        stage3At: 3.5
+        loosenPerDamage: 0.12
+        chokeDamage: 4
+        chokeInterval: 0.5
+        grabSlow1: 0.35
+        grabSlow2: 0.15
+        grabSlow3: 0
+        npcLoosenPerDamage: 0.04
+        npcChokeDamage: 6
+        npcChokeInterval: 0.6
+        escapeMin: 3.5
+        escapeMax: 5.5
+        breakRawThreshold: 7
+        grabBleedStacks: 0
+        holdDrain: 3
+        wearInterval: 1.5
+        grabRange: 2.2
+        holdRange: 3.2
+        cooldown: 2.5
+        selfSlow1: 0.8
+        selfSlow2: 0.6
+        escapeKnock: 6
+        dragOffset: 1.1

@@ -36,7 +36,6 @@ MonoBehaviour:
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
-    enablesConstrict: 0
     thorns: 0
     venomResist: 0
     bleedResist: 0
@@ -46,7 +45,6 @@ MonoBehaviour:
     chassisOnly: 1
     digestion: 0
     nativeChassis: 
-    constrictStage: 0
     abilities: []
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
@@ -87,7 +85,6 @@ MonoBehaviour:
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
-    enablesConstrict: 0
     thorns: 0
     venomResist: 0
     bleedResist: 0
@@ -97,9 +94,8 @@ MonoBehaviour:
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
-    constrictStage: 0
     abilities:
-    - rid: 4402482292869300254
+    - rid: 4402482292869300271
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -157,7 +153,6 @@ MonoBehaviour:
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
-    enablesConstrict: 0
     thorns: 0
     venomResist: 0
     bleedResist: 0
@@ -167,9 +162,8 @@ MonoBehaviour:
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
-    constrictStage: 0
     abilities:
-    - rid: 4402482292869300255
+    - rid: 4402482292869300272
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -233,7 +227,6 @@ MonoBehaviour:
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
-    enablesConstrict: 0
     thorns: 0
     venomResist: 0
     bleedResist: 0
@@ -243,7 +236,6 @@ MonoBehaviour:
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
-    constrictStage: 0
     abilities: []
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
@@ -278,7 +270,6 @@ MonoBehaviour:
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
-    enablesConstrict: 0
     thorns: 0
     venomResist: 0
     bleedResist: 0
@@ -288,7 +279,6 @@ MonoBehaviour:
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
-    constrictStage: 0
     abilities: []
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
@@ -341,7 +331,6 @@ MonoBehaviour:
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
-    enablesConstrict: 0
     thorns: 0
     venomResist: 0
     bleedResist: 0
@@ -351,9 +340,8 @@ MonoBehaviour:
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
-    constrictStage: 0
     abilities:
-    - rid: 4402482292869300256
+    - rid: 4402482292869300273
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -381,7 +369,6 @@ MonoBehaviour:
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
-    enablesConstrict: 0
     thorns: 0
     venomResist: 0
     bleedResist: 0
@@ -391,7 +378,6 @@ MonoBehaviour:
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
-    constrictStage: 0
     abilities: []
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
@@ -2124,7 +2110,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4402482292869300254
+    - rid: 4402482292869300271
       type: {class: LimbStrikeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 8
@@ -2133,7 +2119,7 @@ MonoBehaviour:
         range: 1.6
         halfAngle: 60
         windupTime: 0.45
-    - rid: 4402482292869300255
+    - rid: 4402482292869300272
       type: {class: KickData, ns: , asm: Chimera.Runtime}
       data:
         damage: 4
@@ -2141,7 +2127,7 @@ MonoBehaviour:
         reach: 1.8
         radius: 1.6
         cooldown: 1
-    - rid: 4402482292869300256
+    - rid: 4402482292869300273
       type: {class: ScreamData, ns: , asm: Chimera.Runtime}
       data:
         cooldown: 12

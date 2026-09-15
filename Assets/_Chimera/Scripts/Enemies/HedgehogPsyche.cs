@@ -115,8 +115,7 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
             if (grabMachine == null)
             {
                 if (!TryGetComponent(out grabMachine)) grabMachine = gameObject.AddComponent<Constrict>();
-                // кап стадии даёт ТЕЛО из данных (Цепкая пасть constrictStage=1 → ст.1, плоский пин); психика — только хват+драйв
-                grabMachine.ConfigureHolder(3.5f, 5.5f, 7); // жертва вырывается сама; сильный удар извне рвёт хват
+                // машину заводит и кормит записью Цепкой пасти ТЕЛО (ст.1, окно вырывания, порог срыва); психика — только хват и драйв
             }
             return grabMachine;
         }

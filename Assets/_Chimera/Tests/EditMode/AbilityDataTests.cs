@@ -82,5 +82,22 @@ namespace Chimera.Tests.EditMode
             var mute = (HowlData)new HowlData { radius = 14f, stunAt = 0f }.Resolve(null, native: true, power: 5f);
             Assert.IsFalse(mute.Stuns, "порог 0 — стана нет вовсе, при любой мощи");
         }
+
+        [Test]
+        public void ConstrictData_ForeignChassisCapsStage_SupTakesStrongestGrip()
+        {
+            var guest = new ConstrictData { maxStage = 3, foreignMaxStage = 2 };
+            guest.OnForeignChassis();
+            Assert.AreEqual(2, guest.maxStage, "в гостях захват держит не выше foreignMaxStage");
+
+            var jaw = new ConstrictData { maxStage = 1, foreignMaxStage = 2 };
+            jaw.OnForeignChassis();
+            Assert.AreEqual(1, jaw.maxStage, "кап режет только сверху: слабый захват в гостях не усиливается");
+
+            var home = new ConstrictData { maxStage = 3, foreignMaxStage = 2 };
+            Assert.AreEqual(3, ((ConstrictData)AbilityData.Sup(jaw, home)).maxStage, "при двух грэпл-органах держит сильнейший");
+            var slow = (ConstrictData)AbilityData.Sup(new ConstrictData { grabSlow1 = 0.5f }, new ConstrictData { grabSlow1 = 0.35f });
+            Assert.AreEqual(0.35f, slow.grabSlow1, 1e-5f, "слоу жертвы — меньший множитель сильнее");
+        }
     }
 }

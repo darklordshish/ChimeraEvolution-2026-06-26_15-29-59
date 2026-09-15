@@ -35,9 +35,8 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     [SerializeField] int grabMinPack = 3;        // ЗАХВАТ — СТАЙНЫЙ приём: держать имеет смысл, только когда есть кому грызть
     [SerializeField] float grabPackRadius = 14f; // в каком радиусе вокруг себя считаем «навалились вместе»
     [SerializeField] float grabGrit = 3f;        // насколько АГРЕССИЯ особи двигает порог «разжать хватку» (0 = все одинаковы)
-    [SerializeField] int grabBleedStacks = 1;    // клыки сомкнулись — разовая кровь за вцепление (удержание само урона не даёт)
     [SerializeField] int ripSelfKnock = 6;       // отлёт волка, когда с него срываются рывком
-    // замедление жертвы-игрока — теперь у ОБЩЕЙ машины (Constrict.grabSlow1 0.35); волк — держатель ст.1
+    // числа хвата (стадия, слоу жертвы, порог срыва, кровь на входе) — запись ConstrictData волчьей Пасти
 
     [Header("Окружение (стая)")]
     [SerializeField] float circleSpeed = 0.85f;  // доля скорости при кружении в слоте
@@ -626,7 +625,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
 
     // ЕДИНАЯ МАШИНА ЗАХВАТА (общая со змеёй и хвостом игрока): волк — держатель СТ.1 (плоский пин для стаи).
     // Механику удержания (ApplyGrab/слоу/статус) ведёт она; РЕШЕНИЯ (когда/кого/релиз/кровь/подтягивание) —
-    // драйвер. Порог срыва-по-удару высок: волк отпускает по НОКБЕКУ/рывку/прорежению стаи (логика драйвера),
+    // драйвер. Порог срыва-по-удару в записи Пасти высок: волк отпускает по НОКБЕКУ/рывку/прорежению стаи (логика драйвера),
     // а не по одиночному удару — поведение как было, спасение по-прежнему = таран лося (нокбек)
     // ДЫХАЛКА ВОЛКА: погоня замораживает бак (слив = его реген), прыжок из него вычитает. Отсюда «волны»:
     // прыгнул дважды — дальше грызи вблизи или отвались отдышаться. Стая перестаёт быть монолитом
@@ -646,8 +645,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
             if (grabMachine == null)
             {
                 if (!TryGetComponent(out grabMachine)) grabMachine = gameObject.AddComponent<Constrict>();
-                // кап стадии даёт ТЕЛО из данных (Пасть волка constrictStage=1 → ст.1, слабейший держатель); психика — только хват+драйв
-                grabMachine.ConfigureHolder(99f, 99f, 9999); // жертва-игрок (escape N/A); срыв-по-удару отключён — релиз у драйвера
+                // машину заводит и кормит записью Пасти ТЕЛО (get-or-add — порядок Awake не гарантирован); психика — только когда и кого
             }
             return grabMachine;
         }
@@ -708,15 +706,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         // МАШИНА берёт игрока (ApplyGrab + слоу ст.1); this — IGrabber для срыва рывком
         var ph = playerHealth != null ? playerHealth : playerCtl.GetComponent<Health>();
         if (ph == null || !GrabMachine.Begin(ph, this)) { Disengage(attackCooldown); return; }
-        grabbing = true;
-
-        // ЗУБЫ СОМКНУЛИСЬ: вцепление — это клыки в теле, а не объятие. Разовая кровь за вход в хват;
-        // дальше удержание снова «чистый контроль» (тикающий урон превратил бы захват в казнь).
-        if (grabBleedStacks > 0)
-        {
-            var hit = new Hit(ownHealth, transform.position);
-            for (int i = 0; i < grabBleedStacks; i++) hit.Apply(ph, HitEffect.Bleed());
-        }
+        grabbing = true; // зубы сомкнулись — разовую кровь за вцепление льёт машина по записи Пасти
     }
 
     void UpdateGrab()

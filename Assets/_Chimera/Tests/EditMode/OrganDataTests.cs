@@ -19,15 +19,8 @@ namespace Chimera.Tests.EditMode
         // ДОЛГ: «Класс.поле» — числа приёмов, ещё не переехавшие в запись органа
         static readonly HashSet<string> Debt = new(StringComparer.Ordinal)
         {
-            // задача 6-бис — захват (в таблице спеки пропущен, см. её §10)
-            "Constrict.breakRawThreshold", "Constrict.chokeDamage", "Constrict.chokeInterval", "Constrict.escapeMax",
-            "Constrict.escapeMin", "Constrict.grabSlow1", "Constrict.grabSlow2", "Constrict.grabSlow3",
-            "Constrict.holdDrain", "Constrict.loosenPerDamage", "Constrict.npcChokeDamage",
-            "Constrict.npcChokeInterval", "Constrict.npcLoosenPerDamage", "Constrict.stage2At", "Constrict.stage3At",
-            "Constrict.tightenRate", "Constrict.wearInterval", "PlayerConstrict.breakDamage",
-            "PlayerConstrict.cooldown", "PlayerConstrict.dragOffset", "PlayerConstrict.escapeKnock",
-            "PlayerConstrict.escapeMax", "PlayerConstrict.escapeMin", "PlayerConstrict.grabRange",
-            "PlayerConstrict.holdRange", "PlayerConstrict.selfSlow1", "PlayerConstrict.selfSlow2",
+            // ПУСТО: числа всех приёмов переехали в записи органов (задачи 2–6-бис). Сюда число попадает только
+            // на время переезда; законное число индивида — на поле с [NotOrganData("причина")]
         };
 
         // носители, которых НЕ видно через IAbility: без явной проверки детектор мог бы молча ослепнуть на них

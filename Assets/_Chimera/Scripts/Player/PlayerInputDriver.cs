@@ -32,7 +32,6 @@ public class PlayerInputDriver : MonoBehaviour
         bellow = GetComponent<PlayerBellow>();
         scream = GetComponent<PlayerScream>();
         antler = GetComponent<PlayerAntler>();
-        // constrict берём в Start: его может до-создать CreatureBody.Awake (порядок Awake не гарантирован)
 
         // ЛКМ / X на геймпаде / J
         attackAction = new InputAction("Attack", InputActionType.Button);
@@ -83,8 +82,7 @@ public class PlayerInputDriver : MonoBehaviour
     void Start()
     {
         body = GetComponent<CreatureBody>();
-        constrict = GetComponent<PlayerConstrict>(); // после всех Awake — увидит и до-созданный телом
-        // залп берём лениво при нажатии: грань заводит тело по записи органа «Игломёт»
+        // залп и захват берём лениво при нажатии: их грани заводит тело по записям органов
         BuildSlotHotkeys();
     }
 
@@ -149,6 +147,7 @@ public class PlayerInputDriver : MonoBehaviour
             if (bellow != null) bellow.TryUse();
             if (scream != null) scream.TryUse();
         }
+        if (constrict == null && (constrictAction.WasPressedThisFrame() || presentAction.WasPressedThisFrame())) constrict = GetComponent<PlayerConstrict>();
         if (constrict != null && constrictAction.WasPressedThisFrame()) constrict.TryUse();
         if (constrict != null && presentAction.WasPressedThisFrame()) constrict.TogglePresent(); // C: ноша за спину/под удар
         // ЗАЛП ИГЛАМИ (средняя кнопка) — доступность из записи органа и перезарядку гейтит сама грань

@@ -21,14 +21,15 @@ public partial class CreatureBody
             var pick = sl.Pick;
             float power = BonusMultiplier(pick.species);                                 // та же мощь, что у чисел органа
             Organ displaced = pick.native || sl.chimera ? null : ChassisOrgan(sl.name);   // вытесненный родной орган слота
+            // ДОМ ОРГАНА (правило спеки 2a): родное шасси не задано — гейта нет; задано — дом, если совпало с шасси тела
+            bool home = string.IsNullOrEmpty(sl.Worn.nativeChassis) || (chassis != null && sl.Worn.nativeChassis == chassis.speciesName);
             foreach (var record in sl.Worn.abilities)
             {
                 if (record == null) continue;                                             // пустой элемент массива в инспекторе
-                // ДОМАШНИЙ ПРИЁМ: открыт только на родном шасси органа (см. AbilityData.NativeOnly)
-                if (record.NativeOnly && !string.IsNullOrEmpty(sl.Worn.nativeChassis)
-                    && (chassis == null || sl.Worn.nativeChassis != chassis.speciesName)) continue;
+                if (record.NativeOnly && !home) continue;                                 // ДОМАШНИЙ ПРИЁМ: только на родном шасси (см. AbilityData.NativeOnly)
                 var type = record.GetType();
                 var resolved = record.Resolve(RecordOf(displaced, type), pick.native, power);
+                if (!home) resolved.OnForeignChassis();                                   // В ГОСТЯХ: приём режет себя сам (захват — кап стадии)
                 abilities[type] = abilities.TryGetValue(type, out var prev) ? AbilityData.Sup(prev, resolved) : resolved;
             }
         }
