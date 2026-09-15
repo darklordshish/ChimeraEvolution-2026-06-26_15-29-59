@@ -119,7 +119,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482292869300286
+    - rid: 4402482301799235599
     visualScale: {x: 1, y: 1, z: 1.2}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -193,7 +193,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482292869300287
+    - rid: 4402482301799235600
     visualScale: {x: 1, y: 1, z: 1.2}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -383,9 +383,9 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: "\u0412\u043E\u043B\u043A"
     abilities:
-    - rid: 4402482292869300288
-    - rid: 4402482292869300289
-    - rid: 4402482292869300290
+    - rid: 4402482301799235601
+    - rid: 4402482301799235602
+    - rid: 4402482301799235603
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -3145,7 +3145,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4402482292869300286
+    - rid: 4402482301799235599
       type: {class: LimbStrikeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 18
@@ -3154,7 +3154,7 @@ MonoBehaviour:
         range: 1.5
         halfAngle: 60
         windupTime: 0.45
-    - rid: 4402482292869300287
+    - rid: 4402482301799235600
       type: {class: LeapData, ns: , asm: Chimera.Runtime}
       data:
         damage: 12
@@ -3165,7 +3165,7 @@ MonoBehaviour:
         duration: 0.5
         hitRadius: 1.3
         windupTime: 0.5
-    - rid: 4402482292869300288
+    - rid: 4402482301799235601
       type: {class: BiteData, ns: , asm: Chimera.Runtime}
       data:
         damage: 14
@@ -3177,7 +3177,7 @@ MonoBehaviour:
         halfAngle: 55
         windupTime: 0.45
         cooldown: 0.7
-    - rid: 4402482292869300289
+    - rid: 4402482301799235602
       type: {class: HowlData, ns: , asm: Chimera.Runtime}
       data:
         radius: 14
@@ -3185,7 +3185,7 @@ MonoBehaviour:
         stunDuration: 1
         fearMoraleHit: 2
         cooldown: 8
-    - rid: 4402482292869300290
+    - rid: 4402482301799235603
       type: {class: ConstrictData, ns: , asm: Chimera.Runtime}
       data:
         maxStage: 1
@@ -3204,7 +3204,7 @@ MonoBehaviour:
         npcChokeInterval: 0.6
         escapeMin: 2.6
         escapeMax: 4
-        breakRawThreshold: 9999
+        breakRawThreshold: 10
         grabBleedStacks: 1
         holdDrain: 3
         wearInterval: 1.5

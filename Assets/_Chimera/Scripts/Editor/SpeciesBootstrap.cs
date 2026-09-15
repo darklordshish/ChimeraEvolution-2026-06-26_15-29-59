@@ -244,8 +244,8 @@ public static class SpeciesBootstrap
             // главное оружие против хищника). Урон здесь работает только у ИГРОКА через `PlayerAttack`: человек
             // с волчьими лапами дерётся ими осознанно, и это законная условность конструктора, а не ошибка данных.
             //     Захват волку даёт ПАСТЬ (запись `ConstrictData`, ст.1), а не лапы: заводить лапам свой грэпл значило бы
-            // дать одному зверю два захватывающих органа. Порог срыва 9999 — ударом извне волчью хватку не сорвать:
-            // отпускают нокбек, рывок игрока и прореженная стая (это решает психика-драйвер). Кровь на входе — клыки.
+            // дать одному зверю два захватывающих органа. Порог срыва 10 — по таблице ударов (спека 16.09 §3): тики, иглы,
+            // наскоки, укус сородича и рога хватку не рвут; тяжёлый укус, копыто и таран — рвут. Нокбек и рывок волк отпускает сам. Кровь на входе — клыки.
             new Organ { organName = "Коготь",        slot = "Руки",   hotkey = "1", cost = 4, abilities = new AbilityData[] { new LimbStrikeData { damage = 18, knockForce = 0f, range = 1.5f, halfAngle = 60f, windupTime = 0.45f } }, visualScale = new Vector3(1f, 1f, 1.2f), visualParts = new[] {
                 new OrganPart { scale = new Vector3(0.850f, 0.221f, 0.900f), offset = new Vector3(0.000f, 0.410f, 0.059f), shape = PartShape.Sphere }, // лопаточная мышца
                 new OrganPart { scale = new Vector3(0.977f, 0.124f, 0.833f), offset = new Vector3(0.000f, 0.452f, 0.059f), euler = new Vector3(-21f, 0f, 0f), shape = PartShape.Capsule }, // лопатка→плечевой
@@ -273,7 +273,7 @@ public static class SpeciesBootstrap
                 new OrganPart { scale = new Vector3(0.50f, 0.36f, 0.40f), offset = new Vector3(0.04f, 0.32f, -0.04f), euler = new Vector3(-6f, 0f, -7f), role = PartRole.Ear, shape = PartShape.Sphere }, // ВЕРХУШКА ЗАКРУГЛЁННАЯ (0.36→0.50): у волка ухо треугольник с тупым концом, а не остриё
                 new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), shape = PartShape.Sphere, role = PartRole.Eye, color = new Color(0.45f, 0.30f, 0.12f, 1f) }, // ЦВЕТ ГЛАЗА = КАНАЛ: нюх
             } },
-            new Organ { organName = "Пасть",         slot = "Пасть",  hotkey = "5", cost = 5, abilities = new AbilityData[] { new BiteData { damage = 14, bleedStacks = 2, regenDebuff = 0.5f, regenDebuffTime = 3f, range = 2f, halfAngle = 55f, windupTime = 0.45f, cooldown = 0.7f }, new HowlData { radius = 14f, stunAt = 2f, stunDuration = 1f, fearMoraleHit = 2f, cooldown = 8f }, new ConstrictData { maxStage = 1, breakRawThreshold = 9999, grabBleedStacks = 1 } }, nativeChassis = "Волк", visualParts = new[] {
+            new Organ { organName = "Пасть",         slot = "Пасть",  hotkey = "5", cost = 5, abilities = new AbilityData[] { new BiteData { damage = 14, bleedStacks = 2, regenDebuff = 0.5f, regenDebuffTime = 3f, range = 2f, halfAngle = 55f, windupTime = 0.45f, cooldown = 0.7f }, new HowlData { radius = 14f, stunAt = 2f, stunDuration = 1f, fearMoraleHit = 2f, cooldown = 8f }, new ConstrictData { maxStage = 1, breakRawThreshold = 10, grabBleedStacks = 1 } }, nativeChassis = "Волк", visualParts = new[] {
                 new OrganPart { scale = new Vector3(0.154f, 0.689f, 0.077f), offset = new Vector3(0.262f, -0.111f, 0.318f), color = new Color(0.95f, 0.94f, 0.90f, 1f) }, // КЛЫК верхний (пр): 0.13L, тип уходит НИЖЕ линии губы и НАРУЖУ от тела челюсти — иначе зуб тонет в морде
                 new OrganPart { scale = new Vector3(0.154f, 0.689f, 0.077f), offset = new Vector3(-0.262f, -0.111f, 0.318f), color = new Color(0.95f, 0.94f, 0.90f, 1f) }, // клык верхний (лев)
                 new OrganPart { scale = new Vector3(0.131f, 0.578f, 0.068f), offset = new Vector3(0.231f, -0.133f, 0.445f), color = new Color(0.95f, 0.94f, 0.90f, 1f) }, // клык нижний (пр): 0.11L, стоит ПЕРЕД верхним (снаружи), как в референсе черепа

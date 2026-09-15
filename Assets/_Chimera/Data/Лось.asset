@@ -113,7 +113,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482292869300277
+    - rid: 4402482301799235587
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -205,7 +205,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482292869300278
+    - rid: 4402482301799235588
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -297,7 +297,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482292869300279
+    - rid: 4402482301799235589
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -476,7 +476,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482292869300280
+    - rid: 4402482301799235590
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -3228,7 +3228,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4402482292869300277
+    - rid: 4402482301799235587
       type: {class: LimbStrikeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
@@ -3237,7 +3237,7 @@ MonoBehaviour:
         range: 1.8
         halfAngle: 60
         windupTime: 0.45
-    - rid: 4402482292869300278
+    - rid: 4402482301799235588
       type: {class: ChargeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
@@ -3256,14 +3256,14 @@ MonoBehaviour:
         stompForce: 13
         plowForce: 6
         plowRadius: 1.6
-    - rid: 4402482292869300279
+    - rid: 4402482301799235589
       type: {class: BellowData, ns: , asm: Chimera.Runtime}
       data:
         fearRadius: 10
         rallyRadius: 40
         fearMoraleHit: 2
         cooldown: 10
-    - rid: 4402482292869300280
+    - rid: 4402482301799235590
       type: {class: AntlerData, ns: , asm: Chimera.Runtime}
       data:
         damage: 12
