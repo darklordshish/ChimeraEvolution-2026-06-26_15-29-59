@@ -6,7 +6,7 @@ using UnityEngine;
 /// Фича ЧЕЛОВЕЧЕСКИХ ног (CreatureBody выставляет KickEnabled) — с волчьими ногами пропадает,
 /// и захват снимается только рывком. Потом: копыто лося и т.п. на том же флаге.
 /// </summary>
-public class PlayerKick : MonoBehaviour, IAbility
+public class PlayerKick : MonoBehaviour, IAbility, IAbilityCarrier
 {
     [Header("Пинок")]
     [SerializeField] int damage = 4;
@@ -14,7 +14,7 @@ public class PlayerKick : MonoBehaviour, IAbility
     [SerializeField] float radius = 1.6f;   // широкий — толкаем клин стаи
     [SerializeField] float force = 12f;     // сила отлёта
     [SerializeField] float cooldown = 1.0f;
-    [SerializeField] float shake = 0.4f;
+    [SerializeField, NotOrganData("ощущение: тряска камеры игрока")] float shake = 0.4f;
 
     // включается органом «Ноги» (человеческие). Дефолт true — без данных тела пинок работает как раньше.
     public bool KickEnabled { get; set; } = true;

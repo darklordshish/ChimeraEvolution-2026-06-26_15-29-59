@@ -5,13 +5,13 @@ using UnityEngine;
 /// короткая дистанция, мощный единичный удар. Активен, только если слот «Пасть» надет
 /// (CreatureBody выставляет BiteEnabled).
 /// </summary>
-public class PlayerBite : MonoBehaviour, IAbility
+public class PlayerBite : MonoBehaviour, IAbility, IAbilityCarrier
 {
     [Header("Укус")]
     [SerializeField] float range = 1.2f;   // короче когтя
     [SerializeField] float radius = 0.9f;
     [SerializeField] float cooldown = 0.7f;
-    [SerializeField] float shake = 0.2f;
+    [SerializeField, NotOrganData("ощущение: тряска камеры игрока")] float shake = 0.2f;
     [SerializeField, Range(0f, 1f)] float regenDebuff = 0.5f; // укус сбивает реген цели (×0.5)
     [SerializeField] float regenDebuffTime = 3f;
 

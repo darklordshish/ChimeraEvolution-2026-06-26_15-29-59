@@ -15,7 +15,7 @@ using UnityEngine;
 /// РЕЖИМ, не приём: психика (лестница отчаяния, слайс D) решает КОГДА свернуться и КОГДА катить.
 /// </summary>
 [RequireComponent(typeof(Health))]
-public class CurlDefense : MonoBehaviour
+public class CurlDefense : MonoBehaviour, IAbilityCarrier
 {
     [Header("Клубок")]
     [SerializeField, Range(0f, 0.9f)] float curlArmor = 0.6f; // броня в клубке (МАКСИМУМ с базовой, не сумма)

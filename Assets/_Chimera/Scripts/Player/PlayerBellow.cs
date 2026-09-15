@@ -7,13 +7,13 @@ using UnityEngine;
 /// угроз исключён → приведи волков и рявкни — цепь размолотит стаю). ЧУЖИМ — удар по морали (−2,
 /// рёв туши). Своих (кинов ЛЮБОГО вида) не контролим. Кулдаун свой; звучит в мире (Noise).
 /// </summary>
-public class PlayerBellow : MonoBehaviour, IAbility
+public class PlayerBellow : MonoBehaviour, IAbility, IAbilityCarrier
 {
     [Header("Рёв (Глотка лося)")]
     [SerializeField] float fearRadius = 12f;   // удар по морали чужих (−2 — голос туши)
     [SerializeField] float rallyRadius = 30f;  // кин-лоси в этом радиусе детонируют берсерком (цепь понесёт дальше)
     [SerializeField] float cooldown = 10f;
-    [SerializeField] float shake = 0.35f;
+    [SerializeField, NotOrganData("ощущение: тряска камеры игрока")] float shake = 0.35f;
 
     public bool BellowEnabled { get; set; } // включается Глоткой лося (CreatureBody)
     public float FearRadius => fearRadius;  // для аккорда с воем: стан берёт БОЛЬШИЙ из радиусов двух голосов

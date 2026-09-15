@@ -5,7 +5,7 @@ using UnityEngine;
 /// наносим урон всем найденным Health (каждому — один раз за замах).
 /// При попадании — сочность: хитстоп + тряска камеры.
 /// </summary>
-public class PlayerAttack : MonoBehaviour, IAbility
+public class PlayerAttack : MonoBehaviour, IAbility, IAbilityCarrier
 {
     [Header("Удар")]
     [SerializeField] int damage = 10;
@@ -14,8 +14,8 @@ public class PlayerAttack : MonoBehaviour, IAbility
     [SerializeField] float cooldown = 0.45f;
 
     [Header("Сочность")]
-    [SerializeField] float hitstopDuration = 0.06f;
-    [SerializeField] float shakeMagnitude = 0.25f;
+    [SerializeField, NotOrganData("ощущение: хитстоп удара игрока")] float hitstopDuration = 0.06f;
+    [SerializeField, NotOrganData("ощущение: тряска камеры игрока")] float shakeMagnitude = 0.25f;
 
     float nextTime;
     CameraFollow cam;

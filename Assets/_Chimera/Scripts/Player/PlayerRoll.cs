@@ -15,7 +15,7 @@ using UnityEngine;
 /// (`rollOn && thornsOn`). Одни ноги = защитный уворот без урона: этот компонент просто не активен,
 /// а i-frames рывка живут в PlayerController и остаются. Числа переката — свои (иглы работают как гейт).
 /// </summary>
-public class PlayerRoll : MonoBehaviour
+public class PlayerRoll : MonoBehaviour, IAbilityCarrier
 {
     [Header("Перекат (на рывке)")]
     [SerializeField] int damage = 12;
@@ -23,7 +23,7 @@ public class PlayerRoll : MonoBehaviour
     [SerializeField] float force = 4f;      // лёгкий толчок вбок (катишься сквозь, не сносишь — это не таран)
     [SerializeField] float radius = 1.2f;   // ширина клубка
     [SerializeField] float reach = 0.9f;    // вынос центра вперёд
-    [SerializeField] float shake = 0.18f;
+    [SerializeField, NotOrganData("ощущение: тряска камеры игрока")] float shake = 0.18f;
 
     public bool RollEnabled { get; set; } // включается органом «Ежиные ноги»
 

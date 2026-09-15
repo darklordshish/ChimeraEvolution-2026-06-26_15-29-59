@@ -8,7 +8,7 @@ using UnityEngine;
 /// Иглы-руки ВЫТЕСНЯЮТ мечевой удар в слоте Рук (melee↔ranged выбор): взял метатели — бьёшь издали, а не
 /// когтем в упор. До-создаётся телом игроку, включается флагом органа (`VolleyEnabled`).
 /// </summary>
-public class PlayerQuillVolley : MonoBehaviour, IAbility
+public class PlayerQuillVolley : MonoBehaviour, IAbility, IAbilityCarrier
 {
     [Header("Залп")]
     [SerializeField] int quills = 6;

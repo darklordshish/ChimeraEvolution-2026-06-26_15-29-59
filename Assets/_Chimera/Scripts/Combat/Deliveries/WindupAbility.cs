@@ -9,10 +9,10 @@ public enum AbilityRun { Running, Done, Cancelled }
 /// в наследниках (Abort): укус сдаётся всегда, прыжок в полёте закоммичен. Кулдаун атак НЕ здесь —
 /// общий ритм атак существа держит психика (это её решение, не свойство доставки).
 /// </summary>
-public abstract class WindupAbility : MonoBehaviour, IAbility
+public abstract class WindupAbility : MonoBehaviour, IAbility, IAbilityCarrier
 {
     [SerializeField] protected float windupTime = 0.45f;
-    [SerializeField] protected float gravity = -20f;
+    [SerializeField, NotOrganData("физика тела: гравитация полёта одна у всех")] protected float gravity = -20f;
 
     protected CharacterController controller;
     protected Telegraph telegraph;
@@ -128,7 +128,7 @@ public abstract class WindupAbility : MonoBehaviour, IAbility
     //    Наследник задаёт дальность/угол; в эдит-режиме читает сериализованные поля (Awake не нужен).
     protected virtual float GizmoRange => 2f;
     protected virtual float GizmoHalfAngle => 45f;
-    [SerializeField] float gizmoHeight = 0.5f; // высота отрисовки хитбокса: низким (волк/змея) 0.5, высоким (лось) ставит префаб
+    [SerializeField, NotOrganData("отладка: высота отрисовки хитбокса")] float gizmoHeight = 0.5f; // высота отрисовки хитбокса: низким (волк/змея) 0.5, высоким (лось) ставит префаб
 
     void OnDrawGizmos()
     {

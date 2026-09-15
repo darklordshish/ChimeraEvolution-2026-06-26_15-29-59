@@ -7,7 +7,7 @@ using UnityEngine;
 /// рывке PlayerController (не отдельная кнопка): «основа боя лося — копыта», локомоция от данных.
 /// Урон — раз на рывок (память целей чистится на новом рывке). Кровотечения НЕТ (таран тупой; кровь — рога).
 /// </summary>
-public class PlayerCharge : MonoBehaviour
+public class PlayerCharge : MonoBehaviour, IAbilityCarrier
 {
     [Header("Таран (на рывке)")]
     [SerializeField] int damage = 22;
@@ -15,7 +15,7 @@ public class PlayerCharge : MonoBehaviour
     [SerializeField, Range(0f, 1f)] float lightChargeMult = 0.25f; // ТАРАН-ПО-МАССЕ: доля отброса у НЕмассивного таранящего (игрок на человечьем шасси)
     [SerializeField] float radius = 1.3f; // ширина тарана
     [SerializeField] float reach = 1.0f;  // вынос центра вперёд
-    [SerializeField] float shake = 0.3f;
+    [SerializeField, NotOrganData("ощущение: тряска камеры игрока")] float shake = 0.3f;
 
     public bool ChargeEnabled { get; set; } // включается органом «Лосиные ноги»
 

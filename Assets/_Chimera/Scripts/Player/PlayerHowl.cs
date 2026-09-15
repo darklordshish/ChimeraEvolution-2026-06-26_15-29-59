@@ -6,7 +6,7 @@ using UnityEngine;
 /// (CreatureBody выставляет HowlEnabled). Урона нет. Активное УДЕРЖАНИЕ захвата воем не рвётся —
 /// только пинок/рывок (но обхват ЗМЕИ вой рвёт на ст.1–2 — её собственный стан).
 /// </summary>
-public class PlayerHowl : MonoBehaviour, IAbility
+public class PlayerHowl : MonoBehaviour, IAbility, IAbilityCarrier
 {
     [Header("Вой")]
     [SerializeField] float radius = 7f;
@@ -14,7 +14,7 @@ public class PlayerHowl : MonoBehaviour, IAbility
     [SerializeField] float fearRadius = 14f;    // дальнее кольцо (radius..fearRadius): испуг — удар по морали
     [SerializeField] float fearMoraleHit = 2f;  // −вклад шкалы морали; × бонус органов (родство): до −4 на сотке (почти вожак)
     [SerializeField] float cooldown = 8f;
-    [SerializeField] float shake = 0.3f;
+    [SerializeField, NotOrganData("ощущение: тряска камеры игрока")] float shake = 0.3f;
 
     public bool HowlEnabled { get; set; } // включается волчьей Пастью (CreatureBody)
     public bool StunUnlocked { get; set; } // ПОРОГ-ФИЧА: стан открыт, только если мощь доросла до порога Пасти

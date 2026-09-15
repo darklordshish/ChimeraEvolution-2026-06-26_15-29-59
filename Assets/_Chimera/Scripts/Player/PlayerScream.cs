@@ -14,13 +14,13 @@ using UnityEngine;
 /// а ярость вдобавок поднимает входящий урон. Кричать выгодно, когда тебя уже рвут, — и ровно тогда это
 /// опаснее всего. Штука решает не «нажать ли», а «сколько ещё терпеть до крика».
 /// </summary>
-public class PlayerScream : MonoBehaviour, IAbility
+public class PlayerScream : MonoBehaviour, IAbility, IAbilityCarrier
 {
     [Header("Клич")]
     [SerializeField] float cooldown = 12f;
     [SerializeField] float boostPerStack = 0.12f; // +12% к ярости за каждый стак крови на себе
     [SerializeField] float maxBoost = 2f;         // потолок усиления (кровопотеря сама себя ограничивает)
-    [SerializeField] float shake = 0.2f;
+    [SerializeField, NotOrganData("ощущение: тряска камеры игрока")] float shake = 0.2f;
 
     public bool ScreamEnabled { get; set; }       // включает орган `Рот` человека (CreatureBody)
 

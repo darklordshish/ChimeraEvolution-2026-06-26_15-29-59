@@ -6,7 +6,7 @@ using UnityEngine;
 /// Спека лося: «рога — откидывание немассивных + Bleed». Диспатчится на E вместе с пинком («пинок повесим
 /// на откидывание рогами»): человечьи ноги — пинок, рога — свайп; есть оба — бьют оба. Включается органом.
 /// </summary>
-public class PlayerAntler : MonoBehaviour, IAbility
+public class PlayerAntler : MonoBehaviour, IAbility, IAbilityCarrier
 {
     [Header("Рога")]
     [SerializeField] int damage = 12;
@@ -15,7 +15,7 @@ public class PlayerAntler : MonoBehaviour, IAbility
     [SerializeField] float force = 9f;     // отлёт (Massive резистит)
     [SerializeField] int bleedStacks = 2;  // протыкание — кровь стаками
     [SerializeField] float cooldown = 1.2f;
-    [SerializeField] float shake = 0.35f;
+    [SerializeField, NotOrganData("ощущение: тряска камеры игрока")] float shake = 0.35f;
 
     public bool AntlerEnabled { get; set; } // включается органом «Рога» (химерный слот)
 

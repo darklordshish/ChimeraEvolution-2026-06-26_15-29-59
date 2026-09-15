@@ -21,7 +21,7 @@ public enum GrabTick { Holding, Escaped, Broken, Gone }
 /// Massive-жертва — на стадию слабее (единое правило хвата).
 /// Числа перенесены ДОСЛОВНО из проверенной машины змеи (в т.ч. баланс «одна змея душит волка»).
 /// </summary>
-public class Constrict : MonoBehaviour
+public class Constrict : MonoBehaviour, IAbilityCarrier
 {
     [Header("Сжатие")]
     [SerializeField] float tightenRate = 1f;    // сжатие/сек

@@ -12,7 +12,7 @@ using UnityEngine;
 /// змея тем же правом тащит на стену — у неё «куда» решает психика, у тебя — ноги).
 /// Massive-жертва (босс) — на стадию слабее (правило машины).
 /// </summary>
-public class PlayerConstrict : MonoBehaviour, IAbility
+public class PlayerConstrict : MonoBehaviour, IAbility, IAbilityCarrier
 {
     [Header("Захват (орган «Хвост») — драйверные ручки; машина сжатия — компонент Constrict")]
     [SerializeField] float grabRange = 2.2f;      // дальность подбора цели (в упор)
