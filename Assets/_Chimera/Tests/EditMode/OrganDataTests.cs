@@ -26,6 +26,10 @@ namespace Chimera.Tests.EditMode
         // носители, которых НЕ видно через IAbility: без явной проверки детектор мог бы молча ослепнуть на них
         static readonly string[] CarriersWithoutTryUse = { "PlayerCharge", "PlayerRoll", "CurlDefense", "Constrict" };
 
+        // ВКЛЮЧАТЕЛЬ ПРИЁМА — ЗАПИСЬ ОРГАНА (задача 8). Булевы `enables*` у органа остались только у чувств:
+        // их перевод в данные — шаг 5 ревизии, не эта спека. Снимешь флаг чувства — вычеркни его отсюда
+        static readonly string[] SenseFlags = { "enablesScent", "enablesThermal" };
+
         const BindingFlags Own = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
 
         static IEnumerable<Type> Carriers() =>
@@ -51,6 +55,18 @@ namespace Chimera.Tests.EditMode
         }
 
         static string Lines(IEnumerable<string> items) => string.Join("\n", items.Select(s => "  " + s));
+
+        [Test]
+        public void Organ_HasNoAbilityFlags_OnlySenseFlagsLeft()
+        {
+            var flags = typeof(Organ).GetFields(BindingFlags.Instance | BindingFlags.Public)
+                .Where(f => f.FieldType == typeof(bool) && f.Name.StartsWith("enables", StringComparison.Ordinal))
+                .Select(f => f.Name).ToList();
+            var unexpected = flags.Where(n => !SenseFlags.Contains(n)).OrderBy(n => n, StringComparer.Ordinal).ToList();
+            Assert.IsEmpty(unexpected, "включатель приёма — запись органа (AbilityData), а не булев флаг:\n" + Lines(unexpected));
+            var stale = SenseFlags.Where(n => !flags.Contains(n)).ToList();
+            Assert.IsEmpty(stale, "флаг чувства снят, а в списке остался — вычеркни:\n" + Lines(stale));
+        }
 
         [Test]
         public void EveryAbility_IsCarrier_AndHiddenCarriersAreSeen()
