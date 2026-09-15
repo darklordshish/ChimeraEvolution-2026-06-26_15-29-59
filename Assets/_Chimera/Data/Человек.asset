@@ -21,7 +21,6 @@ MonoBehaviour:
     hotkey: 1
     cost: 0
     damage: 0
-    lifeSteal: 0
     staminaBonus: 0
     staminaRegenBonus: 0
     hpBonus: 0
@@ -88,7 +87,6 @@ MonoBehaviour:
     hotkey: 1
     cost: 3
     damage: 8
-    lifeSteal: 0
     staminaBonus: 0
     staminaRegenBonus: 0
     hpBonus: 0
@@ -173,7 +171,6 @@ MonoBehaviour:
     hotkey: 2
     cost: 3
     damage: 0
-    lifeSteal: 0
     staminaBonus: 0
     staminaRegenBonus: 0
     hpBonus: 0
@@ -264,7 +261,6 @@ MonoBehaviour:
     hotkey: 3
     cost: 6
     damage: 0
-    lifeSteal: 0
     staminaBonus: 0.5
     staminaRegenBonus: 0.5
     hpBonus: 0.5
@@ -325,7 +321,6 @@ MonoBehaviour:
     hotkey: 4
     cost: 3
     damage: 0
-    lifeSteal: 0
     staminaBonus: 0
     staminaRegenBonus: 0
     hpBonus: 0
@@ -404,7 +399,6 @@ MonoBehaviour:
     hotkey: 5
     cost: 3
     damage: 0
-    lifeSteal: 0
     staminaBonus: 0
     staminaRegenBonus: 0
     hpBonus: 0
@@ -459,7 +453,6 @@ MonoBehaviour:
     hotkey: 6
     cost: 3
     damage: 0
-    lifeSteal: 0
     staminaBonus: 0
     staminaRegenBonus: 0
     hpBonus: 0
@@ -520,7 +513,6 @@ MonoBehaviour:
     baseSize: {x: 0.47, y: 0.6, z: 0.24}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
-    codeDriven: 0
     solid: 0
     inner: 0
     chainForward: 0
@@ -542,7 +534,6 @@ MonoBehaviour:
     baseSize: {x: 1, y: 1, z: 1}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
-    codeDriven: 0
     solid: 0
     inner: 0
     chainForward: 0
@@ -564,7 +555,6 @@ MonoBehaviour:
     baseSize: {x: 1, y: 1, z: 1}
     baseEuler: {x: -10, y: 0, z: 0}
     mirrorX: 0
-    codeDriven: 0
     solid: 0
     inner: 0
     chainForward: 0
@@ -646,7 +636,6 @@ MonoBehaviour:
     baseSize: {x: 0.1, y: 0.08, z: 0.06}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
-    codeDriven: 0
     solid: 0
     inner: 0
     chainForward: 0
@@ -674,7 +663,6 @@ MonoBehaviour:
     baseSize: {x: 0.035, y: 0.035, z: 0.035}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 1
-    codeDriven: 0
     solid: 0
     inner: 0
     chainForward: 0
@@ -702,7 +690,6 @@ MonoBehaviour:
     baseSize: {x: 0.022, y: 0.062, z: 0.032}
     baseEuler: {x: -15, y: 0, z: 0}
     mirrorX: 1
-    codeDriven: 0
     solid: 0
     inner: 0
     chainForward: 0
@@ -724,7 +711,6 @@ MonoBehaviour:
     baseSize: {x: 0.126, y: 0.134, z: 0.126}
     baseEuler: {x: 10, y: 0, z: 0}
     mirrorX: 0
-    codeDriven: 0
     solid: 0
     inner: 0
     chainForward: 0
@@ -764,7 +750,6 @@ MonoBehaviour:
     baseSize: {x: 0.47, y: 0.6, z: 0.24}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
-    codeDriven: 0
     solid: 0
     inner: 0
     chainForward: 0
@@ -810,7 +795,6 @@ MonoBehaviour:
     baseSize: {x: 0.115, y: 0.81, z: 0.12}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 1
-    codeDriven: 0
     solid: 0
     inner: 0
     chainForward: 0
@@ -832,7 +816,6 @@ MonoBehaviour:
     baseSize: {x: 0.16, y: 0.985, z: 0.21}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 1
-    codeDriven: 0
     solid: 0
     inner: 0
     chainForward: 0
@@ -854,7 +837,6 @@ MonoBehaviour:
     baseSize: {x: 0.38, y: 0.34, z: 0.28}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
-    codeDriven: 0
     solid: 0
     inner: 1
     chainForward: 0
@@ -894,7 +876,6 @@ MonoBehaviour:
     baseSize: {x: 1, y: 1, z: 1}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
-    codeDriven: 0
     solid: 0
     inner: 1
     chainForward: 0
@@ -916,7 +897,6 @@ MonoBehaviour:
     baseSize: {x: 0.12, y: 0.12, z: 0.12}
     baseEuler: {x: 25, y: 0, z: 0}
     mirrorX: 0
-    codeDriven: 0
     solid: 0
     inner: 0
     chainForward: 0
@@ -938,7 +918,6 @@ MonoBehaviour:
     baseSize: {x: 0.1, y: 0.1, z: 0.1}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 1
-    codeDriven: 0
     solid: 0
     inner: 0
     chainForward: 0
@@ -960,7 +939,6 @@ MonoBehaviour:
     baseSize: {x: 1, y: 1, z: 1}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
-    codeDriven: 0
     solid: 0
     inner: 0
     chainForward: 0
@@ -982,7 +960,6 @@ MonoBehaviour:
     baseSize: {x: 0.16, y: 0.16, z: 0.16}
     baseEuler: {x: -135, y: 0, z: 0}
     mirrorX: 0
-    codeDriven: 0
     solid: 0
     inner: 0
     chainForward: 0
@@ -2246,4 +2223,3 @@ MonoBehaviour:
   skinBlend: 0.05
   skinFur: 0
   buildLayers: 0
-  cages: []

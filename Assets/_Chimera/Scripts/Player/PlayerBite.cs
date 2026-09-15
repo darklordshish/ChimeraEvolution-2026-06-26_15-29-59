@@ -2,24 +2,24 @@ using UnityEngine;
 
 /// <summary>
 /// Укус — вторая атака (слот «Пасть»). Отдельная кнопка (Q / правый триггер):
-/// короткая дистанция, мощный единичный удар + вампиризм. Активен, только если слот «Пасть» надет
+/// короткая дистанция, мощный единичный удар. Активен, только если слот «Пасть» надет
 /// (CreatureBody выставляет BiteEnabled).
 /// </summary>
 public class PlayerBite : MonoBehaviour, IAbility
 {
     [Header("Укус")]
-    [SerializeField] int damage = 14;
     [SerializeField] float range = 1.2f;   // короче когтя
     [SerializeField] float radius = 0.9f;
     [SerializeField] float cooldown = 0.7f;
-    [SerializeField] int lifeSteal = 6;    // лечение за результативный укус
     [SerializeField] float shake = 0.2f;
     [SerializeField, Range(0f, 1f)] float regenDebuff = 0.5f; // укус сбивает реген цели (×0.5)
     [SerializeField] float regenDebuffTime = 3f;
 
     public bool BiteEnabled { get; set; }  // включается слотом «Пасть»
 
-    int organDamage;  // урон из данных органа Пасти (0 = орган молчит → сериализованный дефолт выше)
+    int organDamage;  // урон из данных органа Пасти — ЕДИНСТВЕННЫЙ источник силы укуса.
+    // Своих чисел силы грань игрока не заводит (решение 12.09): «способность от органа, у игрока только
+    // модификаторы». Ноль здесь = орган урона не даёт, а НЕ «не настроено» — дефолт подставлять нечем
     int venomStacks;  // яд из данных органа (змеиные клыки)
     int bleedStacks;  // кровь из данных органа (волчьи клыки)
 
@@ -50,11 +50,14 @@ public class PlayerBite : MonoBehaviour, IAbility
     {
         // призрака раскрывает попадание (Hit.Apply), не замах
         var hit = new Hit(ownHealth, transform.position);
-        // единый паёк укуса (см. MeleeBlow): урон + сбив регена + вампиризм + яд/кровь по данным органа
+        // единый паёк укуса (см. MeleeBlow): урон + сбив регена + яд/кровь по данным органа.
+        // ВАМПИРИЗМА У ИГРОКА НЕТ: сила приёма принадлежит ОРГАНУ, а грань игрока своих чисел силы
+        // не заводит (решение 12.09). Лечение укусом вернётся вместе с видом-носителем — полем органа.
+        // Канал доставки (MeleeBlow.LifeSteal) жив: им пользуется модуль боссовости
         var blow = new MeleeBlow
         {
-            Damage = organDamage > 0 ? organDamage : damage,
-            LifeSteal = lifeSteal, VenomStacks = venomStacks, BleedStacks = bleedStacks,
+            Damage = organDamage,
+            VenomStacks = venomStacks, BleedStacks = bleedStacks,
             RegenDebuffFactor = regenDebuff, RegenDebuffTime = regenDebuffTime,
         };
         var targets = TargetScan.Healths(BiteCenter(), radius, transform);

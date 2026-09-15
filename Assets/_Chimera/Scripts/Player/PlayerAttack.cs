@@ -42,7 +42,7 @@ public class PlayerAttack : MonoBehaviour, IAbility
         var hit = new Hit(ownHealth, transform.position);
         var blow = new MeleeBlow { Damage = damage }; // единый паёк удара (см. MeleeBlow)
         var targets = TargetScan.Healths(AttackCenter(), radius, transform);
-        foreach (var hp in targets) blow.Deliver(hit, hp); // урон + вампиризм; эрозия по кину — внутри Hit.Apply
+        foreach (var hp in targets) blow.Deliver(hit, hp); // урон; эрозия по кину — внутри Hit.Apply
 
         if (targets.Count > 0) // попали хотя бы по одному — сочность раз за замах
         {
@@ -60,8 +60,6 @@ public class PlayerAttack : MonoBehaviour, IAbility
 
     // слот «Сердце»: скорость атак (кулдаун)
     public void SetCooldown(float newCooldown) => cooldown = newCooldown;
-
-    // слот «Пасть»: вампиризм (лечение при попадании)
 
     Vector3 AttackCenter() => transform.position + transform.forward * range + Vector3.up * 0.3f; // грудь (корень игрока — ЦЕНТР капсулы CC)
 

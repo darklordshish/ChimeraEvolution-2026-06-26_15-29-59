@@ -40,7 +40,7 @@ public class PlayerKick : MonoBehaviour, IAbility
 
     void DoKick()
     {
-        var hit = new Hit(ownHealth, transform.position); // источник нужен раскрытию призрака (вампиризма у пинка всё равно нет)
+        var hit = new Hit(ownHealth, transform.position); // источник нужен раскрытию призрака
         var blow = new MeleeBlow { Damage = damage, KnockForce = force }; // единый паёк (см. MeleeBlow)
         var targets = TargetScan.Healths(KickCenter(), radius, transform);
         foreach (var hp in targets) blow.Deliver(hit, hp); // лёгкий урон (вспышка+стаггер) + отталкивание; эрозия — внутри Hit.Apply

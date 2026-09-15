@@ -71,7 +71,7 @@ public class Health : MonoBehaviour
         Current = Mathf.Clamp(Current + delta, 1, maxHealth);
     }
 
-    // лечение (слот «Пасть» — вампиризм)
+    // лечение: сытость, регенерация, вампиризм боссового модуля (у граней игрока источника нет)
     public void Heal(int amount)
     {
         if (dead || amount <= 0) return;
