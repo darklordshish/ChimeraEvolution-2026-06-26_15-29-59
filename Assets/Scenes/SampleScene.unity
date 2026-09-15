@@ -904,14 +904,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8cc2e428d3608034ea7bef7ac41b5b55, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerBite
-  damage: 14
-  range: 1.2
-  radius: 0.9
-  cooldown: 0.7
-  lifeSteal: 6
   shake: 0.2
-  regenDebuff: 0.5
-  regenDebuffTime: 3
 --- !u!114 &1083135100
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1383,6 +1376,51 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1967981317
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1967981319}
+  - component: {fileID: 1967981318}
+  m_Layer: 0
+  m_Name: IndividualityConfig
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1967981318
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1967981317}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 724da7f62370af141b18ceabceabd7b8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Chimera.Runtime::IndividualityConfig
+  individuality: 0
+--- !u!4 &1967981319
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1967981317}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1993741889
 GameObject:
   m_ObjectHideFlags: 0
@@ -1555,3 +1593,4 @@ SceneRoots:
   - {fileID: 1705119179}
   - {fileID: 2013181515}
   - {fileID: 77689572}
+  - {fileID: 1967981319}

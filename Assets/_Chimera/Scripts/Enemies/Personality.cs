@@ -23,9 +23,18 @@ public class Personality : MonoBehaviour
 
     void Awake()
     {
+        // ИНДИВИДУАЛЬНОСТЬ ВЫКЛЮЧЕНА (рубильник `IndividualityConfig`) — характер средний: середина каждого диапазона
+        if (!IndividualityConfig.On)
+        {
+            Bravery = Mid(braveryRange); Aggression = Mid(aggressionRange);
+            Curiosity = Mid(curiosityRange); Caution = Mid(cautionRange);
+            return;
+        }
         Bravery = Random.Range(braveryRange.x, braveryRange.y);
         Aggression = Random.Range(aggressionRange.x, aggressionRange.y);
         Curiosity = Random.Range(curiosityRange.x, curiosityRange.y);
         Caution = Random.Range(cautionRange.x, cautionRange.y);
     }
+
+    static float Mid(Vector2 range) => (range.x + range.y) * 0.5f;
 }

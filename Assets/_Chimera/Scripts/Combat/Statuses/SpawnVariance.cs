@@ -18,6 +18,8 @@ public class SpawnVariance : MonoBehaviour
 
     void Awake()
     {
+        // ИНДИВИДУАЛЬНОСТЬ ВЫКЛЮЧЕНА (рубильник `IndividualityConfig`) — особь средняя: множители остаются 1
+        if (!IndividualityConfig.On) return;
         DamageMult = Roll(damageSpread);
         SpeedMult = Roll(speedSpread);
         HpMult = Roll(hpSpread);
