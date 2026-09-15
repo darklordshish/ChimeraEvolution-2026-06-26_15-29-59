@@ -67,5 +67,20 @@ namespace Chimera.Tests.EditMode
             Assert.AreEqual(0.6f, s.cooldown, 1e-5f, "перезарядка — меньше лучше");
             Assert.AreEqual(0.5f, s.regenDebuff, 1e-5f, "сбив регена — меньший множитель сильнее");
         }
+
+        [Test]
+        public void HowlData_ReachNotBelowBase_StunsOnlyFromPowerThreshold()
+        {
+            var weak = (HowlData)new HowlData { radius = 14f, stunAt = 2f }.Resolve(null, native: true, power: 0.45f);
+            Assert.AreEqual(14f, weak.Reach, 1e-5f, "рядовой волк воет как волк: радиус не ниже базы");
+            Assert.IsFalse(weak.Stuns, "мощь ниже порога — вой только зовёт, не станит");
+
+            var strong = (HowlData)new HowlData { radius = 14f, stunAt = 2f }.Resolve(null, native: true, power: 2f);
+            Assert.AreEqual(28f, strong.Reach, 1e-5f, "радиус растёт с мощью органа");
+            Assert.IsTrue(strong.Stuns, "мощь доросла до порога — вой станит");
+
+            var mute = (HowlData)new HowlData { radius = 14f, stunAt = 0f }.Resolve(null, native: true, power: 5f);
+            Assert.IsFalse(mute.Stuns, "порог 0 — стана нет вовсе, при любой мощи");
+        }
     }
 }

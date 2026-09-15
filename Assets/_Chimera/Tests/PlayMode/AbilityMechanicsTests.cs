@@ -89,6 +89,12 @@ namespace Chimera.Tests.PlayMode
             damage = 12, minRange = 5f, maxRange = 6.5f, speed = 13f, up = 5f, duration = 0.5f, hitRadius = 1.3f, windupTime = 0.05f,
         };
 
+        static HowlData Howl() => new HowlData { radius = 14f, stunAt = 0.5f, stunDuration = 1f, fearMoraleHit = 2f, cooldown = 0.1f };
+
+        static BellowData Bellow() => new BellowData { fearRadius = 10f, rallyRadius = 40f, fearMoraleHit = 2f, cooldown = 0.1f };
+
+        static ScreamData Scream() => new ScreamData { cooldown = 0.1f, boostPerStack = 0.12f, maxBoost = 2f };
+
         struct Case
         {
             public string name, slot;
@@ -107,6 +113,9 @@ namespace Chimera.Tests.PlayMode
             new Case { name = "удар конечностью", slot = "Руки", record = Limb, npc = typeof(LimbStrikeAbility), player = typeof(PlayerAttack) },
             new Case { name = "пинок", slot = "Ноги человека", record = Kick, npc = null, player = typeof(PlayerKick) },
             new Case { name = "наскок", slot = "Ноги волка", record = Leap, npc = typeof(LeapAbility), player = null },
+            new Case { name = "вой", slot = "Пасть волка", record = Howl, npc = null, player = typeof(PlayerHowl) },
+            new Case { name = "рёв", slot = "Глотка", record = Bellow, npc = null, player = typeof(PlayerBellow) },
+            new Case { name = "клич", slot = "Рот", record = Scream, npc = null, player = typeof(PlayerScream) },
         };
 
         static Organ OrganWith(string name, string slot, params AbilityData[] records) =>
@@ -649,6 +658,66 @@ namespace Chimera.Tests.PlayMode
             int before = target.Current;
             yield return Swing(leap, target);
             Assert.AreEqual(rec.damage, before - target.Current, "урон наскока ≠ записи органа");
+        }
+
+        // ── ГОЛОС ────────────────────────────────────────────────────────────────────────
+
+        [UnityTest]
+        public IEnumerator Player_Howl_StunsOnlyWhenOrganPowerReachesThreshold()
+        {
+            var rec = Howl(); // порог стана низкий: любая мощь органа до него дорастает
+            var body = Player(Species("Человек", OrganWith("Пасть волка", "Пасть", rec)));
+            var target = Dummy(new Vector3(0f, 0f, 2f)); // ближнее кольцо: половина радиуса
+            yield return null;
+            Physics.SyncTransforms();
+
+            var howl = body.GetComponent<PlayerHowl>();
+            Assert.IsNotNull(howl, "тело игрока не завело грань воя по записи органа");
+            Assert.IsTrue(body.Ability<HowlData>().Stuns, "мощь органа выше порога записи — стан должен быть открыт");
+            Assert.IsTrue(howl.TryUse(), "вой не сработал");
+            Assert.IsTrue(target.GetComponent<Stagger>().IsStunned, "вой не оглушил ближнюю чужую цель");
+
+            rec.stunAt = 100f; // порог недостижим
+            body.Refeed();
+            yield return new WaitForSeconds(rec.stunDuration + rec.cooldown + 0.1f); // прошлый стан спал, перезарядка прошла
+            Assert.IsFalse(body.Ability<HowlData>().Stuns, "порог выше мощи — стан должен быть закрыт");
+            Assert.IsTrue(howl.TryUse(), "вой не перезарядился по записи");
+            Assert.IsFalse(target.GetComponent<Stagger>().IsStunned, "вой оглушил, хотя мощь органа не доросла до порога");
+        }
+
+        [UnityTest]
+        public IEnumerator Player_Bellow_FrightensStrangersInFearRadius()
+        {
+            var rec = Bellow();
+            var body = Player(Species("Человек", OrganWith("Глотка", "Пасть", rec)));
+            var near = Dummy(new Vector3(0f, 0f, rec.fearRadius * 0.5f));
+            var far = Dummy(new Vector3(0f, 0f, rec.fearRadius + 5f));
+            var nearMorale = near.gameObject.AddComponent<Morale>();
+            var farMorale = far.gameObject.AddComponent<Morale>();
+            yield return null;
+            Physics.SyncTransforms();
+
+            var bellow = body.GetComponent<PlayerBellow>();
+            Assert.IsNotNull(bellow, "тело игрока не завело грань рёва по записи органа");
+            float nearBefore = nearMorale.Current, farBefore = farMorale.Current;
+            Assert.IsTrue(bellow.TryUse(), "рёв не сработал");
+            Assert.AreEqual(nearBefore - rec.fearMoraleHit, nearMorale.Current, 1e-4f, "рёв давит дух чужих в радиусе ужаса числом записи");
+            Assert.AreEqual(farBefore, farMorale.Current, 1e-4f, "рёв задел дух за радиусом ужаса записи");
+        }
+
+        [UnityTest]
+        public IEnumerator Player_Scream_BleedsSelf_AndEnrages()
+        {
+            var rec = Scream();
+            var body = Player(Species("Человек", OrganWith("Рот", "Пасть", rec)));
+            var rage = body.gameObject.AddComponent<Rage>();
+            yield return null;
+
+            var scream = body.GetComponent<PlayerScream>();
+            Assert.IsNotNull(scream, "тело игрока не завело грань клича по записи органа");
+            Assert.IsTrue(scream.TryUse(), "клич не сработал");
+            Assert.AreEqual(1, BleedOf(body.GetComponent<Health>()), "клич не пустил кровь кричащему");
+            Assert.IsTrue(rage.IsEnraged, "клич не ввёл в ярость");
         }
     }
 }

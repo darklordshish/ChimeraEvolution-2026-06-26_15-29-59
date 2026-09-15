@@ -45,7 +45,6 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     [SerializeField] float disengageRange = 9f;  // дальше — отпускаем жетон атаки
 
     [Header("Вой (зов ближней стаи)")]
-    [SerializeField] float howlRadius = 16f;    // на сколько разносится вой — сбегаются только ближние волки
     [SerializeField] float howlCooldown = 10f;  // личный КД воя (= жизни стака: один волк держит ~1 живой вклад)
     [SerializeField] float howlCueTime = 0.4f;  // сколько держится вспышка-телеграф воя
     [SerializeField] float alertMemory = 8f;    // сколько волк держит тревогу, услышав вой
@@ -191,10 +190,13 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
 
     // тело-на-шасси (CreatureBody: органы Волка × экспрессия ~0.45) кормит деривированное.
     // Ритм атак — фирменная тактика психики; числа прыжка — в записи органа ног (LeapData).
-    public void OnBodyStats(float bodyMoveSpeed, float howlRange)
+    // ГОЛОС — запись воя у органа Пасти (HowlData): радиус зова стаи = база × мощь, не ниже базы. Нет органа — волк не воет
+    CreatureBody voiceBody;
+    float HowlRadius { get { if (voiceBody == null) TryGetComponent(out voiceBody); var h = voiceBody != null ? voiceBody.Ability<HowlData>() : null; return h != null ? h.Reach : 0f; } }
+    
+    public void OnBodyStats(float bodyMoveSpeed)
     {
         moveSpeed = bodyMoveSpeed;
-        if (howlRange > 0.01f) howlRadius = howlRange; // ГОЛОС — от данных Пасти (природная норма ×1)
     }
 
     // сородич погиб рядом (и я в бою) → −1 к морали (единая арифметика вернулась после качелей баланса:
@@ -795,12 +797,13 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     // (лось пойдёт проверить, будущие уши тоже) — физика и семантика разнесены
     void TryHowl(Vector3 pos)
     {
+        if (HowlRadius <= 0f) return; // нет Пасти с воем — звать нечем
         if (Time.time < nextHowlTime) return;
         if (Belly != null && Belly.IsSated) return; // СЫТ — не до охоты: не зовёт стаю; рать собирают ГОЛОДНЫЕ
         // вой — событие СТАИ, не хор: голос подаёт ОДИН (иначе фон морали = размер стаи и страх не пробивает)
         if (!pack.TryClaimHowl()) { nextHowlTime = Time.time + 1f; return; }
         nextHowlTime = Time.time + howlCooldown;
-        pack.Howl(transform.position, howlRadius, pos);
+        pack.Howl(transform.position, HowlRadius, pos);
         if (noiseSrc == null) TryGetComponent(out noiseSrc);
         if (noiseSrc != null) noiseSrc.Spike(1f, 0.8f, TelegraphColors.Howl); // вой ЗВУЧИТ в мире (тон = цвет голоса)
         FlashTelegraph(TelegraphColors.Howl, howlCueTime); // видимый сигнал: волк зовёт стаю
@@ -811,9 +814,10 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     // остаётся. Обычные вои (по игроку) гейтятся хором как прежде — фон морали там не растёт
     void HuntHowl(Vector3 pos)
     {
+        if (HowlRadius <= 0f) return; // нет Пасти с воем — звать нечем
         if (Time.time < nextHowlTime) return;
         nextHowlTime = Time.time + howlCooldown;
-        pack.Howl(transform.position, howlRadius, pos); // Hear (сородичи сходятся к туше) + Cheer +1
+        pack.Howl(transform.position, HowlRadius, pos); // Hear (сородичи сходятся к туше) + Cheer +1
         if (noiseSrc == null) TryGetComponent(out noiseSrc);
         if (noiseSrc != null) noiseSrc.Spike(1f, 0.8f); // клич звучит в мире (лоси слышат — настораживаются)
         FlashTelegraph(TelegraphColors.Howl, howlCueTime);

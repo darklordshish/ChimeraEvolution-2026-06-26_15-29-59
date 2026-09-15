@@ -142,11 +142,12 @@ public class PlayerInputDriver : MonoBehaviour
         // сбегаются (вой-эскорт) уже ЗАРЯЖЕННЫЕ (рёв качает дух). Каждый голос сам гейтит Enabled/кулдаун
         if (howlAction.WasPressedThisFrame())
         {
-            if (bellow == null) bellow = GetComponent<PlayerBellow>(); // тело могло до-создать после нашего Awake
+            if (howl == null) howl = GetComponent<PlayerHowl>();       // грани голосов заводит тело по записям органов — берём лениво
+            if (bellow == null) bellow = GetComponent<PlayerBellow>();
             if (scream == null) scream = GetComponent<PlayerScream>();
-            howl?.TryUse();
-            bellow?.TryUse();
-            scream?.TryUse();
+            if (howl != null) howl.TryUse();
+            if (bellow != null) bellow.TryUse();
+            if (scream != null) scream.TryUse();
         }
         if (constrict != null && constrictAction.WasPressedThisFrame()) constrict.TryUse();
         if (constrict != null && presentAction.WasPressedThisFrame()) constrict.TogglePresent(); // C: ноша за спину/под удар

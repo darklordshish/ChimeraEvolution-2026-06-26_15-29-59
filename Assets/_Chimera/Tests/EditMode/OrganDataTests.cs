@@ -19,10 +19,6 @@ namespace Chimera.Tests.EditMode
         // ДОЛГ: «Класс.поле» — числа приёмов, ещё не переехавшие в запись органа
         static readonly HashSet<string> Debt = new(StringComparer.Ordinal)
         {
-            // задача 6 — голос: вой, рёв, клич
-            "PlayerBellow.cooldown", "PlayerBellow.fearRadius", "PlayerBellow.rallyRadius", "PlayerHowl.cooldown",
-            "PlayerHowl.fearMoraleHit", "PlayerHowl.fearRadius", "PlayerHowl.radius", "PlayerHowl.stunDuration",
-            "PlayerScream.boostPerStack", "PlayerScream.cooldown", "PlayerScream.maxBoost",
             // задача 6-бис — захват (в таблице спеки пропущен, см. её §10)
             "Constrict.breakRawThreshold", "Constrict.chokeDamage", "Constrict.chokeInterval", "Constrict.escapeMax",
             "Constrict.escapeMin", "Constrict.grabSlow1", "Constrict.grabSlow2", "Constrict.grabSlow3",

@@ -58,10 +58,10 @@ public class DebugHud : MonoBehaviour
         var abil = new List<string> { "меч ЛКМ" };
         if (kick != null && kick.Available) abil.Add("пинок E");
         if (bite != null && bite.Available) abil.Add("укус Q");
-        if (howl != null && howl.HowlEnabled) abil.Add("вой Alt");
+        if (howl != null && howl.Available) abil.Add("вой Alt");
         if (constrict != null && constrict.ConstrictEnabled) abil.Add("обхват F");
         if (bellow == null && player != null) player.TryGetComponent(out bellow); // тело до-создаёт после нашего Start
-        if (bellow != null && bellow.BellowEnabled) abil.Add("РЁВ Alt");
+        if (bellow != null && bellow.Available) abil.Add("РЁВ Alt");
         var antler = player != null ? player.GetComponent<PlayerAntler>() : null;
         if (antler != null && antler.Available) abil.Add("рога R");
         var charge = player != null ? player.GetComponent<PlayerCharge>() : null;

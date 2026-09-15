@@ -54,7 +54,6 @@ public partial class CreatureBody : MonoBehaviour
     PlayerController move;
     Health health;
     Stamina stamina;   // бак дыхалки — кор-механика у ВСЕХ тел, как и Health
-    PlayerHowl howl;
     PlayerConstrict constrictAb;
     SpawnVariance variance; // разброс особи: HP учитываем при раздаче витальности (иначе гонка Start'ов)
     Bossness bossness;      // модуль боссовости: множитель HP опрашиваем так же, как разброс
@@ -64,8 +63,6 @@ public partial class CreatureBody : MonoBehaviour
     VenomResist venomResistComp; // ядоупорность (Сердце ежа)
     BleedResist bleedResistComp; // кровеупорность (Лосиное сердце)
     Satiety satietyComp;    // шкала сытости-голода — у любого тела; распад зависит от однородности (метаболизм химеры)
-    PlayerBellow bellowAb;  // рёв (Глотка лося) — до-создаём игроку в Awake, включаем сборкой
-    PlayerScream screamAb;  // клич (Рот человека) — тот же порядок: до-создание в Awake, включение сборкой
     Betrayal betrayal;      // подрыв признания: удар по кину копит эрозию (только у игрока)
     Senses senses;          // профиль чувств ИГРОКА (каналы от сборки); у NPC он приходит с префаба
     // ГЛОТАЕТ ЦЕЛИКОМ (Тело-хвост змеи, chassisOnly): убитая добыча даёт ПОЛНУЮ сытость (крупная трапеза),
@@ -79,8 +76,6 @@ public partial class CreatureBody : MonoBehaviour
     public static CreatureBody PlayerBody { get; private set; } // тело ИГРОКА: HUD/dev/спавнеры читают его родство
     public SpeciesSO[] Donors => donors; // из кого собираются химеры «такие же, как игрок» (босс: Человек + его доноры)
 
-    /// <summary>Дорос ли носитель до СТАНА в вое (порог задан органом Пасти, см. Organ.howlStunAt).</summary>
-    public bool HowlStuns { get; private set; }
 
     // ─── СЛОТЫ/КОНСТРУКТОР (типы Slot/Variant, поле slots, экономика пула, публичный API конструктора,
     //     BuildSlots, Toggle) вынесены в CreatureBody.Slots.cs (partial-split #5, поведение то же) ───
@@ -117,15 +112,10 @@ public partial class CreatureBody : MonoBehaviour
         // ЭМОЦ-ИНДИКАЦИЯ — тоже тело: ярость/страх подкрашивают (у холоднокровных эмоций нет — тинт молчит сам)
         if (!TryGetComponent<EmotionTint>(out _)) gameObject.AddComponent<EmotionTint>();
         TryGetComponent(out health);
-        TryGetComponent(out howl);
         TryGetComponent(out constrictAb);
         // обхват/рёв — новые способности: достраиваем скелет сами (руками не повесить = кнопка молча мертва).
         // Крутилки видны на добавленном компоненте в рантайме; для перманентного тюнинга добавь в редакторе.
         if (move != null && constrictAb == null) constrictAb = gameObject.AddComponent<PlayerConstrict>();
-        TryGetComponent(out bellowAb);
-        if (move != null && bellowAb == null) bellowAb = gameObject.AddComponent<PlayerBellow>();
-        TryGetComponent(out screamAb);
-        if (move != null && screamAb == null) screamAb = gameObject.AddComponent<PlayerScream>();
         TryGetComponent(out betrayal);
         if (move != null && betrayal == null) betrayal = gameObject.AddComponent<Betrayal>(); // эрозия признания — только у игрока
         TryGetComponent(out variance);
@@ -264,7 +254,6 @@ public partial class CreatureBody : MonoBehaviour
         if (health == null) TryGetComponent(out health);
         if (attack == null) TryGetComponent(out attack);
         if (move == null) TryGetComponent(out move);
-        if (howl == null) TryGetComponent(out howl);
         if (constrictAb == null) TryGetComponent(out constrictAb);
         if (variance == null) TryGetComponent(out variance);
         if (bossness == null) TryGetComponent(out bossness);
@@ -289,9 +278,9 @@ public partial class CreatureBody : MonoBehaviour
 
         // суммирование групп; урон группы «Пасть» принадлежит УКУСУ, не мечу
         float hpBonusF = 0f, stamF = 0f, stamRegF = 0f;
-        float atkCd = 0f, mv = 0f, dash = 0f, dashDur = 0f, dashCd = 0f, reduce = 0f, regen = 0f, regenOOC = 0f, thermal = 0f, howlR = 0f, howlStunAt = 0f;
-        bool scentOn = false, howlOn = false, coldOn = false, camoOn = false,
-             thermalOn = false, constrictOn = false, digestOn = false, bellowOn = false, screamOn = false,
+        float atkCd = 0f, mv = 0f, dash = 0f, dashDur = 0f, dashCd = 0f, reduce = 0f, regen = 0f, regenOOC = 0f, thermal = 0f;
+        bool scentOn = false, coldOn = false, camoOn = false,
+             thermalOn = false, constrictOn = false, digestOn = false,
              insightOn = false, keenEarOn = false,
              thornsOn = false, venomResistOn = false, bleedResistOn = false;
         float earMult = 0f;
@@ -302,11 +291,9 @@ public partial class CreatureBody : MonoBehaviour
             hpBonusF += c.hpBonus; stamF += c.stam; stamRegF += c.stamRegen;
             atkCd += c.atkCd; mv += c.mv; dash += c.dash; dashDur += c.dashDur; dashCd += c.dashCd;
             reduce += c.reduce; regen += c.regen; regenOOC += c.regenOOC; thermal += c.thermal;
-            howlR = Mathf.Max(howlR, c.howlR);
-            howlStunAt = Mathf.Max(howlStunAt, c.howlStunAt);
-            scentOn |= c.scent; howlOn |= c.howl;
+            scentOn |= c.scent;
             coldOn |= c.cold; camoOn |= c.camo; thermalOn |= c.thermalOn; constrictOn |= c.constrict;
-            digestOn |= c.digest; bellowOn |= c.bellow; screamOn |= c.scream;
+            digestOn |= c.digest;
             constrictCap = Mathf.Max(constrictCap, c.constrictCap); insightOn |= c.insight;
             keenEarOn |= c.keenEar; earMult = Mathf.Max(earMult, c.earMult);
             thornsOn |= c.thorns; venomResistOn |= c.venomResist;
@@ -314,17 +301,8 @@ public partial class CreatureBody : MonoBehaviour
         }
 
         // ПРИЁМЫ ИЗ ЗАПИСЕЙ ОРГАНОВ (спека 12.09): раскрыть, свести дубли, накормить носителей — один путь игроку и NPC.
-        // Переехали все удары: укус, рога, таран, залп, перекат, клубок, конечность, пинок, наскок; голос и захват едут следом
+        // Переехали все удары и голос (вой, рёв, клич); захват едет следом
         ProvisionAbilities();
-        // ГОЛОС — от данных: радиус = органная база × МОЩЬ-превосходство (игрок BonusMult ×1..2;
-        // NPC max(1, Э) — норму вниз не штрафуем: взрослый волк воет как волк)
-        float voiceMult = Mathf.Max(1f, Power); // радиус: норму вниз не штрафуем (взрослый волк воет как волк)
-        float howlReach = howlR * voiceMult;
-        // ПОРОГ-ФИЧА (3-я ось экспрессии): стан открывается, только если МОЩЬ носителя доросла до порога органа.
-        // Рядовой волк (Э 0.45) лишь зовёт стаю; игрок на 100 родства — глушит. Через данные,
-        // без флагов «это игрок»: один вой на всех, разница — в составе носителя
-        HowlStuns = howlStunAt > 0f && Power >= howlStunAt;
-        if (howl != null) { howl.HowlEnabled = howlOn; howl.SetReach(howlReach); howl.StunUnlocked = HowlStuns; }
         if (constrictAb != null) // ИГРОК: драйвер PlayerConstrict оборачивает машину
         {
             constrictAb.ConstrictEnabled = constrictOn;               // обхват — фича Хвоста (химерный слот)
@@ -337,8 +315,6 @@ public partial class CreatureBody : MonoBehaviour
             if (!TryGetComponent<Constrict>(out var grabM)) grabM = gameObject.AddComponent<Constrict>();
             grabM.SetMaxStage(Mathf.Max(1, constrictCap));
         }
-        if (bellowAb != null) bellowAb.BellowEnabled = bellowOn;             // РЁВ — фича Глотки лося (K2)
-        if (screamAb != null) screamAb.ScreamEnabled = screamOn;             // КЛИЧ — фича Рта человека
         if (satietyComp != null) satietyComp.SetMetabolism(Homogeneity); // МЕТАБОЛИЗМ по тирам: чистый держит сытость дольше, химера сгорает
         SetColdBlooded(coldOn); // холоднокровность (Сердце змеи): невидимость для термозрения врагов
         SetCamouflage(camoOn);  // камуфляж (Чешуя змеи): невидимость в неподвижности
@@ -401,8 +377,8 @@ public partial class CreatureBody : MonoBehaviour
         }
 
         // НПС-потребители (психика): тело отдаёт деривированное — скорость хода
-        // и ГОЛОС (радиус воя, уже × мощь). Числа ПРИЁМОВ психике больше не идут: доставки кормят записи органов
-        foreach (var c in GetComponents<IBodyStatConsumer>()) c.OnBodyStats(mv, howlReach);
+        // Голос и числа приёмов психике не идут: доставки кормят записи органов, а голос психика читает у тела (Ability<T>)
+        foreach (var c in GetComponents<IBodyStatConsumer>()) c.OnBodyStats(mv);
 
         // МОРФОЛОГИЯ (ось 2): пересобрать куб-модель из состава (слоты шасси раньше химерных → шасси-фёрст) +
         // пере-собрать renderers (морф-части новые), чтобы тинт их покрасил. Только у видов со скелетом (Волк/Человек)
@@ -520,5 +496,5 @@ public partial class CreatureBody : MonoBehaviour
 /// </summary>
 public interface IBodyStatConsumer
 {
-    void OnBodyStats(float moveSpeed, float howlRange);
+    void OnBodyStats(float moveSpeed);
 }

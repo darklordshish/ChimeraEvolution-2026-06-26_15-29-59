@@ -59,8 +59,6 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
                                                      // окружении вырубал лося каждые пару секунд — «бьёт, но подтупливает»)
 
     [Header("Рёв — крик угрозы (срез D)")]
-    [SerializeField] float bellowRadius = 10f;      // ужас — ЛИЧНОЕ ПРОСТРАНСТВО (= граница лесенки): сунулся внутрь — получил по духу
-    [SerializeField] float bellowChainRadius = 40f; // цепная ярость сородичей — рёв туши слышен далеко
     [SerializeField] float bellowCooldown = 10f;
     [SerializeField] float bellowCueTime = 1.2f; // вспышка-сигнал рёва (Howl-цвет): длинная — рёв нельзя проморгать
 
@@ -137,9 +135,14 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     // на старте нельзя — остались бы с null навсегда, и лось таранил бы даром, ничем себя не выдав
     Stamina Breath { get { if (stamina == null) TryGetComponent(out stamina); return stamina; } }
 
-    // тело-на-шасси кормит скорость; урон тарана остаётся на ChargeAbility (как урон прыжка у волка);
-    // голос (howlRange) — задел: РЁВ пока фирменный (bellowRadius), переведём на данные Глотки при тюнинге
-    public void OnBodyStats(float bodyMoveSpeed, float howlRange)
+    // тело-на-шасси кормит скорость; числа тарана, рогов, копыта и рёва — в записях органов (читаются у тела)
+    // РЁВ — запись органа «Глотка» (BellowData): радиус ужаса (личное пространство, им же меряются теллы) и цепь сородичей.
+    // Нет Глотки — нет рёва, и теллы никого не пугают
+    CreatureBody voiceBody;
+    BellowData Bellow { get { if (voiceBody == null) TryGetComponent(out voiceBody); return voiceBody != null ? voiceBody.Ability<BellowData>() : null; } }
+    float BellowRadius => Bellow != null ? Bellow.fearRadius : 0f;
+    
+    public void OnBodyStats(float bodyMoveSpeed)
     {
         moveSpeed = bodyMoveSpeed;
     }
@@ -205,6 +208,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     // слышен всем ушам (Noise.Spike), рядом с игроком трясёт камеру. Вспышка Howl-цвета — визуальный сигнал
     void TryBellow()
     {
+        if (Bellow == null) return; // нет Глотки — реветь нечем
         if (Time.time < nextBellow) return;
         nextBellow = Time.time + bellowCooldown;
 
@@ -213,20 +217,20 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
         if (telegraph != null) { telegraph.Set(true, TelegraphColors.Howl, intent: true); bellowCueUntil = Time.time + bellowCueTime; }
 
         var hit = new HashSet<Component>(); // дедуп коллайдеров одного существа
-        float maxR = Mathf.Max(bellowRadius, bellowChainRadius);
+        float maxR = Mathf.Max(BellowRadius, Bellow.rallyRadius);
         foreach (var col in Physics.OverlapSphere(transform.position, maxR, ~0, QueryTriggerInteraction.Ignore))
         {
             var morale = col.GetComponentInParent<Morale>();
             if (morale != null && morale.transform != transform && !body.IsKin(morale.GetComponentInParent<CreatureBody>()) // своих (лосей) не пугаем — им цепь-ярость (кин по идентичности)
                 && hit.Add(morale)
-                && (morale.transform.position - transform.position).sqrMagnitude <= bellowRadius * bellowRadius)
-                morale.Add(-2f); // РЁВ туши весит два воя (прецедент «большого голоса» — как вой игрока)
+                && (morale.transform.position - transform.position).sqrMagnitude <= BellowRadius * BellowRadius)
+                morale.Add(-Bellow.fearMoraleHit); // РЁВ туши весит два воя (число — в записи Глотки) (прецедент «большого голоса» — как вой игрока)
             var mate = col.GetComponentInParent<MoosePsyche>();
             if (mate != null && mate != this && hit.Add(mate)) mate.Provoke(); // цепь — на всю слышимость; яростный не ревёт заново
         }
 
         if (cam != null && playerCtl != null
-            && (playerCtl.transform.position - transform.position).sqrMagnitude <= bellowRadius * bellowRadius)
+            && (playerCtl.transform.position - transform.position).sqrMagnitude <= BellowRadius * BellowRadius)
             cam.Shake(0.25f, 0.35f); // вес туши чувствуется телом
     }
 
@@ -256,7 +260,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     void ScareWolves()
     {
         var hit = new HashSet<Component>();
-        foreach (var col in Physics.OverlapSphere(transform.position, bellowRadius, ~0, QueryTriggerInteraction.Ignore))
+        foreach (var col in Physics.OverlapSphere(transform.position, BellowRadius, ~0, QueryTriggerInteraction.Ignore))
         {
             var morale = col.GetComponentInParent<Morale>();
             // теллы пугают ЧУЖИХ (у лося теперь тоже есть Morale — своих не стращаем, для них рёв = цепь-ярость)

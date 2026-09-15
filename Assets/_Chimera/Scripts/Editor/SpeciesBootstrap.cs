@@ -60,7 +60,7 @@ public static class SpeciesBootstrap
                 new OrganPart { scale = new Vector3(0.80f, 0.42f, 0.60f), offset = new Vector3(0.00f, -0.40f, 0.06f), role = PartRole.Ear, shape = PartShape.Sphere }, // мочка
                 new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), shape = PartShape.Sphere, role = PartRole.Eye, color = new Color(0.35f, 0.65f, 0.95f, 1f) }, // ЦВЕТ ГЛАЗА = КАНАЛ: прозрение — читает числа и намерения
             } }, // внутренний: сокет `inner` — своей детали нет, но форма органа проступает (цвет глаза = канал восприятия)
-            new Organ { organName = "Рот",    slot = "Пасть",  hotkey = "5", cost = 3, enablesScream = true }, // лицо/пасть — ОТДЕЛЬНО от черепа: волчья Пасть сядет сюда же → морда оборотня-волка.
+            new Organ { organName = "Рот",    slot = "Пасть",  hotkey = "5", cost = 3, abilities = new AbilityData[] { new ScreamData { cooldown = 12f, boostPerStack = 0.12f, maxBoost = 2f } } }, // лицо/пасть — ОТДЕЛЬНО от черепа: волчья Пасть сядет сюда же → морда оборотня-волка.
             //     БОЕВОЙ КЛИЧ: слот больше не мёртвый. Кусать человек не умеет, но кричит — ярость по своей крови (PlayerScream)
             new Organ { organName = "Кожа",   slot = "Шкура",  hotkey = "6", cost = 3, damageReduction = 0f },
         };
@@ -272,7 +272,7 @@ public static class SpeciesBootstrap
                 new OrganPart { scale = new Vector3(0.50f, 0.36f, 0.40f), offset = new Vector3(0.04f, 0.32f, -0.04f), euler = new Vector3(-6f, 0f, -7f), role = PartRole.Ear, shape = PartShape.Sphere }, // ВЕРХУШКА ЗАКРУГЛЁННАЯ (0.36→0.50): у волка ухо треугольник с тупым концом, а не остриё
                 new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), shape = PartShape.Sphere, role = PartRole.Eye, color = new Color(0.45f, 0.30f, 0.12f, 1f) }, // ЦВЕТ ГЛАЗА = КАНАЛ: нюх
             } },
-            new Organ { organName = "Пасть",         slot = "Пасть",  hotkey = "5", cost = 5, abilities = new AbilityData[] { new BiteData { damage = 14, bleedStacks = 2, regenDebuff = 0.5f, regenDebuffTime = 3f, range = 2f, halfAngle = 55f, windupTime = 0.45f, cooldown = 0.7f } }, enablesHowl = true, howlRadius = 14f, howlStunAt = 2f, enablesConstrict = true, constrictStage = 1, nativeChassis = "Волк", visualParts = new[] {
+            new Organ { organName = "Пасть",         slot = "Пасть",  hotkey = "5", cost = 5, abilities = new AbilityData[] { new BiteData { damage = 14, bleedStacks = 2, regenDebuff = 0.5f, regenDebuffTime = 3f, range = 2f, halfAngle = 55f, windupTime = 0.45f, cooldown = 0.7f }, new HowlData { radius = 14f, stunAt = 2f, stunDuration = 1f, fearMoraleHit = 2f, cooldown = 8f } }, enablesConstrict = true, constrictStage = 1, nativeChassis = "Волк", visualParts = new[] {
                 new OrganPart { scale = new Vector3(0.154f, 0.689f, 0.077f), offset = new Vector3(0.262f, -0.111f, 0.318f), color = new Color(0.95f, 0.94f, 0.90f, 1f) }, // КЛЫК верхний (пр): 0.13L, тип уходит НИЖЕ линии губы и НАРУЖУ от тела челюсти — иначе зуб тонет в морде
                 new OrganPart { scale = new Vector3(0.154f, 0.689f, 0.077f), offset = new Vector3(-0.262f, -0.111f, 0.318f), color = new Color(0.95f, 0.94f, 0.90f, 1f) }, // клык верхний (лев)
                 new OrganPart { scale = new Vector3(0.131f, 0.578f, 0.068f), offset = new Vector3(0.231f, -0.133f, 0.445f), color = new Color(0.95f, 0.94f, 0.90f, 1f) }, // клык нижний (пр): 0.11L, стоит ПЕРЕД верхним (снаружи), как в референсе черепа
@@ -711,7 +711,7 @@ public static class SpeciesBootstrap
                 new OrganPart { scale = new Vector3(0.46f, 0.12f, 0.48f), offset = new Vector3(0.00f, -0.40f, -0.09f), euler = new Vector3(14f, 0f, 0f), shape = PartShape.Capsule }, // путо
                 new OrganPart { scale = new Vector3(0.66f, 0.09f, 0.84f), offset = new Vector3(0.00f, -0.46f, -0.05f) }, // копыто
             } }, // длинные ноги: шаг ровный, а рывок = ДЛИННЫЙ мощный ТАРАН (35 > волчьих 30 + вдвое дольше → прёт быстро и далеко)
-            new Organ { organName = "Глотка",         slot = "Пасть",  hotkey = "5", cost = 4, enablesBellow = true }, // РЁВ (K2): кин-лоси в берсерк на месте, чужим страх
+            new Organ { organName = "Глотка",         slot = "Пасть",  hotkey = "5", cost = 4, abilities = new AbilityData[] { new BellowData { fearRadius = 10f, rallyRadius = 40f, fearMoraleHit = 2f, cooldown = 10f } } }, // РЁВ (K2): кин-лоси в берсерк на месте, чужим страх
             new Organ { organName = "Слух",           slot = "Чутьё",  hotkey = "4", cost = 3, dashCooldown = 0.7f, keenHearing = true, hearingMult = 2f, visualParts = new[] {
                 new OrganPart { scale = new Vector3(1.00f, 1.00f, 1.00f), shape = PartShape.Sphere, role = PartRole.Nose }, // нос
                 new OrganPart { scale = new Vector3(0.92f, 1.00f, 0.72f), offset = new Vector3(0.00f, 0.00f, 0.00f), role = PartRole.Ear }, // раковина

@@ -10,8 +10,8 @@ public partial class CreatureBody
     // вклад одного надетого органа в статы тела (после бленда/экспрессии)
     struct Contribution
     {
-        public float hpBonus, stam, stamRegen, atkCd, mv, dash, dashDur, dashCd, reduce, regen, regenOOC, thermal, howlR, howlStunAt;
-        public bool scent, howl, cold, camo, thermalOn, constrict, digest, bellow, scream;
+        public float hpBonus, stam, stamRegen, atkCd, mv, dash, dashDur, dashCd, reduce, regen, regenOOC, thermal;
+        public bool scent, cold, camo, thermalOn, constrict, digest, bellow, scream;
         public bool thorns, venomResist; // иглы-ответка, ядоупорность (ёж)
         public bool bleedResist;  // кровеупорность (лосиное сердце)
         public bool insight; // ЧУТЬЁ УЧЁНОГО: распознавание намерений + числа состояний (человеческое Чутьё)
@@ -29,13 +29,11 @@ public partial class CreatureBody
             mv = Mathf.Max(a.mv, b.mv), dash = Mathf.Max(a.dash, b.dash), dashDur = Mathf.Max(a.dashDur, b.dashDur), dashCd = Mathf.Min(a.dashCd, b.dashCd),
             reduce = Mathf.Max(a.reduce, b.reduce), regen = Mathf.Max(a.regen, b.regen),
             regenOOC = Mathf.Max(a.regenOOC, b.regenOOC), thermal = Mathf.Max(a.thermal, b.thermal),
-            howlR = Mathf.Max(a.howlR, b.howlR),
-            howlStunAt = Mathf.Max(a.howlStunAt, b.howlStunAt),
             scent = a.scent || b.scent,
-            howl = a.howl || b.howl, cold = a.cold || b.cold, camo = a.camo || b.camo,
+            cold = a.cold || b.cold, camo = a.camo || b.camo,
             thermalOn = a.thermalOn || b.thermalOn, constrict = a.constrict || b.constrict,
             constrictCap = Mathf.Max(a.constrictCap, b.constrictCap),
-            digest = a.digest || b.digest, bellow = a.bellow || b.bellow, scream = a.scream || b.scream,
+            digest = a.digest || b.digest,
             insight = a.insight || b.insight,
             keenEar = a.keenEar || b.keenEar, earMult = Mathf.Max(a.earMult, b.earMult),
             thorns = a.thorns || b.thorns, venomResist = a.venomResist || b.venomResist,
@@ -93,13 +91,10 @@ public partial class CreatureBody
             regenOOC = own ? w.regenOOC * m : w.regenOOC,
             // ДИСКРЕТНОЕ — всегда у надетого как есть: фичи не «раскрываются», они либо есть, либо нет
             dashDur = w.dashDuration, thermal = w.thermalRange,
-            howlR = w.howlRadius, howlStunAt = w.howlStunAt,
             scent = w.enablesScent,
-            howl = w.enablesHowl, cold = w.coldBlooded, camo = w.camo, thermalOn = w.enablesThermal,
-            constrict = w.enablesConstrict, digest = w.digestion, bellow = w.enablesBellow,
+            cold = w.coldBlooded, camo = w.camo, thermalOn = w.enablesThermal,
+            constrict = w.enablesConstrict, digest = w.digestion,
             insight = w.insight,
-            scream = w.enablesScream,   // КЛИЧ: гейта по шасси нет — человечий Рот кричит на любом теле,
-                                        // цена (своя кровь) и так не даёт этим злоупотреблять
             keenEar = w.keenHearing, earMult = w.hearingMult,
             thorns = w.thorns, venomResist = w.venomResist,
             bleedResist = w.bleedResist,

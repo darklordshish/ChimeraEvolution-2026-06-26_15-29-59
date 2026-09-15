@@ -126,7 +126,7 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
                              * (variance != null ? variance.SpeedMult : 1f)
                              * (Breath != null ? Breath.MoveMult : 1f);
 
-    public void OnBodyStats(float bodyMoveSpeed, float howlRange)
+    public void OnBodyStats(float bodyMoveSpeed)
     {
         moveSpeed = bodyMoveSpeed; // урон, яд и кровь укуса тело кормит доставке напрямую из записи органа (BiteData)
     }

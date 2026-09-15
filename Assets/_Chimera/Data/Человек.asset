@@ -32,10 +32,7 @@ MonoBehaviour:
     regenOOC: 0
     dashDuration: 0
     thermalRange: 0
-    howlStunAt: 0
-    howlRadius: 0
     enablesScent: 0
-    enablesHowl: 0
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
@@ -46,8 +43,6 @@ MonoBehaviour:
     keenHearing: 0
     hearingMult: 0
     insight: 0
-    enablesBellow: 0
-    enablesScream: 0
     chassisOnly: 1
     digestion: 0
     nativeChassis: 
@@ -88,10 +83,7 @@ MonoBehaviour:
     regenOOC: 0
     dashDuration: 0
     thermalRange: 0
-    howlStunAt: 0
-    howlRadius: 0
     enablesScent: 0
-    enablesHowl: 0
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
@@ -102,14 +94,12 @@ MonoBehaviour:
     keenHearing: 0
     hearingMult: 0
     insight: 0
-    enablesBellow: 0
-    enablesScream: 0
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
     constrictStage: 0
     abilities:
-    - rid: 4402482292869300240
+    - rid: 4402482292869300254
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -163,10 +153,7 @@ MonoBehaviour:
     regenOOC: 0
     dashDuration: 0
     thermalRange: 0
-    howlStunAt: 0
-    howlRadius: 0
     enablesScent: 0
-    enablesHowl: 0
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
@@ -177,14 +164,12 @@ MonoBehaviour:
     keenHearing: 0
     hearingMult: 0
     insight: 0
-    enablesBellow: 0
-    enablesScream: 0
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
     constrictStage: 0
     abilities:
-    - rid: 4402482292869300241
+    - rid: 4402482292869300255
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -244,10 +229,7 @@ MonoBehaviour:
     regenOOC: 0.75
     dashDuration: 0
     thermalRange: 0
-    howlStunAt: 0
-    howlRadius: 0
     enablesScent: 0
-    enablesHowl: 0
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
@@ -258,8 +240,6 @@ MonoBehaviour:
     keenHearing: 0
     hearingMult: 0
     insight: 0
-    enablesBellow: 0
-    enablesScream: 0
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
@@ -294,10 +274,7 @@ MonoBehaviour:
     regenOOC: 0
     dashDuration: 0
     thermalRange: 0
-    howlStunAt: 0
-    howlRadius: 0
     enablesScent: 0
-    enablesHowl: 0
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
@@ -308,8 +285,6 @@ MonoBehaviour:
     keenHearing: 0
     hearingMult: 0
     insight: 1
-    enablesBellow: 0
-    enablesScream: 0
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
@@ -362,10 +337,7 @@ MonoBehaviour:
     regenOOC: 0
     dashDuration: 0
     thermalRange: 0
-    howlStunAt: 0
-    howlRadius: 0
     enablesScent: 0
-    enablesHowl: 0
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
@@ -376,13 +348,12 @@ MonoBehaviour:
     keenHearing: 0
     hearingMult: 0
     insight: 0
-    enablesBellow: 0
-    enablesScream: 1
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
     constrictStage: 0
-    abilities: []
+    abilities:
+    - rid: 4402482292869300256
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -406,10 +377,7 @@ MonoBehaviour:
     regenOOC: 0
     dashDuration: 0
     thermalRange: 0
-    howlStunAt: 0
-    howlRadius: 0
     enablesScent: 0
-    enablesHowl: 0
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
@@ -420,8 +388,6 @@ MonoBehaviour:
     keenHearing: 0
     hearingMult: 0
     insight: 0
-    enablesBellow: 0
-    enablesScream: 0
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
@@ -2158,7 +2124,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4402482292869300240
+    - rid: 4402482292869300254
       type: {class: LimbStrikeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 8
@@ -2167,7 +2133,7 @@ MonoBehaviour:
         range: 1.6
         halfAngle: 60
         windupTime: 0.45
-    - rid: 4402482292869300241
+    - rid: 4402482292869300255
       type: {class: KickData, ns: , asm: Chimera.Runtime}
       data:
         damage: 4
@@ -2175,3 +2141,9 @@ MonoBehaviour:
         reach: 1.8
         radius: 1.6
         cooldown: 1
+    - rid: 4402482292869300256
+      type: {class: ScreamData, ns: , asm: Chimera.Runtime}
+      data:
+        cooldown: 12
+        boostPerStack: 0.12
+        maxBoost: 2

@@ -32,10 +32,7 @@ MonoBehaviour:
     regenOOC: 0
     dashDuration: 0
     thermalRange: 0
-    howlStunAt: 0
-    howlRadius: 0
     enablesScent: 0
-    enablesHowl: 0
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
@@ -46,8 +43,6 @@ MonoBehaviour:
     keenHearing: 0
     hearingMult: 0
     insight: 0
-    enablesBellow: 0
-    enablesScream: 0
     chassisOnly: 1
     digestion: 0
     nativeChassis: 
@@ -124,10 +119,7 @@ MonoBehaviour:
     regenOOC: 0
     dashDuration: 0
     thermalRange: 0
-    howlStunAt: 0
-    howlRadius: 0
     enablesScent: 0
-    enablesHowl: 0
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
@@ -138,14 +130,12 @@ MonoBehaviour:
     keenHearing: 0
     hearingMult: 0
     insight: 0
-    enablesBellow: 0
-    enablesScream: 0
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
     constrictStage: 0
     abilities:
-    - rid: 4402482292869300247
+    - rid: 4402482292869300263
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -193,10 +183,7 @@ MonoBehaviour:
     regenOOC: 0
     dashDuration: 0
     thermalRange: 0
-    howlStunAt: 0
-    howlRadius: 0
     enablesScent: 0
-    enablesHowl: 0
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
@@ -207,8 +194,6 @@ MonoBehaviour:
     keenHearing: 0
     hearingMult: 0
     insight: 0
-    enablesBellow: 0
-    enablesScream: 0
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
@@ -357,10 +342,7 @@ MonoBehaviour:
     regenOOC: 0
     dashDuration: 0.14
     thermalRange: 0
-    howlStunAt: 0
-    howlRadius: 0
     enablesScent: 0
-    enablesHowl: 0
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
@@ -371,15 +353,13 @@ MonoBehaviour:
     keenHearing: 0
     hearingMult: 0
     insight: 0
-    enablesBellow: 0
-    enablesScream: 0
     chassisOnly: 0
     digestion: 0
     nativeChassis: "\u0401\u0436"
     constrictStage: 0
     abilities:
-    - rid: 4402482292869300248
-    - rid: 4402482292869300249
+    - rid: 4402482292869300264
+    - rid: 4402482292869300265
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -427,10 +407,7 @@ MonoBehaviour:
     regenOOC: 0
     dashDuration: 0
     thermalRange: 0
-    howlStunAt: 0
-    howlRadius: 0
     enablesScent: 0
-    enablesHowl: 0
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
@@ -441,14 +418,12 @@ MonoBehaviour:
     keenHearing: 0
     hearingMult: 0
     insight: 0
-    enablesBellow: 0
-    enablesScream: 0
     chassisOnly: 0
     digestion: 0
     nativeChassis: "\u0401\u0436"
     constrictStage: 1
     abilities:
-    - rid: 4402482292869300250
+    - rid: 4402482292869300266
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -472,10 +447,7 @@ MonoBehaviour:
     regenOOC: 0
     dashDuration: 0
     thermalRange: 0
-    howlStunAt: 0
-    howlRadius: 0
     enablesScent: 0
-    enablesHowl: 0
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
@@ -486,8 +458,6 @@ MonoBehaviour:
     keenHearing: 0
     hearingMult: 0
     insight: 0
-    enablesBellow: 0
-    enablesScream: 0
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
@@ -516,10 +486,7 @@ MonoBehaviour:
     regenOOC: 0
     dashDuration: 0
     thermalRange: 0
-    howlStunAt: 0
-    howlRadius: 0
     enablesScent: 1
-    enablesHowl: 0
     coldBlooded: 0
     camo: 0
     enablesThermal: 0
@@ -530,8 +497,6 @@ MonoBehaviour:
     keenHearing: 1
     hearingMult: 1.6
     insight: 0
-    enablesBellow: 0
-    enablesScream: 0
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
@@ -3219,7 +3184,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4402482292869300247
+    - rid: 4402482292869300263
       type: {class: VolleyData, ns: , asm: Chimera.Runtime}
       data:
         damagePerQuill: 4
@@ -3234,14 +3199,14 @@ MonoBehaviour:
         windupTime: 0.5
         cooldown: 0.8
         blindAimError: 1.6
-    - rid: 4402482292869300248
+    - rid: 4402482292869300264
       type: {class: RollData, ns: , asm: Chimera.Runtime}
       data:
         damage: 10
         bleedStacks: 1
         knockForce: 8
         radius: 1.2
-    - rid: 4402482292869300249
+    - rid: 4402482292869300265
       type: {class: CurlData, ns: , asm: Chimera.Runtime}
       data:
         curlArmor: 0.6
@@ -3250,7 +3215,7 @@ MonoBehaviour:
         rollDrain: 40
         rollTurnSpeed: 90
         rollGravity: 20
-    - rid: 4402482292869300250
+    - rid: 4402482292869300266
       type: {class: BiteData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
