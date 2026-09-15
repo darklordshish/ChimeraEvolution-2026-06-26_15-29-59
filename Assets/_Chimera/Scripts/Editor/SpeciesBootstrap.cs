@@ -700,7 +700,7 @@ public static class SpeciesBootstrap
                 new OrganPart { scale = new Vector3(0.48f, 0.09f, 0.50f), offset = new Vector3(0.00f, -0.40f, 0.07f), euler = new Vector3(16f, 0f, 0f), shape = PartShape.Capsule }, // путо
                 new OrganPart { scale = new Vector3(0.68f, 0.07f, 0.86f), offset = new Vector3(0.00f, -0.47f, 0.09f) }, // копыто
             } }, // удар копытом — оружие
-            new Organ { organName = "Лосиные ноги",   slot = "Ноги",   hotkey = "2", cost = 5, moveSpeed = 5f, dashSpeed = 35f, dashDuration = 0.38f, enablesCharge = true, visualParts = new[] {
+            new Organ { organName = "Лосиные ноги",   slot = "Ноги",   hotkey = "2", cost = 5, moveSpeed = 5f, dashSpeed = 35f, dashDuration = 0.38f, abilities = new AbilityData[] { new ChargeData { damage = 22, damagePerMeter = 1f, knockForce = 12f, lightChargeMult = 0.25f, staggerTime = 0.5f, hitRadius = 1.8f, minRange = 4f, maxRange = 18f, chargeSpeed = 35f, duration = 0.73f, windupTime = 0.5f, stompRadius = 4f, stompStagger = 0.4f, stompForce = 13f, plowForce = 6f, plowRadius = 1.6f } }, visualParts = new[] {
                 new OrganPart { scale = new Vector3(1.44f, 0.44f, 1.38f), offset = new Vector3(0.00f, 0.28f, -0.05f), shape = PartShape.Sphere }, // мышца бедра
                 new OrganPart { scale = new Vector3(1.24f, 0.38f, 1.22f), offset = new Vector3(0.00f, 0.32f, -0.05f), euler = new Vector3(-14f, 0f, 0f), shape = PartShape.Capsule }, // таз→колено
                 new OrganPart { scale = new Vector3(1.08f, 0.20f, 1.10f), offset = new Vector3(0.00f, 0.13f, 0.02f), shape = PartShape.Sphere }, // колено
@@ -722,7 +722,7 @@ public static class SpeciesBootstrap
                 new OrganPart { scale = new Vector3(1.06f, 1.00f, 1.10f), offset = new Vector3(0.00f, 0.00f, 0.04f), shape = PartShape.Sphere }, // грудная клетка ЛОСЯ
             } }, // +200% HP + КРОВЕУПОРНОСТЬ: сердце ТАНКА — явный HP-король (обгоняет волчьи 1.75); у массивного лося своё преимущество (гора HP), а кровь ему особенно опасна (% от макс HP)
             new Organ { organName = "Толстая шкура",  slot = "Шкура",  hotkey = "6", cost = 5, damageReduction = 0.35f, visualScale = new Vector3(1.15f, 1.1f, 1f) }, // броня против ПРЯМОГО урона (не крови)
-            new Organ { organName = "Рога",           slot = "Рога",   hotkey = "8", cost = 5, enablesAntler = true, visualScale = new Vector3(1f, 1f, 1f), visualParts = new[] {
+            new Organ { organName = "Рога",           slot = "Рога",   hotkey = "8", cost = 5, abilities = new AbilityData[] { new AntlerData { damage = 12, knockForce = 9f, bleedStacks = 2, range = 2.5f, halfAngle = 50f, windupTime = 0.35f, cooldown = 1.2f } }, visualScale = new Vector3(1f, 1f, 1f), visualParts = new[] {
                 new OrganPart { scale = new Vector3(0.75f, 0.60f, 0.75f), offset = new Vector3(0.05f, 0.00f, 0.00f), shape = PartShape.Sphere }, // розетка
                 new OrganPart { scale = new Vector3(0.46f, 0.65f, 0.48f), offset = new Vector3(0.28f, 0.22f, 0.02f), euler = new Vector3(0f, 0f, -62f), shape = PartShape.Capsule }, // короткий ствол
                 new OrganPart { scale = new Vector3(1.90f, 0.26f, 2.20f), offset = new Vector3(1.35f, 0.56f, 0.05f), euler = new Vector3(-34f, 0f, 24f) }, // лопата — УЖЕ прежней: у живого лося она изрезана глубокими вырезами, примитивом их не сделать, поэтому силуэт «гребёнки» держат отростки, а не доска

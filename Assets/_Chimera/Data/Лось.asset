@@ -52,8 +52,6 @@ MonoBehaviour:
     insight: 0
     enablesBellow: 0
     enablesScream: 0
-    enablesAntler: 0
-    enablesCharge: 0
     enablesRoll: 0
     chassisOnly: 1
     digestion: 0
@@ -134,8 +132,6 @@ MonoBehaviour:
     insight: 0
     enablesBellow: 0
     enablesScream: 0
-    enablesAntler: 0
-    enablesCharge: 0
     enablesRoll: 0
     chassisOnly: 0
     digestion: 0
@@ -240,15 +236,14 @@ MonoBehaviour:
     insight: 0
     enablesBellow: 0
     enablesScream: 0
-    enablesAntler: 0
-    enablesCharge: 1
     enablesRoll: 0
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 0
-    abilities: []
+    abilities:
+    - rid: 4402482292869300228
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -346,8 +341,6 @@ MonoBehaviour:
     insight: 0
     enablesBellow: 1
     enablesScream: 0
-    enablesAntler: 0
-    enablesCharge: 0
     enablesRoll: 0
     chassisOnly: 0
     digestion: 0
@@ -398,8 +391,6 @@ MonoBehaviour:
     insight: 0
     enablesBellow: 0
     enablesScream: 0
-    enablesAntler: 0
-    enablesCharge: 0
     enablesRoll: 0
     chassisOnly: 0
     digestion: 0
@@ -474,8 +465,6 @@ MonoBehaviour:
     insight: 0
     enablesBellow: 0
     enablesScream: 0
-    enablesAntler: 0
-    enablesCharge: 0
     enablesRoll: 0
     chassisOnly: 0
     digestion: 0
@@ -532,8 +521,6 @@ MonoBehaviour:
     insight: 0
     enablesBellow: 0
     enablesScream: 0
-    enablesAntler: 0
-    enablesCharge: 0
     enablesRoll: 0
     chassisOnly: 0
     digestion: 0
@@ -584,15 +571,14 @@ MonoBehaviour:
     insight: 0
     enablesBellow: 0
     enablesScream: 0
-    enablesAntler: 1
-    enablesCharge: 0
     enablesRoll: 0
     chassisOnly: 0
     digestion: 0
     nativeChassis: 
     constrictStage: 0
     enablesCurl: 0
-    abilities: []
+    abilities:
+    - rid: 4402482292869300229
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -3343,4 +3329,33 @@ MonoBehaviour:
   buildLayers: 0
   references:
     version: 2
-    RefIds: []
+    RefIds:
+    - rid: 4402482292869300228
+      type: {class: ChargeData, ns: , asm: Chimera.Runtime}
+      data:
+        damage: 22
+        damagePerMeter: 1
+        knockForce: 12
+        lightChargeMult: 0.25
+        staggerTime: 0.5
+        hitRadius: 1.8
+        minRange: 4
+        maxRange: 18
+        chargeSpeed: 35
+        duration: 0.73
+        windupTime: 0.5
+        stompRadius: 4
+        stompStagger: 0.4
+        stompForce: 13
+        plowForce: 6
+        plowRadius: 1.6
+    - rid: 4402482292869300229
+      type: {class: AntlerData, ns: , asm: Chimera.Runtime}
+      data:
+        damage: 12
+        knockForce: 9
+        bleedStacks: 2
+        range: 2.5
+        halfAngle: 50
+        windupTime: 0.35
+        cooldown: 1.2

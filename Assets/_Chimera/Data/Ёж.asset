@@ -52,8 +52,6 @@ MonoBehaviour:
     insight: 0
     enablesBellow: 0
     enablesScream: 0
-    enablesAntler: 0
-    enablesCharge: 0
     enablesRoll: 0
     chassisOnly: 1
     digestion: 0
@@ -152,8 +150,6 @@ MonoBehaviour:
     insight: 0
     enablesBellow: 0
     enablesScream: 0
-    enablesAntler: 0
-    enablesCharge: 0
     enablesRoll: 0
     chassisOnly: 0
     digestion: 0
@@ -228,8 +224,6 @@ MonoBehaviour:
     insight: 0
     enablesBellow: 0
     enablesScream: 0
-    enablesAntler: 0
-    enablesCharge: 0
     enablesRoll: 0
     chassisOnly: 0
     digestion: 0
@@ -400,8 +394,6 @@ MonoBehaviour:
     insight: 0
     enablesBellow: 0
     enablesScream: 0
-    enablesAntler: 0
-    enablesCharge: 0
     enablesRoll: 1
     chassisOnly: 0
     digestion: 0
@@ -476,8 +468,6 @@ MonoBehaviour:
     insight: 0
     enablesBellow: 0
     enablesScream: 0
-    enablesAntler: 0
-    enablesCharge: 0
     enablesRoll: 0
     chassisOnly: 0
     digestion: 0
@@ -485,7 +475,7 @@ MonoBehaviour:
     constrictStage: 1
     enablesCurl: 0
     abilities:
-    - rid: 4402482292869300225
+    - rid: 4402482292869300230
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -529,8 +519,6 @@ MonoBehaviour:
     insight: 0
     enablesBellow: 0
     enablesScream: 0
-    enablesAntler: 0
-    enablesCharge: 0
     enablesRoll: 0
     chassisOnly: 0
     digestion: 0
@@ -581,8 +569,6 @@ MonoBehaviour:
     insight: 0
     enablesBellow: 0
     enablesScream: 0
-    enablesAntler: 0
-    enablesCharge: 0
     enablesRoll: 0
     chassisOnly: 0
     digestion: 0
@@ -3272,7 +3258,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4402482292869300225
+    - rid: 4402482292869300230
       type: {class: BiteData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22

@@ -6,35 +6,24 @@ using UnityEngine;
 /// удар копытами по цели в hitRadius: урон + Knockback (резист у Massive — внутри Knockback) + Stagger.
 /// ПРОПАШКА (массивный таранящий): по пути раздвигает попавшихся — кин толчком, не-кин толчком+уроном разгона.
 /// Закоммичен как прыжок: мягкий срыв (стаггер) игнорит, жёсткий (нокбэк) рвёт. Дефолты — лось.
+/// ВСЕ ЧИСЛА — ИЗ ЗАПИСИ ОРГАНА «Лосиные ноги» (<see cref="ChargeData"/>, спека «данные в органах»): нет записи — тарана нет.
+/// Довод о длине разбега и прочие обоснования чисел живут у полей записи, рядом с ручками.
 /// </summary>
-public class ChargeAbility : WindupAbility
+public class ChargeAbility : WindupAbility, IOrganAbility
 {
-    [Header("Таран")]
-    [SerializeField] float minRange = 4f;
-    [SerializeField] float maxRange = 12f;
-    [SerializeField] float chargeSpeed = 22f;  // быстрее волчьего бега ×5 и чуть быстрее рывка игрока: от тарана НЕ УБЕЖАТЬ —
-    [SerializeField] float duration = 0.73f;   // только уворот ВБОК (направление фиксируется в последний кадр замаха)
-    // ЭТО ЛИШЬ ДЕФОЛТ ДЛЯ СВЕЖЕГО КОМПОНЕНТА. Боевые числа лося задаёт генератор префаба
-    // (`MoosePrefab.cs`), и правит их надо ТАМ: правка здесь молча не доедет до зверя, потому что
-    // PrefabConfig.Set перезапишет поле при пересборке. Проверено 08.09 — тюнинг тарана так и потерялся
-    [SerializeField] int damage = 20;            // база удара копытами (вплотную ≈ рога)
-    [SerializeField] float damagePerMeter = 1.5f; // ФИЗИКА РАЗГОНА: +урон за каждый метр разбега — длинная прямая сокрушает
-    [SerializeField] float hitRadius = 1.8f;
-    [SerializeField] float knockForce = 12f;   // отлёт цели (Knockback сам резистит Massive-ЦЕЛЬ)
-    [SerializeField, Range(0f, 1f)] float lightChargeMult = 0.25f; // ТАРАН-ПО-МАССЕ: доля отброса, если таранящий сам НЕ массивен (снести с ног = нужна масса)
-    [SerializeField] float staggerTime = 0.5f; // сбив цели при попадании
-    [SerializeField] float stompRadius = 4f;   // топот-приземление: AOE в конце тарана (разгоняет скопления)
-    [SerializeField] float stompStagger = 0.4f;
-    [SerializeField] float stompForce = 13f;   // радиальный толчок топота у эпицентра — «землетрясение» (спад к краю; Massive резистит)
+    ChargeData data; // раскрытая запись тарана; null — тарана нет
 
-    [Header("Пропашка (только массивный таранящий)")]
-    [SerializeField] float plowForce = 6f;     // несильный снос тех, кто попался на пути разгона (не главная цель)
-    [SerializeField] float plowRadius = 1.6f;  // ширина пропашки (кого задевает туша на ходу)
+    public System.Type DataType => typeof(ChargeData);
+    public void Configure(AbilityData d) => data = d as ChargeData;
+    public bool Available => data != null;
+    protected override bool Ready => data != null;
+    protected override float WindupTime => data.windupTime;
 
-    public float MinRange => minRange; // психика читает окно дистанций тарана
-    public float MaxRange => maxRange;
+    // психика читает окно дистанций тарана; нет тарана — пустое окно [0, 0]
+    public float MinRange => data != null ? data.minRange : 0f;
+    public float MaxRange => data != null ? data.maxRange : 0f;
 
-    protected override float GizmoRange => maxRange; // хитбокс — дальность разбега тарана
+    protected override float GizmoRange => MaxRange; // хитбокс — дальность разбега тарана
     protected override float GizmoHalfAngle => 30f;
 
     bool charging, hit;
@@ -52,12 +41,12 @@ public class ChargeAbility : WindupAbility
             if (Time.time < windupEnd) { SettleInPlace(); return AbilityRun.Running; }
             charging = true; hit = false; plowedThisCharge.Clear();
             telegraph.Clear();
-            chargeEnd = Time.time + duration;
+            chargeEnd = Time.time + data.duration;
             dir = DirToTarget();               // направление берём в последний кадр замаха
             chargeStart = transform.position;  // отсюда меряем разгон
         }
 
-        controller.Move(dir * chargeSpeed * Time.deltaTime);                                // рывок вперёд
+        controller.Move(dir * data.chargeSpeed * Time.deltaTime);                                // рывок вперёд
         if (!controller.isGrounded) controller.Move(Vector3.up * gravity * Time.deltaTime); // прижать к земле
 
         // ПРОПАШКА: массивная туша по пути раздвигает попавшихся — ВКЛЮЧАЯ главную цель (её штатный удар в конце
@@ -67,7 +56,7 @@ public class ChargeAbility : WindupAbility
         if (GetComponent<Massive>() != null)
         {
             if (ownBody == null) TryGetComponent(out ownBody);
-            foreach (var hp in TargetScan.Healths(transform.position, plowRadius, transform))
+            foreach (var hp in TargetScan.Healths(transform.position, data.plowRadius, transform))
             {
                 if (!plowedThisCharge.Add(hp)) continue; // каждого задеваем раз за таран (цель — тоже, её удар часто мажет)
                 var vb = hp.GetComponent<CreatureBody>();
@@ -75,28 +64,28 @@ public class ChargeAbility : WindupAbility
                 if (!kin) // не-кин: урон разгона (формула главного удара), БЕЗ стаггера — это снос, не стан
                 {
                     float run = (transform.position - chargeStart).magnitude;
-                    int dmg = Mathf.RoundToInt((damage + damagePerMeter * run) * DamageMult);
+                    int dmg = Mathf.RoundToInt((data.damage + data.damagePerMeter * run) * DamageMult);
                     new MeleeBlow { Damage = dmg }.Deliver(new Hit(ownHealth, transform.position), hp);
                 }
                 Vector3 away = hp.transform.position - transform.position; away.y = 0f;
-                if (hp.TryGetComponent<Knockback>(out var kb)) kb.Push((away.sqrMagnitude > 0.0001f ? away.normalized : dir) * plowForce); // несильный снос (Massive-цель проигнорит)
+                if (hp.TryGetComponent<Knockback>(out var kb)) kb.Push((away.sqrMagnitude > 0.0001f ? away.normalized : dir) * data.plowForce); // несильный снос (Massive-цель проигнорит)
             }
         }
 
         // финальный удар — только если пропашка цель ещё не задела (дедуп: `Add` вернёт false, если уже плужена).
         // Так цель гарантированно получает урон (обычно от пропашки), а полный отброс/стаггер — когда доехал в упор
-        if (!hit && targetHealth != null && DistToTarget() <= hitRadius && plowedThisCharge.Add(targetHealth))
+        if (!hit && targetHealth != null && DistToTarget() <= data.hitRadius && plowedThisCharge.Add(targetHealth))
         {
             hit = true;
             float run = (transform.position - chargeStart).magnitude; // метры разбега = импульс туши
             // единый паёк (см. MeleeBlow): урон-с-разгоном (мощь уже учтена) + сбив. Откидывание ОСТАЁТСЯ
             // направленным (импульс ВДОЛЬ линии тарана, не от центра) — фирменный снос, числа не трогаем
-            int dmg = Mathf.RoundToInt((damage + damagePerMeter * run) * DamageMult);
-            var blow = new MeleeBlow { Damage = dmg, StaggerTime = staggerTime };
+            int dmg = Mathf.RoundToInt((data.damage + data.damagePerMeter * run) * DamageMult);
+            var blow = new MeleeBlow { Damage = dmg, StaggerTime = data.staggerTime };
             blow.Deliver(new Hit(ownHealth, transform.position), targetHealth);
             // ТАРАН-ПО-МАССЕ (§5 спеки #2A): массивная туша (лось) сносит в полную силу, лёгкое тело
             // (игрок на человечьем шасси) — лишь слабый толчок. Приём читает СВОЁ тело
-            float appliedKnock = GetComponent<Massive>() != null ? knockForce : knockForce * lightChargeMult;
+            float appliedKnock = GetComponent<Massive>() != null ? data.knockForce : data.knockForce * data.lightChargeMult;
             if (targetHealth.TryGetComponent<Knockback>(out var kb)) kb.Push(dir * appliedKnock); // Massive-ЦЕЛЬ Push всё равно проигнорит
         }
         if (Time.time < chargeEnd) return AbilityRun.Running;
@@ -109,16 +98,16 @@ public class ChargeAbility : WindupAbility
     // топот-приземление: сбивает всех со Stagger в радиусе (кроме себя) — разгоняет скопления, «землетрясение»
     void Stomp()
     {
-        foreach (var col in Physics.OverlapSphere(transform.position, stompRadius, ~0, QueryTriggerInteraction.Ignore))
+        foreach (var col in Physics.OverlapSphere(transform.position, data.stompRadius, ~0, QueryTriggerInteraction.Ignore))
         {
             var st = col.GetComponentInParent<Stagger>();
             if (st == null || st.gameObject == gameObject) continue;
-            st.Hitstun(stompStagger);
+            st.Hitstun(data.stompStagger);
             if (st.TryGetComponent<Knockback>(out var kb)) // радиальный толчок = видимое землетрясение (Massive резистит)
             {
                 Vector3 away = st.transform.position - transform.position; away.y = 0f;
                 float d = away.magnitude;
-                if (d > 0.0001f) kb.Push(away / d * stompForce * Mathf.Clamp01(1f - d / stompRadius * 0.6f)); // ближе к эпицентру — сильнее
+                if (d > 0.0001f) kb.Push(away / d * data.stompForce * Mathf.Clamp01(1f - d / data.stompRadius * 0.6f)); // ближе к эпицентру — сильнее
             }
         }
     }

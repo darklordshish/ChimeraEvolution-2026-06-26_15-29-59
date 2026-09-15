@@ -52,8 +52,6 @@ MonoBehaviour:
     insight: 0
     enablesBellow: 0
     enablesScream: 0
-    enablesAntler: 0
-    enablesCharge: 0
     enablesRoll: 0
     chassisOnly: 1
     digestion: 0
@@ -116,8 +114,6 @@ MonoBehaviour:
     insight: 0
     enablesBellow: 0
     enablesScream: 0
-    enablesAntler: 0
-    enablesCharge: 0
     enablesRoll: 0
     chassisOnly: 0
     digestion: 0
@@ -198,8 +194,6 @@ MonoBehaviour:
     insight: 0
     enablesBellow: 0
     enablesScream: 0
-    enablesAntler: 0
-    enablesCharge: 0
     enablesRoll: 0
     chassisOnly: 0
     digestion: 0
@@ -286,8 +280,6 @@ MonoBehaviour:
     insight: 0
     enablesBellow: 0
     enablesScream: 0
-    enablesAntler: 0
-    enablesCharge: 0
     enablesRoll: 0
     chassisOnly: 0
     digestion: 0
@@ -344,8 +336,6 @@ MonoBehaviour:
     insight: 1
     enablesBellow: 0
     enablesScream: 0
-    enablesAntler: 0
-    enablesCharge: 0
     enablesRoll: 0
     chassisOnly: 0
     digestion: 0
@@ -420,8 +410,6 @@ MonoBehaviour:
     insight: 0
     enablesBellow: 0
     enablesScream: 1
-    enablesAntler: 0
-    enablesCharge: 0
     enablesRoll: 0
     chassisOnly: 0
     digestion: 0
@@ -472,8 +460,6 @@ MonoBehaviour:
     insight: 0
     enablesBellow: 0
     enablesScream: 0
-    enablesAntler: 0
-    enablesCharge: 0
     enablesRoll: 0
     chassisOnly: 0
     digestion: 0

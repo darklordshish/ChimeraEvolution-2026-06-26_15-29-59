@@ -10,12 +10,15 @@ namespace Chimera.Tests.PlayMode
     /// <summary>
     /// МЕХАНИКА ПРИЁМОВ ОТНОСИТЕЛЬНО ДАННЫХ (спека `2026-09-12-dannye-v-organah.md`). Проверяется ПРОВОДКА, а не баланс:
     /// приём бьёт ровно тем, что записано в органе (после закона экспрессии), есть ровно пока надет орган, и одна запись
-    /// кормит и NPC, и игрока. Ожидания читаются из тестовых записей и из раскрытой записи тела — поворот ручки
-    /// в игре тест не краснит, разрыв проводки краснит. Индивидуальность выключена: средняя особь, урон не плавает.
+    /// кормит и NPC, и игрока. Ожидания читаются из тестовых записей и из раскрытой записи тела — поворот ручки в игре
+    /// тест не краснит, разрыв проводки краснит. Индивидуальность выключена: средняя особь, урон не плавает.
+    ///
+    /// ТАБЛИЦА ПРИЁМОВ (<see cref="Cases"/>): переехавший приём добавляет строку, и общие проверки (прививка даёт приём,
+    /// возврат родного органа снимает; нет записи — носитель недоступен) идут по всем приёмам сразу. Удары каждого
+    /// приёма — отдельными тестами ниже.
     /// </summary>
     public class AbilityMechanicsTests
     {
-        const string Maw = "Пасть";
         readonly List<Object> trash = new();
 
         [SetUp]
@@ -33,16 +36,42 @@ namespace Chimera.Tests.PlayMode
             foreach (var o in trash) if (o != null) Object.Destroy(o);
             trash.Clear();
             IndividualityConfig.On = true;
-            Time.timeScale = 1f; // хитстоп укуса игрока роняет время на миг — не оставить его соседним тестам
+            Time.timeScale = 1f; // хитстоп удара игрока роняет время на миг — не оставить его соседним тестам
         }
 
-        // ── ЗАПИСИ И ВИДЫ ────────────────────────────────────────────────────────────────
+        // ── ЗАПИСИ (числа — тестовые, не баланс; замахи короткие: тест проверяет проводку, а не телеграф) ───────
 
         static BiteData Bite(int damage = 14, int bleed = 1, int venom = 1) => new BiteData
         {
             damage = damage, bleedStacks = bleed, venomStacks = venom, regenDebuff = 0.5f, regenDebuffTime = 3f,
-            range = 2f, halfAngle = 55f, cooldown = 0.7f,
-            windupTime = 0.05f, // короткий замах: тест проверяет проводку, а не телеграф
+            range = 2f, halfAngle = 55f, windupTime = 0.05f, cooldown = 0.7f,
+        };
+
+        static AntlerData Antler() => new AntlerData
+        {
+            damage = 12, knockForce = 9f, bleedStacks = 2, range = 2.5f, halfAngle = 50f, windupTime = 0.05f, cooldown = 1.2f,
+        };
+
+        static ChargeData Charge() => new ChargeData
+        {
+            damage = 22, knockForce = 12f, lightChargeMult = 0.25f, staggerTime = 0.5f, hitRadius = 1.8f,
+            damagePerMeter = 0f, // разгон обнулён: пройденные метры зависят от кадров, а тест проверяет проводку
+            minRange = 4f, maxRange = 18f, chargeSpeed = 35f, duration = 0.4f, windupTime = 0.05f,
+            stompRadius = 4f, stompStagger = 0.4f, stompForce = 13f, plowForce = 6f, plowRadius = 1.6f,
+        };
+
+        struct Case
+        {
+            public string name, slot;
+            public System.Func<AbilityData> record;
+            public System.Type npc, player;
+        }
+
+        static readonly Case[] Cases =
+        {
+            new Case { name = "укус", slot = "Пасть", record = () => Bite(), npc = typeof(BiteAbility), player = typeof(PlayerBite) },
+            new Case { name = "рога", slot = "Рога", record = Antler, npc = typeof(AntlerAbility), player = typeof(PlayerAntler) },
+            new Case { name = "таран", slot = "Ноги", record = Charge, npc = typeof(ChargeAbility), player = typeof(PlayerCharge) },
         };
 
         static Organ OrganWith(string name, string slot, params AbilityData[] records) =>
@@ -64,6 +93,19 @@ namespace Chimera.Tests.PlayMode
             return so;
         }
 
+        // человек без приёмов во всех слотах таблицы и зверь с записями во всех — пара для проверок прививки
+        (SpeciesSO human, SpeciesSO beast) HumanAndBeast()
+        {
+            var humanOrgans = new List<Organ>();
+            var beastOrgans = new List<Organ>();
+            foreach (var c in Cases)
+            {
+                humanOrgans.Add(OrganWith("человечий " + c.slot, c.slot));
+                beastOrgans.Add(OrganWith("звериный " + c.slot, c.slot, c.record()));
+            }
+            return (Species("Человек", humanOrgans.ToArray()), Species("Зверь", beastOrgans.ToArray()));
+        }
+
         // ── СУЩЕСТВА ─────────────────────────────────────────────────────────────────────
 
         CreatureBody Npc(SpeciesSO chassis, float expression, SpeciesSO[] donors = null)
@@ -78,7 +120,7 @@ namespace Chimera.Tests.PlayMode
             return body;
         }
 
-        CreatureBody Player(SpeciesSO chassis)
+        CreatureBody Player(SpeciesSO chassis, SpeciesSO[] donors = null)
         {
             var go = new GameObject("Игрок");
             go.SetActive(false);                              // собрать до Awake: контроллер требует капсулу и драйвер ввода
@@ -88,7 +130,7 @@ namespace Chimera.Tests.PlayMode
             go.AddComponent<PlayerController>();
             var body = go.AddComponent<CreatureBody>();
             go.SetActive(true);
-            body.Configure(chassis, new SpeciesSO[0]);
+            body.Configure(chassis, donors ?? new SpeciesSO[0]);
             trash.Add(go);
             return body;
         }
@@ -137,6 +179,8 @@ namespace Chimera.Tests.PlayMode
 
         static int BleedOf(Health h) => h.TryGetComponent<Bleed>(out var b) ? b.Stacks : 0;
         static int VenomOf(Health h) => h.TryGetComponent<Venom>(out var v) ? v.Stacks : 0;
+        static bool Knocked(Health h) => h.GetComponent<Knockback>().IsActive;
+        static bool Staggered(Health h) => h.GetComponent<Stagger>().IsStaggered;
 
         static int SlotIndex(CreatureBody body, string slot)
         {
@@ -153,19 +197,67 @@ namespace Chimera.Tests.PlayMode
             return -1;
         }
 
+        static IOrganAbility CarrierOf(CreatureBody body, System.Type type) => body.GetComponent(type) as IOrganAbility;
+
+        // ── ОБЩЕЕ ПО ТАБЛИЦЕ ─────────────────────────────────────────────────────────────
+
+        IEnumerator GraftGainsRevertLoses(bool player)
+        {
+            var (human, beast) = HumanAndBeast();
+            var body = player ? Player(human, new[] { beast }) : Npc(human, expression: 1f, donors: new[] { beast });
+            yield return null;
+
+            foreach (var c in Cases)
+            {
+                var type = player ? c.player : c.npc;
+                var carrier = CarrierOf(body, type);
+                Assert.IsTrue(carrier == null || !carrier.Available, $"{c.name}: у человечьего органа приёма нет, а носитель доступен");
+
+                int slot = SlotIndex(body, c.slot);
+                Assert.IsTrue(body.Install(slot, VariantOf(body, slot, "Зверь")), $"{c.name}: не удалось привить звериный орган");
+                carrier = CarrierOf(body, type);
+                Assert.IsNotNull(carrier, $"{c.name}: прививка органа не завела носителя {type.Name}");
+                Assert.IsTrue(carrier.Available, $"{c.name}: привитый орган не дал приём");
+
+                Assert.IsTrue(body.Install(slot, VariantOf(body, slot, "Человек")), $"{c.name}: не удалось вернуть родной орган");
+                Assert.IsFalse(carrier.Available, $"{c.name}: вернули родной орган — приём должен пропасть");
+            }
+        }
+
+        [UnityTest] public IEnumerator EveryAbility_Npc_GraftGains_RevertLoses() => GraftGainsRevertLoses(player: false);
+        [UnityTest] public IEnumerator EveryAbility_Player_GraftGains_RevertLoses() => GraftGainsRevertLoses(player: true);
+
+        [UnityTest]
+        public IEnumerator EveryAbility_Npc_NoRecord_CarrierUnavailable()
+        {
+            var (human, _) = HumanAndBeast();
+            var body = Npc(human, expression: 1f);
+            var hanging = new List<(Case c, IOrganAbility carrier)>();
+            foreach (var c in Cases) hanging.Add((c, (IOrganAbility)body.gameObject.AddComponent(c.npc))); // так вешает психика в Awake
+            body.Refeed();
+            yield return null;
+
+            foreach (var (c, carrier) in hanging)
+            {
+                Assert.IsFalse(carrier.Available, $"{c.name}: нет записи органа — приёма быть не должно");
+                var windup = (WindupAbility)carrier;
+                windup.SetTarget(Dummy(new Vector3(0f, 0f, 1.2f)));
+                Assert.IsFalse(windup.TryUse(), $"{c.name}: недоступный приём запустил замах");
+            }
+        }
+
         // ── УКУС ─────────────────────────────────────────────────────────────────────────
 
         [UnityTest]
         public IEnumerator Npc_Bite_HitsWithOrganRecord()
         {
             var rec = Bite();
-            var body = Npc(Species("Волк", OrganWith("Пасть волка", Maw, rec)), expression: 1f);
+            var body = Npc(Species("Волк", OrganWith("Пасть волка", "Пасть", rec)), expression: 1f);
             var target = Dummy(new Vector3(0f, 0f, 1.2f));
             yield return null;
 
             var bite = body.GetComponent<BiteAbility>();
             Assert.IsNotNull(bite, "тело не завело доставку укуса по записи органа");
-            Assert.IsTrue(bite.Available, "запись есть, а укус недоступен");
             Assert.AreEqual(rec.range, bite.Range, 1e-5f, "психика читает досягаемость не из записи");
             Assert.AreEqual(0, bite.Payload().LifeSteal, "у приёма вампиризм — он принадлежит модулю боссовости");
 
@@ -180,7 +272,7 @@ namespace Chimera.Tests.PlayMode
         public IEnumerator Npc_Bite_ExpressionScalesDamage_NotEffects()
         {
             var rec = Bite(damage: 20, bleed: 1, venom: 0);
-            var body = Npc(Species("Волк", OrganWith("Пасть волка", Maw, rec)), expression: 0.5f);
+            var body = Npc(Species("Волк", OrganWith("Пасть волка", "Пасть", rec)), expression: 0.5f);
             var target = Dummy(new Vector3(0f, 0f, 1.2f));
             yield return null;
 
@@ -195,53 +287,16 @@ namespace Chimera.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator Npc_NoRecord_NoBite_EvenIfDeliveryHangs()
-        {
-            var body = Npc(Species("Лось", OrganWith("Глотка", Maw)), expression: 1f); // Пасть без записи укуса
-            var bite = body.gameObject.AddComponent<BiteAbility>();                  // так доставку вешает психика в Awake
-            body.Refeed();
-            var target = Dummy(new Vector3(0f, 0f, 1.2f));
-            yield return null;
-
-            Assert.IsFalse(bite.Available, "нет записи органа — нет укуса");
-            Assert.AreEqual(0f, bite.Range, 1e-5f, "недоступный укус не должен заманивать психику в зону атаки");
-            bite.SetTarget(target);
-            Assert.IsFalse(bite.TryUse(), "недоступный укус запустил замах");
-        }
-
-        [UnityTest]
-        public IEnumerator Graft_GainsBite_Removal_LosesIt()
-        {
-            var rec = Bite();
-            var human = Species("Человек", OrganWith("Рот", Maw));
-            var wolf = Species("Волк", OrganWith("Пасть волка", Maw, rec));
-            var body = Npc(human, expression: 1f, donors: new[] { wolf });
-            yield return null;
-            Assert.IsNull(body.Ability<BiteData>(), "у человечьего рта укуса нет");
-
-            int slot = SlotIndex(body, Maw);
-            Assert.IsTrue(body.Install(slot, VariantOf(body, slot, "Волк")), "не удалось привить волчью Пасть");
-            var bite = body.GetComponent<BiteAbility>();
-            Assert.IsNotNull(bite, "прививка Пасти не завела доставку укуса");
-            Assert.IsTrue(bite.Available, "привитая Пасть не дала укус");
-            Assert.AreEqual(rec.damage, body.Ability<BiteData>().damage, "донор на мощи 1 бьёт числом записи");
-
-            Assert.IsTrue(body.Install(slot, VariantOf(body, slot, "Человек")), "не удалось вернуть родной рот");
-            Assert.IsFalse(bite.Available, "вернули человечий рот — укус должен пропасть");
-        }
-
-        [UnityTest]
         public IEnumerator Player_Bite_SameRecord_SameCone()
         {
             var rec = Bite(damage: 14, bleed: 1, venom: 0);
-            var body = Player(Species("Человек", OrganWith("Пасть волка", Maw, rec)));
+            var body = Player(Species("Человек", OrganWith("Пасть волка", "Пасть", rec)));
             var target = Dummy(new Vector3(0f, 0f, 1.2f));
             yield return null;
             Physics.SyncTransforms();
 
             var bite = body.GetComponent<PlayerBite>();
             Assert.IsNotNull(bite, "тело игрока не завело грань укуса по записи органа");
-            Assert.IsTrue(bite.Available, "запись есть, а укус игрока недоступен");
             var resolved = body.Ability<BiteData>();
 
             int before = target.Current;
@@ -249,12 +304,102 @@ namespace Chimera.Tests.PlayMode
             Assert.AreEqual(resolved.damage, before - target.Current, "игрок бьёт не раскрытой записью тела");
             Assert.AreEqual(resolved.bleedStacks, BleedOf(target), "кровь игрока ≠ записи");
 
-            yield return new WaitForSecondsRealtime(0.1f);                   // отпустить хитстоп
-            yield return new WaitForSeconds(resolved.cooldown + 0.05f);       // дождаться перезарядки из записи
-            Teleport(target, new Vector3(0f, 0f, -1.2f));                     // за спину — вне конуса
+            yield return new WaitForSecondsRealtime(0.1f);                // отпустить хитстоп
+            yield return new WaitForSeconds(resolved.cooldown + 0.05f);    // дождаться перезарядки из записи
+            Teleport(target, new Vector3(0f, 0f, -1.2f));                  // за спину — вне конуса
             int behind = target.Current;
             Assert.IsTrue(bite.TryUse(), "укус игрока не перезарядился по записи");
             Assert.AreEqual(behind, target.Current, "укус игрока задел цель за спиной — конус из записи не соблюдён");
+        }
+
+        // ── РОГА ─────────────────────────────────────────────────────────────────────────
+
+        [UnityTest]
+        public IEnumerator Npc_Antler_HitsWithOrganRecord()
+        {
+            var rec = Antler();
+            var body = Npc(Species("Лось", OrganWith("Рога", "Рога", rec)), expression: 1f);
+            var target = Dummy(new Vector3(0f, 0f, 1.5f));
+            yield return null;
+
+            var antler = body.GetComponent<AntlerAbility>();
+            Assert.IsNotNull(antler, "тело не завело доставку рогов по записи органа");
+            Assert.AreEqual(rec.range, antler.Range, 1e-5f, "психика читает досягаемость рогов не из записи");
+
+            int before = target.Current;
+            yield return Swing(antler, target);
+            Assert.AreEqual(rec.damage, before - target.Current, "урон рогов ≠ записи органа");
+            Assert.AreEqual(rec.bleedStacks, BleedOf(target), "кровь от рогов ≠ записи органа");
+            Assert.IsTrue(Knocked(target), "рога не отбросили цель, хотя в записи есть отлёт");
+        }
+
+        [UnityTest]
+        public IEnumerator Player_Antler_SameRecord_SameCone()
+        {
+            var rec = Antler();
+            var body = Player(Species("Человек", OrganWith("Рога", "Рога", rec)));
+            var target = Dummy(new Vector3(0f, 0f, 1.5f));
+            yield return null;
+            Physics.SyncTransforms();
+
+            var antler = body.GetComponent<PlayerAntler>();
+            Assert.IsNotNull(antler, "тело игрока не завело грань рогов по записи органа");
+
+            int before = target.Current;
+            Assert.IsTrue(antler.TryUse(), "удар рогами игрока не сработал");
+            Assert.AreEqual(rec.damage, before - target.Current, "рога игрока бьют не записью органа");
+            Assert.AreEqual(rec.bleedStacks, BleedOf(target), "кровь от рогов игрока ≠ записи");
+            Assert.IsTrue(Knocked(target), "рога игрока не отбросили цель");
+
+            yield return new WaitForSeconds(rec.cooldown + 0.05f);
+            Teleport(target, new Vector3(0f, 0f, -1.5f));
+            int behind = target.Current;
+            Assert.IsTrue(antler.TryUse(), "рога игрока не перезарядились по записи");
+            Assert.AreEqual(behind, target.Current, "рога игрока задели цель за спиной — конус из записи не соблюдён");
+        }
+
+        // ── ТАРАН ────────────────────────────────────────────────────────────────────────
+
+        [UnityTest]
+        public IEnumerator Npc_Charge_HitsWithOrganRecord()
+        {
+            var rec = Charge();
+            var body = Npc(Species("Лось", OrganWith("Лосиные ноги", "Ноги", rec)), expression: 1f);
+            var target = Dummy(new Vector3(0f, 0f, 6f)); // в окне разбега записи [minRange, maxRange]
+            yield return null;
+
+            var charge = body.GetComponent<ChargeAbility>();
+            Assert.IsNotNull(charge, "тело не завело доставку тарана по записи органа");
+            Assert.AreEqual(rec.minRange, charge.MinRange, 1e-5f, "психика читает окно тарана не из записи");
+            Assert.AreEqual(rec.maxRange, charge.MaxRange, 1e-5f, "психика читает окно тарана не из записи");
+
+            int before = target.Current;
+            yield return Swing(charge, target);
+            Assert.AreEqual(rec.damage, before - target.Current, "урон тарана ≠ записи органа (разгон в записи обнулён)");
+            Assert.IsTrue(Staggered(target), "таран не сбил цель, хотя в записи есть сбив");
+        }
+
+        [UnityTest]
+        public IEnumerator Player_Charge_RidesDash_WithOrganRecord()
+        {
+            var rec = Charge();
+            var body = Player(Species("Человек", OrganWith("Лосиные ноги", "Ноги", rec)));
+            var target = Dummy(new Vector3(0f, 0f, 1f)); // внутри радиуса удара записи
+            yield return null;
+            Physics.SyncTransforms();
+
+            var charge = body.GetComponent<PlayerCharge>();
+            Assert.IsNotNull(charge, "тело игрока не завело грань тарана по записи органа");
+            Assert.IsTrue(charge.Available, "запись есть, а таран игрока недоступен");
+
+            int before = target.Current;
+            // рывок: таран — пассивный наездник на нём, отдельной кнопки нет
+            typeof(PlayerController).GetField("dashTimer", BindingFlags.NonPublic | BindingFlags.Instance)
+                .SetValue(body.GetComponent<PlayerController>(), 0.3f);
+            yield return null;
+            yield return null;
+            Assert.AreEqual(rec.damage, before - target.Current, "таран игрока бьёт не записью органа (разгон в записи обнулён)");
+            Assert.IsTrue(Staggered(target), "таран игрока не сбил цель — сбив из записи не доехал до грани");
         }
     }
 }

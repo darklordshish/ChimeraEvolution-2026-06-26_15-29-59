@@ -19,16 +19,6 @@ namespace Chimera.Tests.EditMode
         // ДОЛГ: «Класс.поле» — числа приёмов, ещё не переехавшие в запись органа
         static readonly HashSet<string> Debt = new(StringComparer.Ordinal)
         {
-            // задача 3 — рога и таран
-            "AntlerAbility.bleedStacks", "AntlerAbility.damage", "AntlerAbility.halfAngle",
-            "AntlerAbility.knockForce", "AntlerAbility.range", "ChargeAbility.chargeSpeed", "ChargeAbility.damage",
-            "ChargeAbility.damagePerMeter", "ChargeAbility.duration", "ChargeAbility.hitRadius",
-            "ChargeAbility.knockForce", "ChargeAbility.lightChargeMult", "ChargeAbility.maxRange",
-            "ChargeAbility.minRange", "ChargeAbility.plowForce", "ChargeAbility.plowRadius",
-            "ChargeAbility.staggerTime", "ChargeAbility.stompForce", "ChargeAbility.stompRadius",
-            "ChargeAbility.stompStagger", "PlayerAntler.bleedStacks", "PlayerAntler.cooldown", "PlayerAntler.damage",
-            "PlayerAntler.force", "PlayerAntler.radius", "PlayerAntler.range", "PlayerCharge.damage",
-            "PlayerCharge.force", "PlayerCharge.lightChargeMult", "PlayerCharge.radius", "PlayerCharge.reach",
             // задача 4 — залп, клубок, перекат
             "CurlDefense.curlArmor", "CurlDefense.rollBleed", "CurlDefense.rollDamage", "CurlDefense.rollDrain",
             "CurlDefense.rollGravity", "CurlDefense.rollKnock", "CurlDefense.rollRadius", "CurlDefense.rollSpeed",
