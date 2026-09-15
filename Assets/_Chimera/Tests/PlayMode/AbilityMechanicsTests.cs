@@ -412,7 +412,7 @@ namespace Chimera.Tests.PlayMode
 
             int before = target.Current;
             Assert.IsTrue(antler.TryUse(), "удар рогами игрока не сработал");
-            Assert.AreEqual(rec.damage, before - target.Current, "рога игрока бьют не записью органа");
+            Assert.AreEqual(body.Ability<AntlerData>().damage, before - target.Current, "рога игрока бьют не раскрытой записью органа");
             Assert.AreEqual(rec.bleedStacks, BleedOf(target), "кровь от рогов игрока ≠ записи");
             Assert.IsTrue(Knocked(target), "рога игрока не отбросили цель");
 
@@ -461,7 +461,7 @@ namespace Chimera.Tests.PlayMode
             Dash(body, 0.3f);
             yield return null;
             yield return null;
-            Assert.AreEqual(rec.damage, before - target.Current, "таран игрока бьёт не записью органа (разгон в записи обнулён)");
+            Assert.AreEqual(body.Ability<ChargeData>().damage, before - target.Current, "таран игрока бьёт не раскрытой записью органа (разгон в записи обнулён)");
             Assert.IsTrue(Staggered(target), "таран игрока не сбил цель — сбив из записи не доехал до грани");
         }
 
@@ -499,13 +499,14 @@ namespace Chimera.Tests.PlayMode
 
             var volley = body.GetComponent<PlayerQuillVolley>();
             Assert.IsNotNull(volley, "тело игрока не завело грань залпа по записи органа");
-            float power = Mathf.Max(1f, body.Ability<VolleyData>().power);
-            int perQuill = Mathf.Max(1, Mathf.RoundToInt(rec.damagePerQuill * power));
+            var resolved = body.Ability<VolleyData>();
+            float power = Mathf.Max(1f, resolved.power);                // мощь органа — модификатор полёта
+            int perQuill = Mathf.Max(1, resolved.damagePerQuill);       // урон уже раскрыт законом органа
 
             int before = target.Current;
             Assert.IsTrue(volley.TryUse(), "залп игрока не сработал");
             yield return new WaitForSeconds(8f / (rec.speed * power) + 0.3f);
-            Assert.AreEqual(rec.quills * perQuill, before - target.Current, "урон залпа игрока ≠ запись × мощь органа");
+            Assert.AreEqual(rec.quills * perQuill, before - target.Current, "урон залпа игрока ≠ раскрытой записи органа");
         }
 
         // ── ПЕРЕКАТ И КЛУБОК ─────────────────────────────────────────────────────────────
@@ -543,7 +544,7 @@ namespace Chimera.Tests.PlayMode
             Dash(spiky, 0.3f);
             yield return null;
             yield return null;
-            Assert.AreEqual(rec.damage, b2 - t2.Current, "перекат бьёт не записью органа");
+            Assert.AreEqual(spiky.Ability<RollData>().damage, b2 - t2.Current, "перекат бьёт не раскрытой записью органа");
             Assert.AreEqual(rec.bleedStacks, BleedOf(t2), "кровь переката ≠ записи");
         }
 
@@ -650,7 +651,7 @@ namespace Chimera.Tests.PlayMode
             Assert.IsNotNull(kick, "тело игрока не завело грань пинка по записи органа");
             int before = target.Current;
             Assert.IsTrue(kick.TryUse(), "пинок не сработал");
-            Assert.AreEqual(rec.damage, before - target.Current, "пинок бьёт не записью органа");
+            Assert.AreEqual(body.Ability<KickData>().damage, before - target.Current, "пинок бьёт не раскрытой записью органа");
             Assert.IsTrue(Knocked(target), "пинок не оттолкнул цель, хотя в записи есть отлёт");
         }
 

@@ -40,10 +40,11 @@ public class PlayerQuillVolley : MonoBehaviour, IAbility, IOrganAbility
         flatFwd = flatFwd.sqrMagnitude > 0.001f ? flatFwd.normalized : transform.forward;
         Vector3 origin = transform.position + Vector3.up * 1.2f + flatFwd * 0.6f; // от груди, вперёд за свой коллайдер
 
-        // МОЩЬ ОРГАНА — МОДИФИКАТОР ИНДИВИДА (решение 12.09: в записи база, у игрока модификаторы). Дальний бой растёт
-        // с мастерством, как всё остальное; ниже ×1 не опускается — свежий графт стреляет базой записи
+        // УРОН УЖЕ РАСКРЫТ ЗАКОНОМ ОРГАНА в записи (спека 16.09: урон всех приёмов — по экспрессии), второй раз не множим.
+        // Мощь органа здесь — модификатор индивида только для полёта: с мастерством иглы летят дальше и быстрее;
+        // ниже ×1 не опускается — свежий графт стреляет базой записи
         float power = Mathf.Max(1f, data.power);
-        int dmg = Mathf.Max(1, Mathf.RoundToInt(data.damagePerQuill * power));
+        int dmg = Mathf.Max(1, data.damagePerQuill);
         var blow = new MeleeBlow { Damage = dmg, BleedStacks = data.bleedPerQuill, SlowStacks = data.slowPerQuill };
         Quaternion aimRot = Quaternion.LookRotation(aimDir);
         float coneR = Mathf.Tan(data.spreadAngle * Mathf.Deg2Rad);

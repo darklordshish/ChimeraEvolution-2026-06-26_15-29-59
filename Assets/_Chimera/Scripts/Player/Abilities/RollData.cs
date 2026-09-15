@@ -13,7 +13,7 @@ public class RollData : AbilityData
     public override Type PlayerCarrier => typeof(PlayerRoll);
 
     [Tooltip("Урон тому, кого прокатил. Раз за рывок / прокат.")]
-    [MustBePositive] public int damage = 10;
+    [Expressed, MustBePositive] public int damage = 10;
 
     [Tooltip("Стаков кровотечения: иглы протыкают.")]
     [Min(0)] public int bleedStacks = 1;

@@ -13,7 +13,7 @@ public class KickData : AbilityData
     public override Type PlayerCarrier => typeof(PlayerKick);
 
     [Tooltip("Урон пинка: лёгкий, главное — толчок.")]
-    [MustBePositive] public int damage = 4;
+    [Expressed, MustBePositive] public int damage = 4;
 
     [Tooltip("Сила отлёта от пинка.")]
     [Min(0f)] public float knockForce = 12f;

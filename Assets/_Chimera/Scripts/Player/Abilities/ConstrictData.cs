@@ -44,7 +44,7 @@ public class ConstrictData : AbilityData
     [LowerIsBetter, Min(0f)] public float loosenPerDamage = 0.12f;
 
     [Tooltip("Урон удушения игрока за тик на ст.3. Минует i-frames: рывком из удушения не спрятаться.")]
-    [Min(0)] public int chokeDamage = 4;
+    [Expressed, Min(0)] public int chokeDamage = 4;
 
     [Tooltip("Интервал удушения игрока, с.")]
     [LowerIsBetter, MustBePositive] public float chokeInterval = 0.5f;
@@ -63,7 +63,7 @@ public class ConstrictData : AbilityData
     [LowerIsBetter, Min(0f)] public float npcLoosenPerDamage = 0.04f;
 
     [Tooltip("Урон удушения NPC за тик на ст.3. Баланс «одна змея душит волка».")]
-    [Min(0)] public int npcChokeDamage = 6;
+    [Expressed, Min(0)] public int npcChokeDamage = 6;
 
     [Tooltip("Интервал удушения NPC, с.")]
     [LowerIsBetter, MustBePositive] public float npcChokeInterval = 0.6f;

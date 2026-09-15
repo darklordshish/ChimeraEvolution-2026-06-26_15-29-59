@@ -11,8 +11,8 @@ public class LeapData : AbilityData
     public override Type NpcCarrier => typeof(LeapAbility);
     public override Type PlayerCarrier => null;
 
-    [Tooltip("Урон на приземлении. Как есть: экспрессией не раскрывается (так наскок бил до переезда).")]
-    [MustBePositive] public int damage = 12;
+    [Tooltip("Урон на приземлении. Раскрывается экспрессией, как урон любого приёма (спека 16.09): у природного зверя — доля записи, у игрока растёт с мощью органа.")]
+    [Expressed, MustBePositive] public int damage = 12;
 
     [Tooltip("Ближе этого прыгать незачем, м: психика кусает с места.")]
     [MustBePositive] public float minRange = 5f;

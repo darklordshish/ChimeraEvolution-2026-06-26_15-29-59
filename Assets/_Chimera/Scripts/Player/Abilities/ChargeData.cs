@@ -13,11 +13,11 @@ public class ChargeData : AbilityData
     public override Type PlayerCarrier => typeof(PlayerCharge);
 
     [Header("Удар — читают NPC и игрок")]
-    [Tooltip("Базовый урон тарана. Как есть: экспрессией не раскрывается (так таран бил до переезда).")]
-    [MustBePositive] public int damage = 22;
+    [Tooltip("Базовый урон тарана. Раскрывается экспрессией, как урон любого приёма (спека 16.09): у природного зверя — доля записи, у игрока растёт с мощью органа.")]
+    [Expressed, MustBePositive] public int damage = 22;
 
     [Tooltip("ФИЗИКА РАЗГОНА: +урон за каждый метр разбега. Скручен до 1.0, чтобы длинная прямая не делала ваншотом.")]
-    [Min(0f)] public float damagePerMeter = 1f;
+    [Expressed, Min(0f)] public float damagePerMeter = 1f;
 
     [Tooltip("Отлёт цели. Массивная цель резистит сама (Knockback).")]
     [Min(0f)] public float knockForce = 12f;

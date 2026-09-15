@@ -12,8 +12,8 @@ public class AntlerData : AbilityData
     public override Type PlayerCarrier => typeof(PlayerAntler);
 
     [Header("Сила")]
-    [Tooltip("Урон удара рогами. Как есть: экспрессией не раскрывается (так рога били до переезда; выровнять с уроном органа — решение дизайна).")]
-    [MustBePositive] public int damage = 12;
+    [Tooltip("Урон удара рогами. Раскрывается экспрессией, как урон любого приёма (спека 16.09): у природного зверя — доля записи, у игрока растёт с мощью органа.")]
+    [Expressed, MustBePositive] public int damage = 12;
 
     [Tooltip("Отлёт цели. Массивная цель резистит сама (Knockback).")]
     [Min(0f)] public float knockForce = 9f;

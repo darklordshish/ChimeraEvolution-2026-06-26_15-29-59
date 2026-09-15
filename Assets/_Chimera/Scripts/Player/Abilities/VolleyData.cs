@@ -14,7 +14,7 @@ public class VolleyData : AbilityData
 
     [Header("Паёк иглы")]
     [Tooltip("Урон одной иглы. У игрока × мощь органа (родство с ежом), у NPC как есть.")]
-    [MustBePositive] public int damagePerQuill = 4;
+    [Expressed, MustBePositive] public int damagePerQuill = 4;
 
     [Tooltip("Стаков кровотечения за иглу: протыкание.")]
     [Min(0)] public int bleedPerQuill = 1;
