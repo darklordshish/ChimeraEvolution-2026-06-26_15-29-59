@@ -156,7 +156,7 @@ Alt зовёт ВСЕ голоса разом — это правило дубл
 | **Индивидуальность** | рубильник `IndividualityConfig` (объект в сцене; галочка снята с 15.09 — все особи средние, механика детерминирована); диапазоны — `SpawnVariance` (±HP/урон/скорость) и `Personality` (храбрость/агрессия/любопытство/осторожность), тело вешает оба каждому NPC |
 | Ярость | `Rage` на префабе (множители, `permanent`); длительность от воя — `howlRageDuration` (волк) / `rageDuration` (босс) |
 | Стая: жетоны, мораль, паника | объект `PackCoordinator` в сцене |
-| Приёмы (урон/дальности/замахи) | **записи способностей органов** в `SpeciesBootstrap` (`abilities`: укус — `BiteData`); ещё не переехавшие — компоненты на префабах, их перечень — долг `OrganDataTests` |
+| Приёмы (урон/дальности/замахи) | **записи способностей органов** в `SpeciesBootstrap` (`abilities`: укус — `BiteData`, рога — `AntlerData`, таран — `ChargeData`); ещё не переехавшие — компоненты на префабах, их перечень — долг `OrganDataTests` |
 | Родство: скидка и кривая мощи | `CreatureBody` игрока (`discountPerAffinity`, `bonusStart/Full`, `maxBonusMult`) |
 | **Эволюция NPC** | `EvolutionConfig` (объект в сцене): `startAffinity` (1=отладка/0=демка), `chimerizeMultiplier` (интенсивность), метаморфоза-гистерезис = Medium |
 | **Морфология (скелет/части)** | `SpeciesSO.sockets` в `SpeciesBootstrap`: `parent/attach/attachOffset` — граф хребта, `baseSize`/`sizeRel` — калибр места (свой или долей родителя), `parts` — форма МЕСТА, `Organ.visualParts` — форма ОРГАНА (перебивает место), `formFrom`/`formRole` — форма от ЧУЖОГО органа. Переген видов после правок; FBX↔кубы — тумблер в `WolfPrefab`/`PlayerModel` |
