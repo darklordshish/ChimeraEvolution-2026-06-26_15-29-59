@@ -36,6 +36,8 @@ public class Constrict : MonoBehaviour, IOrganAbility
     public float WindupTime => data != null ? data.windupTime : 0f;     // замах захвата у драйвера NPC
     public float RipSelfKnock => data != null ? data.ripSelfKnock : 0f; // отлёт держащего, когда жертва сорвалась рывком
     public float BiteInterval => data != null ? data.biteInterval : 0f; // как часто держащий кусает жертву
+    public float GrabRange => data != null ? data.grabRange : 0f;       // досягаемость подбора цели (игрок и альфа)
+    public float HoldRange => data != null ? data.holdRange : 0f;       // дальше — хватка соскользнула (игрок и альфа)
 
     /// <summary>Запись от тела (или от драйвера игрока). Сняли орган посреди хвата — хват отпускается.</summary>
     public void Configure(AbilityData d)

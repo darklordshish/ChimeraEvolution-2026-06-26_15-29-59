@@ -939,5 +939,41 @@ namespace Chimera.Tests.PlayMode
             Assert.IsTrue(machine.Begin(victim), "перезарядка записи прошла, а машина не берёт");
             machine.End();
         }
+
+        // ── ЗАХВАТ У ХИМЕРЫ-АЛЬФЫ — ПРОСТЕЙШИЙ ВАРИАНТ (спека 16.09 §4) ─────────────────────────
+
+        [UnityTest]
+        public IEnumerator Alpha_GrabsLoneTarget_WithGripRecord()
+        {
+            var rec = Grip();
+            rec.windupTime = 0.05f;
+            var body = Npc(Species("Человек", OrganWith("Хвост", "Хвост", rec)), expression: 1f);
+            Dummy(new Vector3(0f, 0f, rec.grabRange * 0.5f));
+            yield return null;
+
+            var machine = body.GetComponent<Constrict>();
+            Assert.IsNotNull(machine, "тело не завело машину захвата по записи органа");
+            body.gameObject.AddComponent<ChimeraAlphaPsyche>();
+            bool grabbed = false;
+            yield return Until(() => grabbed |= machine.Holding, 3f);
+            Assert.IsTrue(grabbed, "альфа с записью захвата не схватила одинокую цель в досягаемости");
+        }
+
+        [UnityTest]
+        public IEnumerator Alpha_DoesNotGrab_WhenSeveralEnemies()
+        {
+            var rec = Grip();
+            rec.windupTime = 0.05f;
+            var body = Npc(Species("Человек", OrganWith("Хвост", "Хвост", rec)), expression: 1f);
+            Dummy(new Vector3(0f, 0f, rec.grabRange * 0.5f));
+            Dummy(new Vector3(3f, 0f, 3f)); // второй чужой в радиусе обзора
+            yield return null;
+
+            var machine = body.GetComponent<Constrict>();
+            body.gameObject.AddComponent<ChimeraAlphaPsyche>();
+            bool grabbed = false;
+            yield return Until(() => grabbed |= machine.Holding, 1.5f);
+            Assert.IsFalse(grabbed, "альфа схватила, хотя чужих рядом несколько");
+        }
     }
 }
