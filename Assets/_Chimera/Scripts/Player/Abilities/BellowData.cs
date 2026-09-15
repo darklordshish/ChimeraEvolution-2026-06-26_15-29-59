@@ -21,6 +21,9 @@ public class BellowData : AbilityData
     [Tooltip("Удар по морали чужих в радиусе ужаса. Рёв туши весит два воя.")]
     [MustBePositive] public float fearMoraleHit = 2f;
 
-    [Tooltip("Перезарядка рёва игрока, с. Как часто ревёт лось, решает психика (bellowCooldown) — это тактика.")]
+    [Tooltip("Перезарядка рёва, с — у игрока и у лося (психика ждёт её по записи).")]
     [LowerIsBetter, MustBePositive] public float cooldown = 10f;
+
+    [Tooltip("Сколько держится вспышка-сигнал рёва у NPC, с: длинная — рёв нельзя проморгать.")]
+    [MustBePositive] public float cueTime = 1.2f;
 }

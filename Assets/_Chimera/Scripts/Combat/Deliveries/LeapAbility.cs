@@ -15,6 +15,7 @@ public class LeapAbility : WindupAbility, IOrganAbility
     public bool Available => data != null;
     protected override bool Ready => data != null;
     protected override float WindupTime => data.windupTime;
+    protected override float StaminaCost => data != null ? data.staminaCost : 0f;      // цена наскока — запись ног
 
     // психика читает окно дистанций; нет наскока — пустое окно [0, 0]
     public float MinRange => data != null ? data.minRange : 0f;

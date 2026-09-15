@@ -45,7 +45,7 @@ public class VolleyData : AbilityData
     [Tooltip("Замах NPC перед залпом, с: телеграф. У игрока замаха нет.")]
     [LowerIsBetter, MustBePositive] public float windupTime = 0.5f;
 
-    [Tooltip("Перезарядка залпа игрока, с. Ритм залпов ежа держит психика (volleyCooldown) — это тактика.")]
+    [Tooltip("Перезарядка залпа, с — у игрока и у NPC (доставка ждёт её сама). Число родного вида органа (спека 16.09).")]
     [LowerIsBetter, MustBePositive] public float cooldown = 0.8f;
 
     [Tooltip("СТРЕЛЬБА ПО НЮХУ: радиус промаха прицела, когда цель чуется, но не видна (камуфляж), м. Читает NPC.")]

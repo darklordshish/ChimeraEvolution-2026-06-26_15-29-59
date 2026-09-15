@@ -33,16 +33,9 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     [SerializeField] float wanderRadius = 14f;
     [SerializeField, Range(0f, 1f)] float grazeSpeed = 0.5f;
     [SerializeField] float provokeRadius = 5f;   // вторжение ВПЛОТНУЮ на глазах — мгновенный максимум лесенки
-    [SerializeField] float attackCooldown = 2.5f;
-    // У РОГОВ СВОЙ ОТКАТ, И ОН БОЛЬШОЙ (2.5). Короткий (1.2) был поставлен 08.09, когда рога были
-    // ЕДИНСТВЕННЫМ ближним приёмом лося и вблизи он почти не отвечал. Теперь вплотную работает копыто,
-    // и рога вернулись к своей роли: редкий сильный удар, который надо переждать. Частым «не подходи»
-    // служит копыто — оно слабее и без кровотечения
-    [SerializeField] float antlerCooldown = 2.5f;
-    [SerializeField] float hoofCooldown = 1.1f;   // копыто — частый ближний ответ
-    // Ноль = «не настроено»: поле новое, а компонент уже лежит в префабе, куда инициализатор не
-    // доедет (гоча проекта). Без обёртки лось на старом префабе бил бы рогами КАЖДЫЙ КАДР
-    float AntlerCd => antlerCooldown > 0f ? antlerCooldown : 2.5f;
+    [SerializeField, NotOrganData("решение психики: ритм выбора атаки; перезарядку приёма держит доставка по записи органа")] float attackCooldown = 2.5f;
+    // ОТКАТЫ РОГОВ И КОПЫТА, ЦЕНА ТАРАНА, ПЕРЕЗАРЯДКА И СИГНАЛ РЁВА — В ЗАПИСЯХ ОРГАНОВ (спека 16.09): доставки ждут
+    // и платят сами, психика только решает, чем бить. Копыто по-прежнему со своим откатом — у его доставки
 
     [Header("Лесенка предупреждений + берсерк (срез C)")]
     [SerializeField] float warnRadius = 10f;         // видимый провокатор ближе — раздражение растёт (ближе = быстрее)
@@ -58,9 +51,6 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
                                                      // стены. НЕ гасит ярость (в отличие от прежнего тайм-аута, который в
                                                      // окружении вырубал лося каждые пару секунд — «бьёт, но подтупливает»)
 
-    [Header("Рёв — крик угрозы (срез D)")]
-    [SerializeField] float bellowCooldown = 10f;
-    [SerializeField] float bellowCueTime = 1.2f; // вспышка-сигнал рёва (Howl-цвет): длинная — рёв нельзя проморгать
 
     Stagger stagger;
     Knockback knockback;
@@ -87,7 +77,7 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     CameraFollow cam;      // рёв рядом с игроком встряхивает камеру (вес туши)
     Health playerHealth;   // игрок — фолбэк-угроза (кэш)
     CreatureBody body;     // своё тело — кин-проверка (мой вид = шасси)
-    float nextAttackTime, nextHoofTime, nextBellow, bellowCueUntil, nextThreatScan; // вертикаль/гравитация — в NavLocomotion
+    float nextAttackTime, nextBellow, bellowCueUntil, nextThreatScan; // вертикаль/гравитация — в NavLocomotion
     bool provoked, playerKinNow; // кин-игрок: не провоцирует лесенку (даже когда других угроз нет и цель — он)
     float irritation;      // ЛЕСЕНКА 0..1: копится от видимого провокатора, спадает без него
     float calmSince = -1f;    // разъярён: с какого момента сцена «рассосалась» (не видит/далеко)
@@ -118,7 +108,6 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     [SerializeField] float satedAgitation = 0.6f;  // на полной сытости
     float Agitation => Belly != null ? Mathf.Lerp(hungryAgitation, satedAgitation, Belly.Fullness) : 1f;
 
-    [SerializeField] float chargeCost = 70f; // 45 не читалось: реген успевал вернуть между таранами
     // ПОГОНЯ ЖЖЁТ ДЫХАЛКУ — главный расход, а не приёмы. Пока трата шла только на редкий таран, полоска
     // «телепалась у полной»: реген всё возвращал между ударами. Непрерывный слив делает состояние зверя
     // читаемым — и превращает «загнать лося» из фигуры речи в тактику
@@ -127,9 +116,6 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     // не оторвёшься. Два тарана — и он пуст, дальше только копытами
     [SerializeField] float chaseDrain = 5f;  // расход бака в секунду, пока реально бежит за целью
     float ChaseDrain => chaseDrain > 0f ? chaseDrain : 5f;
-    // ГОЧА: поле новое, психика уже лежит в префабе → придёт НУЛЁМ, и таран станет бесплатным, ничем
-    // себя не выдав (лось просто продолжит таранить, как раньше). Читаем 0 как «не настроено»
-    float ChargeCost => chargeCost > 0f ? chargeCost : 70f;
     Stamina stamina;
     // ЛЕНИВАЯ привязка: бак до-создаёт тело в Recompute, а он бывает ПОЗЖЕ нашего Awake. Схватить один раз
     // на старте нельзя — остались бы с null навсегда, и лось таранил бы даром, ничем себя не выдав
@@ -210,11 +196,11 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     {
         if (Bellow == null) return; // нет Глотки — реветь нечем
         if (Time.time < nextBellow) return;
-        nextBellow = Time.time + bellowCooldown;
+        nextBellow = Time.time + Bellow.cooldown; // перезарядка рёва — запись Глотки
 
         if (noiseSrc == null) TryGetComponent(out noiseSrc);
         if (noiseSrc != null) noiseSrc.Spike(1f, 1f, TelegraphColors.Howl); // рёв — тон голоса
-        if (telegraph != null) { telegraph.Set(true, TelegraphColors.Howl, intent: true); bellowCueUntil = Time.time + bellowCueTime; }
+        if (telegraph != null) { telegraph.Set(true, TelegraphColors.Howl, intent: true); bellowCueUntil = Time.time + Bellow.cueTime; }
 
         var hit = new HashSet<Component>(); // дедуп коллайдеров одного существа
         float maxR = Mathf.Max(BellowRadius, Bellow.rallyRadius);
@@ -339,9 +325,8 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
             // выключал лося на весь откат: стрейфом его удерживали в цикле «замахнулся — отменил — ждёт».
             // Доворот выше делает срыв редким, но когда он всё же случился — это НЕ состоявшийся удар,
             // и платить за него как за удар не за что. Четверть отката: пауза видна, беспомощности нет
-            bool wasAntler = activeAbility == antler;   // запомнить ДО обнуления: откат зависит от приёма
             activeAbility = null;
-            float cd = wasAntler ? AntlerCd : attackCooldown;
+            float cd = attackCooldown; // откат самого приёма держит доставка по записи органа
             nextAttackTime = Time.time + (st == AbilityRun.Cancelled ? cd * 0.25f : cd);
             return;
         }
@@ -423,17 +408,17 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
                 { if (antler.TryUse()) activeAbility = antler; Settle(Vector3.zero); return; }
                 // ТАРАН копытами (+топот на приземлении) — в окне дистанции И при дыхалке. Выдохся —
                 // условие не выполнится, и он просто пойдёт догонять шагом: угроза осталась, разгон кончился
-                if (dist >= charge.MinRange && dist <= charge.MaxRange && (Breath == null || Breath.Has(ChargeCost)))
-                { if (charge.TryUse()) { Breath?.TrySpend(ChargeCost); activeAbility = charge; } Settle(Vector3.zero); return; }
+                if (dist >= charge.MinRange && dist <= charge.MaxRange && charge.CanUse) // цену тарана платит доставка по записи ног
+                { if (charge.TryUse()) activeAbility = charge; Settle(Vector3.zero); return; }
             }
             // КОПЫТО — СВОЙ ТАЙМЕР, И ЭТО ГЛАВНОЕ ОРУЖИЕ ЛОСЯ ВБЛИЗИ. Стоит ОТДЕЛЬНО от общего отката
             // намеренно: пока рога перезаряжаются (2.5 с), зверь вплотную не должен становиться
             // безобидным — иначе его держат в упор и бьют безнаказанно, что и было до 11.09.
             //     Природа тут заодно с механикой: лось отбивается от хищника передними ногами, а
             // рогами бодает соперников. Урон копыта — из записи удара конечностью у органа «Копыто»
-            else if (sees && hoof != null && dist <= hoof.Range && Time.time >= nextHoofTime)
+            else if (sees && hoof != null && dist <= hoof.Range && hoof.CanUse)
             {
-                if (hoof.TryUse()) { activeAbility = hoof; nextHoofTime = Time.time + hoofCooldown; }
+                if (hoof.TryUse()) activeAbility = hoof;
                 Settle(Vector3.zero);
                 return;
             }

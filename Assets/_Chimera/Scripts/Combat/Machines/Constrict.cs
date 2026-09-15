@@ -30,6 +30,13 @@ public class Constrict : MonoBehaviour, IOrganAbility
     public System.Type DataType => typeof(ConstrictData);
     public bool Available => data != null;
 
+    float readyAt; // перезарядка после отпускания — держит машина для всех драйверов (запись органа)
+    /// <summary>Можно ли хватать: запись есть и перезарядка прошла. Драйверы спрашивают это, а не держат свой таймер.</summary>
+    public bool Ready => data != null && Time.time >= readyAt;
+    public float WindupTime => data != null ? data.windupTime : 0f;     // замах захвата у драйвера NPC
+    public float RipSelfKnock => data != null ? data.ripSelfKnock : 0f; // отлёт держащего, когда жертва сорвалась рывком
+    public float BiteInterval => data != null ? data.biteInterval : 0f; // как часто держащий кусает жертву
+
     /// <summary>Запись от тела (или от драйвера игрока). Сняли орган посреди хвата — хват отпускается.</summary>
     public void Configure(AbilityData d)
     {
@@ -62,7 +69,7 @@ public class Constrict : MonoBehaviour, IOrganAbility
     /// <summary>Взять жертву. owner нужен только для жертвы-игрока (ApplyGrab/ReleaseGrab).</summary>
     public bool Begin(Health victim, IGrabber grabOwner = null)
     {
-        if (data == null || victim == null || Holding) return false;
+        if (!Ready || victim == null || Holding) return false;
         held = victim;
         owner = grabOwner;
         victim.TryGetComponent(out heldPlayer);
@@ -147,6 +154,7 @@ public class Constrict : MonoBehaviour, IOrganAbility
     /// <summary>Отпустить (драйвер сам решает кулдаун/последствия).</summary>
     public void End()
     {
+        if (stage > 0 && data != null) readyAt = Time.time + data.cooldown; // отпустил — перезарядка захвата из записи
         if (heldPlayer != null && owner != null) heldPlayer.ReleaseGrab(owner);
         else if (held != null && held.TryGetComponent<ICarried>(out var carried)) carried.SetCarried(false); // ноша оживает
         if (heldGrabbed != null) heldGrabbed.Release();

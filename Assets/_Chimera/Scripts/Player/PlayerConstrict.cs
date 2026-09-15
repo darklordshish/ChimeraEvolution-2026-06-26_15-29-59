@@ -38,7 +38,6 @@ public class PlayerConstrict : MonoBehaviour, IAbility, IOrganAbility
     Constrict machine; // ЕДИНАЯ машина захвата (общая со змеёй) — лениво: порядок Awake с CreatureBody не гарантирован
     Camouflage victimCamo;
     PlayerController move;
-    float nextTime;
     bool carriedOn;    // ноша взята (ICarried) — раз на защёлк
     bool presenting;   // позиция ноши: false — ЗА СПИНОЙ (походный хват, идёшь свободно); true — ПЕРЕД
                        // СОБОЙ, ПОД СВОИ УДАРЫ (стойка разделки: её капсула мешает идти вперёд — намеренно)
@@ -62,7 +61,6 @@ public class PlayerConstrict : MonoBehaviour, IAbility, IOrganAbility
     {
         if (data == null) return false;
         if (Holding) { Release(push: false); return true; } // добровольно отпустил — без отлёта
-        if (Time.time < nextTime) return false;
         if (move != null && move.IsGrabbed) return false;   // сам в чьей-то пасти — не до обхватов
 
         var target = FindVictim();
@@ -124,7 +122,6 @@ public class PlayerConstrict : MonoBehaviour, IAbility, IOrganAbility
         }
         if (machine != null) machine.End(); // снимет единый статус Grabbed и ношу (ICarried) сам
         victimCamo = null; carriedOn = false;
-        nextTime = Time.time + (data != null ? data.cooldown : 0f);
     }
 
     void OnDrawGizmosSelected()

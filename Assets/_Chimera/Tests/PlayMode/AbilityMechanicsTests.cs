@@ -876,5 +876,68 @@ namespace Chimera.Tests.PlayMode
             yield return Until(() => target.Current < before, 3f);
             Assert.AreEqual(rec.damage, before - target.Current, "альфа без Пасти не ударила конечностью по записи");
         }
+
+        // ── ЦЕНА И ПЕРЕЗАРЯДКА ПРИЁМА — У НОСИТЕЛЯ ПО ЗАПИСИ (спека 16.09) ─────────────────────
+
+        [UnityTest]
+        public IEnumerator Npc_Charge_PaysStaminaCostFromRecord()
+        {
+            var rec = Charge();
+            rec.staminaCost = 40f;
+            var body = Npc(Species("Лось", OrganWith("Лосиные ноги", "Ноги", rec)), expression: 1f);
+            var target = Dummy(new Vector3(0f, 0f, 6f));
+            yield return null;
+
+            var charge = body.GetComponent<ChargeAbility>();
+            var breath = body.GetComponent<Stamina>();
+            Assert.IsNotNull(breath, "у тела нет бака дыхалки");
+            charge.SetTarget(target);
+            float before = breath.Current;
+            Assert.IsTrue(charge.TryUse(), "таран не запустился при полном баке");
+            Assert.AreEqual(before - rec.staminaCost, breath.Current, 0.01f, "таран списал не цену записи ног");
+            charge.Abort(true);
+
+            breath.Drain(breath.Current - rec.staminaCost * 0.5f); // в баке меньше цены
+            yield return null;
+            Assert.IsFalse(charge.CanUse, "в баке меньше цены записи, а таран доступен");
+            Assert.IsFalse(charge.TryUse(), "таран запустился без дыхалки на цену записи");
+        }
+
+        [UnityTest]
+        public IEnumerator Npc_Antler_WaitsCooldownFromRecord()
+        {
+            var rec = Antler();
+            rec.cooldown = 1f;
+            var body = Npc(Species("Лось", OrganWith("Рога", "Рога", rec)), expression: 1f);
+            var target = Dummy(new Vector3(0f, 0f, 1.5f));
+            yield return null;
+
+            var antler = body.GetComponent<AntlerAbility>();
+            yield return Swing(antler, target);
+            Assert.IsFalse(antler.CanUse, "рога готовы сразу после удара — перезарядка записи не держится");
+            Teleport(target, new Vector3(0f, 0f, 1.5f));
+            Assert.IsFalse(antler.TryUse(), "рога ударили в перезарядке записи");
+            yield return new WaitForSeconds(rec.cooldown + 0.05f);
+            Assert.IsTrue(antler.CanUse, "перезарядка записи прошла, а рога не готовы");
+        }
+
+        [UnityTest]
+        public IEnumerator Constrict_CooldownAfterRelease_HeldByMachine()
+        {
+            var rec = Grip();
+            rec.cooldown = 0.5f;
+            var holder = Npc(Species("Удав", OrganWith("Хвост", "Хвост", rec)), expression: 1f);
+            var victim = Dummy(new Vector3(0f, 0f, 1.2f));
+            yield return null;
+
+            var machine = holder.GetComponent<Constrict>();
+            Assert.IsTrue(machine.Begin(victim), "машина не взяла жертву");
+            machine.End();
+            Assert.IsFalse(machine.Ready, "сразу после отпускания машина готова — перезарядка записи не держится");
+            Assert.IsFalse(machine.Begin(victim), "машина взяла жертву в перезарядке записи");
+            yield return new WaitForSeconds(rec.cooldown + 0.05f);
+            Assert.IsTrue(machine.Begin(victim), "перезарядка записи прошла, а машина не берёт");
+            machine.End();
+        }
     }
 }

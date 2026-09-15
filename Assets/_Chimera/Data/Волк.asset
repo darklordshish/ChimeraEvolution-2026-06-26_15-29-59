@@ -119,7 +119,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482301799235599
+    - rid: 4402482301799235619
     visualScale: {x: 1, y: 1, z: 1.2}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -193,7 +193,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482301799235600
+    - rid: 4402482301799235620
     visualScale: {x: 1, y: 1, z: 1.2}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -383,9 +383,9 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: "\u0412\u043E\u043B\u043A"
     abilities:
-    - rid: 4402482301799235601
-    - rid: 4402482301799235602
-    - rid: 4402482301799235603
+    - rid: 4402482301799235621
+    - rid: 4402482301799235622
+    - rid: 4402482301799235623
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -3145,7 +3145,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4402482301799235599
+    - rid: 4402482301799235619
       type: {class: LimbStrikeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 18
@@ -3154,7 +3154,8 @@ MonoBehaviour:
         range: 1.5
         halfAngle: 60
         windupTime: 0.45
-    - rid: 4402482301799235600
+        cooldown: 1.1
+    - rid: 4402482301799235620
       type: {class: LeapData, ns: , asm: Chimera.Runtime}
       data:
         damage: 12
@@ -3165,7 +3166,8 @@ MonoBehaviour:
         duration: 0.5
         hitRadius: 1.3
         windupTime: 0.5
-    - rid: 4402482301799235601
+        staminaCost: 30
+    - rid: 4402482301799235621
       type: {class: BiteData, ns: , asm: Chimera.Runtime}
       data:
         damage: 14
@@ -3177,15 +3179,16 @@ MonoBehaviour:
         halfAngle: 55
         windupTime: 0.45
         cooldown: 0.7
-    - rid: 4402482301799235602
+    - rid: 4402482301799235622
       type: {class: HowlData, ns: , asm: Chimera.Runtime}
       data:
         radius: 14
         stunAt: 2
         stunDuration: 1
         fearMoraleHit: 2
-        cooldown: 8
-    - rid: 4402482301799235603
+        cooldown: 10
+        cueTime: 0.4
+    - rid: 4402482301799235623
       type: {class: ConstrictData, ns: , asm: Chimera.Runtime}
       data:
         maxStage: 1
@@ -3211,6 +3214,9 @@ MonoBehaviour:
         grabRange: 2.2
         holdRange: 3.2
         cooldown: 2.5
+        windupTime: 0.35
+        ripSelfKnock: 6
+        biteInterval: 1.2
         selfSlow1: 0.8
         selfSlow2: 0.6
         escapeKnock: 6

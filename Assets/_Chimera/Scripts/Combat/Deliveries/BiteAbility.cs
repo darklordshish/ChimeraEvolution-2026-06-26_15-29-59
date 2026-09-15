@@ -17,6 +17,7 @@ public class BiteAbility : WindupAbility, IOrganAbility
     public bool Available => data != null;
     protected override bool Ready => data != null;
     protected override float WindupTime => data.windupTime;
+    protected override float Cooldown => data != null ? data.cooldown : 0f;            // перезарядка укуса — запись Пасти
 
     // психика читает для решений (дистанция атаки/удержания, прицельный конус); нет укуса — 0: в зону не заманит
     public override float WindowMax => Range;               // окно арсенала: вплотную — до досягаемости записи

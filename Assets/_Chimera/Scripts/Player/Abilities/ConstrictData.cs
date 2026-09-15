@@ -89,15 +89,26 @@ public class ConstrictData : AbilityData
     [Tooltip("Как часто выдохшийся теряет стадию, с (иначе спад за один кадр). Жертве это честный выход «на измор».")]
     [MustBePositive] public float wearInterval = 1.5f;
 
-    [Header("Игрок — драйвер PlayerConstrict")]
-    [Tooltip("Дальность подбора цели в упор, м.")]
+    [Header("Драйвер — когда и как хватать")]
+    [Tooltip("Дальность подбора цели в упор, м (игрок и химера-альфа).")]
     [MustBePositive] public float grabRange = 2.2f;
 
-    [Tooltip("Жертва ушла дальше — хватка соскользнула, м.")]
+    [Tooltip("Жертва ушла дальше — хватка соскользнула, м (игрок и химера-альфа).")]
     [MustBePositive] public float holdRange = 3.2f;
 
-    [Tooltip("Перезарядка после отпускания, с.")]
+    [Tooltip("Перезарядка после отпускания, с. Держит сама машина — для всех драйверов: игрока, волка, змеи, ежа, альфы.")]
     [LowerIsBetter, Min(0f)] public float cooldown = 2.5f;
+
+    [Tooltip("Замах перед захватом у NPC, с: сигнал захвата — успей увернуться. 0 — хватает сразу (ёж). У игрока замаха нет — нажатие и есть решение.")]
+    [LowerIsBetter, Min(0f)] public float windupTime = 0.35f;
+
+    [Tooltip("Отлёт держащего NPC, когда жертва-игрок сорвалась рывком.")]
+    [Min(0f)] public float ripSelfKnock = 5f;
+
+    [Tooltip("Как часто держащий NPC кусает того, кого держит, с. Сам укус — запись Пасти.")]
+    [LowerIsBetter, MustBePositive] public float biteInterval = 1.2f;
+
+    [Header("Игрок — драйвер PlayerConstrict")]
 
     [Tooltip("Твой множитель хода на ст.1: держишь отдельной частью тела.")]
     [Range(0f, 1f)] public float selfSlow1 = 0.8f;

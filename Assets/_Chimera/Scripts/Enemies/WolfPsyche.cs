@@ -30,12 +30,10 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     // числа укуса и прыжка — в записях органов (BiteData у Пасти, LeapData у ног): тюнить в SpeciesBootstrap
 
     [Header("Захват (удержание)")]
-    [SerializeField] float grabWindupTime = 0.35f;
     [SerializeField, Range(0f, 1f)] float grabChance = 0.5f;
     [SerializeField] int grabMinPack = 3;        // ЗАХВАТ — СТАЙНЫЙ приём: держать имеет смысл, только когда есть кому грызть
     [SerializeField] float grabPackRadius = 14f; // в каком радиусе вокруг себя считаем «навалились вместе»
     [SerializeField] float grabGrit = 3f;        // насколько АГРЕССИЯ особи двигает порог «разжать хватку» (0 = все одинаковы)
-    [SerializeField] int ripSelfKnock = 6;       // отлёт волка, когда с него срываются рывком
     // числа хвата (стадия, слоу жертвы, порог срыва, кровь на входе) — запись ConstrictData волчьей Пасти
 
     [Header("Окружение (стая)")]
@@ -44,8 +42,6 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     [SerializeField] float disengageRange = 9f;  // дальше — отпускаем жетон атаки
 
     [Header("Вой (зов ближней стаи)")]
-    [SerializeField] float howlCooldown = 10f;  // личный КД воя (= жизни стака: один волк держит ~1 живой вклад)
-    [SerializeField] float howlCueTime = 0.4f;  // сколько держится вспышка-телеграф воя
     [SerializeField] float alertMemory = 8f;    // сколько волк держит тревогу, услышав вой
     [SerializeField] float curiosityMemory = 5f; // любопытство к странному звуку (гремок): сколько идём проверять
     [SerializeField] float rescueRadius = 12f;   // замечаем возню схваченного сородича (стан рядом) — воем и идём отбивать
@@ -59,7 +55,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     [SerializeField] float packCountRadius = 15f; // «стая рядом» для решения о тени
 
     [Header("Кулдаун")]
-    [SerializeField] float attackCooldown = 1.4f;
+    [SerializeField, NotOrganData("решение психики: ритм выбора атаки стаи; перезарядку приёма держит доставка по записи органа")] float attackCooldown = 1.4f;
 
     [Header("Расталкивание")]
     [SerializeField] float separationRadius = 1.6f;
@@ -192,6 +188,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     // ГОЛОС — запись воя у органа Пасти (HowlData): радиус зова стаи = база × мощь, не ниже базы. Нет органа — волк не воет
     CreatureBody voiceBody;
     float HowlRadius { get { if (voiceBody == null) TryGetComponent(out voiceBody); var h = voiceBody != null ? voiceBody.Ability<HowlData>() : null; return h != null ? h.Reach : 0f; } }
+    HowlData HowlRec => voiceBody != null ? voiceBody.Ability<HowlData>() : null; // перезарядка и сигнал воя; HowlRadius > 0 гарантирует запись
     
     public void OnBodyStats(float bodyMoveSpeed)
     {
@@ -503,7 +500,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         {
             if (dist <= bite.Range)
             {
-                if (!huntingPrey && PackReadyForGrab() && pack.TryAcquireGrab(this) && Random.value < grabChance)
+                if (!huntingPrey && GrabMachine.Ready && PackReadyForGrab() && pack.TryAcquireGrab(this) && Random.value < grabChance)
                 {
                     BeginGrabWindup();
                     pack.ReleaseAttack(this); hasToken = false; // захват — отдельная роль, освобождает слот атакующего
@@ -513,8 +510,8 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
                 return;
             }
             // ПРЫЖОК — рывок усилия: без дыхалки волк остаётся грызть вблизи (отсюда «волны» стаи)
-            if (dist >= leap.MinRange && dist <= leap.MaxRange && (Breath == null || Breath.Has(LeapCost)))
-            { if (leap.TryUse()) { Breath?.TrySpend(LeapCost); activeAbility = leap; } Settle(Vector3.zero); return; }
+            if (dist >= leap.MinRange && dist <= leap.MaxRange && leap.CanUse)
+            { if (leap.TryUse()) activeAbility = leap; Settle(Vector3.zero); return; } // цену прыжка платит доставка по записи ног
         }
 
         // движение: по ЗМЕЕ окружаем КОЛЬЦОМ (личный угол вокруг добычи); против игрока — с жетоном рвёмся в упор,
@@ -609,8 +606,8 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
             if (Time.time >= nextAttackTime && Vector3.Angle(transform.forward, dir) <= bite.HalfAngle)
             {
                 if (dist <= bite.Range) { if (bite.TryUse()) activeAbility = bite; Settle(Vector3.zero); return true; }
-                if (dist >= leap.MinRange && dist <= leap.MaxRange && (Breath == null || Breath.Has(LeapCost)))
-                { if (leap.TryUse()) { Breath?.TrySpend(LeapCost); activeAbility = leap; } Settle(Vector3.zero); return true; }
+                if (dist >= leap.MinRange && dist <= leap.MaxRange && leap.CanUse)
+                { if (leap.TryUse()) activeAbility = leap; Settle(Vector3.zero); return true; }
             }
             Settle(nav.Arrive(mooseTarget.transform.position, Speed, stopAt: bite.Range * 0.85f) + Separation() * attackSeparation);
             return true;
@@ -630,9 +627,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     // ДЫХАЛКА ВОЛКА: погоня замораживает бак (слив = его реген), прыжок из него вычитает. Отсюда «волны»:
     // прыгнул дважды — дальше грызи вблизи или отвались отдышаться. Стая перестаёт быть монолитом
     [SerializeField] float chaseDrain = 10f; // расход в секунду, пока гонится (= реген волка)
-    [SerializeField] float leapCost = 30f;   // прыжок — рывок усилия (из бака 86 это два прыжка)
     float ChaseDrain => chaseDrain > 0f ? chaseDrain : 10f;
-    float LeapCost => leapCost > 0f ? leapCost : 30f;
     Stamina breath;
     // ленивая привязка: бак до-создаёт тело в Recompute, он бывает позже нашего Awake
     Stamina Breath { get { if (breath == null) TryGetComponent(out breath); return breath; } }
@@ -691,7 +686,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     void BeginGrabWindup()
     {
         windingUp = true;
-        windupEnd = Time.time + grabWindupTime;
+        windupEnd = Time.time + GrabMachine.WindupTime; // замах захвата — запись Пасти
         activeTelegraph = TelegraphColors.Grab;
         ShowTelegraph(activeTelegraph);
     }
@@ -744,7 +739,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
             if (knockback != null)
             {
                 Vector3 away = transform.position - target.position; away.y = 0f;
-                if (away.sqrMagnitude > 0.001f) knockback.Push(away.normalized * ripSelfKnock);
+                if (away.sqrMagnitude > 0.001f) knockback.Push(away.normalized * grabMachine.RipSelfKnock); // отлёт сорванного — запись Пасти
             }
             Disengage(attackCooldown);
         }
@@ -792,11 +787,11 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         if (Belly != null && Belly.IsSated) return; // СЫТ — не до охоты: не зовёт стаю; рать собирают ГОЛОДНЫЕ
         // вой — событие СТАИ, не хор: голос подаёт ОДИН (иначе фон морали = размер стаи и страх не пробивает)
         if (!pack.TryClaimHowl()) { nextHowlTime = Time.time + 1f; return; }
-        nextHowlTime = Time.time + howlCooldown;
+        nextHowlTime = Time.time + HowlRec.cooldown;
         pack.Howl(transform.position, HowlRadius, pos);
         if (noiseSrc == null) TryGetComponent(out noiseSrc);
         if (noiseSrc != null) noiseSrc.Spike(1f, 0.8f, TelegraphColors.Howl); // вой ЗВУЧИТ в мире (тон = цвет голоса)
-        FlashTelegraph(TelegraphColors.Howl, howlCueTime); // видимый сигнал: волк зовёт стаю
+        FlashTelegraph(TelegraphColors.Howl, HowlRec.cueTime); // видимый сигнал: волк зовёт стаю
     }
 
     // ЗАГОННЫЙ КЛИЧ (тень у туши): БЕЗ гейта-хора — голоса стаи в загоне НАСЛАИВАЮТСЯ (сумма живых
@@ -806,11 +801,11 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     {
         if (HowlRadius <= 0f) return; // нет Пасти с воем — звать нечем
         if (Time.time < nextHowlTime) return;
-        nextHowlTime = Time.time + howlCooldown;
+        nextHowlTime = Time.time + HowlRec.cooldown;
         pack.Howl(transform.position, HowlRadius, pos); // Hear (сородичи сходятся к туше) + Cheer +1
         if (noiseSrc == null) TryGetComponent(out noiseSrc);
         if (noiseSrc != null) noiseSrc.Spike(1f, 0.8f); // клич звучит в мире (лоси слышат — настораживаются)
-        FlashTelegraph(TelegraphColors.Howl, howlCueTime);
+        FlashTelegraph(TelegraphColors.Howl, HowlRec.cueTime);
     }
 
     // телеграф через таймер telegraphUntil: персистентный (до Disengage) / краткая вспышка / гашение

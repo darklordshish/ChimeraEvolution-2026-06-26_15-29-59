@@ -24,8 +24,11 @@ public class HowlData : AbilityData
     [Tooltip("Удар по морали дальнего кольца. У игрока × мощь органа: до −4 на сотке родства. Читает игрок.")]
     [MustBePositive] public float fearMoraleHit = 2f;
 
-    [Tooltip("Перезарядка воя игрока, с. Как часто воет волк, решает психика (howlCooldown) — это тактика.")]
-    [LowerIsBetter, MustBePositive] public float cooldown = 8f;
+    [Tooltip("Перезарядка воя, с — у игрока и у волка (психика ждёт её по записи). Держит один вклад воя в шкале духа стаи. Число родного вида органа (спека 16.09).")]
+    [LowerIsBetter, MustBePositive] public float cooldown = 10f;
+
+    [Tooltip("Сколько держится вспышка-сигнал воя у NPC, с: видно, что волк зовёт стаю.")]
+    [MustBePositive] public float cueTime = 0.4f;
 
     /// <summary>Итоговый радиус голоса: база × мощь органа, норму вниз не штрафуем.</summary>
     public float Reach => radius * Mathf.Max(1f, power);

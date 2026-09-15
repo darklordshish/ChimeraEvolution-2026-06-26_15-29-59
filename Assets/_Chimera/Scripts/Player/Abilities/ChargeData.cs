@@ -47,6 +47,10 @@ public class ChargeData : AbilityData
     [Tooltip("Замах перед разбегом, с. Направление фиксируется в последний кадр замаха — отсюда уворот вбок.")]
     [LowerIsBetter, MustBePositive] public float windupTime = 0.5f;
 
+    [Tooltip("Цена тарана из бака дыхалки. Платит сама доставка при запуске: не хватает — тарана нет, зверь догоняет шагом. "
+             + "Цена — свойство ног, а не вида: химера с лосиными ногами платит ту же. Рывок игрока платит свою цену ног.")]
+    [LowerIsBetter, Min(0f)] public float staminaCost = 70f;
+
     [Header("Топот и пропашка — читает NPC")]
     [Tooltip("Радиус топота-приземления в конце тарана, м: разгоняет скопления.")]
     [Min(0f)] public float stompRadius = 4f;

@@ -30,7 +30,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     [SerializeField, Range(0f, 1f)] float creepSpeed = 0.5f;
     [SerializeField] float roamSenseRadius = 22f;           // праздный поиск: чуем тёплую жизнь ЗА термо-радиусом — крадёмся к ней (не застываем точкой-приманкой)
     [SerializeField] float wanderRadius = 12f;              // ничего не чуем — тихо бродим этим радиусом (перемешиваем засады)
-    [SerializeField] float lureInterval = 1.2f;             // ПРИМАНКА: жертва вне броска — гремим часто и маним
+    [SerializeField, NotOrganData("поведение засады: как часто змея манит гремком")] float lureInterval = 1.2f;             // ПРИМАНКА: жертва вне броска — гремим часто и маним
     [SerializeField] float rattleHearRadius = 15f;          // пассивный гремок: тихий (будит любопытство рядом)
     [SerializeField] float lureHearRadius = 28f;            // приманка: ГРОМКАЯ — тянет зверьё издалека (должна перекрывать термо и блуждание стаи)
     [SerializeField] float quietCrowdRadius = 8f;           // толпа: ≥quietCrowdSize ДРУГИХ тёплых в этом радиусе — гремок молчит, добыча брошена
@@ -58,20 +58,17 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     [SerializeField] float carryStandoff = 0.7f;           // отжатие жертвы ОТ плоскости стены (не влипает в неё)
     [SerializeField] float lonelyRadius = 9f;               // «одиночка» = нет ДРУГИХ тёплых в этом радиусе вокруг жертвы (× Caution:
                                                             // осторожная требует большей изоляции; ориентир — радиус спасения стаи ~12)
-    [SerializeField] float retargetInterval = 0.5f;         // как часто пересматриваем выбор жертвы
+    [SerializeField, NotOrganData("восприятие: как часто психика пересматривает цель")] float retargetInterval = 0.5f;         // как часто пересматриваем выбор жертвы
     [SerializeField] float revealMemory = 2f;               // камуфляж: «раскрыта» столько после приёма (> кулдауна — не мигает в мили)
-    [SerializeField] float rattleInterval = 3f;             // гремок: как часто затаившаяся змея выдаёт себя
-    [SerializeField] float rattleCue = 0.4f;                // длительность мигания погремушки (звук ляжет сверху позже)
+    [SerializeField, NotOrganData("поведение засады: как часто затаившаяся змея выдаёт себя")] float rattleInterval = 3f;             // гремок: как часто затаившаяся змея выдаёт себя
+    [SerializeField, NotOrganData("ощущение: длина мигания гремка")] float rattleCue = 0.4f;                // длительность мигания погремушки (звук ляжет сверху позже)
     [SerializeField, Range(0f, 1f)] float scentStrength = 0.35f; // запах слабый: не потеет, мало движется
 
     [Header("Кулдаун")]
-    [SerializeField] float attackCooldown = 1.6f;
+    [SerializeField, NotOrganData("решение психики: ритм выбора атаки; перезарядку приёма держит доставка по записи органа")] float attackCooldown = 1.6f;
 
     [Header("Обхват (удушающий захват)")]
     [SerializeField, Range(0f, 1f)] float grabChance = 0.5f; // шанс обвить вместо простого укуса (в упор)
-    [SerializeField] float grabWindup = 0.35f;               // замах перед обхватом (телеграф — увернись)
-    [SerializeField] int ripSelfKnock = 5;                   // отлёт змеи, когда игрок сорвался рывком (ст.1)
-    [SerializeField] float grabBiteInterval = 1.2f;          // как часто грызёт того, кого держит (яд/урон — ИЗ ОРГАНА клыков)
     // САМА МАШИНА хвата (сжатие/стадии/ратчет/чок/яд + тюнинг обеих жертв) — общий компонент Constrict
     // (фича органа «Хвост», хвост-эталон 2026-07-19); здесь остались только решения ДРАЙВЕРА (когда/куда)
 
@@ -592,15 +589,15 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
             if (dist <= bite.Range)
             {
                 // в упор: обвить (обхват) либо простой ядовитый укус
-                if (Random.value < grabChance) { BeginGrabWindup(); Settle(Vector3.zero); return; }
+                if (constrictM.Ready && Random.value < grabChance) { BeginGrabWindup(); Settle(Vector3.zero); return; }
                 if (bite.TryUse()) activeAbility = bite;
                 Settle(Vector3.zero); return;
             }
             // БРОСОК — рывок усилия. Погони у змеи нет и расхода на неё тоже: она засадник, её дыхалка
             // уходит на два дела — метнуться и душить (второе тратит общая машина захвата). Отсюда цена
             // промаха: не попал — жди, пока отдышишься, а добыча тем временем ушла
-            if (dist >= leap.MinRange && dist <= leap.MaxRange && (Breath == null || Breath.Has(LungeCost)))
-            { if (leap.TryUse()) { Breath?.TrySpend(LungeCost); activeAbility = leap; } Settle(Vector3.zero); return; }
+            if (dist >= leap.MinRange && dist <= leap.MaxRange && leap.CanUse)
+            { if (leap.TryUse()) activeAbility = leap; Settle(Vector3.zero); return; } // цену броска платит доставка по записи
         }
 
         // вне броска: ЗАМРИ И МАНИ — подкрадывание выдало бы засаду, пусть любопытная жертва подойдёт сама;
@@ -714,7 +711,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     void BeginGrabWindup()
     {
         windingUp = true;
-        windupEnd = Time.time + grabWindup;
+        windupEnd = Time.time + constrictM.WindupTime; // замах обхвата — запись Хвоста
         telegraph.Set(true, TelegraphColors.Grab, intent: true); // ЗАМАХ броска: что именно готовит — читает Чутьё
     }
 
@@ -724,7 +721,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         constricting = constrictM.Begin(targetHealth, this);
         if (!constricting) return;
         shownStage = 1;
-        nextGrabBite = Time.time + grabBiteInterval; // первый укус — не в тот же кадр, что захват
+        nextGrabBite = Time.time + constrictM.BiteInterval; // первый укус — не в тот же кадр, что захват
         telegraph.Set(true, TelegraphColors.Grab, intent: true); // приём = намерение: без Чутья тело просто светлеет
     }
 
@@ -759,7 +756,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         // клыков), поэтому яд копится стаками сам и к 3-му выходит на DoT — без хардкода в машине хвата
         if (Time.time >= nextGrabBite)
         {
-            nextGrabBite = Time.time + grabBiteInterval;
+            nextGrabBite = Time.time + constrictM.BiteInterval;
             bite.BiteNow(constrictM.Victim);
         }
         if (constrictM.Victim == null) { EndConstrict(attackCooldown); return; } // grab-укус мог УБИТЬ жертву в этом же кадре → машина освободила → её transform ниже был бы NRE
@@ -872,7 +869,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         if (knockback != null && victim != null)
         {
             Vector3 away = transform.position - victim.transform.position; away.y = 0f;
-            if (away.sqrMagnitude > 0.001f) knockback.Push(away.normalized * ripSelfKnock);
+            if (away.sqrMagnitude > 0.001f) knockback.Push(away.normalized * constrictM.RipSelfKnock); // отлёт сорванной змеи — запись Хвоста
         }
         EndConstrict(attackCooldown);
         return true;
@@ -883,10 +880,8 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
 
     void Settle(Vector3 horizontal) => nav.Move(horizontal); // ход — общая локомоция (сглаживание/гравитация там)
 
-    // ДЫХАЛКА ЗМЕИ: бак 55, бросок 20 — два броска подряд, дальше засада поневоле. Ползание бесплатно:
+    // ДЫХАЛКА ЗМЕИ: цена броска — запись Тела-хвоста (LeapData.staminaCost), бак держит два броска подряд. Ползание бесплатно:
     // крадущийся охотник не «устаёт», он именно этим и занимается
-    [SerializeField] float lungeCost = 20f;
-    float LungeCost => lungeCost > 0f ? lungeCost : 20f;
     Stamina breath;
     // ленивая привязка: бак до-создаёт тело в Recompute, он бывает позже нашего Awake
     Stamina Breath { get { if (breath == null) TryGetComponent(out breath); return breath; } }

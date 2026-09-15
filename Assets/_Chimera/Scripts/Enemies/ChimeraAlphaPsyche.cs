@@ -15,10 +15,10 @@ using UnityEngine;
 public class ChimeraAlphaPsyche : MonoBehaviour, IBodyStatConsumer
 {
     [SerializeField] float scanRadius = 16f;        // радиус обнаружения живых
-    [SerializeField] float attackCooldown = 1.1f;   // ритм атак — решение психики, не свойство доставки
+    [SerializeField, NotOrganData("решение психики: ритм выбора атаки; перезарядку приёма держит доставка по записи органа")] float attackCooldown = 1.1f;   // ритм атак — решение психики, не свойство доставки
     [SerializeField] float emptyArsenalStop = 1.8f; // бить нечем — на сколько подходить к цели (тактика; дальности приёмов — в записях органов)
     [SerializeField] float wanderRadius = 10f;
-    [SerializeField] float retargetInterval = 0.5f;
+    [SerializeField, NotOrganData("восприятие: как часто психика пересматривает цель")] float retargetInterval = 0.5f;
     [SerializeField] float rotationSpeed = 240f;    // доворот морды к цели: укус/залп бьют в конус ВПЕРЁД — без доворота мажут
 
     // 0-гоча (сериализация): читаем 0 как «не настроено»

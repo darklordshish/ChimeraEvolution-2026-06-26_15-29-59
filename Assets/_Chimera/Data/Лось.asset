@@ -113,7 +113,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482301799235587
+    - rid: 4402482301799235607
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -205,7 +205,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482301799235588
+    - rid: 4402482301799235608
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -297,7 +297,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482301799235589
+    - rid: 4402482301799235609
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -476,7 +476,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482301799235590
+    - rid: 4402482301799235610
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -3228,7 +3228,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4402482301799235587
+    - rid: 4402482301799235607
       type: {class: LimbStrikeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
@@ -3237,7 +3237,8 @@ MonoBehaviour:
         range: 1.8
         halfAngle: 60
         windupTime: 0.45
-    - rid: 4402482301799235588
+        cooldown: 1.1
+    - rid: 4402482301799235608
       type: {class: ChargeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
@@ -3251,19 +3252,21 @@ MonoBehaviour:
         chargeSpeed: 35
         duration: 0.73
         windupTime: 0.5
+        staminaCost: 70
         stompRadius: 4
         stompStagger: 0.4
         stompForce: 13
         plowForce: 6
         plowRadius: 1.6
-    - rid: 4402482301799235589
+    - rid: 4402482301799235609
       type: {class: BellowData, ns: , asm: Chimera.Runtime}
       data:
         fearRadius: 10
         rallyRadius: 40
         fearMoraleHit: 2
         cooldown: 10
-    - rid: 4402482301799235590
+        cueTime: 1.2
+    - rid: 4402482301799235610
       type: {class: AntlerData, ns: , asm: Chimera.Runtime}
       data:
         damage: 12
@@ -3272,4 +3275,4 @@ MonoBehaviour:
         range: 2.5
         halfAngle: 50
         windupTime: 0.35
-        cooldown: 1.2
+        cooldown: 2.5

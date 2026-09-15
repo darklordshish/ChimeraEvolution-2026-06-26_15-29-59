@@ -94,17 +94,35 @@ public abstract class WindupAbility : MonoBehaviour, IAbility, IAbilityCarrier
     protected abstract bool Ready { get; }
     protected abstract float WindupTime { get; }
 
+    // ЦЕНА И ПЕРЕЗАРЯДКА ПРИЁМА — ТОЖЕ ИЗ ЗАПИСИ ОРГАНА (спека 16.09): доставка платит и ждёт сама, психика только решает.
+    // Химера с лосиными ногами платит за таран ту же цену, что лось: цена принадлежит ногам, а не виду
+    protected virtual float StaminaCost => 0f;
+    protected virtual float Cooldown => 0f;
+    [SerializeField, NotOrganData("правило боя: сорванный замах стоит долю перезарядки — пауза видна, беспомощности нет")]
+    float cancelledCooldownShare = 0.25f;
+    float readyAt;
+    Stamina breath;
+    Stamina Breath { get { if (breath == null) TryGetComponent(out breath); return breath; } } // бак тело до-создаёт в Recompute
+
+    /// <summary>Можно ли запустить приём сейчас: запись есть, перезарядка прошла, дыхалки на цену хватает.
+    /// Психика спрашивает это, а не держит свой таймер и не считает цену.</summary>
+    public bool CanUse => Ready && Time.time >= readyAt && (StaminaCost <= 0f || Breath == null || Breath.Has(StaminaCost));
+
+    void RefundCooldown() => readyAt = Mathf.Min(readyAt, Time.time + Cooldown * cancelledCooldownShare);
+
     /// <summary>ОКНО СРАБАТЫВАНИЯ по дистанции до цели — из записи органа: ближний приём бьёт от 0 до досягаемости,
     /// разбег, наскок и залп — с минимальной дистанции. Нет записи — окно пустое (0). Читает арбитр арсенала
     /// (`Arsenal`) у химеры-альфы. Верх абстрактный по той же причине, что замах: доставка без окна не скомпилируется.</summary>
     public virtual float WindowMin => 0f;
     public abstract float WindowMax { get; }
 
-    // запуск замаха; false — если уже занят, нет цели или приём недоступен
+    // запуск замаха; false — занят, нет цели, приём недоступен, не прошла перезарядка или не хватает дыхалки
     public bool TryUse()
     {
-        if (Busy || target == null || !Ready) return false;
+        if (Busy || target == null || !CanUse) return false;
+        if (StaminaCost > 0f && Breath != null && !Breath.TrySpend(StaminaCost)) return false; // цену платит сам носитель
         Busy = true;
+        readyAt = Time.time + Cooldown; // перезарядка идёт с запуска
         windupEnd = Time.time + WindupTime;
         telegraph.Set(true, TelegraphColor, intent: true); // ЗАМАХ = намерение: цвет приёма читает лишь Чутьё
         OnBegin();
@@ -118,7 +136,7 @@ public abstract class WindupAbility : MonoBehaviour, IAbility, IAbilityCarrier
         if (!Ready) { Busy = false; telegraph.Clear(); return AbilityRun.Cancelled; } // орган сняли посреди замаха — приёма больше нет
         if (target == null || targetHealth == null) { Busy = false; telegraph.Clear(); return AbilityRun.Cancelled; } // цель умерла посреди приёма (NPC-жертва)
         var st = OnTick();
-        if (st != AbilityRun.Running) { Busy = false; telegraph.Clear(); }
+        if (st != AbilityRun.Running) { Busy = false; telegraph.Clear(); if (st == AbilityRun.Cancelled) RefundCooldown(); }
         return st;
     }
 
@@ -128,6 +146,7 @@ public abstract class WindupAbility : MonoBehaviour, IAbility, IAbilityCarrier
         if (!Busy) return;
         Busy = false;
         telegraph.Clear();
+        RefundCooldown(); // сорван извне — не удар, полной перезарядки не стоит
     }
 
     protected abstract Color TelegraphColor { get; }

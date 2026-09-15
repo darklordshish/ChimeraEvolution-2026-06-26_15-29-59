@@ -18,6 +18,7 @@ public class QuillVolley : WindupAbility, IOrganAbility
     public bool Available => data != null;
     protected override bool Ready => data != null;
     protected override float WindupTime => data.windupTime;
+    protected override float Cooldown => data != null ? data.cooldown : 0f;            // перезарядка залпа — запись Игломёта
 
     bool blind; // этот залп — вслепую (ставит психика перед TryUse)
 

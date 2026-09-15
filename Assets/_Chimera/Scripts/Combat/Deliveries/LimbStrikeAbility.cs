@@ -21,6 +21,7 @@ public class LimbStrikeAbility : WindupAbility, IOrganAbility
     public bool Available => data != null;
     protected override bool Ready => data != null;
     protected override float WindupTime => data.windupTime;
+    protected override float Cooldown => data != null ? data.cooldown : 0f;            // перезарядка удара — запись конечности
 
     public override float WindowMax => Range;               // окно арсенала: вплотную — до досягаемости записи
     public float Range => data != null ? data.range : 0f; // психика читает досягаемость; нет удара — 0, в зону не заманит

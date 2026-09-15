@@ -34,4 +34,7 @@ public class LeapData : AbilityData
 
     [Tooltip("Замах перед прыжком, с. Наведение идёт до последнего кадра замаха.")]
     [LowerIsBetter, MustBePositive] public float windupTime = 0.5f;
+
+    [Tooltip("Цена наскока из бака дыхалки — рывок усилия. Платит сама доставка при запуске: выдохся — грызи вблизи или отдышись.")]
+    [LowerIsBetter, Min(0f)] public float staminaCost = 30f;
 }

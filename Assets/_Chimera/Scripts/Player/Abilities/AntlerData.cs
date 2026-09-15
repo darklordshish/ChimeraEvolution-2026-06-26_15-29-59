@@ -31,6 +31,6 @@ public class AntlerData : AbilityData
     [Tooltip("Замах NPC, с: телеграф для уворота. У игрока замаха нет — нажатие и есть решение.")]
     [LowerIsBetter, MustBePositive] public float windupTime = 0.35f;
 
-    [Tooltip("Перезарядка рогов игрока, с. Как часто бодает NPC, решает психика (MoosePsyche.antlerCooldown) — это тактика, а не число приёма.")]
+    [Tooltip("Перезарядка рогов, с — у игрока и у NPC (доставка ждёт её сама). Рога — редкий сильный удар: вплотную чаще отвечает копыто. Число родного вида органа (спека 16.09).")]
     [LowerIsBetter, MustBePositive] public float cooldown = 1.2f;
 }

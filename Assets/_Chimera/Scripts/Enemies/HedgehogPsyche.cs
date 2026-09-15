@@ -40,15 +40,14 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
     [SerializeField] float hurtCurlWindow = 2.5f;   // сколько «помним» удар не-кина как повод держать клубок (перестал бить → через столько развернётся)
     [SerializeField] float rollAtBreath = 0.3f;     // доля стамины, ниже которой свёрнутый ёж идёт на ПРОРЫВ катанием (C2)
     [SerializeField] float cornerHpFrac = 0.25f;    // ПРЕДЕЛ (D): HP ниже этой доли ПОД давлением → закольцовка страха в ярость
-    [SerializeField] float cornerCooldown = 6f;     // угроз нет столько секунд → предел остывает (как лосиный берсерк)
+    [SerializeField, NotOrganData("поведение: сколько остывает предел без угроз")] float cornerCooldown = 6f;     // угроз нет столько секунд → предел остывает (как лосиный берсерк)
     [SerializeField] float fearPerHit = 1f;         // сколько страха копит один удар не-кина (мораль в минус)
-    [SerializeField] float retargetInterval = 0.7f;
+    [SerializeField, NotOrganData("восприятие: как часто психика пересматривает цель")] float retargetInterval = 0.7f;
 
     [Header("Бой")]
     [SerializeField] float rotationSpeed = 240f;
-    [SerializeField] float attackCooldown = 1.1f;
+    [SerializeField, NotOrganData("решение психики: ритм выбора атаки; перезарядку приёма держит доставка по записи органа")] float attackCooldown = 1.1f;
     [SerializeField] float wanderRadius = 7f;
-    [SerializeField] float grabCooldown = 3f;    // пауза между попытками вцепиться
 
     float moveSpeed = 4f; // приходит из органов (Ежиные ноги) через тело
 
@@ -59,8 +58,6 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
     BiteAbility bite;
     QuillVolley _volley; // залп — ДАЛЬНЯЯ грань (первый ranged в игре): доставку заводит ТЕЛО по записи органа «Игломёт»
     QuillVolley volley { get { if (_volley == null) TryGetComponent(out _volley); return _volley != null && _volley.Available ? _volley : null; } } // лениво и только доступный: тело заводит залп в Recompute, ПОСЛЕ нашего Awake; нет органа — null, ёж ближний
-    float nextVolleyAt;
-    [SerializeField] float volleyCooldown = 2.5f;
     [SerializeField] float highTargetY = 1.6f;   // цель ВЫШЕ этого над ежом — ближним боем не достать (змея уползла на стену/насест)
     float HighTargetY => highTargetY > 0f ? highTargetY : 1.6f; // 0-гоча: новое поле у психики на префабе приходит нулём
     Stagger stagger;
@@ -70,7 +67,7 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
     Rage rage;
     SpawnVariance variance;
     WindupAbility activeAbility;
-    float nextAttackTime, nextRetarget, nextGrabAt;
+    float nextAttackTime, nextRetarget, grabWindupEnd = -1f; // grabWindupEnd: идёт замах захвата, -1 — нет
     bool huntingPrey, holding;
     CurlDefense _curl; // КЛУБОК (слайс C): оборонительная стойка последнего рубежа. Доставку заводит ТЕЛО по записи CurlData («Ежиные ноги» на ежином шасси)
     CurlDefense curl { get { if (_curl == null) TryGetComponent(out _curl); return _curl != null && _curl.Available ? _curl : null; } } // лениво и только доступный: запись клубка есть лишь на ежином шасси
@@ -350,7 +347,7 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
         // свободен (сквозь стену не стреляем). Камуфляж сбивает прицел, а не отменяет залп; задел попал →
         // урон РАСКРЫВАЕТ цель → дальше прицельно. Та же видовая заявка, что в Retarget: «от носа не спрятаться».
         // По игроку/прочим — только визуально (huntingPrey гейтит): ёж наводится нюхом лишь на свою добычу
-        bool volleyReady = volley != null && Time.time >= nextVolleyAt && dist >= volley.MinRange && dist <= volley.MaxRange;
+        bool volleyReady = volley != null && volley.CanUse && dist >= volley.MinRange && dist <= volley.MaxRange; // перезарядку залпа держит доставка по записи
         bool smellShot = volleyReady && !sees && huntingPrey && Perception.HasLineOfSight(transform.position, target, transform);
         if (volleyReady && (sees || smellShot))
         {
@@ -359,7 +356,6 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
             if (volley.TryUse())
             {
                 activeAbility = volley;
-                nextVolleyAt = Time.time + volleyCooldown;
                 Settle(Vector3.zero);
                 return;
             }
@@ -384,13 +380,26 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
 
         // ВЦЕПИТЬСЯ — только в ДОБЫЧУ (змею): игрока и прочих ёж не хватает, он для них крепость,
         // а не контролёр. Хват дорог по дыхалке, поэтому не пробуем, когда её нет
-        if (huntingPrey && dist <= bite.Range && Time.time >= nextGrabAt
-            && (Breath == null || !Breath.Exhausted) && GrabMachine.Begin(targetHealth))
+        if (huntingPrey && dist <= bite.Range && GrabMachine.Ready && (Breath == null || !Breath.Exhausted))
         {
-            holding = true;
-            nextGrabAt = Time.time + grabCooldown;
-            Settle(Vector3.zero);
-            return;
+            // ЗАМАХ ЗАХВАТА — из записи Пасти (у Цепкой пасти 0: ёж вцепляется сразу); перезарядку держит машина
+            if (grabWindupEnd < 0f && GrabMachine.WindupTime > 0f)
+            {
+                grabWindupEnd = Time.time + GrabMachine.WindupTime;
+                if (TryGetComponent<Telegraph>(out var cue)) cue.Set(true, TelegraphColors.Grab, intent: true);
+            }
+            if (grabWindupEnd < 0f || Time.time >= grabWindupEnd)
+            {
+                if (grabWindupEnd >= 0f && TryGetComponent<Telegraph>(out var done)) done.Clear();
+                grabWindupEnd = -1f;
+                if (GrabMachine.Begin(targetHealth)) { holding = true; Settle(Vector3.zero); return; }
+            }
+            else { Settle(Vector3.zero); return; } // замах идёт
+        }
+        else if (grabWindupEnd >= 0f)
+        {
+            grabWindupEnd = -1f; // добыча ушла из досягаемости — замах сорван
+            if (TryGetComponent<Telegraph>(out var cancel)) cancel.Clear();
         }
 
         if (Time.time >= nextAttackTime && dist <= bite.Range && bite.TryUse())

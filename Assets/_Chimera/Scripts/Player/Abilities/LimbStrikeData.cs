@@ -29,6 +29,9 @@ public class LimbStrikeData : AbilityData
     [Tooltip("Полуугол конуса, градусы. Шире рогов: конечностью машут, а не целятся корпусом.")]
     [MustBePositive] public float halfAngle = 60f;
 
-    [Tooltip("Замах NPC, с: телеграф для уворота. У игрока замаха нет. Как часто бьёт NPC, решает психика (hoofCooldown).")]
+    [Tooltip("Замах NPC, с: телеграф для уворота. У игрока замаха нет.")]
     [LowerIsBetter, MustBePositive] public float windupTime = 0.45f;
+
+    [Tooltip("Перезарядка удара у NPC, с: доставка ждёт её сама — вплотную зверь не становится безобидным, пока откатывается другой приём. У игрока ритм ударов задаёт темп Сердца (SetTempo), а не эта ручка.")]
+    [LowerIsBetter, MustBePositive] public float cooldown = 1.1f;
 }
