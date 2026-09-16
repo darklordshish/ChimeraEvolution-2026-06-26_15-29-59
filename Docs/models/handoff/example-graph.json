@@ -1,0 +1,60 @@
+{
+    "species": "Волк",
+    "hides": ["хребет", "шея", "голова", "Руки", "Ноги", "Шкура", "Сердце"],
+    "nodes": [
+        {
+            "name": "корпус", "parent": "", "socket": "хребет", "layer": 0,
+            "origin": { "x": 0.0, "y": 0.78, "z": -0.62 },
+            "attach": 1.0, "freeOrigin": false,
+            "length": 1.15, "endBone": "", "endAttach": 1.0,
+            "dir": { "x": 90.0, "y": 0.0, "z": 0.0 },
+            "r0": 0.24, "r1": 0.21, "section": 0.72, "depth": 1.0,
+            "blend": 0.12, "chain": 0, "mirrorX": false
+        },
+        {
+            "name": "шея", "parent": "корпус", "socket": "шея", "layer": 0,
+            "origin": { "x": 0.0, "y": 0.0, "z": 0.0 },
+            "attach": 1.0, "freeOrigin": false,
+            "length": 0.30, "endBone": "", "endAttach": 1.0,
+            "dir": { "x": -28.0, "y": 0.0, "z": 0.0 },
+            "r0": 0.19, "r1": 0.14, "section": 0.85, "depth": 1.0,
+            "blend": 0.12, "chain": 0, "mirrorX": false
+        },
+        {
+            "name": "голова", "parent": "шея", "socket": "голова", "layer": 0,
+            "origin": { "x": 0.0, "y": 0.0, "z": 0.0 },
+            "attach": 1.0, "freeOrigin": false,
+            "length": 0.26, "endBone": "", "endAttach": 1.0,
+            "dir": { "x": 22.0, "y": 0.0, "z": 0.0 },
+            "r0": 0.13, "r1": 0.09, "section": 0.9, "depth": 1.0,
+            "blend": 0.08, "chain": 0, "mirrorX": false
+        },
+        {
+            "name": "нога.перед", "parent": "корпус", "socket": "Руки", "layer": 0,
+            "origin": { "x": 0.10, "y": 0.92, "z": 0.0 },
+            "attach": 0.85, "freeOrigin": true,
+            "length": 0.62, "endBone": "", "endAttach": 1.0,
+            "dir": { "x": -90.0, "y": 0.0, "z": 0.0 },
+            "r0": 0.08, "r1": 0.05, "section": 1.0, "depth": 1.0,
+            "blend": 0.03, "chain": 0, "mirrorX": true
+        },
+        {
+            "name": "нога.зад", "parent": "корпус", "socket": "Ноги", "layer": 0,
+            "origin": { "x": 0.10, "y": 0.18, "z": 0.0 },
+            "attach": 0.15, "freeOrigin": true,
+            "length": 0.66, "endBone": "", "endAttach": 1.0,
+            "dir": { "x": -90.0, "y": 0.0, "z": 0.0 },
+            "r0": 0.10, "r1": 0.05, "section": 1.0, "depth": 1.0,
+            "blend": 0.03, "chain": 0, "mirrorX": true
+        },
+        {
+            "name": "хвост", "parent": "корпус", "socket": "Хвост", "layer": 0,
+            "origin": { "x": 0.0, "y": 0.0, "z": 0.0 },
+            "attach": 0.0, "freeOrigin": false,
+            "length": 0.45, "endBone": "", "endAttach": 1.0,
+            "dir": { "x": 160.0, "y": 0.0, "z": 0.0 },
+            "r0": 0.06, "r1": 0.03, "section": 1.0, "depth": 1.0,
+            "blend": 0.05, "chain": 3, "mirrorX": false
+        }
+    ]
+}

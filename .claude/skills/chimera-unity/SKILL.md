@@ -128,7 +128,34 @@ unity command run_script --file Tools/Agent/Stand.cs --entry Stand.Axis \
 > `speciesName # число костей # слои` — содержимое костей и числа поля в ключ не входят. Копиям
 > обязательно давать РАЗНЫЙ `speciesName`, иначе все образцы придут из кэша одинаковыми.
 
-## 6. Что ещё есть (полный список — `unity command` без имени)
+## 6. Приёмка формы от модельной линии
+
+Силуэтный граф приходит ФАЙЛОМ `Docs/models/handoff/<вид>-graph.json` (формат и инварианты —
+`Docs/models/SPEC-priyomka-formy.md`). Узел графа — это `Bone`: второго описания формы в проекте нет.
+
+```bash
+# образец формата из нынешних данных (для модельной линии)
+unity command run_script --file Tools/Agent/Graph.cs --entry Graph.Export --args '["Волк"]'
+
+# проверка поставки — печатает ВСЕ нарушения разом, ничего не меняет
+unity command run_script --file Tools/Agent/Graph.cs --entry Graph.Check --args '["Docs/models/handoff/volk-graph.json"]'
+
+# перенос в данные вида (только при чистой проверке)
+unity command run_script --file Tools/Agent/Graph.cs --entry Graph.Import --args '["Docs/models/handoff/volk-graph.json"]'
+
+# чистый лист: снять кости и скрытия — вид рисуется только местами
+unity command run_script --file Tools/Agent/Graph.cs --entry Graph.Clear --args '["Волк"]'
+```
+
+**Файл сильнее ассета.** `SpeciesBootstrap` при пересоздании видов сам подхватывает поставку
+(`SpeciesHandoff.Apply`): есть файл — форма из него, нет — кости из кода. Поэтому `Graph.Import`
+в ассет не «победит» следующее `chimera-species`, а совпадёт с ним. Битая поставка НЕ применяется
+молча — ошибка в консоль, прежнее остаётся.
+
+Порядок приёмки: `Check` → `Import` (или сразу `chimera-species`) → `chimera-map` → кадр на полигоне →
+ответ письмом с числами и картинкой.
+
+## 7. Что ещё есть (полный список — `unity command` без имени)
 
 | нужно | команда |
 |---|---|
@@ -141,7 +168,7 @@ unity command run_script --file Tools/Agent/Stand.cs --entry Stand.Axis \
 
 **Правки сцен и ассетов — командой или скриптом, не правкой YAML руками.**
 
-## 7. Гочи пайплайна
+## 8. Гочи пайплайна
 
 - **`save_path` и пути ассетов confined в `Assets/`** — всё, что вне, отвергается с 400.
 - **Кириллица в аргументах работает** (имена ассетов, камер, слотов) — экранировать не нужно.
@@ -151,7 +178,7 @@ unity command run_script --file Tools/Agent/Stand.cs --entry Stand.Axis \
 - **Кадр стоит токенов** (картинка в контексте): снимать по делу, а не «на всякий случай».
 - Батч-редактор не видит `unity status` мгновенно — дать ему секунд десять на старт.
 
-## 8. Где проходит граница с пользователем
+## 9. Где проходит граница с пользователем
 
 **Claude делает сам:** сборку и пересборку видов, тесты, отчёты-детекторы, кадры и оценку силуэта,
 стыков и пропорций, правки данных и сцены, коммиты по зелёным тестам.
