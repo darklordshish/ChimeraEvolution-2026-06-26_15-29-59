@@ -107,11 +107,23 @@ public static class MorphBuilder
         foreach (var socket in sockets)
         {
             if (socket == null || string.IsNullOrEmpty(socket.name)) continue;
-            if (boneSockets.Contains(socket.name)) continue;   // форму этого места строит скелет
+            organBySocket.TryGetValue(socket.name, out var organ);
+            if (boneSockets.Contains(socket.name))
+            {
+                // ФОРМУ ЭТОГО МЕСТА СТРОИТ ГРАФ — но куски органа, прикреплённые к УЗЛУ, рисуются и здесь. Ноги
+                // волка погашены (тушу и бёдра даёт поле), а пясть и лапа — ригблоки на конце `предплечье`:
+                // погаси их вместе с местом, и зверь остался бы без лап ниже запястья. Куски без узла на
+                // погашенном месте по-прежнему не рисуются — их форму заменило поле
+                if (HasNodeParts(organ))
+                {
+                    var (hp, hr) = Place(socket, byName, placed, 0, axisOf, byBone, bonePos, boneSockets);
+                    NodeParts(container.transform, socket, organ, hp, hr, SizeOf(socket, byName, 0), axisOf, byBone, bonePos);
+                }
+                continue;
+            }
             // ЦЕПЬ ЗМЕИ НЕ ПРОПУСКАЕМ: морф СТРОИТ ФОРМУ и ставит звенья в стартовую позу, а дальше
             // позицию каждый кадр перезаписывает своя система (SnakeBodyChain ведёт цепь по пути головы).
             // Раньше здесь стоял continue — отсюда невидимая змея: место есть, а рисовать его было некому
-            organBySocket.TryGetValue(socket.name, out var organ);
             // БЕЗ ОРГАНА НЕ РИСУЕМ в двух случаях: место закрыто у этого шасси (у человека нет хвоста) либо
             // лежит ВНУТРИ тела и проступает только формой органа (Сердце → грудная клетка)
             if (organ == null && (socket.graft || socket.inner)) continue;
@@ -141,8 +153,23 @@ public static class MorphBuilder
             var made = new List<GameObject>();
             float linkD = ChainDiameter(socket, byName, 0);
             Vector3 sz = SizeOf(socket, byName, 0);   // габарит: свой или доля родителя
-            Piece(container.transform, socket, organ, +1f, pos, rot, made, linkD, fromOther, sz);
-            if (socket.mirrorX) Piece(container.transform, socket, organ, -1f, pos, rot, made, linkD, fromOther, sz);
+
+            // КУСКИ НА УЗЛАХ рисуются отдельно — у них свой кадр (узел или, если узла у носителя нет, само
+            // место). Орган, у которого ВСЕ куски на узлах, место кубом не рисует: волчьи ноги на человеке —
+            // это пясть и лапа, а не пясть, лапа и ещё голый куб места поверх
+            bool onlyNodeParts = false;
+            if (HasNodeParts(organ))
+            {
+                NodeParts(container.transform, socket, organ, pos, rot, sz, axisOf, byBone, bonePos);
+                var rest = PartsWithoutNode(organ);
+                if (rest == null) onlyNodeParts = true;
+                else if (fromOther == null) fromOther = rest;
+            }
+            if (!onlyNodeParts)
+            {
+                Piece(container.transform, socket, organ, +1f, pos, rot, made, linkD, fromOther, sz);
+                if (socket.mirrorX) Piece(container.transform, socket, organ, -1f, pos, rot, made, linkD, fromOther, sz);
+            }
 
             // РЕБЁНОК ЦЕПИ СИДИТ НА ЗВЕНЕ. Место, висящее на цепном родителе, становится ПОТОМКОМ того звена,
             // на которое указывает `attach` (0 — последнее, у кончика). Иначе оно остаётся соседом звеньев, и
@@ -274,6 +301,84 @@ public static class MorphBuilder
 
         placed[s.name] = (pos, rot);
         return (pos, rot);
+    }
+
+    static bool HasNodeParts(Organ organ)
+    {
+        if (organ == null || organ.visualParts == null) return false;
+        foreach (var p in organ.visualParts) if (p != null && !string.IsNullOrEmpty(p.node)) return true;
+        return false;
+    }
+
+    static OrganPart[] PartsWithoutNode(Organ organ)
+    {
+        var rest = new List<OrganPart>();
+        foreach (var p in organ.visualParts) if (p != null && string.IsNullOrEmpty(p.node)) rest.Add(p);
+        return rest.Count > 0 ? rest.ToArray() : null;
+    }
+
+    /// <summary>КУСОК НА УЗЛЕ ГРАФА (решение 17.09: нижние ноги — ригблоки, письмо FEEDBACK-2026-09-17c §4).
+    ///
+    /// КАДР: начало в КОНЦЕ узла, поворот узла × Euler(−90, 0, 0) — тот же, которым место садится на кость:
+    /// +Z вдоль узла, +Y — перёд узла, +X вбок. ЕДИНИЦЫ — доли узла, а не метры: `offset` и `scale` по X и Y в
+    /// ДИАМЕТРАХ конца узла (2·r1), по Z — в ДЛИНАХ узла; `euler` — поза сегмента в этом кадре. Метров в
+    /// данных донора быть не может (закон идентичности), поэтому один брусок годится любому калибру.
+    ///
+    /// УЗЛА У НОСИТЕЛЯ НЕТ (человек на чистом листе с волчьими ногами) — кадр даёт само место по той же
+    /// формуле: длина — длинная сторона места, диаметр — меньшая поперечная, начало — дальний конец места.
+    /// Спрятать кусок было бы проще, но тогда игрок, приживший волчьи ноги, не увидел бы лап: игра соврала бы
+    /// ему о его же теле. Особого случая при этом нет — меняется только поставщик кадра.</summary>
+    static void NodeParts(Transform parent, BodySocket socket, Organ organ, Vector3 placePos, Quaternion placeRot,
+                          Vector3 placeSize, Dictionary<string, Vector3> axisOf,
+                          Dictionary<string, Bone> byBone, Dictionary<string, (Vector3, Quaternion)> bonePos)
+    {
+        foreach (var pt in organ.visualParts)
+        {
+            if (pt == null || string.IsNullOrEmpty(pt.node)) continue;
+
+            Vector3 end;
+            Quaternion frame;
+            float diameter, length;
+            bool mirror;
+            if (byBone != null && bonePos != null && byBone.TryGetValue(pt.node, out var node))
+            {
+                var (np, nr) = SkeletonBuilder.Place(node, byBone, bonePos);
+                length = node.length;
+                diameter = 2f * node.r1;
+                end = np + nr * (Vector3.up * length);
+                frame = nr * Quaternion.Euler(-90f, 0f, 0f);
+                mirror = node.mirrorX;          // пара узлов → пара кусков, как пара ног
+            }
+            else
+            {
+                Vector3 axis = axisOf != null && axisOf.TryGetValue(socket.name, out var pinned) ? pinned : LongAxis(placeSize);
+                Vector3 across = new Vector3(1f - Mathf.Abs(axis.x), 1f - Mathf.Abs(axis.y), 1f - Mathf.Abs(axis.z));
+                length = Mathf.Abs(Vector3.Dot(placeSize, new Vector3(Mathf.Abs(axis.x), Mathf.Abs(axis.y), Mathf.Abs(axis.z))));
+                float a = across.x > 0f ? placeSize.x : float.MaxValue;
+                float b = across.y > 0f ? placeSize.y : float.MaxValue;
+                float c = across.z > 0f ? placeSize.z : float.MaxValue;
+                diameter = Mathf.Min(a, Mathf.Min(b, c));
+                end = placePos + placeRot * (axis * (length * 0.5f));
+                frame = placeRot * Quaternion.FromToRotation(Vector3.forward, axis);
+                mirror = socket.mirrorX;
+            }
+
+            var unit = new Vector3(diameter, diameter, length);
+            Vector3 pos = end + frame * Vector3.Scale(pt.offset, unit);
+            Vector3 euler = (frame * Quaternion.Euler(pt.euler)).eulerAngles;
+            Vector3 size = Vector3.Scale(pt.scale, unit);
+
+            Mark(Spawn(parent, socket.name, pos, euler, size, +1f, pt.shape, socket.solid, pt.block), pt);
+            if (mirror) Mark(Spawn(parent, socket.name, pos, euler, size, -1f, pt.shape, socket.solid, pt.block), pt);
+        }
+    }
+
+    static void Mark(GameObject go, OrganPart pt)
+    {
+        if (pt.role == PartRole.None && pt.color.a <= 0f) return;
+        var mark = go.AddComponent<PartMark>();
+        mark.role = pt.role;
+        mark.own = pt.color;
     }
 
     // одна куб-часть на якоре. side = +1/-1 — сторона парного якоря (зеркалим вынос по X и рыскание/крен,
