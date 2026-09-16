@@ -130,7 +130,13 @@ public static class BoneMesher
         // пересчитать надо ОДНУ лапу, а не всю тушу. Задача шасси — согласовать стыки: где сустав, куда
         // смотрит, какой там радиус; модуль обязан прийти в эту точку и зайти внутрь соседа с запасом.
         string key = chassis.speciesName + "#" + bones.Length + "#L" + chassis.BuildLayers;
-        if (!cache.TryGetValue(key, out var parts))
+        // ЗАПИСЬ КЭША МОЖЕТ БЫТЬ МЁРТВОЙ. Кэш статический и переживает то, чего не переживают меши: выход из
+        // Play, выгрузку сцены, `Resources.UnloadUnusedAssets` — ссылка из managed-словаря для Unity ссылкой
+        // не считается, и неиспользуемый меш уничтожается. Словарь при этом отдаёт «Mesh», который равен null
+        // по правилам Unity, и существо собирается НЕВИДИМЫМ: рендереры есть, геометрии нет, ошибки нет.
+        // Поймано 17.09: после прогона PlayMode-тестов кадр волка показал одни детали головы — в кэше
+        // «Волк#18#L4» было 7 мешей, живых 0. В сборке тот же путь даёт перезапуск забега со сменой сцены
+        if (!cache.TryGetValue(key, out var parts) || parts.Any(p => p.mesh == null))
             cache[key] = parts = Polygonize(segs.Where(x => (int)x.layer < chassis.BuildLayers).ToList(),
                                            bind, chassis.SkinCell, chassis.SkinBlend, chassis.SkinFur);
 
