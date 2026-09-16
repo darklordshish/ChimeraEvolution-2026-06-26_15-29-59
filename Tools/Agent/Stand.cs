@@ -76,6 +76,72 @@ public static class Stand
         return Row(items, view, aspect);
     }
 
+    /// <summary>ПОЛОСКА ПО ОСИ: одно и то же тело при `min · канон · max` одного параметра, в ряд.
+    ///
+    /// Зачем: пока ось проверяется только на готовом звере, поздно и дорого. Полоска ловит три вещи —
+    /// где генератор ломается, где форма перестаёт быть анатомичной и **какие оси вообще ничего не
+    /// меняют** (если ×0,3 и ×3 дают один силуэт и те же треугольники, ось не стоит держать как ось).
+    ///
+    /// Данные вида НЕ ПРАВЯТСЯ: ассет копируется `Instantiate` (Unity клонирует его сериализацией, то
+    /// есть вместе с костями и местами), правится копия, копия сносится. Иначе полоска молча испортила
+    /// бы вид — ровно тот класс ошибок, против которого написан весь этот инструмент.</summary>
+    public static string Axis(string speciesAsset, string axis, float lo, float hi, string view, float aspect)
+    {
+        var src = AssetDatabase.LoadAssetAtPath<SpeciesSO>(speciesAsset);
+        if (src == null) return "вид не найден: " + speciesAsset;
+
+        var items = new List<(SpeciesSO, List<Organ>, string)>();
+        foreach (var k in new[] { lo, 1f, hi })
+        {
+            var copy = Object.Instantiate(src);
+            // ИМЯ ВИДА МЕНЯЕМ ОБЯЗАТЕЛЬНО: `BoneMesher` кэширует оболочку по ключу
+            // «speciesName # число костей # слои» — содержимое костей, `skinCell` и `skinBlend` в ключ
+            // НЕ входят. Оставь копиям одно имя — и все три полоски получат один и тот же меш из кэша,
+            // а полоска покажет «параметр ничего не меняет» там, где он меняет всё. Поймано первым же
+            // прогоном 17.09: blend ×0,3 и ×3 дали ровно 48 332 треугольника и тот же габарит
+            copy.speciesName = src.speciesName + " ×" + k.ToString("0.##") + " " + axis;
+            copy.name = copy.speciesName;
+            if (!Apply(copy, axis, k)) { return "ось не знаю: " + axis + " (есть: blend, cell, thickness, section, depth, length, sizeRel, organScale)"; }
+            items.Add((copy, Native(copy), axis + " ×" + k.ToString("0.##")));
+        }
+        var report = Row(items, view, aspect);
+        foreach (var (copy, _, _) in items) { }   // копии живут до Wipe: они нужны собранным телам
+        return axis + ": " + report;
+    }
+
+    /// <summary>Правка одной оси в КОПИИ вида. `false` — оси с таким именем нет.</summary>
+    static bool Apply(SpeciesSO s, string axis, float k)
+    {
+        switch (axis)
+        {
+            case "blend":                                   // слияние соседних объёмов поля
+                s.skinBlend = Mathf.Max(0.0001f, s.skinBlend * k);
+                return true;
+            case "cell":                                    // РАЗРЕШЕНИЕ СЕТКИ поля — прямо про бюджет
+                s.skinCell = Mathf.Max(0.001f, s.skinCell * k);
+                return true;
+            case "thickness":                               // толщина костей у обоих концов
+                if (s.bones != null) foreach (var b in s.bones) { if (b == null) continue; b.r0 *= k; b.r1 *= k; }
+                return true;
+            case "section":                                 // сечение поперёк (плоский бок против бочки)
+                if (s.bones != null) foreach (var b in s.bones) { if (b == null) continue; b.section = (b.section <= 0f ? 1f : b.section) * k; }
+                return true;
+            case "depth":                                   // сечение вдоль взгляда (ухо, лопасть рога)
+                if (s.bones != null) foreach (var b in s.bones) { if (b == null) continue; b.depth = (b.depth <= 0f ? 1f : b.depth) * k; }
+                return true;
+            case "length":                                  // длины костей — пропорции скелета
+                if (s.bones != null) foreach (var b in s.bones) { if (b == null) continue; b.length *= k; }
+                return true;
+            case "sizeRel":                                 // доля места от родителя (граф мест)
+                if (s.sockets != null) foreach (var so in s.sockets) { if (so == null) continue; if (so.sizeRel != Vector3.zero) so.sizeRel *= k; }
+                return true;
+            case "organScale":                              // габарит формы органа в его месте
+                if (s.organs != null) foreach (var o in s.organs) { if (o == null) continue; o.visualScale *= k; }
+                return true;
+        }
+        return false;
+    }
+
     public static string Wipe()
     {
         int n = 0;
@@ -92,6 +158,21 @@ public static class Stand
         if (species.organs != null)
             foreach (var o in species.organs) if (o != null) worn.Add(o);
         return worn;
+    }
+
+    /// <summary>ТРЕУГОЛЬНИКИ СОБРАННОГО ТЕЛА — то число, которым мерится бюджет (контракт §7.4: зверь
+    /// 600–1 500). Считается по факту построенных мешей, а не по данным: разойтись с игрой не может.</summary>
+    static int Triangles(Renderer[] rends)
+    {
+        int n = 0;
+        foreach (var r in rends)
+        {
+            Mesh m = r is SkinnedMeshRenderer sk ? sk.sharedMesh
+                   : r.TryGetComponent<MeshFilter>(out var mf) ? mf.sharedMesh : null;
+            if (m == null) continue;
+            for (int s = 0; s < m.subMeshCount; s++) n += (int)(m.GetIndexCount(s) / 3);
+        }
+        return n;
     }
 
     static string Row(List<(SpeciesSO chassis, List<Organ> worn, string label)> items, string view, float aspect)
@@ -128,7 +209,8 @@ public static class Stand
             body.transform.position = along * (cursor - Vector3.Dot(b.min, along));
             cursor += width + Gap;
             top = Mathf.Max(top, b.max.y);
-            report.Add(string.Format("{0}: {1} дет., {2:0.00}×{3:0.00}×{4:0.00} м", label, rends.Length, b.size.x, b.size.y, b.size.z));
+            report.Add(string.Format("{0}: {1} дет., {2} тр, {3:0.00}×{4:0.00}×{5:0.00} м",
+                                     label, rends.Length, Triangles(rends), b.size.x, b.size.y, b.size.z));
         }
         float span = Mathf.Max(0.001f, cursor - Gap);
 
