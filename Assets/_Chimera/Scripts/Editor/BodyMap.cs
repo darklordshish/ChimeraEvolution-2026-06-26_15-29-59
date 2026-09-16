@@ -25,11 +25,16 @@ public static class BodyMap
         sb.AppendLine("карта строит существо настоящим билдером и обмеряет результат.");
         sb.AppendLine();
 
-        int species = 0;
+        var all = new List<SpeciesSO>();
         foreach (var guid in AssetDatabase.FindAssets("t:SpeciesSO"))
         {
-            var sp = AssetDatabase.LoadAssetAtPath<SpeciesSO>(AssetDatabase.GUIDToAssetPath(guid));
-            if (sp == null) continue;
+            var loaded = AssetDatabase.LoadAssetAtPath<SpeciesSO>(AssetDatabase.GUIDToAssetPath(guid));
+            if (loaded != null) all.Add(loaded);
+        }
+
+        int species = 0;
+        foreach (var sp in all)
+        {
             species++;
 
             var parts = BodyProbe.Measure(sp);
@@ -220,8 +225,113 @@ public static class BodyMap
             sb.AppendLine();
         }
 
+        Chimeras(sb, ci, all);
+
         System.IO.File.WriteAllText(OutPath, sb.ToString(), new UTF8Encoding(false));
         AssetDatabase.Refresh();
         Debug.Log($"Карта тел записана: {OutPath} (видов: {species})");
+    }
+
+    /// <summary>ХИМЕРНЫЕ СБОРКИ ТЕМ ЖЕ ДЕТЕКТОРОМ (п.4 спеки идентичности 14.08, закрыт 17.09).
+    ///
+    /// До этого карта строила только РОДНОЙ состав, и «численная проверка стыков чиста» для химер была
+    /// неисполнима: смешение меняет пропорции мест, а мерить их было нечем. Теперь пара «шасси + донор»
+    /// собирается ЧЕРЕЗ ПУБЛИЧНЫЙ API конструктора, её план уходит в тот же `BodyProbe.Measure`, и
+    /// проверяются три инварианта закона идентичности:
+    ///   • ТОПОЛОГИЯ НОСИТЕЛЯ — деталей ровно столько же, сколько у чистого шасси;
+    ///   • КОРЕНЬ НЕ СМЕШИВАЕТСЯ (И3) — габарит места `хребет` совпадает до микрона;
+    ///   • ЛОКАЛЬНОСТЬ — поехали только места под графтом, а не вся тушка.
+    /// Ни один из трёх не проверить, пересчитывая числа на бумаге: они о СОБРАННОМ теле.</summary>
+    static void Chimeras(StringBuilder sb, CultureInfo ci, List<SpeciesSO> all)
+    {
+        sb.AppendLine("## Химерные сборки — тем же детектором");
+        sb.AppendLine();
+        sb.AppendLine("Пара «шасси + донор»: в шасси ставится первый звериный орган донора, план берётся");
+        sb.AppendLine("у самого конструктора (`GetBlendedPlan`), тело строится тем же билдером и меряется.");
+        sb.AppendLine("«Мест поехало» — сколько мест сменили габарит против чистого шасси (локальность).");
+        sb.AppendLine();
+        sb.AppendLine("| шасси | донор | графт | деталей (шасси → химера) | мест поехало | сильнее всего | корень неизменен |");
+        sb.AppendLine("|---|---|---|---|---|---|---|");
+
+        foreach (var chassis in all)
+        {
+            var nativeParts = BodyProbe.Measure(chassis);
+            // МЕРИМ МЕСТА, А НЕ ДЕТАЛИ — та же оговорка, что у стыков выше, и первая версия этого
+            // раздела на ней и споткнулась: у места по семь частей (орган «Хребет» у ежа) плюс
+            // зеркальные пары, имена у них ОДИНАКОВЫ, и сравнение «первая попавшаяся против каждой»
+            // выдало «корень поехал на 79 %» там, где план хребта совпадал с шассийным до знака
+            var nativeWhole = BodyProbe.Group(chassis, nativeParts).whole;
+
+            foreach (var donor in all)
+            {
+                if (donor == chassis) continue;
+                var plan = ChimeraPlan(chassis, donor, out string organ);
+                if (plan == null)
+                {
+                    sb.AppendLine($"| {chassis.speciesName} | {donor.speciesName} | {organ ?? "—"} | — | — | — | смешения нет |");
+                    continue;
+                }
+
+                var mixed = BodyProbe.Measure(chassis, plan);
+                var mixedWhole = BodyProbe.Group(chassis, mixed).whole;
+                int moved = 0;
+                float worst = 0f;
+                string worstName = "—";
+                bool spineHeld = true;
+                foreach (var kv in mixedWhole)
+                {
+                    if (!nativeWhole.TryGetValue(kv.Key, out var was)) continue;
+                    float d = (kv.Value.size - was.size).magnitude / Mathf.Max(0.0001f, was.size.magnitude);
+                    if (d > 0.001f) moved++;
+                    if (d > worst) { worst = d; worstName = kv.Key; }
+                    if (kv.Key == BodySlots.Spine && d > 0.0001f) spineHeld = false;
+                }
+                sb.AppendLine(string.Format(ci, "| {0} | {1} | {2} | {3} → {4} | {5} | {6} {7:P1} | {8} |",
+                              chassis.speciesName, donor.speciesName, organ, nativeParts.Count, mixed.Count,
+                              moved, worstName, worst, spineHeld ? "да" : "**НЕТ**"));
+            }
+        }
+        sb.AppendLine();
+    }
+
+    /// <summary>Собрать химеру ЧЕРЕЗ ПУБЛИЧНЫЙ API конструктора и вернуть её смешанный план.
+    /// Своей арифметики здесь нет намеренно: детектор обязан ходить тем же путём, что игра, иначе он
+    /// меряет собственную копию правил (тот же довод, что у `BodyProbe`).</summary>
+    static BodySocket[] ChimeraPlan(SpeciesSO chassis, SpeciesSO donor, out string organ)
+    {
+        organ = null;
+        var go = new GameObject("~ХимераЗамер");
+        try
+        {
+            // контроллер нужен билдеру: высоты в данных заданы ОТ ЗЕМЛИ
+            var cc = go.AddComponent<CharacterController>();
+            cc.height = 2f;
+            cc.center = new Vector3(0f, 1f, 0f);
+
+            var body = go.AddComponent<CreatureBody>();
+            body.Configure(chassis, new[] { donor });
+
+            // ЭКОНОМИКА ЗДЕСЬ НЕ ПРЕДМЕТ: детектор меряет ФОРМУ. На родном пуле шасси (у человека 16)
+            // почти любой донорский орган дороже снимаемого родного, `Install` отказывает, и таблица
+            // выходит пустой — так и вышло в первом прогоне 17.09. Расширяем пул публичным же API,
+            // которым это делает награда за суперхимеру; цена графта проверяется тестами экономики
+            body.ExpandPool(500);
+
+            for (int i = 0; i < body.SlotCount; i++)
+            {
+                var variants = body.GetVariants(i);
+                for (int v = 0; v < variants.Count; v++)
+                {
+                    if (variants[v].native || variants[v].species != donor.speciesName) continue;
+                    if (!body.Install(i, v)) continue;              // не по карману — следующий
+                    organ = variants[v].organName;
+                    var plan = body.GetBlendedPlan();
+                    if (plan != null) return plan;                  // ХРЕБЕТ не смешивается (И3): графт
+                    break;                                          // на нём плана не даёт — берём другой слот
+                }
+            }
+            return null;
+        }
+        finally { Object.DestroyImmediate(go); }
     }
 }
