@@ -86,7 +86,34 @@ unity command run_script --file Tools/Agent/ShotSpecies.cs --entry ShotSpecies.W
 unity command eval --code 'var r = GameObject.Find("~ШОТ"); return r.GetComponentsInChildren<SkinnedMeshRenderer>().Length + " / " + r.GetComponentsInChildren<MeshRenderer>().Length;'
 ```
 
-## 5. Что ещё есть (полный список — `unity command` без имени)
+## 5. Полигон: ряд тел в одном кадре
+
+Сцена `Assets/Scenes/Полигон.unity` — стенд для сравнения. **В ней сохранены только свет и якорь**:
+существа, линейка и камера строятся командой и НЕ сохраняются. Сцена с запечёнными телами стала бы вторым
+источником правды рядом с данными видов и разошлась бы с ними молча.
+
+```bash
+unity command open_scene --path Assets/Scenes/Полигон.unity
+
+# все пять видов в ряд (profile | front), аргумент 2 — отношение ширины кадра к высоте
+unity command run_script --file Tools/Agent/Stand.cs --entry Stand.Species --args '["profile",1.6]'
+
+# ТРОЙКА СРАВНЕНИЯ: чистое шасси · химера · чистый донор
+unity command run_script --file Tools/Agent/Stand.cs --entry Stand.Compare \
+  --args '["Assets/_Chimera/Data/Человек.asset","Assets/_Chimera/Data/Волк.asset","Пасть,Чутьё","profile",1.6]'
+
+unity command capture_game_view --camera "СтендCam" --width 1600 --height 1000 --save_path "Кадры/Ряд.png"
+unity command run_script --file Tools/Agent/Stand.cs --entry Stand.Wipe
+```
+
+**Зачем ряд, а не отдельные кадры.** Смешение читается ТОЛЬКО в сравнении: кадр химеры сам по себе
+выглядит нормальным телом, и лишь рядом с чистым шасси и чистым донором видно, потянулась ли пропорция.
+В кадре есть линия земли и метки через 0,5 м — дефект называется числом прямо с картинки («холка ниже
+метки 1,5»), как того требует правило «где и насколько».
+
+**Сцену после работы не сохранять** (`save_scene` не звать): построенное — мусор для git.
+
+## 6. Что ещё есть (полный список — `unity command` без имени)
 
 | нужно | команда |
 |---|---|
@@ -99,7 +126,7 @@ unity command eval --code 'var r = GameObject.Find("~ШОТ"); return r.GetCompo
 
 **Правки сцен и ассетов — командой или скриптом, не правкой YAML руками.**
 
-## 6. Гочи пайплайна
+## 7. Гочи пайплайна
 
 - **`save_path` и пути ассетов confined в `Assets/`** — всё, что вне, отвергается с 400.
 - **Кириллица в аргументах работает** (имена ассетов, камер, слотов) — экранировать не нужно.
@@ -109,7 +136,7 @@ unity command eval --code 'var r = GameObject.Find("~ШОТ"); return r.GetCompo
 - **Кадр стоит токенов** (картинка в контексте): снимать по делу, а не «на всякий случай».
 - Батч-редактор не видит `unity status` мгновенно — дать ему секунд десять на старт.
 
-## 7. Где проходит граница с пользователем
+## 8. Где проходит граница с пользователем
 
 **Claude делает сам:** сборку и пересборку видов, тесты, отчёты-детекторы, кадры и оценку силуэта,
 стыков и пропорций, правки данных и сцены, коммиты по зелёным тестам.

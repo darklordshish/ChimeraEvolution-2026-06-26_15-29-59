@@ -1,0 +1,199 @@
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEngine;
+
+/// <summary>ПОЛИГОН — стенд для сравнения тел. Строит НЕСКОЛЬКО существ В ОДИН РЯД с общей линейкой и
+/// одной камерой, чтобы разницу было видно глазом, а не по памяти между двумя кадрами.
+///
+/// ЗАЧЕМ РЯД, А НЕ ОТДЕЛЬНЫЕ КАДРЫ. Смешение по идентичности читается только в сравнении: кадр химеры
+/// сам по себе выглядит «нормальным телом», и лишь рядом с чистым шасси и чистым донором видно, потянулась
+/// ли пропорция и куда. Ровно этого не хватало 17.09, когда «человек + волчьи Пасть и Чутьё» оказался
+/// неотличим от человека — вывод стоил отдельного захода, а на стенде был бы виден сразу.
+///
+/// ЧТО ЛЕЖИТ В СЦЕНЕ, А ЧТО СТРОИТСЯ. В `Assets/Scenes/Полигон.unity` сохранён только СВЕТ и якорь.
+/// Существа, линейка и камера строятся командой и НЕ СОХРАНЯЮТСЯ: сцена с запечёнными телами стала бы
+/// вторым источником правды рядом с данными видов и разошлась бы с ними молча — та самая болезнь, от
+/// которой написана спека «одна линия партии».
+///
+/// КАК ЗВАТЬ (скилл `chimera-unity`, раздел «Полигон»):
+///   unity command run_script --file Tools/Agent/Stand.cs --entry Stand.Species --args '["profile",1.6]'
+///   unity command run_script --file Tools/Agent/Stand.cs --entry Stand.Compare
+///        --args '["Assets/_Chimera/Data/Человек.asset","Assets/_Chimera/Data/Волк.asset","Пасть,Чутьё","profile",1.6]'
+///   unity command capture_game_view --camera СтендCam --width 1600 --height 1000 --save_path Кадры/Ряд.png
+///   unity command run_script --file Tools/Agent/Stand.cs --entry Stand.Wipe</summary>
+public static class Stand
+{
+    const string Rig = "~СТЕНД";
+    const float Gap = 0.6f;          // просвет между фигурами, м
+    static readonly string[] All = { "Человек", "Волк", "Лось", "Ёж", "Змея" };
+
+    /// <summary>Все пять видов в ряд. `view`: profile | front. `aspect` — ширина кадра к высоте.</summary>
+    public static string Species(string view, float aspect)
+    {
+        var items = new List<(SpeciesSO chassis, List<Organ> worn, string label)>();
+        foreach (var name in All)
+        {
+            var so = AssetDatabase.LoadAssetAtPath<SpeciesSO>("Assets/_Chimera/Data/" + name + ".asset");
+            if (so == null) return "нет ассета вида: " + name;
+            items.Add((so, Native(so), so.speciesName));
+        }
+        return Row(items, view, aspect);
+    }
+
+    /// <summary>ТРОЙКА СРАВНЕНИЯ: чистое шасси · химера · чистый донор. Именно в таком порядке — смесь
+    /// стоит между своими крайностями, и «потянулась ли пропорция» читается за один взгляд.</summary>
+    public static string Compare(string chassisAsset, string donorAsset, string slots, string view, float aspect)
+    {
+        var chassis = AssetDatabase.LoadAssetAtPath<SpeciesSO>(chassisAsset);
+        var donor = AssetDatabase.LoadAssetAtPath<SpeciesSO>(donorAsset);
+        if (chassis == null || donor == null) return "вид не найден";
+
+        var graft = new List<Organ>();
+        var taken = new List<string>();
+        foreach (var raw in slots.Split(','))
+        {
+            var slot = raw.Trim();
+            if (slot.Length == 0) continue;
+            Organ found = null;
+            if (donor.organs != null)
+                foreach (var o in donor.organs)
+                    if (o != null && o.slot == slot) { found = o; break; }
+            if (found == null) return "у донора нет органа на слот «" + slot + "»";
+            graft.Add(found);
+            taken.Add(slot);
+        }
+        if (graft.Count == 0) return "не названо ни одного слота";
+
+        var mixed = new List<Organ>(graft);
+        mixed.AddRange(Native(chassis));
+
+        var items = new List<(SpeciesSO, List<Organ>, string)>
+        {
+            (chassis, Native(chassis), chassis.speciesName),
+            (chassis, mixed, chassis.speciesName + "+" + donor.speciesName + " (" + string.Join(",", taken) + ")"),
+            (donor, Native(donor), donor.speciesName),
+        };
+        return Row(items, view, aspect);
+    }
+
+    public static string Wipe()
+    {
+        int n = 0;
+        foreach (var go in Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            if (go != null && go.name == Rig) { Object.DestroyImmediate(go); n++; }
+        return "снесено: " + n;
+    }
+
+    // ── внутреннее ──────────────────────────────────────────────────────────────────────
+
+    static List<Organ> Native(SpeciesSO species)
+    {
+        var worn = new List<Organ>();
+        if (species.organs != null)
+            foreach (var o in species.organs) if (o != null) worn.Add(o);
+        return worn;
+    }
+
+    static string Row(List<(SpeciesSO chassis, List<Organ> worn, string label)> items, string view, float aspect)
+    {
+        Wipe();
+        if (aspect <= 0f) aspect = 1.6f;
+        bool front = view == "front";
+
+        var root = new GameObject(Rig);
+        // РЯД ИДЁТ ПОПЕРЁК ВЗГЛЯДА: в профиль фигуры расставляются вдоль своей длины (Z), анфас — вдоль
+        // ширины (X). Иначе орто-камера сложит их друг в друга и ряд превратится в кашу
+        Vector3 along = front ? Vector3.right : Vector3.forward;
+
+        float cursor = 0f, top = 0f;
+        var report = new List<string>();
+
+        foreach (var (chassis, worn, label) in items)
+        {
+            var body = new GameObject(label);
+            body.transform.SetParent(root.transform, false);
+            var cc = body.AddComponent<CharacterController>();     // билдеру нужен низ капсулы: высоты от земли
+            cc.height = 2f;
+            cc.center = new Vector3(0f, 1f, 0f);
+
+            MorphBuilder.Build(body.transform, chassis, worn);
+
+            var rends = body.GetComponentsInChildren<Renderer>();
+            if (rends.Length == 0) { Object.DestroyImmediate(body); report.Add(label + ": пусто"); continue; }
+            var b = rends[0].bounds;
+            foreach (var r in rends) b.Encapsulate(r.bounds);
+
+            float width = front ? b.size.x : b.size.z;
+            // ставим так, чтобы ЛЕВЫЙ край фигуры пришёлся на курсор: ряд идёт встык с просветом
+            body.transform.position = along * (cursor - Vector3.Dot(b.min, along));
+            cursor += width + Gap;
+            top = Mathf.Max(top, b.max.y);
+            report.Add(string.Format("{0}: {1} дет., {2:0.00}×{3:0.00}×{4:0.00} м", label, rends.Length, b.size.x, b.size.y, b.size.z));
+        }
+        float span = Mathf.Max(0.001f, cursor - Gap);
+
+        Ruler(root.transform, along, span, top);
+
+        // ОДНА КАМЕРА НА ВЕСЬ РЯД, рамка считается от ряда — поэтому кадры разных прогонов сравнимы.
+        // Вертикаль ведётся от ЗЕМЛИ, а не от центра: ряд длинный, орто-размер задаёт ширина, и если
+        // целиться в середину фигур, половина кадра уходит в пустое небо (так и вышло в первом прогоне)
+        float orthoSize = Mathf.Max(top * 0.5f + 0.3f, (span * 0.5f + 0.4f) / aspect);
+        var cam = new GameObject("СтендCam").AddComponent<Camera>();
+        cam.transform.SetParent(root.transform, false);
+        Vector3 eye = front ? Vector3.back : Vector3.right;
+        Vector3 center = along * (span * 0.5f) + Vector3.up * (orthoSize * 0.8f);   // земля у нижнего края
+        cam.transform.position = center + eye * (span + top + 5f);
+        cam.transform.rotation = Quaternion.LookRotation(-eye, Vector3.up);
+        cam.orthographic = true;
+        cam.orthographicSize = orthoSize;
+        cam.clearFlags = CameraClearFlags.SolidColor;
+        cam.backgroundColor = new Color(0.16f, 0.17f, 0.19f, 1f);
+        cam.nearClipPlane = 0.01f;
+        cam.farClipPlane = (span + top) * 20f + 50f;
+
+        var lamp = new GameObject("Свет").AddComponent<Light>();
+        lamp.transform.SetParent(root.transform, false);
+        lamp.type = LightType.Directional;
+        lamp.intensity = 1.1f;
+        lamp.transform.rotation = Quaternion.Euler(35f, front ? 200f : 140f, 0f);
+
+        return string.Join(" · ", report) + string.Format("  [ряд {0:0.00} м, верх {1:0.00} м]", span, top);
+    }
+
+    /// <summary>ЛИНЕЙКА В КАДРЕ: линия земли по всему ряду и столб с рисками через 0,5 м. Дефект тогда
+    /// читается числом прямо с картинки («холка ниже метки 0,5») — это и есть наше правило «где и
+    /// насколько» вместо «выглядит плохо».</summary>
+    static void Ruler(Transform parent, Vector3 along, float span, float top)
+    {
+        var mat = new Material(Shader.Find("Universal Render Pipeline/Lit")) { color = new Color(0.45f, 0.5f, 0.55f, 1f) };
+
+        var ground = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        ground.name = "земля";
+        ground.transform.SetParent(parent, false);
+        ground.transform.position = along * (span * 0.5f) + Vector3.down * 0.01f;
+        ground.transform.localScale = along * (span + 1f) + new Vector3(0.02f, 0.02f, 0.02f) + Vector3.up * 0.0f
+                                    + (along == Vector3.right ? new Vector3(0f, 0f, 0.6f) : new Vector3(0.6f, 0f, 0f));
+        ground.transform.localScale = new Vector3(Mathf.Max(0.05f, ground.transform.localScale.x),
+                                                  0.02f, Mathf.Max(0.05f, ground.transform.localScale.z));
+        Paint(ground, mat);
+
+        float marks = Mathf.Ceil(Mathf.Max(top, 1f) / 0.5f);
+        for (int i = 1; i <= marks; i++)
+        {
+            float h = i * 0.5f;
+            var tick = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            tick.name = "метка " + h.ToString("0.0") + " м";
+            tick.transform.SetParent(parent, false);
+            bool whole = Mathf.Approximately(h % 1f, 0f);
+            tick.transform.position = -along * 0.35f + Vector3.up * h;
+            tick.transform.localScale = new Vector3(whole ? 0.30f : 0.16f, 0.015f, whole ? 0.30f : 0.16f);
+            Paint(tick, mat);
+        }
+    }
+
+    static void Paint(GameObject go, Material mat)
+    {
+        if (go.TryGetComponent<Collider>(out var col)) Object.DestroyImmediate(col);
+        if (go.TryGetComponent<Renderer>(out var r)) r.sharedMaterial = mat;
+    }
+}
