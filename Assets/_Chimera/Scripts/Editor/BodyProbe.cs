@@ -215,15 +215,24 @@ public static class BodyProbe
             int cut = sock.IndexOf('~');
             if (cut > 0) sock = sock.Substring(0, cut);          // «Тело~сустав» → «Тело»
 
-            string key = mirrored.Contains(sock) ? $"{sock} ({(p.center.x >= 0f ? "пр" : "лев")})" : sock;
-            res.socketOf[key] = sock;
+            // ДЕТАЛЬ НА СРЕДИННОЙ ЛИНИИ ПАРНОГО МЕСТА — ОБЕИМ СТОРОНАМ. Оболочка поля одна на обе лапы, и
+            // пока место рисовала только она, сторона была одна и знак её центра ничего не решал. С кусками
+            // на узлах (17.09) у места появились две стороны, и центр оболочки −0.0003 уводил её влево:
+            // правой доставались одни бруски в 30 см под хребтом, карта печатала «ЩЕЛЬ 434 %» на здоровой лапе
+            string[] keys = !mirrored.Contains(sock) ? new[] { sock }
+                          : Mathf.Abs(p.center.x) <= 0.1f * p.size.x ? new[] { sock + " (пр)", sock + " (лев)" }
+                          : new[] { $"{sock} ({(p.center.x >= 0f ? "пр" : "лев")})" };
 
             var b = new Bounds(p.center, p.size);
-            if (res.whole.TryGetValue(key, out var acc)) { acc.Encapsulate(b); res.whole[key] = acc; }
-            else res.whole[key] = b;
+            foreach (var key in keys)
+            {
+                res.socketOf[key] = sock;
+                if (res.whole.TryGetValue(key, out var acc)) { acc.Encapsulate(b); res.whole[key] = acc; }
+                else res.whole[key] = b;
 
-            if (!res.pieces.TryGetValue(key, out var list)) res.pieces[key] = list = new List<Bounds>();
-            list.Add(b);
+                if (!res.pieces.TryGetValue(key, out var list)) res.pieces[key] = list = new List<Bounds>();
+                list.Add(b);
+            }
         }
         return res;
     }
@@ -258,7 +267,13 @@ public static class BodyProbe
                 // просто наименьшее число нельзя: наименьшее — это самое глубокое ПЕРЕКРЫТИЕ, и выбирались
                 // детали, вложенные друг в друга (шар-сустав внутри кости). Оттуда шла лавина «врастаний»
                 // ровно на −100% при полном отсутствии щелей: перекос детектора в одну сторону
-                if (Mathf.Abs(gap) >= Mathf.Abs(bestGap)) continue;
+                // ...НО КАСАНИЕ ВАЖНЕЕ БЛИЗОСТИ. Место держится за родителя той деталью, что его КАСАЕТСЯ, а не
+                // той, что ближе по модулю: верхняя бусина уха в 8 мм над черепом обходила нижнюю, вросшую на 5 см,
+                // и карта печатала ЩЕЛЬ на прилегающем ухе (17.09, после раскладки головы). Среди касающихся —
+                // по-прежнему наименьший модуль, среди некасающихся — наименьший зазор
+                bool touches = gap <= 0f, bestTouches = bestGap <= 0f;
+                if (bestTouches && !touches) continue;
+                if (bestTouches == touches && Mathf.Abs(gap) >= Mathf.Abs(bestGap)) continue;
                 // РАЗМЕР ИМЕННО ЭТОЙ ДЕТАЛИ — им же меряются пороги. Считая их от коробки ГРУППЫ, мы
                 // получали абсурд: у места «Рога» коробка 1.15 м, поэтому «щелью» считался разрыв от
                 // 8.8 см — а розетка висела в 3.4 см от головы и проходила как норма. Шов образует
