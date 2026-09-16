@@ -353,7 +353,7 @@ public static class MorphBuilder
                     var made1 = Spawn(parent, socket.name,
                           linkPos + place * Vector3.Scale(pt.offset, canonBase * k),
                           (place * Quaternion.Euler(pt.euler)).eulerAngles,
-                          Vector3.Scale(canonSize, pt.scale) * k, side, pt.shape, socket.solid);
+                          Vector3.Scale(canonSize, pt.scale) * k, side, pt.shape, socket.solid, pt.block);
                     // ПАСПОРТ ДЕТАЛИ: роль и своя окраска едут вместе с куском, а не списком имён в чужой
                     // системе. Вешаем только когда есть что сказать — обычный кусок остаётся чистым визуалом
                     if (pt.role != PartRole.None || pt.color.a > 0f)
@@ -497,6 +497,48 @@ public static class MorphBuilder
     /// <summary>Материал по умолчанию — ТОТ ЖЕ, что у примитивов. Берём его с реального примитива, а не
     /// ищем шейдер по имени: имя зависит от рендер-пайплайна, и промах даёт розовую тушу вместо серой.
     /// Части-места получают его сами, а скин-мешу материал надо назначить руками.</summary>
+    // ── БИБЛИОТЕКА ФОРМ ──────────────────────────────────────────────────────────────────
+    // Блок ищется ПО ИМЕНИ: кусок вида говорит «клин», каталог отвечает мешем. Каталога нет или имени в
+    // нём нет — кусок рисуется примитивом, как раньше, а имя копится в `MissingBlocks`. Тихий откат без
+    // следа был бы миной того же рода, что «новое поле приходит нулём»: опечатка в имени не даёт ни
+    // ошибки, ни заметной разницы на мелкой детали
+    static ShapeCatalog catalog;
+    static bool catalogAsked;
+    static readonly SortedSet<string> missingBlocks = new();
+
+    /// <summary>Действующий каталог форм: поданный `SetCatalog` либо поднятый из `Resources`.</summary>
+    public static ShapeCatalog Catalog
+    {
+        get
+        {
+            if (catalog == null && !catalogAsked)
+            {
+                catalogAsked = true;
+                catalog = Resources.Load<ShapeCatalog>(ShapeCatalog.ResourceName);
+            }
+            return catalog;
+        }
+    }
+
+    /// <summary>Подать каталог вручную (бутстрап, тест). `null` — работать на голых примитивах.</summary>
+    public static void SetCatalog(ShapeCatalog c)
+    {
+        catalog = c;
+        catalogAsked = true;
+        missingBlocks.Clear();
+    }
+
+    /// <summary>ИМЕНА БЛОКОВ, КОТОРЫХ НЕ НАШЛОСЬ, — долг библиотеки форм, видимый машине.</summary>
+    public static IEnumerable<string> MissingBlocks => missingBlocks;
+
+    static Mesh BlockMesh(string blockName)
+    {
+        if (string.IsNullOrEmpty(blockName)) return null;
+        var mesh = Catalog != null ? Catalog.Find(blockName) : null;
+        if (mesh == null) missingBlocks.Add(blockName);
+        return mesh;
+    }
+
     static Material PrimitiveMaterial()
     {
         if (primMat != null) return primMat;
@@ -581,18 +623,34 @@ public static class MorphBuilder
 
     // одна деталь. side = -1 зеркалит вынос по X и рыскание/крен (тангаж общий: левая лапа не «смотрит» иначе правой)
     static GameObject Spawn(Transform parent, string name, Vector3 pos, Vector3 euler, Vector3 size, float side,
-                            PartShape shape = PartShape.Cube, bool solid = false)
+                            PartShape shape = PartShape.Cube, bool solid = false, string block = null)
     {
         if (side < 0f) { pos.x = -pos.x; euler.y = -euler.y; euler.z = -euler.z; }
 
-        // КАПСУЛА И ЦИЛИНДР у Unity ВДВОЕ ВЫШЕ куба при том же масштабе (высота примитива 2, диаметр 1).
-        // Делим Y, чтобы `scale` во всех данных значил ОДНО И ТО ЖЕ — габарит куска, а не масштаб примитива
-        if (shape == PartShape.Capsule || shape == PartShape.Cylinder) size.y *= 0.5f;
+        GameObject cube;
+        var blockMesh = BlockMesh(block);
+        if (blockMesh != null)
+        {
+            // РИГБЛОК ПОДМЕНЯЕТ КУБ ОДИН В ОДИН: габарит блока 1×1×1 с центром в нуле (требование
+            // контракта), поэтому `size` значит ровно то же, что у куба, и делить Y не нужно.
+            // Плотному куску коллайдер даёт КОРОБКА, а не меш: у блока она точна по построению, а
+            // выпуклый MeshCollider стоил бы пересчёта на каждой пересборке тела
+            cube = new GameObject("блок", typeof(MeshFilter), typeof(MeshRenderer));
+            cube.GetComponent<MeshFilter>().sharedMesh = blockMesh;
+            cube.GetComponent<MeshRenderer>().sharedMaterial = PrimitiveMaterial();
+            if (solid) cube.AddComponent<BoxCollider>();
+        }
+        else
+        {
+            // КАПСУЛА И ЦИЛИНДР у Unity ВДВОЕ ВЫШЕ куба при том же масштабе (высота примитива 2, диаметр 1).
+            // Делим Y, чтобы `scale` во всех данных значил ОДНО И ТО ЖЕ — габарит куска, а не масштаб примитива
+            if (shape == PartShape.Capsule || shape == PartShape.Cylinder) size.y *= 0.5f;
 
-        var cube = GameObject.CreatePrimitive(shape == PartShape.Sphere ? PrimitiveType.Sphere
+            cube = GameObject.CreatePrimitive(shape == PartShape.Sphere ? PrimitiveType.Sphere
                                             : shape == PartShape.Capsule ? PrimitiveType.Capsule
                                             : shape == PartShape.Cylinder ? PrimitiveType.Cylinder
                                             : PrimitiveType.Cube);
+        }
         // [ANIM] ПЛОТНАЯ ЧАСТЬ оставляет коллайдер: кусок тела — препятствие для других и поверхность
         // попаданий (тело змеи плотное по всей длине). Обычная часть остаётся чистым визуалом:
         // физика носителя — его CharacterController, лишние коллайдеры мешали бы ему самому
