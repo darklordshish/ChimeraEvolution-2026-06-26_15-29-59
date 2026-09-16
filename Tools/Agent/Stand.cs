@@ -96,6 +96,68 @@ public static class Stand
         return axis + ": " + report;
     }
 
+    /// <summary>ТРОЙКА ЗАТЕНЕНИЯ: одно тело гладким, плоским и плоским на грубой клетке — чтобы решать вопрос
+    /// «лоуполи ли это» по картинке, а не на словах (17.09). Плоское делается разваркой меша: у каждого
+    /// треугольника свои вершины и своя нормаль. На экране это то же, что плоское затенение в шейдере через
+    /// производные позиции, только без шейдера — для решения о стиле этого достаточно.</summary>
+    public static string Shading(string speciesAsset, float coarse, float aspect)
+    {
+        var src = AssetDatabase.LoadAssetAtPath<SpeciesSO>(speciesAsset);
+        if (src == null) return "вид не найден: " + speciesAsset;
+
+        var labels = new[] { "гладкое", "плоское", "плоское, клетка ×" + coarse.ToString("0.##") };
+        var items = new List<(SpeciesSO, List<Organ>, string, BodySocket[])>();
+        for (int i = 0; i < 3; i++)
+        {
+            var copy = Object.Instantiate(src);
+            copy.speciesName = src.speciesName + " · " + labels[i];   // своё имя: кэш оболочки по виду
+            copy.name = copy.speciesName;
+            if (i == 2) copy.skinCell = src.skinCell * coarse;
+            items.Add((copy, Native(copy), labels[i], null));
+        }
+        // С 17.09 ИГРА СТРОИТ ОБОЛОЧКУ ГРАНЯМИ (`BoneMesher.Flat`). Тройка остаётся сравнением: собираем все три гладкими,
+        // а плоские развариваем после — так кадр повторяет тот, по которому принималось решение
+        string report;
+        bool flat = BoneMesher.Flat;
+        BoneMesher.Flat = false;
+        try { report = Row(items, "profile", aspect); }
+        finally { BoneMesher.Flat = flat; }
+
+        // разварка — ПОСЛЕ сборки и на копии меша: кэш оболочки не трогаем
+        var rig = GameObject.Find(Rig);
+        foreach (var body in rig.GetComponentsInChildren<Transform>(true))
+        {
+            if (body.name != labels[1] && body.name != labels[2]) continue;
+            foreach (var sk in body.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                if (sk.sharedMesh != null) sk.sharedMesh = Unweld(sk.sharedMesh);
+        }
+        return "затенение: " + report;
+    }
+
+    static Mesh Unweld(Mesh src)
+    {
+        var v = src.vertices;
+        var w = src.boneWeights;
+        var t = src.triangles;
+        var nv = new Vector3[t.Length];
+        var nw = w.Length > 0 ? new BoneWeight[t.Length] : null;
+        var nt = new int[t.Length];
+        for (int i = 0; i < t.Length; i++)
+        {
+            nv[i] = v[t[i]];
+            if (nw != null) nw[i] = w[t[i]];
+            nt[i] = i;
+        }
+        var m = new Mesh { name = src.name + " (плоско)", indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+        m.vertices = nv;
+        if (nw != null) m.boneWeights = nw;
+        m.bindposes = src.bindposes;
+        m.triangles = nt;
+        m.RecalculateNormals();       // вершины не общие — нормаль у каждой грани своя
+        m.RecalculateBounds();
+        return m;
+    }
+
     /// <summary>Правка одной оси в КОПИИ вида. `false` — оси с таким именем нет.</summary>
     static bool Apply(SpeciesSO s, string axis, float k)
     {
@@ -209,7 +271,7 @@ public static class Stand
         float orthoSize = Mathf.Max(top * 0.5f + 0.3f, (span * 0.5f + 0.4f) / aspect);
         var cam = new GameObject("СтендCam").AddComponent<Camera>();
         cam.transform.SetParent(root.transform, false);
-        Vector3 eye = front ? Vector3.back : Vector3.right;
+        Vector3 eye = front ? Vector3.forward : Vector3.right;   // анфас — перед мордой (звери смотрят в +Z)
         Vector3 center = along * (span * 0.5f) + Vector3.up * (orthoSize * 0.8f);   // земля у нижнего края
         cam.transform.position = center + eye * (span + top + 5f);
         cam.transform.rotation = Quaternion.LookRotation(-eye, Vector3.up);

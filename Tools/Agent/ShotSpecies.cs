@@ -55,6 +55,19 @@ public static class ShotSpecies
                      + (plan == null ? " — ПЛАНА НЕТ, пропорции шассийные" : ""), plan);
     }
 
+    /// <summary>ПОЛОСА ПО ВЫСОТЕ — крупный план части тела (лапы, голова), чтобы дефект называть числом, а не
+    /// «выглядит странно». Собирает вид как `Build` и сужает кадр до полосы `yMin..yMax` метров от земли.</summary>
+    public static string Band(string speciesAsset, string view, float yMin, float yMax)
+    {
+        var report = Build(speciesAsset, view);
+        var cam = GameObject.Find("ПрофильCam")?.GetComponent<Camera>();
+        if (cam == null) return report + " — камеры нет";
+        var p = cam.transform.position;
+        cam.transform.position = new Vector3(p.x, (yMin + yMax) * 0.5f, p.z);
+        cam.orthographicSize = (yMax - yMin) * 0.5f * 1.1f;
+        return report + string.Format(" · полоса {0:0.00}–{1:0.00} м", yMin, yMax);
+    }
+
     /// <summary>Снести сцену кадра. Зовётся всегда после съёмки: сцена не сохраняется, но мусор в ней мешает.</summary>
     public static string Wipe()
     {
@@ -99,7 +112,8 @@ public static class ShotSpecies
         var b = rends[0].bounds;
         foreach (var r in rends) b.Encapsulate(r.bounds);
 
-        Vector3 dir = view == "front" ? Vector3.back : view == "top" ? Vector3.up : Vector3.right;
+        // АНФАС — КАМЕРА ПЕРЕД МОРДОЙ: звери смотрят в +Z. До 17.09 здесь стоял Vector3.back, и «анфас» был видом сзади
+        Vector3 dir = view == "front" ? Vector3.forward : view == "top" ? Vector3.up : Vector3.right;
         float span = Mathf.Max(b.size.x, Mathf.Max(b.size.y, b.size.z));
 
         var cam = new GameObject("ПрофильCam").AddComponent<Camera>();
