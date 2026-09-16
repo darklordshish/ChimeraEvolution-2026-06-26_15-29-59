@@ -59,6 +59,11 @@ public class SnakeBodyChain : MonoBehaviour
         for (int i = 0; i < morph.childCount; i++)
         {
             var c = morph.GetChild(i);
+            // ОБОЛОЧКА СЛОТА — НЕ ЗВЕНО. `BoneMesher` кладёт в тот же контейнер скиннед-меши слотов с ТЕМИ ЖЕ
+            // именами (`шея`, `хребет`, `Хвост`), и по одному имени их не отличить: замер модельной линии 17.09
+            // нашёл 18 «звеньев», из которых первые три были оболочками, хвостовая — первой у головы. Двигать
+            // трансформ скиннед-меша бессмысленно: его вершины идут за костями, а не за объектом
+            if (c.GetComponent<SkinnedMeshRenderer>() != null) continue;
             foreach (var n in ChainNames)
                 if (c.name == n) { found.Add(c); break; }
         }
