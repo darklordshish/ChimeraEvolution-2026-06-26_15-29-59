@@ -1,0 +1,187 @@
+# -*- coding: utf-8 -*-
+"""РАСКЛАДКА ГОЛОВЫ ВОЛКА — калибр места `голова` и доли деталей на ней (поставка 3, письмо механик 17.09c §3).
+
+КАК ЭТО СВЯЗАНО С ИГРОЙ. Место `голова` погашено графом и берёт у одноимённого узла ПОЗУ: начало места — в
+начале узла, длинная ось (Z) — вдоль узла, +Y — к темени. Калибр (W × H × L) место держит СВОЙ, и от него
+считаются доли всех деталей головы (`MorphBuilder.Place`):
+    вдоль оси от начала узла  = (attach + attachOffset.z) · L
+    к темени                  = attachOffset.y · H
+    вбок                      = attachOffset.x · W
+
+ОТКУДА ЧИСЛА. Точки сняты с `ref/photo/wolf_standing_1.jpg` (та же сетка и опоры, что у `graph.py`) и
+переведены в кадр ГОЛОВЫ СНИМКА: начало — основание черепа под ушами, ось — к кончику носа. В этом кадре
+голова одна и та же при любой посадке, поэтому точки переносятся на нейтральную голову графа как есть.
+Ширины, которых профиль не даёт, — отдельной строкой с источником.
+
+Калибр L — от основания черепа до кончика носа: лишняя против узла длина места и есть зона морды (клин).
+
+Запуск:  python head_layout.py [--out путь]
+"""
+import argparse
+import json
+import math
+import os
+
+import graph as G
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+# ── ТОЧКИ ГОЛОВЫ НА СНИМКЕ, px исходника ─────────────────────────────────────────────────────────────
+HEAD_PX = {
+    'основание_черепа': (1610, 280),   # сустав головы: под основанием ушей, на 8 см ниже линии загривка
+    'кончик_носа':      (1935, 400),
+    'мочка':            (1915, 405),   # центр мочки
+    'глаз':             (1765, 268),
+    'ухо_середина':     (1650, 110),
+    'темя':             (1630, 175),   # верх черепа у основания ушей
+    'стоп':             (1800, 260),   # перелом лба в спинку носа
+    'угол_рта':         (1760, 420),
+    'подбородок':       (1880, 460),
+    'челюсть_низ':      (1700, 470),   # низ челюсти под глазом
+}
+
+
+def world(name):
+    z, y = G.px(*HEAD_PX[name])
+    return (y, z)
+
+
+def photo_frame():
+    oy, oz = world('основание_черепа')
+    ny, nz = world('кончик_носа')
+    dy, dz = ny - oy, nz - oz
+    L = math.hypot(dy, dz)
+    u = (dy / L, dz / L)                 # вдоль головы
+    v = (u[1], -u[0])                    # к темени: перпендикуляр, повёрнутый вверх
+    if v[0] < 0:
+        v = (-v[0], -v[1])
+    return (oy, oz), u, v, L
+
+
+def local(name):
+    (oy, oz), u, v, _ = photo_frame()
+    y, z = world(name)
+    d = (y - oy, z - oz)
+    return (d[0] * u[0] + d[1] * u[1], d[0] * v[0] + d[1] * v[1])   # (вдоль, к темени)
+
+
+# ── КАЛИБР МЕСТА «голова» ────────────────────────────────────────────────────────────────────────────
+_, _, _, L_PHOTO = photo_frame()
+L = round(L_PHOTO + 0.005, 3)            # до переднего края мочки
+# Высота: от низа челюсти до темени у основания ушей, по снимку
+H = round(local('темя')[1] - local('челюсть_низ')[1], 3)
+# Ширина: профиль её не даёт. Скуловая ширина псовых ≈ 0.55 длины черепа (пластина `skeleton/wolf_skull_plate.jpg`,
+# дорсальный аспект) плюс мех на скулах по 3 см (`photo/wolf_head_front.jpg`)
+W = round(0.55 * L + 0.06, 3)
+
+NECK_CALIBRE = (0.220, 0.300, 0.380)     # калибр места `шея` у волка — от него считается sizeRel головы
+
+
+def rel(abs_size, cal):
+    return tuple(round(a / c, 3) for a, c in zip(abs_size, cal))
+
+
+def place(name, attach, along, up, lateral, size, euler=(0.0, 0.0, 0.0), note=''):
+    """Деталь головы: положение в метрах кадра головы → доли калибра."""
+    return dict(name=name, attach=attach,
+                attachOffset=[round(lateral / W, 3), round(up / H, 3), round(along / L - attach, 3)],
+                sizeRel=list(rel(size, (W, H, L))), baseEuler=list(euler), note=note,
+                metres=dict(along=round(along, 3), up=round(up, 3), lateral=round(lateral, 3), size=list(size)))
+
+
+def layout():
+    eye_a, eye_b = local('глаз')
+    ear_a, ear_b = local('ухо_середина')
+    nose_a, nose_b = local('мочка')
+    stop_a, stop_b = local('стоп')
+    jaw_a, jaw_b = local('челюсть_низ')
+
+    # ПАСТЬ = МОРДА. Коробка места от 0.095 (заход клина в череп на свою толщину) до кончика носа, по высоте от
+    # низа челюсти до стопа. Центр коробки и есть точка места
+    m_a0, m_a1 = 0.095, L
+    m_b0, m_b1 = round(jaw_b + 0.002, 3), round(stop_b + 0.005, 3)
+    m_len, m_h, m_w = m_a1 - m_a0, m_b1 - m_b0, 0.14
+    m_a, m_b = (m_a0 + m_a1) / 2, (m_b0 + m_b1) / 2
+
+    # ГЛАЗ НА ПОВЕРХНОСТИ УЗЛА, а не «примерно сбоку»: полуширина узла `голова` на этой длине и высоте — из самого
+    # графа (радиус сужается от r0 к r1, ширина × section). Глаз выступает на треть своего радиуса
+    hn = next(n for n in G.build_nodes() if n['name'] == 'голова')
+    h_len = math.dist(hn['a'], hn['b'])
+    r_at = hn['r0'] + (hn['r1'] - hn['r0']) * min(1.0, max(0.0, eye_a / h_len))
+    eye_lat = round(hn['section'] * math.sqrt(max(0.0, r_at * r_at - eye_b * eye_b)) + 0.032 / 6, 3)
+
+    places = [
+        place('глаза', 0.5, eye_a, eye_b, eye_lat, (0.032, 0.032, 0.032),
+              note='на поверхности узла `голова`: вбок — по его сечению на этой длине и высоте'),
+        # Ухо стоит вертикально в мире: кадр головы наклонён носом вниз на 22°, наклон уха снят на столько же
+        place('уши', 0.5, ear_a, ear_b, 0.075, (0.075, 0.165, 0.035), euler=(-28.0, 45.0, -15.0),
+              note='центр уха; основание и кончик рисует Чутьё долями этого места'),
+        place('нос', 0.5, nose_a, nose_b, 0.0, (0.047, 0.040, 0.045), note='мочка на конце клина'),
+        place('Пасть', 1.0, m_a, m_b, 0.0, (m_w, m_h, m_len),
+              note='коробка морды: клин + зубы; ось Z длиннее высоты с запасом'),
+        place('Рога', 0.6, 0.08, 0.14, 0.06, (0.101, 0.127, 0.142),
+              note='графт: над черепом за ушами; габарит прежний'),
+    ]
+    return places, (m_w, m_h, m_len), (m_a, m_b)
+
+
+def teeth(muzzle, centre):
+    """Зубы Пасти в долях коробки морды. Абсолютные размеры — прежние (волк 01.09), места — по новой морде:
+    клыки выходят из-под губы у переднего края, щёчные — вдоль линии рта."""
+    W_, H_, L_ = muzzle
+    ca, cb = centre
+
+    def part(name, a, b, lat, size, color):
+        return dict(name=name, offset=[round(lat / W_, 3), round((b - cb) / H_, 3), round((a - ca) / L_, 3)],
+                    scale=[round(size[0] / W_, 3), round(size[1] / H_, 3), round(size[2] / L_, 3)], color=color)
+
+    white, ivory = [0.95, 0.94, 0.90, 1.0], [0.92, 0.90, 0.84, 1.0]
+    out = []
+    for side in (+1, -1):
+        s = '(пр)' if side > 0 else '(лев)'
+        out += [
+            part('клык верхний ' + s, 0.320, -0.080, side * 0.036, (0.018, 0.060, 0.016), white),
+            part('клык нижний ' + s, 0.345, -0.085, side * 0.031, (0.016, 0.050, 0.014), white),
+            part('щёчный хищнический ' + s, 0.240, -0.085, side * 0.052, (0.014, 0.034, 0.026), ivory),
+            part('щёчный задний ' + s, 0.170, -0.095, side * 0.062, (0.012, 0.028, 0.022), ivory),
+        ]
+    return out
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--out', default=os.path.join(HERE, 'out', 'volk-head-layout.json'))
+    args = ap.parse_args()
+
+    places, muzzle, centre = layout()
+    head_size = (W, H, L)
+    doc = dict(
+        head=dict(baseSize=list(head_size), sizeRel=list(rel(head_size, NECK_CALIBRE))),
+        places=places,
+        muzzle=dict(block='клин', offset=[0, 0, 0], scale=[1, 1, 1]),
+        teeth=teeth(muzzle, centre),
+    )
+    os.makedirs(os.path.dirname(args.out), exist_ok=True)
+    with open(args.out, 'w', encoding='utf-8') as f:
+        json.dump(doc, f, ensure_ascii=False, indent=2)
+    # Плоская копия для проб в редакторе: сериализатор Unity не разбирает вложенные классы скрипта, собранного на лету
+    f3 = lambda v: ','.join('%g' % x for x in v)
+    with open(os.path.splitext(args.out)[0] + '.txt', 'w', encoding='utf-8') as f:
+        f.write('head|%s|%s\n' % (f3(doc['head']['baseSize']), f3(doc['head']['sizeRel'])))
+        for p in places:
+            f.write('place|%s|%g|%s|%s|%s\n' % (p['name'], p['attach'], f3(p['attachOffset']), f3(p['sizeRel']), f3(p['baseEuler'])))
+        f.write('muzzle|%s|%s|%s\n' % (doc['muzzle']['block'], f3(doc['muzzle']['offset']), f3(doc['muzzle']['scale'])))
+        for t in doc['teeth']:
+            f.write('tooth|%s|%s|%s|%s\n' % (t['name'], f3(t['offset']), f3(t['scale']), f3(t['color'])))
+
+    print('калибр головы W×H×L = %.3f × %.3f × %.3f м; sizeRel от шеи = %s' % (head_size + (doc['head']['sizeRel'],)))
+    for p in places:
+        m = p['metres']
+        print('  %-6s attach %.1f  offset %-24s sizeRel %-24s  (вдоль %.3f, к темени %.3f, вбок %.3f)' %
+              (p['name'], p['attach'], p['attachOffset'], p['sizeRel'], m['along'], m['up'], m['lateral']))
+    for t in doc['teeth']:
+        print('    %-24s offset %-24s scale %s' % (t['name'], t['offset'], t['scale']))
+
+
+if __name__ == '__main__':
+    main()

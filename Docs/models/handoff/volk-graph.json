@@ -163,7 +163,7 @@
       },
       "attach": 1.0,
       "freeOrigin": false,
-      "length": 0.2,
+      "length": 0.17,
       "endBone": "",
       "endAttach": 1.0,
       "dir": {
@@ -171,8 +171,8 @@
         "y": 0.0,
         "z": 0.0
       },
-      "r0": 0.12,
-      "r1": 0.09,
+      "r0": 0.135,
+      "r1": 0.075,
       "section": 0.95,
       "depth": 1.0,
       "blend": 0.08,
@@ -255,67 +255,11 @@
         "y": 0.0,
         "z": 0.0
       },
-      "r0": 0.066,
-      "r1": 0.038,
+      "r0": 0.07,
+      "r1": 0.047,
       "section": 0.85,
       "depth": 1.0,
       "blend": 0.05,
-      "chain": 0,
-      "mirrorX": true
-    },
-    {
-      "name": "пясть",
-      "parent": "предплечье",
-      "layer": 0,
-      "socket": "Руки",
-      "origin": {
-        "x": 0.0,
-        "y": 0.0,
-        "z": 0.0
-      },
-      "attach": 1.0,
-      "freeOrigin": false,
-      "length": 0.1432,
-      "endBone": "",
-      "endAttach": 1.0,
-      "dir": {
-        "x": 0.026,
-        "y": 0.0,
-        "z": 0.0
-      },
-      "r0": 0.038,
-      "r1": 0.04,
-      "section": 1.0,
-      "depth": 1.0,
-      "blend": 0.04,
-      "chain": 0,
-      "mirrorX": true
-    },
-    {
-      "name": "лапа_п",
-      "parent": "пясть",
-      "layer": 0,
-      "socket": "Руки",
-      "origin": {
-        "x": 0.0,
-        "y": 0.1518,
-        "z": 0.0112
-      },
-      "attach": 1.0,
-      "freeOrigin": true,
-      "length": 0.1201,
-      "endBone": "",
-      "endAttach": 1.0,
-      "dir": {
-        "x": -80.085,
-        "y": 0.0,
-        "z": 0.0
-      },
-      "r0": 0.042,
-      "r1": 0.032,
-      "section": 1.0,
-      "depth": 1.0,
-      "blend": 0.03,
       "chain": 0,
       "mirrorX": true
     },
@@ -396,66 +340,10 @@
         "z": 0.0
       },
       "r0": 0.082,
-      "r1": 0.045,
+      "r1": 0.052,
       "section": 0.8,
       "depth": 1.0,
       "blend": 0.06,
-      "chain": 0,
-      "mirrorX": true
-    },
-    {
-      "name": "плюсна",
-      "parent": "голень",
-      "layer": 0,
-      "socket": "Ноги",
-      "origin": {
-        "x": 0.0,
-        "y": 0.0,
-        "z": 0.0
-      },
-      "attach": 1.0,
-      "freeOrigin": false,
-      "length": 0.2933,
-      "endBone": "",
-      "endAttach": 1.0,
-      "dir": {
-        "x": 311.919,
-        "y": 0.0,
-        "z": 0.0
-      },
-      "r0": 0.042,
-      "r1": 0.038,
-      "section": 1.0,
-      "depth": 1.0,
-      "blend": 0.04,
-      "chain": 0,
-      "mirrorX": true
-    },
-    {
-      "name": "лапа_з",
-      "parent": "плюсна",
-      "layer": 0,
-      "socket": "Ноги",
-      "origin": {
-        "x": 0.0,
-        "y": 0.3024,
-        "z": 0.0108
-      },
-      "attach": 1.0,
-      "freeOrigin": true,
-      "length": 0.1201,
-      "endBone": "",
-      "endAttach": 1.0,
-      "dir": {
-        "x": -82.765,
-        "y": 0.0,
-        "z": 0.0
-      },
-      "r0": 0.042,
-      "r1": 0.032,
-      "section": 1.0,
-      "depth": 1.0,
-      "blend": 0.03,
       "chain": 0,
       "mirrorX": true
     },
