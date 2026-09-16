@@ -55,6 +55,7 @@ MonoBehaviour:
       offset: {x: 0, y: 0.06, z: -0.32}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -62,6 +63,7 @@ MonoBehaviour:
       offset: {x: 0.33, y: -0.2, z: -0.32}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -69,6 +71,7 @@ MonoBehaviour:
       offset: {x: -0.33, y: -0.2, z: -0.32}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -76,6 +79,7 @@ MonoBehaviour:
       offset: {x: 0.31, y: -0.12, z: 0.28}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -83,6 +87,7 @@ MonoBehaviour:
       offset: {x: -0.31, y: -0.12, z: 0.28}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -118,7 +123,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482323816185882
+    - rid: 4402482324938162182
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -128,6 +133,7 @@ MonoBehaviour:
       offset: {x: 0, y: 0.35, z: 0.07}
       euler: {x: -19, y: 0, z: 0}
       shape: 2
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -135,6 +141,7 @@ MonoBehaviour:
       offset: {x: 0, y: 0.11, z: 0.08}
       euler: {x: 24, y: 0, z: 0}
       shape: 2
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -142,6 +149,7 @@ MonoBehaviour:
       offset: {x: 0, y: -0.08, z: 0.05}
       euler: {x: -6, y: 0, z: 0}
       shape: 2
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -149,6 +157,7 @@ MonoBehaviour:
       offset: {x: 0, y: -0.27, z: 0.06}
       euler: {x: -3, y: 0, z: 0}
       shape: 2
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -156,6 +165,7 @@ MonoBehaviour:
       offset: {x: 0, y: 0.32, z: 0.08}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -163,6 +173,7 @@ MonoBehaviour:
       offset: {x: 0, y: 0.02, z: 0.04}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -170,6 +181,7 @@ MonoBehaviour:
       offset: {x: 0, y: -0.18, z: 0.06}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -177,6 +189,7 @@ MonoBehaviour:
       offset: {x: 0, y: -0.4, z: 0.07}
       euler: {x: 16, y: 0, z: 0}
       shape: 2
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -184,6 +197,7 @@ MonoBehaviour:
       offset: {x: 0, y: -0.47, z: 0.09}
       euler: {x: 0, y: 0, z: 0}
       shape: 0
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -219,7 +233,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482323816185883
+    - rid: 4402482324938162183
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -229,6 +243,7 @@ MonoBehaviour:
       offset: {x: 0, y: 0.28, z: -0.05}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -236,6 +251,7 @@ MonoBehaviour:
       offset: {x: 0, y: 0.32, z: -0.05}
       euler: {x: -14, y: 0, z: 0}
       shape: 2
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -243,6 +259,7 @@ MonoBehaviour:
       offset: {x: 0, y: 0.13, z: 0.02}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -250,6 +267,7 @@ MonoBehaviour:
       offset: {x: 0, y: 0.04, z: -0.06}
       euler: {x: 28, y: 0, z: 0}
       shape: 2
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -257,6 +275,7 @@ MonoBehaviour:
       offset: {x: 0, y: -0.06, z: -0.14}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -264,6 +283,7 @@ MonoBehaviour:
       offset: {x: 0, y: -0.22, z: -0.13}
       euler: {x: -5, y: 0, z: 0}
       shape: 2
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -271,6 +291,7 @@ MonoBehaviour:
       offset: {x: 0, y: -0.05, z: -0.21}
       euler: {x: 0, y: 0, z: 0}
       shape: 0
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -278,6 +299,7 @@ MonoBehaviour:
       offset: {x: 0, y: -0.4, z: -0.09}
       euler: {x: 14, y: 0, z: 0}
       shape: 2
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -285,6 +307,7 @@ MonoBehaviour:
       offset: {x: 0, y: -0.46, z: -0.05}
       euler: {x: 0, y: 0, z: 0}
       shape: 0
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -320,7 +343,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482323816185884
+    - rid: 4402482324938162184
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -367,6 +390,7 @@ MonoBehaviour:
       offset: {x: 0, y: 0, z: 0}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      node: 
       block: 
       role: 4
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -374,6 +398,7 @@ MonoBehaviour:
       offset: {x: 0, y: 0, z: 0}
       euler: {x: 0, y: 0, z: 0}
       shape: 0
+      node: 
       block: 
       role: 3
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -381,6 +406,7 @@ MonoBehaviour:
       offset: {x: 0, y: 0.44, z: -0.08}
       euler: {x: 0, y: 0, z: 0}
       shape: 0
+      node: 
       block: 
       role: 3
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -388,6 +414,7 @@ MonoBehaviour:
       offset: {x: 0, y: 0, z: 0}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      node: 
       block: 
       role: 1
       color: {r: 0.78, g: 0.82, b: 0.86, a: 1}
@@ -432,6 +459,7 @@ MonoBehaviour:
       offset: {x: 0, y: 0, z: 0.04}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -504,7 +532,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482323816185885
+    - rid: 4402482324938162185
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -514,6 +542,7 @@ MonoBehaviour:
       offset: {x: 0.05, y: 0, z: 0}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -521,6 +550,7 @@ MonoBehaviour:
       offset: {x: 0.28, y: 0.22, z: 0.02}
       euler: {x: 0, y: 0, z: -62}
       shape: 2
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -528,6 +558,7 @@ MonoBehaviour:
       offset: {x: 1.35, y: 0.56, z: 0.05}
       euler: {x: -34, y: 0, z: 24}
       shape: 0
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -535,6 +566,7 @@ MonoBehaviour:
       offset: {x: 0.5, y: 0.8, z: 1}
       euler: {x: 56, y: 0, z: 14}
       shape: 2
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -542,6 +574,7 @@ MonoBehaviour:
       offset: {x: 1.55, y: 1.05, z: 1.05}
       euler: {x: 0, y: 0, z: 10}
       shape: 2
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -549,6 +582,7 @@ MonoBehaviour:
       offset: {x: 1.95, y: 1.29, z: 0.7}
       euler: {x: 0, y: 0, z: 10}
       shape: 2
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -556,6 +590,7 @@ MonoBehaviour:
       offset: {x: 2.15, y: 1.43, z: 0.05}
       euler: {x: 0, y: 0, z: 10}
       shape: 2
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -563,6 +598,7 @@ MonoBehaviour:
       offset: {x: 1.95, y: 1.29, z: -0.7}
       euler: {x: 0, y: 0, z: 10}
       shape: 2
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -570,6 +606,7 @@ MonoBehaviour:
       offset: {x: 1.55, y: 1.05, z: -1.05}
       euler: {x: 0, y: 0, z: 10}
       shape: 2
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -640,6 +677,7 @@ MonoBehaviour:
       offset: {x: 0, y: 0.14, z: -0.33}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -647,6 +685,7 @@ MonoBehaviour:
       offset: {x: 0, y: -0.04, z: 0.12}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -654,6 +693,7 @@ MonoBehaviour:
       offset: {x: 0, y: 0.15, z: 0}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -661,6 +701,7 @@ MonoBehaviour:
       offset: {x: 0, y: -0.27, z: 0.36}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -668,6 +709,7 @@ MonoBehaviour:
       offset: {x: 0, y: -0.28, z: 0.08}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -696,6 +738,7 @@ MonoBehaviour:
       offset: {x: 0, y: 0, z: 0}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -724,6 +767,7 @@ MonoBehaviour:
       offset: {x: 0, y: 0, z: 0}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      node: 
       block: 
       role: 1
       color: {r: 0.1, g: 0.1, b: 0.12, a: 1}
@@ -773,6 +817,7 @@ MonoBehaviour:
       offset: {x: 0, y: 0, z: 0}
       euler: {x: 90, y: 0, z: 0}
       shape: 2
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -780,6 +825,7 @@ MonoBehaviour:
       offset: {x: 0, y: -0.34, z: 0.32}
       euler: {x: 20, y: 0, z: 0}
       shape: 1
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -808,6 +854,7 @@ MonoBehaviour:
       offset: {x: 0, y: 0.03, z: 0.08}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -815,6 +862,7 @@ MonoBehaviour:
       offset: {x: 0, y: -0.2, z: 0.06}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -822,6 +870,7 @@ MonoBehaviour:
       offset: {x: 0, y: -0.18, z: -0.46}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -829,6 +878,7 @@ MonoBehaviour:
       offset: {x: 0, y: -0.16, z: 0.4}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -857,6 +907,7 @@ MonoBehaviour:
       offset: {x: 0, y: 0.04, z: -0.02}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -927,6 +978,7 @@ MonoBehaviour:
       offset: {x: 0, y: 0, z: 0.34}
       euler: {x: 0, y: 0, z: 0}
       shape: 1
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -934,6 +986,7 @@ MonoBehaviour:
       offset: {x: 0, y: 0, z: -0.02}
       euler: {x: 0, y: 0, z: 0}
       shape: 0
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -941,6 +994,7 @@ MonoBehaviour:
       offset: {x: 0, y: 0, z: -0.42}
       euler: {x: 0, y: 0, z: 0}
       shape: 0
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -948,6 +1002,7 @@ MonoBehaviour:
       offset: {x: 0, y: 0, z: -0.76}
       euler: {x: 0, y: 0, z: 0}
       shape: 0
+      node: 
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
@@ -1073,7 +1128,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4402482323816185882
+    - rid: 4402482324938162182
       type: {class: LimbStrikeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
@@ -1083,7 +1138,7 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.45
         cooldown: 1.1
-    - rid: 4402482323816185883
+    - rid: 4402482324938162183
       type: {class: ChargeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
@@ -1103,7 +1158,7 @@ MonoBehaviour:
         stompForce: 13
         plowForce: 6
         plowRadius: 1.6
-    - rid: 4402482323816185884
+    - rid: 4402482324938162184
       type: {class: BellowData, ns: , asm: Chimera.Runtime}
       data:
         fearRadius: 10
@@ -1111,7 +1166,7 @@ MonoBehaviour:
         fearMoraleHit: 2
         cooldown: 10
         cueTime: 1.2
-    - rid: 4402482323816185885
+    - rid: 4402482324938162185
       type: {class: AntlerData, ns: , asm: Chimera.Runtime}
       data:
         damage: 12
