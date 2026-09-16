@@ -26,6 +26,13 @@ public static class BoneMesher
     /// пространство, и лечится это анатомией, а не оператором композиции.</summary>
     const float Weld = 0.3f;
 
+    /// <summary>ОБОЛОЧКА ГРАНЯМИ — стиль игры (решение геймдизайнера 17.09 по тройке затенения «гладкое · плоское ·
+    /// плоское на клетке ×1,5», выбрано третье). Гладкая оболочка рядом с гранёными ригблоками читалась двумя языками:
+    /// лапы и морда выглядели приклеенными от другой модели. Грань — треугольник со СВОИМИ вершинами: общая вершина
+    /// усредняет нормаль соседей и снова сглаживает. Флаг, а не константа, только ради стенда: `Stand.Shading` строит
+    /// гладкую копию для сравнения. Входит в ключ кэша — иначе переключение молча отдало бы прежний меш.</summary>
+    public static bool Flat = true;
+
     // МЕШИ КЭШИРУЮТСЯ ПО ВИДУ: кости у всех волков одинаковы, значит и оболочка одна. Пересчёт нужен
     // только когда состав меняет сам скелет — до тех пор двадцать волков на арене делят одну геометрию
     static readonly Dictionary<string, (string slot, Mesh mesh)[]> cache = new();
@@ -129,7 +136,7 @@ public static class BoneMesher
         //     Отсюда же следует химеризация: донорский модуль просто встаёт на место шассийного, и
         // пересчитать надо ОДНУ лапу, а не всю тушу. Задача шасси — согласовать стыки: где сустав, куда
         // смотрит, какой там радиус; модуль обязан прийти в эту точку и зайти внутрь соседа с запасом.
-        string key = chassis.speciesName + "#" + bones.Length + "#L" + chassis.BuildLayers;
+        string key = chassis.speciesName + "#" + bones.Length + "#L" + chassis.BuildLayers + (Flat ? "#грани" : "");
         // ЗАПИСЬ КЭША МОЖЕТ БЫТЬ МЁРТВОЙ. Кэш статический и переживает то, чего не переживают меши: выход из
         // Play, выгрузку сцены, `Resources.UnloadUnusedAssets` — ссылка из managed-словаря для Unity ссылкой
         // не считается, и неиспользуемый меш уничтожается. Словарь при этом отдаёт «Mesh», который равен null
@@ -380,15 +387,19 @@ public static class BoneMesher
             var mw = new List<BoneWeight>(); var mt = new List<int>();
             foreach (int vi in kv.Value)
             {
-                if (!map.TryGetValue(vi, out int local))
+                // ГРАНЯМИ — вершина на каждый угол треугольника, без переиспользования: нормаль у грани своя
+                if (Flat || !map.TryGetValue(vi, out int local))
                 {
-                    map[vi] = local = mv.Count;
+                    local = mv.Count;
+                    if (!Flat) map[vi] = local;
                     mv.Add(verts[vi]); mn.Add(norms[vi]); mw.Add(weights[vi]);
                 }
                 mt.Add(local);
             }
             var mesh = new Mesh { name = kv.Key };
+            if (mv.Count > 65535) mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;   // разварка втрое множит вершины
             mesh.SetVertices(mv); mesh.SetNormals(mn); mesh.SetTriangles(mt, 0);
+            if (Flat) mesh.RecalculateNormals();   // вершины не общие — нормаль грани вместо градиента поля
             mesh.boneWeights = mw.ToArray();
             mesh.bindposes = bind;
             mesh.RecalculateBounds();
