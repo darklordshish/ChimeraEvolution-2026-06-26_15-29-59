@@ -265,7 +265,7 @@ public static class BodyMap
             foreach (var donor in all)
             {
                 if (donor == chassis) continue;
-                var plan = ChimeraPlan(chassis, donor, out string organ);
+                var plan = BodyProbe.ChimeraPlan(chassis, donor, null, out _, out string organ);
                 if (plan == null)
                 {
                     sb.AppendLine($"| {chassis.speciesName} | {donor.speciesName} | {organ ?? "—"} | — | — | — | смешения нет |");
@@ -294,44 +294,4 @@ public static class BodyMap
         sb.AppendLine();
     }
 
-    /// <summary>Собрать химеру ЧЕРЕЗ ПУБЛИЧНЫЙ API конструктора и вернуть её смешанный план.
-    /// Своей арифметики здесь нет намеренно: детектор обязан ходить тем же путём, что игра, иначе он
-    /// меряет собственную копию правил (тот же довод, что у `BodyProbe`).</summary>
-    static BodySocket[] ChimeraPlan(SpeciesSO chassis, SpeciesSO donor, out string organ)
-    {
-        organ = null;
-        var go = new GameObject("~ХимераЗамер");
-        try
-        {
-            // контроллер нужен билдеру: высоты в данных заданы ОТ ЗЕМЛИ
-            var cc = go.AddComponent<CharacterController>();
-            cc.height = 2f;
-            cc.center = new Vector3(0f, 1f, 0f);
-
-            var body = go.AddComponent<CreatureBody>();
-            body.Configure(chassis, new[] { donor });
-
-            // ЭКОНОМИКА ЗДЕСЬ НЕ ПРЕДМЕТ: детектор меряет ФОРМУ. На родном пуле шасси (у человека 16)
-            // почти любой донорский орган дороже снимаемого родного, `Install` отказывает, и таблица
-            // выходит пустой — так и вышло в первом прогоне 17.09. Расширяем пул публичным же API,
-            // которым это делает награда за суперхимеру; цена графта проверяется тестами экономики
-            body.ExpandPool(500);
-
-            for (int i = 0; i < body.SlotCount; i++)
-            {
-                var variants = body.GetVariants(i);
-                for (int v = 0; v < variants.Count; v++)
-                {
-                    if (variants[v].native || variants[v].species != donor.speciesName) continue;
-                    if (!body.Install(i, v)) continue;              // не по карману — следующий
-                    organ = variants[v].organName;
-                    var plan = body.GetBlendedPlan();
-                    if (plan != null) return plan;                  // ХРЕБЕТ не смешивается (И3): графт
-                    break;                                          // на нём плана не даёт — берём другой слот
-                }
-            }
-            return null;
-        }
-        finally { Object.DestroyImmediate(go); }
-    }
 }

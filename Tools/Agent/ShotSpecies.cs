@@ -45,26 +45,14 @@ public static class ShotSpecies
         if (chassis == null) return "шасси не найдено: " + chassisAsset;
         if (donor == null) return "донор не найден: " + donorAsset;
 
-        // слотов можно назвать несколько через запятую: приёмка смешения идёт на «человек + Пасть + Чутьё»
-        var worn = new List<Organ>();
-        var taken = new List<string>();
-        foreach (var raw in slot.Split(','))
-        {
-            var name = raw.Trim();
-            if (name.Length == 0) continue;
-            Organ graft = null;
-            if (donor.organs != null)
-                foreach (var o in donor.organs)
-                    if (o != null && o.slot == name) { graft = o; break; }
-            if (graft == null) return "у донора нет органа на слот «" + name + "»";
-            worn.Add(graft);          // ПЕРВЫЙ ЗАНЯВШИЙ СЛОТ ПОБЕЖДАЕТ — графты идут впереди родных
-            taken.Add(name);
-        }
-        if (worn.Count == 0) return "не названо ни одного слота";
-
-        worn.AddRange(NativeOrgans(chassis));
+        // ХИМЕРА СОБИРАЕТСЯ ТЕМ ЖЕ ПУТЁМ, ЧТО В ИГРЕ И В КАРТЕ ТЕЛ: конструктор ставит графт и отдаёт
+        // смешанный план. До 17.09 инструмент складывал органы сам и звал билдер БЕЗ плана — пропорции донора
+        // на кадре не появлялись по построению (нашла модельная линия). Слоты — через запятую
+        var plan = BodyProbe.ChimeraPlan(chassis, donor, slot, out var worn, out var grafted);
+        if (worn == null) return "графт не встал: у донора нет органа на «" + slot + "» или слот не найден";
         return Stage(chassis, worn, view,
-                     chassis.speciesName + " + " + donor.speciesName + " (" + string.Join(", ", taken) + ")");
+                     chassis.speciesName + " + " + donor.speciesName + " (" + grafted + ")"
+                     + (plan == null ? " — ПЛАНА НЕТ, пропорции шассийные" : ""), plan);
     }
 
     /// <summary>Снести сцену кадра. Зовётся всегда после съёмки: сцена не сохраняется, но мусор в ней мешает.</summary>
@@ -88,7 +76,7 @@ public static class ShotSpecies
         return worn;
     }
 
-    static string Stage(SpeciesSO chassis, List<Organ> worn, string view, string label)
+    static string Stage(SpeciesSO chassis, List<Organ> worn, string view, string label, BodySocket[] plan = null)
     {
         Wipe();
 
@@ -102,7 +90,7 @@ public static class ShotSpecies
         cc.height = 2f;
         cc.center = new Vector3(0f, 1f, 0f);
 
-        MorphBuilder.Build(body.transform, chassis, worn);
+        MorphBuilder.Build(body.transform, chassis, worn, plan);
 
         // РЕАЛЬНЫЕ границы НАРИСОВАННЫХ деталей, а не габариты мест: место может быть не заполнено,
         // и кадр по коробкам мест показал бы пустоту вместо зверя

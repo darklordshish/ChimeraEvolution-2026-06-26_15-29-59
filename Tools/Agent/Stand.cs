@@ -30,12 +30,12 @@ public static class Stand
     /// <summary>Все пять видов в ряд. `view`: profile | front. `aspect` — ширина кадра к высоте.</summary>
     public static string Species(string view, float aspect)
     {
-        var items = new List<(SpeciesSO chassis, List<Organ> worn, string label)>();
+        var items = new List<(SpeciesSO chassis, List<Organ> worn, string label, BodySocket[] plan)>();
         foreach (var name in All)
         {
             var so = AssetDatabase.LoadAssetAtPath<SpeciesSO>("Assets/_Chimera/Data/" + name + ".asset");
             if (so == null) return "нет ассета вида: " + name;
-            items.Add((so, Native(so), so.speciesName));
+            items.Add((so, Native(so), so.speciesName, null));
         }
         return Row(items, view, aspect);
     }
@@ -48,30 +48,18 @@ public static class Stand
         var donor = AssetDatabase.LoadAssetAtPath<SpeciesSO>(donorAsset);
         if (chassis == null || donor == null) return "вид не найден";
 
-        var graft = new List<Organ>();
-        var taken = new List<string>();
-        foreach (var raw in slots.Split(','))
-        {
-            var slot = raw.Trim();
-            if (slot.Length == 0) continue;
-            Organ found = null;
-            if (donor.organs != null)
-                foreach (var o in donor.organs)
-                    if (o != null && o.slot == slot) { found = o; break; }
-            if (found == null) return "у донора нет органа на слот «" + slot + "»";
-            graft.Add(found);
-            taken.Add(slot);
-        }
-        if (graft.Count == 0) return "не названо ни одного слота";
+        // ХИМЕРА — ТЕМ ЖЕ ПУТЁМ, ЧТО В ИГРЕ И В КАРТЕ ТЕЛ: конструктор ставит графт и отдаёт смешанный
+        // план. До 17.09 стенд складывал органы сам и звал билдер БЕЗ плана — пропорции донора на кадре не
+        // появлялись по построению, и «химера неотличима от шасси» наполовину была артефактом стенда
+        var plan = BodyProbe.ChimeraPlan(chassis, donor, slots, out var mixed, out var grafted);
+        if (mixed == null) return "графт не встал: у донора нет органа на «" + slots + "»";
 
-        var mixed = new List<Organ>(graft);
-        mixed.AddRange(Native(chassis));
-
-        var items = new List<(SpeciesSO, List<Organ>, string)>
+        var items = new List<(SpeciesSO, List<Organ>, string, BodySocket[])>
         {
-            (chassis, Native(chassis), chassis.speciesName),
-            (chassis, mixed, chassis.speciesName + "+" + donor.speciesName + " (" + string.Join(",", taken) + ")"),
-            (donor, Native(donor), donor.speciesName),
+            (chassis, Native(chassis), chassis.speciesName, null),
+            (chassis, mixed, chassis.speciesName + "+" + donor.speciesName + " (" + grafted + ")"
+                             + (plan == null ? " БЕЗ ПЛАНА" : ""), plan),
+            (donor, Native(donor), donor.speciesName, null),
         };
         return Row(items, view, aspect);
     }
@@ -90,7 +78,7 @@ public static class Stand
         var src = AssetDatabase.LoadAssetAtPath<SpeciesSO>(speciesAsset);
         if (src == null) return "вид не найден: " + speciesAsset;
 
-        var items = new List<(SpeciesSO, List<Organ>, string)>();
+        var items = new List<(SpeciesSO, List<Organ>, string, BodySocket[])>();
         foreach (var k in new[] { lo, 1f, hi })
         {
             var copy = Object.Instantiate(src);
@@ -102,10 +90,9 @@ public static class Stand
             copy.speciesName = src.speciesName + " ×" + k.ToString("0.##") + " " + axis;
             copy.name = copy.speciesName;
             if (!Apply(copy, axis, k)) { return "ось не знаю: " + axis + " (есть: blend, cell, thickness, section, depth, length, sizeRel, organScale)"; }
-            items.Add((copy, Native(copy), axis + " ×" + k.ToString("0.##")));
+            items.Add((copy, Native(copy), axis + " ×" + k.ToString("0.##"), null));
         }
         var report = Row(items, view, aspect);
-        foreach (var (copy, _, _) in items) { }   // копии живут до Wipe: они нужны собранным телам
         return axis + ": " + report;
     }
 
@@ -175,7 +162,7 @@ public static class Stand
         return n;
     }
 
-    static string Row(List<(SpeciesSO chassis, List<Organ> worn, string label)> items, string view, float aspect)
+    static string Row(List<(SpeciesSO chassis, List<Organ> worn, string label, BodySocket[] plan)> items, string view, float aspect)
     {
         Wipe();
         if (aspect <= 0f) aspect = 1.6f;
@@ -189,7 +176,7 @@ public static class Stand
         float cursor = 0f, top = 0f;
         var report = new List<string>();
 
-        foreach (var (chassis, worn, label) in items)
+        foreach (var (chassis, worn, label, plan) in items)
         {
             var body = new GameObject(label);
             body.transform.SetParent(root.transform, false);
@@ -197,7 +184,7 @@ public static class Stand
             cc.height = 2f;
             cc.center = new Vector3(0f, 1f, 0f);
 
-            MorphBuilder.Build(body.transform, chassis, worn);
+            MorphBuilder.Build(body.transform, chassis, worn, plan);
 
             var rends = body.GetComponentsInChildren<Renderer>();
             if (rends.Length == 0) { Object.DestroyImmediate(body); report.Add(label + ": пусто"); continue; }

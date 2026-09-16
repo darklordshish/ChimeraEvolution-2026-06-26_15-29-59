@@ -9,6 +9,76 @@ using UnityEngine;
 /// места: именно его отсутствие заставляло править стыки по скриншотам (спека 2026-08-10).</summary>
 public static class BodyProbe
 {
+    /// <summary>СОБРАТЬ ХИМЕРУ ЧЕРЕЗ ПУБЛИЧНЫЙ API КОНСТРУКТОРА и вернуть её смешанный план — и список
+    /// надетых органов в порядке, в каком их отдаёт билдеру игра (графты впереди родных).
+    ///
+    /// ОДИН ПОМОЩНИК НА ВСЕХ, И ЭТО НЕ КОСМЕТИКА. 17.09 инструменты кадра строили химеру сами и звали
+    /// `MorphBuilder.Build` БЕЗ плана — пропорции донора на кадрах не появлялись по построению, а вывод
+    /// «смешение до картинки не доходит» наполовину оказался артефактом инструмента (нашла модельная
+    /// линия). Карта тел план передавала. Два способа собрать одну химеру — два ответа на один вопрос.
+    /// `slots` — имена слотов через запятую; пусто — первый звериный орган, дающий план.</summary>
+    public static BodySocket[] ChimeraPlan(SpeciesSO chassis, SpeciesSO donor, string slots,
+                                           out List<Organ> worn, out string grafted)
+    {
+        worn = null;
+        grafted = null;
+        if (chassis == null || donor == null) return null;
+
+        var wanted = new HashSet<string>();
+        if (!string.IsNullOrEmpty(slots))
+            foreach (var raw in slots.Split(',')) { var t = raw.Trim(); if (t.Length > 0) wanted.Add(t); }
+
+        var go = new GameObject("~ХимераПлан");
+        try
+        {
+            var cc = go.AddComponent<CharacterController>();   // билдеру нужен низ капсулы: высоты от земли
+            cc.height = 2f;
+            cc.center = new Vector3(0f, 1f, 0f);
+
+            var body = go.AddComponent<CreatureBody>();
+            body.Configure(chassis, new[] { donor });
+            // ЭКОНОМИКА ЗДЕСЬ НЕ ПРЕДМЕТ: меряется форма. На родном пуле донорский орган почти всегда дороже
+            // снимаемого, и `Install` отказывал бы — расширяем пул тем же API, что награда за суперхимеру
+            body.ExpandPool(500);
+
+            var names = new List<string>();
+            var organs = new List<Organ>();
+            for (int i = 0; i < body.SlotCount; i++)
+            {
+                var slotName = body.GetSlot(i).slot;
+                if (wanted.Count > 0 && !wanted.Contains(slotName)) continue;
+                var variants = body.GetVariants(i);
+                int native = variants.FindIndex(x => x.native);
+                for (int v = 0; v < variants.Count; v++)
+                {
+                    if (variants[v].native || variants[v].species != donor.speciesName) continue;
+                    if (!body.Install(i, v)) continue;
+                    // слот не назван, и графт плана не даёт (хребет не смешивается) — вернуть родной и искать дальше
+                    if (wanted.Count == 0 && body.GetBlendedPlan() == null)
+                    {
+                        if (native >= 0) body.Install(i, native);
+                        break;
+                    }
+                    names.Add(variants[v].organName);
+                    break;
+                }
+                if (wanted.Count == 0 && names.Count > 0) break;
+            }
+            if (names.Count == 0) return null;
+
+            // надетое берём у САМОГО тела, в его порядке: графт впереди родного, как собирает игра
+            foreach (var o in donor.organs ?? new Organ[0])
+                if (o != null && names.Contains(o.organName)) organs.Add(o);
+            foreach (var o in chassis.organs ?? new Organ[0])
+                if (o != null && !organs.Exists(g => g.slot == o.slot)) organs.Add(o);
+
+            worn = organs;
+            grafted = string.Join(", ", names);
+            return body.GetBlendedPlan();
+        }
+        finally { Object.DestroyImmediate(go); }
+    }
+
     /// <summary>Замер одной детали: что это, чей ребёнок, где и какого размера НА САМОМ ДЕЛЕ.</summary>
     public struct Part
     {
