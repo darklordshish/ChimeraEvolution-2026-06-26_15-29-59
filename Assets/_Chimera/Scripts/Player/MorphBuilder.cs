@@ -137,7 +137,7 @@ public static class MorphBuilder
                 if (picked.Count > 0) fromOther = picked.ToArray();
             }
 
-            var (pos, rot) = Place(socket, byName, placed, 0, axisOf, byBone, bonePos);
+            var (pos, rot) = Place(socket, byName, placed, 0, axisOf, byBone, bonePos, boneSockets);
             var made = new List<GameObject>();
             float linkD = ChainDiameter(socket, byName, 0);
             Vector3 sz = SizeOf(socket, byName, 0);   // габарит: свой или доля родителя
@@ -182,12 +182,39 @@ public static class MorphBuilder
                                        Dictionary<string, (Vector3, Quaternion)> placed, int depth,
                                        Dictionary<string, Vector3> axisOf = null,
                                        Dictionary<string, Bone> byBone = null,
-                                       Dictionary<string, (Vector3, Quaternion)> bonePos = null)
+                                       Dictionary<string, (Vector3, Quaternion)> bonePos = null,
+                                       HashSet<string> hides = null)
     {
         if (placed.TryGetValue(s.name, out var done)) return done;
 
         var rot = Quaternion.Euler(s.baseEuler);
         var pos = s.localPos;
+
+        // ПОГАШЕННОЕ МЕСТО СТОИТ ПО УЗЛУ ГРАФА С ТЕМ ЖЕ ИМЕНЕМ (17.09, письмо модельной линии OTVET §4.1).
+        // Тело рисует граф, а детали головы (Пасть, глаза, уши, нос) считаются от места `голова`. Пока место
+        // стояло по своему плану, детали садились туда, где голова была БЫ по цепочке мест, — у горла и в
+        // воздухе перед мордой, при любом качестве графа (п. 0 паспорта волка, отложенный «до клетки» 01.09,
+        // а клетку отменили). Двигать план мест под граф руками — второй источник формы, разошлись бы на
+        // первой же правке.
+        //     ПОЗА ОТ УЗЛА, КАЛИБР ОТ МЕСТА. Начало места совпадает с началом узла, длинная ось места ложится
+        // вдоль узла, а длина остаётся своей. Растянуть место до длины узла нельзя: узел `голова` — череп
+        // БЕЗ морды (0.20 м), место — череп С мордой (0.47 м), и доли всех деталей сжались бы вдвое. Лишняя
+        // длина места и есть зона морды: её заполнит ригблок Пасти.
+        //     Поворот узла собственный, `baseEuler` места не добавляется: наклон уже несёт граф, второй раз
+        // голова «кивнула» бы на угол, заданный под старый план.
+        if (hides != null && hides.Contains(s.name) && byBone != null && bonePos != null
+            && byBone.TryGetValue(s.name, out var node))
+        {
+            var (np, nr) = SkeletonBuilder.Place(node, byBone, bonePos);
+            Vector3 size = SizeOf(s, byName, 0);
+            Vector3 axis = axisOf != null && axisOf.TryGetValue(s.name, out var pinnedOwn) ? pinnedOwn : LongAxis(size);
+            float length = Mathf.Abs(Vector3.Dot(size, new Vector3(Mathf.Abs(axis.x), Mathf.Abs(axis.y), Mathf.Abs(axis.z))));
+            // кость растёт по своему +Y — разворачиваем так, чтобы по нему легла ДЛИННАЯ ось места
+            var frame = nr * Quaternion.FromToRotation(axis, Vector3.up);
+            pos = np + frame * (axis * (length * 0.5f));
+            placed[s.name] = (pos, frame);
+            return (pos, frame);
+        }
 
         // МЕСТО НА КОСТИ. Скелет забирает несущее (позвоночник, рёбра, конечности), а голова, хвост и
         // закрытые места остаются сокетами — и родителя им надо где-то взять. Берут его на КОСТИ: место
@@ -220,7 +247,7 @@ public static class MorphBuilder
 
         if (depth < 16 && !string.IsNullOrEmpty(s.parent) && byName.TryGetValue(s.parent, out var par) && par != s)
         {
-            var (ppos, prot) = Place(par, byName, placed, depth + 1, axisOf, byBone, bonePos);
+            var (ppos, prot) = Place(par, byName, placed, depth + 1, axisOf, byBone, bonePos, hides);
             // СТЫК на ДЛИННОЙ оси родителя: `attach` = доля вдоль неё (0 — начало, 1 — конец).
             // Смещение — в КАЛИБРАХ родителя, поэтому переживает масштабирование вида
             var b = SizeOf(par, byName, 0);
