@@ -660,6 +660,16 @@ public static class MorphBuilder
         missingBlocks.Clear();
     }
 
+    /// <summary>Вернуть каталог по умолчанию: следующий запрос снова поднимет его из `Resources`. Тестам, подававшим свой
+    /// каталог или `null`, звать в конце — иначе «пустой» каталог переживёт тест до перезагрузки домена, и всё, что
+    /// строится в редакторе после прогона (виды, карта тел, кадры), нарисует ригблоки кубами без единой ошибки.</summary>
+    public static void ResetCatalog()
+    {
+        catalog = null;
+        catalogAsked = false;
+        missingBlocks.Clear();
+    }
+
     /// <summary>ИМЕНА БЛОКОВ, КОТОРЫХ НЕ НАШЛОСЬ, — долг библиотеки форм, видимый машине.</summary>
     public static IEnumerable<string> MissingBlocks => missingBlocks;
 

@@ -69,8 +69,20 @@ namespace Chimera.Tests.EditMode
         [TearDown]
         public void TearDown()
         {
-            MorphBuilder.SetCatalog(null);
+            // ВЕРНУТЬ КАТАЛОГ ИЗ RESOURCES, А НЕ ОСТАВИТЬ «ПУСТОЙ». Прежний `SetCatalog(null)` здесь помечал каталог
+            // найденным-и-пустым до перезагрузки домена: после прогона тестов `chimera-species`, карта тел и кадры
+            // рисовали все ригблоки кубами без единой ошибки (поймано 17.09 на поставке 4: 26 примитивов у волка)
+            MorphBuilder.ResetCatalog();
             if (root != null) Object.DestroyImmediate(root);
+        }
+
+        [Test]
+        public void ResetCatalog_ReturnsResourcesCatalog_AfterTestsEmptiedIt()
+        {
+            MorphBuilder.SetCatalog(null);
+            MorphBuilder.ResetCatalog();
+            Assert.AreSame(Resources.Load<ShapeCatalog>(ShapeCatalog.ResourceName), MorphBuilder.Catalog,
+                           "после сброса билдер не ищет каталог в Resources — блоки нарисуются кубами");
         }
 
         [Test]
