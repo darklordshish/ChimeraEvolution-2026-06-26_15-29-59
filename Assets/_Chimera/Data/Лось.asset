@@ -123,7 +123,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482324938162182
+    - rid: 4402482331420196890
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -233,7 +233,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482324938162183
+    - rid: 4402482331420196891
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -343,7 +343,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482324938162184
+    - rid: 4402482331420196892
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -532,7 +532,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482324938162185
+    - rid: 4402482331420196893
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -648,14 +648,14 @@ MonoBehaviour:
     inner: 0
     chainForward: 0
     graft: 0
-    parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    parent: "\u041F\u0430\u0441\u0442\u044C"
     attach: 0.5
-    attachOffset: {x: 0, y: -0.12, z: 0.42}
+    attachOffset: {x: 0, y: 0.26, z: -0.0633}
     parts: []
     chain: 0
     chainTaper: 0
     linkDiameter: 0
-    sizeRel: {x: 0.54, y: 0.36, z: 0.16}
+    sizeRel: {x: 0.7883, y: 0.72, z: 0.3376}
     formFrom: "\u0427\u0443\u0442\u044C\u0451"
     formRole: 4
     linkLength: 0
@@ -1128,7 +1128,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4402482324938162182
+    - rid: 4402482331420196890
       type: {class: LimbStrikeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
@@ -1138,7 +1138,7 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.45
         cooldown: 1.1
-    - rid: 4402482324938162183
+    - rid: 4402482331420196891
       type: {class: ChargeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
@@ -1158,7 +1158,7 @@ MonoBehaviour:
         stompForce: 13
         plowForce: 6
         plowRadius: 1.6
-    - rid: 4402482324938162184
+    - rid: 4402482331420196892
       type: {class: BellowData, ns: , asm: Chimera.Runtime}
       data:
         fearRadius: 10
@@ -1166,7 +1166,7 @@ MonoBehaviour:
         fearMoraleHit: 2
         cooldown: 10
         cueTime: 1.2
-    - rid: 4402482324938162185
+    - rid: 4402482331420196893
       type: {class: AntlerData, ns: , asm: Chimera.Runtime}
       data:
         damage: 12
