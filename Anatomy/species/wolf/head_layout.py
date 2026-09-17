@@ -93,6 +93,9 @@ def layout():
     eye_a, eye_b = local('глаз')
     ear_a, ear_b = local('ухо_середина')
     nose_a, nose_b = local('мочка')
+    # мочка на самом конце клина, наполовину наружу: по снимку её центр на 2 см позади кончика носа, и в клине она
+    # тонула целиком — у блока нет мягкой мочки поверх кости, как у зверя
+    nose_a = L - 0.003
     stop_a, stop_b = local('стоп')
     jaw_a, jaw_b = local('челюсть_низ')
 
@@ -108,7 +111,12 @@ def layout():
     hn = next(n for n in G.build_nodes() if n['name'] == 'голова')
     h_len = math.dist(hn['a'], hn['b'])
     r_at = hn['r0'] + (hn['r1'] - hn['r0']) * min(1.0, max(0.0, eye_a / h_len))
-    eye_lat = round(hn['section'] * math.sqrt(max(0.0, r_at * r_at - eye_b * eye_b)) + 0.032 / 6, 3)
+    analytic = hn['section'] * math.sqrt(max(0.0, r_at * r_at - eye_b * eye_b))
+    # ...НО ОБОЛОЧКА ТОЛЩЕ РАСЧЁТА на крупной клетке. Замер поверхности головы вбок в точке глаза (поставка 4,
+    # `HeadSurface` по вершинам оболочки): клетка 0.056 — 0.039 м (расчёт 0.041), клетка 0.084 — 0.057 м. Раскладка
+    # делается под клетку 0.084 (решение геймдизайнера 17.09), иначе глаз тонул в черепе целиком
+    SURFACE_GROWTH_AT_0084 = 0.057 - 0.039
+    eye_lat = round(analytic + SURFACE_GROWTH_AT_0084 + 0.003, 3)
 
     places = [
         place('глаза', 0.5, eye_a, eye_b, eye_lat, (0.032, 0.032, 0.032),
@@ -116,13 +124,35 @@ def layout():
         # Ухо стоит вертикально в мире: кадр головы наклонён носом вниз на 22°, наклон уха снят на столько же
         place('уши', 0.5, ear_a, ear_b, 0.075, (0.075, 0.165, 0.035), euler=(-28.0, 45.0, -15.0),
               note='центр уха; основание и кончик рисует Чутьё долями этого места'),
-        place('нос', 0.5, nose_a, nose_b, 0.0, (0.047, 0.040, 0.045), note='мочка на конце клина'),
         place('Пасть', 1.0, m_a, m_b, 0.0, (m_w, m_h, m_len),
               note='коробка морды: клин + зубы; ось Z длиннее высоты с запасом'),
         place('Рога', 0.6, 0.08, 0.14, 0.06, (0.101, 0.127, 0.142),
               note='графт: над черепом за ушами; габарит прежний'),
     ]
+    # МОЧКА ЕДЕТ С МОРДОЙ (ответ на вопрос механик 17.09d §6 п. 5). Мочка — конец морды: привили волку человечий Рот,
+    # морды нет — мочке не место в воздухе перед лицом; привили человеку волчью Пасть — мочка обязана сесть на
+    # кончик морды оборотня, а не остаться на лбу над ней. Поэтому доли мочки — от калибра ПАСТИ, а поле `parent`
+    # — сверка: доли посчитаны от этого родителя (родство мест — запись механик, её перевешивают они)
+    nose = dict(name='нос', parent='Пасть', attach=0.5,
+                attachOffset=[0.0, round((nose_b - m_b) / m_h, 3), round((nose_a - m_a) / m_len, 3)],
+                sizeRel=list(rel((0.047, 0.040, 0.045), (m_w, m_h, m_len))), baseEuler=[0.0, 0.0, 0.0],
+                note='мочка на конце клина; доли — от калибра Пасти',
+                metres=dict(along=round(nose_a, 3), up=round(nose_b, 3), lateral=0.0, size=[0.047, 0.040, 0.045]))
+    places.append(nose)
     return places, (m_w, m_h, m_len), (m_a, m_b)
+
+
+def senses():
+    """ПРИЗНАКИ ЧУВСТВ БЛОКАМИ (решение геймдизайнера 17.09: «нормальные, а не из примитивов»). Части органа Чутья по
+    ролям, в калибре и кадре места-адреса. Цвет глаза не задаётся: это канал механики (чем зверь воспринимает мир).
+      • ухо — блок заполняет место `уши` целиком: высота по Y, ширина по X, толщина по Z;
+      • глаз — миндаль вдоль головы: у 3.2 см куба места он 1.8 × 1.9 × 4.2 см, половина тонет в черепе;
+      • мочка — капля тупым концом вперёд, чуть приплюснута."""
+    return [
+        dict(role='Ear', block='ухо', offset=[0, 0, 0], scale=[1, 1, 1], euler=[0, 0, 0]),
+        dict(role='Eye', block='глаз', offset=[0, 0, 0], scale=[0.56, 0.60, 1.30], euler=[0, 0, 0]),
+        dict(role='Nose', block='капля', offset=[0, 0, 0], scale=[1.0, 0.85, 1.0], euler=[0, 0, 0]),
+    ]
 
 
 def teeth(muzzle, centre):
@@ -160,6 +190,7 @@ def main():
         places=places,
         muzzle=dict(block='клин', offset=[0, 0, 0], scale=[1, 1, 1]),
         teeth=teeth(muzzle, centre),
+        senses=senses(),
     )
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     with open(args.out, 'w', encoding='utf-8') as f:
@@ -177,8 +208,9 @@ def main():
     print('калибр головы W×H×L = %.3f × %.3f × %.3f м; sizeRel от шеи = %s' % (head_size + (doc['head']['sizeRel'],)))
     for p in places:
         m = p['metres']
-        print('  %-6s attach %.1f  offset %-24s sizeRel %-24s  (вдоль %.3f, к темени %.3f, вбок %.3f)' %
-              (p['name'], p['attach'], p['attachOffset'], p['sizeRel'], m['along'], m['up'], m['lateral']))
+        print('  %-6s attach %.1f  offset %-24s sizeRel %-24s  (вдоль %.3f, к темени %.3f, вбок %.3f)%s' %
+              (p['name'], p['attach'], p['attachOffset'], p['sizeRel'], m['along'], m['up'], m['lateral'],
+               '  от места «%s»' % p['parent'] if 'parent' in p else ''))
     for t in doc['teeth']:
         print('    %-24s offset %-24s scale %s' % (t['name'], t['offset'], t['scale']))
 

@@ -12,7 +12,10 @@
 
 ОТКУДА ЧИСЛА. Суставы — те же точки `graph.py` со снимка `wolf_standing_1.jpg`. Наклон пясти и плюсны снят
 отдельно: запястье (1255, 1300) → лапа (1310, 1455) даёт 19.5° вперёд от отвеса, скакательный (170, 1150) →
-лапа (240, 1455) — 12.9°. Лапа стоит подушкой на земле: низ капли в Y = 0.
+лапа (240, 1455) — 12.9°. Лапа стоит подушкой на земле: низ блока `лапа` в Y = 0.
+
+ПОСТАВКА 4 (клетка 0.084): поле ноги кончается там, где нога ещё не уже 0.1 м (`graph.FORE_END`, `graph.HIND_END`),
+поэтому блоков на узле три: низ предплечья или голени, пясть или плюсна, лапа.
 
 Запуск:  python legs_layout.py [--out путь]
 """
@@ -82,28 +85,52 @@ def part(n, block, centre, size, axis_dir, up_hint=None):
                 metres=dict(centre=r(centre), size=r(size)))
 
 
-def leg(node_name, slot, organ, pastern_deg, bar_base, bar_len_extra, paw_size, paw_ahead):
-    n = node_by_name(node_name)
-    wrist = n['b']
-    D = 2.0 * n['r1']
-    d_node = unit(sub(n['b'], n['a']))
+def segment(n, start, end, width, depth, overlap_dir=None, overlap=0.0):
+    """Брусок между двумя точками мира: начинается раньше `start` на `overlap` вдоль `overlap_dir` (шов перекрыт)."""
+    if overlap_dir is not None:
+        start = sub(start, mul(unit(overlap_dir), overlap))
+    axis = sub(end, start)
+    length = math.sqrt(dot(axis, axis))
+    centre = add(start, mul(unit(axis), length * 0.5))
+    return part(n, 'брусок', centre, (width, depth, length), axis)
 
-    # брусок: начало внутри узла на свою толщину, конец — путовый сустав над лапой, под снятым со снимка углом
-    thick = bar_base[0]
-    start = sub(wrist, mul(d_node, thick))
+
+def paw(n, fetlock, size, ahead):
+    """Лапа подушкой на земле: низ в Y = 0, сгиб над путовым суставом, пальцы вперёд."""
+    w, h, l = size
+    centre = (fetlock[0], h * 0.5, fetlock[2] + ahead)
+    return part(n, 'лапа', centre, (w, h, l), (0.0, 0.0, 1.0))
+
+
+def fetlock_below(p, deg):
+    """Путовый сустав под точкой p: наклон сегмента вперёд от отвеса на deg, высота над землёй постоянная."""
     fet_y = G.PAW_Y + 0.035
-    drop = wrist[1] - fet_y
-    fetlock = (wrist[0], fet_y, wrist[2] + drop * math.tan(math.radians(pastern_deg)))
-    bar_axis = sub(fetlock, start)
-    bar_len = math.sqrt(dot(bar_axis, bar_axis)) + bar_len_extra
-    bar_centre = add(start, mul(unit(bar_axis), bar_len * 0.5))
-    bar = part(n, 'брусок', bar_centre, (bar_base[0], bar_base[1], bar_len), bar_axis)
+    return (p[0], fet_y, p[2] + (p[1] - fet_y) * math.tan(math.radians(deg)))
 
-    # лапа: подушкой на земле, пальцами вперёд, центр чуть впереди путового сустава
-    w, h, l = paw_size
-    paw_centre = (wrist[0], h * 0.5, fetlock[2] + paw_ahead)
-    paw = part(n, 'капля', paw_centre, (w, h, l), (0.0, 0.0, 1.0))
-    return dict(slot=slot, organ=organ, parts=[bar, paw])
+
+def front_leg():
+    """ПЕРЕДНЯЯ: поле кончается на середине предплечья (`graph.FORE_END`). Ниже три блока на конце узла:
+    низ предплечья до запястья, пясть 19.5° вперёд (снимок: запястье → лапа), лапа."""
+    n = node_by_name('предплечье')
+    d = sub(n['b'], n['a'])
+    low = segment(n, n['b'], G.WRIST, 0.092, 0.098, d, 0.06)          # ширина предплечья на снимке 0.096 на Y 0.51
+    fet = fetlock_below(G.WRIST, 19.5)
+    pastern = segment(n, G.WRIST, fet, 0.068, 0.074, sub(fet, G.WRIST), 0.04)
+    foot = paw(n, fet, (0.105, 0.070, 0.135), 0.030)
+    return dict(slot='Руки', organ='Коготь', parts=[low, pastern, foot])
+
+
+def hind_leg():
+    """ЗАДНЯЯ: поле кончается над скакательным (`graph.HIND_END`). Ниже: низ голени до сустава, плюсна 12.9° вперёд
+    (снимок: скакательный → лапа), лапа. Угол между двумя брусками и есть скакательный сустав — вместо шара поля,
+    который на клетке торчал назад рваным шипом"""
+    n = node_by_name('голень')
+    d = sub(n['b'], n['a'])
+    low = segment(n, n['b'], add(G.HOCK, mul(unit(d), 0.03)), 0.100, 0.105, d, 0.07)
+    fet = fetlock_below(G.HOCK, 12.9)
+    shank = segment(n, G.HOCK, fet, 0.070, 0.082, sub(fet, G.HOCK), 0.05)
+    foot = paw(n, fet, (0.098, 0.065, 0.125), 0.028)
+    return dict(slot='Ноги', organ='Волчьи ноги', parts=[low, shank, foot])
 
 
 def main():
@@ -111,12 +138,7 @@ def main():
     ap.add_argument('--out', default=os.path.join(HERE, 'out', 'volk-legs-layout.json'))
     args = ap.parse_args()
 
-    legs = [
-        # передняя: пясть 0.075 × 0.075 у запястья (диаметр конца предплечья 0.076), лапа 0.085 × 0.06 × 0.13
-        leg('предплечье', 'Руки', 'Коготь', 19.5, (0.072, 0.076), 0.015, (0.085, 0.060, 0.130), 0.035),
-        # задняя: плюсна уже конца голени (0.09) — у псовых плюсна сухая, лапа чуть меньше передней
-        leg('голень', 'Ноги', 'Волчьи ноги', 12.9, (0.066, 0.074), 0.015, (0.080, 0.055, 0.120), 0.030),
-    ]
+    legs = [front_leg(), hind_leg()]
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     with open(args.out, 'w', encoding='utf-8') as f:
         json.dump(dict(legs=legs), f, ensure_ascii=False, indent=2)
