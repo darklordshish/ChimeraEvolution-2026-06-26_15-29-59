@@ -1,0 +1,36 @@
+{
+  "species": "Змея",
+  "hides": [
+    "голова"
+  ],
+  "nodes": [
+    {
+      "name": "голова",
+      "parent": "",
+      "layer": 0,
+      "socket": "голова",
+      "origin": {
+        "x": 0.0,
+        "y": 0.3,
+        "z": -0.17
+      },
+      "attach": 1.0,
+      "freeOrigin": false,
+      "length": 0.27,
+      "endBone": "",
+      "endAttach": 1.0,
+      "dir": {
+        "x": 91.061,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "r0": 0.15,
+      "r1": 0.093,
+      "section": 1.0,
+      "depth": 0.6966666666666668,
+      "blend": 0.06,
+      "chain": 0,
+      "mirrorX": false
+    }
+  ]
+}
