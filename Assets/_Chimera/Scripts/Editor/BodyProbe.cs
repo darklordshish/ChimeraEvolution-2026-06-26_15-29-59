@@ -41,18 +41,31 @@ public static class BodyProbe
             // снимаемого, и `Install` отказывал бы — расширяем пул тем же API, что награда за суперхимеру
             body.ExpandPool(500);
 
+            // ПРИДАТОК БЕЗ РОДНОГО СЛОТА ИДЁТ В ХИМЕРНЫЙ (17.09, поставка 5): у волка нет слота «Рога», рога встают в
+            // выданный химерный слот — ровно так их получает игрок и NPC. Пока помощник перебирал одни родные слоты,
+            // карта тел и инструменты кадра не могли собрать на чужом шасси ни рогов, ни хвоста, ни игломёта
+            var nativeSlots = new HashSet<string>();
+            for (int i = 0; i < body.SlotCount; i++) nativeSlots.Add(body.GetSlot(i).slot);
+            var appendages = new HashSet<string>();
+            foreach (var w in wanted) if (!nativeSlots.Contains(w)) { appendages.Add(w); body.GrantChimeraSlot(); }
+
             var names = new List<string>();
             var organs = new List<Organ>();
             for (int i = 0; i < body.SlotCount; i++)
             {
-                var slotName = body.GetSlot(i).slot;
-                if (wanted.Count > 0 && !wanted.Contains(slotName)) continue;
+                var view = body.GetSlot(i);
+                var slotName = view.slot;
+                if (wanted.Count > 0 && !wanted.Contains(slotName) && !(view.chimera && appendages.Count > 0)) continue;
                 var variants = body.GetVariants(i);
                 int native = variants.FindIndex(x => x.native);
                 for (int v = 0; v < variants.Count; v++)
                 {
                     if (variants[v].native || variants[v].species != donor.speciesName) continue;
+                    // в химерный слот — только орган названного придатка, и каждый придаток один раз
+                    bool chimeraPick = view.chimera && wanted.Count > 0;
+                    if (chimeraPick && !appendages.Contains(variants[v].slotType)) continue;
                     if (!body.Install(i, v)) continue;
+                    if (chimeraPick) appendages.Remove(variants[v].slotType);
                     // слот не назван, и графт плана не даёт (хребет не смешивается) — вернуть родной и искать дальше
                     if (wanted.Count == 0 && body.GetBlendedPlan() == null)
                     {

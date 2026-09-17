@@ -53,6 +53,22 @@ namespace Chimera.Tests.EditMode
         public void TearDown() { if (go != null) Object.DestroyImmediate(go); }
 
         [Test]
+        public void Appendage_WithoutNativeSlot_GraftsIntoChimeraSlot()
+        {
+            // ПРИДАТОК ИДЁТ В ХИМЕРНЫЙ СЛОТ (17.09, поставка 5). У волка родного слота «Рога» нет — рога встают в выданный
+            // химерный слот. Помощник перебирал только родные слоты, и карта тел с инструментами кадра не могли
+            // собрать ни рогов, ни хвоста, ни игломёта на чужом шасси: «графт не встал» при годном доноре
+            var wolf = Load("Волк");
+            var moose = Load("Лось");
+            BodyProbe.ChimeraPlan(wolf, moose, "Рога", out var worn, out var grafted);
+
+            Assert.IsNotNull(worn, "лосиные рога на волка не встали — придаток без родного слота не собирается");
+            var antlers = moose.organs.First(o => o != null && o.slot == "Рога");
+            Assert.IsTrue(worn.Contains(antlers), "в надетом нет лосиных рогов: " + grafted);
+            Assert.AreEqual(wolf.organs.Count(o => o != null) + 1, worn.Count, "придаток добавляется к родному составу, а не вытесняет орган");
+        }
+
+        [Test]
         public void Chimera_KeepsCarrierTopology_AndMovesSomething()
         {
             var chassis = Load("Человек");
