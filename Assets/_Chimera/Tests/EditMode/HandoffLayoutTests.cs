@@ -104,6 +104,39 @@ namespace Chimera.Tests.EditMode
             Assert.AreEqual(eyeChannel, eye.color, "блок глаза погасил цвет канала");
         }
 
+        const string NoseFromMaw = @"{ ""places"": [ { ""name"": ""нос"", ""parent"": ""Пасть"", ""attach"": 0.5,
+            ""attachOffset"": [0, 0.070, 0.489], ""sizeRel"": [0.336, 0.160, 0.161], ""baseEuler"": [0, 0, 0] } ] }";
+
+        [Test]
+        public void PlaceParent_Mismatch_IsNotApplied_AndShouts()
+        {
+            // ДОЛИ СЧИТАНЫ ОТ РОДИТЕЛЯ (поставка 4 §3): мочка посчитана от калибра Пасти. Примени её к месту, всё ещё
+            // висящему на голове, — мочка молча встанет вдвое шире и на 3 см выше. Сверка, а не запись структуры:
+            // родство мест — наша запись, раскладка только говорит, от кого она считала
+            var so = Species();
+            var nose = so.sockets.First(s => s.name == "нос");
+            nose.parent = "голова";
+            UnityEngine.TestTools.LogAssert.Expect(LogType.Error, new System.Text.RegularExpressions.Regex("родител"));
+
+            SpeciesHandoff.ApplyLayouts(so, NoseFromMaw, null);
+
+            Assert.AreEqual(0.1f, nose.attach, 1e-4f, "раскладка применена к месту с другим родителем");
+            Assert.AreEqual(Vector3.zero, nose.attachOffset, "раскладка применена к месту с другим родителем");
+        }
+
+        [Test]
+        public void PlaceParent_Match_IsApplied()
+        {
+            var so = Species();
+            var nose = so.sockets.First(s => s.name == "нос");
+            nose.parent = "Пасть";
+
+            SpeciesHandoff.ApplyLayouts(so, NoseFromMaw, null);
+
+            Assert.AreEqual(0.489f, nose.attachOffset.z, 1e-4f);
+            Assert.AreEqual(0.336f, nose.sizeRel.x, 1e-4f);
+        }
+
         [Test]
         public void TeethWithoutMuzzle_DoNotAddCube()
         {

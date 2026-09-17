@@ -31,7 +31,7 @@ public static class SpeciesHandoff
     // пояснения для людей, разбор их пропускает
 
     [System.Serializable] class Calibre { public float[] baseSize; public float[] sizeRel; }
-    [System.Serializable] class PlaceDto { public string name; public float attach; public float[] attachOffset, sizeRel, baseEuler; }
+    [System.Serializable] class PlaceDto { public string name, parent; public float attach; public float[] attachOffset, sizeRel, baseEuler; }
     [System.Serializable] class PartDto { public string node, block, role; public float[] offset, scale, euler, color; }
     [System.Serializable] class HeadLayout { public Calibre head; public PlaceDto[] places; public PartDto muzzle; public PartDto[] teeth, senses; }
     [System.Serializable] class LegDto { public string slot, organ; public PartDto[] parts; }
@@ -79,6 +79,14 @@ public static class SpeciesHandoff
             {
                 var s = FindSocket(species, p.name);
                 if (s == null) { Debug.LogError($"[форма] {species.speciesName}: раскладка головы называет место «{p.name}», которого у вида нет"); continue; }
+                // РОДИТЕЛЬ В РАСКЛАДКЕ — СВЕРКА, А НЕ ЗАПИСЬ СТРУКТУРЫ (поставка 4 §3). Доли считаются в калибре родителя:
+                // мочка, посчитанная от Пасти и применённая к месту на голове, молча встала бы вдвое шире и на 3 см выше.
+                // Родство мест — запись механик в бутстрапе; разошлись — не применяем и кричим
+                if (!string.IsNullOrEmpty(p.parent) && p.parent != (s.parent ?? ""))
+                {
+                    Debug.LogError($"[форма] {species.speciesName}: раскладка посчитала место «{p.name}» от родителя «{p.parent}», а у вида его родитель «{s.parent}» — доли не применены");
+                    continue;
+                }
                 s.attach = p.attach;
                 s.attachOffset = V(p.attachOffset, s.attachOffset);
                 s.sizeRel = V(p.sizeRel, s.sizeRel);
