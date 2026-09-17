@@ -247,7 +247,17 @@ def lopata():
     ])
 
 
-BLOCKS = [klin, brusok, kaplya, lapa, ukho, glaz, bulava, kopyto, rog, lopata]
+def igla():
+    """ИГЛА — прямой острый конус, растёт НАРУЖУ (+Y): иглы ежа, стволы игломёта. Самый дешёвый блок библиотеки.
+
+    Их на звере десятки, поэтому колец два — основание и остриё: 28 тр. Рог (`рог`) дороже вдвое и гнётся; игла прямая."""
+    return loft('игла', [
+        (-0.50, ring(1.00, 1.00, ch=0.45)),
+        (+0.50, ring(0.08, 0.08, ch=0.45)),
+    ], along='y')
+
+
+BLOCKS = [klin, brusok, kaplya, lapa, ukho, glaz, bulava, kopyto, rog, lopata, igla]
 
 
 def main():
