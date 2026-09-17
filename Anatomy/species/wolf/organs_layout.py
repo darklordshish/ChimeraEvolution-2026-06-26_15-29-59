@@ -17,7 +17,7 @@
 ПОСТАВКА 4 (клетка 0.084): поле ноги кончается там, где нога ещё не уже 0.1 м (`graph.FORE_END`, `graph.HIND_END`),
 поэтому блоков на узле три: низ предплечья или голени, пясть или плюсна, лапа.
 
-Запуск:  python legs_layout.py [--out путь]
+Запуск:  python organs_layout.py [--out путь]
 """
 import argparse
 import json
@@ -135,13 +135,13 @@ def hind_leg():
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--out', default=os.path.join(HERE, 'out', 'volk-legs-layout.json'))
+    ap.add_argument('--out', default=os.path.join(HERE, 'out', 'volk-organs-layout.json'))
     args = ap.parse_args()
 
     legs = [front_leg(), hind_leg()]
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     with open(args.out, 'w', encoding='utf-8') as f:
-        json.dump(dict(legs=legs), f, ensure_ascii=False, indent=2)
+        json.dump(dict(organs=legs), f, ensure_ascii=False, indent=2)
     f3 = lambda v: ','.join('%g' % x for x in v)
     with open(os.path.splitext(args.out)[0] + '.txt', 'w', encoding='utf-8') as f:
         for lg in legs:

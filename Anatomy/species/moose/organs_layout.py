@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """РАСКЛАДКА НИЖНИХ НОГ ЛОСЯ — пясть, плюсна, путо и копыта ригблоками на концах узлов.
 
-Контракт крепления — тот же, что у волка (`../wolf/legs_layout.py`, письмо механик 17.09c §4): часть называет узел,
+Контракт крепления — тот же, что у волка (`../wolf/organs_layout.py`, письмо механик 17.09c §4): часть называет узел,
 кадр — «тело узла» (+Z вдоль узла, +Y перёд узла, +X вбок), X/Y в диаметрах конца узла, Z в его длинах. Помощники
 кадра берутся оттуда же, а не копируются.
 
@@ -14,7 +14,7 @@
 передняя нога ниже поля — ОДИН брусок от середины предплечья до путового (шишка бруска на −0.3 его длины встаёт ровно на
 запястье), а не два. Задняя — как у волка: низ голени к скакательному и плюсна, угол между ними и есть скакательный сустав.
 
-Запуск:  python legs_layout.py [--out путь]
+Запуск:  python organs_layout.py [--out путь]
 """
 import argparse
 import importlib.util
@@ -28,7 +28,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 def _wolf_legs():
-    spec = importlib.util.spec_from_file_location('wolf_legs', os.path.join(HERE, '..', 'wolf', 'legs_layout.py'))
+    spec = importlib.util.spec_from_file_location('wolf_legs', os.path.join(HERE, '..', 'wolf', 'organs_layout.py'))
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
@@ -91,7 +91,7 @@ def hind_leg():
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--out', default=os.path.join(HERE, 'out', 'los-legs-layout-draft.json'))
+    ap.add_argument('--out', default=os.path.join(HERE, 'out', 'los-organs-layout-draft.json'))
     args = ap.parse_args()
 
     import antlers
@@ -100,7 +100,7 @@ def main():
     legs = [front_leg(), hind_leg(), horns]
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     with open(args.out, 'w', encoding='utf-8') as f:
-        json.dump(dict(legs=legs), f, ensure_ascii=False, indent=2)
+        json.dump(dict(organs=legs), f, ensure_ascii=False, indent=2)
     for lg in legs:
         print('%s (%s):' % (lg['organ'], lg['slot']))
         for p in lg['parts']:
