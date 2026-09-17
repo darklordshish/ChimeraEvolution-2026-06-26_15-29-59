@@ -50,6 +50,10 @@ unity command run_tests --mode playmode --async_tests true
 unity command test_status                                    # пока не "completed"
 ```
 
+> **Тесты перед кадрами — проверь каталог форм.** До 17.09 `FormBlocksTests` оставлял билдеру пустой каталог, и после
+> прогона EditMode виды, карта тел и кадры рисовали ригблоки кубами без ошибок. Починено (`MorphBuilder.ResetCatalog`),
+> но признак стоит помнить: `MorphBuilder.MissingBlocks` не пуст при целом `Resources/Формы.asset` — статику испортил тест.
+
 Новые файлы — сперва импорт и компиляция: `run_script` любого безобидного скрипта с
 `AssetDatabase.Refresh()`, затем `unity command recompile_status` до `idle`/`completed`.
 
@@ -64,9 +68,14 @@ unity command test_status                                    # пока не "co
 unity command run_script --file Tools/Agent/ShotSpecies.cs --entry ShotSpecies.Build \
   --args '["Assets/_Chimera/Data/Волк.asset","profile"]'
 
-# ПОЛОСА ПО ВЫСОТЕ — крупный план (лапы, голова): кадр сужен до yMin..yMax метров от земли
+# ПОЛОСА ПО ВЫСОТЕ — крупный план лап: кадр сужен до yMin..yMax метров от земли
 unity command run_script --file Tools/Agent/ShotSpecies.cs --entry ShotSpecies.Band \
   --args '["Assets/_Chimera/Data/Волк.asset","front",0.0,0.75]'
+
+# КРУПНО ПО ДЕТАЛЯМ — кадр наводится на рендереры с этими именами (голова в профиль: полоса по высоте
+# захватывает спину, и морда уходит за край)
+unity command run_script --file Tools/Agent/ShotSpecies.cs --entry ShotSpecies.Focus \
+  --args '["Assets/_Chimera/Data/Волк.asset","profile","голова,Пасть,нос,глаза,уши"]'
 
 # химера: шасси + орган(ы) донора, слоты через запятую
 unity command run_script --file Tools/Agent/ShotSpecies.cs --entry ShotSpecies.Chimera \
