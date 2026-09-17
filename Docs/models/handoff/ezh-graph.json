@@ -1,0 +1,294 @@
+{
+  "species": "Ёж",
+  "hides": [
+    "хребет",
+    "шея",
+    "голова",
+    "Сердце",
+    "Руки",
+    "Ноги",
+    "Хвост"
+  ],
+  "nodes": [
+    {
+      "name": "хребет",
+      "parent": "",
+      "layer": 0,
+      "socket": "хребет",
+      "origin": {
+        "x": 0.0,
+        "y": 0.4,
+        "z": -0.4
+      },
+      "attach": 1.0,
+      "freeOrigin": false,
+      "length": 0.6,
+      "endBone": "",
+      "endAttach": 1.0,
+      "dir": {
+        "x": 90.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "r0": 0.4,
+      "r1": 0.33,
+      "section": 0.9,
+      "depth": 1.0,
+      "blend": 0.12,
+      "chain": 0,
+      "mirrorX": false
+    },
+    {
+      "name": "козырёк",
+      "parent": "хребет",
+      "layer": 0,
+      "socket": "хребет",
+      "origin": {
+        "x": 0.0,
+        "y": 0.5,
+        "z": -0.04
+      },
+      "attach": 1.0,
+      "freeOrigin": true,
+      "length": 0.402,
+      "endBone": "",
+      "endAttach": 1.0,
+      "dir": {
+        "x": -5.711,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "r0": 0.28,
+      "r1": 0.14,
+      "section": 0.95,
+      "depth": 1.0,
+      "blend": 0.12,
+      "chain": 0,
+      "mirrorX": false
+    },
+    {
+      "name": "грудь",
+      "parent": "хребет",
+      "layer": 0,
+      "socket": "Сердце",
+      "origin": {
+        "x": 0.0,
+        "y": 0.15,
+        "z": 0.06
+      },
+      "attach": 1.0,
+      "freeOrigin": true,
+      "length": 0.3302,
+      "endBone": "",
+      "endAttach": 1.0,
+      "dir": {
+        "x": 1.736,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "r0": 0.22,
+      "r1": 0.22,
+      "section": 1.0,
+      "depth": 1.0,
+      "blend": 0.12,
+      "chain": 0,
+      "mirrorX": false
+    },
+    {
+      "name": "шея",
+      "parent": "хребет",
+      "layer": 0,
+      "socket": "шея",
+      "origin": {
+        "x": 0.0,
+        "y": 0.7,
+        "z": 0.0269
+      },
+      "attach": 1.0,
+      "freeOrigin": true,
+      "length": 0.1354,
+      "endBone": "",
+      "endAttach": 1.0,
+      "dir": {
+        "x": -4.234,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "r0": 0.15,
+      "r1": 0.14,
+      "section": 1.0,
+      "depth": 1.0,
+      "blend": 0.1,
+      "chain": 0,
+      "mirrorX": false
+    },
+    {
+      "name": "голова",
+      "parent": "шея",
+      "layer": 0,
+      "socket": "голова",
+      "origin": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "attach": 1.0,
+      "freeOrigin": false,
+      "length": 0.16,
+      "endBone": "",
+      "endAttach": 1.0,
+      "dir": {
+        "x": 35.458,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "r0": 0.14,
+      "r1": 0.12,
+      "section": 1.0,
+      "depth": 1.05,
+      "blend": 0.08,
+      "chain": 0,
+      "mirrorX": false
+    },
+    {
+      "name": "плечо",
+      "parent": "хребет",
+      "layer": 0,
+      "socket": "Руки",
+      "origin": {
+        "x": 0.24,
+        "y": 0.56,
+        "z": 0.1
+      },
+      "attach": 1.0,
+      "freeOrigin": true,
+      "length": 0.197,
+      "endBone": "",
+      "endAttach": 1.0,
+      "dir": {
+        "x": 66.038,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "r0": 0.1,
+      "r1": 0.07,
+      "section": 1.0,
+      "depth": 1.0,
+      "blend": 0.1,
+      "chain": 0,
+      "mirrorX": true
+    },
+    {
+      "name": "кисть",
+      "parent": "плечо",
+      "layer": 0,
+      "socket": "Руки",
+      "origin": {
+        "x": 0.0,
+        "y": 0.2437,
+        "z": 0.0426
+      },
+      "attach": 1.0,
+      "freeOrigin": true,
+      "length": 0.2486,
+      "endBone": "",
+      "endAttach": 1.0,
+      "dir": {
+        "x": -64.885,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "r0": 0.06,
+      "r1": 0.055,
+      "section": 1.25,
+      "depth": 0.95,
+      "blend": 0.06,
+      "chain": 0,
+      "mirrorX": true
+    },
+    {
+      "name": "бедро",
+      "parent": "хребет",
+      "layer": 0,
+      "socket": "Ноги",
+      "origin": {
+        "x": 0.24,
+        "y": -0.0,
+        "z": 0.08
+      },
+      "attach": 1.0,
+      "freeOrigin": true,
+      "length": 0.1649,
+      "endBone": "",
+      "endAttach": 1.0,
+      "dir": {
+        "x": 75.964,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "r0": 0.12,
+      "r1": 0.085,
+      "section": 1.0,
+      "depth": 1.0,
+      "blend": 0.1,
+      "chain": 0,
+      "mirrorX": true
+    },
+    {
+      "name": "голень",
+      "parent": "бедро",
+      "layer": 0,
+      "socket": "Ноги",
+      "origin": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "attach": 1.0,
+      "freeOrigin": false,
+      "length": 0.0671,
+      "endBone": "",
+      "endAttach": 1.0,
+      "dir": {
+        "x": -12.529,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "r0": 0.085,
+      "r1": 0.07,
+      "section": 1.0,
+      "depth": 1.0,
+      "blend": 0.06,
+      "chain": 0,
+      "mirrorX": true
+    },
+    {
+      "name": "хвост",
+      "parent": "хребет",
+      "layer": 0,
+      "socket": "Хвост",
+      "origin": {
+        "x": 0.0,
+        "y": -0.26,
+        "z": 0.24
+      },
+      "attach": 1.0,
+      "freeOrigin": true,
+      "length": 0.1077,
+      "endBone": "",
+      "endAttach": 1.0,
+      "dir": {
+        "x": -201.801,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "r0": 0.06,
+      "r1": 0.05,
+      "section": 1.0,
+      "depth": 1.0,
+      "blend": 0.05,
+      "chain": 0,
+      "mirrorX": false
+    }
+  ]
+}
