@@ -13,7 +13,8 @@ namespace Chimera.Tests.EditMode
             try
             {
                 so.skinCell = 0f;
-                Assert.AreEqual(0.02f, so.SkinCell, 1e-5f, "skinCell 0 должен дать дефолт 0.02 через свойство");
+                // дефолт — зерно проекта (17.09: одна клетка поля на все виды), а не прежние 0.02
+                Assert.AreEqual(SpeciesSO.Grain, so.SkinCell, 1e-5f, "skinCell 0 должен дать зерно проекта через свойство");
                 so.skinCell = 0.05f;
                 Assert.AreEqual(0.05f, so.SkinCell, 1e-5f);
             }
