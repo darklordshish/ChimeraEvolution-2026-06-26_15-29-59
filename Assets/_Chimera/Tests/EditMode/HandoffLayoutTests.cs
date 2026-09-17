@@ -35,7 +35,7 @@ namespace Chimera.Tests.EditMode
           ""teeth"": [ { ""name"": ""клык"", ""offset"": [0.257, -0.2, 0.304], ""scale"": [0.129, 0.24, 0.057], ""color"": [0.95, 0.94, 0.9, 1.0] } ]
         }";
 
-        const string Legs = @"{ ""legs"": [ { ""slot"": ""Руки"", ""organ"": ""Коготь"", ""parts"": [
+        const string Organs = @"{ ""organs"": [ { ""slot"": ""Руки"", ""organ"": ""Коготь"", ""parts"": [
             { ""node"": ""предплечье"", ""block"": ""брусок"", ""offset"": [0, 0.147, 0.067], ""scale"": [0.766, 0.809, 0.44], ""euler"": [-7.6, 0, 0] } ] } ] }";
 
         [Test]
@@ -60,10 +60,10 @@ namespace Chimera.Tests.EditMode
         }
 
         [Test]
-        public void Legs_ReplaceOrganParts_WithNodeParts()
+        public void OrganParts_ReplaceOrganParts_WithNodeParts()
         {
             var so = Species();
-            SpeciesHandoff.ApplyLayouts(so, null, Legs);
+            SpeciesHandoff.ApplyLayouts(so, null, Organs);
 
             var claw = so.organs.First(o => o.organName == "Коготь");
             Assert.AreEqual(1, claw.visualParts.Length);

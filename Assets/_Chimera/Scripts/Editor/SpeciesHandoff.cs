@@ -26,7 +26,7 @@ public static class SpeciesHandoff
     }
 
     // ── РАСКЛАДКИ: калибр и места деталей, куски органов ──────────────────────────────────────────
-    // Формат задан поставкой 3 модельной линии (`volk-head-layout.json`, `volk-legs-layout.json`). Числа
+    // Формат задан поставкой 3 модельной линии (`volk-head-layout.json`; раскладка кусков органов — `volk-organs-layout.json`, до поставки 5 звалась `legs-layout`). Числа
     // массивами, а не объектами Vector3 — так их пишет генератор на Python; лишние поля («metres», «note») —
     // пояснения для людей, разбор их пропускает
 
@@ -34,10 +34,10 @@ public static class SpeciesHandoff
     [System.Serializable] class PlaceDto { public string name, parent; public float attach; public float[] attachOffset, sizeRel, baseEuler; }
     [System.Serializable] class PartDto { public string node, block, role; public float[] offset, scale, euler, color; }
     [System.Serializable] class HeadLayout { public Calibre head; public PlaceDto[] places; public PartDto muzzle; public PartDto[] teeth, senses; }
-    [System.Serializable] class LegDto { public string slot, organ; public PartDto[] parts; }
-    [System.Serializable] class LegsLayout { public LegDto[] legs; }
+    [System.Serializable] class OrganDto { public string slot, organ; public PartDto[] parts; }
+    [System.Serializable] class OrgansLayout { public OrganDto[] organs; }
 
-    /// <summary>Применить поставку вида целиком: граф, раскладку головы, раскладку ног. Каждый файл
+    /// <summary>Применить поставку вида целиком: граф, раскладку головы, раскладку кусков органов (ноги, рога). Каждый файл
     /// независим — нет раскладки, значит те места и органы остаются, какими их задал бутстрап.</summary>
     public static bool Apply(SpeciesSO species)
     {
@@ -46,10 +46,14 @@ public static class SpeciesHandoff
 
         string stem = Dir + Translit(species.speciesName);
         string head = System.IO.File.Exists(stem + "-head-layout.json") ? System.IO.File.ReadAllText(stem + "-head-layout.json") : null;
-        string legs = System.IO.File.Exists(stem + "-legs-layout.json") ? System.IO.File.ReadAllText(stem + "-legs-layout.json") : null;
-        if (head != null || legs != null)
+        string organs = System.IO.File.Exists(stem + "-organs-layout.json") ? System.IO.File.ReadAllText(stem + "-organs-layout.json") : null;
+        // ИМЯ «legs-layout» СНЯТО 17.09 (поставка 5): в файле кроме ног лежат рога, а скоро иглы и хвосты — это куски
+        // любых органов. Старое имя не читаем и не молчим: регенерация прежним генератором должна быть видна сразу
+        if (System.IO.File.Exists(stem + "-legs-layout.json"))
+            Debug.LogError($"[форма] {species.speciesName}: «{stem}-legs-layout.json» — устаревшее имя, файл НЕ читается. Раскладка кусков органов живёт в «-organs-layout.json» с корнем «organs»");
+        if (head != null || organs != null)
         {
-            int n = ApplyLayouts(species, head, legs);
+            int n = ApplyLayouts(species, head, organs);
             Debug.Log($"[форма] {species.speciesName}: приняты раскладки из поставки — изменений {n}");
         }
         return graph;
@@ -60,7 +64,7 @@ public static class SpeciesHandoff
     /// раскладки у них и копия чисел у нас, и первая же регенерация разойдётся с кодом молча — ровно та беда,
     /// из-за которой граф уехал в файл. Промах имени (места или органа нет у вида) не проглатывается: в консоль.
     /// Возвращает число применённых изменений; открыт для теста, чтобы не зависеть от файлов на диске.</summary>
-    public static int ApplyLayouts(SpeciesSO species, string headJson, string legsJson)
+    public static int ApplyLayouts(SpeciesSO species, string headJson, string organsJson)
     {
         int n = 0;
         if (!string.IsNullOrEmpty(headJson))
@@ -152,13 +156,13 @@ public static class SpeciesHandoff
             }
         }
 
-        if (!string.IsNullOrEmpty(legsJson))
+        if (!string.IsNullOrEmpty(organsJson))
         {
-            var l = JsonUtility.FromJson<LegsLayout>(legsJson);
-            foreach (var leg in l.legs ?? new LegDto[0])
+            var l = JsonUtility.FromJson<OrgansLayout>(organsJson);
+            foreach (var leg in l.organs ?? new OrganDto[0])
             {
                 var organ = FindOrgan(species, leg.slot, leg.organ);
-                if (organ == null) { Debug.LogError($"[форма] {species.speciesName}: раскладка ног называет орган «{leg.organ}» на слоте «{leg.slot}», которого у вида нет"); continue; }
+                if (organ == null) { Debug.LogError($"[форма] {species.speciesName}: раскладка кусков органов называет орган «{leg.organ}» на слоте «{leg.slot}», которого у вида нет"); continue; }
                 var parts = new System.Collections.Generic.List<OrganPart>();
                 foreach (var p in leg.parts ?? new PartDto[0]) parts.Add(Part(p));
                 organ.visualParts = parts.ToArray();   // целиком: прежние колонны и мышцы на погашенном месте не нужны
