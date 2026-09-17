@@ -68,6 +68,34 @@ public static class ShotSpecies
         return report + string.Format(" · полоса {0:0.00}–{1:0.00} м", yMin, yMax);
     }
 
+    /// <summary>КРУПНЫЙ ПЛАН ПО ДЕТАЛЯМ — кадр наводится на рендереры с названными именами (места через запятую:
+    /// «голова,Пасть,нос,глаза,уши»). Полоса по высоте для головы в профиль не годится: в ту же высоту попадает спина,
+    /// и морда уходит за край кадра (17.09, поставка 4).</summary>
+    public static string Focus(string speciesAsset, string view, string names)
+    {
+        var report = Build(speciesAsset, view);
+        var root = GameObject.Find(Rig);
+        var cam = root != null ? root.GetComponentInChildren<Camera>() : null;
+        if (cam == null) return report + " — камеры нет";
+
+        var wanted = new HashSet<string>(names.Split(','));
+        Bounds? box = null;
+        foreach (var r in root.GetComponentsInChildren<Renderer>())
+        {
+            if (!wanted.Contains(r.name)) continue;
+            if (box == null) box = r.bounds; else { var b = box.Value; b.Encapsulate(r.bounds); box = b; }
+        }
+        if (box == null) return report + " — деталей с такими именами нет: " + names;
+
+        var bb = box.Value;
+        var dir = cam.transform.forward;                                   // камера смотрит вдоль −оси вида
+        cam.transform.position = bb.center - dir * (bb.size.magnitude * 3f);
+        float w = view == "profile" ? bb.size.z : bb.size.x;               // ширина кадра в плоскости вида
+        float h = view == "top" ? bb.size.z : bb.size.y;
+        cam.orthographicSize = Mathf.Max(h, w * 0.8f) * 0.6f;
+        return report + string.Format(" · крупно: {0} ({1:0.00}×{2:0.00} м)", names, w, h);
+    }
+
     /// <summary>Снести сцену кадра. Зовётся всегда после съёмки: сцена не сохраняется, но мусор в ней мешает.</summary>
     public static string Wipe()
     {
