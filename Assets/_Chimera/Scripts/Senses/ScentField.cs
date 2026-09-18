@@ -33,7 +33,7 @@ public class ScentField : MonoBehaviour
 
     void Update()
     {
-        float cutoff = Time.time - lifetime;
+        float cutoff = Time.time - lifetime * ForestClimate.ScentLifetimeMult(); // s3b: дождь смывает следы
         points.RemoveAll(p => p.born < cutoff); // чистим выцветшие
     }
 
