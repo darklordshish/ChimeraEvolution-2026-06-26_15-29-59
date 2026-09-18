@@ -30,6 +30,7 @@ public class PlayerAttack : MonoBehaviour, IAbility, IOrganAbility
     float nextTime;
     CameraFollow cam;
     Health ownHealth;
+    HandsBridge hands; // s4b: мост рук (лениво — грань могут до-создать позже)
 
     void Start()
     {
@@ -49,14 +50,24 @@ public class PlayerAttack : MonoBehaviour, IAbility, IOrganAbility
     void DoAttack()
     {
         if (ownHealth == null) ownHealth = GetComponent<Health>(); // удар до нашего Start
+        if (hands == null) hands = GetComponent<HandsBridge>(); // мост могут повесить позже — берём лениво
         // призрака раскрывает ПОПАДАНИЕ (Hit.Apply), не замах — холостой взмах безопасен
         var hit = new Hit(ownHealth, transform.position);
-        var blow = new MeleeBlow { Damage = data.damage, KnockForce = data.knockForce, BleedStacks = data.bleedStacks }; // единый паёк
+        // s4b: мост с предметом переопределяет ПАЁК+КОНУС (темп не трогаем); без моста — путь записи
+        bool manual = hands != null && hands.HasHands;
+        HandStrike strike = manual ? hands.ResolveStrike() : default;
+        if (manual) hands.SpendSwing();
+        var blow = new MeleeBlow { // единый паёк
+            Damage = manual ? strike.damage : data.damage,
+            KnockForce = manual ? strike.knockForce : data.knockForce,
+            BleedStacks = manual ? strike.bleedStacks : data.bleedStacks };
+        float range = manual ? strike.range : data.range;
+        float halfAngle = manual ? strike.halfAngle : data.halfAngle;
         int struck = 0;
-        foreach (var hp in TargetScan.Healths(transform.position, data.range + ScanPad, transform))
+        foreach (var hp in TargetScan.Healths(transform.position, range + ScanPad, transform))
         {
-            if (!InCone(hp.transform.position)) continue;
-            blow.Deliver(hit, hp); // урон; эрозия по кину — внутри Hit.Apply
+            if (!InCone(hp.transform.position, range, halfAngle)) continue;
+            blow.Deliver(hit, hp, manual ? strike.damageMult : 1f); // урон; эрозия по кину — внутри Hit.Apply
             struck++;
         }
 
@@ -67,11 +78,11 @@ public class PlayerAttack : MonoBehaviour, IAbility, IOrganAbility
         }
     }
 
-    bool InCone(Vector3 point)
+    bool InCone(Vector3 point, float range, float halfAngle)
     {
         Vector3 to = point - transform.position; to.y = 0f;
-        if (to.sqrMagnitude > data.range * data.range) return false;
-        return to.sqrMagnitude < 0.0001f || Vector3.Angle(transform.forward, to) <= data.halfAngle;
+        if (to.sqrMagnitude > range * range) return false;
+        return to.sqrMagnitude < 0.0001f || Vector3.Angle(transform.forward, to) <= halfAngle;
     }
 
     void OnDrawGizmos()
