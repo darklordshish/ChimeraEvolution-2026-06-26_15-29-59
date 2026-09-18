@@ -31,11 +31,12 @@
 скрытие рантайма + long-tick assert. Отклонено: фолбэк-обёртки «0 = не настроено»
 (единый механизм — `CheckSite`, а не двойная семантика).
 
-## Инварианты (EditMode `Tests/EditMode/Forest/Habitats/LairRulesTests.cs`, 8 тестов)
+## Инварианты (EditMode `Tests/EditMode/Forest/Habitats/LairRulesTests.cs`, 9 тестов)
 
 Валидация (битый/чистый сайт), страх (кламп/спад/порог 0.69/0.7), очередь (до капа 2,
 стоит на капе при долгих тиках), страх блокирует очередь и отпускает после спада,
-события на пересечении, реестр (total 3+4=7, nearest, unregister чистит).
+килл мимо fearRadius игнорируется + tier-масштаб страха, события на пересечении,
+реестр (total 3+4=7, nearest, unregister чистит).
 
 ## Что НЕ делаем
 
@@ -46,5 +47,5 @@
 
 ## Приёмка
 
-`run_tests --mode editor` зелёный (8 новых) + `git diff --name-only` без `*.unity/*.prefab/*.asset`.
+`run_tests --mode editor` зелёный (9 новых) + `git diff --name-only` без `*.unity/*.prefab/*.asset`.
 Плейтест не нужен. `Docs/СТАТУС.md` — за `docs-keeper` при мердже.
