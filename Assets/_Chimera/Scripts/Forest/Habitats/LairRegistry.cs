@@ -11,6 +11,9 @@ public class LairRegistry : MonoBehaviour
 
     public int Count => sites.Count;
 
+    /// <summary>Перечисление для спавнера (s2b). Только чтение снаружи.</summary>
+    public System.Collections.Generic.IReadOnlyList<LairSite> Sites => sites;
+
     public void Register(LairSite site)
     {
         if (site != null && !sites.Contains(site)) sites.Add(site);
