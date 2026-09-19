@@ -94,6 +94,7 @@ public static class ForestScenicTool
         int texRes = Mathf.Clamp(applier.resolution, 4, 128);
         float step = size / texRes;
         Color[] cells = ForestMapBuilder.BuildColors(applier.config, texRes, step);
+        cells = FloraWaterTint.TintCells(cells, applier.config, texRes, step); // s8: мокрое дно
         var tex = new Texture2D(texRes, texRes, TextureFormat.RGB24, false);
         tex.filterMode = FilterMode.Point;
         tex.wrapMode = TextureWrapMode.Clamp;

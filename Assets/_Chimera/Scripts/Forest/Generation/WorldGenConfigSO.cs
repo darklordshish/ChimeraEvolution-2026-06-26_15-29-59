@@ -22,6 +22,9 @@ public class WorldGenConfigSO : ScriptableObject
     public float mapHalfExtent = 95f;
     public float maxSlopeDegrees = 35f;
 
+    [Header("Вода (s8): уровень ЗАГЛУШКА числом — ниже не растёт, дно темнеет; плоскости нет")]
+    public float waterLevel = -1.5f;
+
     void OnValidate()
     {
         octaves = Mathf.Clamp(octaves, 1, 8);
