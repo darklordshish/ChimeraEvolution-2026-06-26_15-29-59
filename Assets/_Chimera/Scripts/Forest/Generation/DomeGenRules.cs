@@ -29,6 +29,8 @@ public static class DomeGenRules
             issues.Add($"ridgedOctaves={cfg.ridgedOctaves} вне [1, 8]");
         if (cfg.warpOctaves < 0 || cfg.warpOctaves > 8)
             issues.Add($"warpOctaves={cfg.warpOctaves} вне [0, 8]");
+        if (cfg.warpStrength < 0f)
+            issues.Add($"warpStrength={cfg.warpStrength} должен быть >= 0");
         if (cfg.baseFrequency <= 0f)
             issues.Add($"baseFrequency={cfg.baseFrequency} должен быть > 0");
         if (cfg.amplitude < 0f)

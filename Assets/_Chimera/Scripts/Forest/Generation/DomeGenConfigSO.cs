@@ -18,6 +18,7 @@ public class DomeGenConfigSO : ScriptableObject
     public int octaves = 5;
     public int ridgedOctaves = 5;
     public int warpOctaves = 4;
+    public float warpStrength = 6f;
     public float baseFrequency = 0.02f;
     public float amplitude = 6f;
     public float maxSlopeDegrees = 35f;
@@ -48,6 +49,7 @@ public class DomeGenConfigSO : ScriptableObject
         octaves = Mathf.Clamp(octaves, 1, 8);
         ridgedOctaves = Mathf.Clamp(ridgedOctaves, 1, 8);
         warpOctaves = Mathf.Clamp(warpOctaves, 0, 8);
+        warpStrength = Mathf.Max(warpStrength, 0f);
         baseFrequency = Mathf.Max(baseFrequency, 0.0001f);
         amplitude = Mathf.Max(amplitude, 0f);
         maxSlopeDegrees = Mathf.Clamp(maxSlopeDegrees, 1f, 60f);

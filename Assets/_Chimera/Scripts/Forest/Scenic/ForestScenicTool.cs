@@ -25,8 +25,11 @@ public static class ForestScenicTool
         Debug.Log($"[Forest] карта записана в {dir}");
     }
 
-    public static void SetupCameras()
+    public static void SetupCameras(string sizeText)
     {
+        float size = 35f;
+        float.TryParse(sizeText, out size);
+        if (size <= 0f) size = 35f;
         var sandbox = GameObject.Find("SandboxCam");
         if (sandbox == null)
         {
@@ -39,12 +42,13 @@ public static class ForestScenicTool
         if (top == null)
         {
             top = new GameObject("TopCam");
-            var cam = top.AddComponent<Camera>();
-            cam.orthographic = true;
-            cam.orthographicSize = 35f;
+            top.AddComponent<Camera>();
             top.transform.position = new Vector3(0f, 60f, 0f);
             top.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
         }
+        var topCam = top.GetComponent<Camera>();
+        topCam.orthographic = true;
+        topCam.orthographicSize = size;
         Debug.Log("[Forest] камеры SandboxCam (3/4) + TopCam (топдаун-орто) готовы");
     }
 
@@ -124,5 +128,45 @@ public static class ForestScenicTool
         }
         Object.DestroyImmediate(go);
         Debug.Log("[Forest] террейн снесён");
+    }
+
+    /// <summary>
+    /// Превью рельефа павильона чанками (s10a): диаметр + quads на чанк.
+    /// Снос — WipeDomePreview. В сцену ничего не сохраняется.
+    /// </summary>
+    public static void BuildDomePreview(string diameterText, string quadsText)
+    {
+        DomePreview.BuildPreview(diameterText, quadsText);
+    }
+
+    public static void WipeDomePreview()
+    {
+        DomePreview.WipePreview();
+        Debug.Log("[Forest] превью купола снесено");
+    }
+
+    /// <summary>
+    /// Кадр под купол (s10a): туман гасится (иначе Exp2 0.012 на 2000м — белое молоко),
+    /// far plane камер — 6000, TopCap — топдаун-орто на весь диаметр, SandboxCam — 3/4.
+    /// Возврат тумана/света — ForestLightSetup.SetupSandbox() (как в s7/s9).
+    /// </summary>
+    public static void FrameDome(string diameterText)
+    {
+        float diameter = 2000f;
+        float.TryParse(diameterText, out diameter);
+        if (diameter <= 0f) diameter = 2000f;
+        RenderSettings.fog = false;
+        SetupCameras("35");
+        var top = GameObject.Find("TopCam");
+        var topCam = top.GetComponent<Camera>();
+        top.transform.position = new Vector3(0f, diameter * 1.3f, 0f);
+        topCam.orthographicSize = diameter * 0.5f + 100f;
+        topCam.farClipPlane = 6000f;
+        var sandbox = GameObject.Find("SandboxCam");
+        var sandboxCam = sandbox.GetComponent<Camera>();
+        sandbox.transform.position = new Vector3(0f, diameter * 0.45f, -diameter * 0.55f);
+        sandbox.transform.rotation = Quaternion.Euler(45f, 0f, 0f);
+        sandboxCam.farClipPlane = 6000f;
+        Debug.Log($"[Forest] кадр купола настроен (Ø{diameter} м, туман выкл, far 6000)");
     }
 }
