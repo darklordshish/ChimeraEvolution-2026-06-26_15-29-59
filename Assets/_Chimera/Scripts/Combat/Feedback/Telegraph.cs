@@ -10,6 +10,7 @@ using UnityEngine;
 public class Telegraph : MonoBehaviour
 {
     static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
+    static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor"); // s3d: второй канал (без keyword на материале молча игнор — см. EmissionSetup)
 
     Renderer[] renderers;
     Color[] baseColors;
@@ -136,8 +137,17 @@ public class Telegraph : MonoBehaviour
             // нераспознанное — светлеем ОТ СВОЕГО цвета (per-renderer): волк остаётся волком, просто «зажёгся»
             Color target = veiled ? Color.Lerp(rest, Color.white, UnknownLift) : activeColor;
             Color c = !active ? rest : activeT >= 0f ? Color.Lerp(rest, target, activeT) : target;
-            if (pulseAmp > 0f) c = Color.Lerp(c, pulse.pulseColor, pulseAmp * pulseWave);
-            mpb.SetColor(BaseColor, c);
+            if (pulseAmp > 0f)
+            {
+                c = Color.Lerp(c, pulse.pulseColor, pulseAmp * pulseWave);
+                mpb.SetColor(BaseColor, c);
+                mpb.SetColor(EmissionColor, pulse.pulseColor * (pulseAmp * pulseWave));
+            }
+            else
+            {
+                mpb.SetColor(BaseColor, c);
+                mpb.SetColor(EmissionColor, Color.black); // залипший glow запрещён
+            }
             renderers[i].SetPropertyBlock(mpb);
         }
     }

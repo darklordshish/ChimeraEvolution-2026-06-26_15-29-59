@@ -7,23 +7,24 @@ using UnityEngine.TestTools;
 namespace Chimera.Tests.PlayMode
 {
     /// <summary>
-    /// Пульс-акцент телеграфа: в тумане замах осциллирует, в ясную — статика,
-    /// статусы не пульсируют. Читаем MPB обратно (прецедент Rebase).
-    /// Слайс s3c (ветка forest/s3c-telegraph-outline).
+    /// Второй канал телеграфа: в тумане emission осциллирует, в ясную и на статусах — чёрный.
+    /// Читаем MPB обратно (прецедент Rebase). Insight пиним (иначе veil), сбрасываем в TearDown.
+    /// Чтения разнесены на полупериод (0.25с при 2Гц) — детерминированно разные фазы.
+    /// Слайс s3d (ветка forest/s3d-emission-outline).
     /// </summary>
-    public class TelegraphPulseTests
+    public class TelegraphEmissionTests
     {
         readonly List<Object> trash = new List<Object>();
-        static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
+        static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor");
 
-        GameObject Rig(Color bodyColor)
+        GameObject Rig()
         {
             var go = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            go.name = "~TelegraphRig";
+            go.name = "~EmissionRig";
             trash.Add(go);
             var renderer = go.GetComponent<MeshRenderer>();
             var mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-            mat.color = bodyColor;
+            mat.EnableKeyword("_EMISSION");
             renderer.sharedMaterial = mat;
             trash.Add(mat);
             var telegraph = go.AddComponent<Telegraph>();
@@ -31,12 +32,11 @@ namespace Chimera.Tests.PlayMode
             return go;
         }
 
-        static Color ReadApplied(GameObject go)
+        static Color ReadEmission(GameObject go)
         {
             var mpb = new MaterialPropertyBlock();
-            var renderer = go.GetComponent<MeshRenderer>();
-            renderer.GetPropertyBlock(mpb);
-            return mpb.isEmpty ? new Color(-1f, -1f, -1f, -1f) : mpb.GetColor(BaseColor);
+            go.GetComponent<MeshRenderer>().GetPropertyBlock(mpb);
+            return mpb.GetColor(EmissionColor);
         }
 
         static TelegraphChannels Channels()
@@ -48,68 +48,69 @@ namespace Chimera.Tests.PlayMode
         public void Clean()
         {
             ForestClimate.ResetStatic();
+            Perception.Insight = false;
+            Time.timeScale = 1f;
             foreach (var o in trash) if (o != null) Object.Destroy(o);
             trash.Clear();
         }
 
         [UnityTest]
-        public IEnumerator Pulse_OscillatesInFog()
+        public IEnumerator Emission_OscillatesInFog()
         {
+            Perception.Insight = true;
             ForestClimate.CurrentState = new WeatherState { kind = WeatherKind.Fog };
             ForestClimate.CurrentTimeMinutes = 10f;
-            var go = Rig(Color.gray);
+            var go = Rig();
             var telegraph = go.GetComponent<Telegraph>();
             telegraph.SetPulse(Channels());
             telegraph.Set(true, Color.red, true);
             yield return null;
             // спред по 6 семплам за ~0.5с (двухточечный замер — лотерея фазы)
-            var samples = new System.Collections.Generic.List<Color>();
+            var samples = new List<Color>();
             for (int i = 0; i < 6; i++)
             {
-                samples.Add(ReadApplied(go));
+                samples.Add(ReadEmission(go));
                 yield return new WaitForSecondsRealtime(0.1f);
             }
             float spread = 0f;
+            float brightness = 0f;
+            foreach (var s in samples) brightness = Mathf.Max(brightness, s.r + s.g + s.b);
             for (int i = 0; i < samples.Count; i++)
                 for (int j = i + 1; j < samples.Count; j++)
                     spread = Mathf.Max(spread, Vector4.Distance(samples[i], samples[j]));
-            Assert.Greater(spread, 0.1f,
-                "в тумане применённый цвет осциллирует (макс. разброс семплов)");
+            Assert.Greater(brightness, 0.01f, "в тумане emission не чёрный");
+            Assert.Greater(spread, 0.1f, "осцилляция видна в разбросе семплов");
         }
 
         [UnityTest]
-        public IEnumerator NoPulse_InClear()
+        public IEnumerator Emission_BlackInClear()
         {
+            Perception.Insight = true;
             ForestClimate.ResetStatic();
-            var go = Rig(Color.gray);
+            var go = Rig();
             var telegraph = go.GetComponent<Telegraph>();
             telegraph.SetPulse(Channels());
             telegraph.Set(true, Color.red, true);
             yield return null;
-            Color a = ReadApplied(go);
-            yield return new WaitForSecondsRealtime(0.3f);
-            Color b = ReadApplied(go);
-            Assert.AreEqual(a.r, b.r, 1e-4f, "в ясную — статика");
-            Assert.AreEqual(a.g, b.g, 1e-4f);
-            Assert.AreEqual(a.b, b.b, 1e-4f);
+            yield return new WaitForSecondsRealtime(0.25f);
+            Color b = ReadEmission(go);
+            Assert.Less(b.r + b.g + b.b, 0.01f, "в ясную emission чёрный");
         }
 
         [UnityTest]
-        public IEnumerator Statuses_DontPulse()
+        public IEnumerator Emission_BlackForStatuses()
         {
+            Perception.Insight = true;
             ForestClimate.CurrentState = new WeatherState { kind = WeatherKind.Fog };
             ForestClimate.CurrentTimeMinutes = 10f;
-            var go = Rig(Color.gray);
+            var go = Rig();
             var telegraph = go.GetComponent<Telegraph>();
             telegraph.SetPulse(Channels());
             telegraph.Set(true, Color.white, false);
             yield return null;
-            Color a = ReadApplied(go);
-            yield return new WaitForSecondsRealtime(0.3f);
-            Color b = ReadApplied(go);
-            Assert.AreEqual(a.r, b.r, 1e-4f, "статусы (intent=false) не пульсируют");
-            Assert.AreEqual(a.g, b.g, 1e-4f);
-            Assert.AreEqual(a.b, b.b, 1e-4f);
+            yield return new WaitForSecondsRealtime(0.25f);
+            Color b = ReadEmission(go);
+            Assert.Less(b.r + b.g + b.b, 0.01f, "статусы (intent=false) не светятся");
         }
     }
 }
