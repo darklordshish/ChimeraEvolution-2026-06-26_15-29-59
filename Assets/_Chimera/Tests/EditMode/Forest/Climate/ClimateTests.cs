@@ -125,15 +125,14 @@ namespace Chimera.Tests.EditMode
         {
             var good = new TelegraphChannels
             {
-                color = Color.red,
-                outlineColor = Color.white,
-                outlineWidth = 2f,
+                pulseColor = Color.white,
+                pulseAmp = 1f,
                 pulseFreq = 4f
             };
             Assert.IsEmpty(TelegraphChannels.Validate(good));
-            var noWidth = good;
-            noWidth.outlineWidth = 0f;
-            Assert.IsNotEmpty(TelegraphChannels.Validate(noWidth), "нулевая обводка обязана ловиться");
+            var noAmp = good;
+            noAmp.pulseAmp = 0f;
+            Assert.IsNotEmpty(TelegraphChannels.Validate(noAmp), "нулевая амплитуда обязана ловиться");
             var noPulse = good;
             noPulse.pulseFreq = 0f;
             Assert.IsNotEmpty(TelegraphChannels.Validate(noPulse), "нулевой пульс обязан ловиться");
