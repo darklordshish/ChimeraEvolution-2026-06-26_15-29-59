@@ -42,10 +42,28 @@ public class LairSite : MonoBehaviour
     [NonSerialized] public float fear;
     [NonSerialized] public float timer;
 
+    // КРЫШИ s6: место под ВЕРНУВШИХСЯ (не выводок) — отдельный счётчик, иначе врёт учёт.
+    // Крыша: population + reserved + queue <= capacity.
+    readonly HashSet<int> reservedHolders = new HashSet<int>();
+
+    public int ReservedCount => reservedHolders.Count;
+
+    /// <summary>Держать крышу за вернувшегося. Идемпотентен (повтор того же — no-op).</summary>
+    public bool TryReserve(int ownerId)
+    {
+        if (IsFull) return false;
+        return reservedHolders.Add(ownerId);
+    }
+
+    public void Release(int ownerId)
+    {
+        reservedHolders.Remove(ownerId);
+    }
+
     public event Action Exhausted;
     public event Action Recovered;
 
-    public bool IsFull => population + pendingSpawns >= capacity;
+    public bool IsFull => population + pendingSpawns + reservedHolders.Count >= capacity;
     public bool IsExhausted => LairRules.IsExhausted(fear, exhaustFear);
 
     public bool IsNearHome(Vector3 pos)
@@ -67,10 +85,15 @@ public class LairSite : MonoBehaviour
         population = Mathf.Max(0, population - 1);
     }
 
-    /// <summary>Хук спавнера забирает готовый слот: 1 если есть, иначе 0.</summary>
+    /// <summary>
+    /// Хук спавнера забирает готовый слот. Блокируется только занятыми телами
+    /// (population + reserved): полная ОЧЕРЕДЬ — снимаема, иначе хук встанет.
+    /// Рост очереди и резерв блокируются полной крышей (см. IsFull).
+    /// </summary>
     public int ConsumeSpawn()
     {
         if (pendingSpawns <= 0) return 0;
+        if (population + reservedHolders.Count >= capacity) return 0;
         pendingSpawns--;
         population++;
         return 1;

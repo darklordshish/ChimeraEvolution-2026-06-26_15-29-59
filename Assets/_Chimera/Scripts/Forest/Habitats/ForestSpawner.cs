@@ -38,7 +38,7 @@ public class ForestSpawner : MonoBehaviour
     public bool DrainOnce(LairSite site)
     {
         if (site == null || site.pendingSpawns <= 0) return false;
-        if (site.population >= site.capacity) return false;
+        if (site.population + site.ReservedCount >= site.capacity) return false; // крыша занята телами
         if (site.IsExhausted) return false;
         SpeciesSO species = FindSpecies(site.speciesName);
         if (species == null) return false;
@@ -52,6 +52,7 @@ public class ForestSpawner : MonoBehaviour
             null);
         if (body == null) return false;
         lastSpawn = body;
+        body.home = site; // s6: точка возврата — свой дом с рождения
         site.ConsumeSpawn();
         Health health = body.GetComponent<Health>();
         if (health != null) health.onDeath.AddListener(() => OnSpawnedDeath(site, body));
