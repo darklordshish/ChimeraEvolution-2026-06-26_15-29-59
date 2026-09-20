@@ -151,7 +151,7 @@ public static class ForestScenicTool
     /// </summary>
     public static void FrameRiver()
     {
-        if (DomePreview.Hydro == null)
+        if (!DomePreview.Reattach())
             throw new System.InvalidOperationException("сначала BuildDomePreview (нет Hydro)");
         var s = DomePreview.Hydro;
         int mid = s.riverPts.Count / 2;
@@ -167,6 +167,26 @@ public static class ForestScenicTool
         sandbox.transform.LookAt(target);
         sandbox.GetComponent<Camera>().farClipPlane = 6000f;
         Debug.Log($"[Forest] кадр реки настроен (точка {mid}/{s.riverPts.Count}, туман выкл)");
+    }
+
+    /// <summary>
+    /// Фаза неба превью (s10c): day → 10.5 мин, sunset → 20.5, night → 25.5 (или минуты числом).
+    /// Позиции камер — как в FrameDome, затем риг ставит свет/туман/шейдер по фазе.
+    /// </summary>
+    public static void FrameSky(string phaseText)
+    {
+        if (!DomePreview.Reattach())
+            throw new System.InvalidOperationException("сначала BuildDomePreview (нет превью)");
+        float minutes = 10.5f;
+        if (phaseText == "sunset") minutes = 20.5f;
+        else if (phaseText == "night") minutes = 25.5f;
+        else if (phaseText != "day") float.TryParse(phaseText, out minutes);
+        FrameDome("2000");
+        // Камера висты ВНУТРИ свода (апекс +700): снаружи видно только изнанку.
+        var sandbox = GameObject.Find("SandboxCam");
+        sandbox.transform.position = new Vector3(0f, 300f, -700f);
+        sandbox.transform.LookAt(new Vector3(0f, 0f, 200f));
+        DomeSkyRig.ApplyPhase(DomePreview.PreviewRoot, minutes);
     }
 
     /// <summary>

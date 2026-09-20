@@ -13,6 +13,42 @@ public static class DomePreview
 {
     public static GameObject PreviewRoot { get; private set; }
     public static DomeHydro.State Hydro { get; private set; }
+
+    /// <summary>
+    /// Перепривязка после перезагрузки домена: статики умирают, объекты сцены живут.
+    /// Диаметр выводится из чанков (n² штук × размер), Hydro перестраивается
+    /// детерминированно (сид превью фиксирован). Без неё любой Frame* после
+    /// перекомпиляции падает с «нет превью».
+    /// </summary>
+    public static bool Reattach()
+    {
+        if (PreviewRoot != null && Hydro != null) return true;
+        var root = GameObject.Find("~DomePreview");
+        if (root == null) return false;
+        PreviewRoot = root;
+        if (Hydro == null)
+        {
+            int chunks = 0;
+            float chunk = 250f;
+            foreach (Transform c in root.transform)
+            {
+                if (!c.name.StartsWith("Chunk_")) continue;
+                chunks++;
+                var mf = c.GetComponent<MeshFilter>();
+                if (mf != null && mf.sharedMesh != null) chunk = mf.sharedMesh.bounds.size.x;
+            }
+            int n = Mathf.Max(1, Mathf.RoundToInt(Mathf.Sqrt(chunks)));
+            var cfg = ScriptableObject.CreateInstance<DomeGenConfigSO>();
+            cfg.seed = 1337;
+            cfg.randomSeed = false;
+            cfg.mapDiameter = n * chunk;
+            Hydro = DomeHydro.Build(cfg, 256);
+            Object.DestroyImmediate(cfg);
+        }
+        return true;
+    }
+    static Material skyMat;
+    static Material starMat;
     static Material previewMat;
     static Material rockMat;
     static Material waterMat;
@@ -56,6 +92,21 @@ public static class DomePreview
         Part("RockRing", DomeRockRing.BuildRingMesh(cfg, 256, 6), rockMat);
         Part("Lake", LakeDisc(hydro), waterMat);
         Part("River", RiverRibbon(cfg, hydro), waterMat);
+        float rv = DomeGenRules.VaultRadius(cfg);
+        skyMat = new Material(Shader.Find("Chimera/DomeSky"));
+        skyMat.SetVector("_Center", new Vector3(0f, DomeVault.CenterY(rv), 0f));
+        Part("Vault", DomeVault.BuildVaultMesh(rv, 128, 24), skyMat);
+        starMat = new Material(Shader.Find("Chimera/DomeFlat"));
+        starMat.SetFloat("_Level", 0f);
+        var vaultCenter = new Vector3(0f, DomeVault.CenterY(rv), 0f);
+        Part("Stars", DomeStars.BuildStarMesh(1337, 400, vaultCenter, rv * 0.985f, rv * 0.004f), starMat);
+        var sun = new GameObject("DomeSun");
+        sun.transform.SetParent(PreviewRoot.transform, false);
+        var sunLight = sun.AddComponent<Light>();
+        sunLight.type = LightType.Directional;
+        sunLight.shadows = LightShadows.None;
+        DomeSkyRig.Reset();
+        DomeSkyRig.ApplyPhase(PreviewRoot, 10.5f);
         Object.DestroyImmediate(cfg);
         Debug.Log($"[Forest] превью купола построено (сид 1337, Ø{diameter} м, чанков {n}×{n} + кольцо + озеро r={hydro.lakeRadius:F0}м + река {hydro.riverPts.Count} т.)");
     }
@@ -160,6 +211,17 @@ public static class DomePreview
             Object.DestroyImmediate(waterMat);
             waterMat = null;
         }
+        if (skyMat != null)
+        {
+            Object.DestroyImmediate(skyMat);
+            skyMat = null;
+        }
+        if (starMat != null)
+        {
+            Object.DestroyImmediate(starMat);
+            starMat = null;
+        }
+        DomeSkyRig.Reset();
     }
 
     public static GameObject NavRoot { get; private set; }
