@@ -13,6 +13,16 @@ public static class DomeChunkMesh
     public static Mesh BuildChunkMesh(DomeGenConfigSO cfg, int cx, int cz, int quadsPerSide)
     {
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
+        return BuildChunkMesh(cfg, cx, cz, quadsPerSide,
+            (x, z) => DomeHeightField.SampleHeight(cfg, x, z));
+    }
+
+    /// <summary>Тот же чанк, но высоты — произвольным семплером (гидрология с вырезом).</summary>
+    public static Mesh BuildChunkMesh(DomeGenConfigSO cfg, int cx, int cz, int quadsPerSide,
+        Func<float, float, float> sampler)
+    {
+        if (cfg == null) throw new ArgumentNullException(nameof(cfg));
+        if (sampler == null) throw new ArgumentNullException(nameof(sampler));
         int res = Mathf.Clamp(quadsPerSide, 4, 128);
         float half = cfg.mapDiameter * 0.5f;
         float x0 = -half + cx * cfg.chunkSize;
@@ -23,10 +33,10 @@ public static class DomeChunkMesh
         for (int iz = 0; iz < res; iz++)
             for (int ix = 0; ix < res; ix++)
             {
-                Vector3 p00 = Point(cfg, x0 + ix * step, z0 + iz * step);
-                Vector3 p10 = Point(cfg, x0 + (ix + 1) * step, z0 + iz * step);
-                Vector3 p01 = Point(cfg, x0 + ix * step, z0 + (iz + 1) * step);
-                Vector3 p11 = Point(cfg, x0 + (ix + 1) * step, z0 + (iz + 1) * step);
+                Vector3 p00 = Point(sampler, x0 + ix * step, z0 + iz * step);
+                Vector3 p10 = Point(sampler, x0 + (ix + 1) * step, z0 + iz * step);
+                Vector3 p01 = Point(sampler, x0 + ix * step, z0 + (iz + 1) * step);
+                Vector3 p11 = Point(sampler, x0 + (ix + 1) * step, z0 + (iz + 1) * step);
                 verts[v++] = p00;
                 verts[v++] = p11;
                 verts[v++] = p10;
@@ -44,8 +54,8 @@ public static class DomeChunkMesh
         return mesh;
     }
 
-    static Vector3 Point(DomeGenConfigSO cfg, float x, float z)
+    static Vector3 Point(Func<float, float, float> sampler, float x, float z)
     {
-        return new Vector3(x, DomeHeightField.SampleHeight(cfg, x, z), z);
+        return new Vector3(x, sampler(x, z), z);
     }
 }
