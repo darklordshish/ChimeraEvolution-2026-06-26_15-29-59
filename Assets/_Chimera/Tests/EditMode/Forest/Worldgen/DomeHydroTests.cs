@@ -27,7 +27,7 @@ namespace Chimera.Tests.EditMode
             try
             {
                 Assert.Greater(s.lakeRadius, 20f, "озеро не лужа");
-                Assert.Less(s.lakeRadius, 400f, "озеро не море");
+                Assert.LessOrEqual(s.lakeRadius, 150f, "радиус капается spec max");
                 Assert.Less(new Vector2(s.lakeCenter.x, s.lakeCenter.y).magnitude, 1000f, "озеро внутри карты");
                 float bed = DomeHydro.SampleHydro(cfg, s, s.lakeCenter.x, s.lakeCenter.y);
                 Assert.Less(bed, s.lakeLevel, "дно по центру ниже уровня воды");
@@ -46,6 +46,11 @@ namespace Chimera.Tests.EditMode
             try
             {
                 Assert.GreaterOrEqual(s.riverPts.Count, 2, "река из ≥2 точек");
+                float len = 0f;
+                for (int i = 1; i < s.riverPts.Count; i++)
+                    len += Vector2.Distance(s.riverPts[i - 1], s.riverPts[i]);
+                Assert.GreaterOrEqual(len, 100f, "река не лужа (≥100м на сетке 128)");
+                Assert.LessOrEqual(len, 650f, "река в коридоре спеки (устье ≤600м + шаг)");
                 for (int i = 1; i < s.riverBed.Count; i++)
                     Assert.Less(s.riverBed[i], s.riverBed[i - 1], $"русло монотонно в точке {i}");
                 int mid = s.riverPts.Count / 2;

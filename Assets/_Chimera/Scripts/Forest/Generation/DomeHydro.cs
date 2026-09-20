@@ -18,8 +18,8 @@ public static class DomeHydro
         public Vector2 lakeCenter;
         public float lakeRadius;
         public float lakeLevel;
-        public float riverHalfWidth = 4f;
-        public float riverDepth = 1.2f;
+        public float riverHalfWidth = 2.5f;
+        public float riverDepth = 0.9f;
         public float lakeDepth = 2.5f;
     }
 
@@ -38,14 +38,17 @@ public static class DomeHydro
         var lake = DomeWater.LakeMask(h, filled, 0.01f);
         var state = new State();
 
-        // Крупнейший кластер озера (BFS).
+        // Кластер озера: самый ГЛУБОКИЙ (max filled−orig), не самый большой —
+        // иначе за озеро сходит пологая низина на полкарты. Радиус капается spec max.
         var seen = new bool[gridRes, gridRes];
         List<Vector2Int> best = null;
+        float bestDepth = 0f;
         for (int ix = 0; ix < gridRes; ix++)
             for (int iz = 0; iz < gridRes; iz++)
             {
                 if (!lake[ix, iz] || seen[ix, iz]) continue;
                 var cluster = new List<Vector2Int>();
+                float depth = 0f;
                 var queue = new Queue<Vector2Int>();
                 queue.Enqueue(new Vector2Int(ix, iz));
                 seen[ix, iz] = true;
@@ -53,6 +56,8 @@ public static class DomeHydro
                 {
                     var c = queue.Dequeue();
                     cluster.Add(c);
+                    float dd = filled[c.x, c.y] - h[c.x, c.y];
+                    if (dd > depth) depth = dd;
                     for (int k = 0; k < 4; k++)
                     {
                         int nx = c.x + (k == 0 ? 1 : k == 1 ? -1 : 0);
@@ -62,7 +67,7 @@ public static class DomeHydro
                         queue.Enqueue(new Vector2Int(nx, nz));
                     }
                 }
-                if (best == null || cluster.Count > best.Count) best = cluster;
+                if (best == null || depth > bestDepth) { best = cluster; bestDepth = depth; }
             }
         if (best == null || best.Count == 0)
             throw new InvalidOperationException("озеро не нашлось: поле без впадин (смени сид)");
@@ -71,7 +76,7 @@ public static class DomeHydro
         foreach (var c in best) { inLake[c.x, c.y] = true; sumX += c.x; sumZ += c.y; }
         float cx = sumX / best.Count, cz = sumZ / best.Count;
         state.lakeCenter = new Vector2(-d / 2 + (cx + 0.5f) * cell, -d / 2 + (cz + 0.5f) * cell);
-        state.lakeRadius = Mathf.Sqrt(best.Count / Mathf.PI) * cell;
+        state.lakeRadius = Math.Min(Mathf.Sqrt(best.Count / Mathf.PI) * cell, 150f);
         // Уровень = минимальный обод (min filled у соседей кластера).
         float spill = float.PositiveInfinity;
         foreach (var c in best)
@@ -83,9 +88,20 @@ public static class DomeHydro
                 if (filled[nx, nz] < spill) spill = filled[nx, nz];
             }
         state.lakeLevel = spill;
+        // Вода — только капированный диск: за его пределами марш, река течёт по нему.
+        // (Полный кластер впадины может накрывать полкарты и душить треки.)
+        for (int ix = 0; ix < gridRes; ix++)
+            for (int iz = 0; iz < gridRes; iz++)
+            {
+                float wx = -d / 2 + (ix + 0.5f) * cell;
+                float wz = -d / 2 + (iz + 0.5f) * cell;
+                float dx = wx - state.lakeCenter.x;
+                float dz = wz - state.lakeCenter.y;
+                inLake[ix, iz] = dx * dx + dz * dz <= state.lakeRadius * state.lakeRadius;
+            }
 
-        // Исток: максимальная аккумуляция вне озера, но с запасом трека:
-        // трек обязан дать ≥8 клеток до озера/границы, иначе это лужа у берега.
+        // Исток: самый ДЛИННЫЙ трек среди настоящих ручьёв (acc ≥ 10), не короче 150м.
+        // Максимум аккумуляции даёт толстую, но короткую протоку у озера — спеке нужна длина.
         var dir = DomeWater.FlowDir(filled);
         var acc = DomeWater.Accumulation(filled, dir);
         var candidates = new List<Vector2Int>();
@@ -95,17 +111,25 @@ public static class DomeHydro
                 if (inLake[ix, iz]) continue;
                 candidates.Add(new Vector2Int(ix, iz));
             }
-        candidates.Sort((a, b) => acc[b.x, b.y].CompareTo(acc[a.x, a.y]));
         List<Vector2Int> gridPath = null;
+        int minCells = Mathf.CeilToInt(150f / cell);
+        int bestLen = 0;
+        float bestLenAcc = 0f;
         foreach (var cand in candidates)
         {
+            if (acc[cand.x, cand.y] < 10f) continue;
             var traced = DomeWater.TraceRiver(dir, cand.x, cand.y);
             int usable = 0;
             while (usable < traced.Count && !inLake[traced[usable].x, traced[usable].y]) usable++;
-            if (usable >= 8) { gridPath = traced.GetRange(0, usable); break; }
+            if (usable >= minCells && (usable > bestLen || (usable == bestLen && acc[cand.x, cand.y] > bestLenAcc)))
+            {
+                bestLen = usable;
+                bestLenAcc = acc[cand.x, cand.y];
+                gridPath = traced.GetRange(0, usable);
+            }
         }
         if (gridPath == null)
-            throw new InvalidOperationException("река короче 8 клеток (смени сид)");
+            throw new InvalidOperationException("река короче 150м (смени сид)");
         // Мировая полилиния (прореживание ×2) + монотонные отметки русла.
         float ceiling = float.PositiveInfinity;
         for (int i = 0; i < gridPath.Count; i += 2)
@@ -120,7 +144,20 @@ public static class DomeHydro
         }
         if (state.riverPts.Count < 2)
             throw new InvalidOperationException("река короче 2 точек (смени сид)");
+        // Спека: речушка 300–600м. Хвост (устье) держим, лишнее верховье отрезаем.
+        while (state.riverPts.Count > 2 && PolyLength(state.riverPts) > 600f)
+        {
+            state.riverPts.RemoveAt(0);
+            state.riverBed.RemoveAt(0);
+        }
         return state;
+    }
+
+    static float PolyLength(List<Vector2> pts)
+    {
+        float len = 0f;
+        for (int i = 1; i < pts.Count; i++) len += Vector2.Distance(pts[i - 1], pts[i]);
+        return len;
     }
 
     /// <summary>Поле с вырезом: чаша озера + русло реки поверх DomeHeightField.</summary>

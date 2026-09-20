@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Unity.AI.Navigation;
 using UnityEngine;
 using UnityEngine.AI;
@@ -11,6 +12,7 @@ using UnityEngine.AI;
 public static class DomePreview
 {
     public static GameObject PreviewRoot { get; private set; }
+    public static DomeHydro.State Hydro { get; private set; }
     static Material previewMat;
     static Material rockMat;
     static Material waterMat;
@@ -42,7 +44,8 @@ public static class DomePreview
         rockMat = Flat(new Color(0.5f, 0.5f, 0.5f));
         waterMat = Flat(new Color(0.2f, 0.45f, 0.6f));
         PreviewRoot = new GameObject("~DomePreview");
-        var hydro = DomeHydro.Build(cfg, 128);
+        var hydro = DomeHydro.Build(cfg, 256);
+        Hydro = hydro;
         System.Func<float, float, float> sampler = (x, z) => DomeHydro.SampleHydro(cfg, hydro, x, z);
         for (int cz = 0; cz < n; cz++)
             for (int cx = 0; cx < n; cx++)
@@ -52,7 +55,7 @@ public static class DomePreview
             }
         Part("RockRing", DomeRockRing.BuildRingMesh(cfg, 256, 6), rockMat);
         Part("Lake", LakeDisc(hydro), waterMat);
-        Part("River", RiverRibbon(hydro), waterMat);
+        Part("River", RiverRibbon(cfg, hydro), waterMat);
         Object.DestroyImmediate(cfg);
         Debug.Log($"[Forest] превью купола построено (сид 1337, Ø{diameter} м, чанков {n}×{n} + кольцо + озеро r={hydro.lakeRadius:F0}м + река {hydro.riverPts.Count} т.)");
     }
@@ -74,24 +77,42 @@ public static class DomePreview
         return FacetMesh("LakeDisc", verts);
     }
 
-    static Mesh RiverRibbon(DomeHydro.State s)
+    /// <summary>
+    /// Лента реки: сегменты дробятся ×4 с посадкой каждой точки на вырезанное поле
+    /// (+0.25), поэтому вода непрерывна и повторяет русло, а не режет бугры напрямик.
+    /// </summary>
+    static Mesh RiverRibbon(DomeGenConfigSO cfg, DomeHydro.State s)
     {
         var pts = s.riverPts;
-        var verts = new Vector3[(pts.Count - 1) * 6];
+        const int sub = 4;
+        var verts = new List<Vector3>((pts.Count - 1) * sub * 6);
         float w = s.riverHalfWidth;
-        int v = 0;
         for (int i = 0; i < pts.Count - 1; i++)
         {
             Vector2 d = (pts[i + 1] - pts[i]).normalized;
             Vector2 p = new Vector2(-d.y, d.x) * w;
-            Vector3 l0 = new Vector3(pts[i].x - p.x, s.riverBed[i] + 0.35f, pts[i].y - p.y);
-            Vector3 r0 = new Vector3(pts[i].x + p.x, s.riverBed[i] + 0.35f, pts[i].y + p.y);
-            Vector3 l1 = new Vector3(pts[i + 1].x - p.x, s.riverBed[i + 1] + 0.35f, pts[i + 1].y - p.y);
-            Vector3 r1 = new Vector3(pts[i + 1].x + p.x, s.riverBed[i + 1] + 0.35f, pts[i + 1].y + p.y);
-            verts[v++] = l0; verts[v++] = r0; verts[v++] = r1;
-            verts[v++] = l0; verts[v++] = r1; verts[v++] = l1;
+            Vector3 prevL = WaterEdge(cfg, s, pts[i].x - p.x, pts[i].y - p.y);
+            Vector3 prevR = WaterEdge(cfg, s, pts[i].x + p.x, pts[i].y + p.y);
+            for (int k = 1; k <= sub; k++)
+            {
+                float t = k / (float)sub;
+                float px = Mathf.Lerp(pts[i].x, pts[i + 1].x, t);
+                float pz = Mathf.Lerp(pts[i].y, pts[i + 1].y, t);
+                Vector2 dd = (pts[i + 1] - pts[i]).normalized;
+                Vector2 pp = new Vector2(-dd.y, dd.x) * w;
+                Vector3 l = WaterEdge(cfg, s, px - pp.x, pz - pp.y);
+                Vector3 r = WaterEdge(cfg, s, px + pp.x, pz + pp.y);
+                verts.Add(prevL); verts.Add(prevR); verts.Add(r);
+                verts.Add(prevL); verts.Add(r); verts.Add(l);
+                prevL = l; prevR = r;
+            }
         }
-        return FacetMesh("RiverRibbon", verts);
+        return FacetMesh("RiverRibbon", verts.ToArray());
+    }
+
+    static Vector3 WaterEdge(DomeGenConfigSO cfg, DomeHydro.State s, float x, float z)
+    {
+        return new Vector3(x, DomeHydro.SampleHydro(cfg, s, x, z) + 0.25f, z);
     }
 
     static Mesh FacetMesh(string name, Vector3[] verts)
@@ -118,6 +139,7 @@ public static class DomePreview
 
     public static void WipePreview()
     {
+        Hydro = null;
         if (PreviewRoot != null)
         {
             Object.DestroyImmediate(PreviewRoot);

@@ -146,8 +146,32 @@ public static class ForestScenicTool
     }
 
     /// <summary>
+    /// Крупный кадр реки (s10b-3): камера у середины русла, смотрит вниз по течению.
+    /// Требует построенного превью (DomePreview.Hydro). Туман гасится, как в FrameDome.
+    /// </summary>
+    public static void FrameRiver()
+    {
+        if (DomePreview.Hydro == null)
+            throw new System.InvalidOperationException("сначала BuildDomePreview (нет Hydro)");
+        var s = DomePreview.Hydro;
+        int mid = s.riverPts.Count / 2;
+        Vector2 p = s.riverPts[mid];
+        Vector2 q = s.riverPts[Mathf.Min(mid + 1, s.riverPts.Count - 1)];
+        Vector2 d = q - p;
+        d = d.sqrMagnitude > 1e-6f ? d.normalized : Vector2.right;
+        Vector3 target = new Vector3(p.x, s.riverBed[mid], p.y);
+        RenderSettings.fog = false;
+        SetupCameras("35");
+        var sandbox = GameObject.Find("SandboxCam");
+        sandbox.transform.position = target + new Vector3(-d.x * 90f, 55f, -d.y * 90f);
+        sandbox.transform.LookAt(target);
+        sandbox.GetComponent<Camera>().farClipPlane = 6000f;
+        Debug.Log($"[Forest] кадр реки настроен (точка {mid}/{s.riverPts.Count}, туман выкл)");
+    }
+
+    /// <summary>
     /// Кадр под купол (s10a): туман гасится (иначе Exp2 0.012 на 2000м — белое молоко),
-    /// far plane камер — 6000, TopCap — топдаун-орто на весь диаметр, SandboxCam — 3/4.
+    /// far plane камер — 6000, TopCam — топдаун-орто на весь диаметр, SandboxCam — 3/4.
     /// Возврат тумана/света — ForestLightSetup.SetupSandbox() (как в s7/s9).
     /// </summary>
     public static void FrameDome(string diameterText)
