@@ -15,32 +15,68 @@ public static class DomeHeightField
     const long WarpSaltX = 0x2B4D8A1FL;
     const long WarpSaltZ = 0x6C9E3D77L;
 
+    /// <summary>
+    /// Blittable-параметры поля: копируются в джобу (ScriptableObject в джобу нельзя).
+    /// Один источник математики — SampleRaw: скаляр и джоба считают им.
+    /// </summary>
+    public struct DomeHeightParams
+    {
+        public long seed;
+        public int version;
+        public int octaves;
+        public int ridgedOctaves;
+        public int warpOctaves;
+        public float warpStrength;
+        public float baseFrequency;
+        public float amplitude;
+
+        public static DomeHeightParams From(DomeGenConfigSO cfg)
+        {
+            if (cfg == null) throw new ArgumentNullException(nameof(cfg));
+            return new DomeHeightParams
+            {
+                seed = cfg.seed,
+                version = cfg.version,
+                octaves = cfg.octaves,
+                ridgedOctaves = cfg.ridgedOctaves,
+                warpOctaves = cfg.warpOctaves,
+                warpStrength = cfg.warpStrength,
+                baseFrequency = cfg.baseFrequency,
+                amplitude = cfg.amplitude,
+            };
+        }
+    }
+
     public static float SampleHeight(DomeGenConfigSO cfg, float x, float z)
     {
-        if (cfg == null) throw new ArgumentNullException(nameof(cfg));
-        long seed = cfg.seed ^ ((long)cfg.version * 7919L);
-        float f = cfg.baseFrequency;
+        return SampleRaw(DomeHeightParams.From(cfg), x, z);
+    }
+
+    public static float SampleRaw(DomeHeightParams p, float x, float z)
+    {
+        long seed = p.seed ^ ((long)p.version * 7919L);
+        float f = p.baseFrequency;
 
         float wx = 0f, wz = 0f;
-        if (cfg.warpOctaves > 0 && cfg.warpStrength > 0f)
+        if (p.warpOctaves > 0 && p.warpStrength > 0f)
         {
-            wx = ValueNoise2D.Fbm(seed + WarpSaltX, x * f, z * f, cfg.warpOctaves);
-            wz = ValueNoise2D.Fbm(seed + WarpSaltZ, x * f, z * f, cfg.warpOctaves);
+            wx = ValueNoise2D.Fbm(seed + WarpSaltX, x * f, z * f, p.warpOctaves);
+            wz = ValueNoise2D.Fbm(seed + WarpSaltZ, x * f, z * f, p.warpOctaves);
         }
-        float px = x + wx * cfg.warpStrength;
-        float pz = z + wz * cfg.warpStrength;
+        float px = x + wx * p.warpStrength;
+        float pz = z + wz * p.warpStrength;
 
-        float b = ValueNoise2D.Fbm(seed + BaseSalt, px * f, pz * f, cfg.octaves);
+        float b = ValueNoise2D.Fbm(seed + BaseSalt, px * f, pz * f, p.octaves);
         float mask = ValueNoise2D.Fbm(seed + MaskSalt, x * f * 0.25f, z * f * 0.25f, 3);
         float m = Mathf.Clamp01((mask - 0.05f) / 0.5f);
         float r = 0f;
-        if (cfg.ridgedOctaves > 0)
+        if (p.ridgedOctaves > 0)
         {
-            float n = ValueNoise2D.Fbm(seed + RidgeSalt, px * f * 2f, pz * f * 2f, cfg.ridgedOctaves);
+            float n = ValueNoise2D.Fbm(seed + RidgeSalt, px * f * 2f, pz * f * 2f, p.ridgedOctaves);
             float ridge = 1f - Mathf.Abs(n);
             r = ridge * ridge;
         }
-        return cfg.amplitude * (0.55f * b + 0.65f * (r * m - 0.35f * m) - 0.12f * (1f - m));
+        return p.amplitude * (0.55f * b + 0.65f * (r * m - 0.35f * m) - 0.12f * (1f - m));
     }
 
     /// <summary>Хэш сетки — якорь теста детерминизма (как WorldHeightField.SampleGridHash).</summary>
