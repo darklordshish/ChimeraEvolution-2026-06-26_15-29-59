@@ -103,6 +103,21 @@ public static class FloraMeshKit
         return Bake(v, n, t, "Crown");
     }
 
+    /// <summary>Крона ясеня-исполина: 7 широких сплюснутых икосаэдров (герой s10g).
+    /// Гроздь — outward только объёмом (как Crown). 140 тр.</summary>
+    public static Mesh AshCrown(float r)
+    {
+        var v = new List<Vector3>(); var n = new List<Vector3>(); var t = new List<int>();
+        Ico(v, n, t, r, new Vector3(0, r * 0.9f, 0), 0.55f);
+        for (int k = 0; k < 6; k++)
+        {
+            float a = k / 6f * Mathf.PI * 2f;
+            Ico(v, n, t, r * 0.55f,
+                new Vector3(Mathf.Cos(a) * r * 0.85f, r * 0.45f, Mathf.Sin(a) * r * 0.85f), 0.55f);
+        }
+        return Bake(v, n, t, "AshCrown");
+    }
+
     /// <summary>Плита: бокс sx·sy·sz. 12 тр.</summary>
     public static Mesh Slab(float sx, float sy, float sz)
     {
