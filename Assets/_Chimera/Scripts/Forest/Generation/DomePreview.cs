@@ -13,6 +13,8 @@ public static class DomePreview
 {
     public static GameObject PreviewRoot { get; private set; }
     public static DomeHydro.State Hydro { get; private set; }
+    public static DomeAshSite.AshSpot Ash { get; private set; }
+    public static bool HasAsh { get; private set; }
     public static DomeFacilityLayout.Facility Facility { get; private set; }
     public static List<DomeSlope.MouthSpot> Mouths { get; private set; }
     public static List<DomeSlope.NestSpot> Nests { get; private set; }
@@ -25,7 +27,7 @@ public static class DomePreview
     /// </summary>
     public static bool Reattach()
     {
-        if (PreviewRoot != null && Hydro != null && Mouths != null && Facility != null) return true;
+        if (PreviewRoot != null && Hydro != null && Mouths != null && Facility != null && HasAsh) return true;
         var root = GameObject.Find("~DomePreview");
         if (root == null) return false;
         PreviewRoot = root;
@@ -46,6 +48,11 @@ public static class DomePreview
             cfg.randomSeed = false;
             cfg.mapDiameter = n * chunk;
             if (Hydro == null) Hydro = DomeHydro.Build(cfg, 256);
+            if (!HasAsh && Hydro != null)
+            {
+                Ash = DomeAshSite.FindSpot(cfg, 1337, Vector2.zero, Hydro, 96);
+                HasAsh = true;
+            }
             if (Facility == null) Facility = DomeFacilityLayout.Build(cfg, 1337, Vector2.zero);
             if (Mouths == null)
             {
@@ -102,6 +109,7 @@ public static class DomePreview
         Part("Lake", LakeDisc(hydro), waterMat);
         Part("River", RiverRibbon(cfg, hydro), waterMat);
         BuildMouths(cfg, hydro);
+        BuildAsh(cfg, hydro);
         BuildFacility(cfg, hydro);
         float rv = DomeGenRules.VaultRadius(cfg);
         skyMat = new Material(Shader.Find("Chimera/DomeSky"));
@@ -205,6 +213,12 @@ public static class DomePreview
         Hydro = null;
         if (PreviewRoot != null)
         {
+            // Снос мешей кита (создаются свежими каждый билд — иначе утечка):
+            // уникальные sharedMesh всех фильтров корня.
+            var seen = new System.Collections.Generic.HashSet<Mesh>();
+            foreach (var filter in PreviewRoot.GetComponentsInChildren<MeshFilter>())
+                if (filter != null && filter.sharedMesh != null && seen.Add(filter.sharedMesh))
+                    Object.DestroyImmediate(filter.sharedMesh);
             Object.DestroyImmediate(PreviewRoot);
             PreviewRoot = null;
         }
@@ -243,6 +257,10 @@ public static class DomePreview
             Object.DestroyImmediate(nestMat);
             nestMat = null;
         }
+        foreach (var m in new[] { barkMat, crownMat, owlMat })
+            if (m != null) Object.DestroyImmediate(m);
+        barkMat = crownMat = owlMat = null;
+        HasAsh = false;
         Mouths = null;
         Nests = null;
         Facility = null;
@@ -255,6 +273,43 @@ public static class DomePreview
     static Material navMat;
     static Material darkMat;
     static Material nestMat;
+    static Material barkMat;
+    static Material crownMat;
+    static Material owlMat;
+
+    /// <summary>
+    /// Ясень-исполин в превью (s10g-2): ствол 30м + крона 12м + гнездо-платформа
+    /// + болванка совы (2 икосаэдра — масса и масштаб, не модель).
+    /// </summary>
+    public static void BuildAsh(DomeGenConfigSO cfg, DomeHydro.State hydro)
+    {
+        Ash = DomeAshSite.FindSpot(cfg, 1337, Vector2.zero, hydro, 96);
+        HasAsh = true;
+        barkMat = Flat(new Color(0.35f, 0.25f, 0.18f));
+        crownMat = Flat(new Color(0.24f, 0.38f, 0.20f));
+        owlMat = Flat(new Color(0.55f, 0.52f, 0.47f));
+        float gy = DomeHeightField.SampleHeight(cfg, Ash.pos.x, Ash.pos.y);
+        var root = new GameObject("Ash");
+        root.transform.SetParent(PreviewRoot.transform, false);
+        root.transform.position = new Vector3(Ash.pos.x, gy, Ash.pos.y);
+        TrunkPart(root.transform, FloraMeshKit.Trunk(0.8f, 0.3f, 30f), barkMat, Vector3.zero);
+        TrunkPart(root.transform, FloraMeshKit.AshCrown(12f), crownMat, new Vector3(0f, 30f, 0f));
+        TrunkPart(root.transform, FloraMeshKit.Slab(2.2f, 0.3f, 2.2f), barkMat, new Vector3(3f, 36f, 1f));
+        TrunkPart(root.transform, FloraMeshKit.Icosahedron(0.55f), owlMat, new Vector3(3f, 37f, 1f));
+        TrunkPart(root.transform, FloraMeshKit.Icosahedron(0.32f), owlMat, new Vector3(3f, 37.8f, 1.35f));
+        Debug.Log($"[Forest] ясень: ({Ash.pos.x:F0},{Ash.pos.y:F0}), гнездо на 36м");
+    }
+
+    static void TrunkPart(Transform parent, Mesh mesh, Material mat, Vector3 localPos)
+    {
+        var go = new GameObject("AshPart");
+        go.transform.SetParent(parent, false);
+        go.transform.localPosition = localPos;
+        var filter = go.AddComponent<MeshFilter>();
+        filter.sharedMesh = mesh;
+        var renderer = go.AddComponent<MeshRenderer>();
+        renderer.sharedMaterial = mat;
+    }
 
     /// <summary>
     /// Устья и гнёзда в превью (s10e-2): портал из плит (косяки + перемычка + тёмная

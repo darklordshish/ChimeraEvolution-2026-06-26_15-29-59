@@ -256,6 +256,23 @@ public static class ForestScenicTool
     }
 
     /// <summary>
+    /// Кадр ясеня (s10g-2): камера перед исполином, в кадре ствол + крона + гнездо.
+    /// </summary>
+    public static void FrameAsh()
+    {
+        if (!DomePreview.Reattach() || !DomePreview.HasAsh)
+            throw new System.InvalidOperationException("сначала BuildDomePreview с ясенем");
+        var a = DomePreview.Ash;
+        RenderSettings.fog = false;
+        SetupCameras("35");
+        var sandbox = GameObject.Find("SandboxCam");
+        sandbox.transform.position = new Vector3(a.pos.x - 45f, 18f, a.pos.y - 55f);
+        sandbox.transform.LookAt(new Vector3(a.pos.x, a.groundY + 22f, a.pos.y));
+        sandbox.GetComponent<Camera>().farClipPlane = 6000f;
+        Debug.Log("[Forest] кадр ясеня настроен (туман выкл)");
+    }
+
+    /// <summary>
     /// Фаза неба превью (s10c): day → 10.5 мин, sunset → 20.5, night → 25.5 (или минуты числом).
     /// Позиции камер — как в FrameDome, затем риг ставит свет/туман/шейдер по фазе.
     /// </summary>
