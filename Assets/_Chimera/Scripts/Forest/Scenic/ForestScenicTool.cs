@@ -207,6 +207,55 @@ public static class ForestScenicTool
     }
 
     /// <summary>
+    /// Кадр лаборатории (s10f-2): камера над двором, смотрит на боксы.
+    /// </summary>
+    public static void FrameLab()
+    {
+        if (!DomePreview.Reattach() || DomePreview.Facility == null)
+            throw new System.InvalidOperationException("сначала BuildDomePreview с корпусами");
+        RenderSettings.fog = false;
+        SetupCameras("35");
+        var sandbox = GameObject.Find("SandboxCam");
+        sandbox.transform.position = new Vector3(0f, 28f, -38f);
+        sandbox.transform.LookAt(new Vector3(0f, 2f, 5f));
+        sandbox.GetComponent<Camera>().farClipPlane = 6000f;
+        Debug.Log("[Forest] кадр лаборатории настроен (туман выкл)");
+    }
+
+    /// <summary>
+    /// Кадр ангара (s10f-2): камера на площадке, смотрит в портал.
+    /// </summary>
+    public static void FrameHangar()
+    {
+        if (!DomePreview.Reattach() || DomePreview.Facility == null)
+            throw new System.InvalidOperationException("сначала BuildDomePreview с корпусами");
+        var f = DomePreview.Facility;
+        Vector2 fwd = new Vector2(
+            Mathf.Sin(f.hangarYaw * Mathf.Deg2Rad), Mathf.Cos(f.hangarYaw * Mathf.Deg2Rad));
+        RenderSettings.fog = false;
+        SetupCameras("35");
+        // Высота ворот — по построенным деталям (ангар стоит на склоне кольца,
+        // земля там +40…+100, а не 0 — поймано кадром s10f).
+        float topY = 5f;
+        var facRoot = GameObject.Find("Facility");
+        if (facRoot != null)
+        {
+            foreach (Transform c in facRoot.transform)
+            {
+                Vector3 p = c.position;
+                float dx = p.x - f.hangarPos.x, dz = p.z - f.hangarPos.y;
+                if (dx * dx + dz * dz < 30f * 30f && p.y > topY) topY = p.y;
+            }
+        }
+        var sandbox = GameObject.Find("SandboxCam");
+        sandbox.transform.position = new Vector3(
+            f.hangarPos.x - fwd.x * 30f, topY + 8f, f.hangarPos.y - fwd.y * 30f);
+        sandbox.transform.LookAt(new Vector3(f.hangarPos.x, topY - 2f, f.hangarPos.y));
+        sandbox.GetComponent<Camera>().farClipPlane = 6000f;
+        Debug.Log("[Forest] кадр ангара настроен (туман выкл)");
+    }
+
+    /// <summary>
     /// Фаза неба превью (s10c): day → 10.5 мин, sunset → 20.5, night → 25.5 (или минуты числом).
     /// Позиции камер — как в FrameDome, затем риг ставит свет/туман/шейдер по фазе.
     /// </summary>

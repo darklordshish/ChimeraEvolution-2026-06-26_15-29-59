@@ -13,6 +13,7 @@ public static class DomePreview
 {
     public static GameObject PreviewRoot { get; private set; }
     public static DomeHydro.State Hydro { get; private set; }
+    public static DomeFacilityLayout.Facility Facility { get; private set; }
     public static List<DomeSlope.MouthSpot> Mouths { get; private set; }
     public static List<DomeSlope.NestSpot> Nests { get; private set; }
 
@@ -24,7 +25,7 @@ public static class DomePreview
     /// </summary>
     public static bool Reattach()
     {
-        if (PreviewRoot != null && Hydro != null && Mouths != null) return true;
+        if (PreviewRoot != null && Hydro != null && Mouths != null && Facility != null) return true;
         var root = GameObject.Find("~DomePreview");
         if (root == null) return false;
         PreviewRoot = root;
@@ -45,6 +46,7 @@ public static class DomePreview
             cfg.randomSeed = false;
             cfg.mapDiameter = n * chunk;
             if (Hydro == null) Hydro = DomeHydro.Build(cfg, 256);
+            if (Facility == null) Facility = DomeFacilityLayout.Build(cfg, 1337, Vector2.zero);
             if (Mouths == null)
             {
                 Mouths = DomeSlope.FindMouths(cfg, 3, 96);
@@ -100,6 +102,7 @@ public static class DomePreview
         Part("Lake", LakeDisc(hydro), waterMat);
         Part("River", RiverRibbon(cfg, hydro), waterMat);
         BuildMouths(cfg, hydro);
+        BuildFacility(cfg, hydro);
         float rv = DomeGenRules.VaultRadius(cfg);
         skyMat = new Material(Shader.Find("Chimera/DomeSky"));
         skyMat.SetVector("_Center", new Vector3(0f, DomeVault.CenterY(rv), 0f));
@@ -242,6 +245,8 @@ public static class DomePreview
         }
         Mouths = null;
         Nests = null;
+        Facility = null;
+        DomeFacilityPlacer.ClearMats();
         DomeSkyRig.Reset();
     }
 
@@ -255,6 +260,16 @@ public static class DomePreview
     /// Устья и гнёзда в превью (s10e-2): портал из плит (косяки + перемычка + тёмная
     /// карта ниши), скалы вокруг, каирны-маркеры гнёзд. y — по carved-полю превью.
     /// </summary>
+    public static void BuildFacility(DomeGenConfigSO cfg, DomeHydro.State hydro)
+    {
+        Facility = DomeFacilityLayout.Build(cfg, 1337, Vector2.zero);
+        System.Func<float, float, float> ground = (x, z) => Mathf.Max(
+            DomeHydro.SampleHydro(cfg, hydro, x, z),
+            DomeSlope.RingField(cfg, x, z));
+        DomeFacilityPlacer.Build(PreviewRoot, Facility, ground);
+        Debug.Log($"[Forest] корпуса: деталей {Facility.parts.Count}, POI {Facility.pois.Count}");
+    }
+
     public static void BuildMouths(DomeGenConfigSO cfg, DomeHydro.State hydro)
     {
         System.Func<float, float, float> ground = (x, z) => DomeSlope.RingField(cfg, x, z);
