@@ -18,6 +18,22 @@ public static class FloraScatter
     public static List<FloraPoint> Scatter(long seed, int salt, int count, float areaHalf,
         float minDist, WorldGenConfigSO world)
     {
+        return ScatterCore(seed, salt, count, areaHalf, minDist, world, float.PositiveInfinity);
+    }
+
+    /// <summary>
+    /// Тот же rejection sampling, но с потолком над водой (папоротники: только
+    /// влажная низина waterLevel…waterLevel+maxHeightAboveWater). s10d.
+    /// </summary>
+    public static List<FloraPoint> ScatterBelt(long seed, int salt, int count, float areaHalf,
+        float minDist, WorldGenConfigSO world, float maxHeightAboveWater)
+    {
+        return ScatterCore(seed, salt, count, areaHalf, minDist, world, maxHeightAboveWater);
+    }
+
+    static List<FloraPoint> ScatterCore(long seed, int salt, int count, float areaHalf,
+        float minDist, WorldGenConfigSO world, float maxHeightAboveWater)
+    {
         var pts = new List<FloraPoint>();
         if (world == null || count <= 0 || areaHalf <= 0f || minDist <= 0f) return pts;
         float cell = minDist;
@@ -33,6 +49,7 @@ public static class FloraScatter
             i++;
             float y = WorldHeightField.SampleHeight(world, x, z);
             if (y < world.waterLevel) continue; // пруды чистые
+            if (y > world.waterLevel + maxHeightAboveWater) continue; // пояс: выше не растёт
             if (SlopeAt(world, x, z) > world.maxSlopeDegrees) continue; // на крутизне не растёт
             int cx = Mathf.FloorToInt(x / cell);
             int cz = Mathf.FloorToInt(z / cell);

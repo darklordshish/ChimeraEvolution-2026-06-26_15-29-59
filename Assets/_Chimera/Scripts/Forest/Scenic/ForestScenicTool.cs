@@ -146,6 +146,20 @@ public static class ForestScenicTool
     }
 
     /// <summary>
+    /// Покраска витрины (Showcase.Build не красит — аппликатор без материала;
+    /// без этого террейн маджента). s10d.
+    /// </summary>
+    public static void PaintPreview()
+    {
+        var go = GameObject.Find("~ForestTerrain");
+        if (go == null) throw new System.InvalidOperationException("сначала Showcase.Build (нет ~ForestTerrain)");
+        var applier = go.GetComponent<TerrainApplier>();
+        if (applier == null) throw new System.InvalidOperationException("на ~ForestTerrain нет TerrainApplier");
+        PaintRelief(applier);
+        Debug.Log("[Forest] витрина покрашена");
+    }
+
+    /// <summary>
     /// Крупный кадр реки (s10b-3): камера у середины русла, смотрит вниз по течению.
     /// Требует построенного превью (DomePreview.Hydro). Туман гасится, как в FrameDome.
     /// </summary>

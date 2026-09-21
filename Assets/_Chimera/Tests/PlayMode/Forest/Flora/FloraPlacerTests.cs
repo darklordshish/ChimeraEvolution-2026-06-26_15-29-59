@@ -22,6 +22,7 @@ namespace Chimera.Tests.PlayMode
             flora.rockCount = 2;
             flora.bushCount = 2;
             flora.grassCount = 10;
+            flora.fernCount = 4;
             flora.minDistance = 2f;
 
             var ground = new GameObject("~ForestGround");

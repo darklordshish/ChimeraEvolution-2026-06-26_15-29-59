@@ -77,6 +77,34 @@ namespace Chimera.Tests.EditMode
         }
 
         [Test]
+        public void ScatterBelt_RespectsCeiling()
+        {
+            var cfg = World(1337);
+            var pts = FloraScatter.ScatterBelt(cfg.seed, 55, 120, 46f, 2f, cfg, 1f);
+            Assert.Greater(pts.Count, 0, "пояс не пуст");
+            foreach (var p in pts)
+            {
+                Assert.GreaterOrEqual(p.pos.y, cfg.waterLevel, "ниже воды нет");
+                Assert.LessOrEqual(p.pos.y, cfg.waterLevel + 1f + 1e-4f, "выше пояса нет");
+            }
+        }
+
+        [Test]
+        public void TreeKindFor_LowlandKeepsLegacy_HighlandGivesSpruce()
+        {
+            for (int k = 0; k < 50; k++)
+            {
+                var kind = FloraPlacer.TreeKindFor(1337, k, 0f);
+                Assert.AreNotEqual(FloraKind.SpruceTree, kind, $"низина k={k} — старый набор");
+                Assert.AreEqual(FloraPlacer.TreeKindFor(1337, k, 0f), kind, "детерминировано");
+            }
+            int spruce = 0;
+            for (int k = 0; k < 200; k++)
+                if (FloraPlacer.TreeKindFor(1337, k, 10f) == FloraKind.SpruceTree) spruce++;
+            Assert.Greater(spruce, 100, "высоко — в основном ели");
+        }
+
+        [Test]
         public void Kit_HasVolume()
         {
             Assert.Greater(FloraMeshKit.Trunk(0.14f, 0.09f, 2.6f).bounds.size.y, 2f, "ствол тянется вверх");
