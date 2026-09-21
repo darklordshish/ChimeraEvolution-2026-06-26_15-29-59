@@ -12,6 +12,7 @@ public class FloraConfigSO : ScriptableObject
     public int rockCount = 12;
     public int bushCount = 24;
     public int grassCount = 200;
+    public int fernCount = 120;
 
     [Header("Мин-дистанция между стволами/камнями, м")]
     public float minDistance = 3f;
@@ -22,6 +23,7 @@ public class FloraConfigSO : ScriptableObject
         rockCount = Mathf.Max(0, rockCount);
         bushCount = Mathf.Max(0, bushCount);
         grassCount = Mathf.Max(0, grassCount);
+        fernCount = Mathf.Max(0, fernCount);
         minDistance = Mathf.Max(0.5f, minDistance);
     }
 }

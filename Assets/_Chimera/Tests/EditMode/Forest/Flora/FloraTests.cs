@@ -82,6 +82,8 @@ namespace Chimera.Tests.EditMode
             Assert.Greater(FloraMeshKit.Trunk(0.14f, 0.09f, 2.6f).bounds.size.y, 2f, "ствол тянется вверх");
             Assert.Greater(FloraMeshKit.Crown(1.1f).bounds.size.x, 1f, "крона широкая");
             Assert.Greater(FloraMeshKit.GrassBlade(0.12f, 0.7f).vertexCount, 0, "травинка не пуста");
+            Assert.Greater(FloraMeshKit.SpruceCrown(1f, 3f).bounds.size.y, 2f, "ель тянется вверх");
+            Assert.Greater(FloraMeshKit.Fern(0.8f, 0.5f, 0.08f).vertexCount, 0, "папоротник не пуст");
         }
 
         static void AssertOutward(Mesh mesh, string name)
@@ -104,11 +106,16 @@ namespace Chimera.Tests.EditMode
             AssertOutward(FloraMeshKit.Trunk(0.14f, 0.09f, 2.6f), "ствол");
             AssertOutward(FloraMeshKit.Icosahedron(1f), "икосаэдр (примитив гроздей)");
             AssertOutward(FloraMeshKit.Slab(0.9f, 0.5f, 0.7f), "плита");
-            AssertOutward(FloraMeshKit.Spike(0.5f, 2.4f), "шип");
+            AssertOutward(FloraMeshKit.Spike(0.5f, 2.4f), "шип (примитив ярусов ели)");
             // Крона/куст — грозди: внутренние стороны смотрят друг на друга законно,
-            // outward меряем на одиночном икосаэдре выше; здесь только объём:
+            // outward меряем на одиночном икосаэдре выше; здесь только объём.
+            // Ель — туда же: ярусы тем же winding, что шип (проверен), а общий центр
+            // даёт ложный минус нижнему ярусу (поймано тестом: −0.04 на грани 0).
             Assert.Greater(FloraMeshKit.Crown(1.1f).vertexCount, 0, "крона не пуста");
             Assert.Greater(FloraMeshKit.Bush(0.7f).vertexCount, 0, "куст не пуст");
+            Assert.Greater(FloraMeshKit.SpruceCrown(1f, 3f).vertexCount, 0, "ель не пуста");
+            // Папоротник односторонний (лист двусторонний): только объём.
+            Assert.Greater(FloraMeshKit.Fern(0.8f, 0.5f, 0.08f).bounds.size.x, 0.5f, "папоротник раскидистый");
         }
 
         [Test]

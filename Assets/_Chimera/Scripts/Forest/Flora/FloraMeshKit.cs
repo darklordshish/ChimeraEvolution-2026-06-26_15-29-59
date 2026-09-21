@@ -147,6 +147,55 @@ public static class FloraMeshKit
         return Bake(v, n, t, "Bush");
     }
 
+    static void ConeTier(List<Vector3> v, List<Vector3> n, List<int> t, float y0, float h, float r)
+    {
+        Vector3 tip = new Vector3(0, y0 + h, 0);
+        Vector3[] ring = new Vector3[8];
+        for (int k = 0; k < 8; k++)
+        {
+            float a = k / 8f * Mathf.PI * 2f;
+            ring[k] = new Vector3(Mathf.Cos(a) * r, y0, Mathf.Sin(a) * r);
+        }
+        for (int k = 0; k < 8; k++) Tri(v, n, t, tip, ring[(k + 1) % 8], ring[k]);
+    }
+
+    /// <summary>Ель: 3 яруса восьмигранных конусов (ствол — отдельно Trunk).
+    /// Низ открыт (прячет верхний ярус), бока — наружу (тест). 24 тр.</summary>
+    public static Mesh SpruceCrown(float r, float h)
+    {
+        var v = new List<Vector3>(); var n = new List<Vector3>(); var t = new List<int>();
+        ConeTier(v, n, t, h * 0.30f, h * 0.34f, r);
+        ConeTier(v, n, t, h * 0.55f, h * 0.30f, r * 0.72f);
+        ConeTier(v, n, t, h * 0.76f, h * 0.26f, r * 0.45f);
+        return Bake(v, n, t, "SpruceCrown");
+    }
+
+    static void FrondQuad(List<Vector3> v, List<Vector3> n, List<int> t,
+        Vector3 a, Vector3 b, Vector3 c, Vector3 d)
+    {
+        Tri(v, n, t, a, b, c);
+        Tri(v, n, t, a, c, d);
+    }
+
+    /// <summary>Папоротник: 6 поникающих вай по 2 квада. Односторонний (лист двусторонний);
+    /// outward не меряем (как грозди), только объём. 24 тр.</summary>
+    public static Mesh Fern(float len, float h, float w)
+    {
+        var v = new List<Vector3>(); var n = new List<Vector3>(); var t = new List<int>();
+        for (int k = 0; k < 6; k++)
+        {
+            float a = (k + 0.5f) / 6f * Mathf.PI * 2f;
+            Vector3 dir = new Vector3(Mathf.Cos(a), 0, Mathf.Sin(a));
+            Vector3 perp = new Vector3(-Mathf.Sin(a), 0, Mathf.Cos(a)) * w;
+            Vector3 b0 = new Vector3(0, 0.05f, 0);
+            Vector3 m0 = dir * (len * 0.55f) + new Vector3(0, h * 0.75f, 0);
+            Vector3 t0 = dir * len + new Vector3(0, h * 0.3f, 0);
+            FrondQuad(v, n, t, b0 - perp, b0 + perp, m0 + perp, m0 - perp);
+            FrondQuad(v, n, t, m0 - perp * 0.6f, m0 + perp * 0.6f, t0 + perp * 0.3f, t0 - perp * 0.3f);
+        }
+        return Bake(v, n, t, "Fern");
+    }
+
     /// <summary>Травинка: 2 кросс-квада (двусторонний материал). 4 тр.</summary>
     public static Mesh GrassBlade(float w, float h)
     {
