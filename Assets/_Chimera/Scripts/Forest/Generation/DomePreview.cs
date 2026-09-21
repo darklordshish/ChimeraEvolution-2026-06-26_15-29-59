@@ -13,6 +13,8 @@ public static class DomePreview
 {
     public static GameObject PreviewRoot { get; private set; }
     public static DomeHydro.State Hydro { get; private set; }
+    public static List<DomeSlope.MouthSpot> Mouths { get; private set; }
+    public static List<DomeSlope.NestSpot> Nests { get; private set; }
 
     /// <summary>
     /// Перепривязка после перезагрузки домена: статики умирают, объекты сцены живут.
@@ -22,11 +24,11 @@ public static class DomePreview
     /// </summary>
     public static bool Reattach()
     {
-        if (PreviewRoot != null && Hydro != null) return true;
+        if (PreviewRoot != null && Hydro != null && Mouths != null) return true;
         var root = GameObject.Find("~DomePreview");
         if (root == null) return false;
         PreviewRoot = root;
-        if (Hydro == null)
+        if (Hydro == null || Mouths == null)
         {
             int chunks = 0;
             float chunk = 250f;
@@ -42,7 +44,12 @@ public static class DomePreview
             cfg.seed = 1337;
             cfg.randomSeed = false;
             cfg.mapDiameter = n * chunk;
-            Hydro = DomeHydro.Build(cfg, 256);
+            if (Hydro == null) Hydro = DomeHydro.Build(cfg, 256);
+            if (Mouths == null)
+            {
+                Mouths = DomeSlope.FindMouths(cfg, 3, 96);
+                Nests = DomeSlope.FindNests(cfg, cfg.seed, Mouths, 2);
+            }
             Object.DestroyImmediate(cfg);
         }
         return true;
@@ -92,6 +99,7 @@ public static class DomePreview
         Part("RockRing", DomeRockRing.BuildRingMesh(cfg, 256, 6), rockMat);
         Part("Lake", LakeDisc(hydro), waterMat);
         Part("River", RiverRibbon(cfg, hydro), waterMat);
+        BuildMouths(cfg, hydro);
         float rv = DomeGenRules.VaultRadius(cfg);
         skyMat = new Material(Shader.Find("Chimera/DomeSky"));
         skyMat.SetVector("_Center", new Vector3(0f, DomeVault.CenterY(rv), 0f));
@@ -178,7 +186,7 @@ public static class DomePreview
         return mesh;
     }
 
-    static void Part(string name, Mesh mesh, Material mat)
+    static GameObject Part(string name, Mesh mesh, Material mat)
     {
         var go = new GameObject(name);
         go.transform.SetParent(PreviewRoot.transform, false);
@@ -186,6 +194,7 @@ public static class DomePreview
         filter.sharedMesh = mesh;
         var renderer = go.AddComponent<MeshRenderer>();
         renderer.sharedMaterial = mat;
+        return go;
     }
 
     public static void WipePreview()
@@ -221,12 +230,100 @@ public static class DomePreview
             Object.DestroyImmediate(starMat);
             starMat = null;
         }
+        if (darkMat != null)
+        {
+            Object.DestroyImmediate(darkMat);
+            darkMat = null;
+        }
+        if (nestMat != null)
+        {
+            Object.DestroyImmediate(nestMat);
+            nestMat = null;
+        }
+        Mouths = null;
+        Nests = null;
         DomeSkyRig.Reset();
     }
 
     public static GameObject NavRoot { get; private set; }
     public static NavMeshSurface NavSurface { get; private set; }
     static Material navMat;
+    static Material darkMat;
+    static Material nestMat;
+
+    /// <summary>
+    /// Устья и гнёзда в превью (s10e-2): портал из плит (косяки + перемычка + тёмная
+    /// карта ниши), скалы вокруг, каирны-маркеры гнёзд. y — по carved-полю превью.
+    /// </summary>
+    public static void BuildMouths(DomeGenConfigSO cfg, DomeHydro.State hydro)
+    {
+        System.Func<float, float, float> ground = (x, z) => DomeSlope.RingField(cfg, x, z);
+        Mouths = DomeSlope.FindMouths(cfg, 3, 96, ground);
+        Nests = DomeSlope.FindNests(cfg, cfg.seed, Mouths, 2, ground);
+        if (Mouths.Count == 0)
+        {
+            Debug.Log("[Forest] устьев нет на этом рельефе (смени сид)");
+            return;
+        }
+        darkMat = Flat(new Color(0.14f, 0.15f, 0.16f));
+        nestMat = Flat(new Color(0.35f, 0.42f, 0.23f));
+        // Посадка — по кольцу (портал стоит на скале, чанки кольца не дублируют).
+        foreach (var m in Mouths)
+        {
+            float gy = ground(m.pos.x, m.pos.y);
+            float yaw = Mathf.Atan2(Mathf.Cos(m.facing), Mathf.Sin(m.facing)) * Mathf.Rad2Deg;
+            var root = new GameObject("Mouth");
+            root.transform.SetParent(PreviewRoot.transform, false);
+            root.transform.position = new Vector3(m.pos.x, gy - 0.3f, m.pos.y);
+            root.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+            Box(root.transform, FloraMeshKit.Slab(0.8f, 3f, 1.2f), rockMat, new Vector3(-1.6f, 0f, 0f));
+            Box(root.transform, FloraMeshKit.Slab(0.8f, 3f, 1.2f), rockMat, new Vector3(1.6f, 0f, 0f));
+            Box(root.transform, FloraMeshKit.Slab(4.2f, 0.8f, 1.4f), rockMat, new Vector3(0f, 3.2f, 0f));
+            Box(root.transform, FloraMeshKit.Slab(3.2f, 3f, 0.1f), darkMat, new Vector3(0f, 1.5f, -0.8f));
+        }
+        int ri = 0;
+        foreach (var m in Mouths)
+        {
+            for (int j = 0; j < 14; j++, ri++)
+            {
+                float a = SeededHash.ToFloat01(SeededHash.Hash(cfg.seed, 800, ri)) * Mathf.PI * 2f;
+                float dist = 5f + SeededHash.ToFloat01(SeededHash.Hash(cfg.seed, 801, ri)) * 13f;
+                float x = m.pos.x + Mathf.Cos(a) * dist;
+                float z = m.pos.y + Mathf.Sin(a) * dist;
+                var mesh = (ri % 2 == 0) ? FloraMeshKit.Slab(0.9f, 0.5f, 0.7f) : FloraMeshKit.Spike(0.5f, 2.4f);
+                var go = Part("MouthRock", mesh, rockMat);
+                go.transform.position = new Vector3(x, ground(x, z), z);
+                float s = 1.2f + SeededHash.ToFloat01(SeededHash.Hash(cfg.seed, 802, ri)) * 1.6f;
+                go.transform.localScale = Vector3.one * s;
+                go.transform.rotation = Quaternion.Euler(0f, SeededHash.ToFloat01(SeededHash.Hash(cfg.seed, 803, ri)) * 360f, 0f);
+            }
+        }
+        foreach (var n in Nests)
+        {
+            float gy = ground(n.pos.x, n.pos.y);
+            Cairn(n.pos.x, gy, n.pos.y, 0.9f);
+            Cairn(n.pos.x, gy + 0.55f, n.pos.y, 0.6f);
+            Cairn(n.pos.x, gy + 0.95f, n.pos.y, 0.35f);
+        }
+        Debug.Log($"[Forest] устья: {Mouths.Count}, гнёзда: {Nests.Count}");
+    }
+
+    static void Box(Transform parent, Mesh mesh, Material mat, Vector3 localPos)
+    {
+        var go = new GameObject("MouthPart");
+        go.transform.SetParent(parent, false);
+        go.transform.localPosition = localPos;
+        var filter = go.AddComponent<MeshFilter>();
+        filter.sharedMesh = mesh;
+        var renderer = go.AddComponent<MeshRenderer>();
+        renderer.sharedMaterial = mat;
+    }
+
+    static void Cairn(float x, float y, float z, float size)
+    {
+        var go = Part("NestCairn", FloraMeshKit.Slab(size, size * 0.6f, size), nestMat);
+        go.transform.position = new Vector3(x, y, z);
+    }
     static float navAmplitude;
 
     /// <summary>

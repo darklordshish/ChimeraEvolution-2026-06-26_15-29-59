@@ -184,6 +184,29 @@ public static class ForestScenicTool
     }
 
     /// <summary>
+    /// Крупный кадр устья (s10e-2): камера перед первым порталом, смотрит в нишу.
+    /// Требует построенного превью (устья — в нём). Туман гасится.
+    /// </summary>
+    public static void FrameMouth()
+    {
+        if (!DomePreview.Reattach() || DomePreview.Mouths == null || DomePreview.Mouths.Count == 0)
+            throw new System.InvalidOperationException("сначала BuildDomePreview с устьями");
+        var m = DomePreview.Mouths[0];
+        Vector2 fwd = new Vector2(Mathf.Cos(m.facing), Mathf.Sin(m.facing));
+        var mouthObj = GameObject.Find("Mouth");
+        Vector3 target = mouthObj != null
+            ? mouthObj.transform.position + new Vector3(0f, 2f, 0f)
+            : new Vector3(m.pos.x, 2f, m.pos.y);
+        RenderSettings.fog = false;
+        SetupCameras("35");
+        var sandbox = GameObject.Find("SandboxCam");
+        sandbox.transform.position = new Vector3(m.pos.x - fwd.x * 16f, 5.5f, m.pos.y - fwd.y * 16f);
+        sandbox.transform.LookAt(target + new Vector3(0f, 1.5f, 0f));
+        sandbox.GetComponent<Camera>().farClipPlane = 6000f;
+        Debug.Log($"[Forest] кадр устья настроен (портал 0/{DomePreview.Mouths.Count}, туман выкл)");
+    }
+
+    /// <summary>
     /// Фаза неба превью (s10c): day → 10.5 мин, sunset → 20.5, night → 25.5 (или минуты числом).
     /// Позиции камер — как в FrameDome, затем риг ставит свет/туман/шейдер по фазе.
     /// </summary>

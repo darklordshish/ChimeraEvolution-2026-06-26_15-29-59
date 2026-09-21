@@ -96,5 +96,30 @@ namespace Chimera.Tests.EditMode
                 Object.DestroyImmediate(cfg);
             }
         }
+
+        [Test]
+        public void RingField_MeetsField_AndRisesOnRing()
+        {
+            var cfg = Config(1337);
+            cfg.mapDiameter = 2000f;
+            try
+            {
+                float rin = DomeRockRing.InnerRadius(cfg);
+                float far = DomeHeightField.SampleHeight(cfg, 100f, 0f);
+                Assert.AreEqual(far, DomeSlope.RingField(cfg, 100f, 0f), 1e-6f, "вне кольца — чистое поле");
+                float mid = (rin + DomeRockRing.OuterRadius(cfg)) / 2;
+                float a = 0.7f;
+                float x = Mathf.Cos(a) * mid, z = Mathf.Sin(a) * mid;
+                Assert.GreaterOrEqual(DomeSlope.RingField(cfg, x, z),
+                    DomeHeightField.SampleHeight(cfg, x, z) - 0.01f, "на кольце не ниже поля");
+                float edge = DomeSlope.RingField(cfg, Mathf.Cos(a) * rin, Mathf.Sin(a) * rin);
+                Assert.AreEqual(DomeHeightField.SampleHeight(cfg, Mathf.Cos(a) * rin, Mathf.Sin(a) * rin),
+                    edge, 0.5f, "стык с полем без ступеньки");
+            }
+            finally
+            {
+                Object.DestroyImmediate(cfg);
+            }
+        }
     }
 }

@@ -28,18 +28,31 @@ public static class DomeSlope
     public static float SlopeAt(DomeGenConfigSO cfg, float x, float z)
     {
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
+        return SlopeAtS(cfg, x, z, (ax, az) => DomeHeightField.SampleHeight(cfg, ax, az));
+    }
+
+    public static float SlopeAtS(DomeGenConfigSO cfg, float x, float z, Func<float, float, float> height)
+    {
+        if (cfg == null) throw new ArgumentNullException(nameof(cfg));
+        if (height == null) throw new ArgumentNullException(nameof(height));
         const float e = 1f;
-        float gx = (DomeHeightField.SampleHeight(cfg, x + e, z) - DomeHeightField.SampleHeight(cfg, x - e, z)) / (2f * e);
-        float gz = (DomeHeightField.SampleHeight(cfg, x, z + e) - DomeHeightField.SampleHeight(cfg, x, z - e)) / (2f * e);
+        float gx = (height(x + e, z) - height(x - e, z)) / (2f * e);
+        float gz = (height(x, z + e) - height(x, z - e)) / (2f * e);
         return Mathf.Atan(Mathf.Sqrt(gx * gx + gz * gz)) * Mathf.Rad2Deg;
     }
 
     /// <summary>Направление downhill (куда смотрит устье).</summary>
     public static Vector2 DownhillDir(DomeGenConfigSO cfg, float x, float z)
     {
+        if (cfg == null) throw new ArgumentNullException(nameof(cfg));
+        return DownhillDirS(cfg, x, z, (ax, az) => DomeHeightField.SampleHeight(cfg, ax, az));
+    }
+
+    static Vector2 DownhillDirS(DomeGenConfigSO cfg, float x, float z, Func<float, float, float> height)
+    {
         const float e = 1f;
-        float gx = (DomeHeightField.SampleHeight(cfg, x + e, z) - DomeHeightField.SampleHeight(cfg, x - e, z)) / (2f * e);
-        float gz = (DomeHeightField.SampleHeight(cfg, x, z + e) - DomeHeightField.SampleHeight(cfg, x, z - e)) / (2f * e);
+        float gx = (height(x + e, z) - height(x - e, z)) / (2f * e);
+        float gz = (height(x, z + e) - height(x, z - e)) / (2f * e);
         var g = new Vector2(gx, gz);
         return g.sqrMagnitude > 1e-8f ? -g.normalized : Vector2.right;
     }
@@ -60,12 +73,39 @@ public static class DomeSlope
     }
 
     /// <summary>
+    /// Поле+кольцо (s10e-2): высота с учётом скального кольца (пещеры — в его склонах).
+    /// Внутри Rin−30 и снаружи Rout — чистое поле; на стыке кольцо стартует с высоты
+    /// поля, max() не рвёт (тест).
+    /// </summary>
+    public static float RingField(DomeGenConfigSO cfg, float x, float z)
+    {
+        if (cfg == null) throw new ArgumentNullException(nameof(cfg));
+        float field = DomeHeightField.SampleHeight(cfg, x, z);
+        float r = Mathf.Sqrt(x * x + z * z);
+        float rin = DomeRockRing.InnerRadius(cfg);
+        float rout = DomeRockRing.OuterRadius(cfg);
+        if (r < rin - 30f || r > rout) return field;
+        float t = Mathf.Clamp01((r - rin) / (rout - rin));
+        float a = Mathf.Atan2(z, x);
+        return Math.Max(field, DomeRockRing.HeightAt(cfg, a, t));
+    }
+
+    /// <summary>
     /// Устья (want штук): склон 35–55° + площадка 5м вниз по склону <15°.
     /// Разнос: не ближе 150м друг к другу (компактный склон, не россыпь).
+    /// Семплер по умолчанию — поле; превью даёт поле+кольцо (пещеры в скалах периметра).
     /// </summary>
     public static List<MouthSpot> FindMouths(DomeGenConfigSO cfg, int want, int gridRes)
     {
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
+        return FindMouths(cfg, want, gridRes, (x, z) => DomeHeightField.SampleHeight(cfg, x, z));
+    }
+
+    public static List<MouthSpot> FindMouths(DomeGenConfigSO cfg, int want, int gridRes,
+        Func<float, float, float> height)
+    {
+        if (cfg == null) throw new ArgumentNullException(nameof(cfg));
+        if (height == null) throw new ArgumentNullException(nameof(height));
         var spots = new List<MouthSpot>();
         float d = cfg.mapDiameter;
         gridRes = Mathf.Clamp(gridRes, 32, 160);
@@ -76,11 +116,11 @@ public static class DomeSlope
                 float x = -d / 2 + (ix + 0.5f) * cell;
                 float z = -d / 2 + (iz + 0.5f) * cell;
                 if (new Vector2(x, z).magnitude > d / 2) continue; // только круг павильона
-                float slope = SlopeAt(cfg, x, z);
+                float slope = SlopeAtS(cfg, x, z, height);
                 if (slope < 35f || slope > 55f) continue;
-                Vector2 down = DownhillDir(cfg, x, z);
+                Vector2 down = DownhillDirS(cfg, x, z, height);
                 Vector2 pad = new Vector2(x, z) + down * 5f;
-                float padSlope = SlopeAt(cfg, pad.x, pad.y);
+                float padSlope = SlopeAtS(cfg, pad.x, pad.y, height);
                 if (padSlope >= 15f) continue;
                 bool far = true;
                 foreach (var s in spots)
@@ -101,6 +141,14 @@ public static class DomeSlope
     public static List<NestSpot> FindNests(DomeGenConfigSO cfg, long seed, List<MouthSpot> mouths, int perMouth)
     {
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
+        return FindNests(cfg, seed, mouths, perMouth, (x, z) => DomeHeightField.SampleHeight(cfg, x, z));
+    }
+
+    public static List<NestSpot> FindNests(DomeGenConfigSO cfg, long seed, List<MouthSpot> mouths,
+        int perMouth, Func<float, float, float> height)
+    {
+        if (cfg == null) throw new ArgumentNullException(nameof(cfg));
+        if (height == null) throw new ArgumentNullException(nameof(height));
         var nests = new List<NestSpot>();
         for (int m = 0; m < mouths.Count; m++)
         {
@@ -111,7 +159,7 @@ public static class DomeSlope
                 float dist = 15f + SeededHash.ToFloat01(SeededHash.Hash(seed, 700 + m, j)) * 25f;
                 Vector2 p = mouths[m].pos + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * dist;
                 if (p.magnitude > cfg.mapDiameter / 2) continue;
-                if (SlopeAt(cfg, p.x, p.y) >= 30f) continue;
+                if (SlopeAtS(cfg, p.x, p.y, height) >= 30f) continue;
                 nests.Add(new NestSpot { pos = p, radius = 3f, mouth = m });
                 placed++;
             }
