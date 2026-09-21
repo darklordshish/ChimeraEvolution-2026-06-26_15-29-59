@@ -36,6 +36,16 @@ namespace Chimera.Tests.EditMode
         }
 
         [Test]
+        public void Highland_IsNotSnow()
+        {
+            Color peak = ForestMapBuilder.ReliefColor(1f);
+            Assert.Less(peak.grayscale, 0.7f, "верх — сухая охра, не снег (кость отменена s10d)");
+            Assert.Greater(peak.r, peak.b, "верх тёплый (r > b), не ледяной");
+            Color valley = ForestMapBuilder.ReliefColor(0f);
+            Assert.Greater(valley.g, valley.r, "низ — зелёный");
+        }
+
+        [Test]
         public void Dims_MatchResolution()
         {
             var colors = ForestMapBuilder.BuildColors(Config(7), 24, 2f);

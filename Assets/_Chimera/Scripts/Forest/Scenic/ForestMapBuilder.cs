@@ -20,19 +20,23 @@ public static class ForestMapBuilder
 
     static readonly Color Valley = new Color(0.29f, 0.49f, 0.23f);
     static readonly Color Rock = new Color(0.5f, 0.5f, 0.5f);
-    static readonly Color Bone = new Color(0.87f, 0.83f, 0.72f);
+    static readonly Color Dry = new Color(0.66f, 0.56f, 0.37f);
     static readonly Color SteepTint = new Color(0.85f, 0.15f, 0.1f);
 
-    /// <summary>Цвет рельефа по нормализованной высоте t [0, 1] (0 — дно, 1 — пик).</summary>
+    /// <summary>
+    /// Цвет рельефа по нормализованной высоте t [0, 1] (0 — дно, 1 — пик):
+    /// сочная низина → серый камень (дольше) → сухая охра. Кость ОТМЕНЕНА (s10d):
+    /// белизна высокогорья читалась снегом, а павильон тёплый.
+    /// </summary>
     public static Color ReliefColor(float t)
     {
         t = t < 0f ? 0f : (t > 1f ? 1f : t);
-        return t < 0.5f
-            ? Color.Lerp(Valley, Rock, t * 2f)
-            : Color.Lerp(Rock, Bone, (t - 0.5f) * 2f);
+        return t < 0.6f
+            ? Color.Lerp(Valley, Rock, t / 0.6f)
+            : Color.Lerp(Rock, Dry, (t - 0.6f) / 0.4f);
     }
 
-    /// <summary>Базовый рельеф: сочная низина → серый камень → костяная высота.</summary>
+    /// <summary>Базовый рельеф: сочная низина → серый камень → сухая охра (без снега).</summary>
     public static Color[] BuildColors(WorldGenConfigSO cfg, int res, float step)
     {
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
