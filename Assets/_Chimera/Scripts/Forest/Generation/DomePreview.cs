@@ -210,7 +210,24 @@ public static class DomePreview
 
     public static void WipePreview()
     {
+        // Снос ВСЕХ корней по имени (Find отдаёт первый — дубли копились, 5 корней s10h!).
+        PreviewRoot = null;
+        foreach (var go in GameObject.FindObjectsByType<GameObject>())
+        {
+            if (go == null || go.name != "~DomePreview") continue;
+            PreviewRoot = go;
+            WipeOne();
+        }
+        PreviewRoot = null;
         Hydro = null;
+    }
+
+    static void WipeOne()
+    {
+        if (PreviewRoot == null) PreviewRoot = GameObject.Find("~DomePreview");
+        Hydro = null;
+        // Дождь — ДО сноса корня (иначе статики streak висят, дубли копятся).
+        if (PreviewRoot != null) DomeRain.WipePreview(PreviewRoot);
         if (PreviewRoot != null)
         {
             // Снос мешей кита (создаются свежими каждый билд — иначе утечка):
@@ -265,7 +282,33 @@ public static class DomePreview
         Nests = null;
         Facility = null;
         DomeFacilityPlacer.ClearMats();
+        DomeWeather.ResetWet();
         DomeSkyRig.Reset();
+    }
+
+    /// <summary>
+    /// Погода в превью (s10h): дождь над центром + мокрая земля (ступень ×0.7).
+    /// </summary>
+    public static void BuildWeather()
+    {
+        if (PreviewRoot == null) throw new System.InvalidOperationException("сначала BuildDomePreview");
+        bool hasRain = false;
+        foreach (Transform c in PreviewRoot.transform)
+            if (c.name == "~DomeRain") { hasRain = true; break; }
+        if (!hasRain)
+            DomeRain.BuildPreview(PreviewRoot, 0f, 0f);
+        SetWet(1f);
+        Debug.Log("[Forest] погода: дождь + мокро");
+    }
+
+    public static void SetWet(float wet)
+    {
+        var mats = new List<Material>
+        {
+            previewMat, rockMat, barkMat, crownMat, owlMat, darkMat, nestMat,
+        };
+        mats.AddRange(DomeFacilityPlacer.LiveMats());
+        DomeWeather.ApplyWet(mats, wet);
     }
 
     public static GameObject NavRoot { get; private set; }
@@ -458,6 +501,11 @@ public static class DomePreview
 
     public static void WipeNavPreview()
     {
+        if (NavRoot == null)
+        {
+            var nav = GameObject.Find("~DomeNav");
+            if (nav != null) NavRoot = nav;
+        }
         if (NavSurface != null && NavSurface.navMeshData != null)
             NavSurface.RemoveData();
         NavSurface = null;

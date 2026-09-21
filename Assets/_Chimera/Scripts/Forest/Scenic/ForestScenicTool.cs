@@ -256,6 +256,18 @@ public static class ForestScenicTool
     }
 
     /// <summary>
+    /// Кадр дождя (s10h): погода в превью + камера лаборатории.
+    /// </summary>
+    public static void FrameRain()
+    {
+        if (!DomePreview.Reattach())
+            throw new System.InvalidOperationException("сначала BuildDomePreview");
+        DomePreview.BuildWeather();
+        FrameLab();
+        Debug.Log("[Forest] кадр дождя настроен");
+    }
+
+    /// <summary>
     /// Кадр ясеня (s10g-2): камера перед исполином, в кадре ствол + крона + гнездо.
     /// </summary>
     public static void FrameAsh()

@@ -124,4 +124,10 @@ public static class DomeFacilityPlacer
             if (mesh != null) Object.DestroyImmediate(mesh);
         meshCache.Clear();
     }
+
+    public static List<Material> LiveMats()
+    {
+        mats.RemoveAll(m => m == null);
+        return mats;
+    }
 }
