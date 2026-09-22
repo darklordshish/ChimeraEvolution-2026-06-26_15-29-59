@@ -16,7 +16,11 @@
 Имена частей — КОНТРАКТ с кодом игры, менять нельзя:
   * Head/Nose прячет от первого лица `PlayerController.SetFirstPerson`;
   * Head/Muzzle/Nose/Jaw/Ear* красят эмоции (`Telegraph.IsHeadPart`);
-  * лицо (EyeL/EyeR/BrowL/BrowR/Beard) исключено из тинта состава.
+  * лицо (EyeL/EyeR/BrowL/BrowR) исключено из тинта состава.
+
+БОРОДЫ НЕТ (решение геймдизайнера 22.09: «борода влитая в тело очень крипово выглядит, да и лицо не правится
+нормально»; действующий источник — `Docs/models/SPEC-oblik-cheloveka.md`). Деталь `Beard` и её кольца сняты.
+Сам генератор — архивный: `Player.fbx` убран 21.08, метод отменён 10.09 (`SPEC-konstruktor-formy.md`).
 
 Запуск:
     blender --background --python player_gen.py -- --fbx --render --pose
@@ -42,12 +46,12 @@ HEIGHT = 1.90                 # макушка; главный масштаб ф
 PALETTE = {
     "PlayerSkin":  ((0.70, 0.56, 0.46, 1.0), 0.75),   # тинт состава перекрасит в игре
     "PlayerEyes":  ((0.10, 0.10, 0.12, 1.0), 0.25),
-    "PlayerHair":  ((0.38, 0.33, 0.27, 1.0), 0.85),   # седеющая борода учёного
+    "PlayerHair":  ((0.38, 0.33, 0.27, 1.0), 0.85),   # брови
     "PlayerTeeth": ((0.88, 0.86, 0.79, 1.0), 0.45),
 }
 MATERIAL_MAP = {
     "EyeL": "PlayerEyes", "EyeR": "PlayerEyes",
-    "BrowL": "PlayerHair", "BrowR": "PlayerHair", "Beard": "PlayerHair",
+    "BrowL": "PlayerHair", "BrowR": "PlayerHair",
     "Teeth": "PlayerTeeth",
 }
 
@@ -121,16 +125,6 @@ NOSE_RINGS = [
 ]
 EYE = dict(x=0.037, y=-0.088, z=1.776, half=(0.019, 0.010, 0.011))
 BROW = dict(x=0.039, y=-0.092, z=1.800, half=(0.030, 0.009, 0.007))
-# Борода-лопата учёного: колонна, сужающаяся книзу. Кубом она читается коробкой,
-# приклеенной к лицу.
-# Смещение подобрано так, чтобы борода ЛЕЖАЛА НА лице (перед головы на y=-0.118),
-# а не тонула в черепе: утопленная борода торчит наружу только рваными углами.
-BEARD_RINGS = [
-    (1.712, 0.078, 0.062, -0.056),   # заходит в щёки
-    (1.672, 0.072, 0.064, -0.066),
-    (1.640, 0.056, 0.054, -0.070),
-    (1.612, 0.032, 0.034, -0.064),   # клин
-]
 EAR = dict(x=0.092, z=1.752, width=0.020, depth=0.052, height=0.058)
 
 # Зубы видны только когда челюсть открыта. При закрытом рте они обязаны быть
@@ -253,7 +247,6 @@ def build_wolf_scientist():
     add("Teeth", rig.build_teeth("Teeth", TEETH, -1), Vector((0, -0.010, 1.700)))
 
     add("Nose", rig.build_column("Nose", NOSE_RINGS, SIDES_LIMB), Vector((0, 0, 1.752)))
-    add("Beard", rig.build_column("Beard", BEARD_RINGS, SIDES_LIMB), Vector((0, 0, 1.664)))
 
     for side, tag in ((1, "R"), (-1, "L")):
         eye_c = (EYE["x"] * side, EYE["y"], EYE["z"])
@@ -296,7 +289,7 @@ BONE_TREE = [
 ]
 
 EXTRA_ATTACH = {
-    "head": ["Nose", "EyeL", "EyeR", "BrowL", "BrowR", "Beard"],
+    "head": ["Nose", "EyeL", "EyeR", "BrowL", "BrowR"],
     "jaw": ["Teeth"],
 }
 
