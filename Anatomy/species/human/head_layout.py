@@ -15,7 +15,7 @@
 
 ЛИЦО = ПАСТЬ. Нижняя часть лица (челюсть и рот) — деталь Пасти: привили волчью Пасть — у человека морда оборотня.
 
-Запуск:  python head_layout.py [--cell 0.084] [--out путь]
+Запуск:  python head_layout.py [--cell 0.042] [--out путь]
 """
 import argparse
 import json
@@ -31,6 +31,7 @@ NECK_CALIBRE = (0.470 * 0.268, 0.600 * 0.223, 0.240 * 0.525)   # хребет ×
 HEAD_NODE = next(n for n in G.build_nodes() if n['name'] == 'голова')
 
 # ЗАМЕР поверхности (`ProbeM.SurfaceZ`/`SurfaceX`, окно ±4 см): лоб у глаза, лицо по оси, бок головы у уха
+LIPS = {0.084: 0.050, 0.042: 0.015}
 SURFACE = {
     0.084: dict(eye_front=0.050, face_front=0.048, ear_side=0.056),
     0.042: dict(eye_front=0.070, face_front=0.078, ear_side=0.071),
@@ -63,9 +64,12 @@ def place(name, attach, world, size, euler=(0.0, 0.0, 0.0), note='', parent='г�
 
 def layout(cell):
     s = SURFACE[cell]
-    # ЛИЦО: коробка от челюстного угла (Z −0.03) до губ (поверхность лица + 5 см), от подбородка до основания носа
-    m_size = (0.110, 0.075, round(s['face_front'] + 0.05 + 0.03, 3))
-    m_world = (0.0, 1.635, round((s['face_front'] + 0.05 - 0.03) / 2, 3))
+    # ЛИЦО: коробка от челюстного угла (Z −0.03) до губ, от подбородка до основания носа. Губы выходят за поверхность поля
+    # на `LIPS`: на 0.084 поле съедало лицо, и коробка возвращала ему 5 см; на 0.042 поле само держит подбородок, и те же
+    # 5 см торчали рылом (кадр 22.09) — губы на 1.5 см впереди лица, как у живого
+    lips = LIPS[cell]
+    m_size = (0.110, 0.075, round(s['face_front'] + lips + 0.03, 3))
+    m_world = (0.0, 1.635, round((s['face_front'] + lips - 0.03) / 2, 3))
     places = [
         place('Пасть', 0.0, m_world, m_size, note='нижняя часть лица: блок `брусок` челюстью назад'),
         place('глаза', 0.0, (0.032, 1.705, s['eye_front'] - 0.004), (0.020, 0.016, 0.030),
@@ -74,7 +78,8 @@ def layout(cell):
     ]
     # МОЧКА НОСА на Пасти, доли — от калибра Пасти; нос выходит из лица над губами
     lat, up, fwd = local(m_world)
-    nose_world = (0.0, 1.672, s['face_front'] + 0.035)
+    # мочка: капля 5 см под 48° вперёд-вниз выходит на ~3.7 см по Z — центр на 1.2 см впереди лица, кончик ~3 см
+    nose_world = (0.0, 1.672, s['face_front'] + (0.035 if cell >= 0.08 else 0.012))
     nl, nu, nf = local(nose_world)
     nose_size = (0.035, 0.030, 0.050)
     places.append(dict(name='нос', parent='Пасть', attach=0.5,
@@ -99,7 +104,7 @@ def senses():
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--cell', type=float, default=0.084)
+    ap.add_argument('--cell', type=float, default=0.042)   # клетка проекта (решение геймдизайнера 22.09)
     ap.add_argument('--out', default=os.path.join(HERE, 'out', 'chelovek-head-layout-draft.json'))
     args = ap.parse_args()
     places = layout(args.cell)
