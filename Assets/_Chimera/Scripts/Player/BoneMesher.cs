@@ -202,6 +202,10 @@ public static class BoneMesher
             hi = Vector3.Max(hi, Vector3.Max(s.a, s.b) + Vector3.one * r);
         }
         lo -= Vector3.one * cell; hi += Vector3.one * cell;
+        // СЕТКА СИММЕТРИЧНА ПО X ОТНОСИТЕЛЬНО ОСИ ТЕЛА. Зеркальные узлы (`mirrorX`) отражаются через X = 0, и узлы на оси
+        // лежат в ней же — поле симметрично, а сетка с произвольным началом его «рубит» по-разному справа и слева
+        float halfX = Mathf.Ceil(Mathf.Max(-lo.x, hi.x) / cell) * cell;
+        lo.x = -halfX; hi.x = halfX;
 
         int nx = Mathf.CeilToInt((hi.x - lo.x) / cell) + 1;
         int ny = Mathf.CeilToInt((hi.y - lo.y) / cell) + 1;
@@ -341,8 +345,17 @@ public static class BoneMesher
                     // МОДУЛЬ ВЕРШИНЫ — ПО ХОЗЯИНУ ЯЧЕЙКИ, а не по повторному поиску ближайшей кости:
                     // так разрез меша совпадает с тем, как поле СОБИРАЛОСЬ, и граница между модулями
                     // проходит ровно там, где объединение сменило хозяина
-                    int own = -1;
-                    for (int c = 0; c < 8 && own < 0; c++) own = owner[corner[c]];
+                    //     ХОЗЯИН — У БЛИЖАЙШЕГО УГЛА, А НЕ У ПЕРВОГО ПО ПОРЯДКУ. Первый угол всегда со стороны −X: справа от оси
+                    // он смотрит к центру, слева — наружу, и шов между модулями съезжал вправо (голова ежа на оси выходила
+                    // вправо до 0.156, влево до −0.106 — находка модельной линии, поставка 6 §6)
+                    int own = -1; float bestD = float.MaxValue;
+                    for (int c = 0; c < 8; c++)
+                    {
+                        int o = owner[corner[c]];
+                        if (o < 0) continue;
+                        float dc = (CornerPos[c] - local).sqrMagnitude;
+                        if (dc < bestD) { bestD = dc; own = o; }
+                    }
                     weights.Add(Weigh(segs, world, blend, out string near));
                     slotOf.Add(own >= 0 ? slots[own] : near);
 
@@ -353,10 +366,12 @@ public static class BoneMesher
 
         // ── квады: ребро сетки со сменой знака соединяет четыре соседние ячейки
         var perSlot = new Dictionary<string, List<int>>();
-        void Quad(int a, int b, int c, int d, bool flip)
+        // МОДУЛЬ КВАДА — ПО ХОЗЯИНУ ВНУТРЕННЕЙ ТОЧКИ РЕБРА, которое квад пересекает. Прежнее «по первой вершине» тянуло
+        // шов в одну сторону тем же способом, что и первый угол у вершины; ребро же зеркалится вместе с телом
+        void Quad(int a, int b, int c, int d, bool flip, int inside)
         {
             if (a < 0 || b < 0 || c < 0 || d < 0) return;
-            string slot = slotOf[a];                       // модуль по хозяйке первой вершины
+            string slot = owner[inside] >= 0 ? slots[owner[inside]] : slotOf[a];
             if (!perSlot.TryGetValue(slot, out var tris)) perSlot[slot] = tris = new List<int>();
             if (flip) { tris.Add(a); tris.Add(b); tris.Add(c); tris.Add(a); tris.Add(c); tris.Add(d); }
             else      { tris.Add(a); tris.Add(c); tris.Add(b); tris.Add(a); tris.Add(d); tris.Add(c); }
@@ -366,16 +381,18 @@ public static class BoneMesher
             for (int y = 1; y < ny - 1; y++)
                 for (int x = 1; x < nx - 1; x++)
                 {
-                    bool s000 = field[Idx(x, y, z)] < 0f;
-                    if (s000 != field[Idx(x + 1, y, z)] < 0f)
+                    int i000 = Idx(x, y, z);
+                    bool s000 = field[i000] < 0f;
+                    int ix = Idx(x + 1, y, z), iy = Idx(x, y + 1, z), iz = Idx(x, y, z + 1);
+                    if (s000 != field[ix] < 0f)
                         Quad(vertOf[VIdx(x, y - 1, z - 1)], vertOf[VIdx(x, y, z - 1)],
-                             vertOf[VIdx(x, y, z)], vertOf[VIdx(x, y - 1, z)], s000);
-                    if (s000 != field[Idx(x, y + 1, z)] < 0f)
+                             vertOf[VIdx(x, y, z)], vertOf[VIdx(x, y - 1, z)], s000, s000 ? i000 : ix);
+                    if (s000 != field[iy] < 0f)
                         Quad(vertOf[VIdx(x - 1, y, z - 1)], vertOf[VIdx(x, y, z - 1)],
-                             vertOf[VIdx(x, y, z)], vertOf[VIdx(x - 1, y, z)], !s000);
-                    if (s000 != field[Idx(x, y, z + 1)] < 0f)
+                             vertOf[VIdx(x, y, z)], vertOf[VIdx(x - 1, y, z)], !s000, s000 ? i000 : iy);
+                    if (s000 != field[iz] < 0f)
                         Quad(vertOf[VIdx(x - 1, y - 1, z)], vertOf[VIdx(x, y - 1, z)],
-                             vertOf[VIdx(x, y, z)], vertOf[VIdx(x - 1, y, z)], s000);
+                             vertOf[VIdx(x, y, z)], vertOf[VIdx(x - 1, y, z)], s000, s000 ? i000 : iz);
                 }
 
         // ── меш на слот: переиндексация, чтобы каждый нёс только свои вершины
