@@ -147,7 +147,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482447497297930
+    - rid: 4402482452052574218
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -854,8 +854,8 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: "\u0401\u0436"
     abilities:
-    - rid: 4402482447497297931
-    - rid: 4402482447497297932
+    - rid: 4402482452052574219
+    - rid: 4402482452052574220
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -901,8 +901,8 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: "\u0401\u0436"
     abilities:
-    - rid: 4402482447497297933
-    - rid: 4402482447497297934
+    - rid: 4402482452052574221
+    - rid: 4402482452052574222
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -1674,7 +1674,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4402482447497297930
+    - rid: 4402482452052574218
       type: {class: VolleyData, ns: , asm: Chimera.Runtime}
       data:
         damagePerQuill: 4
@@ -1689,14 +1689,14 @@ MonoBehaviour:
         windupTime: 0.5
         cooldown: 2.5
         blindAimError: 1.6
-    - rid: 4402482447497297931
+    - rid: 4402482452052574219
       type: {class: RollData, ns: , asm: Chimera.Runtime}
       data:
         damage: 10
         bleedStacks: 1
         knockForce: 8
         radius: 1.2
-    - rid: 4402482447497297932
+    - rid: 4402482452052574220
       type: {class: CurlData, ns: , asm: Chimera.Runtime}
       data:
         curlArmor: 0.6
@@ -1705,7 +1705,7 @@ MonoBehaviour:
         rollDrain: 40
         rollTurnSpeed: 90
         rollGravity: 20
-    - rid: 4402482447497297933
+    - rid: 4402482452052574221
       type: {class: BiteData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
@@ -1717,7 +1717,7 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.4
         cooldown: 0.7
-    - rid: 4402482447497297934
+    - rid: 4402482452052574222
       type: {class: ConstrictData, ns: , asm: Chimera.Runtime}
       data:
         maxStage: 1
