@@ -39,3 +39,5 @@ MonoBehaviour:
     mesh: {fileID: 8427954107035342456, guid: 1bdb60cb08a85c548aeb09ec1bcc9631, type: 3}
   - name: "\u0437\u0432\u0435\u043D\u043E"
     mesh: {fileID: -6818518384407210652, guid: 1bdb60cb08a85c548aeb09ec1bcc9631, type: 3}
+  - name: "\u043A\u0438\u0441\u0442\u044C"
+    mesh: {fileID: -6866927839901752768, guid: 1bdb60cb08a85c548aeb09ec1bcc9631, type: 3}
