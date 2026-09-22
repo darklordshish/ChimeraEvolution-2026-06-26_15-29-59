@@ -347,6 +347,62 @@
       "mirrorX": true
     },
     {
+      "name": "надбровье",
+      "parent": "голова",
+      "layer": 0,
+      "socket": "голова",
+      "origin": {
+        "x": 0.016,
+        "y": 0.1354,
+        "z": 0.0728
+      },
+      "attach": 1.0,
+      "freeOrigin": true,
+      "length": 0.0443,
+      "endBone": "",
+      "endAttach": 1.0,
+      "dir": {
+        "x": -83.614,
+        "y": -26.679,
+        "z": -38.084
+      },
+      "r0": 0.02,
+      "r1": 0.018,
+      "section": 1.0,
+      "depth": 1.0,
+      "blend": 0.02,
+      "chain": 0,
+      "mirrorX": true
+    },
+    {
+      "name": "скула",
+      "parent": "голова",
+      "layer": 0,
+      "socket": "голова",
+      "origin": {
+        "x": 0.048,
+        "y": 0.0705,
+        "z": 0.0483
+      },
+      "attach": 1.0,
+      "freeOrigin": true,
+      "length": 0.0348,
+      "endBone": "",
+      "endAttach": 1.0,
+      "dir": {
+        "x": -64.636,
+        "y": -0.0,
+        "z": -31.191
+      },
+      "r0": 0.024,
+      "r1": 0.02,
+      "section": 1.0,
+      "depth": 1.0,
+      "blend": 0.02,
+      "chain": 0,
+      "mirrorX": true
+    },
+    {
       "name": "лопатка",
       "parent": "грудь",
       "layer": 0,
