@@ -220,7 +220,7 @@
       },
       "attach": 1.0,
       "freeOrigin": true,
-      "length": 0.33,
+      "length": 0.22,
       "endBone": "",
       "endAttach": 1.0,
       "dir": {
@@ -229,10 +229,38 @@
         "z": 0.0
       },
       "r0": 0.22,
-      "r1": 0.22,
+      "r1": 0.2,
       "section": 1.0,
       "depth": 1.35,
       "blend": 0.1,
+      "chain": 0,
+      "mirrorX": false
+    },
+    {
+      "name": "переносье",
+      "parent": "голова",
+      "layer": 0,
+      "socket": "голова",
+      "origin": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "attach": 1.0,
+      "freeOrigin": false,
+      "length": 0.2,
+      "endBone": "",
+      "endAttach": 1.0,
+      "dir": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "r0": 0.17,
+      "r1": 0.12,
+      "section": 0.7,
+      "depth": 1.45,
+      "blend": 0.06,
       "chain": 0,
       "mirrorX": false
     },
