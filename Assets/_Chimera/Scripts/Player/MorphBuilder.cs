@@ -527,6 +527,9 @@ public static class MorphBuilder
     /// ДИСКОМ (те «проточки» на шее), а погремушка приехала бы овалом. Заодно доворот капсулы на 90°
     /// уехал внутрь узла — снаружи звено смотрит просто вдоль хребта, и `SnakeBodyChain` крутит его без
     /// поправок на форму примитива.</summary>
+    const string LinkBlock = "звено";
+    const float LinkOverlap = 1.12f;   // звено длиннее шага: торцы заходят в соседей (замер модельной линии, поставка 7 §4)
+
     static void BuildLinks(Transform parent, BodySocket s, float side, Vector3 pos, Vector3 euler, int links,
                            List<GameObject> made, float linkD)
     {
@@ -534,6 +537,12 @@ public static class MorphBuilder
         Vector3 grow = ChainDir(s, Vector3.zero);  // метрическая цепь: ось задана по смыслу, габарит не спрашиваем                  // у цепного места длина > толщины → ось Z
         float taper = s.linkTaper > 0f ? s.linkTaper : 1f;        // сужает ТОЛЬКО толщину
         float len = s.linkLength;
+
+        // ЗВЕНО — РИГБЛОК, ЕСЛИ ОН ЕСТЬ В БИБЛИОТЕКЕ (поставка 7 §4). Пара «капсула + шар» давала змее почти всю её цену —
+        // ~27 тыс. треугольников из 27.6 на клетке 0.042. Блок `звено` не сходится торцом в точку, как капсула, поэтому
+        // шар на стыке не нужен; длина с запасом 12 % — торцы прячутся в соседей, пережима нет. Узел звена тот же:
+        // его двигает `SnakeBodyChain`, меш едет внутри. Нет блока — прежние примитивы
+        bool linkBlock = BlockMesh(LinkBlock) != null;
 
         for (int i = 0; i < links; i++)
         {
@@ -544,6 +553,13 @@ public static class MorphBuilder
             node.transform.localPosition = pos + rot * (grow * (len * (i + 0.5f)));
             node.transform.localRotation = rot;
             made.Add(node);
+
+            if (linkBlock)
+            {
+                Spawn(node.transform, s.name, Vector3.zero, Vector3.zero, new Vector3(d, d, len * LinkOverlap),
+                      side, PartShape.Cube, s.solid, LinkBlock);
+                continue;
+            }
 
             // КАПСУЛА ВДОЛЬ ХРЕБТА: Unity вытягивает её по Y, поэтому кладём доворотом на 90°, а размеры
             // даём В МЕТРАХ напрямую (Spawn поделит Y пополам — длина выйдет ровно `len`)
