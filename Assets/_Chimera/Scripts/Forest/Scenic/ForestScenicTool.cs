@@ -49,6 +49,12 @@ public static class ForestScenicTool
         var topCam = top.GetComponent<Camera>();
         topCam.orthographic = true;
         topCam.orthographicSize = size;
+        // Окклюзия ВЫКЛ навсегда: в сцене лежат протухшие baked-данные, и они режут
+        // всю мелкую процедурку (флора, дождь, капли — поймано кадром s10i).
+        // Генеративный мир окклюзию не печёт.
+        topCam.useOcclusionCulling = false;
+        var sandboxCam0 = sandbox.GetComponent<Camera>();
+        sandboxCam0.useOcclusionCulling = false;
         Debug.Log("[Forest] камеры SandboxCam (3/4) + TopCam (топдаун-орто) готовы");
     }
 
@@ -302,6 +308,23 @@ public static class ForestScenicTool
         sandbox.transform.position = new Vector3(0f, 300f, -700f);
         sandbox.transform.LookAt(new Vector3(0f, 0f, 200f));
         DomeSkyRig.ApplyPhase(DomePreview.PreviewRoot, minutes);
+    }
+
+    /// <summary>
+    /// Топдаун без неба (s10i): свод снаружи черен (шейдер красит низ),
+    /// звёзды сверху — мусор. Только рельеф+флора+вода.
+    /// </summary>
+    public static void FrameTop(string diameterText)
+    {
+        FrameDome(diameterText);
+        if (DomePreview.Reattach() && DomePreview.PreviewRoot != null)
+        {
+            var vault = DomePreview.PreviewRoot.transform.Find("Vault");
+            if (vault != null) vault.gameObject.SetActive(false);
+            var stars = DomePreview.PreviewRoot.transform.Find("Stars");
+            if (stars != null) stars.gameObject.SetActive(false);
+        }
+        Debug.Log("[Forest] топдаун без неба настроен");
     }
 
     /// <summary>

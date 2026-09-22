@@ -19,16 +19,27 @@ public static class DomePreview
     public static List<DomeSlope.MouthSpot> Mouths { get; private set; }
     public static List<DomeSlope.NestSpot> Nests { get; private set; }
 
+    public const string RootPrefix = "~DomePreview";
+
     /// <summary>
     /// Перепривязка после перезагрузки домена: статики умирают, объекты сцены живут.
-    /// Диаметр выводится из чанков (n² штук × размер), Hydro перестраивается
-    /// детерминированно (сид превью фиксирован). Без неё любой Frame* после
+    /// Сид — в имени корня, диаметр — из чанков; данные перестраиваются теми же
+    /// семплерами, что билд (кольцо для устьев!). Без неё любой Frame* после
     /// перекомпиляции падает с «нет превью».
     /// </summary>
     public static bool Reattach()
     {
         if (PreviewRoot != null && Hydro != null && Mouths != null && Facility != null && HasAsh) return true;
-        var root = GameObject.Find("~DomePreview");
+        GameObject root = null;
+        long seed = 1337;
+        foreach (var go in GameObject.FindObjectsByType<GameObject>())
+        {
+            if (go == null || !go.name.StartsWith(RootPrefix)) continue;
+            root = go;
+            var tail = go.name.Substring(RootPrefix.Length).TrimStart('_');
+            if (!long.TryParse(tail, out seed)) seed = 1337;
+            break;
+        }
         if (root == null) return false;
         PreviewRoot = root;
         if (Hydro == null || Mouths == null)
@@ -44,20 +55,21 @@ public static class DomePreview
             }
             int n = Mathf.Max(1, Mathf.RoundToInt(Mathf.Sqrt(chunks)));
             var cfg = ScriptableObject.CreateInstance<DomeGenConfigSO>();
-            cfg.seed = 1337;
+            cfg.seed = seed;
             cfg.randomSeed = false;
             cfg.mapDiameter = n * chunk;
             if (Hydro == null) Hydro = DomeHydro.Build(cfg, 256);
             if (!HasAsh && Hydro != null)
             {
-                Ash = DomeAshSite.FindSpot(cfg, 1337, Vector2.zero, Hydro, 96);
+                Ash = DomeAshSite.FindSpot(cfg, seed, Vector2.zero, Hydro, 96);
                 HasAsh = true;
             }
-            if (Facility == null) Facility = DomeFacilityLayout.Build(cfg, 1337, Vector2.zero);
+            if (Facility == null) Facility = DomeFacilityLayout.Build(cfg, seed, Vector2.zero);
             if (Mouths == null)
             {
-                Mouths = DomeSlope.FindMouths(cfg, 3, 96);
-                Nests = DomeSlope.FindNests(cfg, cfg.seed, Mouths, 2);
+                System.Func<float, float, float> ground = (x, z) => DomeSlope.RingField(cfg, x, z);
+                Mouths = DomeSlope.FindMouths(cfg, 3, 96, ground);
+                Nests = DomeSlope.FindNests(cfg, seed, Mouths, 2, ground);
             }
             Object.DestroyImmediate(cfg);
         }
@@ -77,16 +89,19 @@ public static class DomePreview
         return mat;
     }
 
-    public static void BuildPreview(string diameterText, string quadsText)
+    public static void BuildPreview(string diameterText, string quadsText, string seedText = "1337")
     {
         float diameter = 2000f;
         float.TryParse(diameterText, out diameter);
         int quads = 16;
         int.TryParse(quadsText, out quads);
+        long seed = 1337;
+        long.TryParse(seedText, out seed);
+        if (seed == 0) seed = 1337;
         WipePreview();
 
         var cfg = ScriptableObject.CreateInstance<DomeGenConfigSO>();
-        cfg.seed = 1337;
+        cfg.seed = seed;
         cfg.randomSeed = false;
         cfg.mapDiameter = Mathf.Clamp(diameter, 100f, 4000f);
         diameter = cfg.mapDiameter;
@@ -95,7 +110,7 @@ public static class DomePreview
         previewMat = Flat(new Color(0.32f, 0.44f, 0.26f));
         rockMat = Flat(new Color(0.5f, 0.5f, 0.5f));
         waterMat = Flat(new Color(0.2f, 0.45f, 0.6f));
-        PreviewRoot = new GameObject("~DomePreview");
+        PreviewRoot = new GameObject($"{RootPrefix}_{seed}");
         var hydro = DomeHydro.Build(cfg, 256);
         Hydro = hydro;
         System.Func<float, float, float> sampler = (x, z) => DomeHydro.SampleHydro(cfg, hydro, x, z);
@@ -109,8 +124,9 @@ public static class DomePreview
         Part("Lake", LakeDisc(hydro), waterMat);
         Part("River", RiverRibbon(cfg, hydro), waterMat);
         BuildMouths(cfg, hydro);
-        BuildAsh(cfg, hydro);
-        BuildFacility(cfg, hydro);
+        BuildAsh(cfg, hydro, seed);
+        BuildFacility(cfg, hydro, seed);
+        DomeFlora.Build(PreviewRoot, cfg, hydro, seed);
         float rv = DomeGenRules.VaultRadius(cfg);
         skyMat = new Material(Shader.Find("Chimera/DomeSky"));
         skyMat.SetVector("_Center", new Vector3(0f, DomeVault.CenterY(rv), 0f));
@@ -118,7 +134,7 @@ public static class DomePreview
         starMat = new Material(Shader.Find("Chimera/DomeFlat"));
         starMat.SetFloat("_Level", 0f);
         var vaultCenter = new Vector3(0f, DomeVault.CenterY(rv), 0f);
-        Part("Stars", DomeStars.BuildStarMesh(1337, 400, vaultCenter, rv * 0.985f, rv * 0.004f), starMat);
+        Part("Stars", DomeStars.BuildStarMesh(seed, 400, vaultCenter, rv * 0.985f, rv * 0.004f), starMat);
         var sun = new GameObject("DomeSun");
         sun.transform.SetParent(PreviewRoot.transform, false);
         var sunLight = sun.AddComponent<Light>();
@@ -127,7 +143,7 @@ public static class DomePreview
         DomeSkyRig.Reset();
         DomeSkyRig.ApplyPhase(PreviewRoot, 10.5f);
         Object.DestroyImmediate(cfg);
-        Debug.Log($"[Forest] превью купола построено (сид 1337, Ø{diameter} м, чанков {n}×{n} + кольцо + озеро r={hydro.lakeRadius:F0}м + река {hydro.riverPts.Count} т.)");
+        Debug.Log($"[Forest] превью купола построено (сид {seed}, Ø{diameter} м, чанков {n}×{n} + кольцо + озеро r={hydro.lakeRadius:F0}м + река {hydro.riverPts.Count} т.)");
     }
 
     static Mesh LakeDisc(DomeHydro.State s)
@@ -214,7 +230,7 @@ public static class DomePreview
         PreviewRoot = null;
         foreach (var go in GameObject.FindObjectsByType<GameObject>())
         {
-            if (go == null || go.name != "~DomePreview") continue;
+            if (go == null || !go.name.StartsWith(RootPrefix)) continue;
             PreviewRoot = go;
             WipeOne();
         }
@@ -224,7 +240,11 @@ public static class DomePreview
 
     static void WipeOne()
     {
-        if (PreviewRoot == null) PreviewRoot = GameObject.Find("~DomePreview");
+        if (PreviewRoot == null)
+        {
+            foreach (var go in GameObject.FindObjectsByType<GameObject>())
+                if (go != null && go.name.StartsWith(RootPrefix)) { PreviewRoot = go; break; }
+        }
         Hydro = null;
         // Дождь — ДО сноса корня (иначе статики streak висят, дубли копятся).
         if (PreviewRoot != null) DomeRain.WipePreview(PreviewRoot);
@@ -282,6 +302,7 @@ public static class DomePreview
         Nests = null;
         Facility = null;
         DomeFacilityPlacer.ClearMats();
+        DomeFlora.ClearMats();
         DomeWeather.ResetWet();
         DomeSkyRig.Reset();
     }
@@ -324,9 +345,9 @@ public static class DomePreview
     /// Ясень-исполин в превью (s10g-2): ствол 30м + крона 12м + гнездо-платформа
     /// + болванка совы (2 икосаэдра — масса и масштаб, не модель).
     /// </summary>
-    public static void BuildAsh(DomeGenConfigSO cfg, DomeHydro.State hydro)
+    public static void BuildAsh(DomeGenConfigSO cfg, DomeHydro.State hydro, long seed)
     {
-        Ash = DomeAshSite.FindSpot(cfg, 1337, Vector2.zero, hydro, 96);
+        Ash = DomeAshSite.FindSpot(cfg, seed, Vector2.zero, hydro, 96);
         HasAsh = true;
         barkMat = Flat(new Color(0.35f, 0.25f, 0.18f));
         crownMat = Flat(new Color(0.24f, 0.38f, 0.20f));
@@ -358,9 +379,9 @@ public static class DomePreview
     /// Устья и гнёзда в превью (s10e-2): портал из плит (косяки + перемычка + тёмная
     /// карта ниши), скалы вокруг, каирны-маркеры гнёзд. y — по carved-полю превью.
     /// </summary>
-    public static void BuildFacility(DomeGenConfigSO cfg, DomeHydro.State hydro)
+    public static void BuildFacility(DomeGenConfigSO cfg, DomeHydro.State hydro, long seed)
     {
-        Facility = DomeFacilityLayout.Build(cfg, 1337, Vector2.zero);
+        Facility = DomeFacilityLayout.Build(cfg, seed, Vector2.zero);
         System.Func<float, float, float> ground = (x, z) => Mathf.Max(
             DomeHydro.SampleHydro(cfg, hydro, x, z),
             DomeSlope.RingField(cfg, x, z));
