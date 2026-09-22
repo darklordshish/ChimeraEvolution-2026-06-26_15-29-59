@@ -46,7 +46,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482452052574231
+    - rid: 4402482452052574251
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -130,7 +130,7 @@ MonoBehaviour:
     digestion: 1
     nativeChassis: 
     abilities:
-    - rid: 4402482452052574232
+    - rid: 4402482452052574252
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -351,7 +351,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: "\u0417\u043C\u0435\u044F"
     abilities:
-    - rid: 4402482452052574233
+    - rid: 4402482452052574253
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -559,7 +559,7 @@ MonoBehaviour:
     linkLength: 0.36
     linkTaper: 1.118
   - name: "\u0445\u0440\u0435\u0431\u0435\u0442"
-    localPos: {x: 0, y: 0.3, z: -1.64}
+    localPos: {x: 0, y: 0.15, z: -1.64}
     baseSize: {x: 1, y: 1, z: 1}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
@@ -772,7 +772,7 @@ MonoBehaviour:
   - name: "\u0433\u043E\u043B\u043E\u0432\u0430"
     parent: 
     layer: 0
-    origin: {x: 0, y: 0.3, z: -0.17}
+    origin: {x: 0, y: 0.15, z: -0.17}
     socket: "\u0433\u043E\u043B\u043E\u0432\u0430"
     attach: 1
     freeOrigin: 0
@@ -796,7 +796,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4402482452052574231
+    - rid: 4402482452052574251
       type: {class: BiteData, ns: , asm: Chimera.Runtime}
       data:
         damage: 24
@@ -808,7 +808,7 @@ MonoBehaviour:
         halfAngle: 55
         windupTime: 0.4
         cooldown: 0.7
-    - rid: 4402482452052574232
+    - rid: 4402482452052574252
       type: {class: LeapData, ns: , asm: Chimera.Runtime}
       data:
         damage: 8
@@ -820,7 +820,7 @@ MonoBehaviour:
         hitRadius: 1.5
         windupTime: 0.35
         staminaCost: 20
-    - rid: 4402482452052574233
+    - rid: 4402482452052574253
       type: {class: ConstrictData, ns: , asm: Chimera.Runtime}
       data:
         maxStage: 3
