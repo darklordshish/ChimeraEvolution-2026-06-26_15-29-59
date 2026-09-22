@@ -168,7 +168,7 @@ None · Eye · Head · Ear · Nose · Pit
 когда камера от первого лица:
 
 ```
-Head · Nose · Jaw · Teeth · EyeL · EyeR · EarL · EarR · BrowL · BrowR · Beard
+Head · Nose · Jaw · Teeth · EyeL · EyeR · EarL · EarR · BrowL · BrowR · ~~Beard~~ (снято из кода 22.09)
 голова · Пасть · уши · глаза            ← имена процедурных частей (по сокету)
 ```
 

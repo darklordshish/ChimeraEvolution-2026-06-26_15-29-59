@@ -208,7 +208,7 @@ public class PlayerController : MonoBehaviour
         Cursor.lockState = CursorLockMode.Locked; // мышь — руль тела в ОБОИХ видах, курсор не нужен (Esc отпускает)
         Cursor.visible = false;
         // свою голову от ПЕРВОГО лица не рендерим (нос/куб лезут в камеру) — классика FPS; в 3-м лице возвращаем.
-        // Лицо (глаза/брови/борода из PlayerModel) прячется вместе с головой
+        // Лицо (глаза/брови из PlayerModel) прячется вместе с головой
         ReapplyFirstPerson();
     }
 
@@ -226,7 +226,7 @@ public class PlayerController : MonoBehaviour
     static bool IsOwnFace(string n) =>
         n == "Head" || n == "Nose" || n == "Jaw" || n == "Teeth"
         || n == "EyeL" || n == "EyeR" || n == "EarL" || n == "EarR"
-        || n == "BrowL" || n == "BrowR" || n == "Beard"
+        || n == "BrowL" || n == "BrowR"
         || n == "голова" || n == "Пасть" || n == "уши" || n == "глаза"; // морф-части: имя = сокет (Organ.slot)
 
     // конструктор меняет мобильность при смене органа в слоте «Ноги»

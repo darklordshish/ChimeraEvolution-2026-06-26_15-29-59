@@ -14,10 +14,11 @@ public static class PlayerModel
     // все имена деталей, которые генератор считает СВОИМИ (сносит перед пересборкой)
     static readonly string[] Known =
         { "Capsule", "Body", "Chest", "Neck", "Pelvis", "Head", "Nose", "ArmL", "ArmR", "HandL", "HandR", "LegL", "LegR",
-          "EyeL", "EyeR", "BrowL", "BrowR", "Beard", "Model" };
+          "EyeL", "EyeR", "BrowL", "BrowR", "Model" };
 
     const string EyeMatPath = "Assets/_Chimera/Materials/PlayerEyes.mat";
-    const string BeardMatPath = "Assets/_Chimera/Materials/PlayerBeard.mat";
+    // БОРОДЫ У ЧЕЛОВЕКА НЕТ (изменение курса 22.09, `Docs/models/SPEC-oblik-cheloveka.md`); материал волоса остался бровям
+    const string BrowMatPath = "Assets/_Chimera/Materials/PlayerBrows.mat";
 
     [MenuItem("Chimera/Собрать модель игрока")]
     public static void Rebuild()
@@ -78,19 +79,17 @@ public static class PlayerModel
             Part(side < 0 ? "LegL" : "LegR",   new Vector3(0.11f * side, 0.44f, 0f),    new Vector3(0.16f, 0.88f, 0.16f)); // нога до земли
         }
 
-        // ── ЛИЦО: глаза + кустистые брови + борода-лопата (учёный!). Свои материалы — тинт состава эти
+        // ── ЛИЦО: глаза + кустистые брови. Свои материалы — тинт состава эти
         // детали НЕ красит (CreatureBody исключает по именам), FPS-скрытие прячет вместе с головой ──
         var eyeMat = GetOrCreateMat(EyeMatPath, new Color(0.1f, 0.1f, 0.12f));    // тёмные глаза
-        var beardMat = GetOrCreateMat(BeardMatPath, new Color(0.38f, 0.33f, 0.27f)); // седеющая борода
+        var browMat = GetOrCreateMat(BrowMatPath, new Color(0.38f, 0.33f, 0.27f)); // седеющий волос
         for (int side = -1; side <= 1; side += 2)
         {
             Part(side < 0 ? "EyeL" : "EyeR",   new Vector3(0.07f * side, 1.92f, 0.155f),  new Vector3(0.055f, 0.05f, 0.02f))
                 .GetComponent<Renderer>().sharedMaterial = eyeMat;
             Part(side < 0 ? "BrowL" : "BrowR", new Vector3(0.07f * side, 1.98f, 0.155f), new Vector3(0.09f, 0.025f, 0.02f))
-                .GetComponent<Renderer>().sharedMaterial = beardMat; // брови — того же волоса, что борода
+                .GetComponent<Renderer>().sharedMaterial = browMat;
         }
-        Part("Beard", new Vector3(0f, 1.74f, 0.13f), new Vector3(0.24f, 0.18f, 0.14f))
-            .GetComponent<Renderer>().sharedMaterial = beardMat; // борода-лопата: подбородок и ниже головы
         */
 
         // неизвестные визуальные дети (ручные украшения?) не трогаем — но покажем, чтобы решить их судьбу
