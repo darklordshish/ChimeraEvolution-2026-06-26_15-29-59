@@ -123,7 +123,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482452052574254
+    - rid: 4402482452052574274
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -185,7 +185,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482452052574255
+    - rid: 4402482452052574275
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -255,7 +255,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482452052574256
+    - rid: 4402482452052574276
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -444,7 +444,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482452052574257
+    - rid: 4402482452052574277
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -681,7 +681,7 @@ MonoBehaviour:
     graft: 0
     parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
     attach: 0.5
-    attachOffset: {x: 0.3959, y: 0.4329, z: -0.2331}
+    attachOffset: {x: 0.319, y: 0.4329, z: -0.2331}
     parts:
     - scale: {x: 1, y: 1, z: 1}
       offset: {x: 0, y: 0, z: 0}
@@ -1173,15 +1173,33 @@ MonoBehaviour:
     socket: "\u0433\u043E\u043B\u043E\u0432\u0430"
     attach: 1
     freeOrigin: 1
-    length: 0.33
+    length: 0.22
     endBone: 
     endAttach: 1
     dir: {x: 22.646, y: 0, z: 0}
     r0: 0.22
-    r1: 0.22
+    r1: 0.2
     section: 1
     depth: 1.35
     blend: 0.1
+    chain: 0
+    mirrorX: 0
+  - name: "\u043F\u0435\u0440\u0435\u043D\u043E\u0441\u044C\u0435"
+    parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    layer: 0
+    origin: {x: 0, y: 0, z: 0}
+    socket: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    attach: 1
+    freeOrigin: 0
+    length: 0.2
+    endBone: 
+    endAttach: 1
+    dir: {x: 0, y: 0, z: 0}
+    r0: 0.17
+    r1: 0.12
+    section: 0.7
+    depth: 1.45
+    blend: 0.06
     chain: 0
     mirrorX: 0
   - name: "\u0441\u0435\u0440\u044C\u0433\u0430"
@@ -1345,7 +1363,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4402482452052574254
+    - rid: 4402482452052574274
       type: {class: LimbStrikeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
@@ -1355,7 +1373,7 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.45
         cooldown: 1.1
-    - rid: 4402482452052574255
+    - rid: 4402482452052574275
       type: {class: ChargeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
@@ -1375,7 +1393,7 @@ MonoBehaviour:
         stompForce: 13
         plowForce: 6
         plowRadius: 1.6
-    - rid: 4402482452052574256
+    - rid: 4402482452052574276
       type: {class: BellowData, ns: , asm: Chimera.Runtime}
       data:
         fearRadius: 10
@@ -1383,7 +1401,7 @@ MonoBehaviour:
         fearMoraleHit: 2
         cooldown: 10
         cueTime: 1.2
-    - rid: 4402482452052574257
+    - rid: 4402482452052574277
       type: {class: AntlerData, ns: , asm: Chimera.Runtime}
       data:
         damage: 12
