@@ -99,7 +99,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482452052574328
+    - rid: 4402482477550010368
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -145,7 +145,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482452052574329
+    - rid: 4402482477550010369
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -297,7 +297,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482452052574330
+    - rid: 4402482477550010370
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -388,12 +388,12 @@ MonoBehaviour:
     graft: 0
     parent: "\u041F\u0430\u0441\u0442\u044C"
     attach: 0.5
-    attachOffset: {x: 0, y: 0.7769, z: 0.4748}
+    attachOffset: {x: 0, y: 0.7942, z: 0.4263}
     parts: []
     chain: 0
     chainTaper: 0
     linkDiameter: 0
-    sizeRel: {x: 0.2667, y: 0.2917, z: 0.3212}
+    sizeRel: {x: 0.2667, y: 0.2917, z: 0.3118}
     formFrom: "\u0427\u0443\u0442\u044C\u0451"
     formRole: 4
     linkLength: 0
@@ -510,7 +510,7 @@ MonoBehaviour:
     graft: 0
     parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
     attach: 0
-    attachOffset: {x: 0, y: -0.2017, z: 0.0326}
+    attachOffset: {x: 0, y: -0.2045, z: 0.0493}
     parts:
     - scale: {x: 0.7, y: 0.7, z: 0.7}
       offset: {x: 0, y: 0, z: -0.3}
@@ -523,7 +523,7 @@ MonoBehaviour:
     chain: 0
     chainTaper: 0
     linkDiameter: 0
-    sizeRel: {x: 0.8219, y: 0.3214, z: 0.9375}
+    sizeRel: {x: 0.8219, y: 0.3214, z: 0.9659}
     formFrom: 
     formRole: 0
     linkLength: 0
@@ -539,7 +539,7 @@ MonoBehaviour:
     graft: 0
     parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
     attach: 0
-    attachOffset: {x: 0.2123, y: 0.1436, z: 0.3699}
+    attachOffset: {x: 0.2123, y: 0.1399, z: 0.3922}
     parts:
     - scale: {x: 1, y: 1, z: 1}
       offset: {x: 0, y: 0, z: 0}
@@ -1604,7 +1604,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4402482452052574328
+    - rid: 4402482477550010368
       type: {class: LimbStrikeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 8
@@ -1614,7 +1614,7 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.45
         cooldown: 1.1
-    - rid: 4402482452052574329
+    - rid: 4402482477550010369
       type: {class: KickData, ns: , asm: Chimera.Runtime}
       data:
         damage: 4
@@ -1622,7 +1622,7 @@ MonoBehaviour:
         reach: 1.8
         radius: 1.6
         cooldown: 1
-    - rid: 4402482452052574330
+    - rid: 4402482477550010370
       type: {class: ScreamData, ns: , asm: Chimera.Runtime}
       data:
         cooldown: 12
