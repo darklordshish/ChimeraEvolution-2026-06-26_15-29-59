@@ -1,4 +1,4 @@
-﻿---
+---
 name: art-direction
 description: Use when judging any visual, model, silhouette, or morph decision in CHIMERA — low-poly faceted style, atmospheric budget, organic transformation language. Guards GDD §9.
 ---

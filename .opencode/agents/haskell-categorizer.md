@@ -1,4 +1,4 @@
-﻿---
+---
 description: Математик-хаскелист CHIMERA — категорный взгляд, DSL, диаграммы, смелые идеи с трейдоффом
 mode: subagent
 temperature: 0.7

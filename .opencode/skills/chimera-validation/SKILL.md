@@ -1,4 +1,4 @@
-﻿---
+---
 name: chimera-validation
 description: Use when verifying CHIMERA bodies, seams, or any morphology change. Builds with real MorphBuilder and measures renderer bounds, not socket boxes.
 ---

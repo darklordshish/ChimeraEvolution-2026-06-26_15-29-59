@@ -1,4 +1,4 @@
-﻿---
+---
 name: blender-chimera
 description: Use when modeling, sculpting, or generating CHIMERA creatures in Blender — low-poly faceted, armature, cage M×N, FBX per slot. Covers Tools/Blender pipeline, species data, and Unity hand-off.
 ---

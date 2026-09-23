@@ -1,4 +1,4 @@
-﻿---
+---
 description: Арт-директор CHIMERA — low-poly фасетка, атмосфера, силуэт, язык трансформации и бюджет
 mode: subagent
 temperature: 0.35

@@ -1,4 +1,4 @@
-﻿---
+---
 name: chimera-testing
 description: Use when writing or running tests for CHIMERA — EditMode/PlayMode, audit.py, BodyMap detector, cage blending, hit effects. Guards against regressions in morph, combat, and evolution.
 ---

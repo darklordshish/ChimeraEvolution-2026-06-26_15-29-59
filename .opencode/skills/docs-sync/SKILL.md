@@ -1,4 +1,4 @@
-﻿---
+---
 name: docs-sync
 description: Use when docs and code diverge, stage changes, or a slice finishes — keeps СТАТУС, УКАЗАТЕЛЬ, GDD, and specs consistent. Enforces the three doc sorts.
 ---

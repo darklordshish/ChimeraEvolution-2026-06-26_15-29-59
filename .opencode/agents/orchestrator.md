@@ -1,4 +1,4 @@
-﻿---
+---
 description: Оркестратор CHIMERA — дирижёр сквада, spec-first, YAGNI и модератор споров
 mode: primary
 temperature: 0.25

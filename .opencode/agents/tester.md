@@ -1,4 +1,4 @@
-﻿---
+---
 description: Тестер CHIMERA — EditMode/PlayMode, audit.py, BodyMap, клетка, инварианты И1-И8, гочи Unity
 mode: subagent
 temperature: 0.2

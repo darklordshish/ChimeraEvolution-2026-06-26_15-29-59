@@ -1,4 +1,4 @@
-﻿---
+---
 description: Эколог психик CHIMERA — стаи, Metamorph, живой лес, голод и эволюция
 mode: subagent
 temperature: 0.3

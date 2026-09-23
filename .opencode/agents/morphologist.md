@@ -1,4 +1,4 @@
-﻿---
+---
 description: Морфолог CHIMERA — скульптор тел, клетка M×N, кости→мышцы→покровы, детектор швов
 mode: subagent
 temperature: 0.2

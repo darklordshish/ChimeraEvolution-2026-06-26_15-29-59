@@ -1,4 +1,4 @@
-﻿---
+---
 description: Unity-интегратор CHIMERA — префабы, сцена, Editor-генераторы, 15 мин Unity, руки пользователя
 mode: subagent
 temperature: 0.2

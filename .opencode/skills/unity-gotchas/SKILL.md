@@ -1,4 +1,4 @@
-﻿---
+---
 name: unity-gotchas
 description: Use when touching Unity scene, prefabs, Editor code, or any C# that touches Unity lifecycle in CHIMERA. Checklist of 15 mines bought with debugging sessions.
 ---

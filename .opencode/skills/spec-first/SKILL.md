@@ -1,4 +1,4 @@
-﻿---
+---
 name: spec-first
 description: Use when starting any large CHIMERA feature — slice, mechanic, species, or refactor. Enforces spec → plan → code workflow, vertical slices, and YAGNI.
 ---

@@ -1,4 +1,4 @@
-﻿---
+---
 description: Хранитель доков CHIMERA — 79 документов, СТАТУС/УКАЗАТЕЛЬ, GDD, спеки, консистентность
 mode: subagent
 temperature: 0.15

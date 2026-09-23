@@ -1,4 +1,4 @@
-﻿---
+---
 name: morphology-by-layers
 description: Use when building or fixing CHIMERA creature bodies — SpeciesSO sockets, bones, muscles, covers, cage M×N. Enforces layer workflow and tandem rule.
 ---

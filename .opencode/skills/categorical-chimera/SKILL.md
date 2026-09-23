@@ -1,4 +1,4 @@
-﻿---
+---
 name: categorical-chimera
 description: Use when viewing CHIMERA architecture through category theory — functors, colimits, DSL, effect algebras. Proposes testable ideas, not refactors for beauty.
 ---

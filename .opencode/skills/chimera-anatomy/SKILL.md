@@ -1,4 +1,4 @@
-﻿---
+---
 name: chimera-anatomy
 description: Use when working with Anatomy workshop, Blender cage, species refs, or any Python tools in CHIMERA. Handles Anaconda path and audit pipeline.
 ---
