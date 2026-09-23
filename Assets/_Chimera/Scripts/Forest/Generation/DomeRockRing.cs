@@ -42,9 +42,9 @@ public static class DomeRockRing
     }
 
     /// <summary>
-    /// Ручной Hermite вместо Mathf.SmoothStep: в этом окружении SmoothStep ведёт себя
-    /// не по документации (замер 19.09: SmoothStep(0, 0.5, 0.5) = 0.25, а не 1),
-    /// поэтому кривые подъёма/спада считаем явно и тестируемо.
+    /// Ступень Эрмита по u ∈ [0,1]. Не Mathf.SmoothStep: тот — интерполяция SmoothStep(from, to, t)
+    /// (SmoothStep(0, 0.5, 0.5) = 0.25 верно), а не шейдерный smoothstep(edge0, edge1, x).
+    /// Кривые подъёма/спада считаем явно и тестируемо.
     /// </summary>
     static float Hermite(float u)
     {
