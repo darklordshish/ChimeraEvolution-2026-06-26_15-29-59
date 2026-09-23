@@ -18,11 +18,12 @@ public class Senses : MonoBehaviour
     SenseChannel Ch(SenseKind k) =>
         k == SenseKind.Sight ? sight : k == SenseKind.Thermal ? thermal : k == SenseKind.Hearing ? hearing : scent;
 
-    /// <summary>Дальность чувства с учётом ТЕКУЩЕГО состояния восприятия (Спок/Настор/Атака).</summary>
+    /// <summary>Дальность чувства с учётом ТЕКУЩЕГО состояния восприятия (Спок/Настор/Атака)
+    /// и погоды/ночи леса (s3b: множитель поверх, термо вне умножения).</summary>
     public float Range(SenseKind k)
     {
         if (alert == null) TryGetComponent(out alert); // ленивая привязка (порядок Awake не гарантирован)
-        return Ch(k).For(alert != null ? alert.State : Alert.Wary);
+        return Ch(k).For(alert != null ? alert.State : Alert.Wary) * ForestClimate.RangeMult(k);
     }
 
     public float Acuity(SenseKind k) => Ch(k).acuity;

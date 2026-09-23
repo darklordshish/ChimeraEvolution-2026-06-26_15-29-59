@@ -53,7 +53,7 @@ public class Noise : MonoBehaviour
     public void Spike(float strength, float duration, Color tone)
     {
         spike = Mathf.Clamp01(strength);
-        spikeUntil = Time.time + duration;
+        spikeUntil = Time.time + duration * ForestClimate.CueDurationMult(); // s3b: в тумане/дождь объявление дольше (сила клампится)
         Tone = tone;
         SpikeAt = Time.time;
     }

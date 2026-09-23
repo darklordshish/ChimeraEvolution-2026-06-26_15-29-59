@@ -115,6 +115,23 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     public bool Engaged { get; private set; } // игрок в поле зрения = волк агрессивен/нацелен (для «вне боя» игрока)
     bool Alerted => Time.time < alertUntil;   // услышал вой — знает, куда сбегаться (личная память)
 
+    // s6: ВОЗВРАТ ДОМОЙ (пилот): флаг по механике (дефолт false = старое поведение).
+    // Homing/homeTarget — ридонли для тестов. Крыша держится пока пилот активен,
+    // отпускается при уходе/бое/панике/смерти (иначе толпа залипнет).
+    public bool returnHomeEnabled;
+    public bool Homing { get; private set; }
+    public Vector3 homeTarget { get; private set; }
+    bool homeReserved;
+    LairSite homeDen;
+
+    void ReleaseHome()
+    {
+        if (homeReserved && homeDen != null) homeDen.Release(GetInstanceID());
+        homeReserved = false;
+        homeDen = null;
+        Homing = false;
+    }
+
     // услышал чужой вой: поднимаю личную тревогу и запоминаю точку сбора
     public void Hear(Vector3 playerPos) { alertUntil = Time.time + alertMemory; alertPos = playerPos; }
     public void ForgetAlert() => alertUntil = 0f; // сброс личной тревоги (при бегстве стаи — теряем игрока)
@@ -438,6 +455,8 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         if (windingUp) { UpdateGrabWindup(dist, inCone); return; } // только замах захвата — укус/прыжок тикают выше
 
         // не вижу: услышал вой → к точке сбора; иначе по ЗАПАХУ (тропа) + сам вою, зову ближних; иначе брожу.
+        // s6: вышел из пилота (бой/паника/флаг снят/оглушён) — крышу отпустить
+        if (Homing && (!returnHomeEnabled || Engaged || Routing || (stagger != null && stagger.IsStaggered))) ReleaseHome();
         if (!Engaged)
         {
             if (hasToken) ReleaseToken();
@@ -449,6 +468,28 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
             // одиночек). Твой эмерджент круга биома: сытые разбредаются, голодные сбиваются в рать
             if (Belly != null && Belly.IsSated)
             {
+                // s6: пилот возврата — ПЕРВЫЙ в сытой ветке, до брожения.
+                // Идём к СВОЕМУ дому (home тела), не к ближайшему; гейты — как у охоты минус добыча.
+                LairSite den = (returnHomeEnabled && mooseTarget == null && !Routing) && body != null ? body.home : null;
+                if (den != null)
+                {
+                    if (!den.IsNearHome(transform.position))
+                    {
+                        Homing = true;
+                        homeTarget = den.transform.position;
+                        Vector3 hd = nav.DirTo(homeTarget);
+                        if (hd.sqrMagnitude > 0.001f)
+                            transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(hd), rotationSpeed * Time.deltaTime);
+                        Settle(hd * Speed);
+                        return;
+                    }
+                    Homing = false;
+                    if (!homeReserved) homeReserved = den.TryReserve(GetInstanceID());
+                    if (homeReserved) homeDen = den;
+                    Settle(Vector3.zero); // дома: отдыхаем
+                    return;
+                }
+                if (Homing || homeReserved) ReleaseHome();
                 Vector3 wd = nav.DirTo(nav.Wander(wanderRadius));
                 if (wd.sqrMagnitude > 0.001f)
                     transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(wd), rotationSpeed * Time.deltaTime);
@@ -848,6 +889,6 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         nav.Move(horizontal);
     }
 
-    void OnDestroy() { if (ownHealth != null) { ownHealth.onDamaged.RemoveListener(OnHurt); ownHealth.onDeath.RemoveListener(OnKilled); } } // Metamorph сносит психику — подписки не должны её пережить
+    void OnDestroy() { if (ownHealth != null) { ownHealth.onDamaged.RemoveListener(OnHurt); ownHealth.onDeath.RemoveListener(OnKilled); } ReleaseHome(); } // Metamorph сносит психику — подписки не должны её пережить; s6: крышу отпустить
 
 }

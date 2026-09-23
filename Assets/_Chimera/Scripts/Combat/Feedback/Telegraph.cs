@@ -10,6 +10,7 @@ using UnityEngine;
 public class Telegraph : MonoBehaviour
 {
     static readonly int BaseColor = Shader.PropertyToID("_BaseColor");
+    static readonly int EmissionColor = Shader.PropertyToID("_EmissionColor"); // s3d: второй канал (без keyword на материале молча игнор — см. EmissionSetup)
 
     Renderer[] renderers;
     Color[] baseColors;
@@ -110,7 +111,9 @@ public class Telegraph : MonoBehaviour
     const float UnknownLift = 0.45f;
 
     // применить текущее состояние: выкл → рест (эмоция НА ГОЛОВЕ, тело натуральное); градиент → лерп от реста; плоский → цвет
-     void Apply()
+    // pulseTime ≥ 0 — кадр пульса (только из Update): осцилляция УЖЕ посчитанного итога
+    // (рест→градиент→veil) к pulseColor — градиент стадийных не ломается
+     void Apply(float pulseTime = -1f)
     {
         if (mpb == null) mpb = new MaterialPropertyBlock();
         if (renderers == null) return;
@@ -118,6 +121,13 @@ public class Telegraph : MonoBehaviour
         // но безымянным. С Чутьём проступает цвет приёма: укус, захват, таран, вой.
         // Гейт только на НАМЕРЕНИИ: стан и эмоции — факты, у них свои каналы, их не обезличиваем
         bool veiled = activeIntent && !Perception.Insight && !isPlayer;
+
+        float pulseAmp = 0f, pulseWave = 0f;
+        if (pulseTime >= 0f && pulseLatched)
+        {
+            pulseAmp = pulse.pulseAmp * Mathf.Clamp01((0.85f - ForestClimate.RangeMult(SenseKind.Sight)) / 0.45f);
+            pulseWave = 0.5f + 0.5f * Mathf.Sin(pulseTime * pulse.pulseFreq * Mathf.PI * 2f);
+        }
 
         for (int i = 0; i < renderers.Length; i++)
         {
@@ -127,12 +137,43 @@ public class Telegraph : MonoBehaviour
             // нераспознанное — светлеем ОТ СВОЕГО цвета (per-renderer): волк остаётся волком, просто «зажёгся»
             Color target = veiled ? Color.Lerp(rest, Color.white, UnknownLift) : activeColor;
             Color c = !active ? rest : activeT >= 0f ? Color.Lerp(rest, target, activeT) : target;
-            mpb.SetColor(BaseColor, c);
+            if (pulseAmp > 0f)
+            {
+                c = Color.Lerp(c, pulse.pulseColor, pulseAmp * pulseWave);
+                mpb.SetColor(BaseColor, c);
+                mpb.SetColor(EmissionColor, pulse.pulseColor * (pulseAmp * pulseWave));
+            }
+            else
+            {
+                mpb.SetColor(BaseColor, c);
+                mpb.SetColor(EmissionColor, Color.black); // залипший glow запрещён
+            }
             renderers[i].SetPropertyBlock(mpb);
         }
     }
 
     public bool IsShowing => active; // «существо сейчас что-то телеграфирует» = раскрыто (сигнал для камуфляжа)
+
+    // s3c: ПУЛЬС-АКЦЕНТ (не обводка — честное имя): временная модуляция первого канала.
+    // Armed — SetPulse, работает только на активном ЗАМАХЕ (intent): статусы не пульсируют.
+    // Гейт — видимость <0.8, отпуск >0.9 (гистерезис от щелчка), амплитуда рампой 0.85→0.4.
+    // Дефолт disarmed: Update — один бранч + return, поведение 1:1 со старым.
+    TelegraphChannels pulse;
+    bool pulseArmed;
+    bool pulseLatched;
+
+    public void SetPulse(TelegraphChannels channels) { pulse = channels; pulseArmed = true; }
+    public void ClearPulse() { pulseArmed = false; pulseLatched = false; Apply(); }
+
+    void Update()
+    {
+        if (!pulseArmed || !active || !activeIntent) return;
+        float f = ForestClimate.RangeMult(SenseKind.Sight);
+        if (!pulseLatched && f < 0.8f) pulseLatched = true;
+        else if (pulseLatched && f > 0.9f) pulseLatched = false;
+        if (!pulseLatched) return;
+        Apply(Time.time); // событие перезапишет статикой — last-writer за событием, осцилляция продолжится
+    }
 
     /// <summary>Цвет текущего приёма — чтобы ЗВУК этого приёма нёс тот же тон (волна = телеграф на расстоянии).
     /// Молчит (нейтральный) — значит приёма нет: удар без телеграфа звучит безымянно.</summary>

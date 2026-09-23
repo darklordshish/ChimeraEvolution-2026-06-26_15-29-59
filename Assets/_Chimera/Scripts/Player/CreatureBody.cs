@@ -17,6 +17,10 @@ public partial class CreatureBody : MonoBehaviour
     [SerializeField] SpeciesSO chassis;    // базовое тело (MVP: Человек) — слоты, пул, дефолт-органы
     [SerializeField] SpeciesSO[] donors;   // доноры органов (MVP: [Волк])
 
+    // s6: ТОЧКА ВОЗВРАТА — логово-дом (ставит спавнер при рождении; пилот психики ведёт сюда сытого).
+    // Не сериализуем в префаб: дом — состояние забега, а не вида.
+    [System.NonSerialized] public LairSite home;
+
     // — РОДСТВО (аффинити: кривые скидки/мощи, словарь, Power) вынесено в CreatureBody.Affinity.cs (partial-split #2) —
 
     [Header("Капы овершута мощи (глушим 2з−ч на 100 родства)")]
