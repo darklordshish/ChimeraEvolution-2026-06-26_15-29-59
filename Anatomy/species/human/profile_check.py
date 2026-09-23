@@ -17,16 +17,37 @@ import graph as G
 HEIGHTS = [round(1.55 - 0.02 * i, 2) for i in range(36)]
 
 
-def ours(path, torso=0.16):
-    V = []
+def load_obj(path):
+    """Вершины и треугольники OBJ (грани веером; индексы `v/vt/vn`, отрицательные — от конца)."""
+    V, T = [], []
     for line in open(path):
         if line.startswith('v '):
-            x, y, z = map(float, line.split()[1:4])
-            if abs(x) < torso:
-                V.append((-x, y, z))
+            V.append(tuple(map(float, line.split()[1:4])))
+        elif line.startswith('f '):
+            ids = [int(w.split('/')[0]) for w in line.split()[1:]]
+            ids = [i - 1 if i > 0 else len(V) + i for i in ids]
+            T.extend((ids[0], ids[k], ids[k + 1]) for k in range(1, len(ids) - 1))
+    return V, T
+
+
+def section(V, T, h):
+    """СРЕЗ ОБОЛОЧКИ ПЛОСКОСТЬЮ y = h — точки пересечения рёбер. Вершины слоем ±1 см не годятся: на сетке main узлы идут
+    через клетку (4.2 см), и половина высот попадала между рядами — сверка врала на 17 см (23.09, переезд в свою папку)."""
+    out = []
+    for t in T:
+        for i, j in ((t[0], t[1]), (t[1], t[2]), (t[2], t[0])):
+            a, b = V[i], V[j]
+            if (a[1] - h) * (b[1] - h) < 0 and a[1] != b[1]:
+                k = (h - a[1]) / (b[1] - a[1])
+                out.append((-(a[0] + (b[0] - a[0]) * k), h, a[2] + (b[2] - a[2]) * k))   # X зеркален выгрузкой
+    return out
+
+
+def ours(path, torso=0.16):
+    V, T = load_obj(path)
     out = {}
     for h in HEIGHTS:
-        pts = [v for v in V if abs(v[1] - h) < 0.011]
+        pts = [p for p in section(V, T, h) if abs(p[0]) < torso]
         if pts:
             out[h] = (min(p[2] for p in pts), max(p[2] for p in pts))
     return out
