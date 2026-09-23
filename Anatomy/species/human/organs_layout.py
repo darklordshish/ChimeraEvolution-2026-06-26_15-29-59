@@ -74,9 +74,13 @@ def arm():
 def leg():
     n = node_by_name('голень')
     w, h, l = 0.105, 0.075, 0.280
-    heel_z = G.ANKLE[2] - 0.055
-    centre = (G.ANKLE[0], h / 2, heel_z + l / 2)
-    foot = piece(n, 'стопа', centre, (w, h, l), (0.0, 0.0, 1.0), (0.0, 1.0, 0.0))
+    # НОСОК НАРУЖУ на 15°: у листа носки развёрнуты на 15–20° во всех ракурсах, параллельные блоки читались «по стойке смирно»
+    # (рецензия 23.09). Пятка — на 6.5 см позади середины голеностопа вдоль оси стопы
+    toe = math.radians(15.0)
+    d = (math.sin(toe), 0.0, math.cos(toe))
+    heel = (G.ANKLE[0] - d[0] * 0.065, 0.0, G.ANKLE[2] - d[2] * 0.065)
+    centre = (heel[0] + d[0] * l / 2, h / 2, heel[2] + d[2] * l / 2)
+    foot = piece(n, 'стопа', centre, (w, h, l), d, (0.0, 1.0, 0.0))
     return dict(slot='Ноги', organ='Ноги', parts=[foot])
 
 
