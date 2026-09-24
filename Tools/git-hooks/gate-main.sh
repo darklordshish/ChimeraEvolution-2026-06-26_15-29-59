@@ -35,10 +35,11 @@ out=$(PYTHONIOENCODING=utf-8 "$py" Docs/tools/spec_status.py 2>&1) || fail "де
 $out"
 say "детектор спек чист"
 
-# 2. EditMode — если публикация задевает Unity
+# 2. EditMode — если публикация задевает Unity. quotePath=false: иначе git берёт кириллический путь в кавычки
+# ("Assets/_Chimera/Data/\320\222…"), `^Assets/` не совпадает, и правка ассета вида уходила без тестов (поймано 24.09)
 base=$(git merge-base "$sha" "refs/remotes/$remote/main" 2>/dev/null || true)
 if [ "${CHIMERA_GATE_TESTS:-}" != "always" ] && [ -n "$base" ] &&
-   ! git diff --name-only "$base" "$sha" | grep -qE '^(Assets|Packages|ProjectSettings|Tools/Agent)/'; then
+   ! git -c core.quotePath=false diff --name-only "$base" "$sha" | grep -qE '^(Assets|Packages|ProjectSettings|Tools/Agent)/'; then
   say "Unity не задет — тесты не нужны"
   exit 0
 fi
