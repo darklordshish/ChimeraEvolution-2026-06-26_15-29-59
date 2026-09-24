@@ -99,7 +99,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482477550010368
+    - rid: 4402482492715827200
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -145,7 +145,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482477550010369
+    - rid: 4402482492715827201
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -297,7 +297,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482477550010370
+    - rid: 4402482492715827202
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -980,14 +980,14 @@ MonoBehaviour:
   - name: "\u0448\u0435\u044F"
     parent: "\u0433\u0440\u0443\u0434\u044C2"
     layer: 0
-    origin: {x: 0, y: 0.1923, z: 0.0145}
+    origin: {x: 0, y: 0.1953, z: 0.0029}
     socket: "\u0448\u0435\u044F"
     attach: 1
     freeOrigin: 1
-    length: 0.1809
+    length: 0.1825
     endBone: 
     endAttach: 1
-    dir: {x: 19.971, y: 0, z: 0}
+    dir: {x: 23.723, y: 0, z: 0}
     r0: 0.058
     r1: 0.053
     section: 1
@@ -998,17 +998,17 @@ MonoBehaviour:
   - name: "\u0442\u0440\u0430\u043F\u0435\u0446\u0438\u044F"
     parent: "\u0448\u0435\u044F"
     layer: 0
-    origin: {x: 0.05, y: 0.1075, z: -0.0509}
+    origin: {x: 0.05, y: 0.0993, z: -0.0551}
     socket: "\u0448\u0435\u044F"
     attach: 1
     freeOrigin: 1
-    length: 0.1712
+    length: 0.1698
     endBone: 
     endAttach: 1
-    dir: {x: 12.664, y: 180, z: 118.842}
+    dir: {x: 24.023, y: -180, z: 117.94}
     r0: 0.032
     r1: 0.026
-    section: 1.2
+    section: 1.35
     depth: 1
     blend: 0.04
     chain: 0
@@ -1016,14 +1016,14 @@ MonoBehaviour:
   - name: "\u0433\u043E\u043B\u043E\u0432\u0430"
     parent: "\u0448\u0435\u044F"
     layer: 0
-    origin: {x: 0, y: 0.2191, z: 0.0303}
+    origin: {x: 0, y: 0.2226, z: 0.0278}
     socket: "\u0433\u043E\u043B\u043E\u0432\u0430"
     attach: 1
     freeOrigin: 1
     length: 0.0818
     endBone: 
     endAttach: 1
-    dir: {x: -17.707, y: 0, z: 0}
+    dir: {x: -21.459, y: 0, z: 0}
     r0: 0.066
     r1: 0.073
     section: 1.08
@@ -1124,14 +1124,14 @@ MonoBehaviour:
   - name: "\u043B\u043E\u043F\u0430\u0442\u043A\u0430"
     parent: "\u0433\u0440\u0443\u0434\u044C2"
     layer: 0
-    origin: {x: 0.07, y: 0.212, z: -0.0424}
+    origin: {x: 0.055, y: 0.2351, z: -0.052}
     socket: "\u0420\u0443\u043A\u0438"
     attach: 1
     freeOrigin: 1
-    length: 0.1211
+    length: 0.1394
     endBone: 
     endAttach: 1
-    dir: {x: -73.955, y: -27.901, z: -79.823}
+    dir: {x: -75.574, y: 8.874, z: -119.622}
     r0: 0.042
     r1: 0.045
     section: 1.35
@@ -1142,14 +1142,14 @@ MonoBehaviour:
   - name: "\u0434\u0435\u043B\u044C\u0442\u0430-\u043F\u0435\u0440\u0435\u0434"
     parent: "\u043B\u043E\u043F\u0430\u0442\u043A\u0430"
     layer: 0
-    origin: {x: 0.0458, y: 0.1426, z: -0.0211}
+    origin: {x: 0.0428, y: 0.1674, z: -0.0196}
     socket: "\u0420\u0443\u043A\u0438"
     attach: 1
     freeOrigin: 1
     length: 0.1238
     endBone: 
     endAttach: 1
-    dir: {x: 12.426, y: -66.013, z: 83.04}
+    dir: {x: 20.066, y: -64.791, z: 76.242}
     r0: 0.04
     r1: 0.02
     section: 1
@@ -1160,14 +1160,14 @@ MonoBehaviour:
   - name: "\u0434\u0435\u043B\u044C\u0442\u0430"
     parent: "\u043B\u043E\u043F\u0430\u0442\u043A\u0430"
     layer: 0
-    origin: {x: -0.0045, y: 0.1533, z: -0.0092}
+    origin: {x: -0.0072, y: 0.1721, z: -0.0037}
     socket: "\u0420\u0443\u043A\u0438"
     attach: 1
     freeOrigin: 1
     length: 0.1229
     endBone: 
     endAttach: 1
-    dir: {x: 16.707, y: -89.315, z: 88.075}
+    dir: {x: 21.047, y: -89.291, z: 78.498}
     r0: 0.04
     r1: 0.02
     section: 1
@@ -1178,14 +1178,14 @@ MonoBehaviour:
   - name: "\u0434\u0435\u043B\u044C\u0442\u0430-\u0437\u0430\u0434"
     parent: "\u043B\u043E\u043F\u0430\u0442\u043A\u0430"
     layer: 0
-    origin: {x: -0.047, y: 0.1108, z: -0.0257}
+    origin: {x: -0.0477, y: 0.1296, z: -0.0247}
     socket: "\u0420\u0443\u043A\u0438"
     attach: 1
     freeOrigin: 1
     length: 0.1227
     endBone: 
     endAttach: 1
-    dir: {x: 18.279, y: -118.318, z: 66.519}
+    dir: {x: 17.656, y: -118.447, z: 55.978}
     r0: 0.042
     r1: 0.02
     section: 1
@@ -1203,7 +1203,7 @@ MonoBehaviour:
     length: 0.32
     endBone: 
     endAttach: 1
-    dir: {x: 16.883, y: -90.728, z: 82.816}
+    dir: {x: 20.995, y: -90.752, z: 73.123}
     r0: 0.045
     r1: 0.0335
     section: 1
@@ -1604,7 +1604,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4402482477550010368
+    - rid: 4402482492715827200
       type: {class: LimbStrikeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 8
@@ -1614,7 +1614,7 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.45
         cooldown: 1.1
-    - rid: 4402482477550010369
+    - rid: 4402482492715827201
       type: {class: KickData, ns: , asm: Chimera.Runtime}
       data:
         damage: 4
@@ -1622,7 +1622,7 @@ MonoBehaviour:
         reach: 1.8
         radius: 1.6
         cooldown: 1
-    - rid: 4402482477550010370
+    - rid: 4402482492715827202
       type: {class: ScreamData, ns: , asm: Chimera.Runtime}
       data:
         cooldown: 12
