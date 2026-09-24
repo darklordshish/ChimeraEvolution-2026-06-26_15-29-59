@@ -72,8 +72,11 @@ def main(glb, shots, out=None):
     for view, path in shots:
         g = game_mask(path)
         best = None
+        big = silhouette(V, T, view, int(round(g.shape[0] * 1.15)))   # растр один раз, масштабы — ресайзом маски
         for sc in np.linspace(0.85, 1.15, 13):
-            m = silhouette(V, T, view, int(round(g.shape[0] * sc)))
+            h = int(round(g.shape[0] * sc))
+            m = np.asarray(Image.fromarray(big.astype(np.uint8) * 255).resize(
+                (max(1, int(round(big.shape[1] * h / big.shape[0]))), h), Image.BILINEAR)) > 127
             r = SG.pair(g, m[:, ::-1])                  # pair зеркалит второй — здесь зеркало не нужно
             if best is None or r[0] > best[1][0]:
                 best = (sc, r)
