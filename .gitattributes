@@ -170,6 +170,7 @@ Packages/packages-lock.json linguist-generated
 # Exceptions for .asset files such as lightning pre-baking
 LightingData.asset     binary
 
-# Хуки гейта перед main — скрипты bash: с CRLF они ломаются ($''), а core.autocrlf на Windows их бы перевёл
+# Хуки гейта перед main — скрипты bash: с CRLF они ломаются (лишний возврат каретки в конце строк), а core.autocrlf на Windows их бы перевёл
+'), а core.autocrlf на Windows их бы перевёл
 Tools/git-hooks/*       text eol=lf
 *.sh                    text eol=lf
