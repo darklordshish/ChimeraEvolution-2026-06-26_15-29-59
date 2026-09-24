@@ -131,6 +131,7 @@ Anatomy/species/*/ref/
 Tools/Blender/out/
 Tools/Blender/preview/
 Tools/Blender/Archive~/
+Assets/_Chimera/Models/Archive~/
 **/__pycache__/
 Tools/Blender/*.blend
 Tools/Blender/*.blend1
