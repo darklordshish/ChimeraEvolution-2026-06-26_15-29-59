@@ -20,7 +20,7 @@ sc.display.shading.single_color=(0.75,0.75,0.78)
 sc.world=bpy.data.worlds.new('w'); sc.world.color=(0.02,0.022,0.027)
 # кадр под габарит: высокий (человек) — узкий, длинный (зверь) — широкий; ortho_scale у Blender — по большей стороне кадра
 L=max(mx.x-mn.x, mx.y-mn.y); W=max(h, L)
-sc.render.resolution_x=int(900*W/h) if L>h else 500; sc.render.resolution_y=900
+sc.render.resolution_x=max(400, int(900*L/h)); sc.render.resolution_y=900
 cam=bpy.data.cameras.new('c'); cam.type='ORTHO'; cam.ortho_scale=W*1.08
 co=bpy.data.objects.new('c',cam); sc.collection.objects.link(co); sc.camera=co
 # gltf import: Y-up → Blender Z-up; front of sample = -Y in Blender (glTF +Z)
