@@ -16,18 +16,18 @@
       },
       "attach": 1.0,
       "freeOrigin": false,
-      "length": 0.27,
+      "length": 0.34,
       "endBone": "",
       "endAttach": 1.0,
       "dir": {
-        "x": 91.061,
+        "x": 90.843,
         "y": 0.0,
         "z": 0.0
       },
-      "r0": 0.15,
-      "r1": 0.093,
+      "r0": 0.17,
+      "r1": 0.105,
       "section": 1.0,
-      "depth": 0.6966666666666668,
+      "depth": 0.6147058823529412,
       "blend": 0.06,
       "chain": 0,
       "mirrorX": false
