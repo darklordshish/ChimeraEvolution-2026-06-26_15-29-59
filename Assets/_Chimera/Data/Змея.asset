@@ -46,7 +46,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482452052574331
+    - rid: 4402482518219816983
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -57,7 +57,7 @@ MonoBehaviour:
       euler: {x: 0, y: 0, z: 0}
       shape: 0
       node: 
-      block: "\u043A\u043B\u0438\u043D"
+      block: "\u0440\u044B\u043B\u043E"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
     visualSegments: 0
@@ -130,7 +130,7 @@ MonoBehaviour:
     digestion: 1
     nativeChassis: 
     abilities:
-    - rid: 4402482452052574332
+    - rid: 4402482518219816984
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -351,7 +351,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: "\u0417\u043C\u0435\u044F"
     abilities:
-    - rid: 4402482452052574333
+    - rid: 4402482518219816985
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -384,19 +384,19 @@ MonoBehaviour:
     graft: 0
     parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
     attach: 0.5
-    attachOffset: {x: 0.2433, y: -0.0263, z: 0.22}
+    attachOffset: {x: 0.3441, y: -0.0462, z: 0.22}
     parts: []
     chain: 0
     chainTaper: 0
     linkDiameter: 0
-    sizeRel: {x: 0.1167, y: 0.1579, z: 0.0536}
+    sizeRel: {x: 0.1029, y: 0.1154, z: 0.0638}
     formFrom: "\u0427\u0443\u0442\u044C\u0451"
     formRole: 5
     linkLength: 0
     linkTaper: 0
   - name: "\u0433\u043E\u043B\u043E\u0432\u0430"
     localPos: {x: 0, y: 0, z: 0}
-    baseSize: {x: 0.3, y: 0.19, z: 0.56}
+    baseSize: {x: 0.34, y: 0.26, z: 0.47}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
     solid: 1
@@ -490,7 +490,7 @@ MonoBehaviour:
     graft: 0
     parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
     attach: 1
-    attachOffset: {x: 0, y: 0.0526, z: -0.2321}
+    attachOffset: {x: 0, y: 0, z: -0.3936}
     parts:
     - scale: {x: 1, y: 1, z: 1}
       offset: {x: 0, y: 0, z: 0}
@@ -503,7 +503,7 @@ MonoBehaviour:
     chain: 0
     chainTaper: 0
     linkDiameter: 0
-    sizeRel: {x: 0.55, y: 0.5526, z: 0.4643}
+    sizeRel: {x: 0.9206, y: 0.95, z: 0.7872}
     formFrom: 
     formRole: 0
     linkLength: 0
@@ -519,7 +519,7 @@ MonoBehaviour:
     graft: 0
     parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
     attach: 0.5
-    attachOffset: {x: 0.3233, y: 0.2368, z: -0.0714}
+    attachOffset: {x: 0.3618, y: 0.2846, z: 0.0957}
     parts:
     - scale: {x: 1, y: 1, z: 1}
       offset: {x: 0, y: 0, z: 0}
@@ -532,7 +532,7 @@ MonoBehaviour:
     chain: 0
     chainTaper: 0
     linkDiameter: 0
-    sizeRel: {x: 0.1667, y: 0.2632, z: 0.0893}
+    sizeRel: {x: 0.1618, y: 0.2115, z: 0.117}
     formFrom: "\u0427\u0443\u0442\u044C\u0451"
     formRole: 1
     linkLength: 0
@@ -547,7 +547,7 @@ MonoBehaviour:
     chainForward: 1
     graft: 0
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
-    attach: 0.2
+    attach: 0.4285714
     attachOffset: {x: 0, y: 0, z: 0}
     parts: []
     chain: 4
@@ -571,14 +571,14 @@ MonoBehaviour:
     attach: 1
     attachOffset: {x: 0, y: 0, z: 0}
     parts: []
-    chain: 5
+    chain: 7
     chainTaper: 0
     linkDiameter: 0.3
     sizeRel: {x: 0, y: 0, z: 0}
     formFrom: 
     formRole: 0
     linkLength: 0.36
-    linkTaper: 0.97
+    linkTaper: 0.98
   - name: "\u0425\u0432\u043E\u0441\u0442"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 1, y: 1, z: 1}
@@ -592,14 +592,14 @@ MonoBehaviour:
     attach: 0
     attachOffset: {x: 0, y: 0, z: 0}
     parts: []
-    chain: 6
+    chain: 3
     chainTaper: 0
     linkDiameter: 0
     sizeRel: {x: 0, y: 0, z: 0}
     formFrom: 
     formRole: 0
     linkLength: 0.24
-    linkTaper: 0.843
+    linkTaper: 0.67
   - name: "\u041D\u0430\u043A\u043E\u043D\u0435\u0447\u043D\u0438\u043A"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.13, y: 0.13, z: 0.13}
@@ -776,14 +776,14 @@ MonoBehaviour:
     socket: "\u0433\u043E\u043B\u043E\u0432\u0430"
     attach: 1
     freeOrigin: 0
-    length: 0.27
+    length: 0.2301
     endBone: 
     endAttach: 1
-    dir: {x: 91.061, y: 0, z: 0}
-    r0: 0.15
-    r1: 0.093
+    dir: {x: 91.245, y: 0, z: 0}
+    r0: 0.17
+    r1: 0.105
     section: 1
-    depth: 0.69666666
+    depth: 0.84117645
     blend: 0.06
     chain: 0
     mirrorX: 0
@@ -796,7 +796,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4402482452052574331
+    - rid: 4402482518219816983
       type: {class: BiteData, ns: , asm: Chimera.Runtime}
       data:
         damage: 24
@@ -808,7 +808,7 @@ MonoBehaviour:
         halfAngle: 55
         windupTime: 0.4
         cooldown: 0.7
-    - rid: 4402482452052574332
+    - rid: 4402482518219816984
       type: {class: LeapData, ns: , asm: Chimera.Runtime}
       data:
         damage: 8
@@ -820,7 +820,7 @@ MonoBehaviour:
         hitRadius: 1.5
         windupTime: 0.35
         staminaCost: 20
-    - rid: 4402482452052574333
+    - rid: 4402482518219816985
       type: {class: ConstrictData, ns: , asm: Chimera.Runtime}
       data:
         maxStage: 3
