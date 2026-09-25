@@ -147,39 +147,151 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482452052574338
+    - rid: 4402482527471403018
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
     visualAlignToBody: 0
     visualParts:
-    - scale: {x: 0.1875, y: 1.75, z: 0.1875}
-      offset: {x: -0.4375, y: 0.125, z: 0.5}
-      euler: {x: -80, y: 167, z: 0}
+    - scale: {x: 0.25, y: 2.2742, z: 0.25}
+      offset: {x: 0, y: 1.2863, z: -0.7961}
+      euler: {x: -0, y: 90, z: 22}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.1875, y: 1.75, z: 0.1875}
-      offset: {x: -0.1458, y: 0.125, z: 0.5}
-      euler: {x: -80, y: 175.5, z: 0}
+    - scale: {x: 0.25, y: 2.3587, z: 0.25}
+      offset: {x: -0.5793, y: 1.2215, z: -0.747}
+      euler: {x: -23.7, y: 79.1, z: 25.6}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.1875, y: 1.75, z: 0.1875}
-      offset: {x: 0.1458, y: 0.125, z: 0.5}
-      euler: {x: -80, y: -175.5, z: 0}
+    - scale: {x: 0.25, y: 2.4318, z: 0.25}
+      offset: {x: 0.5975, y: 1.2468, z: -0.6584}
+      euler: {x: 23.5, y: 101.5, z: 27}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.1875, y: 1.75, z: 0.1875}
-      offset: {x: 0.4375, y: 0.125, z: 0.5}
-      euler: {x: -80, y: -167, z: 0}
+    - scale: {x: 0.25, y: 2.4919, z: 0.25}
+      offset: {x: 0, y: 1.3684, z: -0.5186}
+      euler: {x: -0, y: 90, z: 25.9}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.25, y: 2.5376, z: 0.25}
+      offset: {x: 0.6226, y: 1.2643, z: -0.4907}
+      euler: {x: 23, y: 102.6, z: 29.7}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.25, y: 2.5679, z: 0.25}
+      offset: {x: -0.6295, y: 1.2588, z: -0.4125}
+      euler: {x: -22.7, y: 76.9, z: 31.1}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.25, y: 2.5822, z: 0.25}
+      offset: {x: 0, y: 1.3533, z: -0.273}
+      euler: {x: -0, y: 90, z: 29.8}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.25, y: 2.5801, z: 0.25}
+      offset: {x: -0.6327, y: 1.2269, z: -0.2659}
+      euler: {x: -22.1, y: 75.9, z: 33.8}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.25, y: 2.5618, z: 0.25}
+      offset: {x: 0.6289, y: 1.201, z: -0.1984}
+      euler: {x: 21.7, y: 104.6, z: 35.2}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.25, y: 2.5276, z: 0.25}
+      offset: {x: 0, y: 1.2698, z: -0.0635}
+      euler: {x: -0, y: 90, z: 33.6}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.25, y: 2.4782, z: 0.25}
+      offset: {x: 0.6111, y: 1.1311, z: -0.0769}
+      euler: {x: 21.1, y: 105.6, z: 37.9}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.25, y: 2.4147, z: 0.25}
+      offset: {x: -0.5974, y: 1.0884, z: -0.023}
+      euler: {x: -20.7, y: 73.9, z: 39.2}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.25, y: 2.3386, z: 0.25}
+      offset: {x: 0, y: 1.1309, z: 0.101}
+      euler: {x: -0, y: 90, z: 37.5}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.25, y: 2.2515, z: 0.25}
+      offset: {x: -0.5622, y: 0.9916, z: 0.071}
+      euler: {x: -20, y: 73, z: 41.8}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.25, y: 2.1552, z: 0.25}
+      offset: {x: 0.5413, y: 0.9391, z: 0.1117}
+      euler: {x: 19.6, y: 107.4, z: 43.2}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.25, y: 2.0519, z: 0.25}
+      offset: {x: 0, y: 0.9596, z: 0.2221}
+      euler: {x: -0, y: 90, z: 41.4}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.25, y: 1.9438, z: 0.25}
+      offset: {x: 0.499, y: 0.8481, z: 0.2077}
+      euler: {x: 18.8, y: 108.3, z: 45.8}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.25, y: 1.8333, z: 0.25}
+      offset: {x: -0.4843, y: 0.8397, z: 0.3103}
+      euler: {x: -18.4, y: 71.3, z: 47.1}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
@@ -222,601 +334,1793 @@ MonoBehaviour:
     visualEuler: {x: 0, y: 0, z: 0}
     visualAlignToBody: 1
     visualParts:
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.2329, y: -0.0121, z: -0.8441}
-      euler: {x: 0.5, y: 61.2, z: -89.1}
+    - scale: {x: 0.0787, y: 0.3262, z: 0.057}
+      offset: {x: -0.187, y: 0.0672, z: -0.5656}
+      euler: {x: 11.3, y: 135.1, z: -101}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.1527, y: 0.1696, z: -0.8592}
-      euler: {x: -10.1, y: 63.7, z: -109.6}
+    - scale: {x: 0.1274, y: 0.5283, z: 0.0922}
+      offset: {x: -0.1299, y: 0.2167, z: -0.58}
+      euler: {x: -7.7, y: 103.4, z: -60.7}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0, y: 0.2405, z: -0.8668}
-      euler: {x: -0, y: 90, z: -129.6}
+    - scale: {x: 0.1137, y: 0.4712, z: 0.0823}
+      offset: {x: -0.041, y: 0.2391, z: -0.5407}
+      euler: {x: -2.6, y: 93.9, z: -56.2}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.1527, y: 0.1696, z: -0.8592}
-      euler: {x: 10.1, y: 116.3, z: -109.6}
+    - scale: {x: 0.1447, y: 0.6042, z: 0.1048}
+      offset: {x: 0.0478, y: 0.2981, z: -0.5619}
+      euler: {x: 4, y: 85.8, z: -46.7}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.2329, y: -0.0121, z: -0.8441}
-      euler: {x: -0.5, y: 118.8, z: -89.1}
+    - scale: {x: 0.118, y: 0.489, z: 0.0854}
+      offset: {x: 0.1337, y: 0.2281, z: -0.5592}
+      euler: {x: 14.3, y: 75.2, z: -47}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.3735, y: 0.2067, z: -0.7227}
-      euler: {x: -0, y: 87.7, z: -90.8}
+    - scale: {x: 0.0724, y: 0.2841, z: 0.0524}
+      offset: {x: 0.1747, y: 0.07, z: -0.5576}
+      euler: {x: -12.6, y: 46, z: -102.8}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.1549, y: 0.4739, z: -0.7542}
-      euler: {x: -0.7, y: 85.5, z: -98.9}
+    - scale: {x: 0.0938, y: 0.389, z: 0.0679}
+      offset: {x: -0.2097, y: -0.1498, z: -0.5118}
+      euler: {x: 3.1, y: 96.3, z: -116.2}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.1549, y: 0.4739, z: -0.7542}
-      euler: {x: 0.7, y: 94.5, z: -98.9}
+    - scale: {x: 0.0896, y: 0.3716, z: 0.0649}
+      offset: {x: -0.2385, y: 0.0227, z: -0.4874}
+      euler: {x: 3.4, y: 115.5, z: -97}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.3735, y: 0.2067, z: -0.7227}
-      euler: {x: 0, y: 92.3, z: -90.8}
+    - scale: {x: 0.1342, y: 0.5564, z: 0.0971}
+      offset: {x: -0.2127, y: 0.2139, z: -0.4828}
+      euler: {x: -13.3, y: 113.4, z: -62.1}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.4856, y: 0.0405, z: -0.5302}
-      euler: {x: -0.6, y: 115.6, z: -88.7}
+    - scale: {x: 0.1447, y: 0.8001, z: 0.1048}
+      offset: {x: -0.1293, y: 0.3856, z: -0.4978}
+      euler: {x: -9.2, y: 99.4, z: -46}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.4478, y: 0.2589, z: -0.548}
-      euler: {x: -3.1, y: 111.5, z: -82.1}
+    - scale: {x: 0.1447, y: 0.6378, z: 0.1048}
+      offset: {x: 0, y: 0.3359, z: -0.4658}
+      euler: {x: -0, y: 90, z: -50.8}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.3509, y: 0.4607, z: -0.5693}
-      euler: {x: -3.5, y: 104.9, z: -77.2}
+    - scale: {x: 0.1447, y: 0.7321, z: 0.1048}
+      offset: {x: 0.1115, y: 0.315, z: -0.507}
+      euler: {x: 4.7, y: 81.7, z: -60.8}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.195, y: 0.6094, z: -0.5874}
-      euler: {x: -2, y: 97.3, z: -74.7}
+    - scale: {x: 0.1447, y: 0.6327, z: 0.1048}
+      offset: {x: 0.2151, y: 0.2125, z: -0.509}
+      euler: {x: 8.5, y: 69.3, z: -68.5}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0, y: 0.6651, z: -0.5947}
-      euler: {x: -0, y: 90, z: -74.1}
+    - scale: {x: 0.0821, y: 0.3404, z: 0.0594}
+      offset: {x: 0.2431, y: 0.0316, z: -0.4755}
+      euler: {x: -1.6, y: 54.2, z: -92.2}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.195, y: 0.6094, z: -0.5874}
-      euler: {x: 2, y: 82.7, z: -74.7}
+    - scale: {x: 0.0918, y: 0.3804, z: 0.0664}
+      offset: {x: 0.2316, y: -0.1526, z: -0.5037}
+      euler: {x: -10.3, y: 72.2, z: -119.1}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.3509, y: 0.4607, z: -0.5693}
-      euler: {x: 3.5, y: 75.1, z: -77.2}
+    - scale: {x: 0.087, y: 0.3608, z: 0.063}
+      offset: {x: -0.2073, y: -0.1839, z: -0.4207}
+      euler: {x: 1.7, y: 93.5, z: -116.2}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.4478, y: 0.2589, z: -0.548}
-      euler: {x: 3.1, y: 68.5, z: -82.1}
+    - scale: {x: 0.1108, y: 0.4592, z: 0.0802}
+      offset: {x: -0.2447, y: -0.1382, z: -0.4468}
+      euler: {x: 4, y: 98.4, z: -115.5}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.4856, y: 0.0405, z: -0.5302}
-      euler: {x: 0.6, y: 64.4, z: -88.7}
+    - scale: {x: 0.0997, y: 0.4132, z: 0.0721}
+      offset: {x: -0.2649, y: -0.0377, z: -0.4292}
+      euler: {x: 6.3, y: 109.1, z: -107.7}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.4662, y: -0.068, z: -0.3687}
-      euler: {x: 2, y: 123.8, z: -93}
+    - scale: {x: 0.1059, y: 0.4389, z: 0.0766}
+      offset: {x: -0.2647, y: 0.074, z: -0.4169}
+      euler: {x: -0.9, y: 119.7, z: -88.5}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.4589, y: 0.1426, z: -0.3778}
-      euler: {x: -4.1, y: 123, z: -83.7}
+    - scale: {x: 0.1447, y: 0.6811, z: 0.1048}
+      offset: {x: -0.2793, y: 0.206, z: -0.4509}
+      euler: {x: -11.1, y: 118.1, z: -70.1}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.399, y: 0.3541, z: -0.3909}
-      euler: {x: -8.9, y: 117.9, z: -73.6}
+    - scale: {x: 0.1447, y: 0.723, z: 0.1048}
+      offset: {x: -0.2308, y: 0.3056, z: -0.4366}
+      euler: {x: -14.5, y: 110.2, z: -55.8}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.2781, y: 0.5391, z: -0.405}
-      euler: {x: -9.6, y: 108.4, z: -63.5}
+    - scale: {x: 0.1447, y: 0.6407, z: 0.1048}
+      offset: {x: -0.1552, y: 0.3334, z: -0.4052}
+      euler: {x: -11.7, y: 102.7, z: -48}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.1008, y: 0.6526, z: -0.4147}
-      euler: {x: -4.2, y: 96.3, z: -56.4}
+    - scale: {x: 0.1447, y: 0.8503, z: 0.1048}
+      offset: {x: -0.1054, y: 0.4282, z: -0.4424}
+      euler: {x: -6.7, y: 97, z: -46.5}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.1008, y: 0.6526, z: -0.4147}
-      euler: {x: 4.2, y: 83.7, z: -56.4}
+    - scale: {x: 0.1447, y: 0.8725, z: 0.1048}
+      offset: {x: -0.0344, y: 0.4339, z: -0.4518}
+      euler: {x: -1.9, y: 92.2, z: -49.5}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.2781, y: 0.5391, z: -0.405}
-      euler: {x: 9.6, y: 71.6, z: -63.5}
+    - scale: {x: 0.1447, y: 0.6859, z: 0.1048}
+      offset: {x: 0.0298, y: 0.3589, z: -0.4177}
+      euler: {x: 1.5, y: 87.9, z: -54.5}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.399, y: 0.3541, z: -0.3909}
-      euler: {x: 8.9, y: 62.1, z: -73.6}
+    - scale: {x: 0.1447, y: 0.8156, z: 0.1048}
+      offset: {x: 0.0942, y: 0.3685, z: -0.4575}
+      euler: {x: 3.7, y: 83.8, z: -59.2}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.4589, y: 0.1426, z: -0.3778}
-      euler: {x: 4.1, y: 57, z: -83.7}
+    - scale: {x: 0.1447, y: 0.8421, z: 0.1048}
+      offset: {x: 0.1597, y: 0.3412, z: -0.4734}
+      euler: {x: 5.7, y: 79.1, z: -62.6}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.4662, y: -0.068, z: -0.3687}
-      euler: {x: -2, y: 56.2, z: -93}
+    - scale: {x: 0.1447, y: 0.603, z: 0.1048}
+      offset: {x: 0.1984, y: 0.2475, z: -0.4247}
+      euler: {x: 8.1, y: 72.6, z: -65.9}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.4531, y: 0.0327, z: -0.2656}
-      euler: {x: -1, y: 123.9, z: -88.5}
+    - scale: {x: 0.1447, y: 0.603, z: 0.1048}
+      offset: {x: 0.2588, y: 0.1861, z: -0.4368}
+      euler: {x: 9.1, y: 63.5, z: -72.4}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.4215, y: 0.2388, z: -0.2706}
-      euler: {x: -6.8, y: 121.1, z: -78.9}
+    - scale: {x: 0.1397, y: 0.579, z: 0.1011}
+      offset: {x: 0.3047, y: 0.087, z: -0.4454}
+      euler: {x: 3.4, y: 54.9, z: -85.2}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.3344, y: 0.4342, z: -0.2768}
-      euler: {x: -10, y: 113.7, z: -68.5}
+    - scale: {x: 0.09, y: 0.3733, z: 0.0652}
+      offset: {x: 0.2784, y: -0.0234, z: -0.4133}
+      euler: {x: -8.8, y: 57.4, z: -103.4}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.1882, y: 0.5836, z: -0.2823}
-      euler: {x: -7.7, y: 102.6, z: -59.3}
+    - scale: {x: 0.0915, y: 0.3792, z: 0.0662}
+      offset: {x: 0.2642, y: -0.1217, z: -0.4202}
+      euler: {x: -11.5, y: 68.1, z: -116.3}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0, y: 0.6412, z: -0.2846}
-      euler: {x: -0, y: 90, z: -55.3}
+    - scale: {x: 0.112, y: 0.4645, z: 0.0811}
+      offset: {x: 0.2315, y: -0.2175, z: -0.4411}
+      euler: {x: -6.9, y: 78.5, z: -120.7}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.1882, y: 0.5836, z: -0.2823}
-      euler: {x: 7.7, y: 77.4, z: -59.3}
+    - scale: {x: 0.109, y: 0.4519, z: 0.0789}
+      offset: {x: -0.1983, y: -0.24, z: -0.3844}
+      euler: {x: 0.9, y: 91.8, z: -115.7}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.3344, y: 0.4342, z: -0.2768}
-      euler: {x: 10, y: 66.3, z: -68.5}
+    - scale: {x: 0.089, y: 0.3691, z: 0.0644}
+      offset: {x: -0.2352, y: -0.16, z: -0.3655}
+      euler: {x: 2.4, y: 94.8, z: -116}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.4215, y: 0.2388, z: -0.2706}
-      euler: {x: 6.8, y: 58.9, z: -78.9}
+    - scale: {x: 0.1129, y: 0.4681, z: 0.0817}
+      offset: {x: -0.2738, y: -0.1029, z: -0.3901}
+      euler: {x: 5.7, y: 102.6, z: -113.9}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.4531, y: 0.0327, z: -0.2656}
-      euler: {x: 1, y: 56.1, z: -88.5}
+    - scale: {x: 0.126, y: 0.5224, z: 0.0912}
+      offset: {x: -0.3017, y: 0.0116, z: -0.3922}
+      euler: {x: 4.5, y: 116.3, z: -99}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.4384, y: -0.0681, z: -0.1785}
-      euler: {x: 2.1, y: 123.8, z: -93.2}
+    - scale: {x: 0.1212, y: 0.5023, z: 0.0877}
+      offset: {x: -0.2788, y: 0.1352, z: -0.3675}
+      euler: {x: -6.7, y: 121.3, z: -79.2}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.4313, y: 0.1298, z: -0.1785}
-      euler: {x: -4, y: 123.1, z: -83.9}
+    - scale: {x: 0.1447, y: 0.713, z: 0.1048}
+      offset: {x: -0.2727, y: 0.2718, z: -0.3939}
+      euler: {x: -14.2, y: 115, z: -62.2}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.3743, y: 0.3278, z: -0.1785}
-      euler: {x: -8.9, y: 118, z: -73.8}
+    - scale: {x: 0.1447, y: 0.85, z: 0.1048}
+      offset: {x: -0.2262, y: 0.3871, z: -0.4048}
+      euler: {x: -13.8, y: 106.5, z: -51.2}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.2603, y: 0.5001, z: -0.1785}
-      euler: {x: -9.6, y: 108.6, z: -63.6}
+    - scale: {x: 0.1447, y: 0.6997, z: 0.1048}
+      offset: {x: -0.1344, y: 0.3793, z: -0.3674}
+      euler: {x: -9.2, y: 99.8, z: -47.2}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.0942, y: 0.6052, z: -0.1784}
-      euler: {x: -4.3, y: 96.4, z: -56.4}
+    - scale: {x: 0.1447, y: 0.8223, z: 0.1048}
+      offset: {x: -0.0706, y: 0.431, z: -0.3942}
+      euler: {x: -4, y: 94.6, z: -48.7}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.0942, y: 0.6052, z: -0.1784}
-      euler: {x: 4.3, y: 83.6, z: -56.4}
+    - scale: {x: 0.1447, y: 0.9584, z: 0.1048}
+      offset: {x: 0, y: 0.4605, z: -0.4324}
+      euler: {x: -0, y: 90, z: -53}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.2603, y: 0.5001, z: -0.1785}
-      euler: {x: 9.6, y: 71.4, z: -63.6}
+    - scale: {x: 0.1447, y: 0.7459, z: 0.1048}
+      offset: {x: 0.0636, y: 0.3757, z: -0.3912}
+      euler: {x: 2.7, y: 85.8, z: -57.7}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.3743, y: 0.3278, z: -0.1785}
-      euler: {x: 8.9, y: 62, z: -73.8}
+    - scale: {x: 0.1447, y: 0.7597, z: 0.1048}
+      offset: {x: 0.1276, y: 0.3519, z: -0.4018}
+      euler: {x: 4.8, y: 81.4, z: -61.2}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.4313, y: 0.1298, z: -0.1785}
-      euler: {x: 4, y: 56.9, z: -83.9}
+    - scale: {x: 0.1447, y: 0.874, z: 0.1048}
+      offset: {x: 0.2076, y: 0.3412, z: -0.4366}
+      euler: {x: 7.2, y: 75.7, z: -63.7}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.4384, y: -0.0681, z: -0.1785}
-      euler: {x: -2.1, y: 56.2, z: -93.2}
+    - scale: {x: 0.1447, y: 0.6442, z: 0.1048}
+      offset: {x: 0.2488, y: 0.2385, z: -0.3887}
+      euler: {x: 9.5, y: 67.5, z: -68.2}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.4287, y: 0.0272, z: -0.0962}
-      euler: {x: -0.9, y: 124, z: -88.7}
+    - scale: {x: 0.1282, y: 0.5314, z: 0.0928}
+      offset: {x: 0.2872, y: 0.1404, z: -0.373}
+      euler: {x: 7.5, y: 57.7, z: -78.3}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.3983, y: 0.2218, z: -0.0916}
-      euler: {x: -6.7, y: 121.2, z: -79}
+    - scale: {x: 0.133, y: 0.5513, z: 0.0963}
+      offset: {x: 0.3287, y: 0.0235, z: -0.3908}
+      euler: {x: -3.5, y: 53.8, z: -94.7}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.3155, y: 0.4056, z: -0.0859}
-      euler: {x: -10, y: 113.8, z: -68.6}
+    - scale: {x: 0.1027, y: 0.4256, z: 0.0743}
+      offset: {x: 0.2976, y: -0.0893, z: -0.3721}
+      euler: {x: -11.6, y: 63.7, z: -112.1}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.1773, y: 0.5454, z: -0.0808}
-      euler: {x: -7.7, y: 102.7, z: -59.3}
+    - scale: {x: 0.0911, y: 0.3775, z: 0.0659}
+      offset: {x: 0.2561, y: -0.1678, z: -0.3623}
+      euler: {x: -9.1, y: 74.5, z: -119.6}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0, y: 0.5991, z: -0.0787}
-      euler: {x: -0, y: 90, z: -55.3}
+    - scale: {x: 0.1176, y: 0.4877, z: 0.0852}
+      offset: {x: 0.2111, y: -0.2577, z: -0.3898}
+      euler: {x: -3.5, y: 83.8, z: -119.4}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.1773, y: 0.5454, z: -0.0808}
-      euler: {x: 7.7, y: 77.3, z: -59.3}
+    - scale: {x: 0.1211, y: 0.502, z: 0.0877}
+      offset: {x: -0.2267, y: -0.2268, z: -0.3529}
+      euler: {x: 1.1, y: 92.3, z: -115.6}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.3155, y: 0.4056, z: -0.0859}
-      euler: {x: 10, y: 66.2, z: -68.6}
+    - scale: {x: 0.0939, y: 0.3892, z: 0.068}
+      offset: {x: -0.2628, y: -0.1317, z: -0.3244}
+      euler: {x: 3.9, y: 98.1, z: -115.7}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.3983, y: 0.2218, z: -0.0916}
-      euler: {x: 6.7, y: 58.8, z: -79}
+    - scale: {x: 0.1087, y: 0.4507, z: 0.0787}
+      offset: {x: -0.297, y: -0.0478, z: -0.3366}
+      euler: {x: 6.9, y: 109.4, z: -108.9}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.4287, y: 0.0272, z: -0.0962}
-      euler: {x: 0.9, y: 56, z: -88.7}
+    - scale: {x: 0.1447, y: 0.6242, z: 0.1048}
+      offset: {x: -0.3315, y: 0.0813, z: -0.363}
+      euler: {x: -0.5, y: 121.6, z: -89.1}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.4138, y: -0.0681, z: -0.0102}
-      euler: {x: 2.3, y: 123.7, z: -93.4}
+    - scale: {x: 0.1419, y: 0.5881, z: 0.1027}
+      offset: {x: -0.2872, y: 0.2049, z: -0.3343}
+      euler: {x: -11.9, y: 119.7, z: -70.1}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.4069, y: 0.1185, z: -0.0024}
-      euler: {x: -3.9, y: 123.2, z: -84.1}
+    - scale: {x: 0.1447, y: 0.7017, z: 0.1048}
+      offset: {x: -0.2478, y: 0.3189, z: -0.3419}
+      euler: {x: -15.1, y: 110.9, z: -55.8}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.3526, y: 0.3046, z: 0.0086}
-      euler: {x: -8.8, y: 118.2, z: -74}
+    - scale: {x: 0.1447, y: 0.9233, z: 0.1048}
+      offset: {x: -0.2019, y: 0.4447, z: -0.3774}
+      euler: {x: -11.7, y: 103.1, z: -48.9}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.2448, y: 0.4658, z: 0.0202}
-      euler: {x: -9.6, y: 108.7, z: -63.7}
+    - scale: {x: 0.1447, y: 0.7838, z: 0.1048}
+      offset: {x: -0.1082, y: 0.4237, z: -0.3492}
+      euler: {x: -6.4, y: 97.1, z: -48.4}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.0885, y: 0.5638, z: 0.0282}
-      euler: {x: -4.3, y: 96.4, z: -56.4}
+    - scale: {x: 0.1447, y: 0.7712, z: 0.1048}
+      offset: {x: -0.0346, y: 0.4186, z: -0.3517}
+      euler: {x: -1.8, y: 92.2, z: -51.8}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.0885, y: 0.5638, z: 0.0282}
-      euler: {x: 4.3, y: 83.6, z: -56.4}
+    - scale: {x: 0.1447, y: 0.9773, z: 0.1048}
+      offset: {x: 0.0372, y: 0.4596, z: -0.4073}
+      euler: {x: 1.4, y: 87.9, z: -56.3}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.2448, y: 0.4658, z: 0.0202}
-      euler: {x: 9.6, y: 71.3, z: -63.7}
+    - scale: {x: 0.1447, y: 0.8223, z: 0.1048}
+      offset: {x: 0.1022, y: 0.392, z: -0.3769}
+      euler: {x: 3.7, y: 83.7, z: -59.9}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.3526, y: 0.3046, z: 0.0086}
-      euler: {x: 8.8, y: 61.8, z: -74}
+    - scale: {x: 0.1447, y: 0.6999, z: 0.1048}
+      offset: {x: 0.162, y: 0.3331, z: -0.3519}
+      euler: {x: 6.2, y: 78.6, z: -62.1}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.4069, y: 0.1185, z: -0.0024}
-      euler: {x: 3.9, y: 56.8, z: -84.1}
+    - scale: {x: 0.1447, y: 0.8352, z: 0.1048}
+      offset: {x: 0.2517, y: 0.3183, z: -0.3893}
+      euler: {x: 9, y: 71.4, z: -64.9}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.4138, y: -0.0681, z: -0.0102}
-      euler: {x: -2.3, y: 56.3, z: -93.4}
+    - scale: {x: 0.1447, y: 0.6753, z: 0.1048}
+      offset: {x: 0.3, y: 0.2123, z: -0.3579}
+      euler: {x: 10, y: 61.7, z: -72.2}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.4021, y: 0.0211, z: 0.1088}
-      euler: {x: -0.8, y: 125.9, z: -88.9}
+    - scale: {x: 0.1127, y: 0.4671, z: 0.0816}
+      offset: {x: 0.3072, y: 0.0872, z: -0.3205}
+      euler: {x: 2.8, y: 53.4, z: -86.3}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.3728, y: 0.2026, z: 0.124}
-      euler: {x: -8.6, y: 125.1, z: -78}
+    - scale: {x: 0.1197, y: 0.4961, z: 0.0866}
+      offset: {x: 0.3302, y: -0.0443, z: -0.3397}
+      euler: {x: -9.7, y: 58.4, z: -105.4}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.2937, y: 0.3718, z: 0.1419}
-      euler: {x: -14.8, y: 117.8, z: -64.1}
+    - scale: {x: 0.1162, y: 0.4818, z: 0.0841}
+      offset: {x: 0.3, y: -0.1541, z: -0.3399}
+      euler: {x: -10.7, y: 69.9, z: -117}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: -0.1641, y: 0.498, z: 0.1571}
-      euler: {x: -12.4, y: 104.3, z: -49.7}
+    - scale: {x: 0.0922, y: 0.3821, z: 0.0667}
+      offset: {x: 0.2391, y: -0.209, z: -0.3181}
+      euler: {x: -5.6, y: 80.5, z: -120}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0, y: 0.5457, z: 0.1631}
-      euler: {x: -0, y: 90, z: -43.4}
+    - scale: {x: 0.104, y: 0.4313, z: 0.0753}
+      offset: {x: -0.209, y: -0.2458, z: -0.2945}
+      euler: {x: 0.3, y: 90.6, z: -114.8}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.1641, y: 0.498, z: 0.1571}
-      euler: {x: 12.4, y: 75.7, z: -49.7}
+    - scale: {x: 0.1266, y: 0.5248, z: 0.0916}
+      offset: {x: -0.2572, y: -0.2031, z: -0.3189}
+      euler: {x: 2.2, y: 94.4, z: -116}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.2937, y: 0.3718, z: 0.1419}
-      euler: {x: 14.8, y: 62.2, z: -64.1}
+    - scale: {x: 0.1028, y: 0.4263, z: 0.0744}
+      offset: {x: -0.2917, y: -0.0988, z: -0.2928}
+      euler: {x: 6.1, y: 103.2, z: -114.2}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.3728, y: 0.2026, z: 0.124}
-      euler: {x: 8.6, y: 54.9, z: -78}
+    - scale: {x: 0.1088, y: 0.4508, z: 0.0787}
+      offset: {x: -0.3136, y: 0.0184, z: -0.2896}
+      euler: {x: 5.1, y: 117.8, z: -99.5}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
-    - scale: {x: 0.0658, y: 0.2833, z: 0.0476}
-      offset: {x: 0.4021, y: 0.0211, z: 0.1088}
-      euler: {x: 0.8, y: 54.1, z: -88.9}
+    - scale: {x: 0.1447, y: 0.6959, z: 0.1048}
+      offset: {x: -0.3448, y: 0.1625, z: -0.3305}
+      euler: {x: -7.1, y: 123.1, z: -79.2}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.6957, z: 0.1048}
+      offset: {x: -0.2894, y: 0.2825, z: -0.3121}
+      euler: {x: -14.9, y: 115.9, z: -62.1}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.6838, z: 0.1048}
+      offset: {x: -0.2158, y: 0.3525, z: -0.2988}
+      euler: {x: -13.8, y: 106.9, z: -51.8}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.9334, z: 0.1048}
+      offset: {x: -0.1637, y: 0.4705, z: -0.348}
+      euler: {x: -8.9, y: 100, z: -48.9}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.8796, z: 0.1048}
+      offset: {x: -0.0764, y: 0.4616, z: -0.3424}
+      euler: {x: -3.8, y: 94.6, z: -50.9}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.7379, z: 0.1048}
+      offset: {x: 0, y: 0.4086, z: -0.317}
+      euler: {x: -0, y: 90, z: -55}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.9337, z: 0.1048}
+      offset: {x: 0.0739, y: 0.4418, z: -0.3696}
+      euler: {x: 2.6, y: 85.8, z: -58.7}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.8909, z: 0.1048}
+      offset: {x: 0.1461, y: 0.4048, z: -0.3631}
+      euler: {x: 5, y: 81.2, z: -60.8}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.6668, z: 0.1048}
+      offset: {x: 0.2005, y: 0.3172, z: -0.3112}
+      euler: {x: 8, y: 74.9, z: -62.6}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.7445, z: 0.1048}
+      offset: {x: 0.2874, y: 0.275, z: -0.3331}
+      euler: {x: 10.7, y: 66.2, z: -67.2}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.6752, z: 0.1048}
+      offset: {x: 0.3431, y: 0.1636, z: -0.3239}
+      euler: {x: 7.9, y: 56, z: -78.4}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1038, y: 0.4303, z: 0.0751}
+      offset: {x: 0.3228, y: 0.0282, z: -0.2792}
+      euler: {x: -4.4, y: 53.6, z: -96}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1102, y: 0.457, z: 0.0798}
+      offset: {x: 0.3213, y: -0.1011, z: -0.2935}
+      euler: {x: -11.4, y: 65, z: -113}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1251, y: 0.5187, z: 0.0906}
+      offset: {x: 0.2849, y: -0.2111, z: -0.3104}
+      euler: {x: -7.8, y: 76.5, z: -119.4}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0978, y: 0.4054, z: 0.0708}
+      offset: {x: 0.217, y: -0.2474, z: -0.2855}
+      euler: {x: -2.4, y: 85.6, z: -118.1}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0965, y: 0.4001, z: 0.0699}
+      offset: {x: -0.2378, y: -0.214, z: -0.2496}
+      euler: {x: 0.8, y: 91.7, z: -115.3}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1243, y: 0.5153, z: 0.09}
+      offset: {x: -0.2892, y: -0.1656, z: -0.2777}
+      euler: {x: 4.2, y: 98.5, z: -116}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1143, y: 0.4737, z: 0.0827}
+      offset: {x: -0.3224, y: -0.054, z: -0.2643}
+      euler: {x: 7.6, y: 110.5, z: -109.5}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1134, y: 0.4702, z: 0.0821}
+      offset: {x: -0.3222, y: 0.0855, z: -0.2493}
+      euler: {x: -0.5, y: 123.4, z: -89.2}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.722, z: 0.1048}
+      offset: {x: -0.3361, y: 0.2386, z: -0.2905}
+      euler: {x: -12.6, y: 120.9, z: -70}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.8044, z: 0.1048}
+      offset: {x: -0.2804, y: 0.3602, z: -0.2948}
+      euler: {x: -15.2, y: 111.4, z: -56.2}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.6519, z: 0.1048}
+      offset: {x: -0.137, y: 0.2486, z: -0.2982}
+      euler: {x: 3.9, y: 105.1, z: -104.2}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.7303, z: 0.1048}
+      offset: {x: -0.0506, y: 0.2729, z: -0.3226}
+      euler: {x: 1.2, y: 95.4, z: -102.5}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1369, y: 0.5674, z: 0.0991}
+      offset: {x: 0.0439, y: 0.2797, z: -0.2758}
+      euler: {x: -1.5, y: 85, z: -106.2}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.6227, z: 0.1048}
+      offset: {x: 0.1286, y: 0.2195, z: -0.2849}
+      euler: {x: -5.6, y: 77.5, z: -113.7}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.666, z: 0.1048}
+      offset: {x: 0.2454, y: 0.3019, z: -0.2782}
+      euler: {x: 10.2, y: 70.4, z: -63.6}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.6319, z: 0.1048}
+      offset: {x: 0.3127, y: 0.2184, z: -0.2739}
+      euler: {x: 10.9, y: 60.2, z: -71.6}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.6324, z: 0.1048}
+      offset: {x: 0.368, y: 0.0955, z: -0.2823}
+      euler: {x: 2.4, y: 52.4, z: -86.9}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1029, y: 0.4265, z: 0.0745}
+      offset: {x: 0.3333, y: -0.0393, z: -0.247}
+      euler: {x: -10.2, y: 59.6, z: -106.8}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1009, y: 0.4182, z: 0.073}
+      offset: {x: 0.3038, y: -0.1466, z: -0.2479}
+      euler: {x: -9.8, y: 71.8, z: -117.4}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1268, y: 0.5256, z: 0.0918}
+      offset: {x: 0.2579, y: -0.252, z: -0.2773}
+      euler: {x: -4.3, y: 82.4, z: -119.1}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1175, y: 0.4872, z: 0.0851}
+      offset: {x: -0.2192, y: -0.2668, z: -0.2355}
+      euler: {x: -0, y: 89.9, z: -114.2}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0934, y: 0.3871, z: 0.0676}
+      offset: {x: -0.2683, y: -0.1811, z: -0.2075}
+      euler: {x: 2.3, y: 94.6, z: -116.2}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1154, y: 0.4783, z: 0.0835}
+      offset: {x: -0.318, y: -0.1131, z: -0.2283}
+      euler: {x: 6.7, y: 104.4, z: -114.4}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1315, y: 0.5453, z: 0.0952}
+      offset: {x: -0.3547, y: 0.012, z: -0.2363}
+      euler: {x: 5.6, y: 119.5, z: -99.8}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1247, y: 0.5168, z: 0.0902}
+      offset: {x: -0.3265, y: 0.1543, z: -0.2152}
+      euler: {x: -7.6, y: 124.6, z: -79.2}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1425, y: 0.5906, z: 0.1031}
+      offset: {x: -0.3292, y: 0.1487, z: -0.2154}
+      euler: {x: 13.4, y: 136.7, z: -102.3}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.6555, z: 0.1048}
+      offset: {x: -0.2952, y: 0.2085, z: -0.2433}
+      euler: {x: 11.4, y: 124.6, z: -106}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1442, y: 0.5977, z: 0.1044}
+      offset: {x: -0.2139, y: 0.3323, z: -0.2347}
+      euler: {x: 0.8, y: 120.6, z: -91.4}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.7095, z: 0.1048}
+      offset: {x: -0.128, y: 0.404, z: -0.2696}
+      euler: {x: -1.8, y: 107, z: -84}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.8793, z: 0.1048}
+      offset: {x: 0, y: 0.4287, z: -0.3221}
+      euler: {x: -0, y: 90, z: -83.8}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.6845, z: 0.1048}
+      offset: {x: 0.1237, y: 0.3797, z: -0.2639}
+      euler: {x: 0, y: 73.4, z: -90}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.616, z: 0.1048}
+      offset: {x: 0.2123, y: 0.3001, z: -0.2392}
+      euler: {x: -5.8, y: 62.2, z: -100.8}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.6622, z: 0.1048}
+      offset: {x: 0.2852, y: 0.1735, z: -0.2422}
+      euler: {x: -15, y: 61.5, z: -115.4}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1373, y: 0.569, z: 0.0994}
+      offset: {x: 0.3181, y: 0.1355, z: -0.212}
+      euler: {x: -17.2, y: 47.3, z: -107.7}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1273, y: 0.5276, z: 0.0921}
+      offset: {x: 0.3305, y: 0.1569, z: -0.2167}
+      euler: {x: 8.2, y: 54.7, z: -78.6}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1342, y: 0.5561, z: 0.0971}
+      offset: {x: 0.3715, y: 0.0201, z: -0.2328}
+      euler: {x: -5.3, y: 53.9, z: -97.2}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1114, y: 0.4619, z: 0.0807}
+      offset: {x: 0.3367, y: -0.1072, z: -0.2187}
+      euler: {x: -10.9, y: 66.7, z: -113.7}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0941, y: 0.3903, z: 0.0681}
+      offset: {x: 0.2825, y: -0.187, z: -0.2049}
+      euler: {x: -6.5, y: 78.5, z: -119}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1208, y: 0.501, z: 0.0875}
+      offset: {x: 0.2274, y: -0.277, z: -0.2368}
+      euler: {x: -1.4, y: 87.2, z: -116.7}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1222, y: 0.5064, z: 0.0884}
+      offset: {x: -0.2534, y: -0.2468, z: -0.1981}
+      euler: {x: 0.8, y: 91.6, z: -115.3}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0952, y: 0.3947, z: 0.0689}
+      offset: {x: -0.301, y: -0.146, z: -0.1658}
+      euler: {x: 4.7, y: 99.4, z: -116.4}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1032, y: 0.4278, z: 0.0747}
+      offset: {x: -0.3387, y: -0.0483, z: -0.1713}
+      euler: {x: 8.4, y: 111.8, z: -110}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.6081, z: 0.1048}
+      offset: {x: -0.3766, y: 0.0917, z: -0.2014}
+      euler: {x: -0.4, y: 125.1, z: -89.4}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.102, y: 0.4228, z: 0.0738}
+      offset: {x: -0.3133, y: 0.0789, z: -0.1411}
+      euler: {x: 28.1, y: 113.6, z: -137.1}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1225, y: 0.5077, z: 0.0886}
+      offset: {x: -0.3292, y: 0.2169, z: -0.1478}
+      euler: {x: 20.8, y: 138.8, z: -107.3}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.7721, z: 0.1048}
+      offset: {x: -0.3531, y: 0.3602, z: -0.192}
+      euler: {x: -4.7, y: 141, z: -86.2}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.7404, z: 0.1048}
+      offset: {x: -0.1647, y: 0.5104, z: -0.2139}
+      euler: {x: -6.1, y: 102.1, z: -63.4}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.718, z: 0.1048}
+      offset: {x: -0.0538, y: 0.5364, z: -0.2075}
+      euler: {x: -1.8, y: 93.6, z: -62.8}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.9227, z: 0.1048}
+      offset: {x: 0.058, y: 0.5701, z: -0.2631}
+      euler: {x: 1.5, y: 86.6, z: -65.3}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.7769, z: 0.1048}
+      offset: {x: 0.1592, y: 0.4938, z: -0.2308}
+      euler: {x: 3.9, y: 79.7, z: -69.4}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1393, y: 0.5773, z: 0.1008}
+      offset: {x: 0.29, y: 0.3301, z: -0.1601}
+      euler: {x: -4.5, y: 41.1, z: -93.9}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.6114, z: 0.1048}
+      offset: {x: 0.3538, y: 0.1824, z: -0.1649}
+      euler: {x: -24.4, y: 47.4, z: -114.2}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1173, y: 0.4862, z: 0.0849}
+      offset: {x: 0.3251, y: 0.0549, z: -0.1496}
+      euler: {x: -27.3, y: 68, z: -138.7}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1085, y: 0.45, z: 0.0786}
+      offset: {x: 0.3451, y: 0.0945, z: -0.1621}
+      euler: {x: 1.7, y: 52, z: -87.8}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1144, y: 0.4742, z: 0.0828}
+      offset: {x: 0.3605, y: -0.0509, z: -0.1781}
+      euler: {x: -10.3, y: 61.4, z: -108.2}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1183, y: 0.4904, z: 0.0856}
+      offset: {x: 0.3261, y: -0.1696, z: -0.1853}
+      euler: {x: -8.6, y: 73.9, z: -117.5}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0923, y: 0.3825, z: 0.0668}
+      offset: {x: 0.2599, y: -0.2255, z: -0.1641}
+      euler: {x: -3.1, y: 84.2, z: -118}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0947, y: 0.3926, z: 0.0685}
+      offset: {x: -0.2329, y: -0.2598, z: -0.1227}
+      euler: {x: -0.2, y: 89.6, z: -113.9}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1182, y: 0.49, z: 0.0856}
+      offset: {x: -0.2922, y: -0.2143, z: -0.1417}
+      euler: {x: 2.6, y: 95.2, z: -116.6}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0991, y: 0.411, z: 0.0718}
+      offset: {x: -0.3356, y: -0.1038, z: -0.1172}
+      euler: {x: 7.5, y: 105.8, z: -114.7}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0968, y: 0.4012, z: 0.0701}
+      offset: {x: -0.3524, y: 0.0263, z: -0.1079}
+      euler: {x: 6.2, y: 121, z: -100.2}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.631, z: 0.1048}
+      offset: {x: -0.378, y: 0.174, z: -0.1502}
+      euler: {x: -7.7, y: 125.9, z: -79.5}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1197, y: 0.4962, z: 0.0866}
+      offset: {x: -0.3489, y: 0.2296, z: -0.1108}
+      euler: {x: -1.3, y: 137, z: -88.8}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1249, y: 0.5179, z: 0.0904}
+      offset: {x: -0.2973, y: 0.3733, z: -0.098}
+      euler: {x: -19.5, y: 126.9, z: -66}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.7795, z: 0.1048}
+      offset: {x: -0.2513, y: 0.5439, z: -0.1417}
+      euler: {x: -16.6, y: 110.2, z: -52.2}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.8212, z: 0.1048}
+      offset: {x: -0.1285, y: 0.6165, z: -0.151}
+      euler: {x: -7.9, y: 98.7, z: -48.3}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.6791, z: 0.1048}
+      offset: {x: 0, y: 0.5823, z: -0.1235}
+      euler: {x: -0, y: 90, z: -49.2}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.8241, z: 0.1048}
+      offset: {x: 0.1258, y: 0.6048, z: -0.1583}
+      euler: {x: 6.8, y: 81.4, z: -51.8}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.7773, z: 0.1048}
+      offset: {x: 0.243, y: 0.527, z: -0.1519}
+      euler: {x: 13.2, y: 70.4, z: -57.3}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1247, y: 0.5171, z: 0.0903}
+      offset: {x: 0.2914, y: 0.3658, z: -0.1039}
+      euler: {x: 14.9, y: 55.2, z: -69.7}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1202, y: 0.4981, z: 0.087}
+      offset: {x: 0.3451, y: 0.226, z: -0.1144}
+      euler: {x: -0, y: 45.7, z: -90}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.6299, z: 0.1048}
+      offset: {x: 0.3789, y: 0.1751, z: -0.1491}
+      euler: {x: 8.1, y: 53.7, z: -79.2}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0965, y: 0.4001, z: 0.0699}
+      offset: {x: 0.3577, y: 0.0296, z: -0.1053}
+      euler: {x: -6.1, y: 55, z: -98.7}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0996, y: 0.4127, z: 0.0721}
+      offset: {x: 0.3463, y: -0.1031, z: -0.1147}
+      euler: {x: -10.1, y: 68.9, z: -114.4}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1181, y: 0.4896, z: 0.0855}
+      offset: {x: 0.304, y: -0.219, z: -0.1388}
+      euler: {x: -5.1, y: 80.6, z: -118.4}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0944, y: 0.3911, z: 0.0683}
+      offset: {x: 0.2363, y: -0.2628, z: -0.1215}
+      euler: {x: -0.7, y: 88.6, z: -115.5}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0724, y: 0.105, z: 0.0524}
+      offset: {x: -0.5149, y: -0.3603, z: 0.1819}
+      euler: {x: 10.3, y: 138.5, z: -99}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0724, y: 0.1922, z: 0.0524}
+      offset: {x: -0.3125, y: -0.1101, z: 0.0022}
+      euler: {x: 5.4, y: 100.6, z: -116.9}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0724, y: 0.1836, z: 0.0524}
+      offset: {x: -0.3305, y: -0.0083, z: 0.0068}
+      euler: {x: 9.2, y: 113, z: -110.6}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.093, y: 0.3857, z: 0.0673}
+      offset: {x: -0.3575, y: 0.0978, z: -0.0322}
+      euler: {x: -0, y: 126.4, z: -90}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1427, y: 0.5916, z: 0.1033}
+      offset: {x: -0.3558, y: 0.2424, z: -0.0734}
+      euler: {x: -12.8, y: 122.7, z: -71}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1296, y: 0.5373, z: 0.0938}
+      offset: {x: -0.3389, y: 0.3019, z: -0.0491}
+      euler: {x: -11.4, y: 136.2, z: -79.3}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1216, y: 0.5041, z: 0.088}
+      offset: {x: -0.2524, y: 0.4193, z: -0.0285}
+      euler: {x: -18.7, y: 119, z: -59.9}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.6795, z: 0.1048}
+      offset: {x: -0.1777, y: 0.5469, z: -0.0564}
+      euler: {x: -12.1, y: 104.4, z: -50.8}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.8009, z: 0.1048}
+      offset: {x: -0.0638, y: 0.6221, z: -0.0812}
+      euler: {x: -3.8, y: 94.3, z: -49.2}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.6227, z: 0.1048}
+      offset: {x: 0.0564, y: 0.5611, z: -0.0444}
+      euler: {x: 3.6, y: 85.7, z: -50.4}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.6477, z: 0.1048}
+      offset: {x: 0.1709, y: 0.5298, z: -0.0541}
+      euler: {x: 10.7, y: 75.8, z: -53.7}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1447, y: 0.6747, z: 0.1048}
+      offset: {x: 0.2848, y: 0.4518, z: -0.0676}
+      euler: {x: 15.9, y: 61.9, z: -62.9}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1075, y: 0.4458, z: 0.0778}
+      offset: {x: 0.3096, y: 0.2907, z: -0.0346}
+      euler: {x: 9.2, y: 45.8, z: -80.7}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1242, y: 0.5147, z: 0.0899}
+      offset: {x: 0.3376, y: 0.2289, z: -0.0576}
+      euler: {x: 12.2, y: 57.7, z: -71.5}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1258, y: 0.5214, z: 0.091}
+      offset: {x: 0.392, y: 0.1, z: -0.062}
+      euler: {x: 0.6, y: 52.1, z: -89.3}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0724, y: 0.1656, z: 0.0524}
+      offset: {x: 0.3282, y: -0.0049, z: 0.0113}
+      euler: {x: -10.2, y: 63.8, z: -109.8}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0724, y: 0.1548, z: 0.0524}
+      offset: {x: 0.31, y: -0.1018, z: 0.0117}
+      euler: {x: -7.3, y: 76.3, z: -117.5}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0724, y: 0.1204, z: 0.0524}
+      offset: {x: 0.5195, y: -0.3615, z: 0.1791}
+      euler: {x: -10.3, y: 41.5, z: -99}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0724, y: 0.2333, z: 0.0524}
+      offset: {x: -0.4895, y: -0.2311, z: 0.2381}
+      euler: {x: 1, y: -14.2, z: 93.9}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0965, y: 0.4, z: 0.0698}
+      offset: {x: -0.4967, y: -0.053, z: 0.1559}
+      euler: {x: -9.9, y: 136.7, z: -80.8}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0724, y: 0.1571, z: 0.0524}
+      offset: {x: -0.3455, y: 0.0531, z: 0.1206}
+      euler: {x: 7.2, y: 121.9, z: -101.4}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.082, y: 0.3399, z: 0.0594}
+      offset: {x: -0.3515, y: 0.1651, z: 0.0814}
+      euler: {x: -7, y: 126.9, z: -80.7}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1123, y: 0.4657, z: 0.0813}
+      offset: {x: -0.3146, y: 0.2845, z: 0.049}
+      euler: {x: -14.5, y: 117.8, z: -64.6}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1184, y: 0.4907, z: 0.0857}
+      offset: {x: -0.2922, y: 0.3549, z: 0.0484}
+      euler: {x: -15.6, y: 129.7, z: -72.1}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.095, y: 0.3938, z: 0.0688}
+      offset: {x: -0.2132, y: 0.4005, z: 0.0935}
+      euler: {x: 2.7, y: 133.7, z: -92.8}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1034, y: 0.4285, z: 0.0748}
+      offset: {x: -0.1075, y: 0.5248, z: 0.11}
+      euler: {x: -6.4, y: 100.4, z: -58.5}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1311, y: 0.5436, z: 0.0949}
+      offset: {x: 0, y: 0.5871, z: 0.0935}
+      euler: {x: -0, y: 90, z: -53.9}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1063, y: 0.4406, z: 0.0769}
+      offset: {x: 0.1085, y: 0.528, z: 0.1072}
+      euler: {x: 6.4, y: 79.6, z: -58.5}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0928, y: 0.3846, z: 0.0672}
+      offset: {x: 0.2103, y: 0.3987, z: 0.0952}
+      euler: {x: -4.1, y: 46.8, z: -94.3}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1174, y: 0.4868, z: 0.085}
+      offset: {x: 0.2897, y: 0.3525, z: 0.0476}
+      euler: {x: 14.4, y: 51, z: -72.9}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1156, y: 0.4794, z: 0.0837}
+      offset: {x: 0.3167, y: 0.2863, z: 0.0454}
+      euler: {x: 13.9, y: 62.5, z: -65.2}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0807, y: 0.3345, z: 0.0584}
+      offset: {x: 0.3503, y: 0.1648, z: 0.0827}
+      euler: {x: 7.1, y: 53, z: -80.7}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0724, y: 0.1548, z: 0.0524}
+      offset: {x: 0.345, y: 0.0533, z: 0.1212}
+      euler: {x: -7.2, y: 57, z: -101}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0965, y: 0.4, z: 0.0698}
+      offset: {x: 0.4967, y: -0.053, z: 0.1559}
+      euler: {x: 9.9, y: 43.3, z: -80.8}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0724, y: 0.2333, z: 0.0524}
+      offset: {x: 0.4895, y: -0.2311, z: 0.2381}
+      euler: {x: 1, y: 14.2, z: -93.9}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0724, y: 0.105, z: 0.0524}
+      offset: {x: -0.335, y: -0.22, z: 0.3087}
+      euler: {x: 25.2, y: 77.1, z: 151.7}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0724, y: 0.105, z: 0.0524}
+      offset: {x: -0.361, y: -0.1124, z: 0.3055}
+      euler: {x: -3.2, y: 6.9, z: 114.4}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0724, y: 0.2333, z: 0.0524}
+      offset: {x: -0.4041, y: -0.0047, z: 0.2902}
+      euler: {x: 1.2, y: -11, z: 96}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0724, y: 0.2333, z: 0.0524}
+      offset: {x: -0.3806, y: 0.113, z: 0.2779}
+      euler: {x: -0.6, y: -24.2, z: 88.6}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0965, y: 0.4, z: 0.0698}
+      offset: {x: -0.399, y: 0.2511, z: 0.2646}
+      euler: {x: -34.1, y: 144.3, z: -68}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0965, y: 0.4, z: 0.0698}
+      offset: {x: -0.3061, y: 0.3641, z: 0.2566}
+      euler: {x: -27.9, y: 108.6, z: -35.7}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0965, y: 0.4, z: 0.0698}
+      offset: {x: -0.2588, y: 0.4207, z: 0.2474}
+      euler: {x: -20.6, y: 128.2, z: -66}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0965, y: 0.4, z: 0.0698}
+      offset: {x: -0.1662, y: 0.5161, z: 0.2833}
+      euler: {x: -17.2, y: 109.4, z: -49.9}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0965, y: 0.4, z: 0.0698}
+      offset: {x: -0.0572, y: 0.5658, z: 0.3045}
+      euler: {x: -6.1, y: 95.7, z: -43.1}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.1018, y: 0.422, z: 0.0737}
+      offset: {x: 0.0584, y: 0.5738, z: 0.3003}
+      euler: {x: 6.1, y: 84.3, z: -43.1}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0965, y: 0.4, z: 0.0698}
+      offset: {x: 0.1662, y: 0.5161, z: 0.2833}
+      euler: {x: 17.2, y: 70.6, z: -49.9}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0965, y: 0.4, z: 0.0698}
+      offset: {x: 0.2588, y: 0.4207, z: 0.2474}
+      euler: {x: 20.6, y: 51.8, z: -66}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0965, y: 0.4, z: 0.0698}
+      offset: {x: 0.3062, y: 0.3643, z: 0.2569}
+      euler: {x: 28.2, y: 71.6, z: -35.1}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0965, y: 0.4, z: 0.0698}
+      offset: {x: 0.399, y: 0.2511, z: 0.2646}
+      euler: {x: 34.1, y: 35.7, z: -68}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0724, y: 0.2333, z: 0.0524}
+      offset: {x: 0.3806, y: 0.113, z: 0.2779}
+      euler: {x: -0.6, y: 24.2, z: -88.6}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0724, y: 0.2333, z: 0.0524}
+      offset: {x: 0.4041, y: -0.0047, z: 0.2902}
+      euler: {x: 1.2, y: 11, z: -96}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0724, y: 0.105, z: 0.0524}
+      offset: {x: 0.361, y: -0.1124, z: 0.3055}
+      euler: {x: -3.2, y: -6.9, z: -114.4}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0724, y: 0.105, z: 0.0524}
+      offset: {x: 0.335, y: -0.22, z: 0.3087}
+      euler: {x: -25.2, y: 102.9, z: 151.7}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0724, y: 0.105, z: 0.0524}
+      offset: {x: -0.2341, y: -0.0999, z: 0.3453}
+      euler: {x: 7, y: 87.2, z: 158.3}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0724, y: 0.105, z: 0.0524}
+      offset: {x: -0.2533, y: 0.0516, z: 0.3625}
+      euler: {x: 38.6, y: 67.5, z: 146.4}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0724, y: 0.105, z: 0.0524}
+      offset: {x: -0.2349, y: 0.2197, z: 0.4309}
+      euler: {x: 19.1, y: 132.7, z: -109.5}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0965, y: 0.4, z: 0.0698}
+      offset: {x: -0.2252, y: 0.4412, z: 0.5158}
+      euler: {x: -54.1, y: 112.6, z: -27.2}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0965, y: 0.4, z: 0.0698}
+      offset: {x: 0.2252, y: 0.4412, z: 0.5158}
+      euler: {x: 54.1, y: 67.4, z: -27.2}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0724, y: 0.105, z: 0.0524}
+      offset: {x: 0.2349, y: 0.2197, z: 0.4309}
+      euler: {x: -19.1, y: 47.3, z: -109.5}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0724, y: 0.105, z: 0.0524}
+      offset: {x: 0.2533, y: 0.0516, z: 0.3625}
+      euler: {x: -38.6, y: 112.5, z: 146.4}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0724, y: 0.105, z: 0.0524}
+      offset: {x: 0.2341, y: -0.0999, z: 0.3453}
+      euler: {x: -7, y: 92.8, z: 158.3}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0724, y: 0.105, z: 0.0524}
+      offset: {x: -0.1335, y: -0.0059, z: 0.4809}
+      euler: {x: 16.1, y: 101.5, z: -143.7}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.0724, y: 0.105, z: 0.0524}
+      offset: {x: 0.1335, y: -0.0059, z: 0.4809}
+      euler: {x: -16.1, y: 78.5, z: -143.7}
       shape: 0
       node: 
       block: "\u0438\u0433\u043B\u0430"
@@ -854,21 +2158,13 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: "\u0401\u0436"
     abilities:
-    - rid: 4402482452052574339
-    - rid: 4402482452052574340
+    - rid: 4402482527471403019
+    - rid: 4402482527471403020
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
     visualAlignToBody: 0
-    visualParts:
-    - scale: {x: 1, y: 0.643, z: 3.28}
-      offset: {x: 0, y: 0.144, z: 1.067}
-      euler: {x: -63.4, y: 0, z: 0}
-      shape: 0
-      node: "\u0433\u043E\u043B\u0435\u043D\u044C"
-      block: "\u043B\u0430\u043F\u0430"
-      role: 0
-      color: {r: 0, g: 0, b: 0, a: 0}
+    visualParts: []
     visualSegments: 0
     visualTaper: 0
   - organName: "\u0426\u0435\u043F\u043A\u0430\u044F \u043F\u0430\u0441\u0442\u044C"
@@ -901,8 +2197,8 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: "\u0401\u0436"
     abilities:
-    - rid: 4402482452052574341
-    - rid: 4402482452052574342
+    - rid: 4402482527471403021
+    - rid: 4402482527471403022
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -911,6 +2207,150 @@ MonoBehaviour:
     - scale: {x: 1, y: 1, z: 1}
       offset: {x: 0, y: 0, z: 0}
       euler: {x: 0, y: 0, z: 0}
+      shape: 0
+      node: 
+      block: "\u043C\u043E\u0440\u0434\u0430"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.7, y: 0.32, z: 0.92}
+      offset: {x: 0, y: -0.56, z: -0.08}
+      euler: {x: 16, y: 0, z: 0}
+      shape: 0
+      node: 
+      block: "\u043A\u043B\u0438\u043D"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+    - scale: {x: 0.077, y: 0.269, z: 0.085}
+      offset: {x: 0.201, y: -0.5, z: 0.34}
+      euler: {x: 180, y: 0, z: 0}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0.95, g: 0.94, b: 0.9, a: 1}
+    - scale: {x: 0.049, y: 0.192, z: 0.054}
+      offset: {x: 0.174, y: -0.6552, z: 0.3}
+      euler: {x: 16, y: 0, z: 0}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0.95, g: 0.94, b: 0.9, a: 1}
+    - scale: {x: 0.056, y: 0.154, z: 0.062}
+      offset: {x: 0.228, y: -0.5, z: 0.22}
+      euler: {x: 180, y: 0, z: 0}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0.95, g: 0.94, b: 0.9, a: 1}
+    - scale: {x: 0.049, y: 0.115, z: 0.054}
+      offset: {x: 0.198, y: -0.6456, z: 0.18}
+      euler: {x: 16, y: 0, z: 0}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0.95, g: 0.94, b: 0.9, a: 1}
+    - scale: {x: 0.056, y: 0.154, z: 0.062}
+      offset: {x: 0.255, y: -0.5, z: 0.1}
+      euler: {x: 180, y: 0, z: 0}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0.95, g: 0.94, b: 0.9, a: 1}
+    - scale: {x: 0.049, y: 0.115, z: 0.054}
+      offset: {x: 0.221, y: -0.636, z: 0.06}
+      euler: {x: 16, y: 0, z: 0}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0.95, g: 0.94, b: 0.9, a: 1}
+    - scale: {x: 0.056, y: 0.154, z: 0.062}
+      offset: {x: 0.282, y: -0.5, z: -0.02}
+      euler: {x: 180, y: 0, z: 0}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0.95, g: 0.94, b: 0.9, a: 1}
+    - scale: {x: 0.049, y: 0.115, z: 0.054}
+      offset: {x: 0.244, y: -0.6264, z: -0.06}
+      euler: {x: 16, y: 0, z: 0}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0.95, g: 0.94, b: 0.9, a: 1}
+    - scale: {x: 0.077, y: 0.269, z: 0.085}
+      offset: {x: -0.201, y: -0.5, z: 0.34}
+      euler: {x: 180, y: 0, z: 0}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0.95, g: 0.94, b: 0.9, a: 1}
+    - scale: {x: 0.049, y: 0.192, z: 0.054}
+      offset: {x: -0.174, y: -0.6552, z: 0.3}
+      euler: {x: 16, y: 0, z: 0}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0.95, g: 0.94, b: 0.9, a: 1}
+    - scale: {x: 0.056, y: 0.154, z: 0.062}
+      offset: {x: -0.228, y: -0.5, z: 0.22}
+      euler: {x: 180, y: 0, z: 0}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0.95, g: 0.94, b: 0.9, a: 1}
+    - scale: {x: 0.049, y: 0.115, z: 0.054}
+      offset: {x: -0.198, y: -0.6456, z: 0.18}
+      euler: {x: 16, y: 0, z: 0}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0.95, g: 0.94, b: 0.9, a: 1}
+    - scale: {x: 0.056, y: 0.154, z: 0.062}
+      offset: {x: -0.255, y: -0.5, z: 0.1}
+      euler: {x: 180, y: 0, z: 0}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0.95, g: 0.94, b: 0.9, a: 1}
+    - scale: {x: 0.049, y: 0.115, z: 0.054}
+      offset: {x: -0.221, y: -0.636, z: 0.06}
+      euler: {x: 16, y: 0, z: 0}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0.95, g: 0.94, b: 0.9, a: 1}
+    - scale: {x: 0.056, y: 0.154, z: 0.062}
+      offset: {x: -0.282, y: -0.5, z: -0.02}
+      euler: {x: 180, y: 0, z: 0}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0.95, g: 0.94, b: 0.9, a: 1}
+    - scale: {x: 0.049, y: 0.115, z: 0.054}
+      offset: {x: -0.244, y: -0.6264, z: -0.06}
+      euler: {x: 16, y: 0, z: 0}
+      shape: 0
+      node: 
+      block: "\u0438\u0433\u043B\u0430"
+      role: 0
+      color: {r: 0.95, g: 0.94, b: 0.9, a: 1}
+    - scale: {x: 0.96, y: 0.18, z: 0.46}
+      offset: {x: 0, y: 0.3, z: -0.26}
+      euler: {x: -32, y: 0, z: 0}
       shape: 0
       node: 
       block: "\u043A\u043B\u0438\u043D"
@@ -1082,7 +2522,7 @@ MonoBehaviour:
     linkTaper: 0
   - name: "\u0433\u043E\u043B\u043E\u0432\u0430"
     localPos: {x: 0, y: 0, z: 0}
-    baseSize: {x: 0.322, y: 0.217, z: 0.348}
+    baseSize: {x: 0.359, y: 0.343, z: 0.458}
     baseEuler: {x: 0, y: 0, z: 0}
     mirrorX: 0
     solid: 0
@@ -1104,7 +2544,7 @@ MonoBehaviour:
     chain: 0
     chainTaper: 0
     linkDiameter: 0
-    sizeRel: {x: 1.8914, y: 1.2056, z: 1.7444}
+    sizeRel: {x: 2.1088, y: 1.9056, z: 2.2957}
     formFrom: 
     formRole: 0
     linkLength: 0
@@ -1120,12 +2560,12 @@ MonoBehaviour:
     graft: 0
     parent: "\u041F\u0430\u0441\u0442\u044C"
     attach: 0.5
-    attachOffset: {x: 0, y: -0.04, z: 0.4685}
+    attachOffset: {x: 0, y: -0.2, z: 0.4198}
     parts: []
     chain: 0
     chainTaper: 0
     linkDiameter: 0
-    sizeRel: {x: 0.5034, y: 0.31, z: 0.2101}
+    sizeRel: {x: 0.2997, y: 0.2808, z: 0.2674}
     formFrom: "\u0427\u0443\u0442\u044C\u0451"
     formRole: 4
     linkLength: 0
@@ -1141,7 +2581,7 @@ MonoBehaviour:
     graft: 0
     parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
     attach: 1
-    attachOffset: {x: 0, y: -0.0092, z: -0.3966}
+    attachOffset: {x: 0, y: -0.0875, z: -0.5}
     parts:
     - scale: {x: 1, y: 0.94, z: 0.4}
       offset: {x: 0, y: 0, z: -0.28}
@@ -1170,7 +2610,7 @@ MonoBehaviour:
     chain: 0
     chainTaper: 0
     linkDiameter: 0
-    sizeRel: {x: 0.4503, y: 0.9217, z: 0.7931}
+    sizeRel: {x: 0.7994, y: 0.758, z: 0.5633}
     formFrom: 
     formRole: 0
     linkLength: 0
@@ -1178,7 +2618,7 @@ MonoBehaviour:
   - name: "\u0433\u043B\u0430\u0437\u0430"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.027, y: 0.027, z: 0.027}
-    baseEuler: {x: 0, y: 0, z: 0}
+    baseEuler: {x: 0, y: 25, z: -12}
     mirrorX: 1
     solid: 0
     inner: 0
@@ -1186,7 +2626,7 @@ MonoBehaviour:
     graft: 0
     parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
     attach: 0.5
-    attachOffset: {x: 0.3851, y: 0.2482, z: -0.1007}
+    attachOffset: {x: 0.3983, y: 0.1312, z: -0.107}
     parts:
     - scale: {x: 1, y: 1, z: 1}
       offset: {x: 0, y: 0, z: 0}
@@ -1199,7 +2639,7 @@ MonoBehaviour:
     chain: 0
     chainTaper: 0
     linkDiameter: 0
-    sizeRel: {x: 0.1398, y: 0.2074, z: 0.1293}
+    sizeRel: {x: 0.2368, y: 0.1603, z: 0.1638}
     formFrom: "\u0427\u0443\u0442\u044C\u0451"
     formRole: 1
     linkLength: 0
@@ -1207,7 +2647,7 @@ MonoBehaviour:
   - name: "\u0443\u0448\u0438"
     localPos: {x: 0, y: 0, z: 0}
     baseSize: {x: 0.11, y: 0.13, z: 0.06}
-    baseEuler: {x: -15, y: 20, z: -35}
+    baseEuler: {x: 40, y: 20, z: -35}
     mirrorX: 1
     solid: 0
     inner: 0
@@ -1215,12 +2655,12 @@ MonoBehaviour:
     graft: 0
     parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
     attach: 0.5
-    attachOffset: {x: 0.5217, y: 0.4269, z: -0.3255}
+    attachOffset: {x: 0.3343, y: 0.4956, z: -0.4127}
     parts: []
     chain: 0
     chainTaper: 0
     linkDiameter: 0
-    sizeRel: {x: 0.3106, y: 0.4608, z: 0.1149}
+    sizeRel: {x: 0.2507, y: 0.3207, z: 0.0873}
     formFrom: "\u0427\u0443\u0442\u044C\u0451"
     formRole: 3
     linkLength: 0
@@ -1482,17 +2922,17 @@ MonoBehaviour:
   - name: "\u0445\u0440\u0435\u0431\u0435\u0442"
     parent: 
     layer: 0
-    origin: {x: 0, y: 0.4, z: -0.4}
+    origin: {x: 0, y: 0.45, z: -0.38}
     socket: "\u0445\u0440\u0435\u0431\u0435\u0442"
     attach: 1
     freeOrigin: 0
-    length: 0.6
+    length: 0.6803
     endBone: 
     endAttach: 1
-    dir: {x: 90, y: 0, z: 0}
-    r0: 0.4
-    r1: 0.33
-    section: 0.9
+    dir: {x: 88.315, y: 0, z: 0}
+    r0: 0.12
+    r1: 0.22
+    section: 1.2
     depth: 1
     blend: 0.12
     chain: 0
@@ -1500,17 +2940,17 @@ MonoBehaviour:
   - name: "\u043A\u043E\u0437\u044B\u0440\u0451\u043A"
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     layer: 0
-    origin: {x: 0, y: 0.5, z: -0.04}
+    origin: {x: 0, y: 0.4827, z: -0.0858}
     socket: "\u0445\u0440\u0435\u0431\u0435\u0442"
     attach: 1
     freeOrigin: 1
-    length: 0.402
+    length: 0.3214
     endBone: 
     endAttach: 1
-    dir: {x: -5.711, y: 0, z: 0}
-    r0: 0.28
-    r1: 0.14
-    section: 0.95
+    dir: {x: -3.671, y: 0, z: 0}
+    r0: 0.18
+    r1: 0.16
+    section: 1.1
     depth: 1
     blend: 0.12
     chain: 0
@@ -1518,17 +2958,17 @@ MonoBehaviour:
   - name: "\u0433\u0440\u0443\u0434\u044C"
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     layer: 0
-    origin: {x: 0, y: 0.15, z: 0.06}
+    origin: {x: 0, y: 0.3784, z: 0.0612}
     socket: "\u0421\u0435\u0440\u0434\u0446\u0435"
     attach: 1
     freeOrigin: 1
-    length: 0.3302
+    length: 0.4001
     endBone: 
     endAttach: 1
-    dir: {x: 1.736, y: 0, z: 0}
-    r0: 0.22
-    r1: 0.22
-    section: 1
+    dir: {x: 0.253, y: 0, z: 0}
+    r0: 0.13
+    r1: 0.16
+    section: 1.05
     depth: 1
     blend: 0.12
     chain: 0
@@ -1536,86 +2976,104 @@ MonoBehaviour:
   - name: "\u0448\u0435\u044F"
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     layer: 0
-    origin: {x: 0, y: 0.7, z: 0.0269}
+    origin: {x: 0, y: 0.7432, z: -0.0982}
     socket: "\u0448\u0435\u044F"
     attach: 1
     freeOrigin: 1
-    length: 0.1354
+    length: 0.2419
     endBone: 
     endAttach: 1
-    dir: {x: -4.234, y: 0, z: 0}
-    r0: 0.15
-    r1: 0.14
+    dir: {x: -5.44, y: 0, z: 0}
+    r0: 0.2
+    r1: 0.18
     section: 1
     depth: 1
-    blend: 0.1
+    blend: 0.12
     chain: 0
     mirrorX: 0
   - name: "\u0433\u043E\u043B\u043E\u0432\u0430"
     parent: "\u0448\u0435\u044F"
     layer: 0
-    origin: {x: 0, y: 0, z: 0}
+    origin: {x: 0, y: 0.2394, z: 0.0198}
     socket: "\u0433\u043E\u043B\u043E\u0432\u0430"
     attach: 1
-    freeOrigin: 0
-    length: 0.16
+    freeOrigin: 1
+    length: 0.1576
     endBone: 
     endAttach: 1
-    dir: {x: 35.458, y: 0, z: 0}
-    r0: 0.14
-    r1: 0.12
-    section: 1
-    depth: 1.05
+    dir: {x: 13.197, y: 0, z: 0}
+    r0: 0.19
+    r1: 0.14
+    section: 0.95
+    depth: 0.85
     blend: 0.08
     chain: 0
     mirrorX: 0
   - name: "\u043F\u043B\u0435\u0447\u043E"
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     layer: 0
-    origin: {x: 0.24, y: 0.56, z: 0.1}
+    origin: {x: 0.12, y: 0.7819, z: -0.0537}
     socket: "\u0420\u0443\u043A\u0438"
     attach: 1
     freeOrigin: 1
-    length: 0.197
+    length: 0.3519
     endBone: 
     endAttach: 1
-    dir: {x: 66.038, y: 0, z: 0}
-    r0: 0.1
-    r1: 0.07
+    dir: {x: -252.625, y: 0, z: 0}
+    r0: 0.15
+    r1: 0.11
     section: 1
     depth: 1
     blend: 0.1
     chain: 0
     mirrorX: 1
-  - name: "\u043A\u0438\u0441\u0442\u044C"
+  - name: "\u043F\u0440\u0435\u0434\u043F\u043B\u0435\u0447\u044C\u0435"
     parent: "\u043F\u043B\u0435\u0447\u043E"
     layer: 0
-    origin: {x: 0, y: 0.2437, z: 0.0426}
+    origin: {x: 0.17, y: 0.3081, z: 0}
     socket: "\u0420\u0443\u043A\u0438"
     attach: 1
     freeOrigin: 1
-    length: 0.2486
+    length: 0.1637
     endBone: 
     endAttach: 1
-    dir: {x: -64.885, y: 0, z: 0}
-    r0: 0.06
-    r1: 0.055
-    section: 1.25
-    depth: 0.95
-    blend: 0.06
+    dir: {x: 293.346, y: 0, z: 0}
+    r0: 0.105
+    r1: 0.062
+    section: 1
+    depth: 1
+    blend: 0.05
+    chain: 0
+    mirrorX: 1
+  - name: "\u043A\u0438\u0441\u0442\u044C"
+    parent: "\u043F\u0440\u0435\u0434\u043F\u043B\u0435\u0447\u044C\u0435"
+    layer: 0
+    origin: {x: -0.04, y: 0.1714, z: 0.0155}
+    socket: "\u0420\u0443\u043A\u0438"
+    attach: 1
+    freeOrigin: 1
+    length: 0.1435
+    endBone: 
+    endAttach: 1
+    dir: {x: -11.277, y: 0, z: 0}
+    r0: 0.062
+    r1: 0.05
+    section: 2
+    depth: 0.5
+    blend: 0.03
     chain: 0
     mirrorX: 1
   - name: "\u0431\u0435\u0434\u0440\u043E"
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     layer: 0
-    origin: {x: 0.24, y: -0, z: 0.08}
+    origin: {x: 0.12, y: 0.0475, z: -0.0286}
     socket: "\u041D\u043E\u0433\u0438"
     attach: 1
     freeOrigin: 1
-    length: 0.1649
+    length: 0.2756
     endBone: 
     endAttach: 1
-    dir: {x: 75.964, y: 0, z: 0}
+    dir: {x: 85.515, y: 0, z: 0}
     r0: 0.12
     r1: 0.085
     section: 1
@@ -1626,34 +3084,52 @@ MonoBehaviour:
   - name: "\u0433\u043E\u043B\u0435\u043D\u044C"
     parent: "\u0431\u0435\u0434\u0440\u043E"
     layer: 0
-    origin: {x: 0, y: 0, z: 0}
+    origin: {x: 0.12, y: 0.2481, z: 0}
     socket: "\u041D\u043E\u0433\u0438"
     attach: 1
-    freeOrigin: 0
-    length: 0.0671
+    freeOrigin: 1
+    length: 0.1468
     endBone: 
     endAttach: 1
-    dir: {x: -12.529, y: 0, z: 0}
-    r0: 0.085
-    r1: 0.07
+    dir: {x: -303.302, y: 0, z: 0}
+    r0: 0.08
+    r1: 0.05
     section: 1
     depth: 1
-    blend: 0.06
+    blend: 0.05
+    chain: 0
+    mirrorX: 1
+  - name: "\u0441\u0442\u043E\u043F\u0430"
+    parent: "\u0433\u043E\u043B\u0435\u043D\u044C"
+    layer: 0
+    origin: {x: 0, y: 0.1722, z: -0.0309}
+    socket: "\u041D\u043E\u0433\u0438"
+    attach: 1
+    freeOrigin: 1
+    length: 0.1458
+    endBone: 
+    endAttach: 1
+    dir: {x: 238.326, y: 0, z: 0}
+    r0: 0.055
+    r1: 0.06
+    section: 1.6
+    depth: 0.58
+    blend: 0.03
     chain: 0
     mirrorX: 1
   - name: "\u0445\u0432\u043E\u0441\u0442"
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     layer: 0
-    origin: {x: 0, y: -0.26, z: 0.24}
+    origin: {x: 0, y: -0.1214, z: 0.0465}
     socket: "\u0425\u0432\u043E\u0441\u0442"
     attach: 1
     freeOrigin: 1
-    length: 0.1077
+    length: 0.1304
     endBone: 
     endAttach: 1
-    dir: {x: -201.801, y: 0, z: 0}
-    r0: 0.06
-    r1: 0.05
+    dir: {x: -235.844, y: 0, z: 0}
+    r0: 0.055
+    r1: 0.042
     section: 1
     depth: 1
     blend: 0.05
@@ -1674,7 +3150,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4402482452052574338
+    - rid: 4402482527471403018
       type: {class: VolleyData, ns: , asm: Chimera.Runtime}
       data:
         damagePerQuill: 4
@@ -1689,14 +3165,14 @@ MonoBehaviour:
         windupTime: 0.5
         cooldown: 2.5
         blindAimError: 1.6
-    - rid: 4402482452052574339
+    - rid: 4402482527471403019
       type: {class: RollData, ns: , asm: Chimera.Runtime}
       data:
         damage: 10
         bleedStacks: 1
         knockForce: 8
         radius: 1.2
-    - rid: 4402482452052574340
+    - rid: 4402482527471403020
       type: {class: CurlData, ns: , asm: Chimera.Runtime}
       data:
         curlArmor: 0.6
@@ -1705,7 +3181,7 @@ MonoBehaviour:
         rollDrain: 40
         rollTurnSpeed: 90
         rollGravity: 20
-    - rid: 4402482452052574341
+    - rid: 4402482527471403021
       type: {class: BiteData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
@@ -1717,7 +3193,7 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.4
         cooldown: 0.7
-    - rid: 4402482452052574342
+    - rid: 4402482527471403022
       type: {class: ConstrictData, ns: , asm: Chimera.Runtime}
       data:
         maxStage: 1
