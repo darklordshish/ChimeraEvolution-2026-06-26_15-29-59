@@ -17,22 +17,22 @@
       "socket": "хребет",
       "origin": {
         "x": 0.0,
-        "y": 0.4,
-        "z": -0.4
+        "y": 0.45,
+        "z": -0.38
       },
       "attach": 1.0,
       "freeOrigin": false,
-      "length": 0.6,
+      "length": 0.6803,
       "endBone": "",
       "endAttach": 1.0,
       "dir": {
-        "x": 90.0,
+        "x": 88.315,
         "y": 0.0,
         "z": 0.0
       },
-      "r0": 0.4,
-      "r1": 0.33,
-      "section": 0.9,
+      "r0": 0.12,
+      "r1": 0.22,
+      "section": 1.2,
       "depth": 1.0,
       "blend": 0.12,
       "chain": 0,
@@ -45,22 +45,22 @@
       "socket": "хребет",
       "origin": {
         "x": 0.0,
-        "y": 0.5,
-        "z": -0.04
+        "y": 0.4827,
+        "z": -0.0858
       },
       "attach": 1.0,
       "freeOrigin": true,
-      "length": 0.402,
+      "length": 0.3214,
       "endBone": "",
       "endAttach": 1.0,
       "dir": {
-        "x": -5.711,
+        "x": -3.671,
         "y": 0.0,
         "z": 0.0
       },
-      "r0": 0.28,
-      "r1": 0.14,
-      "section": 0.95,
+      "r0": 0.18,
+      "r1": 0.16,
+      "section": 1.1,
       "depth": 1.0,
       "blend": 0.12,
       "chain": 0,
@@ -73,22 +73,22 @@
       "socket": "Сердце",
       "origin": {
         "x": 0.0,
-        "y": 0.15,
-        "z": 0.06
+        "y": 0.3784,
+        "z": 0.0612
       },
       "attach": 1.0,
       "freeOrigin": true,
-      "length": 0.3302,
+      "length": 0.4001,
       "endBone": "",
       "endAttach": 1.0,
       "dir": {
-        "x": 1.736,
+        "x": 0.253,
         "y": 0.0,
         "z": 0.0
       },
-      "r0": 0.22,
-      "r1": 0.22,
-      "section": 1.0,
+      "r0": 0.13,
+      "r1": 0.16,
+      "section": 1.05,
       "depth": 1.0,
       "blend": 0.12,
       "chain": 0,
@@ -101,24 +101,24 @@
       "socket": "шея",
       "origin": {
         "x": 0.0,
-        "y": 0.7,
-        "z": 0.0269
+        "y": 0.7432,
+        "z": -0.0982
       },
       "attach": 1.0,
       "freeOrigin": true,
-      "length": 0.1354,
+      "length": 0.2419,
       "endBone": "",
       "endAttach": 1.0,
       "dir": {
-        "x": -4.234,
+        "x": -5.44,
         "y": 0.0,
         "z": 0.0
       },
-      "r0": 0.15,
-      "r1": 0.14,
+      "r0": 0.2,
+      "r1": 0.18,
       "section": 1.0,
       "depth": 1.0,
-      "blend": 0.1,
+      "blend": 0.12,
       "chain": 0,
       "mirrorX": false
     },
@@ -129,23 +129,23 @@
       "socket": "голова",
       "origin": {
         "x": 0.0,
-        "y": 0.0,
-        "z": 0.0
+        "y": 0.2394,
+        "z": 0.0198
       },
       "attach": 1.0,
-      "freeOrigin": false,
-      "length": 0.16,
+      "freeOrigin": true,
+      "length": 0.1576,
       "endBone": "",
       "endAttach": 1.0,
       "dir": {
-        "x": 35.458,
+        "x": 13.197,
         "y": 0.0,
         "z": 0.0
       },
-      "r0": 0.14,
-      "r1": 0.12,
-      "section": 1.0,
-      "depth": 1.05,
+      "r0": 0.19,
+      "r1": 0.14,
+      "section": 0.95,
+      "depth": 0.85,
       "blend": 0.08,
       "chain": 0,
       "mirrorX": false
@@ -156,22 +156,22 @@
       "layer": 0,
       "socket": "Руки",
       "origin": {
-        "x": 0.24,
-        "y": 0.56,
-        "z": 0.1
+        "x": 0.12,
+        "y": 0.7819,
+        "z": -0.0537
       },
       "attach": 1.0,
       "freeOrigin": true,
-      "length": 0.197,
+      "length": 0.3519,
       "endBone": "",
       "endAttach": 1.0,
       "dir": {
-        "x": 66.038,
+        "x": -252.625,
         "y": 0.0,
         "z": 0.0
       },
-      "r0": 0.1,
-      "r1": 0.07,
+      "r0": 0.15,
+      "r1": 0.11,
       "section": 1.0,
       "depth": 1.0,
       "blend": 0.1,
@@ -179,30 +179,58 @@
       "mirrorX": true
     },
     {
-      "name": "кисть",
+      "name": "предплечье",
       "parent": "плечо",
       "layer": 0,
       "socket": "Руки",
       "origin": {
-        "x": 0.0,
-        "y": 0.2437,
-        "z": 0.0426
+        "x": 0.17,
+        "y": 0.3081,
+        "z": 0.0
       },
       "attach": 1.0,
       "freeOrigin": true,
-      "length": 0.2486,
+      "length": 0.1637,
       "endBone": "",
       "endAttach": 1.0,
       "dir": {
-        "x": -64.885,
+        "x": 293.346,
         "y": 0.0,
         "z": 0.0
       },
-      "r0": 0.06,
-      "r1": 0.055,
-      "section": 1.25,
-      "depth": 0.95,
-      "blend": 0.06,
+      "r0": 0.105,
+      "r1": 0.062,
+      "section": 1.0,
+      "depth": 1.0,
+      "blend": 0.05,
+      "chain": 0,
+      "mirrorX": true
+    },
+    {
+      "name": "кисть",
+      "parent": "предплечье",
+      "layer": 0,
+      "socket": "Руки",
+      "origin": {
+        "x": -0.04,
+        "y": 0.1714,
+        "z": 0.0155
+      },
+      "attach": 1.0,
+      "freeOrigin": true,
+      "length": 0.1435,
+      "endBone": "",
+      "endAttach": 1.0,
+      "dir": {
+        "x": -11.277,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "r0": 0.062,
+      "r1": 0.05,
+      "section": 2.0,
+      "depth": 0.5,
+      "blend": 0.03,
       "chain": 0,
       "mirrorX": true
     },
@@ -212,17 +240,17 @@
       "layer": 0,
       "socket": "Ноги",
       "origin": {
-        "x": 0.24,
-        "y": -0.0,
-        "z": 0.08
+        "x": 0.12,
+        "y": 0.0475,
+        "z": -0.0286
       },
       "attach": 1.0,
       "freeOrigin": true,
-      "length": 0.1649,
+      "length": 0.2756,
       "endBone": "",
       "endAttach": 1.0,
       "dir": {
-        "x": 75.964,
+        "x": 85.515,
         "y": 0.0,
         "z": 0.0
       },
@@ -240,25 +268,53 @@
       "layer": 0,
       "socket": "Ноги",
       "origin": {
-        "x": 0.0,
-        "y": 0.0,
+        "x": 0.12,
+        "y": 0.2481,
         "z": 0.0
       },
       "attach": 1.0,
-      "freeOrigin": false,
-      "length": 0.0671,
+      "freeOrigin": true,
+      "length": 0.1468,
       "endBone": "",
       "endAttach": 1.0,
       "dir": {
-        "x": -12.529,
+        "x": -303.302,
         "y": 0.0,
         "z": 0.0
       },
-      "r0": 0.085,
-      "r1": 0.07,
+      "r0": 0.08,
+      "r1": 0.05,
       "section": 1.0,
       "depth": 1.0,
-      "blend": 0.06,
+      "blend": 0.05,
+      "chain": 0,
+      "mirrorX": true
+    },
+    {
+      "name": "стопа",
+      "parent": "голень",
+      "layer": 0,
+      "socket": "Ноги",
+      "origin": {
+        "x": 0.0,
+        "y": 0.1722,
+        "z": -0.0309
+      },
+      "attach": 1.0,
+      "freeOrigin": true,
+      "length": 0.1458,
+      "endBone": "",
+      "endAttach": 1.0,
+      "dir": {
+        "x": 238.326,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "r0": 0.055,
+      "r1": 0.06,
+      "section": 1.6,
+      "depth": 0.58,
+      "blend": 0.03,
       "chain": 0,
       "mirrorX": true
     },
@@ -269,21 +325,21 @@
       "socket": "Хвост",
       "origin": {
         "x": 0.0,
-        "y": -0.26,
-        "z": 0.24
+        "y": -0.1214,
+        "z": 0.0465
       },
       "attach": 1.0,
       "freeOrigin": true,
-      "length": 0.1077,
+      "length": 0.1304,
       "endBone": "",
       "endAttach": 1.0,
       "dir": {
-        "x": -201.801,
+        "x": -235.844,
         "y": 0.0,
         "z": 0.0
       },
-      "r0": 0.06,
-      "r1": 0.05,
+      "r0": 0.055,
+      "r1": 0.042,
       "section": 1.0,
       "depth": 1.0,
       "blend": 0.05,
