@@ -68,7 +68,11 @@ def arm():
     back = math.radians(25)
     palm = (-math.cos(back), 0.0, -math.sin(back))                # к бедру (−X у правой руки) и назад
     hand = piece(n, 'кисть', centre, (0.093, 0.050, hand_len), d, palm)
-    return dict(slot='Руки', organ='Кисть', parts=[hand])
+    # ШТОК (П4, `FEEDBACK-2026-09-27c-shtok.md`): запястье вдоль руки от 3 см выше сустава до 2 см ниже — внутри поля
+    # предплечья и запястья кисти. На четвероногом шасси тянется оно, кисть ниже переезжает к земле целиком
+    wrist = piece(n, 'брусок', G.v_add(G.WRIST, G.v_mul(d, -0.005)), (0.055, 0.040, 0.05), d, palm)
+    wrist['stretch'] = True
+    return dict(slot='Руки', organ='Кисть', parts=[wrist, hand])
 
 
 def leg():
@@ -81,7 +85,12 @@ def leg():
     heel = (G.ANKLE[0] - d[0] * 0.065, 0.0, G.ANKLE[2] - d[2] * 0.065)
     centre = (heel[0] + d[0] * l / 2, h / 2, heel[2] + d[2] * l / 2)
     foot = piece(n, 'стопа', centre, (w, h, l), d, (0.0, 1.0, 0.0))
-    return dict(slot='Ноги', organ='Ноги', parts=[foot])
+    # ШТОК: колонна лодыжки вниз от 3 см выше сустава до верха подъёма (Y 0.05) — в поле голени и в стопе, не видна;
+    # на высоком шасси тянется она, стопа переезжает к земле целиком
+    ankle = piece(n, 'брусок', (G.ANKLE[0], (G.ANKLE[1] + 0.03 + 0.05) / 2, G.ANKLE[2]), (0.06, 0.06, G.ANKLE[1] + 0.03 - 0.05),
+                  (0.0, -1.0, 0.0), (0.0, 0.0, 1.0))
+    ankle['stretch'] = True
+    return dict(slot='Ноги', organ='Ноги', parts=[ankle, foot])
 
 
 def main():

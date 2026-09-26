@@ -248,7 +248,12 @@ def paw(node_name, heel, toe_z, width, height, claws):
     n = next(x for x in G.build_nodes() if x['name'] == node_name)
     x, z0 = heel
     length = toe_z - z0
-    parts = [_WL.part(n, 'лапа', (x, height * 0.5, z0 + length * 0.5), (width, height, length), (0.0, 0.0, 1.0))]
+    wy = n['b'][1]
+    # ШТОК (П4, письмо механик `FEEDBACK-2026-09-27c-shtok.md`): пясть вдоль гнезда от запястья вверх на 4 см, внутри поля
+    # лапы — на еже её не видно. На высоком шасси тянется только она: лапа и когти ниже штока переезжают к земле целиком
+    shank = _WL.part(n, 'брусок', (x, wy + 0.02, n['b'][2]), (0.62 * width, 0.07, 0.04), (0.0, -1.0, 0.0))
+    shank['stretch'] = True
+    parts = [shank, _WL.part(n, 'лапа', (x, height * 0.5, z0 + length * 0.5), (width, height, length), (0.0, 0.0, 1.0))]
     # КИСТЬ ШИРЕ (критик r4): когти расставлены шире и крайние короче — веер по кончикам. Поворот когтя вбок `part` не
     # передаёт (только наклон вокруг X), поэтому когти смотрят параллельно
     for i in range(claws):
