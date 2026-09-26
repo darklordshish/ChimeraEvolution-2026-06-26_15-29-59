@@ -1,8 +1,8 @@
 {
   "species": "Ёж",
-  "graph": "Anatomy/species/hedgehog/out/ezh-graph-draft.json",
-  "head": "Anatomy/species/hedgehog/out/ezh-head-layout-draft.json",
-  "organs": "Anatomy/species/hedgehog/out/ezh-organs-layout-draft.json",
+  "graph": "Docs/models/handoff/ezh-graph.json",
+  "head": "Docs/models/handoff/ezh-head-layout.json",
+  "organs": "Docs/models/handoff/ezh-organs-layout.json",
   "cell": 0.042,
   "frames": {
     "front": [

@@ -84,7 +84,7 @@ GRAIN = 0.042          # клетка проекта (решение геймд�
 SURFACE_AT_EYE = {0.084: 0.150, 0.042: 0.150}[GRAIN]   # Хеджхалк 25.09: голова крупнее (череп r 0.19 → 0.16 ×0.95); было 0.120
 SURFACE_AT_EAR = {0.084: 0.120, 0.042: 0.120}[GRAIN]   # ухо у темени, ближе к оси (было 0.158 у купола)
 MUZZLE_FROM = 0.10      # морда от затылка, м — щёки внутри черепа
-EYE_ALONG, EYE_UP = 0.18, 0.045   # под надбровьем, на стыке морды и черепа (критик r1: глаза торчали над мордой)
+EYE_ALONG, EYE_UP = 0.155, 0.030  # на черепе под навесом (r6: глаз сидел на торце морды — назад на 3.5 см)   # под надбровьем, на стыке морды и черепа (критик r1: глаза торчали над мордой)
 EAR_ALONG, EAR_UP, EAR_LAT = 0.04, 0.17, 0.12   # уши меньше, прижаты назад-вбок (критик r1: «корона из трёх рогов»)
 MUZZLE_W = 0.80         # ширина рыла к ширине головы (было 0.45 — рыльце ежа)
 MUZZLE_BACK = 0.08      # рыло заходит в череп за глаз, м
@@ -111,7 +111,7 @@ def teeth(muzzle):
     W_, H_, L_ = muzzle
     white = [0.95, 0.94, 0.90, 1.0]
     out = [dict(name='нижняя челюсть', block='клин', euler=[16, 0, 0],
-                offset=[0.0, -0.56, -0.08], scale=[0.70, 0.32, 0.92])]
+                offset=[0.0, -0.60, -0.10], scale=[0.70, 0.42, 0.96])]   # r6: доска → клин выше у угла
     for side in (+1, -1):
         s = '(пр)' if side > 0 else '(лев)'
         for i, t in enumerate((0.34, 0.22, 0.10, -0.02)):
@@ -124,9 +124,11 @@ def teeth(muzzle):
             out.append(dict(name='зуб нижний %d %s' % (i, s), block='игла', euler=[16, 0, 0], color=white,
                             offset=[round(side * 0.26 * k, 3), -0.62 - 0.08 * (t + 0.1), round(t - 0.04, 3)],
                             scale=[round(0.014 / W_, 3), round((0.05 if big else 0.03) / H_, 3), round(0.014 / L_, 3)]))
-    # НАДБРОВЬЕ — ОДИН КЛИН от переносицы на лоб (критик r2: две плитки читались стопкой полок и светили торцами)
-    # ...скошенный: передняя грань сходит к переносице (r3: в профиль стоял столбом), по краям навесом над глазами
-    out.append(dict(name='надбровье', block='клин', euler=[-32, 0, 0], offset=[0.0, 0.30, -0.26], scale=[0.96, 0.18, 0.46]))
+    # НАДБРОВЬЯ — НАВЕС НАД КАЖДЫМ ГЛАЗОМ (критик r4, 27.09): один клин во весь лоб в профиль стоял столбом, а глаз торчал
+    # на его верхушке. Теперь два коротких клина остриём вперёд-вниз; r6: вынос 3 см тонул в поле — навес крупнее и выше
+    for side in (+1, -1):
+        out.append(dict(name='надбровье ' + ('(пр)' if side > 0 else '(лев)'), block='клин', euler=[24, side * 14, 0],
+                        offset=[round(side * 0.34, 3), 0.34, -0.24], scale=[0.40, 0.22, 0.46]))
     return out
 
 
@@ -179,7 +181,7 @@ def main():
     places, muzzle = layout()
     head_size = (W, H, L)
     doc = dict(head=dict(baseSize=list(head_size), sizeRel=list(rel(head_size, NECK_CALIBRE))),
-               places=places, muzzle=dict(block='морда', offset=[0, 0, 0], scale=[1, 1, 1]), teeth=teeth(muzzle), senses=senses())
+               places=places, muzzle=dict(block='морда', offset=[0, 0, 0], scale=[0.86, 1, 1]), teeth=teeth(muzzle), senses=senses())
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     with open(args.out, 'w', encoding='utf-8') as f:
         json.dump(doc, f, ensure_ascii=False, indent=2)
