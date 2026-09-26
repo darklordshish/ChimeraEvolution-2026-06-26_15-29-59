@@ -46,7 +46,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482544517840899
+    - rid: 4402482545037672471
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -61,6 +61,7 @@ MonoBehaviour:
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
       nest: 1
+      stretch: 0
     carries:
     - name: "\u043D\u043E\u0441"
       host: 
@@ -149,7 +150,7 @@ MonoBehaviour:
     digestion: 1
     nativeChassis: 
     abilities:
-    - rid: 4402482544517840900
+    - rid: 4402482545037672472
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -240,6 +241,7 @@ MonoBehaviour:
       role: 1
       color: {r: 1, g: 0.45, b: 0.12, a: 1}
       nest: 1
+      stretch: 0
     - scale: {x: 0.0515, y: 0.0882, z: 0.0882}
       offset: {x: 0.0029, y: 0.0019, z: -0.0101}
       euler: {x: 1.24, y: -73.32, z: 0}
@@ -249,6 +251,7 @@ MonoBehaviour:
       role: 5
       color: {r: 0, g: 0, b: 0, a: 0}
       nest: 1
+      stretch: 0
     carries: []
     visualSegments: 0
     visualTaper: 0
@@ -296,6 +299,7 @@ MonoBehaviour:
       role: 0
       color: {r: 0.87, g: 0.82, b: 0.62, a: 1}
       nest: 0
+      stretch: 0
     - scale: {x: 0.76, y: 0.95, z: 0.44}
       offset: {x: 0, y: 0, z: 0.802}
       euler: {x: 0, y: 0, z: 0}
@@ -305,6 +309,7 @@ MonoBehaviour:
       role: 0
       color: {r: 0.87, g: 0.82, b: 0.62, a: 1}
       nest: 0
+      stretch: 0
     - scale: {x: 0.8, y: 1, z: 0.44}
       offset: {x: 0, y: 0, z: 0.406}
       euler: {x: 0, y: 0, z: 0}
@@ -314,6 +319,7 @@ MonoBehaviour:
       role: 0
       color: {r: 0.87, g: 0.82, b: 0.62, a: 1}
       nest: 0
+      stretch: 0
     - scale: {x: 0.784, y: 0.98, z: 0.44}
       offset: {x: 0, y: 0, z: 0.01}
       euler: {x: 0, y: 0, z: 0}
@@ -323,6 +329,7 @@ MonoBehaviour:
       role: 0
       color: {r: 0.87, g: 0.82, b: 0.62, a: 1}
       nest: 0
+      stretch: 0
     - scale: {x: 0.736, y: 0.92, z: 0.44}
       offset: {x: 0, y: 0, z: -0.386}
       euler: {x: 0, y: 0, z: 0}
@@ -332,6 +339,7 @@ MonoBehaviour:
       role: 0
       color: {r: 0.87, g: 0.82, b: 0.62, a: 1}
       nest: 0
+      stretch: 0
     - scale: {x: 0.656, y: 0.82, z: 0.44}
       offset: {x: 0, y: 0, z: -0.782}
       euler: {x: 0, y: 0, z: 0}
@@ -341,6 +349,7 @@ MonoBehaviour:
       role: 0
       color: {r: 0.87, g: 0.82, b: 0.62, a: 1}
       nest: 0
+      stretch: 0
     - scale: {x: 0.544, y: 0.68, z: 0.44}
       offset: {x: 0, y: 0, z: -1.178}
       euler: {x: 0, y: 0, z: 0}
@@ -350,6 +359,7 @@ MonoBehaviour:
       role: 0
       color: {r: 0.87, g: 0.82, b: 0.62, a: 1}
       nest: 0
+      stretch: 0
     carries: []
     visualSegments: 0
     visualTaper: 0
@@ -383,7 +393,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: "\u0417\u043C\u0435\u044F"
     abilities:
-    - rid: 4402482544517840901
+    - rid: 4402482545037672473
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -398,6 +408,7 @@ MonoBehaviour:
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
       nest: 0
+      stretch: 0
     carries: []
     visualSegments: 3
     visualTaper: 0.82
@@ -450,6 +461,7 @@ MonoBehaviour:
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
       nest: 0
+      stretch: 0
     - scale: {x: 0.86, y: 0.34, z: 0.52}
       offset: {x: 0, y: 0.26, z: -0.14}
       euler: {x: 0, y: 0, z: 0}
@@ -459,6 +471,7 @@ MonoBehaviour:
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
       nest: 0
+      stretch: 0
     - scale: {x: 0.7, y: 0.88, z: 0.34}
       offset: {x: 0, y: -0.02, z: 0.1}
       euler: {x: 0, y: 0, z: 0}
@@ -468,6 +481,7 @@ MonoBehaviour:
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
       nest: 0
+      stretch: 0
     - scale: {x: 0.5, y: 0.66, z: 0.26}
       offset: {x: 0, y: -0.04, z: 0.34}
       euler: {x: 0, y: 0, z: 0}
@@ -477,6 +491,7 @@ MonoBehaviour:
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
       nest: 0
+      stretch: 0
     - scale: {x: 0.3, y: 0.16, z: 0.3}
       offset: {x: 0.3, y: 0.24, z: -0.04}
       euler: {x: 0, y: 0, z: 0}
@@ -486,6 +501,7 @@ MonoBehaviour:
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
       nest: 0
+      stretch: 0
     - scale: {x: 0.3, y: 0.16, z: 0.3}
       offset: {x: -0.3, y: 0.24, z: -0.04}
       euler: {x: 0, y: 0, z: 0}
@@ -495,6 +511,7 @@ MonoBehaviour:
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
       nest: 0
+      stretch: 0
     - scale: {x: 0.1, y: 0.1, z: 0.08}
       offset: {x: 0.16, y: 0.02, z: 0.44}
       euler: {x: 0, y: 0, z: 0}
@@ -504,6 +521,7 @@ MonoBehaviour:
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
       nest: 0
+      stretch: 0
     - scale: {x: 0.1, y: 0.1, z: 0.08}
       offset: {x: -0.16, y: 0.02, z: 0.44}
       euler: {x: 0, y: 0, z: 0}
@@ -513,6 +531,7 @@ MonoBehaviour:
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
       nest: 0
+      stretch: 0
     chain: 0
     chainTaper: 0
     linkDiameter: 0
@@ -543,6 +562,7 @@ MonoBehaviour:
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
       nest: 0
+      stretch: 0
     chain: 0
     chainTaper: 0
     linkDiameter: 0
@@ -573,6 +593,7 @@ MonoBehaviour:
       role: 1
       color: {r: 0.1, g: 0.1, b: 0.12, a: 1}
       nest: 0
+      stretch: 0
     chain: 0
     chainTaper: 0
     linkDiameter: 0
@@ -1012,6 +1033,7 @@ MonoBehaviour:
     mirror: 0
     proposed: 0
     span: {x: 0, y: 0}
+  stanceLimbs: []
   skinCell: 0.042
   skinBlend: 0.05
   skinFur: 0
@@ -1019,7 +1041,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4402482544517840899
+    - rid: 4402482545037672471
       type: {class: BiteData, ns: , asm: Chimera.Runtime}
       data:
         damage: 24
@@ -1031,7 +1053,7 @@ MonoBehaviour:
         halfAngle: 55
         windupTime: 0.4
         cooldown: 0.7
-    - rid: 4402482544517840900
+    - rid: 4402482545037672472
       type: {class: LeapData, ns: , asm: Chimera.Runtime}
       data:
         damage: 8
@@ -1043,7 +1065,7 @@ MonoBehaviour:
         hitRadius: 1.5
         windupTime: 0.35
         staminaCost: 20
-    - rid: 4402482544517840901
+    - rid: 4402482545037672473
       type: {class: ConstrictData, ns: , asm: Chimera.Runtime}
       data:
         maxStage: 3

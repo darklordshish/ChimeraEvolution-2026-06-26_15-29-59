@@ -364,15 +364,86 @@ public static class MorphBuilder
         boneXf.TryGetValue(hostName, out var right);
         if (!boneXf.TryGetValue(hostName + ".L", out var left)) left = right;
 
+        // ОПОРНЫЙ КОНЕЦ ДОТЯГИВАЕТСЯ ДО ЗЕМЛИ (П4): высота запястья — калибр шасси, поэтому тянется шток аугмента
+        var shape = System.Array.IndexOf(chassis.stanceLimbs ?? new string[0], socket.name) >= 0
+                  ? ReachGround(parts, np, nr, unit) : null;
+
         foreach (var pt in parts)
         {
-            Vector3 pos = np + nr * (pt.offset * unit);
+            var (off, scl) = shape != null ? shape[pt] : (pt.offset, pt.scale);
+            Vector3 pos = np + nr * (off * unit);
             Vector3 euler = (nr * Quaternion.Euler(pt.euler)).eulerAngles;
-            Vector3 size = pt.scale * unit;
+            Vector3 size = scl * unit;
             Hang(Mark(Spawn(container, socket.name, pos, euler, size, +1f, pt.shape, socket.solid, pt.block), pt), right);
             if (pair)
                 Hang(Mark(Spawn(container, socket.name, pos, euler, size, -1f, pt.shape, socket.solid, pt.block), pt), left);
         }
+    }
+
+    // ── ДОТЯЖКА ОПОРНОГО КОНЦА (П4) ────────────────────────────────────────────────────────────────
+    // Тянется ОДИН шток — голень конца (пясть, колонна копыта), всё ниже него переезжает целиком, выше — остаётся. Так и
+    // в анатомии: чужая лапа на высоком шасси — это длинная пясть, а не растянутые когти. Первая версия (26.09) тянула
+    // позиции всех кусков и разводила короткую ежиную лапу на волке щелями по 10–23 см — матрица химер поймала это как И2.
+    // Нет штока (ни помеченного, ни куска вдоль гнезда) — конец не тянется, и детектор честно покажет «в воздухе»
+
+    static bool Aligned(OrganPart pt) => Quaternion.Angle(Quaternion.identity, Quaternion.Euler(pt.euler)) < 15f;
+
+    /// <summary>ФОРМА КОНЦА, ВСТАВШЕГО НА ЗЕМЛЮ: для каждого куска — смещение и габарит (в единицах гнезда) после
+    /// растяжения штока. Растяжение вдоль +Z гнезда кусочно-линейно: выше штока — как было, внутри — пропорционально,
+    /// ниже — сдвиг на добавку. Добавка подбирается по реальному низу повёрнутых кусков за несколько шагов.</summary>
+    static Dictionary<OrganPart, (Vector3, Vector3)> ReachGround(List<OrganPart> parts, Vector3 np, Quaternion nr, float unit)
+    {
+        var shank = parts.FindAll(p => p.stretch);
+        if (shank.Count == 0)
+        {
+            OrganPart best = null;
+            foreach (var p in parts) if (Aligned(p) && (best == null || p.scale.z > best.scale.z)) best = p;
+            if (best != null) shank.Add(best);
+        }
+        float down = -(nr * Vector3.forward).y;               // сколько вниз даёт единица вдоль гнезда
+        if (shank.Count == 0 || down < 0.2f || unit <= 0f) return null;
+
+        float top = float.MaxValue, bottom = float.MinValue;
+        foreach (var p in shank) { top = Mathf.Min(top, p.offset.z - p.scale.z * 0.5f); bottom = Mathf.Max(bottom, p.offset.z + p.scale.z * 0.5f); }
+        float length = bottom - top;
+        if (length < 1e-4f) return null;
+
+        float add = 0f;
+        Dictionary<OrganPart, (Vector3, Vector3)> shape = null;
+        for (int i = 0; i < 4; i++)
+        {
+            float k = Mathf.Max(0.05f, (length + add) / length);
+            shape = new Dictionary<OrganPart, (Vector3, Vector3)>();
+            foreach (var p in parts)
+            {
+                float z = p.offset.z;
+                float z2 = z <= top ? z : z <= bottom ? top + (z - top) * k : z + add;
+                var s = p.scale;
+                if (shank.Contains(p)) s.z *= k;
+                shape[p] = (new Vector3(p.offset.x, p.offset.y, z2), s);
+            }
+            float low = LowestY(parts, shape, np, nr, unit);
+            if (Mathf.Abs(low) < 0.002f) break;
+            add += low / down / unit;
+        }
+        return shape;
+    }
+
+    static float LowestY(List<OrganPart> parts, Dictionary<OrganPart, (Vector3, Vector3)> shape, Vector3 np, Quaternion nr, float unit)
+    {
+        float low = float.MaxValue;
+        foreach (var pt in parts)
+        {
+            var (off, scl) = shape[pt];
+            Vector3 c = np + nr * (off * unit);
+            var rot = nr * Quaternion.Euler(pt.euler);
+            Vector3 half = scl * (unit * 0.5f);
+            // полувысота повёрнутой коробки: проекции её полуосей на вертикаль
+            float ext = Mathf.Abs((rot * Vector3.right).y) * half.x + Mathf.Abs((rot * Vector3.up).y) * half.y
+                      + Mathf.Abs((rot * Vector3.forward).y) * half.z;
+            low = Mathf.Min(low, c.y - ext);
+        }
+        return low;
     }
 
     /// <summary>КАДР ГНЕЗДА МЕСТА (в системе контейнера) и единица. Сначала — гнездо, которое ПРИНОСИТ надетый аугмент

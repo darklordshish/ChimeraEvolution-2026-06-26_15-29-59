@@ -713,6 +713,13 @@ public static class SpeciesBootstrap
         // геометрия поверх мест, несвязный граф, десятки тысяч треугольников (кадры в `Docs/Диаграммы/Кадры/`).
         EditorUtility.SetDirty(hog);
 
+        // НА ЧЁМ СТОИТ ШАССИ (П4): явным присваиванием у всех пяти, включая пустое у змеи — бутстрап не обнуляет
+        // того, что перестал присваивать
+        human.stanceLimbs = new[] { BodySlots.Legs };
+        wolf.stanceLimbs = new[] { BodySlots.Arms, BodySlots.Legs };
+        moose.stanceLimbs = new[] { BodySlots.Arms, BodySlots.Legs };
+        hog.stanceLimbs = new[] { BodySlots.Arms, BodySlots.Legs };
+        snake.stanceLimbs = new string[0];
         ValidateSockets(new[] { human, wolf, snake, moose, hog }); // сверка сокет-плана: молчит, пока всё сходится
 
         // ПРАВИЛА ТЕЛА (спека 2026-08-10): объективные поломки — в консоль. Ловит то, что раньше молчало

@@ -103,6 +103,21 @@ namespace Chimera.Tests.EditMode
         }
 
         [Test]
+        public void StanceLimb_EndReachesTheGround_OtherLimbKeepsItsLength()
+        {
+            // неопорная (как рука человека): лапа своей длины, низ на 0.10 над землёй (запястье 0.3, кусок 0.3 вниз от 0.4)
+            MorphBuilder.Build(root.transform, a, new[] { Paw() });
+            float free = Paws()[0].GetComponent<Renderer>().bounds.min.y;
+            Assert.That(free, Is.EqualTo(0.10f).Within(0.003f), "неопорный конец не тянется");
+
+            // опорная: тот же аугмент дотянут до земли — высота запястья принадлежит шасси
+            a.stanceLimbs = new[] { "Руки" };
+            MorphBuilder.Build(root.transform, a, new[] { Paw() });
+            foreach (var paw in Paws())
+                Assert.That(paw.GetComponent<Renderer>().bounds.min.y, Is.EqualTo(0f).Within(0.003f), "опорный конец не встал на землю: " + paw.name);
+        }
+
+        [Test]
         public void NoNest_NoDetail_AndTheMissIsVisible()
         {
             a.nests = new PlaceNest[0];

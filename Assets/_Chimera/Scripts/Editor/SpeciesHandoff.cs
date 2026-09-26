@@ -32,7 +32,7 @@ public static class SpeciesHandoff
 
     [System.Serializable] class Calibre { public float[] baseSize; public float[] sizeRel; }
     [System.Serializable] class PlaceDto { public string name, parent; public float attach; public float[] attachOffset, sizeRel, baseEuler; }
-    [System.Serializable] class PartDto { public string node, block, role; public float[] offset, scale, euler, color; public bool nest; }
+    [System.Serializable] class PartDto { public string node, block, role; public float[] offset, scale, euler, color; public bool nest, stretch; }
     [System.Serializable] class HeadLayout { public Calibre head; public PlaceDto[] places; public PartDto muzzle; public PartDto[] teeth, senses; public NestDto[] mawNests; }
     [System.Serializable] class OrganDto { public string slot, organ; public PartDto[] parts; public NestDto[] nests; }
     [System.Serializable] class OrgansLayout { public OrganDto[] organs; }
@@ -299,6 +299,7 @@ public static class SpeciesHandoff
         node = p.node ?? "",
         block = p.block ?? "",
         nest = p.nest,
+        stretch = p.stretch,
         offset = V(p.offset, Vector3.zero),
         scale = V(p.scale, Vector3.one),
         euler = V(p.euler, Vector3.zero),
