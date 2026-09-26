@@ -12,6 +12,7 @@
 чужом — в гнездо носителя, в его калибре.
 
 Запуск:  python nest_convert.py <вид-файл> <место> [<место> …]     например: python nest_convert.py volk Руки Ноги
+         Пасть — по замеру стенда: nest_convert.past(вид, файл-замера) (см. ниже)
 """
 import json
 import math
@@ -117,3 +118,41 @@ def main(file, slots):
 
 if __name__ == '__main__':
     main(sys.argv[1], sys.argv[2:])
+
+
+# ── ПАСТЬ ИЗ ЗАМЕРА СТЕНДА ──────────────────────────────────────────────────────────────────────────────
+# Морда и зубы лежат в `<вид>-head-layout.json` в долях места Пасти (кадр места — от раскладки головы и калибра
+# шасси), пересчитывать эту цепочку в Python — повторять билдер. Поэтому Пасть переводится ПО ЗАМЕРУ: стенд
+# `Kadr.Shot` собирает вид настоящим билдером, eval выписывает каждый кусок места `Пасть` (блок, позиция, поворот,
+# размер) в файл «блок;x;y;z;qx;qy;qz;qw;sx;sy;sz», по строке на кусок в порядке морда → зубы.
+def quat_mat(x, y, z, w):
+    return [[1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+            [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
+            [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)]]
+
+
+def past(file, measured):
+    places = {p['name']: p for p in json.load(open(os.path.join(H, file + '-places-layout.json'), encoding='utf-8'))['places']}
+    pos, N, u = nest_frame(places['Пасть'])
+    rows = [l.split(';') for l in open(measured, encoding='utf-8').read().strip().splitlines()]
+    path = os.path.join(H, file + '-head-layout.json')
+    doc = json.load(open(path, encoding='utf-8'))
+    old = [doc['muzzle']] + list(doc.get('teeth', []))
+    if len(rows) != len(old):
+        raise SystemExit('%s: кусков по замеру %d, в раскладке %d' % (file, len(rows), len(old)))
+    new = []
+    for r, o in zip(rows, old):
+        c = [float(v) for v in r[1:4]]
+        R = quat_mat(*[float(v) for v in r[4:8]])
+        size = [float(v) for v in r[8:11]]
+        if r[0] != o['block']:
+            raise SystemExit('%s: блок по замеру %s, в раскладке %s' % (file, r[0], o['block']))
+        local = app(T(N), [a - b for a, b in zip(c, pos)])
+        p = {k: v for k, v in o.items() if k not in ('offset', 'scale', 'euler')}
+        p.update(nest=True, offset=[round(v / u, 4) for v in local], scale=[round(v / u, 4) for v in size],
+                 euler=to_euler(mul(T(N), R)))
+        new.append(p)
+    doc['muzzle'], doc['teeth'] = new[0], new[1:]
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump(doc, f, ensure_ascii=False, indent=2)
+    print('%-9s Пасть → гнездо (%s): кусков %d' % (file, places['Пасть']['host'], len(new)))
