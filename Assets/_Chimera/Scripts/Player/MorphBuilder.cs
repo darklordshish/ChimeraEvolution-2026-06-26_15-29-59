@@ -121,12 +121,12 @@ public static class MorphBuilder
             bool nested = false;
             if (Nested(organ))
             {
-                NestParts(container.transform, chassis, socket, PartsFor(organ, PartRole.None), byBone, bonePos, boneXf);
+                NestParts(container.transform, chassis, socket, PartsFor(organ, PartRole.None), byBone, bonePos, boneXf, organBySocket);
                 nested = true;
             }
             if (!string.IsNullOrEmpty(socket.formFrom) && organBySocket.TryGetValue(socket.formFrom, out var nestSrc) && Nested(nestSrc))
             {
-                NestParts(container.transform, chassis, socket, PartsFor(nestSrc, socket.formRole), byBone, bonePos, boneXf);
+                NestParts(container.transform, chassis, socket, PartsFor(nestSrc, socket.formRole), byBone, bonePos, boneXf, organBySocket);
                 nested = true;
             }
             if (nested) continue;
@@ -353,32 +353,63 @@ public static class MorphBuilder
     /// положения: правая — на `host`, зеркальная — на `host.L`, если кость парная.</summary>
     static void NestParts(Transform container, SpeciesSO chassis, BodySocket socket, List<OrganPart> parts,
                           Dictionary<string, Bone> byBone, Dictionary<string, (Vector3, Quaternion)> bonePos,
-                          Dictionary<string, Transform> boneXf)
+                          Dictionary<string, Transform> boneXf, Dictionary<string, Organ> worn)
     {
         if (parts.Count == 0) return;
-        PlaceNest nest = null;
-        if (chassis.nests != null) foreach (var n in chassis.nests) if (n != null && n.name == socket.name) { nest = n; break; }
-        if (nest == null || string.IsNullOrEmpty(nest.host) || !byBone.TryGetValue(nest.host, out var host))
+        if (!ResolveNest(chassis, socket.name, byBone, bonePos, worn, out var np, out var nr, out float unit, out bool pair, out string hostName))
         {
             missingNests.Add(chassis.speciesName + "." + socket.name);
             return;
         }
-
-        var (hp, hr) = SkeletonBuilder.Place(host, byBone, bonePos);
-        Vector3 np = hp + hr * nest.localPos;
-        Quaternion nr = hr * nest.localRot;
-        boneXf.TryGetValue(nest.host, out var right);
-        if (!boneXf.TryGetValue(nest.host + ".L", out var left)) left = right;
+        boneXf.TryGetValue(hostName, out var right);
+        if (!boneXf.TryGetValue(hostName + ".L", out var left)) left = right;
 
         foreach (var pt in parts)
         {
-            Vector3 pos = np + nr * (pt.offset * nest.unit);
+            Vector3 pos = np + nr * (pt.offset * unit);
             Vector3 euler = (nr * Quaternion.Euler(pt.euler)).eulerAngles;
-            Vector3 size = pt.scale * nest.unit;
+            Vector3 size = pt.scale * unit;
             Hang(Mark(Spawn(container, socket.name, pos, euler, size, +1f, pt.shape, socket.solid, pt.block), pt), right);
-            if (nest.mirror)
+            if (pair)
                 Hang(Mark(Spawn(container, socket.name, pos, euler, size, -1f, pt.shape, socket.solid, pt.block), pt), left);
         }
+    }
+
+    /// <summary>КАДР ГНЕЗДА МЕСТА (в системе контейнера) и единица. Сначала — гнездо, которое ПРИНОСИТ надетый аугмент
+    /// (`Organ.carries`: нос на кончике чужой морды), в кадре гнезда этого аугмента; нет — гнездо шасси. Кость-хозяин —
+    /// кость гнезда-опоры: нос на морде едет с головой.</summary>
+    static bool ResolveNest(SpeciesSO chassis, string place, Dictionary<string, Bone> byBone,
+                            Dictionary<string, (Vector3, Quaternion)> bonePos, Dictionary<string, Organ> worn,
+                            out Vector3 pos, out Quaternion rot, out float unit, out bool pair, out string host)
+    {
+        pos = Vector3.zero; rot = Quaternion.identity; unit = 1f; pair = false; host = null;
+        if (worn != null)
+            foreach (var kv in worn)
+            {
+                var o = kv.Value;
+                if (o == null || o.carries == null || kv.Key == place) continue;
+                foreach (var c in o.carries)
+                {
+                    if (c == null || c.name != place) continue;
+                    if (!ResolveNest(chassis, kv.Key, byBone, bonePos, null, out var bp, out var br, out float bu, out _, out host)) continue;
+                    pos = bp + br * (c.localPos * bu);
+                    rot = br * c.localRot;
+                    unit = bu * c.unit;
+                    pair = c.mirror;
+                    return true;
+                }
+            }
+
+        PlaceNest nest = null;
+        if (chassis.nests != null) foreach (var n in chassis.nests) if (n != null && n.name == place) { nest = n; break; }
+        if (nest == null || string.IsNullOrEmpty(nest.host) || !byBone.TryGetValue(nest.host, out var hb)) return false;
+        var (hp, hr) = SkeletonBuilder.Place(hb, byBone, bonePos);
+        pos = hp + hr * nest.localPos;
+        rot = hr * nest.localRot;
+        unit = nest.unit;
+        pair = nest.mirror;
+        host = nest.host;
+        return true;
     }
 
     static void Hang(GameObject go, Transform bone)

@@ -33,8 +33,8 @@ public static class SpeciesHandoff
     [System.Serializable] class Calibre { public float[] baseSize; public float[] sizeRel; }
     [System.Serializable] class PlaceDto { public string name, parent; public float attach; public float[] attachOffset, sizeRel, baseEuler; }
     [System.Serializable] class PartDto { public string node, block, role; public float[] offset, scale, euler, color; public bool nest; }
-    [System.Serializable] class HeadLayout { public Calibre head; public PlaceDto[] places; public PartDto muzzle; public PartDto[] teeth, senses; }
-    [System.Serializable] class OrganDto { public string slot, organ; public PartDto[] parts; }
+    [System.Serializable] class HeadLayout { public Calibre head; public PlaceDto[] places; public PartDto muzzle; public PartDto[] teeth, senses; public NestDto[] mawNests; }
+    [System.Serializable] class OrganDto { public string slot, organ; public PartDto[] parts; public NestDto[] nests; }
     [System.Serializable] class OrgansLayout { public OrganDto[] organs; }
     [System.Serializable] class SurfaceDto { public float z0, z1; }
     [System.Serializable] class NestDto { public string name, host; public float[] pos, dir; public float unit; public bool mirror, proposed; public SurfaceDto surface; }
@@ -127,6 +127,7 @@ public static class SpeciesHandoff
                     if (hasMuzzle) parts.Add(Part(h.muzzle));
                     foreach (var t in h.teeth ?? new PartDto[0]) parts.Add(Part(t));
                     maw.visualParts = parts.ToArray();
+                    maw.carries = Carried(h.mawNests);
                     n++;
                 }
             }
@@ -180,6 +181,7 @@ public static class SpeciesHandoff
                 var parts = new System.Collections.Generic.List<OrganPart>();
                 foreach (var p in leg.parts ?? new PartDto[0]) parts.Add(Part(p));
                 organ.visualParts = parts.ToArray();   // целиком: прежние колонны и мышцы на погашенном месте не нужны
+                organ.carries = Carried(leg.nests);
                 n++;
             }
         }
@@ -230,11 +232,8 @@ public static class SpeciesHandoff
 
             bool surface = d.surface != null && (d.surface.z0 != 0f || d.surface.z1 != 0f);
             Vector3 pos = V(d.pos, surface ? hp : Vector3.zero);
-            Vector3 dir = V(d.dir, Vector3.forward);
-            if (dir.sqrMagnitude < 1e-8f) dir = Vector3.forward;
             // «верх» гнезда — мировой верх; у вертикального гнезда (конечность, рог) — перёд тела
-            Vector3 up = Mathf.Abs(Vector3.Dot(dir.normalized, Vector3.up)) > 0.9f ? Vector3.forward : Vector3.up;
-            var rot = Quaternion.LookRotation(dir.normalized, up);
+            var rot = Frame(V(d.dir, Vector3.forward));
 
             var inv = Quaternion.Inverse(hr);
             res.Add(new PlaceNest
@@ -258,6 +257,27 @@ public static class SpeciesHandoff
                 problems.Add($"у места «{s.name}» нет гнезда");
 
         return res.ToArray();
+    }
+
+    /// <summary>ГНЁЗДА, КОТОРЫЕ АУГМЕНТ НЕСЁТ НА СЕБЕ, — в кадре и единицах его собственного гнезда (метров нет: это данные
+    /// донора). Кадр строится тем же правилом, что у гнезда шасси: +Z вдоль `dir`, +Y — верх, у вертикального — перёд.</summary>
+    static PlaceNest[] Carried(NestDto[] dto)
+    {
+        var res = new System.Collections.Generic.List<PlaceNest>();
+        foreach (var d in dto ?? new NestDto[0])
+        {
+            if (d == null || string.IsNullOrEmpty(d.name)) continue;
+            res.Add(new PlaceNest { name = d.name, localPos = V(d.pos, Vector3.zero), localRot = Frame(V(d.dir, Vector3.forward)),
+                                    unit = d.unit > 0f ? d.unit : 1f, mirror = d.mirror });
+        }
+        return res.ToArray();
+    }
+
+    static Quaternion Frame(Vector3 dir)
+    {
+        if (dir.sqrMagnitude < 1e-8f) dir = Vector3.forward;
+        Vector3 up = Mathf.Abs(Vector3.Dot(dir.normalized, Vector3.up)) > 0.9f ? Vector3.forward : Vector3.up;
+        return Quaternion.LookRotation(dir.normalized, up);
     }
 
     static BodySocket FindSocket(SpeciesSO s, string name)

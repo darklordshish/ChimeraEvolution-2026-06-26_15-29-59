@@ -69,6 +69,7 @@ MonoBehaviour:
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
       nest: 0
+    carries: []
     visualSegments: 0
     visualTaper: 0
   - organName: "\u041A\u0438\u0441\u0442\u044C"
@@ -101,7 +102,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482543045115904
+    - rid: 4402482543045115924
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -116,6 +117,7 @@ MonoBehaviour:
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
       nest: 1
+    carries: []
     visualSegments: 0
     visualTaper: 0
   - organName: "\u041D\u043E\u0433\u0438"
@@ -148,7 +150,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482543045115905
+    - rid: 4402482543045115925
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -163,6 +165,7 @@ MonoBehaviour:
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
       nest: 1
+    carries: []
     visualSegments: 0
     visualTaper: 0
   - organName: "\u0421\u0435\u0440\u0434\u0446\u0435"
@@ -209,6 +212,7 @@ MonoBehaviour:
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
       nest: 0
+    carries: []
     visualSegments: 0
     visualTaper: 0
   - organName: "\u0427\u0443\u0442\u044C\u0451"
@@ -273,6 +277,7 @@ MonoBehaviour:
       role: 4
       color: {r: 0, g: 0, b: 0, a: 0}
       nest: 0
+    carries: []
     visualSegments: 0
     visualTaper: 0
   - organName: "\u0420\u043E\u0442"
@@ -305,7 +310,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482543045115906
+    - rid: 4402482543045115926
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -320,6 +325,7 @@ MonoBehaviour:
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
       nest: 1
+    carries: []
     visualSegments: 0
     visualTaper: 0
   - organName: "\u041A\u043E\u0436\u0430"
@@ -357,6 +363,7 @@ MonoBehaviour:
     visualEuler: {x: 0, y: 0, z: 0}
     visualAlignToBody: 0
     visualParts: []
+    carries: []
     visualSegments: 0
     visualTaper: 0
   eatsMeat: 1
@@ -1793,7 +1800,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4402482543045115904
+    - rid: 4402482543045115924
       type: {class: LimbStrikeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 8
@@ -1803,7 +1810,7 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.45
         cooldown: 1.1
-    - rid: 4402482543045115905
+    - rid: 4402482543045115925
       type: {class: KickData, ns: , asm: Chimera.Runtime}
       data:
         damage: 4
@@ -1811,7 +1818,7 @@ MonoBehaviour:
         reach: 1.8
         radius: 1.6
         cooldown: 1
-    - rid: 4402482543045115906
+    - rid: 4402482543045115926
       type: {class: ScreamData, ns: , asm: Chimera.Runtime}
       data:
         cooldown: 12
