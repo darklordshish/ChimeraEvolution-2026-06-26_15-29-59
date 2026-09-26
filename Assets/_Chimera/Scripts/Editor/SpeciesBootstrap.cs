@@ -731,6 +731,7 @@ public static class SpeciesBootstrap
         // ЗЕРНО ГРАНЕЙ — ВСЕМ ВИДАМ, ДО ПОСТАВКИ (`SpeciesSO.Grain`: 17.09 — 0.084, с 22.09 — 0.042). Явно и у видов
         // на чистом листе: бутстрап не обнуляет старого, и граф, пришедший на прежние 0.02, дал бы лосю 98 884 тр
         foreach (var sp in all) sp.skinCell = SpeciesSO.Grain;
+        foreach (var sp in all) EnsureSensePlaces(sp);
         foreach (var sp in all) SpeciesHandoff.Apply(sp);
 
         foreach (var sp in all)
@@ -776,6 +777,21 @@ public static class SpeciesBootstrap
     /// таким именем — орган либо не встанет вовсе (в родных слотах его нет), либо встанет ЧЕРЕЗ ХИМЕРНЫЙ слот
     /// и будет НЕВИДИМ. Раньше это молчало: опечатка в имени = деталь просто не рисуется, без единой ошибки.
     /// Виды без сокет-плана (пока Змея/Лось/Ёж) не проверяем — у них свой визуал префаба.</summary>
+    /// <summary>СЕНСОРНЫЕ МЕСТА У ВСЕХ (спека 2026-09-26, П2): чего у вида нет по природе — стоит графтом, как `Рога` у
+    /// волка. Пустое не рисуется; проступает, только когда привитое Чутьё приносит признак этой роли в гнездо. Свои
+    /// места вида не трогаются.</summary>
+    static void EnsureSensePlaces(SpeciesSO sp)
+    {
+        var have = new System.Collections.Generic.HashSet<string>();
+        foreach (var s in sp.sockets ?? new BodySocket[0]) if (s != null) have.Add(s.name);
+        var list = new System.Collections.Generic.List<BodySocket>(sp.sockets ?? new BodySocket[0]);
+        foreach (var (name, parent, role, pair) in BodySlots.SensePlaces)
+            if (!have.Contains(name) && have.Contains(parent))
+                list.Add(new BodySocket { name = name, parent = parent, attach = 0.5f, mirrorX = pair, graft = true,
+                                          formFrom = BodySlots.Sense, formRole = role });
+        sp.sockets = list.ToArray();
+    }
+
     static void ValidateSockets(SpeciesSO[] all)
     {
         foreach (var chassis in all)

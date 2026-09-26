@@ -209,7 +209,12 @@ public static class SpeciesHandoff
         foreach (var d in l.places)
         {
             if (d == null || string.IsNullOrEmpty(d.name)) continue;
-            if (FindSocket(species, d.name) == null) { problems.Add($"гнездо «{d.name}» — такого места у вида нет"); continue; }
+            if (FindSocket(species, d.name) == null)
+            {
+                // предложенное гнездо под место, которое гнездом не является (горб у всех, кроме лося), — просто не нужно
+                if (d.proposed && !BodySlots.IsNestPlace(d.name)) continue;
+                problems.Add($"гнездо «{d.name}» — такого места у вида нет"); continue;
+            }
             if (d.unit <= 0f) { problems.Add($"гнездо «{d.name}»: единица не задана"); continue; }
 
             // хозяин — кость графа; у змеи цепь звеньев (`звено:N`) костями не является — такие гнёзда ждут своего
@@ -249,7 +254,7 @@ public static class SpeciesHandoff
         var have = new System.Collections.Generic.HashSet<string>();
         foreach (var n in res) have.Add(n.name);
         foreach (var s in species.sockets ?? new BodySocket[0])
-            if (s != null && !string.IsNullOrEmpty(s.name) && !have.Contains(s.name))
+            if (s != null && BodySlots.IsNestPlace(s.name) && !have.Contains(s.name))
                 problems.Add($"у места «{s.name}» нет гнезда");
 
         return res.ToArray();

@@ -83,6 +83,29 @@ public static class BodySlots
         "голова", "шея", "глаза", "уши", "нос", "ямки", "горб",
     };
 
+    // ── ГНЁЗДА СЕНСОРНЫХ АУГМЕНТОВ (спека 2026-09-26, П2) ────────────────────────────────────────────
+    // Признаки чувств рисует орган Чутья по ролям — и у КАЖДОГО шасси для каждой роли должно быть место: привил волку
+    // змеиный Пит-орган — ямкам есть куда встать. До 26.09 ямки были только у змеи, нос и уши — у всех, кроме неё.
+    // Недостающие бутстрап ставит графтом (`SpeciesBootstrap.EnsureSensePlaces`): пустыми они не рисуются
+    public static readonly (string name, string parent, PartRole role, bool pair)[] SensePlaces =
+    {
+        ("глаза", "голова", PartRole.Eye, true),
+        ("уши",   "голова", PartRole.Ear, true),
+        ("нос",   "Пасть",  PartRole.Nose, false),
+        ("ямки",  "голова", PartRole.Pit, true),
+    };
+
+    /// <summary>МЕСТО-ГНЕЗДО: сюда вставляется аугмент или от него считаются гнёзда. Все слоты, кроме пустующего `Тело`,
+    /// шея и голова, сенсорные места. `горб` — форма туши лося, а не гнездо: аугмента на него нет, и от других видов
+    /// гнезда `горб` не требуется.</summary>
+    public static bool IsNestPlace(string name)
+    {
+        if (string.IsNullOrEmpty(name) || name == Body) return false;
+        if (IsSlot(name) || name == "шея" || name == "голова") return true;
+        foreach (var s in SensePlaces) if (s.name == name) return true;
+        return false;
+    }
+
     public static bool IsSlot(string name) => !string.IsNullOrEmpty(name) && All.ContainsKey(name);
 
     public static bool IsPlace(string name)

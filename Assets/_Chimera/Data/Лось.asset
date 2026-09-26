@@ -128,7 +128,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482540938002438
+    - rid: 4402482541205651462
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -193,7 +193,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482540938002439
+    - rid: 4402482541205651463
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -267,7 +267,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482540938002440
+    - rid: 4402482541205651464
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -461,7 +461,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482540938002441
+    - rid: 4402482541205651465
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -1084,6 +1084,27 @@ MonoBehaviour:
     formRole: 0
     linkLength: 0
     linkTaper: 0
+  - name: "\u044F\u043C\u043A\u0438"
+    localPos: {x: 0, y: 0, z: 0}
+    baseSize: {x: 1, y: 1, z: 1}
+    baseEuler: {x: 0, y: 0, z: 0}
+    mirrorX: 1
+    solid: 0
+    inner: 0
+    chainForward: 0
+    graft: 1
+    parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    attach: 0.5
+    attachOffset: {x: 0, y: 0, z: 0}
+    parts: []
+    chain: 0
+    chainTaper: 0
+    linkDiameter: 0
+    sizeRel: {x: 0, y: 0, z: 0}
+    formFrom: "\u0427\u0443\u0442\u044C\u0451"
+    formRole: 5
+    linkLength: 0
+    linkTaper: 0
   bones:
   - name: "\u0445\u0440\u0435\u0431\u0435\u0442"
     parent: 
@@ -1401,7 +1422,151 @@ MonoBehaviour:
   - "\u0420\u0443\u043A\u0438"
   - "\u041D\u043E\u0433\u0438"
   - "\u0425\u0432\u043E\u0441\u0442"
-  nests: []
+  nests:
+  - name: "\u0445\u0440\u0435\u0431\u0435\u0442"
+    host: "\u0445\u0440\u0435\u0431\u0435\u0442"
+    localPos: {x: 0, y: 0, z: 0}
+    localRot: {x: -0.70718133, y: 0, z: 0, w: 0.7070322}
+    unit: 1
+    mirror: 0
+    proposed: 0
+    span: {x: 0, y: 0}
+  - name: "\u0448\u0435\u044F"
+    host: "\u0448\u0435\u044F"
+    localPos: {x: 0, y: -0.000036485344, z: 0.00007359633}
+    localRot: {x: -0.7069411, y: 0, z: 0, w: 0.7072724}
+    unit: 0.88
+    mirror: 0
+    proposed: 0
+    span: {x: 0, y: 0}
+  - name: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    host: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    localPos: {x: 0, y: -0.0001124772, z: 0.0004036775}
+    localRot: {x: -0.70705, y: 0, z: 0, w: 0.7071635}
+    unit: 0.44
+    mirror: 0
+    proposed: 0
+    span: {x: 0, y: 0}
+  - name: "\u0421\u0435\u0440\u0434\u0446\u0435"
+    host: "\u0433\u0440\u0443\u0434\u044C"
+    localPos: {x: 0, y: -0.000010961279, z: -0.0000014622868}
+    localRot: {x: -0.7070935, y: 0, z: 0, w: 0.70712006}
+    unit: 0.8
+    mirror: 0
+    proposed: 0
+    span: {x: 0, y: 0}
+  - name: "\u0427\u0443\u0442\u044C\u0451"
+    host: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    localPos: {x: 0, y: -0.0001124772, z: 0.0004036775}
+    localRot: {x: -0.70705, y: 0, z: 0, w: 0.7071635}
+    unit: 0.44
+    mirror: 0
+    proposed: 0
+    span: {x: 0, y: 0}
+  - name: "\u041F\u0430\u0441\u0442\u044C"
+    host: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    localPos: {x: 0, y: 0.17758974, z: 0.03076629}
+    localRot: {x: -0.7313602, y: 0, z: 0, w: 0.68199134}
+    unit: 0.44
+    mirror: 0
+    proposed: 0
+    span: {x: 0, y: 0}
+  - name: "\u043D\u043E\u0441"
+    host: "\u043F\u0435\u0440\u0435\u043D\u043E\u0441\u044C\u0435"
+    localPos: {x: 0, y: 0.6622182, z: -0.009219534}
+    localRot: {x: -0.838642, y: 0, z: 0, w: 0.544683}
+    unit: 0.44
+    mirror: 0
+    proposed: 0
+    span: {x: 0, y: 0}
+  - name: "\u0433\u043B\u0430\u0437\u0430"
+    host: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    localPos: {x: 0.14, y: 0.25157163, z: -0.22108032}
+    localRot: {x: -0.8103064, y: 0.14039032, z: -0.21615733, w: 0.5262795}
+    unit: 0.44
+    mirror: 1
+    proposed: 0
+    span: {x: 0, y: 0}
+  - name: "\u0443\u0448\u0438"
+    host: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    localPos: {x: 0.2, y: -0.12115576, z: -0.39449957}
+    localRot: {x: 0, y: 0.97815853, z: -0.20786043, w: 0}
+    unit: 0.44
+    mirror: 1
+    proposed: 0
+    span: {x: 0, y: 0}
+  - name: "\u044F\u043C\u043A\u0438"
+    host: "\u043F\u0435\u0440\u0435\u043D\u043E\u0441\u044C\u0435"
+    localPos: {x: 0.12, y: 0.50384486, z: 0.02843541}
+    localRot: {x: -0.5930095, y: 0.38514906, z: -0.5930095, w: 0.38514906}
+    unit: 0.44
+    mirror: 1
+    proposed: 1
+    span: {x: 0, y: 0}
+  - name: "\u0420\u043E\u0433\u0430"
+    host: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    localPos: {x: 0.15, y: -0.017489439, z: -0.21077885}
+    localRot: {x: -0.52561426, y: 0.7696786, z: -0.36221784, w: 0.011084488}
+    unit: 0.44
+    mirror: 1
+    proposed: 0
+    span: {x: 0, y: 0}
+  - name: "\u0433\u043E\u0440\u0431"
+    host: "\u0433\u043E\u0440\u0431"
+    localPos: {x: 0, y: 0.6956403, z: -0.28015617}
+    localRot: {x: 0, y: 0.99152327, z: 0.12992926, w: 0}
+    unit: 1
+    mirror: 0
+    proposed: 0
+    span: {x: 0, y: 0}
+  - name: "\u0418\u0433\u043B\u043E\u043C\u0451\u0442"
+    host: "\u0433\u043E\u0440\u0431"
+    localPos: {x: 0, y: 0.6956403, z: -0.28015617}
+    localRot: {x: 0, y: 0.99152327, z: 0.12992926, w: 0}
+    unit: 1
+    mirror: 0
+    proposed: 1
+    span: {x: 0, y: 0}
+  - name: "\u0428\u043A\u0443\u0440\u0430"
+    host: "\u0445\u0440\u0435\u0431\u0435\u0442"
+    localPos: {x: 0, y: 0, z: 0}
+    localRot: {x: -0.70221514, y: 0, z: 0, w: 0.7119648}
+    unit: 1.98
+    mirror: 0
+    proposed: 0
+    span: {x: -1.2, y: 0.78}
+  - name: "\u0420\u0443\u043A\u0438"
+    host: "\u043F\u0440\u0435\u0434\u043F\u043B\u0435\u0447\u044C\u0435"
+    localPos: {x: 0, y: 0.6284279, z: -0.0026664608}
+    localRot: {x: 0.80326986, y: 0, z: 0, w: -0.5956153}
+    unit: 0.17
+    mirror: 1
+    proposed: 0
+    span: {x: 0, y: 0}
+  - name: "\u041D\u043E\u0433\u0438"
+    host: "\u0433\u043E\u043B\u0435\u043D\u044C"
+    localPos: {x: 0, y: 0.40709174, z: 0.0022482714}
+    localRot: {x: 0.95876026, y: 0, z: 0, w: -0.28421608}
+    unit: 0.2
+    mirror: 1
+    proposed: 0
+    span: {x: 0, y: 0}
+  - name: "\u0425\u0432\u043E\u0441\u0442"
+    host: "\u0445\u0432\u043E\u0441\u0442"
+    localPos: {x: 0, y: 0.0000028511217, z: 0.0000555771}
+    localRot: {x: 0, y: 0.71659416, z: 0.6974904, w: 0}
+    unit: 0.15
+    mirror: 0
+    proposed: 0
+    span: {x: 0, y: 0}
+  - name: "\u041D\u0430\u043A\u043E\u043D\u0435\u0447\u043D\u0438\u043A"
+    host: "\u0445\u0432\u043E\u0441\u0442"
+    localPos: {x: 0, y: 0.2617279, z: 0.000056208413}
+    localRot: {x: 0, y: 0.71659416, z: 0.6974904, w: 0}
+    unit: 0.13
+    mirror: 0
+    proposed: 0
+    span: {x: 0, y: 0}
   skinCell: 0.042
   skinBlend: 0.05
   skinFur: 0
@@ -1409,7 +1574,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4402482540938002438
+    - rid: 4402482541205651462
       type: {class: LimbStrikeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
@@ -1419,7 +1584,7 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.45
         cooldown: 1.1
-    - rid: 4402482540938002439
+    - rid: 4402482541205651463
       type: {class: ChargeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
@@ -1439,7 +1604,7 @@ MonoBehaviour:
         stompForce: 13
         plowForce: 6
         plowRadius: 1.6
-    - rid: 4402482540938002440
+    - rid: 4402482541205651464
       type: {class: BellowData, ns: , asm: Chimera.Runtime}
       data:
         fearRadius: 10
@@ -1447,7 +1612,7 @@ MonoBehaviour:
         fearMoraleHit: 2
         cooldown: 10
         cueTime: 1.2
-    - rid: 4402482540938002441
+    - rid: 4402482541205651465
       type: {class: AntlerData, ns: , asm: Chimera.Runtime}
       data:
         damage: 12
