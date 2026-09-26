@@ -156,3 +156,71 @@ def past(file, measured):
     with open(path, 'w', encoding='utf-8') as f:
         json.dump(doc, f, ensure_ascii=False, indent=2)
     print('%-9s Пасть → гнездо (%s): кусков %d' % (file, places['Пасть']['host'], len(new)))
+
+
+# ── ГНЁЗДА НА МОРДЕ (`mawNests`) ────────────────────────────────────────────────────────────────────────
+# Письмо механик 27.09 (`FEEDBACK-2026-09-27-nos-na-morde.md` §2): аугмент приносит гнёзда мест, что сидят НА нём. Морда
+# несёт `нос` и `ямки`: чужая морда — нос носителя встаёт на её кончик. Запись — в кадре и единицах гнезда `Пасть`:
+# pos и dir в этом кадре, unit — доля единицы Пасти. Числа — из гнёзд шасси (`places-layout`), пересчитанные в кадр
+# Пасти: на своём виде нос встаёт туда же, где стоит сейчас. Ямки — у всех пяти (у кого их нет — `proposed` из
+# таблицы гнёзд): чужой Пит-орган змеи на волчьей морде тоже должен найти место
+MAW_CARRIES = ('нос', 'ямки')
+
+
+def maw_nests(file):
+    places = {p['name']: p for p in json.load(open(os.path.join(H, file + '-places-layout.json'), encoding='utf-8'))['places']}
+    mpos, M, mu = nest_frame(places['Пасть'])
+    out = []
+    for name in MAW_CARRIES:
+        p = places[name]
+        local = app(T(M), [a - b for a, b in zip(p['pos'], mpos)])
+        d = app(T(M), unit(p['dir']))
+        n = dict(name=name, pos=[round(v / mu, 4) for v in local], dir=[round(v, 4) for v in unit(d)],
+                 unit=round(p['unit'] / mu, 4))
+        if p.get('mirror'):
+            n['mirror'] = True
+        out.append(n)
+    path = os.path.join(H, file + '-head-layout.json')
+    doc = json.load(open(path, encoding='utf-8'))
+    doc['mawNests'] = out
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump(doc, f, ensure_ascii=False, indent=2)
+    print('%-9s mawNests: %s' % (file, ', '.join('%s %s' % (n['name'], n['pos']) for n in out)))
+
+
+# ── ПРИЗНАКИ ЧУТЬЯ (`senses`) В ГНЁЗДА ──────────────────────────────────────────────────────────────────
+# По замеру стенда, как Пасть: файл строк «место;блок;x;y;z;qx;qy;qz;qw;sx;sy;sz» — правая сторона (или середина) каждого
+# места Чутья. Кадр — гнездо этого места у своего вида (уши, глаза — `places-layout`; нос, ямки — то же гнездо, что даёт
+# `mawNests` на своей морде)
+ROLE_PLACE = {'Eye': 'глаза', 'Ear': 'уши', 'Nose': 'нос', 'Pit': 'ямки'}
+
+
+def senses(file, measured):
+    places = {p['name']: p for p in json.load(open(os.path.join(H, file + '-places-layout.json'), encoding='utf-8'))['places']}
+    rows = {}
+    for l in open(measured, encoding='utf-8').read().strip().splitlines():
+        r = l.split(';')
+        rows[r[0]] = r[1:]
+    path = os.path.join(H, file + '-head-layout.json')
+    doc = json.load(open(path, encoding='utf-8'))
+    new = []
+    for s in doc['senses']:
+        place = ROLE_PLACE[s['role']]
+        r = rows.get(place)
+        if r is None:
+            raise SystemExit('%s: нет замера места %s' % (file, place))
+        if r[0] != s['block']:
+            raise SystemExit('%s: у %s блок по замеру %s, в раскладке %s' % (file, place, r[0], s['block']))
+        pos, N, u = nest_frame(places[place])
+        c = [float(v) for v in r[1:4]]
+        R = quat_mat(*[float(v) for v in r[4:8]])
+        size = [float(v) for v in r[8:11]]
+        local = app(T(N), [a - b for a, b in zip(c, pos)])
+        p = {k: v for k, v in s.items() if k not in ('offset', 'scale', 'euler')}
+        p.update(nest=True, offset=[round(v / u, 4) for v in local], scale=[round(v / u, 4) for v in size],
+                 euler=to_euler(mul(T(N), R)))
+        new.append(p)
+    doc['senses'] = new
+    with open(path, 'w', encoding='utf-8') as f:
+        json.dump(doc, f, ensure_ascii=False, indent=2)
+    print('%-9s senses → гнёзда: %s' % (file, ', '.join(ROLE_PLACE[s['role']] for s in new)))
