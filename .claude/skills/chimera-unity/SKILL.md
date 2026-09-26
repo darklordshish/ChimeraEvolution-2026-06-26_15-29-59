@@ -40,6 +40,7 @@ unity command chimera-species     # пересоздать 5 SpeciesSO в Data/ 
 unity command chimera-map         # КАРТА ТЕЛ — детектор: строит тела билдером и меряет стыки
 unity command chimera-diagrams    # схемы планов тела по видам
 unity command chimera-reports     # и карту, и схемы разом — обычный порядок сверки
+unity command chimera-matrix      # МАТРИЦА ХИМЕР: каждое шасси с каждым донором, целиком и по аугменту → Docs/Диаграммы/ХИМЕРЫ.md
 ```
 
 ## 3. Тесты

@@ -43,6 +43,13 @@ public static class ChimeraCliCommands
         return "Docs/Диаграммы/<вид>.md обновлены";
     }
 
+    [CliCommand("chimera-matrix", "Выгрузить МАТРИЦУ ХИМЕР — детектор: каждое шасси с каждым донором, целиком и по аугменту")]
+    public static string Matrix()
+    {
+        ChimeraMatrix.Generate();
+        return "Docs/Диаграммы/ХИМЕРЫ.md обновлена";
+    }
+
     /// <summary>Пересобрать оба отчёта разом: после правки данных сверять надо и план, и замер.</summary>
     [CliCommand("chimera-reports", "Выгрузить И карту тел, И схемы — обычный порядок сверки после правки данных")]
     public static string Reports()
