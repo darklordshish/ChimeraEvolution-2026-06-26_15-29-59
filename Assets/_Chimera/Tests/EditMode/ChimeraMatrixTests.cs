@@ -11,7 +11,7 @@ namespace Chimera.Tests.EditMode
     /// значит, что неверно ПРАВИЛО.</summary>
     public class ChimeraMatrixTests
     {
-        const int Debt = 275; // 281 → 275: поставка 25 (концы конечностей и Пасти в гнёздах, 26.09); только опускается
+        const int Debt = 216; // 281 → 275 (поставка 25) → 216 (поставка 26: нос на морде, Чутьё в гнёздах); только опускается
 
         [Test]
         public void PureSpecies_PassTheSameRules()
