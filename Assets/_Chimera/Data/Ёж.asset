@@ -147,7 +147,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482527471403018
+    - rid: 4402482538889609226
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -2128,6 +2128,43 @@ MonoBehaviour:
       color: {r: 0, g: 0, b: 0, a: 0}
     visualSegments: 0
     visualTaper: 0
+  - organName: "\u0415\u0436\u0438\u043D\u044B\u0435 \u043B\u0430\u043F\u044B"
+    slot: "\u0420\u0443\u043A\u0438"
+    hotkey: 1
+    cost: 2
+    staminaBonus: 0
+    staminaRegenBonus: 0
+    hpBonus: 0
+    atkCooldown: 0
+    moveSpeed: 0
+    dashSpeed: 0
+    dashCooldown: 0
+    damageReduction: 0
+    regen: 0
+    regenOOC: 0
+    dashDuration: 0
+    thermalRange: 0
+    enablesScent: 0
+    coldBlooded: 0
+    camo: 0
+    enablesThermal: 0
+    thorns: 0
+    venomResist: 0
+    bleedResist: 0
+    keenHearing: 0
+    hearingMult: 0
+    insight: 0
+    chassisOnly: 0
+    digestion: 0
+    nativeChassis: 
+    abilities: []
+    visualScale: {x: 1, y: 1, z: 1}
+    visualOffset: {x: 0, y: 0, z: 0}
+    visualEuler: {x: 0, y: 0, z: 0}
+    visualAlignToBody: 0
+    visualParts: []
+    visualSegments: 0
+    visualTaper: 0
   - organName: "\u0415\u0436\u0438\u043D\u044B\u0435 \u043D\u043E\u0433\u0438"
     slot: "\u041D\u043E\u0433\u0438"
     hotkey: 2
@@ -2158,8 +2195,8 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: "\u0401\u0436"
     abilities:
-    - rid: 4402482527471403019
-    - rid: 4402482527471403020
+    - rid: 4402482538889609227
+    - rid: 4402482538889609228
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -2197,8 +2234,8 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: "\u0401\u0436"
     abilities:
-    - rid: 4402482527471403021
-    - rid: 4402482527471403022
+    - rid: 4402482538889609229
+    - rid: 4402482538889609230
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -3150,7 +3187,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4402482527471403018
+    - rid: 4402482538889609226
       type: {class: VolleyData, ns: , asm: Chimera.Runtime}
       data:
         damagePerQuill: 4
@@ -3165,14 +3202,14 @@ MonoBehaviour:
         windupTime: 0.5
         cooldown: 2.5
         blindAimError: 1.6
-    - rid: 4402482527471403019
+    - rid: 4402482538889609227
       type: {class: RollData, ns: , asm: Chimera.Runtime}
       data:
         damage: 10
         bleedStacks: 1
         knockForce: 8
         radius: 1.2
-    - rid: 4402482527471403020
+    - rid: 4402482538889609228
       type: {class: CurlData, ns: , asm: Chimera.Runtime}
       data:
         curlArmor: 0.6
@@ -3181,7 +3218,7 @@ MonoBehaviour:
         rollDrain: 40
         rollTurnSpeed: 90
         rollGravity: 20
-    - rid: 4402482527471403021
+    - rid: 4402482538889609229
       type: {class: BiteData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
@@ -3193,7 +3230,7 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.4
         cooldown: 0.7
-    - rid: 4402482527471403022
+    - rid: 4402482538889609230
       type: {class: ConstrictData, ns: , asm: Chimera.Runtime}
       data:
         maxStage: 1

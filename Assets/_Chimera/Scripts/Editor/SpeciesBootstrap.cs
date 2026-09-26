@@ -621,6 +621,11 @@ public static class SpeciesBootstrap
                 new OrganPart { scale = new Vector3(0.07f, 0.62f, 0.07f), offset = new Vector3(0.09f, 0.42f, -0.40f), euler = new Vector3(-42f, 0f, 7f) }, // шип
                 new OrganPart { scale = new Vector3(0.07f, 0.62f, 0.07f), offset = new Vector3(0.26f, 0.33f, -0.40f), euler = new Vector3(-42f, 0f, 20f) }, // шип
             } }, // ОТВЕТКА: броня умеренная — иглы это ответ, а не панцирь
+            // ПЕРЕДНИЕ ЛАПЫ — АУГМЕНТ, А НЕ ЧАСТЬ ГРАФА (решение геймдизайнера 26.09, спека
+            // `2026-09-26-adresaciya-detaley-himery.md` П4): конец конечности у всех видов приносит аугмент гнезда `Руки`.
+            // ПРИЁМА НЕТ — ёж не хватает и не бьёт лапой, его оружие иглы и пасть. Форму (лапа и когти) поставит модельная
+            // линия; пока формы нет, на теле ничего не меняется. cost — ручка баланса, не выверена
+            new Organ { organName = "Ежиные лапы",       slot = "Руки",   hotkey = "1", cost = 2 },
             new Organ { organName = "Ежиные ноги",       slot = "Ноги",   hotkey = "2", cost = 4, moveSpeed = 6f, dashSpeed = 18f, dashDuration = 0.14f, dashCooldown = 0.35f, abilities = new AbilityData[] { new RollData { damage = 10, bleedStacks = 1, knockForce = 8f, radius = 1.2f }, new CurlData { curlArmor = 0.6f, staminaDrain = 30f, rollSpeed = 9f, rollDrain = 40f, rollTurnSpeed = 90f, rollGravity = 20f } }, nativeChassis = "Ёж", visualParts = new[] {
                 new OrganPart { scale = new Vector3(0.95f, 0.44f, 0.95f), offset = new Vector3(0.00f, 0.27f, -0.06f), euler = new Vector3(-10f, 0f, 0f), shape = PartShape.Capsule }, // бедро
                 new OrganPart { scale = new Vector3(0.78f, 0.46f, 0.82f), offset = new Vector3(0.00f, -0.13f, 0.06f), euler = new Vector3(12f, 0f, 0f), shape = PartShape.Capsule }, // голень
