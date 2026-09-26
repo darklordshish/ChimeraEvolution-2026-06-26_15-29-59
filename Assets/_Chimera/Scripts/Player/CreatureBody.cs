@@ -420,18 +420,27 @@ public partial class CreatureBody : MonoBehaviour
         }
     }
 
+    /// <summary>Снос маркера, работающий И В РЕДАКТОРЕ (тот же приём, что `MorphBuilder.Kill`). Карта тел и матрица
+    /// химер собирают тело вне Play: химера снимает с ежа Иглы — и `Destroy` компонента шипов писал ошибку в лог.
+    /// В Play поведение прежнее: отложенный снос до конца кадра.</summary>
+    static void Kill(Object o)
+    {
+        if (Application.isPlaying) Destroy(o);
+        else DestroyImmediate(o);
+    }
+
     // холоднокровность как компонент-маркер: вешаем/снимаем по итогу сборки (живо на смене Сердца у игрока)
     void SetColdBlooded(bool on)
     {
         if (on && cold == null) cold = gameObject.AddComponent<ColdBlooded>();
-        else if (!on && cold != null) { Destroy(cold); cold = null; }
+        else if (!on && cold != null) { Kill(cold); cold = null; }
     }
 
     // ИГЛЫ как компонент: тем же паттерном — снял Шкуру ежа, и ответка исчезла вместе с ней
     void SetThorns(bool on)
     {
         if (on && thornsComp == null) thornsComp = gameObject.AddComponent<Thorns>();
-        else if (!on && thornsComp != null) { Destroy(thornsComp); thornsComp = null; }
+        else if (!on && thornsComp != null) { Kill(thornsComp); thornsComp = null; }
     }
 
     // МАССА как маркер: тело ДОБАВЛЯЕТ Massive по флагу шасси (лось). ADD-ONLY, НЕ снимает: масса — статичное
@@ -446,21 +455,21 @@ public partial class CreatureBody : MonoBehaviour
     void SetVenomResist(bool on)
     {
         if (on && venomResistComp == null) venomResistComp = gameObject.AddComponent<VenomResist>();
-        else if (!on && venomResistComp != null) { Destroy(venomResistComp); venomResistComp = null; }
+        else if (!on && venomResistComp != null) { Kill(venomResistComp); venomResistComp = null; }
     }
 
     // КРОВЕУПОРНОСТЬ как маркер: опрашивается кровотечением при добавлении стака (зеркало ядоупорности)
     void SetBleedResist(bool on)
     {
         if (on && bleedResistComp == null) bleedResistComp = gameObject.AddComponent<BleedResist>();
-        else if (!on && bleedResistComp != null) { Destroy(bleedResistComp); bleedResistComp = null; }
+        else if (!on && bleedResistComp != null) { Kill(bleedResistComp); bleedResistComp = null; }
     }
 
     // камуфляж-в-неподвижности как компонент: вешаем/снимаем по итогу сборки (живо на смене Шкуры у игрока)
     void SetCamouflage(bool on)
     {
         if (on && camoComp == null) camoComp = gameObject.AddComponent<Camouflage>();
-        else if (!on && camoComp != null) { Destroy(camoComp); camoComp = null; }
+        else if (!on && camoComp != null) { Kill(camoComp); camoComp = null; }
     }
 
     // переваривание как компонент-маркер: физиология змеиного шасси (chassisOnly — аугументом не крадётся)
