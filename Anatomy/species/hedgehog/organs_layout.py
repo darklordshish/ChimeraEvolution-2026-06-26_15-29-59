@@ -240,10 +240,32 @@ def gun():
 
 
 # ── ЗАДНИЕ СТОПЫ ─────────────────────────────────────────────────────────────────────────────────────
+def paw(node_name, heel, toe_z, width, height, claws):
+    """КОНЕЦ КОНЕЧНОСТИ — аугмент (П4 спеки «место — плейсхолдер», 26.09): лапа блоком `лапа` на конце узла шасси и когти
+    `клин` у пальцев. Ёж стопоходящий: подошва на земле от пятки/запястья до пальцев, пальцы вперёд, когти вниз-вперёд
+    (лист: крупные когти на всех четырёх лапах). heel — (x, z) начала лапы, toe_z — кончик пальцев."""
+    n = next(x for x in G.build_nodes() if x['name'] == node_name)
+    x, z0 = heel
+    length = toe_z - z0
+    parts = [_WL.part(n, 'лапа', (x, height * 0.5, z0 + length * 0.5), (width, height, length), (0.0, 0.0, 1.0))]
+    for i in range(claws):
+        dx = (i - (claws - 1) / 2) * width * 0.26
+        parts.append(_WL.part(n, 'клин', (x + dx, 0.022, toe_z + 0.025), (0.022, 0.024, 0.075), (0.0, -0.45, 1.0)))
+    return parts
+
+
+def fore_paws():
+    """ПЕРЕДНИЕ ЛАПЫ — орган «Ежиные лапы» на гнезде `Руки` (решение геймдизайнера 26.09): широкая кисть-веер и 4 когтя."""
+    n = next(x for x in G.build_nodes() if x['name'] == 'предплечье')
+    return dict(slot='Руки', organ='Ежиные лапы', parts=paw('предплечье', (n['b'][0], n['b'][2] - 0.06), n['b'][2] + 0.12,
+                                                           0.15, 0.10, 4))
+
+
 def hind_feet():
-    """ЗАДНИЕ СТОПЫ — ПОЛЕМ в графе (узел `стопа`, 25.09), как передние кисти. Орган «Ежиные ноги» кусков не рисует:
-    пустой список в раскладке снимает прежний блок `лапа` целиком (`SpeciesHandoff` заменяет части органа, а не дополняет)."""
-    return dict(slot='Ноги', organ='Ежиные ноги', parts=[])
+    """ЗАДНИЕ СТОПЫ — орган «Ежиные ноги» на гнезде `Ноги`: стопа от пятки вперёд и 4 когтя."""
+    n = next(x for x in G.build_nodes() if x['name'] == 'голень')
+    return dict(slot='Ноги', organ='Ежиные ноги', parts=paw('голень', (n['b'][0], n['b'][2] - 0.06), n['b'][2] + 0.16,
+                                                           0.14, 0.10, 4))
 
 
 def main():
@@ -251,7 +273,7 @@ def main():
     ap.add_argument('--out', default=os.path.join(HERE, 'out', 'ezh-organs-layout-draft.json'))
     args = ap.parse_args()
     sp = spines()
-    organs = [hind_feet(),
+    organs = [fore_paws(), hind_feet(),
               dict(slot='Шкура', organ='Иглы', parts=sp),
               dict(slot='Игломёт', organ='Игломёт', parts=gun())]
     os.makedirs(os.path.dirname(args.out), exist_ok=True)

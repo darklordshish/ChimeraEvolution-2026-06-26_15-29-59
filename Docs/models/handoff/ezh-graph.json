@@ -190,11 +190,11 @@
       },
       "attach": 1.0,
       "freeOrigin": true,
-      "length": 0.1637,
+      "length": 0.2043,
       "endBone": "",
       "endAttach": 1.0,
       "dir": {
-        "x": 293.346,
+        "x": 298.636,
         "y": 0.0,
         "z": 0.0
       },
@@ -203,34 +203,6 @@
       "section": 1.0,
       "depth": 1.0,
       "blend": 0.05,
-      "chain": 0,
-      "mirrorX": true
-    },
-    {
-      "name": "кисть",
-      "parent": "предплечье",
-      "layer": 0,
-      "socket": "Руки",
-      "origin": {
-        "x": -0.04,
-        "y": 0.1714,
-        "z": 0.0155
-      },
-      "attach": 1.0,
-      "freeOrigin": true,
-      "length": 0.1435,
-      "endBone": "",
-      "endAttach": 1.0,
-      "dir": {
-        "x": -11.277,
-        "y": 0.0,
-        "z": 0.0
-      },
-      "r0": 0.062,
-      "r1": 0.05,
-      "section": 2.0,
-      "depth": 0.5,
-      "blend": 0.03,
       "chain": 0,
       "mirrorX": true
     },
@@ -274,11 +246,11 @@
       },
       "attach": 1.0,
       "freeOrigin": true,
-      "length": 0.1468,
+      "length": 0.1907,
       "endBone": "",
       "endAttach": 1.0,
       "dir": {
-        "x": -303.302,
+        "x": -317.361,
         "y": 0.0,
         "z": 0.0
       },
@@ -287,34 +259,6 @@
       "section": 1.0,
       "depth": 1.0,
       "blend": 0.05,
-      "chain": 0,
-      "mirrorX": true
-    },
-    {
-      "name": "стопа",
-      "parent": "голень",
-      "layer": 0,
-      "socket": "Ноги",
-      "origin": {
-        "x": 0.0,
-        "y": 0.1722,
-        "z": -0.0309
-      },
-      "attach": 1.0,
-      "freeOrigin": true,
-      "length": 0.1458,
-      "endBone": "",
-      "endAttach": 1.0,
-      "dir": {
-        "x": 238.326,
-        "y": 0.0,
-        "z": 0.0
-      },
-      "r0": 0.055,
-      "r1": 0.06,
-      "section": 1.6,
-      "depth": 0.58,
-      "blend": 0.03,
       "chain": 0,
       "mirrorX": true
     },
