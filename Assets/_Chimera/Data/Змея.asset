@@ -46,7 +46,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482518219816983
+    - rid: 4402482540938002435
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -60,6 +60,7 @@ MonoBehaviour:
       block: "\u0440\u044B\u043B\u043E"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
+      nest: 0
     visualSegments: 0
     visualTaper: 0
   - organName: "\u0425\u043B\u0430\u0434\u043D\u043E\u043A\u0440\u043E\u0432\u043D\u043E\u0435
@@ -130,7 +131,7 @@ MonoBehaviour:
     digestion: 1
     nativeChassis: 
     abilities:
-    - rid: 4402482518219816984
+    - rid: 4402482540938002436
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -218,6 +219,7 @@ MonoBehaviour:
       block: "\u0433\u043B\u0430\u0437"
       role: 1
       color: {r: 1, g: 0.45, b: 0.12, a: 1}
+      nest: 0
     - scale: {x: 0.5, y: 1, z: 1}
       offset: {x: 0, y: 0, z: 0}
       euler: {x: 0, y: 0, z: 0}
@@ -226,6 +228,7 @@ MonoBehaviour:
       block: "\u043A\u0430\u043F\u043B\u044F"
       role: 5
       color: {r: 0, g: 0, b: 0, a: 0}
+      nest: 0
     visualSegments: 0
     visualTaper: 0
   - organName: "\u041F\u043E\u0433\u0440\u0435\u043C\u0443\u0448\u043A\u0430"
@@ -271,6 +274,7 @@ MonoBehaviour:
       block: "\u0447\u0430\u0448\u043A\u0430"
       role: 0
       color: {r: 0.87, g: 0.82, b: 0.62, a: 1}
+      nest: 0
     - scale: {x: 0.76, y: 0.95, z: 0.44}
       offset: {x: 0, y: 0, z: 0.802}
       euler: {x: 0, y: 0, z: 0}
@@ -279,6 +283,7 @@ MonoBehaviour:
       block: "\u0447\u0430\u0448\u043A\u0430"
       role: 0
       color: {r: 0.87, g: 0.82, b: 0.62, a: 1}
+      nest: 0
     - scale: {x: 0.8, y: 1, z: 0.44}
       offset: {x: 0, y: 0, z: 0.406}
       euler: {x: 0, y: 0, z: 0}
@@ -287,6 +292,7 @@ MonoBehaviour:
       block: "\u0447\u0430\u0448\u043A\u0430"
       role: 0
       color: {r: 0.87, g: 0.82, b: 0.62, a: 1}
+      nest: 0
     - scale: {x: 0.784, y: 0.98, z: 0.44}
       offset: {x: 0, y: 0, z: 0.01}
       euler: {x: 0, y: 0, z: 0}
@@ -295,6 +301,7 @@ MonoBehaviour:
       block: "\u0447\u0430\u0448\u043A\u0430"
       role: 0
       color: {r: 0.87, g: 0.82, b: 0.62, a: 1}
+      nest: 0
     - scale: {x: 0.736, y: 0.92, z: 0.44}
       offset: {x: 0, y: 0, z: -0.386}
       euler: {x: 0, y: 0, z: 0}
@@ -303,6 +310,7 @@ MonoBehaviour:
       block: "\u0447\u0430\u0448\u043A\u0430"
       role: 0
       color: {r: 0.87, g: 0.82, b: 0.62, a: 1}
+      nest: 0
     - scale: {x: 0.656, y: 0.82, z: 0.44}
       offset: {x: 0, y: 0, z: -0.782}
       euler: {x: 0, y: 0, z: 0}
@@ -311,6 +319,7 @@ MonoBehaviour:
       block: "\u0447\u0430\u0448\u043A\u0430"
       role: 0
       color: {r: 0.87, g: 0.82, b: 0.62, a: 1}
+      nest: 0
     - scale: {x: 0.544, y: 0.68, z: 0.44}
       offset: {x: 0, y: 0, z: -1.178}
       euler: {x: 0, y: 0, z: 0}
@@ -319,6 +328,7 @@ MonoBehaviour:
       block: "\u0447\u0430\u0448\u043A\u0430"
       role: 0
       color: {r: 0.87, g: 0.82, b: 0.62, a: 1}
+      nest: 0
     visualSegments: 0
     visualTaper: 0
   - organName: "\u0425\u0432\u043E\u0441\u0442"
@@ -351,7 +361,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: "\u0417\u043C\u0435\u044F"
     abilities:
-    - rid: 4402482518219816985
+    - rid: 4402482540938002437
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -365,6 +375,7 @@ MonoBehaviour:
       block: "\u0437\u0432\u0435\u043D\u043E"
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
+      nest: 0
     visualSegments: 3
     visualTaper: 0.82
   eatsMeat: 1
@@ -415,6 +426,7 @@ MonoBehaviour:
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
+      nest: 0
     - scale: {x: 0.86, y: 0.34, z: 0.52}
       offset: {x: 0, y: 0.26, z: -0.14}
       euler: {x: 0, y: 0, z: 0}
@@ -423,6 +435,7 @@ MonoBehaviour:
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
+      nest: 0
     - scale: {x: 0.7, y: 0.88, z: 0.34}
       offset: {x: 0, y: -0.02, z: 0.1}
       euler: {x: 0, y: 0, z: 0}
@@ -431,6 +444,7 @@ MonoBehaviour:
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
+      nest: 0
     - scale: {x: 0.5, y: 0.66, z: 0.26}
       offset: {x: 0, y: -0.04, z: 0.34}
       euler: {x: 0, y: 0, z: 0}
@@ -439,6 +453,7 @@ MonoBehaviour:
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
+      nest: 0
     - scale: {x: 0.3, y: 0.16, z: 0.3}
       offset: {x: 0.3, y: 0.24, z: -0.04}
       euler: {x: 0, y: 0, z: 0}
@@ -447,6 +462,7 @@ MonoBehaviour:
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
+      nest: 0
     - scale: {x: 0.3, y: 0.16, z: 0.3}
       offset: {x: -0.3, y: 0.24, z: -0.04}
       euler: {x: 0, y: 0, z: 0}
@@ -455,6 +471,7 @@ MonoBehaviour:
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
+      nest: 0
     - scale: {x: 0.1, y: 0.1, z: 0.08}
       offset: {x: 0.16, y: 0.02, z: 0.44}
       euler: {x: 0, y: 0, z: 0}
@@ -463,6 +480,7 @@ MonoBehaviour:
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
+      nest: 0
     - scale: {x: 0.1, y: 0.1, z: 0.08}
       offset: {x: -0.16, y: 0.02, z: 0.44}
       euler: {x: 0, y: 0, z: 0}
@@ -471,6 +489,7 @@ MonoBehaviour:
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
+      nest: 0
     chain: 0
     chainTaper: 0
     linkDiameter: 0
@@ -500,6 +519,7 @@ MonoBehaviour:
       block: 
       role: 0
       color: {r: 0, g: 0, b: 0, a: 0}
+      nest: 0
     chain: 0
     chainTaper: 0
     linkDiameter: 0
@@ -529,6 +549,7 @@ MonoBehaviour:
       block: 
       role: 1
       color: {r: 0.1, g: 0.1, b: 0.12, a: 1}
+      nest: 0
     chain: 0
     chainTaper: 0
     linkDiameter: 0
@@ -789,6 +810,7 @@ MonoBehaviour:
     mirrorX: 0
   skeletonHides:
   - "\u0433\u043E\u043B\u043E\u0432\u0430"
+  nests: []
   skinCell: 0.042
   skinBlend: 0.05
   skinFur: 0
@@ -796,7 +818,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4402482518219816983
+    - rid: 4402482540938002435
       type: {class: BiteData, ns: , asm: Chimera.Runtime}
       data:
         damage: 24
@@ -808,7 +830,7 @@ MonoBehaviour:
         halfAngle: 55
         windupTime: 0.4
         cooldown: 0.7
-    - rid: 4402482518219816984
+    - rid: 4402482540938002436
       type: {class: LeapData, ns: , asm: Chimera.Runtime}
       data:
         damage: 8
@@ -820,7 +842,7 @@ MonoBehaviour:
         hitRadius: 1.5
         windupTime: 0.35
         staminaCost: 20
-    - rid: 4402482518219816985
+    - rid: 4402482540938002437
       type: {class: ConstrictData, ns: , asm: Chimera.Runtime}
       data:
         maxStage: 3

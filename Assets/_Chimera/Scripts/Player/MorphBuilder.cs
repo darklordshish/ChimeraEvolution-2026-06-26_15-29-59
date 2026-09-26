@@ -75,6 +75,12 @@ public static class MorphBuilder
             // землёй ровно на его рост, и это тот самый класс ошибок «мерь там же, где расставляешь»
             BoneMesher.Build(container.transform, chassis, PrimitiveMaterial());
         }
+        // КОСТИ КАК ТРАНСФОРМЫ — чтобы деталь гнезда стала ребёнком своей кости (П7): её повезёт анимация
+        var boneXf = new Dictionary<string, Transform>();
+        var skeleton = container.transform.Find("Skeleton");
+        if (skeleton != null)
+            foreach (var t in skeleton.GetComponentsInChildren<Transform>(true))
+                if (t != skeleton && !boneXf.ContainsKey(t.name)) boneXf[t.name] = t;
 
         // ГРАФ ХРЕБТА: место с `parent` не хранит своих координат — считаем их от родителя и НАСЛЕДУЕМ
         // его поворот. Поэтому наклон шеи тянет за собой голову, морду, уши и рога, а не оставляет их
@@ -108,6 +114,23 @@ public static class MorphBuilder
         {
             if (socket == null || string.IsNullOrEmpty(socket.name)) continue;
             organBySocket.TryGetValue(socket.name, out var organ);
+
+            // ГНЕЗДО (спека 26.09): аугмент, адресованный гнёздами, встаёт в гнездо ШАССИ — в его кадре и единицах,
+            // погашено место или нет (П1: «погашено» отнимает у места форму куба, но не гнездо). Куски без роли — в
+            // своё место; куски с ролью (уши, глаза, нос, ямки Чутья) — в место, которое берёт эту роль (`formFrom`)
+            bool nested = false;
+            if (Nested(organ))
+            {
+                NestParts(container.transform, chassis, socket, PartsFor(organ, PartRole.None), byBone, bonePos, boneXf);
+                nested = true;
+            }
+            if (!string.IsNullOrEmpty(socket.formFrom) && organBySocket.TryGetValue(socket.formFrom, out var nestSrc) && Nested(nestSrc))
+            {
+                NestParts(container.transform, chassis, socket, PartsFor(nestSrc, socket.formRole), byBone, bonePos, boneXf);
+                nested = true;
+            }
+            if (nested) continue;
+
             if (boneSockets.Contains(socket.name))
             {
                 // ФОРМУ ЭТОГО МЕСТА СТРОИТ ГРАФ — но куски органа, прикреплённые к УЗЛУ, рисуются и здесь. Ноги
@@ -303,6 +326,66 @@ public static class MorphBuilder
         return (pos, rot);
     }
 
+    // ── ГНЁЗДА (спека `2026-09-26-adresaciya-detaley-himery.md`) ─────────────────────────────────────────
+    static readonly SortedSet<string> missingNests = new();
+
+    /// <summary>ГНЁЗДА, КОТОРЫХ НЕ НАШЛОСЬ («Вид.место»): аугмент адресован гнездом, а у шасси его нет. Кусок не
+    /// рисуется — ставить его наугад значит снова повесить морду в воздух, — и промах виден машине.</summary>
+    public static IEnumerable<string> MissingNests => missingNests;
+
+    static bool Nested(Organ organ)
+    {
+        if (organ == null || organ.visualParts == null) return false;
+        foreach (var p in organ.visualParts) if (p != null && p.nest) return true;
+        return false;
+    }
+
+    static List<OrganPart> PartsFor(Organ organ, PartRole role)
+    {
+        var res = new List<OrganPart>();
+        foreach (var p in organ.visualParts) if (p != null && p.role == role) res.Add(p);
+        return res;
+    }
+
+    /// <summary>КУСКИ В ГНЕЗДЕ ШАССИ. Кадр — гнездо (поза кости-хозяина × кадр гнезда в ней), единица — его `unit`:
+    /// `offset` и `scale` умножаются на неё, `euler` — доворот в кадре гнезда. Форма донора, калибр носителя (П3).
+    /// Деталь строится в контейнере (там живут зеркало и все замеры) и вешается на кость с сохранением мирового
+    /// положения: правая — на `host`, зеркальная — на `host.L`, если кость парная.</summary>
+    static void NestParts(Transform container, SpeciesSO chassis, BodySocket socket, List<OrganPart> parts,
+                          Dictionary<string, Bone> byBone, Dictionary<string, (Vector3, Quaternion)> bonePos,
+                          Dictionary<string, Transform> boneXf)
+    {
+        if (parts.Count == 0) return;
+        PlaceNest nest = null;
+        if (chassis.nests != null) foreach (var n in chassis.nests) if (n != null && n.name == socket.name) { nest = n; break; }
+        if (nest == null || string.IsNullOrEmpty(nest.host) || !byBone.TryGetValue(nest.host, out var host))
+        {
+            missingNests.Add(chassis.speciesName + "." + socket.name);
+            return;
+        }
+
+        var (hp, hr) = SkeletonBuilder.Place(host, byBone, bonePos);
+        Vector3 np = hp + hr * nest.localPos;
+        Quaternion nr = hr * nest.localRot;
+        boneXf.TryGetValue(nest.host, out var right);
+        if (!boneXf.TryGetValue(nest.host + ".L", out var left)) left = right;
+
+        foreach (var pt in parts)
+        {
+            Vector3 pos = np + nr * (pt.offset * nest.unit);
+            Vector3 euler = (nr * Quaternion.Euler(pt.euler)).eulerAngles;
+            Vector3 size = pt.scale * nest.unit;
+            Hang(Mark(Spawn(container, socket.name, pos, euler, size, +1f, pt.shape, socket.solid, pt.block), pt), right);
+            if (nest.mirror)
+                Hang(Mark(Spawn(container, socket.name, pos, euler, size, -1f, pt.shape, socket.solid, pt.block), pt), left);
+        }
+    }
+
+    static void Hang(GameObject go, Transform bone)
+    {
+        if (go != null && bone != null) go.transform.SetParent(bone, true);
+    }
+
     static bool HasNodeParts(Organ organ)
     {
         if (organ == null || organ.visualParts == null) return false;
@@ -373,12 +456,13 @@ public static class MorphBuilder
         }
     }
 
-    static void Mark(GameObject go, OrganPart pt)
+    static GameObject Mark(GameObject go, OrganPart pt)
     {
-        if (pt.role == PartRole.None && pt.color.a <= 0f) return;
+        if (pt.role == PartRole.None && pt.color.a <= 0f) return go;
         var mark = go.AddComponent<PartMark>();
         mark.role = pt.role;
         mark.own = pt.color;
+        return go;
     }
 
     // одна куб-часть на якоре. side = +1/-1 — сторона парного якоря (зеркалим вынос по X и рыскание/крен,
@@ -684,6 +768,7 @@ public static class MorphBuilder
         catalog = null;
         catalogAsked = false;
         missingBlocks.Clear();
+        missingNests.Clear();
     }
 
     /// <summary>ИМЕНА БЛОКОВ, КОТОРЫХ НЕ НАШЛОСЬ, — долг библиотеки форм, видимый машине.</summary>

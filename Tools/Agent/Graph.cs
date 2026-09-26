@@ -143,9 +143,24 @@ public static class Graph
                 if (!string.IsNullOrEmpty(h) && !known.Contains(h)) bad.Add("гасится место «" + h + "», которого у вида нет");
         }
 
+        // ГНЁЗДА (спека 26.09, И6): раскладка гнёзд проверяется ПРОТИВ ЭТОГО ЖЕ графа — хозяин гнезда обязан быть его
+        // узлом, у каждого места вида обязано быть гнездо. Ассет не трогаем: проверка идёт на копии с новыми костями
+        string placesPath = path.Replace("-graph.json", "-places-layout.json");
+        string nestNote = "";
+        if (sp != null && placesPath != path && System.IO.File.Exists(placesPath))
+        {
+            var probe = Object.Instantiate(sp);
+            probe.bones = nodes;
+            var nests = SpeciesHandoff.ReadNests(probe, System.IO.File.ReadAllText(placesPath), out var problems);
+            Object.DestroyImmediate(probe);
+            foreach (var p in problems) bad.Add("гнёзда: " + p);
+            nestNote = string.Format(", гнёзд {0}", nests.Length);
+        }
+        else if (sp != null) nestNote = ", раскладки гнёзд нет (тотальность не проверена)";
+
         var sb = new StringBuilder();
-        sb.AppendFormat("поставка «{0}»: узлов {1}, скрытых мест {2}",
-                        d.species, nodes.Length, d.hides != null ? d.hides.Length : 0);
+        sb.AppendFormat("поставка «{0}»: узлов {1}, скрытых мест {2}{3}",
+                        d.species, nodes.Length, d.hides != null ? d.hides.Length : 0, nestNote);
         if (bad.Count == 0) { sb.Append("\nЧИСТО: инварианты держатся."); return sb.ToString(); }
         sb.Append("\nНАРУШЕНИЙ: ").Append(bad.Count);
         foreach (var b in bad) sb.Append("\n  • ").Append(b);

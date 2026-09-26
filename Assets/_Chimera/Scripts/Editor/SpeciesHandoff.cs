@@ -32,10 +32,13 @@ public static class SpeciesHandoff
 
     [System.Serializable] class Calibre { public float[] baseSize; public float[] sizeRel; }
     [System.Serializable] class PlaceDto { public string name, parent; public float attach; public float[] attachOffset, sizeRel, baseEuler; }
-    [System.Serializable] class PartDto { public string node, block, role; public float[] offset, scale, euler, color; }
+    [System.Serializable] class PartDto { public string node, block, role; public float[] offset, scale, euler, color; public bool nest; }
     [System.Serializable] class HeadLayout { public Calibre head; public PlaceDto[] places; public PartDto muzzle; public PartDto[] teeth, senses; }
     [System.Serializable] class OrganDto { public string slot, organ; public PartDto[] parts; }
     [System.Serializable] class OrgansLayout { public OrganDto[] organs; }
+    [System.Serializable] class SurfaceDto { public float z0, z1; }
+    [System.Serializable] class NestDto { public string name, host; public float[] pos, dir; public float unit; public bool mirror, proposed; public SurfaceDto surface; }
+    [System.Serializable] class PlacesLayout { public string species; public NestDto[] places; }
 
     /// <summary>Применить поставку вида целиком: граф, раскладку головы, раскладку кусков органов (ноги, рога). Каждый файл
     /// независим — нет раскладки, значит те места и органы остаются, какими их задал бутстрап.</summary>
@@ -51,6 +54,17 @@ public static class SpeciesHandoff
         // любых органов. Старое имя не читаем и не молчим: регенерация прежним генератором должна быть видна сразу
         if (System.IO.File.Exists(stem + "-legs-layout.json"))
             Debug.LogError($"[форма] {species.speciesName}: «{stem}-legs-layout.json» — устаревшее имя, файл НЕ читается. Раскладка кусков органов живёт в «-organs-layout.json» с корнем «organs»");
+        // ГНЁЗДА — ПОСЛЕ ГРАФА: кадр гнезда переводится в кадр кости-хозяина, а кости только что пришли из поставки.
+        // Нет файла — гнёзд нет, и это записывается ЯВНО: бутстрап не обнуляет поля, которые перестал присваивать
+        string places = System.IO.File.Exists(stem + "-places-layout.json") ? System.IO.File.ReadAllText(stem + "-places-layout.json") : null;
+        species.nests = new PlaceNest[0];
+        if (places != null)
+        {
+            species.nests = ReadNests(species, places, out var problems);
+            foreach (var p in problems) Debug.LogError($"[гнёзда] {species.speciesName}: {p}");
+            Debug.Log($"[гнёзда] {species.speciesName}: принято гнёзд {species.nests.Length}, замечаний {problems.Count}");
+        }
+
         if (head != null || organs != null)
         {
             int n = ApplyLayouts(species, head, organs);
@@ -172,6 +186,75 @@ public static class SpeciesHandoff
         return n;
     }
 
+    /// <summary>РАСКЛАДКА ГНЁЗД → гнёзда в кадре костей (спека 26.09, П1; формат — письмо модельной линии
+    /// `FEEDBACK-2026-09-26c-format-gnezd.md` §3). Поставка пишет гнездо в метрах тела — там же, где стоят кости графа
+    /// (`SkeletonBuilder.Place`), поэтому перевод — одна обратная поза кости. `problems` — всё, что не так: промах имени
+    /// места или кости, пустая единица, МЕСТО ВИДА БЕЗ ГНЕЗДА (тотальность, П2 — иначе привитому аугменту некуда
+    /// встать). Битое гнездо не применяется, остальные — да: одна опечатка не должна гасить всё тело.</summary>
+    public static PlaceNest[] ReadNests(SpeciesSO species, string json, out System.Collections.Generic.List<string> problems)
+    {
+        problems = new System.Collections.Generic.List<string>();
+        var res = new System.Collections.Generic.List<PlaceNest>();
+        PlacesLayout l;
+        try { l = JsonUtility.FromJson<PlacesLayout>(json); }
+        catch (System.Exception e) { problems.Add("раскладка гнёзд не разбирается — " + e.Message); return res.ToArray(); }
+        if (l == null || l.places == null) { problems.Add("в раскладке гнёзд нет «places»"); return res.ToArray(); }
+        if (!string.IsNullOrEmpty(l.species) && l.species != species.speciesName)
+        { problems.Add($"раскладка гнёзд названа для «{l.species}», а лежит у «{species.speciesName}»"); return res.ToArray(); }
+
+        var byBone = new System.Collections.Generic.Dictionary<string, Bone>();
+        foreach (var b in species.bones ?? new Bone[0]) if (b != null && !string.IsNullOrEmpty(b.name)) byBone[b.name] = b;
+        var pose = new System.Collections.Generic.Dictionary<string, (Vector3, Quaternion)>();
+
+        foreach (var d in l.places)
+        {
+            if (d == null || string.IsNullOrEmpty(d.name)) continue;
+            if (FindSocket(species, d.name) == null) { problems.Add($"гнездо «{d.name}» — такого места у вида нет"); continue; }
+            if (d.unit <= 0f) { problems.Add($"гнездо «{d.name}»: единица не задана"); continue; }
+
+            // хозяин — кость графа; у змеи цепь звеньев (`звено:N`) костями не является — такие гнёзда ждут своего
+            // хода в билдере, но записываются, чтобы тотальность считалась честно
+            Vector3 hp = Vector3.zero; Quaternion hr = Quaternion.identity;
+            bool chain = d.host != null && d.host.StartsWith("звено:");
+            if (!chain)
+            {
+                if (string.IsNullOrEmpty(d.host) || !byBone.TryGetValue(d.host, out var host))
+                { problems.Add($"гнездо «{d.name}»: кости-хозяина «{d.host}» в графе нет"); continue; }
+                (hp, hr) = SkeletonBuilder.Place(host, byBone, pose);
+            }
+
+            bool surface = d.surface != null && (d.surface.z0 != 0f || d.surface.z1 != 0f);
+            Vector3 pos = V(d.pos, surface ? hp : Vector3.zero);
+            Vector3 dir = V(d.dir, Vector3.forward);
+            if (dir.sqrMagnitude < 1e-8f) dir = Vector3.forward;
+            // «верх» гнезда — мировой верх; у вертикального гнезда (конечность, рог) — перёд тела
+            Vector3 up = Mathf.Abs(Vector3.Dot(dir.normalized, Vector3.up)) > 0.9f ? Vector3.forward : Vector3.up;
+            var rot = Quaternion.LookRotation(dir.normalized, up);
+
+            var inv = Quaternion.Inverse(hr);
+            res.Add(new PlaceNest
+            {
+                name = d.name,
+                host = d.host,
+                localPos = chain ? pos : inv * (pos - hp),
+                localRot = chain ? rot : inv * rot,
+                unit = d.unit,
+                mirror = d.mirror,
+                proposed = d.proposed,
+                span = surface ? new Vector2(d.surface.z0, d.surface.z1) : Vector2.zero,
+            });
+        }
+
+        // ТОТАЛЬНОСТЬ (П2): гнездо у КАЖДОГО места вида, включая те, которых у вида нет по природе
+        var have = new System.Collections.Generic.HashSet<string>();
+        foreach (var n in res) have.Add(n.name);
+        foreach (var s in species.sockets ?? new BodySocket[0])
+            if (s != null && !string.IsNullOrEmpty(s.name) && !have.Contains(s.name))
+                problems.Add($"у места «{s.name}» нет гнезда");
+
+        return res.ToArray();
+    }
+
     static BodySocket FindSocket(SpeciesSO s, string name)
     {
         if (s.sockets != null) foreach (var k in s.sockets) if (k != null && k.name == name) return k;
@@ -190,6 +273,7 @@ public static class SpeciesHandoff
     {
         node = p.node ?? "",
         block = p.block ?? "",
+        nest = p.nest,
         offset = V(p.offset, Vector3.zero),
         scale = V(p.scale, Vector3.one),
         euler = V(p.euler, Vector3.zero),
