@@ -134,7 +134,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482545037672474
+    - rid: 4402482560631832582
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -203,7 +203,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482545037672475
+    - rid: 4402482560631832583
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -282,7 +282,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482545037672476
+    - rid: 4402482560631832584
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -501,7 +501,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482545037672477
+    - rid: 4402482560631832585
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -1319,24 +1319,6 @@ MonoBehaviour:
     blend: 0.1
     chain: 0
     mirrorX: 0
-  - name: "\u043F\u0435\u0440\u0435\u043D\u043E\u0441\u044C\u0435"
-    parent: "\u0433\u043E\u043B\u043E\u0432\u0430"
-    layer: 0
-    origin: {x: 0, y: 0, z: 0}
-    socket: "\u0433\u043E\u043B\u043E\u0432\u0430"
-    attach: 1
-    freeOrigin: 0
-    length: 0.2
-    endBone: 
-    endAttach: 1
-    dir: {x: 0, y: 0, z: 0}
-    r0: 0.17
-    r1: 0.12
-    section: 0.7
-    depth: 1.45
-    blend: 0.06
-    chain: 0
-    mirrorX: 0
   - name: "\u0441\u0435\u0440\u044C\u0433\u0430"
     parent: "\u0448\u0435\u044F"
     layer: 0
@@ -1541,8 +1523,8 @@ MonoBehaviour:
     proposed: 0
     span: {x: 0, y: 0}
   - name: "\u043D\u043E\u0441"
-    host: "\u043F\u0435\u0440\u0435\u043D\u043E\u0441\u044C\u0435"
-    localPos: {x: 0, y: 0.6622182, z: -0.009219534}
+    host: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    localPos: {x: 0, y: 0.8822181, z: -0.009219641}
     localRot: {x: -0.838642, y: 0, z: 0, w: 0.544683}
     unit: 0.44
     mirror: 0
@@ -1565,8 +1547,8 @@ MonoBehaviour:
     proposed: 0
     span: {x: 0, y: 0}
   - name: "\u044F\u043C\u043A\u0438"
-    host: "\u043F\u0435\u0440\u0435\u043D\u043E\u0441\u044C\u0435"
-    localPos: {x: 0.12, y: 0.50384486, z: 0.02843541}
+    host: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    localPos: {x: 0.12, y: 0.72384477, z: 0.028435303}
     localRot: {x: -0.5930095, y: 0.38514906, z: -0.5930095, w: 0.38514906}
     unit: 0.44
     mirror: 1
@@ -1646,7 +1628,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4402482545037672474
+    - rid: 4402482560631832582
       type: {class: LimbStrikeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
@@ -1656,7 +1638,7 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.45
         cooldown: 1.1
-    - rid: 4402482545037672475
+    - rid: 4402482560631832583
       type: {class: ChargeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
@@ -1676,7 +1658,7 @@ MonoBehaviour:
         stompForce: 13
         plowForce: 6
         plowRadius: 1.6
-    - rid: 4402482545037672476
+    - rid: 4402482560631832584
       type: {class: BellowData, ns: , asm: Chimera.Runtime}
       data:
         fearRadius: 10
@@ -1684,7 +1666,7 @@ MonoBehaviour:
         fearMoraleHit: 2
         cooldown: 10
         cueTime: 1.2
-    - rid: 4402482545037672477
+    - rid: 4402482560631832585
       type: {class: AntlerData, ns: , asm: Chimera.Runtime}
       data:
         damage: 12
