@@ -164,7 +164,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482545181589514
+    - rid: 4402482560346882058
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -2666,6 +2666,16 @@ MonoBehaviour:
     visualEuler: {x: 0, y: 0, z: 0}
     visualAlignToBody: 0
     visualParts:
+    - scale: {x: 0.8504, y: 0.5641, z: 0.3229}
+      offset: {x: 0.1613, y: 0.0228, z: -0.1363}
+      euler: {x: 0.03, y: 0, z: 0}
+      shape: 0
+      node: 
+      block: "\u0431\u0440\u0443\u0441\u043E\u043A"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      nest: 1
+      stretch: 1
     - scale: {x: 1.3714, y: 1.1291, z: 1.6937}
       offset: {x: 0.1613, y: 0.142, z: 0.1802}
       euler: {x: -89.97, y: 0, z: 0}
@@ -2749,13 +2759,23 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: "\u0401\u0436"
     abilities:
-    - rid: 4402482545181589515
-    - rid: 4402482545181589516
+    - rid: 4402482560346882059
+    - rid: 4402482560346882060
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
     visualAlignToBody: 0
     visualParts:
+    - scale: {x: 0.868, y: 0.7, z: 0.4005}
+      offset: {x: 0, y: -0.0009, z: -0.1992}
+      euler: {x: -0.03, y: 0, z: 0}
+      shape: 0
+      node: 
+      block: "\u0431\u0440\u0443\u0441\u043E\u043A"
+      role: 0
+      color: {r: 0, g: 0, b: 0, a: 0}
+      nest: 1
+      stretch: 1
     - scale: {x: 1.4, y: 1.4, z: 2.5001}
       offset: {x: 0, y: 0.3497, z: 0.1003}
       euler: {x: -89.97, y: 180, z: 180}
@@ -2839,8 +2859,8 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: "\u0401\u0436"
     abilities:
-    - rid: 4402482545181589517
-    - rid: 4402482545181589518
+    - rid: 4402482560346882061
+    - rid: 4402482560346882062
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -4020,7 +4040,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4402482545181589514
+    - rid: 4402482560346882058
       type: {class: VolleyData, ns: , asm: Chimera.Runtime}
       data:
         damagePerQuill: 4
@@ -4035,14 +4055,14 @@ MonoBehaviour:
         windupTime: 0.5
         cooldown: 2.5
         blindAimError: 1.6
-    - rid: 4402482545181589515
+    - rid: 4402482560346882059
       type: {class: RollData, ns: , asm: Chimera.Runtime}
       data:
         damage: 10
         bleedStacks: 1
         knockForce: 8
         radius: 1.2
-    - rid: 4402482545181589516
+    - rid: 4402482560346882060
       type: {class: CurlData, ns: , asm: Chimera.Runtime}
       data:
         curlArmor: 0.6
@@ -4051,7 +4071,7 @@ MonoBehaviour:
         rollDrain: 40
         rollTurnSpeed: 90
         rollGravity: 20
-    - rid: 4402482545181589517
+    - rid: 4402482560346882061
       type: {class: BiteData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
@@ -4063,7 +4083,7 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.4
         cooldown: 0.7
-    - rid: 4402482545181589518
+    - rid: 4402482560346882062
       type: {class: ConstrictData, ns: , asm: Chimera.Runtime}
       data:
         maxStage: 1
