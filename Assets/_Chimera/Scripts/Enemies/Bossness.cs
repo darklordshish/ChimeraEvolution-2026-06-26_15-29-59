@@ -39,6 +39,12 @@ public class Bossness : MonoBehaviour
         [Min(0)] public int lifeSteal;
         [Tooltip("Временные HP: на сколько вампиризм может поднять свыше максимума. 0 — не выше максимума")]
         [Min(0)] public int overheal;
+        [Tooltip("СВОЙ порог слабого признания — только у босса (у всех 0.65). Он же ступень облика, доминанта психики и то, " +
+                 "как босса видит стая. Оборотню-вожаку — «строго больше половины», люфт для экшена, но не хаос " +
+                 "(геймдизайнер 29.09). 0 — как у всех")]
+        [Range(0f, 1f)] public float kinWeakAt = 0.501f;
+        [Tooltip("СВОЙ порог среднего признания (у всех 0.85). По балансу. 0 — как у всех")]
+        [Range(0f, 1f)] public float kinMediumAt;
     }
 
     [SerializeField] Settings settings = new();
@@ -64,6 +70,8 @@ public class Bossness : MonoBehaviour
     /// <summary>ШАГ 2 — внутри сборки, после рецепта состава: расширение конструктором и раскрытие генов.</summary>
     public void Extend(CreatureBody body)
     {
+        // ПОРОГИ — до психики: доминанту и психику диспатч берёт сразу после сборки состава
+        body.SetKinThresholds(settings.kinWeakAt, settings.kinMediumAt);
         ChimeraFactory.GrantAndFillChimeraSlots(body, settings.chimeraSlots);
         if (settings.expression > 0f) body.SetExpression(settings.expression);
     }

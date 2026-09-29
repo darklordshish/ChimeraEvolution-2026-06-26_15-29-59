@@ -798,10 +798,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b03d1f81fdfe06643ae852ea259dc409, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerAttack
-  damage: 10
-  range: 1.6
-  radius: 1
-  cooldown: 0.45
   hitstopDuration: 0.1
   shakeMagnitude: 0.25
 --- !u!114 &1083135095
@@ -849,11 +845,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bbb2323a0126e184b94f12a65bd9f279, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerKick
-  damage: 4
-  range: 1.8
-  radius: 1.6
-  force: 12
-  cooldown: 1
   shake: 0.4
 --- !u!114 &1083135098
 MonoBehaviour:
@@ -929,11 +920,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 69b224ba9ce9b5d4fa120c5dcc8b33dc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerHowl
-  radius: 7
-  stunDuration: 1
-  fearRadius: 14
-  fearMoraleHit: 2
-  cooldown: 8
   shake: 0.3
 --- !u!114 &1083135102
 MonoBehaviour:
@@ -947,16 +933,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 671b93079e84bfd42b0347189e3951fe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerConstrict
-  grabRange: 2.2
-  holdRange: 3.2
-  cooldown: 2.5
-  escapeMin: 1
-  escapeMax: 2.5
-  selfSlow1: 0.8
-  selfSlow2: 0.6
-  breakDamage: 5
-  escapeKnock: 6
-  dragOffset: 1.1
 --- !u!1 &1181631186
 GameObject:
   m_ObjectHideFlags: 0
@@ -1001,6 +977,8 @@ MonoBehaviour:
     grantsChimeraSlot: 1
     lifeSteal: 0
     overheal: 0
+    kinWeakAt: 0.501
+    kinMediumAt: 0
   autoSpawn: 0
   affinityThreshold: 75
   respawnDelay: 120

@@ -74,6 +74,18 @@ public partial class CreatureBody
         return null;
     }
 
+    /// <summary>СВОИ ПОРОГИ ПРИЗНАНИЯ — только для босса (`Bossness`, решение геймдизайнера 29.09: «боссу давали менять, а
+    /// не всем»). Пороги тела действуют сразу в трёх местах: ступень облика, доминанта для психики (`MostKin`) и то, как тело
+    /// видят другие (`Regard` берёт доминанту цели по ЕЁ порогам). 0 — оставить как у всех.</summary>
+    public void SetKinThresholds(float weak, float medium)
+    {
+        if (weak > 0f) weakAt = weak;
+        if (medium > 0f) mediumAt = medium;
+    }
+
+    public float WeakAt => weakAt;
+    public float MediumAt => mediumAt;
+
     /// <summary>Градация признания вида по ЭФФЕКТИВНОЙ идентичности (база − эрозия предательства): нет /
     /// слабое (≥weakAt) / среднее (≥mediumAt) / сильное (≈1). Кины судят игрока именно так — эрозия от
     /// ударов по своим просаживает признание, и «свой» становится чужим (Betrayal).</summary>
