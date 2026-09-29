@@ -136,7 +136,7 @@ public static class BoneMesher
         //     Отсюда же следует химеризация: донорский модуль просто встаёт на место шассийного, и
         // пересчитать надо ОДНУ лапу, а не всю тушу. Задача шасси — согласовать стыки: где сустав, куда
         // смотрит, какой там радиус; модуль обязан прийти в эту точку и зайти внутрь соседа с запасом.
-        string key = chassis.speciesName + "#" + bones.Length + "#L" + chassis.BuildLayers + (Flat ? "#грани" : "");
+        string key = (string.IsNullOrEmpty(chassis.meshKey) ? chassis.speciesName : chassis.meshKey) + "#" + bones.Length + "#L" + chassis.BuildLayers + (Flat ? "#грани" : "");
         // ЗАПИСЬ КЭША МОЖЕТ БЫТЬ МЁРТВОЙ. Кэш статический и переживает то, чего не переживают меши: выход из
         // Play, выгрузку сцены, `Resources.UnloadUnusedAssets` — ссылка из managed-словаря для Unity ссылкой
         // не считается, и неиспользуемый меш уничтожается. Словарь при этом отдаёт «Mesh», который равен null
