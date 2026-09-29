@@ -343,6 +343,7 @@ public static class SpeciesHandoff
         }
 
         species.bones = d.nodes;
+        BodyChains.ResolveRel(species.bones);   // узлы в долях родителя → метры (поставка 30); в JSON метров у них нет
         species.skeletonHides = d.hides ?? new string[0];
         Debug.Log($"[форма] {species.speciesName}: принят силуэтный граф из поставки — узлов {d.nodes.Length}, скрытых мест {species.skeletonHides.Length}");
         return true;

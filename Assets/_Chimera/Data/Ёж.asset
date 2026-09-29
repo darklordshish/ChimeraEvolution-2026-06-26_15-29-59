@@ -164,7 +164,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482560346882058
+    - rid: 4402482617069600778
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -2759,8 +2759,8 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: "\u0401\u0436"
     abilities:
-    - rid: 4402482560346882059
-    - rid: 4402482560346882060
+    - rid: 4402482617069600779
+    - rid: 4402482617069600780
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -2859,8 +2859,8 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: "\u0401\u0436"
     abilities:
-    - rid: 4402482560346882061
-    - rid: 4402482560346882062
+    - rid: 4402482617069600781
+    - rid: 4402482617069600782
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -3723,6 +3723,17 @@ MonoBehaviour:
     blend: 0.12
     chain: 0
     mirrorX: 0
+    limb: "\u0445\u0440\u0435\u0431\u0435\u0442"
+    mark:
+      a: 
+      b: 
+    rel:
+      at: 0
+      offX: 0
+      offZ: 0
+      len: 0
+      r0: 0
+      r1: 0
   - name: "\u043A\u043E\u0437\u044B\u0440\u0451\u043A"
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     layer: 0
@@ -3741,6 +3752,17 @@ MonoBehaviour:
     blend: 0.12
     chain: 0
     mirrorX: 0
+    limb: "\u0445\u0440\u0435\u0431\u0435\u0442"
+    mark:
+      a: 
+      b: 
+    rel:
+      at: 0
+      offX: 0
+      offZ: 0
+      len: 0
+      r0: 0
+      r1: 0
   - name: "\u0433\u0440\u0443\u0434\u044C"
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     layer: 0
@@ -3759,6 +3781,17 @@ MonoBehaviour:
     blend: 0.12
     chain: 0
     mirrorX: 0
+    limb: "\u0445\u0440\u0435\u0431\u0435\u0442"
+    mark:
+      a: 
+      b: 
+    rel:
+      at: 0
+      offX: 0
+      offZ: 0
+      len: 0
+      r0: 0
+      r1: 0
   - name: "\u0448\u0435\u044F"
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     layer: 0
@@ -3777,6 +3810,17 @@ MonoBehaviour:
     blend: 0.12
     chain: 0
     mirrorX: 0
+    limb: "\u0448\u0435\u044F"
+    mark:
+      a: "\u043E\u0441\u043D\u043E\u0432\u0430\u043D\u0438\u0435 \u0448\u0435\u0438"
+      b: "\u043E\u0441\u043D\u043E\u0432\u0430\u043D\u0438\u0435 \u0447\u0435\u0440\u0435\u043F\u0430"
+    rel:
+      at: 0
+      offX: 0
+      offZ: 0
+      len: 0
+      r0: 0
+      r1: 0
   - name: "\u0433\u043E\u043B\u043E\u0432\u0430"
     parent: "\u0448\u0435\u044F"
     layer: 0
@@ -3795,6 +3839,17 @@ MonoBehaviour:
     blend: 0.08
     chain: 0
     mirrorX: 0
+    limb: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    mark:
+      a: 
+      b: 
+    rel:
+      at: 0
+      offX: 0
+      offZ: 0
+      len: 0
+      r0: 0
+      r1: 0
   - name: "\u043F\u043B\u0435\u0447\u043E"
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     layer: 0
@@ -3813,6 +3868,17 @@ MonoBehaviour:
     blend: 0.1
     chain: 0
     mirrorX: 1
+    limb: "\u043F\u0435\u0440\u0435\u0434"
+    mark:
+      a: "\u043F\u043B\u0435\u0447\u043E"
+      b: "\u043B\u043E\u043A\u043E\u0442\u044C"
+    rel:
+      at: 0
+      offX: 0
+      offZ: 0
+      len: 0
+      r0: 0
+      r1: 0
   - name: "\u043F\u0440\u0435\u0434\u043F\u043B\u0435\u0447\u044C\u0435"
     parent: "\u043F\u043B\u0435\u0447\u043E"
     layer: 0
@@ -3831,6 +3897,17 @@ MonoBehaviour:
     blend: 0.05
     chain: 0
     mirrorX: 1
+    limb: "\u043F\u0435\u0440\u0435\u0434"
+    mark:
+      a: 
+      b: "\u0437\u0430\u043F\u044F\u0441\u0442\u044C\u0435"
+    rel:
+      at: 0
+      offX: 0
+      offZ: 0
+      len: 0
+      r0: 0
+      r1: 0
   - name: "\u0431\u0435\u0434\u0440\u043E"
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     layer: 0
@@ -3849,6 +3926,17 @@ MonoBehaviour:
     blend: 0.1
     chain: 0
     mirrorX: 1
+    limb: "\u0437\u0430\u0434"
+    mark:
+      a: "\u0431\u0435\u0434\u0440\u043E"
+      b: "\u043A\u043E\u043B\u0435\u043D\u043E"
+    rel:
+      at: 0
+      offX: 0
+      offZ: 0
+      len: 0
+      r0: 0
+      r1: 0
   - name: "\u0433\u043E\u043B\u0435\u043D\u044C"
     parent: "\u0431\u0435\u0434\u0440\u043E"
     layer: 0
@@ -3867,6 +3955,17 @@ MonoBehaviour:
     blend: 0.05
     chain: 0
     mirrorX: 1
+    limb: "\u0437\u0430\u0434"
+    mark:
+      a: 
+      b: "\u0441\u043A\u0430\u043A\u0430\u0442\u0435\u043B\u044C\u043D\u044B\u0439"
+    rel:
+      at: 0
+      offX: 0
+      offZ: 0
+      len: 0
+      r0: 0
+      r1: 0
   - name: "\u0445\u0432\u043E\u0441\u0442"
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     layer: 0
@@ -3885,6 +3984,17 @@ MonoBehaviour:
     blend: 0.05
     chain: 0
     mirrorX: 0
+    limb: "\u0445\u0432\u043E\u0441\u0442"
+    mark:
+      a: "\u043A\u043E\u0440\u0435\u043D\u044C \u0445\u0432\u043E\u0441\u0442\u0430"
+      b: 
+    rel:
+      at: 0
+      offX: 0
+      offZ: 0
+      len: 0
+      r0: 0
+      r1: 0
   skeletonHides:
   - "\u0445\u0440\u0435\u0431\u0435\u0442"
   - "\u0448\u0435\u044F"
@@ -4040,7 +4150,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4402482560346882058
+    - rid: 4402482617069600778
       type: {class: VolleyData, ns: , asm: Chimera.Runtime}
       data:
         damagePerQuill: 4
@@ -4055,14 +4165,14 @@ MonoBehaviour:
         windupTime: 0.5
         cooldown: 2.5
         blindAimError: 1.6
-    - rid: 4402482560346882059
+    - rid: 4402482617069600779
       type: {class: RollData, ns: , asm: Chimera.Runtime}
       data:
         damage: 10
         bleedStacks: 1
         knockForce: 8
         radius: 1.2
-    - rid: 4402482560346882060
+    - rid: 4402482617069600780
       type: {class: CurlData, ns: , asm: Chimera.Runtime}
       data:
         curlArmor: 0.6
@@ -4071,7 +4181,7 @@ MonoBehaviour:
         rollDrain: 40
         rollTurnSpeed: 90
         rollGravity: 20
-    - rid: 4402482560346882061
+    - rid: 4402482617069600781
       type: {class: BiteData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
@@ -4083,7 +4193,7 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.4
         cooldown: 0.7
-    - rid: 4402482560346882062
+    - rid: 4402482617069600782
       type: {class: ConstrictData, ns: , asm: Chimera.Runtime}
       data:
         maxStage: 1

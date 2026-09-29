@@ -46,7 +46,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482545037672471
+    - rid: 4402482617069600775
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -150,7 +150,7 @@ MonoBehaviour:
     digestion: 1
     nativeChassis: 
     abilities:
-    - rid: 4402482545037672472
+    - rid: 4402482617069600776
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -393,7 +393,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: "\u0417\u043C\u0435\u044F"
     abilities:
-    - rid: 4402482545037672473
+    - rid: 4402482617069600777
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -894,6 +894,17 @@ MonoBehaviour:
     blend: 0.06
     chain: 0
     mirrorX: 0
+    limb: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    mark:
+      a: "\u043E\u0441\u043D\u043E\u0432\u0430\u043D\u0438\u0435 \u0447\u0435\u0440\u0435\u043F\u0430"
+      b: 
+    rel:
+      at: 0
+      offX: 0
+      offZ: 0
+      len: 0
+      r0: 0
+      r1: 0
   skeletonHides:
   - "\u0433\u043E\u043B\u043E\u0432\u0430"
   nests:
@@ -1041,7 +1052,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4402482545037672471
+    - rid: 4402482617069600775
       type: {class: BiteData, ns: , asm: Chimera.Runtime}
       data:
         damage: 24
@@ -1053,7 +1064,7 @@ MonoBehaviour:
         halfAngle: 55
         windupTime: 0.4
         cooldown: 0.7
-    - rid: 4402482545037672472
+    - rid: 4402482617069600776
       type: {class: LeapData, ns: , asm: Chimera.Runtime}
       data:
         damage: 8
@@ -1065,7 +1076,7 @@ MonoBehaviour:
         hitRadius: 1.5
         windupTime: 0.35
         staminaCost: 20
-    - rid: 4402482545037672473
+    - rid: 4402482617069600777
       type: {class: ConstrictData, ns: , asm: Chimera.Runtime}
       data:
         maxStage: 3

@@ -109,6 +109,7 @@ public static class Graph
         else { sp = Load(d.species); if (sp == null) bad.Add("вида «" + d.species + "» нет в Data/"); }
 
         var nodes = d.nodes ?? new Bone[0];
+        int relCount = BodyChains.ResolveRel(nodes);   // как при импорте: узел в долях своих метров в JSON не несёт
         if (nodes.Length == 0) bad.Add("узлов нет вовсе");
         if (nodes.Length > SoftNodeCap)
             bad.Add(string.Format("узлов {0} — это анатомия, а не силуэт (ориентир ~20, мягкий потолок {1})", nodes.Length, SoftNodeCap));
@@ -128,6 +129,25 @@ public static class Graph
         foreach (var n in nodes)
             if (n != null && !string.IsNullOrEmpty(n.parent) && !names.Contains(n.parent))
                 bad.Add("узел «" + n.name + "» ссылается на несуществующего родителя «" + n.parent + "»");
+
+        // РАЗМЕТКА ЦЕПЕЙ (спека двух слоёв §4.1, формат 29c): у каждого узла цепь из словаря, метки из словаря и каждая
+        // не больше раза на вид; узел в долях — всегда без меток (метка — место разреза, бугор резать нечем)
+        var marks = new HashSet<string>();
+        int noLimb = 0;
+        foreach (var n in nodes)
+        {
+            if (n == null || string.IsNullOrEmpty(n.name)) continue;
+            if (string.IsNullOrEmpty(n.limb)) noLimb++;
+            else if (!BodyChains.IsLimb(n.limb)) bad.Add("узел «" + n.name + "»: цепи «" + n.limb + "» нет в словаре");
+            foreach (var m in new[] { n.mark != null ? n.mark.a : null, n.mark != null ? n.mark.b : null })
+            {
+                if (string.IsNullOrEmpty(m)) continue;
+                if (!BodyChains.IsMark(m)) bad.Add("узел «" + n.name + "»: метки «" + m + "» нет в словаре (холку и крестец не ставить — их считает механика)");
+                else if (!marks.Add(m)) bad.Add("метка «" + m + "» стоит дважды");
+                if (n.rel != null && n.rel.On) bad.Add("узел «" + n.name + "» в долях родителя несёт метку «" + m + "» — бугор не место разреза");
+            }
+        }
+        if (noLimb > 0) bad.Add("узлов без цепи (`limb`): " + noLimb + " — без разметки аугменту нечего подставить");
 
         if (roots == 0) bad.Add("нет корневого узла (с пустым `parent`)");
         if (roots > 1) bad.Add("корней " + roots + " — граф обязан быть СВЯЗНЫМ, корень один");
@@ -159,8 +179,8 @@ public static class Graph
         else if (sp != null) nestNote = ", раскладки гнёзд нет (тотальность не проверена)";
 
         var sb = new StringBuilder();
-        sb.AppendFormat("поставка «{0}»: узлов {1}, скрытых мест {2}{3}",
-                        d.species, nodes.Length, d.hides != null ? d.hides.Length : 0, nestNote);
+        sb.AppendFormat("поставка «{0}»: узлов {1}, скрытых мест {2}{3}, меток {4}, в долях {5}",
+                        d.species, nodes.Length, d.hides != null ? d.hides.Length : 0, nestNote, marks.Count, relCount);
         if (bad.Count == 0) { sb.Append("\nЧИСТО: инварианты держатся."); return sb.ToString(); }
         sb.Append("\nНАРУШЕНИЙ: ").Append(bad.Count);
         foreach (var b in bad) sb.Append("\n  • ").Append(b);
