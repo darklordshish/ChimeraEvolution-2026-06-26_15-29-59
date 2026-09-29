@@ -165,6 +165,35 @@ public partial class CreatureBody
     }
 
     /// <summary>Выдать универсальный ХИМЕРНЫЙ слот (награда суперхимеры / dev). Живо в рантайме.</summary>
+    /// <summary>НАДЕТОЕ В ПОРЯДКЕ ОТРИСОВКИ: на общем месте виден первый (решение геймдизайнера 29.09, спека двух слоёв,
+    /// решение 14). Прививка в родном слоте → прививка в химерном (разные доноры — по убыванию идентичности донора) →
+    /// собственный орган шасси. Собственный орган — не аугмент и уступает любой прививке: иначе химерный слот,
+    /// поставленный поверх своей руки, не виден вовсе, и контур врага врёт о том, что у него работает (GDD §9).
+    /// Работают при этом ВСЕ надетые органы — порядок только про то, чья форма на месте.</summary>
+    public List<Organ> WornInDrawOrder()
+    {
+        var nativeGrafts = new List<Organ>();
+        var chimeraGrafts = new List<(Organ organ, float id)>();
+        var own = new List<Organ>();
+        if (slots != null)
+            foreach (var sl in slots)
+            {
+                if (sl.Empty || sl.Worn == null) continue;
+                if (!sl.Installed) own.Add(sl.Worn);
+                else if (!sl.chimera) nativeGrafts.Add(sl.Worn);
+                else
+                {
+                    var sp = FindSpecies(sl.DonorSpecies);
+                    chimeraGrafts.Add((sl.Worn, sp != null ? Identity(sp) : 0f));
+                }
+            }
+        var worn = new List<Organ>(nativeGrafts);
+        chimeraGrafts.Sort((a, b) => b.id.CompareTo(a.id)); // Sort нестабилен, но при равной идентичности форма одна и та же — донор тот же
+        foreach (var g in chimeraGrafts) worn.Add(g.organ);
+        worn.AddRange(own);
+        return worn;
+    }
+
     public void GrantChimeraSlot()
     {
         chimeraSlots++;

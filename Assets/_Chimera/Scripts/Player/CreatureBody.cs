@@ -371,8 +371,7 @@ public partial class CreatureBody : MonoBehaviour
         // СНОСИТ старый Morph, если остался от прежнего билда, и не строит). Гейт по скелету (Волк/Человек).
         if (chassis != null && chassis.sockets != null && chassis.sockets.Length > 0)
         {
-            var worn = new System.Collections.Generic.List<Organ>();
-            foreach (var sl in slots) if (!sl.Empty && sl.Worn != null) worn.Add(sl.Worn); // слоты шасси раньше химерных → шасси-фёрст
+            var worn = WornInDrawOrder();
             var blendedPlan = GetBlendedPlan(); // Ф6: смешение по Identity с локальностью (Пасть→голова, Руки/Ноги→хребет исключён); null = тождественность
             MorphBuilder.Build(transform, chassis, worn, blendedPlan); // ИГРОК СТРОИТСЯ ТАК ЖЕ: его тело — такая же химера, без исключений
             // ЧАСТИ НОВЫЕ — ВСЕ, КТО ДЕРЖИТ НА НИХ ССЫЛКИ, ПЕРЕ-СОБИРАЮТСЯ. Ссылка, снятая в Awake, к этому

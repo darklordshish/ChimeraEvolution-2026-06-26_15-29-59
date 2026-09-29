@@ -11,7 +11,7 @@ public static class MorphBuilder
     const string Container = "Morph";
 
     /// <summary>Пересобрать куб-модель под `root` по надетым органам и скелету `chassis`.
-    /// wornOrgans — надетые органы В ПОРЯДКЕ приоритета (РОДНЫЕ раньше химерных → шасси-фёрст: первый занявший
+    /// wornOrgans — надетые органы В ПОРЯДКЕ ОТРИСОВКИ (`CreatureBody.WornInDrawOrder`: первый занявший
     /// part побеждает). worn == null → только СНОСИТ старый Morph (для игрока: остаётся его PlayerModel).</summary>
     public static void Build(Transform root, SpeciesSO chassis, IReadOnlyList<Organ> wornOrgans,
                              BodySocket[] plan = null)
@@ -31,8 +31,9 @@ public static class MorphBuilder
         if (chassis == null || chassis.sockets == null || chassis.sockets.Length == 0 || wornOrgans == null) return;
 
         // орган на СОКЕТ по его `slot` — место следует из механики, отдельного поля-адреса нет.
-        // ПЕРВИЧЕН орган РОДНОГО слота шасси (он раньше в списке), химерный — вторичный: на общем сокете
-        // виден первичный. Слияние дизайна двух органов на одном месте — отдельная фича (сокет морфный)
+        // НА ОБЩЕМ СОКЕТЕ ВИДЕН ПЕРВЫЙ: порядок задаёт тело (`CreatureBody.WornInDrawOrder`, решение 14 спеки двух
+        // слоёв) — прививка в родном слоте, потом в химерном, собственный орган шасси последним. Слияние двух органов на
+        // одном месте — отдельная фича (сокет морфный)
         var organBySocket = new Dictionary<string, Organ>();
         foreach (var o in wornOrgans)
             if (o != null && !string.IsNullOrEmpty(o.slot) && !organBySocket.ContainsKey(o.slot))
