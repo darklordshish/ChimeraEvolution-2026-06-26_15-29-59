@@ -30,7 +30,11 @@
       "depth": 0.8411764705882353,
       "blend": 0.06,
       "chain": 0,
-      "mirrorX": false
+      "mirrorX": false,
+      "limb": "голова",
+      "mark": {
+        "a": "основание черепа"
+      }
     }
   ]
 }

@@ -36,6 +36,9 @@ import math
 import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'tools'))
+import razmetka as R
 
 # ── СНИМОК → МЕТРЫ ──────────────────────────────────────────────────────────────────────────────────
 GROUND_PX, WITHERS_PX, MID_X_PX = 1475.0, 380.0, 830.0
@@ -300,6 +303,18 @@ def to_bones(nodes):
 HIDES = ['хребет', 'шея', 'голова', 'Шкура', 'Сердце', 'Руки', 'Ноги', 'Хвост']
 
 
+# ── РАЗМЕТКА ЦЕПЕЙ (`Anatomy/tools/razmetka.py`, письмо механик 29c): узел → (цепь, метка начала, метка конца) ──
+RAZMETKA = {
+    'хребет': ('хребет', None, None), 'крестец': ('хребет', None, None), 'грудной': ('хребет', None, None),
+    'грудь': ('хребет', None, None), 'загривок': ('хребет', None, None),     # бугры туши; загривок и грива — черта (29d)
+    'шея': ('шея', 'основание шеи', 'основание черепа'), 'грива': ('шея', None, None),
+    'голова': ('голова', None, None),
+    'лопатка': ('перед', None, 'плечо'), 'плечо': ('перед', None, 'локоть'), 'предплечье': ('перед', None, 'запястье'),
+    'бедро': ('зад', 'бедро', 'колено'), 'ляжка': ('зад', None, None), 'голень': ('зад', None, 'скакательный'),
+    'хвост': ('хвост', 'корень хвоста', None), 'хвост_кисть': ('хвост', None, None),
+}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--out', default=os.path.join(HERE, 'out', 'volk-graph-draft.json'))
@@ -308,6 +323,7 @@ def main():
 
     nodes = build_nodes(args.preview_muzzle)
     bones = to_bones(nodes)
+    R.apply(bones, RAZMETKA, 'Волк')
     doc = dict(species='Волк', hides=HIDES, nodes=bones)
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     with open(args.out, 'w', encoding='utf-8') as f:

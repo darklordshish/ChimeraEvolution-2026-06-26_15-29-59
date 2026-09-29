@@ -37,6 +37,9 @@ import os
 import ref_trace as RT
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'tools'))
+import razmetka as R
 
 def v_sub(a, b): return tuple(x - y for x, y in zip(a, b))
 def v_add(a, b): return tuple(x + y for x, y in zip(a, b))
@@ -569,12 +572,35 @@ def to_bones(nodes):
     return out
 
 
+# ── РАЗМЕТКА ЦЕПЕЙ (`Anatomy/tools/razmetka.py`, письмо механик 29c): узел → (цепь, метка начала, метка конца) ──
+def _loft(base, n, limb):
+    return {'%s%d' % (base, i): (limb, None, None) for i in range(1, n + 1)}
+
+
+RAZMETKA = {
+    'хребет': ('хребет', None, None), 'пояс1': ('хребет', None, None), 'пояс2': ('хребет', None, None),
+    **_loft('грудь', 3, 'хребет'),                                 # сечения туши вдоль хребта
+    'грудная': ('хребет', None, None), 'ягодица': ('хребет', None, None),
+    'шея': ('шея', 'основание шеи', 'основание черепа'), 'трапеция': ('шея', None, None),
+    'голова': ('голова', None, None), 'челюсть': ('голова', None, None), 'морда': ('голова', None, None),
+    'надбровье': ('голова', None, None),
+    'лопатка': ('перед', None, 'плечо'), 'дельта-перед': ('перед', None, None), 'дельта': ('перед', None, None),
+    'дельта-зад': ('перед', None, None),
+    'плечо': ('перед', None, 'локоть'), **_loft('плечо', 3, 'перед'),
+    'предплечье': ('перед', None, 'запястье'), **_loft('предплечье', 4, 'перед'),
+    'бедро': ('зад', 'бедро', 'колено'), **_loft('бедро', 4, 'зад'),
+    'голень': ('зад', None, 'скакательный'), **_loft('голень', 6, 'зад'), 'икра': ('зад', None, None),
+    # хвоста нет: `корень хвоста` у человека не ставится (проверка механик это знает)
+}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--out', default=os.path.join(HERE, 'out', 'chelovek-graph-draft.json'))
     args = ap.parse_args()
     nodes = build_nodes()
     bones = to_bones(nodes)
+    R.apply(bones, RAZMETKA, 'Человек')
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     with open(args.out, 'w', encoding='utf-8') as f:
         json.dump(dict(species='Человек', hides=HIDES, nodes=bones), f, ensure_ascii=False, indent=2)

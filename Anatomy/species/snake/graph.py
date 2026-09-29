@@ -21,6 +21,9 @@ import json
 import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'tools'))
+import razmetka as R
 
 
 def _wolf_graph():
@@ -65,12 +68,18 @@ def build_nodes():
 HIDES = ['голова']
 
 
+# ── РАЗМЕТКА ЦЕПЕЙ (`Anatomy/tools/razmetka.py`, письмо механик 29c): узел → (цепь, метка начала, метка конца) ──
+# граф змеи — одна голова; шея, хребет и хвост — звенья (шея 1–4, хребет 5–11, хвост 12–14 + погремушка; письмо 29c §2)
+RAZMETKA = {'голова': ('голова', 'основание черепа', None)}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--out', default=os.path.join(HERE, 'out', 'zmeya-graph-draft.json'))
     args = ap.parse_args()
     nodes = build_nodes()
     bones = to_bones(nodes)
+    R.apply(bones, RAZMETKA, 'Змея')
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     with open(args.out, 'w', encoding='utf-8') as f:
         json.dump(dict(species='Змея', hides=HIDES, nodes=bones), f, ensure_ascii=False, indent=2)

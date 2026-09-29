@@ -25,6 +25,9 @@ import json
 import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'tools'))
+import razmetka as R
 
 
 def _wolf_graph():
@@ -151,12 +154,25 @@ def build_nodes():
 HIDES = ['хребет', 'шея', 'голова', 'Сердце', 'Руки', 'Ноги', 'Хвост']
 
 
+# ── РАЗМЕТКА ЦЕПЕЙ (`Anatomy/tools/razmetka.py`, письмо механик 29c): узел → (цепь, метка начала, метка конца) ──
+RAZMETKA = {
+    'хребет': ('хребет', None, None), 'козырёк': ('хребет', None, None), 'грудь': ('хребет', None, None),
+    'шея': ('шея', 'основание шеи', 'основание черепа'),
+    'голова': ('голова', None, None),
+    # ЛОПАТКИ НЕТ: плечо растёт из туши, метка `плечо` на его начале — там же механика возьмёт холку (участок нулевой)
+    'плечо': ('перед', 'плечо', 'локоть'), 'предплечье': ('перед', None, 'запястье'),
+    'бедро': ('зад', 'бедро', 'колено'), 'голень': ('зад', None, 'скакательный'),   # скакательный = щиколотка (гомология)
+    'хвост': ('хвост', 'корень хвоста', None),
+}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--out', default=os.path.join(HERE, 'out', 'ezh-graph-draft.json'))
     args = ap.parse_args()
     nodes = build_nodes()
     bones = to_bones(nodes)
+    R.apply(bones, RAZMETKA, 'Ёж')
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     with open(args.out, 'w', encoding='utf-8') as f:
         json.dump(dict(species='Ёж', hides=HIDES, nodes=bones), f, ensure_ascii=False, indent=2)

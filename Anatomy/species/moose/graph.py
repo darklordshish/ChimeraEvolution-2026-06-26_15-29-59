@@ -31,6 +31,9 @@ import math
 import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', 'tools'))
+import razmetka as R
 
 
 def _wolf_graph():
@@ -218,6 +221,18 @@ def build_nodes():
 HIDES = ['хребет', 'шея', 'голова', 'горб', 'Шкура', 'Сердце', 'Руки', 'Ноги', 'Хвост']
 
 
+# ── РАЗМЕТКА ЦЕПЕЙ (`Anatomy/tools/razmetka.py`, письмо механик 29c): узел → (цепь, метка начала, метка конца) ──
+RAZMETKA = {
+    'хребет': ('хребет', None, None), 'крестец': ('хребет', None, None), 'грудной': ('хребет', None, None),
+    'грудь': ('хребет', None, None), 'горб': ('хребет', None, None), 'грива': ('хребет', None, None),  # горб+грива — черта
+    'шея': ('шея', 'основание шеи', 'основание черепа'), 'серьга': ('шея', None, None),
+    'голова': ('голова', None, None),
+    'лопатка': ('перед', None, 'плечо'), 'плечо': ('перед', None, 'локоть'), 'предплечье': ('перед', None, 'запястье'),
+    'бедро': ('зад', 'бедро', 'колено'), 'ляжка': ('зад', None, None), 'голень': ('зад', None, 'скакательный'),
+    'хвост': ('хвост', 'корень хвоста', None),
+}
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--out', default=os.path.join(HERE, 'out', 'los-graph-draft.json'))
@@ -225,6 +240,7 @@ def main():
 
     nodes = build_nodes()
     bones = to_bones(nodes)
+    R.apply(bones, RAZMETKA, 'Лось')
     doc = dict(species='Лось', hides=HIDES, nodes=bones)
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     with open(args.out, 'w', encoding='utf-8') as f:

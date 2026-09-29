@@ -36,7 +36,9 @@
       "depth": 1.0,
       "blend": 0.02,
       "chain": 0,
-      "mirrorX": false
+      "mirrorX": false,
+      "limb": "хребет",
+      "mark": {}
     },
     {
       "name": "пояс1",
@@ -64,7 +66,9 @@
       "depth": 1.538,
       "blend": 0.008,
       "chain": 0,
-      "mirrorX": false
+      "mirrorX": false,
+      "limb": "хребет",
+      "mark": {}
     },
     {
       "name": "пояс2",
@@ -92,7 +96,9 @@
       "depth": 1.0,
       "blend": 0.008,
       "chain": 0,
-      "mirrorX": false
+      "mirrorX": false,
+      "limb": "хребет",
+      "mark": {}
     },
     {
       "name": "грудь1",
@@ -120,7 +126,9 @@
       "depth": 1.0,
       "blend": 0.008,
       "chain": 0,
-      "mirrorX": false
+      "mirrorX": false,
+      "limb": "хребет",
+      "mark": {}
     },
     {
       "name": "грудь2",
@@ -148,7 +156,9 @@
       "depth": 1.0,
       "blend": 0.008,
       "chain": 0,
-      "mirrorX": false
+      "mirrorX": false,
+      "limb": "хребет",
+      "mark": {}
     },
     {
       "name": "грудь3",
@@ -176,7 +186,9 @@
       "depth": 1.0,
       "blend": 0.008,
       "chain": 0,
-      "mirrorX": false
+      "mirrorX": false,
+      "limb": "хребет",
+      "mark": {}
     },
     {
       "name": "шея",
@@ -204,7 +216,12 @@
       "depth": 1.18,
       "blend": 0.04,
       "chain": 0,
-      "mirrorX": false
+      "mirrorX": false,
+      "limb": "шея",
+      "mark": {
+        "a": "основание шеи",
+        "b": "основание черепа"
+      }
     },
     {
       "name": "трапеция",
@@ -232,7 +249,9 @@
       "depth": 1.0,
       "blend": 0.04,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "шея",
+      "mark": {}
     },
     {
       "name": "голова",
@@ -260,7 +279,9 @@
       "depth": 1.2,
       "blend": 0.03,
       "chain": 0,
-      "mirrorX": false
+      "mirrorX": false,
+      "limb": "голова",
+      "mark": {}
     },
     {
       "name": "челюсть",
@@ -288,7 +309,9 @@
       "depth": 1.0,
       "blend": 0.02,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "голова",
+      "mark": {}
     },
     {
       "name": "морда",
@@ -316,7 +339,9 @@
       "depth": 1.0,
       "blend": 0.02,
       "chain": 0,
-      "mirrorX": false
+      "mirrorX": false,
+      "limb": "голова",
+      "mark": {}
     },
     {
       "name": "надбровье",
@@ -344,7 +369,9 @@
       "depth": 1.0,
       "blend": 0.02,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "голова",
+      "mark": {}
     },
     {
       "name": "грудная",
@@ -372,7 +399,9 @@
       "depth": 1.0,
       "blend": 0.015,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "хребет",
+      "mark": {}
     },
     {
       "name": "ягодица",
@@ -400,7 +429,9 @@
       "depth": 1.0,
       "blend": 0.02,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "хребет",
+      "mark": {}
     },
     {
       "name": "лопатка",
@@ -428,7 +459,11 @@
       "depth": 1.0,
       "blend": 0.04,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "перед",
+      "mark": {
+        "b": "плечо"
+      }
     },
     {
       "name": "дельта-перед",
@@ -456,7 +491,9 @@
       "depth": 1.0,
       "blend": 0.012,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "перед",
+      "mark": {}
     },
     {
       "name": "дельта",
@@ -484,7 +521,9 @@
       "depth": 1.0,
       "blend": 0.012,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "перед",
+      "mark": {}
     },
     {
       "name": "дельта-зад",
@@ -512,7 +551,9 @@
       "depth": 1.0,
       "blend": 0.012,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "перед",
+      "mark": {}
     },
     {
       "name": "плечо",
@@ -540,7 +581,11 @@
       "depth": 1.0,
       "blend": 0.02,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "перед",
+      "mark": {
+        "b": "локоть"
+      }
     },
     {
       "name": "плечо1",
@@ -568,7 +613,9 @@
       "depth": 2.129,
       "blend": 0.015,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "перед",
+      "mark": {}
     },
     {
       "name": "плечо2",
@@ -596,7 +643,9 @@
       "depth": 1.467,
       "blend": 0.015,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "перед",
+      "mark": {}
     },
     {
       "name": "плечо3",
@@ -624,7 +673,9 @@
       "depth": 1.431,
       "blend": 0.015,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "перед",
+      "mark": {}
     },
     {
       "name": "предплечье",
@@ -652,7 +703,11 @@
       "depth": 1.0,
       "blend": 0.02,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "перед",
+      "mark": {
+        "b": "запястье"
+      }
     },
     {
       "name": "предплечье1",
@@ -680,7 +735,9 @@
       "depth": 1.216,
       "blend": 0.015,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "перед",
+      "mark": {}
     },
     {
       "name": "предплечье2",
@@ -708,7 +765,9 @@
       "depth": 1.0,
       "blend": 0.015,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "перед",
+      "mark": {}
     },
     {
       "name": "предплечье3",
@@ -736,7 +795,9 @@
       "depth": 1.186,
       "blend": 0.015,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "перед",
+      "mark": {}
     },
     {
       "name": "предплечье4",
@@ -764,7 +825,9 @@
       "depth": 2.052,
       "blend": 0.015,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "перед",
+      "mark": {}
     },
     {
       "name": "бедро",
@@ -792,7 +855,12 @@
       "depth": 1.0,
       "blend": 0.02,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "зад",
+      "mark": {
+        "a": "бедро",
+        "b": "колено"
+      }
     },
     {
       "name": "бедро1",
@@ -820,7 +888,9 @@
       "depth": 1.566,
       "blend": 0.008,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "зад",
+      "mark": {}
     },
     {
       "name": "бедро2",
@@ -848,7 +918,9 @@
       "depth": 1.253,
       "blend": 0.008,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "зад",
+      "mark": {}
     },
     {
       "name": "бедро3",
@@ -876,7 +948,9 @@
       "depth": 1.253,
       "blend": 0.008,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "зад",
+      "mark": {}
     },
     {
       "name": "бедро4",
@@ -904,7 +978,9 @@
       "depth": 1.253,
       "blend": 0.008,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "зад",
+      "mark": {}
     },
     {
       "name": "голень",
@@ -932,7 +1008,11 @@
       "depth": 1.0,
       "blend": 0.02,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "зад",
+      "mark": {
+        "b": "скакательный"
+      }
     },
     {
       "name": "голень1",
@@ -960,7 +1040,9 @@
       "depth": 1.315,
       "blend": 0.015,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "зад",
+      "mark": {}
     },
     {
       "name": "голень2",
@@ -988,7 +1070,9 @@
       "depth": 1.166,
       "blend": 0.015,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "зад",
+      "mark": {}
     },
     {
       "name": "голень3",
@@ -1016,7 +1100,9 @@
       "depth": 1.055,
       "blend": 0.015,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "зад",
+      "mark": {}
     },
     {
       "name": "голень4",
@@ -1044,7 +1130,9 @@
       "depth": 1.193,
       "blend": 0.015,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "зад",
+      "mark": {}
     },
     {
       "name": "голень5",
@@ -1072,7 +1160,9 @@
       "depth": 1.416,
       "blend": 0.015,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "зад",
+      "mark": {}
     },
     {
       "name": "голень6",
@@ -1100,7 +1190,9 @@
       "depth": 1.342,
       "blend": 0.015,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "зад",
+      "mark": {}
     },
     {
       "name": "икра",
@@ -1128,7 +1220,9 @@
       "depth": 1.0,
       "blend": 0.015,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "зад",
+      "mark": {}
     }
   ]
 }

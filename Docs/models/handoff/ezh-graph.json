@@ -36,7 +36,9 @@
       "depth": 1.0,
       "blend": 0.12,
       "chain": 0,
-      "mirrorX": false
+      "mirrorX": false,
+      "limb": "хребет",
+      "mark": {}
     },
     {
       "name": "козырёк",
@@ -64,7 +66,9 @@
       "depth": 1.0,
       "blend": 0.12,
       "chain": 0,
-      "mirrorX": false
+      "mirrorX": false,
+      "limb": "хребет",
+      "mark": {}
     },
     {
       "name": "грудь",
@@ -92,7 +96,9 @@
       "depth": 1.0,
       "blend": 0.12,
       "chain": 0,
-      "mirrorX": false
+      "mirrorX": false,
+      "limb": "хребет",
+      "mark": {}
     },
     {
       "name": "шея",
@@ -120,7 +126,12 @@
       "depth": 1.0,
       "blend": 0.12,
       "chain": 0,
-      "mirrorX": false
+      "mirrorX": false,
+      "limb": "шея",
+      "mark": {
+        "a": "основание шеи",
+        "b": "основание черепа"
+      }
     },
     {
       "name": "голова",
@@ -148,7 +159,9 @@
       "depth": 0.85,
       "blend": 0.08,
       "chain": 0,
-      "mirrorX": false
+      "mirrorX": false,
+      "limb": "голова",
+      "mark": {}
     },
     {
       "name": "плечо",
@@ -176,7 +189,12 @@
       "depth": 1.0,
       "blend": 0.1,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "перед",
+      "mark": {
+        "a": "плечо",
+        "b": "локоть"
+      }
     },
     {
       "name": "предплечье",
@@ -204,7 +222,11 @@
       "depth": 1.0,
       "blend": 0.05,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "перед",
+      "mark": {
+        "b": "запястье"
+      }
     },
     {
       "name": "бедро",
@@ -232,7 +254,12 @@
       "depth": 1.0,
       "blend": 0.1,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "зад",
+      "mark": {
+        "a": "бедро",
+        "b": "колено"
+      }
     },
     {
       "name": "голень",
@@ -260,7 +287,11 @@
       "depth": 1.0,
       "blend": 0.05,
       "chain": 0,
-      "mirrorX": true
+      "mirrorX": true,
+      "limb": "зад",
+      "mark": {
+        "b": "скакательный"
+      }
     },
     {
       "name": "хвост",
@@ -288,7 +319,11 @@
       "depth": 1.0,
       "blend": 0.05,
       "chain": 0,
-      "mirrorX": false
+      "mirrorX": false,
+      "limb": "хвост",
+      "mark": {
+        "a": "корень хвоста"
+      }
     }
   ]
 }
