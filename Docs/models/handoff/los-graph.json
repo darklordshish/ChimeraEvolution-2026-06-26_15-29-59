@@ -47,14 +47,8 @@
       "parent": "хребет",
       "layer": 0,
       "socket": "хребет",
-      "origin": {
-        "x": 0.0,
-        "y": 0.05,
-        "z": 0.0007
-      },
       "attach": 1.0,
       "freeOrigin": true,
-      "length": 0.3059,
       "endBone": "",
       "endAttach": 1.0,
       "dir": {
@@ -62,29 +56,29 @@
         "y": 0.0,
         "z": 0.0
       },
-      "r0": 0.46,
-      "r1": 0.28,
       "section": 0.76,
       "depth": 1.0,
       "blend": 0.2,
       "chain": 0,
       "mirrorX": false,
       "limb": "хребет",
-      "mark": {}
+      "mark": {},
+      "rel": {
+        "at": 0.0345,
+        "offX": 0.0,
+        "offZ": 0.0014,
+        "len": 0.211,
+        "r0": 0.92,
+        "r1": 0.56
+      }
     },
     {
       "name": "грудной",
       "parent": "хребет",
       "layer": 0,
       "socket": "хребет",
-      "origin": {
-        "x": 0.0,
-        "y": 0.8502,
-        "z": -0.0083
-      },
       "attach": 1.0,
       "freeOrigin": true,
-      "length": 0.8261,
       "endBone": "",
       "endAttach": 1.0,
       "dir": {
@@ -92,29 +86,29 @@
         "y": 0.0,
         "z": 0.0
       },
-      "r0": 0.5,
-      "r1": 0.5,
       "section": 0.72,
       "depth": 1.0,
       "blend": 0.2,
       "chain": 0,
       "mirrorX": false,
       "limb": "хребет",
-      "mark": {}
+      "mark": {},
+      "rel": {
+        "at": 0.5863,
+        "offX": 0.0,
+        "offZ": -0.0166,
+        "len": 0.5697,
+        "r0": 1.0,
+        "r1": 1.0
+      }
     },
     {
       "name": "горб",
       "parent": "грудной",
       "layer": 0,
       "socket": "горб",
-      "origin": {
-        "x": 0.0,
-        "y": -0.0036,
-        "z": -0.3833
-      },
       "attach": 1.0,
       "freeOrigin": true,
-      "length": 0.7762,
       "endBone": "",
       "endAttach": 1.0,
       "dir": {
@@ -122,29 +116,29 @@
         "y": 0.0,
         "z": 0.0
       },
-      "r0": 0.22,
-      "r1": 0.27,
       "section": 0.62,
       "depth": 1.0,
       "blend": 0.22,
       "chain": 0,
       "mirrorX": false,
       "limb": "хребет",
-      "mark": {}
+      "mark": {},
+      "rel": {
+        "at": -0.0044,
+        "offX": 0.0,
+        "offZ": -0.7666,
+        "len": 0.9396,
+        "r0": 0.44,
+        "r1": 0.54
+      }
     },
     {
       "name": "грива",
       "parent": "горб",
       "layer": 0,
       "socket": "горб",
-      "origin": {
-        "x": 0.0,
-        "y": 0.0,
-        "z": 0.0
-      },
       "attach": 1.0,
       "freeOrigin": false,
-      "length": 0.8559,
       "endBone": "",
       "endAttach": 1.0,
       "dir": {
@@ -152,29 +146,29 @@
         "y": 0.0,
         "z": 0.0
       },
-      "r0": 0.27,
-      "r1": 0.18,
       "section": 0.55,
       "depth": 1.0,
       "blend": 0.2,
       "chain": 0,
       "mirrorX": false,
       "limb": "хребет",
-      "mark": {}
+      "mark": {},
+      "rel": {
+        "at": 1.0,
+        "offX": 0.0,
+        "offZ": 0.0,
+        "len": 1.1027,
+        "r0": 1.0,
+        "r1": 0.6667
+      }
     },
     {
       "name": "грудь",
       "parent": "грудной",
       "layer": 0,
       "socket": "Сердце",
-      "origin": {
-        "x": 0.0,
-        "y": -0.23,
-        "z": 0.2339
-      },
       "attach": 1.0,
       "freeOrigin": true,
-      "length": 1.4023,
       "endBone": "",
       "endAttach": 1.0,
       "dir": {
@@ -182,15 +176,21 @@
         "y": 0.0,
         "z": 0.0
       },
-      "r0": 0.33,
-      "r1": 0.4,
       "section": 0.78,
       "depth": 1.0,
       "blend": 0.22,
       "chain": 0,
       "mirrorX": false,
       "limb": "хребет",
-      "mark": {}
+      "mark": {},
+      "rel": {
+        "at": -0.2784,
+        "offX": 0.0,
+        "offZ": 0.4678,
+        "len": 1.6975,
+        "r0": 0.66,
+        "r1": 0.8
+      }
     },
     {
       "name": "шея",
@@ -260,14 +260,8 @@
       "parent": "шея",
       "layer": 0,
       "socket": "шея",
-      "origin": {
-        "x": 0.0,
-        "y": 0.9666,
-        "z": 0.2673
-      },
       "attach": 1.0,
       "freeOrigin": true,
-      "length": 0.4045,
       "endBone": "",
       "endAttach": 1.0,
       "dir": {
@@ -275,15 +269,21 @@
         "y": 0.0,
         "z": 0.0
       },
-      "r0": 0.17,
-      "r1": 0.08,
       "section": 0.45,
       "depth": 1.2,
       "blend": 0.08,
       "chain": 0,
       "mirrorX": false,
       "limb": "шея",
-      "mark": {}
+      "mark": {},
+      "rel": {
+        "at": 1.1366,
+        "offX": 0.0,
+        "offZ": 0.7862,
+        "len": 0.4757,
+        "r0": 0.5,
+        "r1": 0.2353
+      }
     },
     {
       "name": "лопатка",
@@ -419,14 +419,8 @@
       "parent": "бедро",
       "layer": 0,
       "socket": "Ноги",
-      "origin": {
-        "x": 0.0,
-        "y": 0.1295,
-        "z": 0.2772
-      },
       "attach": 1.0,
       "freeOrigin": true,
-      "length": 0.6238,
       "endBone": "",
       "endAttach": 1.0,
       "dir": {
@@ -434,15 +428,21 @@
         "y": 0.0,
         "z": 0.0
       },
-      "r0": 0.24,
-      "r1": 0.14,
       "section": 0.62,
       "depth": 1.0,
       "blend": 0.18,
       "chain": 0,
       "mirrorX": true,
       "limb": "зад",
-      "mark": {}
+      "mark": {},
+      "rel": {
+        "at": 0.1757,
+        "offX": 0.0,
+        "offZ": 0.8838,
+        "len": 0.8462,
+        "r0": 0.7652,
+        "r1": 0.4464
+      }
     },
     {
       "name": "голень",

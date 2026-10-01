@@ -80,6 +80,7 @@ def main():
     nodes = build_nodes()
     bones = to_bones(nodes)
     R.apply(bones, RAZMETKA, 'Змея')
+    R.rel_all(bones)
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     with open(args.out, 'w', encoding='utf-8') as f:
         json.dump(dict(species='Змея', hides=HIDES, nodes=bones), f, ensure_ascii=False, indent=2)

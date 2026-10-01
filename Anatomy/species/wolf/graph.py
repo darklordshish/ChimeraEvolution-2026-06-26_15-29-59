@@ -324,6 +324,7 @@ def main():
     nodes = build_nodes(args.preview_muzzle)
     bones = to_bones(nodes)
     R.apply(bones, RAZMETKA, 'Волк')
+    R.rel_all(bones)
     doc = dict(species='Волк', hides=HIDES, nodes=bones)
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     with open(args.out, 'w', encoding='utf-8') as f:

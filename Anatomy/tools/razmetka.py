@@ -49,3 +49,22 @@ def apply(bones, table, species):
         b['limb'] = limb
         b['mark'] = mark
     return sorted(seen)
+
+
+def rel_all(bones):
+    """УЗЛЫ В ДОЛЯХ РОДИТЕЛЯ (поставка 30, формат механик 29g): бугор, сечение лофта, масса туши — узел без метки в цепи
+    родителя — пишется `rel` ВМЕСТО метровых `origin`, `length`, `r0`, `r1`; метры выводит `BodyChains.ResolveRel`.
+    Доли считаются от метров родителя ДО того, как у него самого метры заменятся (сечения на сечениях)."""
+    import otnositelno as O
+    by = {b['name']: b for b in bones}
+    rels = {}
+    for b in bones:
+        if O.is_relative(b, by):
+            q = O.to_rel(b, by[b['parent']])
+            rels[b['name']] = dict(at=q['at'], offX=q['off'][0], offZ=q['off'][1], len=q['len'], r0=q['r'][0], r1=q['r'][1])
+    for b in bones:
+        if b['name'] in rels:
+            for k in ('origin', 'length', 'r0', 'r1'):
+                b.pop(k, None)
+            b['rel'] = rels[b['name']]
+    return len(rels)

@@ -16,6 +16,7 @@
 Кадр кости — как у `SkeletonBuilder`: +Y вдоль кости, X — ширина, Z — глубина.
 
 Запуск:  python otnositelno.py [файл-графа …]   — пересчёт, обратная сборка в метры и расхождение (должно быть 0).
+С поставки 31 генераторы пишут `rel` сами (`razmetka.rel_all`); скрипт годен для черновика с метрами.
 """
 import json
 import os
@@ -79,6 +80,9 @@ def check(path):
 
 def main(paths):
     for path in paths or [os.path.join(H, f + '-graph.json') for f in ('volk', 'los', 'ezh', 'zmeya', 'chelovek')]:
+        if any('rel' in n for n in json.load(open(path, encoding='utf-8'))['nodes']):
+            print('%s: уже в долях (поставка 31) — сверка идёт в Unity, `BodyChains.ResolveRel`' % os.path.basename(path))
+            continue
         sp, rows, worst = check(path)
         print('%s: в долях %d узлов, обратная сборка расходится на %.2g м' % (sp, len(rows), worst))
         for name, parent, rel in rows:
