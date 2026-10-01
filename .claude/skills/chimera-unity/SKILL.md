@@ -41,6 +41,7 @@ unity command chimera-map         # КАРТА ТЕЛ — детектор: ст
 unity command chimera-diagrams    # схемы планов тела по видам
 unity command chimera-reports     # и карту, и схемы разом — обычный порядок сверки
 unity command chimera-matrix      # МАТРИЦА ХИМЕР: каждое шасси с каждым донором, целиком и по аугменту → Docs/Диаграммы/ХИМЕРЫ.md
+unity command chimera-silhouette  # СВЕРКА СИЛУЭТОВ: тело билдером против маски листа (IoU) → Docs/Диаграммы/СИЛУЭТЫ.md + маски тел
 ```
 
 ## 3. Тесты

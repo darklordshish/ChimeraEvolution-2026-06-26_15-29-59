@@ -51,6 +51,9 @@ public static class ChimeraCliCommands
     }
 
     /// <summary>Пересобрать оба отчёта разом: после правки данных сверять надо и план, и замер.</summary>
+    [CliCommand("chimera-silhouette", "Выгрузить СВЕРКУ СИЛУЭТОВ — детектор читаемости: тело билдером против маски листа (IoU)")]
+    public static string Silhouette() => SilhouetteDetector.Generate();
+
     [CliCommand("chimera-reports", "Выгрузить И карту тел, И схемы — обычный порядок сверки после правки данных")]
     public static string Reports()
     {
