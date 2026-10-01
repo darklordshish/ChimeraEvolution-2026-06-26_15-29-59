@@ -52,14 +52,7 @@ public static class ChainSwap
     {
         if (chassis == null || worn == null || chassis.bones == null || chassis.bones.Length == 0) return chassis;
 
-        var grafts = new List<((string slot, string limb, string upperEnd, Kind kind, string calibre, bool gaze) e, SpeciesSO donor)>();
-        foreach (var e in Map)
-        {
-            var organ = worn.FirstOrDefault(o => o != null && o.slot == e.slot);   // видимый орган слота (порядок — `WornInDrawOrder`)
-            var donor = OwnerOf(organ);
-            if (donor == null || donor.speciesName == chassis.speciesName || donor.bones == null || donor.bones.Length == 0) continue;
-            grafts.Add((e, donor));
-        }
+        var grafts = Grafts(chassis, worn);
         if (grafts.Count == 0) return chassis;
 
         // КЛЮЧ — СОСТАВ И ОТПЕЧАТОК СОДЕРЖИМОГО: по одним именам кэш отдавал бы старое тело после пересоздания видов
@@ -68,15 +61,8 @@ public static class ChainSwap
                      string.Join(",", grafts.Select(g => g.e.slot + ":" + g.donor.speciesName + "#" + Stamp(g.donor)));
         if (cache.TryGetValue(key, out var hit) && hit != null) return hit;
 
-        var tree = BodyTree.From(chassis, out var loose);
-        if (tree == null) { Debug.LogWarning($"[тело] {chassis.speciesName}: граф не дерево (корней не один) — не подставляю"); return chassis; }
-        foreach (var (e, donor) in grafts)
-        {
-            var dTree = BodyTree.From(donor, out _, graft: donor.speciesName);
-            if (dTree == null) continue;
-            tree = e.kind == Kind.Chain ? SwapChain(tree, chassis, dTree, e.limb, e.upperEnd, e.slot, e.calibre, e.gaze, chassis.organs, worn)
-                                        : SwapGroup(tree, dTree, e.slot, chassis.speciesName, donor.speciesName);
-        }
+        var assembled = Assemble(chassis, grafts, worn, null);
+        if (assembled.bones == null) return chassis;
 
         var body = ScriptableObject.CreateInstance<SpeciesSO>();
         JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(chassis), body);
@@ -84,9 +70,56 @@ public static class ChainSwap
         body.name = key;
         body.meshKey = key;
         body.organs = chassis.organs;   // ОРГАНЫ — ТЕ ЖЕ ОБЪЕКТЫ: копировать их незачем, а тождество нужно поиску владельца
-        (body.bones, body.nests) = BodyTree.Flatten(tree, loose);
+        (body.bones, body.nests) = assembled;
         cache[key] = body;
         return body;
+    }
+
+    /// <summary>СБОРКА ТЕЛА: `body = local ∘ global` (спека конструктора §5, находка математика консилиума). Глобальный слой —
+    /// `zipWith` по форме дерева ШАССИ, а локальный `Replace` эту форму меняет, поэтому определён только этот порядок:
+    /// сначала шасси идёт к виду-цели, затем по швам уже смещённого носителя вставляются части-аугменты. Глобального
+    /// слоя в коде ещё нет — его место ровно здесь, ПЕРЕД циклом подстановок. Порядок самих подстановок на тело не влияет
+    /// (сторож `ChainSwapTests.SlotOrder_DoesNotChangeBody`); `slotOrder` — только для этого сторожа.</summary>
+    static (Bone[] bones, PlaceNest[] nests) Assemble(SpeciesSO chassis,
+        List<((string slot, string limb, string upperEnd, Kind kind, string calibre, bool gaze) e, SpeciesSO donor)> grafts,
+        IReadOnlyList<Organ> worn, IReadOnlyList<string> slotOrder)
+    {
+        var tree = BodyTree.From(chassis, out var loose);
+        if (tree == null) { Debug.LogWarning($"[тело] {chassis.speciesName}: граф не дерево (корней не один) — не подставляю"); return (null, null); }
+
+        // ГЛОБАЛЬНЫЙ СЛОЙ (идентичность → вид-цель) — сюда, когда появится
+
+        var order = slotOrder == null ? grafts : grafts.OrderBy(g => IndexOf(slotOrder, g.e.slot)).ToList();
+        foreach (var (e, donor) in order)
+        {
+            var dTree = BodyTree.From(donor, out _, graft: donor.speciesName);
+            if (dTree == null) continue;
+            tree = e.kind == Kind.Chain ? SwapChain(tree, chassis, dTree, e.limb, e.upperEnd, e.slot, e.calibre, e.gaze, chassis.organs, worn)
+                                        : SwapGroup(tree, dTree, e.slot, chassis.speciesName, donor.speciesName);
+        }
+        return BodyTree.Flatten(tree, loose);
+    }
+
+    static int IndexOf(IReadOnlyList<string> list, string x) { for (int i = 0; i < list.Count; i++) if (list[i] == x) return i; return int.MaxValue; }
+
+    /// <summary>Для сторожа порядка: собрать тело, подставляя слоты в заданном порядке (кэш не участвует).</summary>
+    public static (Bone[] bones, PlaceNest[] nests) AssembleInOrder(SpeciesSO chassis, IReadOnlyList<Organ> worn, IReadOnlyList<string> slotOrder)
+    {
+        var grafts = Grafts(chassis, worn);
+        return grafts.Count == 0 ? (chassis.bones, chassis.nests) : Assemble(chassis, grafts, worn, slotOrder);
+    }
+
+    static List<((string slot, string limb, string upperEnd, Kind kind, string calibre, bool gaze) e, SpeciesSO donor)> Grafts(SpeciesSO chassis, IReadOnlyList<Organ> worn)
+    {
+        var grafts = new List<((string slot, string limb, string upperEnd, Kind kind, string calibre, bool gaze) e, SpeciesSO donor)>();
+        foreach (var e in Map)
+        {
+            var organ = worn.FirstOrDefault(o => o != null && o.slot == e.slot);   // видимый орган слота (порядок — `WornInDrawOrder`)
+            var donor = OwnerOf(organ);
+            if (donor == null || donor.speciesName == chassis.speciesName || donor.bones == null || donor.bones.Length == 0) continue;
+            grafts.Add((e, donor));
+        }
+        return grafts;
     }
 
     /// <summary>Чей орган: орган живёт в записи вида и своего вида не знает. Ищем среди загруженных видов по ТОЖДЕСТВУ

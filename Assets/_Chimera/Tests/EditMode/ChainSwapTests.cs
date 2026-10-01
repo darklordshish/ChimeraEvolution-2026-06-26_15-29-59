@@ -137,6 +137,46 @@ namespace Chimera.Tests.EditMode
                 Assert.AreEqual(1, c.bones.Count(b => string.IsNullOrEmpty(b.parent)), $"{c.name}: корней не один");
         }
 
+        static IEnumerable<string[]> Permutations(string[] xs)
+        {
+            if (xs.Length <= 1) { yield return xs; yield break; }
+            for (int i = 0; i < xs.Length; i++)
+                foreach (var rest in Permutations(xs.Where((_, j) => j != i).ToArray()))
+                    yield return new[] { xs[i] }.Concat(rest).ToArray();
+        }
+
+        [Test]
+        public void SlotOrder_DoesNotChangeBody()
+        {
+            // СТОРОЖ ПОРЯДКА (спека конструктора §5, находка математика консилиума): подстановки слотов коммутируют —
+            // все перестановки дают одно тело. Сравнение — множеством костей и гнёзд: порядок списка не важен, важна форма
+            var slots = new[] { BodySlots.Arms, BodySlots.Legs, BodySlots.Maw, BodySlots.Heart };
+            var names = new[] { "Волк", "Лось", "Ёж", "Змея", "Человек" };
+            foreach (var cn in names)
+                foreach (var dn in names)
+                {
+                    if (cn == dn) continue;
+                    var c = Load(cn); var d = Load(dn);
+                    var worn = c.organs.Where(o => !slots.Contains(o.slot)).ToList();
+                    worn.InsertRange(0, d.organs.Where(o => slots.Contains(o.slot)));
+                    string Print(string[] order)
+                    {
+                        var (bones, nests) = ChainSwap.AssembleInOrder(c, worn, order);
+                        var lines = bones.Select(b => JsonUtility.ToJson(b))
+                            .Concat(nests.Select(n => $"{n.name}@{n.host} {n.localPos} {n.localRot} {n.unit}")).ToList();
+                        lines.Sort(System.StringComparer.Ordinal);
+                        return string.Join("|", lines);
+                    }
+                    string first = null;
+                    foreach (var order in Permutations(slots))
+                    {
+                        var p = Print(order);
+                        first ??= p;
+                        Assert.AreEqual(first, p, $"{cn}+{dn}: порядок {string.Join(",", order)} дал другое тело");
+                    }
+                }
+        }
+
         [Test]
         public void SameComposition_SharesOneBody()
         {
