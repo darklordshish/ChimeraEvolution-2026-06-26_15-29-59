@@ -164,7 +164,7 @@ def main():
         V, F = load(path)
         N, A = normals_areas(V, F); E = edges(F)
         k, kt = m2(N, A, E)
-        rms, hd = m4(V, F, (Vr, Fr), h, rng) if name != 'C' else (float('nan'), float('nan'))
+        rms, hd = m4(V, F, (Vr, Fr), h, rng) if name not in os.environ.get('BEZ_M4', 'C').split(',') else (float('nan'), float('nan'))   # BEZ_M4 — плечи без M4 против этого эталона
         ip = iou(figure(os.path.join(frames, name + '-profile.png')), mprof)
         ia = iou(figure(os.path.join(frames, name + '-nose.png')), mfront)
         print('| %s | %d | %.3f | %d | %.3f | %.3f | %.2f | %.2f | %.3f | %.3f |' % (name, len(F), m1(N, A), k, kt, m3(V, F, N, E), rms, hd, ip, ia))
