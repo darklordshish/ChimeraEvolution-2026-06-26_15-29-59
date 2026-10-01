@@ -25,6 +25,7 @@ public static class Kadr
         {
             var d = JsonUtility.FromJson<Delivery>(System.IO.File.ReadAllText(graph));
             c.bones = d.nodes; c.skeletonHides = d.hides;
+            BodyChains.ResolveRel(c.bones);   // узлы в долях родителя (поставка 31) своих метров в JSON не несут — как при импорте
         }
         SpeciesHandoff.ApplyLayouts(c,
             string.IsNullOrEmpty(head) ? null : System.IO.File.ReadAllText(head),

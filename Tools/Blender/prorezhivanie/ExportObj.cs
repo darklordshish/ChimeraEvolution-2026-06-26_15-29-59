@@ -18,6 +18,7 @@ public static class ExportObj
         so.speciesName = species + " ~obj " + System.DateTime.Now.Ticks;
         var d = JsonUtility.FromJson<Delivery>(System.IO.File.ReadAllText(graph));
         so.bones = d.nodes; so.skeletonHides = d.hides;
+        BodyChains.ResolveRel(so.bones);   // узлы в долях родителя (поставка 31) — как при импорте
         SpeciesHandoff.ApplyLayouts(so, string.IsNullOrEmpty(head) ? null : System.IO.File.ReadAllText(head),
             string.IsNullOrEmpty(organs) ? null : System.IO.File.ReadAllText(organs));
         so.skinCell = cell;

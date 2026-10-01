@@ -26,6 +26,7 @@ public static class Chitaemost
         string H = "Docs/models/handoff/" + file;
         var d = JsonUtility.FromJson<Delivery>(System.IO.File.ReadAllText(H + "-graph.json"));
         c.bones = d.nodes; c.skeletonHides = d.hides;
+        BodyChains.ResolveRel(c.bones);   // узлы в долях родителя (поставка 31) — как при импорте
         SpeciesHandoff.ApplyLayouts(c, System.IO.File.ReadAllText(H + "-head-layout.json"),
             System.IO.File.ReadAllText(H + "-organs-layout.json"));
         c.skinCell = 0.042f;
