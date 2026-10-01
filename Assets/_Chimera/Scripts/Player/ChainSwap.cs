@@ -44,7 +44,8 @@ public static class ChainSwap
         (BodySlots.Heart, null, null, Kind.Group, null, false),
     };
 
-    static readonly Dictionary<string, SpeciesSO> cache = new();
+    // ПОТОЛОК (01.10): составная копия — скрытый ScriptableObject, сам он не выгрузится; вытесненную уничтожаем
+    static readonly BoundedCache<string, SpeciesSO> cache = new(256, so => { if (so == null) return; if (Application.isPlaying) Object.Destroy(so); else Object.DestroyImmediate(so); });
     static readonly Dictionary<Organ, SpeciesSO> owners = new();
 
     /// <summary>Тело для сборки: шасси, если прививок нет, иначе составная копия.</summary>

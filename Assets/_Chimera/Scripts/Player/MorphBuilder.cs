@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 /// <summary>МОРФОЛОГИЯ (ось 2): собирает КУБ-МОДЕЛЬ тела из данных — ОДНА система (без статичного BuildBlocky,
@@ -228,6 +229,133 @@ public static class MorphBuilder
                 if (socket.mirrorX) Piece(container.transform, socket, null, -1f, pos, rot, made, linkD, null, sz);
             }
         }
+
+        if (BakeParts && Application.isPlaying)
+            BakeRigid(container.transform, new HashSet<GameObject>(chainLinks.Values.SelectMany(l => l)));
+    }
+
+    /// <summary>Запекать жёсткие детали — только в игре: это оптимизация рантайма, геометрия та же. Детекторы и кадры
+    /// в редакторе (матрица, карта тел) меряют детали поштучно и видят их как раньше. Флаг — для сторожа.</summary>
+    public static bool BakeParts = true;
+
+    // ── ЗАПЕКАНИЕ ЖЁСТКИХ ДЕТАЛЕЙ (01.10, стена рендереров — консилиум формы) ──────────────────────────
+    // Каждый ригблок был своим объектом с MeshRenderer: у ежа 291 рендерер на особь (224 иглы), у лося 40; при
+    // 30–100 NPC первая стена — число рендереров, а не поле. Жёстко несомые детали одного места сливаются в ОДИН
+    // скиннед-меш с именем места: вершина привязана к кости детали с весом 1, поэтому деталь едет с костью, как ехала.
+    //     ЧТО ЗАПЕКАЕТСЯ — по устройству, а не по списку: деталь висит прямо на кости (её несёт скелет), без паспорта
+    // (`PartMark` — роль или свой цвет: глаз красится сам, его микшер должен видеть отдельно) и без коллайдера (плотный
+    // кусок — препятствие). Звенья цепи змеи на кости не висят — их ведёт движок цепи, и они остаются как есть.
+    //     Имя рендерера = имя места: телеграф, первое лицо, камуфляж и микшер цвета обходят рендереры и меньше их
+    // не станут различать. Меш кэшируется ПО СОДЕРЖИМОМУ (меш блока × поза в контейнере × кость): одинаковые особи
+    // делят одну геометрию, как оболочки поля.
+    static readonly BoundedCache<string, Mesh> bakedCache = new(512);   // потолок: см. `BoundedCache`
+
+    static void BakeRigid(Transform container, HashSet<GameObject> chainLinks)
+    {
+        var skeleton = container.Find("Skeleton");
+        var bones = skeleton != null ? new HashSet<Transform>(skeleton.GetComponentsInChildren<Transform>()) : new HashSet<Transform>();
+        var groups = new Dictionary<string, List<MeshRenderer>>();
+        var loose = new Dictionary<string, List<MeshRenderer>>();   // детали прямо на контейнере (покров: иглы ежа)
+        foreach (var mr in container.GetComponentsInChildren<MeshRenderer>())
+        {
+            var t = mr.transform;
+            if (t.parent == null || chainLinks.Contains(t.gameObject) || chainLinks.Contains(t.parent.gameObject)) continue;
+            if (mr.GetComponent<PartMark>() != null || mr.GetComponent<Collider>() != null) continue;
+            if (!mr.TryGetComponent<MeshFilter>(out var mf) || mf.sharedMesh == null || !mf.sharedMesh.isReadable) continue;
+            var target = t.parent == container ? loose : bones.Contains(t.parent) && t.parent != skeleton ? groups : null;
+            if (target == null) continue;
+            if (!target.TryGetValue(t.name, out var l)) target[t.name] = l = new List<MeshRenderer>();
+            l.Add(mr);
+        }
+
+        // ДЕТАЛИ НА КОНТЕЙНЕРЕ — статичный меш места: кость их не несёт, в контейнере они и так неподвижны. Покров
+        // ежа висит так сейчас (П5); когда сядет на кость хребта — уйдёт в скиннед-ветку ниже сам
+        foreach (var (name, parts) in loose)
+        {
+            if (parts.Count < 2) continue;
+            var key = Key(name, parts, null, container.worldToLocalMatrix);
+            if (!bakedCache.TryGetValue(key, out var mesh) || mesh == null)
+                bakedCache[key] = mesh = Combine(name, parts, null, container.worldToLocalMatrix);
+            var go = new GameObject(name, typeof(MeshFilter), typeof(MeshRenderer));
+            go.transform.SetParent(container, false);
+            go.GetComponent<MeshFilter>().sharedMesh = mesh;
+            go.GetComponent<MeshRenderer>().sharedMaterial = parts[0].sharedMaterial;
+            foreach (var p in parts) { p.gameObject.SetActive(false); Kill(p.gameObject); }
+        }
+        if (skeleton == null) return;
+
+        var toRoot = container.worldToLocalMatrix;
+        foreach (var (name, parts) in groups)
+        {
+            if (parts.Count < 2) continue;   // одна деталь — запекать незачем
+            var boneList = parts.Select(p => p.transform.parent).Distinct().ToList();
+            var boneIndex = boneList.Select((b, i) => (b, i)).ToDictionary(x => x.b, x => x.i);
+
+            string k = Key(name, parts, boneIndex, toRoot);
+            if (!bakedCache.TryGetValue(k, out var mesh) || mesh == null)
+                bakedCache[k] = mesh = Combine(name, parts, boneIndex, toRoot);
+
+            var go = new GameObject(name);
+            go.transform.SetParent(container, false);
+            var smr = go.AddComponent<SkinnedMeshRenderer>();
+            smr.sharedMesh = mesh;
+            smr.bones = boneList.ToArray();
+            smr.rootBone = skeleton;
+            smr.sharedMaterial = parts[0].sharedMaterial;
+            smr.updateWhenOffscreen = false;   // как у оболочки поля: невидимых не скинним, границы — с запасом
+            smr.localBounds = BoneMesher.Padded(mesh.bounds);
+            foreach (var p in parts) { p.gameObject.SetActive(false); Kill(p.gameObject); }
+        }
+    }
+
+    static string Key(string name, List<MeshRenderer> parts, Dictionary<Transform, int> boneIndex, Matrix4x4 toRoot)
+    {
+        var key = new System.Text.StringBuilder(name).Append(boneIndex == null ? "#static" : "#skin");
+        foreach (var p in parts)
+        {
+            var m = toRoot * p.transform.localToWorldMatrix;
+            key.Append('|').Append(p.GetComponent<MeshFilter>().sharedMesh.GetInstanceID())
+               .Append('@').Append(boneIndex == null ? -1 : boneIndex[p.transform.parent]);
+            for (int i = 0; i < 12; i++) key.Append(',').Append(Mathf.RoundToInt(m[i] * 10000f));
+        }
+        return key.ToString();
+    }
+
+    /// <summary>Слить детали в один меш в системе контейнера. `boneIndex` — скиннинг (вес 1 к кости детали); null —
+    /// статичный меш.</summary>
+    static Mesh Combine(string name, List<MeshRenderer> parts, Dictionary<Transform, int> boneIndex, Matrix4x4 toRoot)
+    {
+        var v = new List<Vector3>(); var n = new List<Vector3>(); var w = new List<BoneWeight>(); var tris = new List<int>();
+        var bind = boneIndex == null ? null : new Matrix4x4[boneIndex.Count];
+        if (boneIndex != null) foreach (var (b, i) in boneIndex) bind[i] = b.worldToLocalMatrix * toRoot.inverse;
+        foreach (var p in parts)
+        {
+            var src = p.GetComponent<MeshFilter>().sharedMesh;
+            var m = toRoot * p.transform.localToWorldMatrix;
+            var nm = m.inverse.transpose;
+            int bi = boneIndex == null ? 0 : boneIndex[p.transform.parent], start = v.Count;
+            var sv = src.vertices; var sn = src.normals;
+            for (int i = 0; i < sv.Length; i++)
+            {
+                v.Add(m.MultiplyPoint3x4(sv[i]));
+                n.Add(sn.Length == sv.Length ? nm.MultiplyVector(sn[i]).normalized : Vector3.up);
+                if (boneIndex != null) w.Add(new BoneWeight { boneIndex0 = bi, weight0 = 1f });
+            }
+            bool flip = m.determinant < 0f;   // зеркальная деталь: отражение выворачивает обход треугольников
+            var st = src.triangles;
+            for (int i = 0; i < st.Length; i += 3)
+            {
+                tris.Add(start + st[i]);
+                tris.Add(start + (flip ? st[i + 2] : st[i + 1]));
+                tris.Add(start + (flip ? st[i + 1] : st[i + 2]));
+            }
+        }
+        var mesh = new Mesh { name = name + " (запечено)" };
+        if (v.Count > 65535) mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+        mesh.SetVertices(v); mesh.SetNormals(n); mesh.SetTriangles(tris, 0);
+        if (boneIndex != null) { mesh.boneWeights = w.ToArray(); mesh.bindposes = bind; }
+        mesh.RecalculateBounds();
+        return mesh;
     }
 
     /// <summary>Позиция и поворот места. Корень (без `parent`) стоит по своим `localPos`/`baseEuler`;

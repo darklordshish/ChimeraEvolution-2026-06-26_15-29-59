@@ -36,7 +36,9 @@ public static class BoneMesher
 
     // МЕШИ КЭШИРУЮТСЯ ПО ВИДУ: кости у всех волков одинаковы, значит и оболочка одна. Пересчёт нужен
     // только когда состав меняет сам скелет — до тех пор двадцать волков на арене делят одну геометрию
-    static readonly Dictionary<string, (string slot, Mesh mesh)[]> cache = new();
+    // ПОТОЛОК (01.10): состав особей комбинаторен — без потолка кэш рос бы без конца. Вытесненные меши не уничтожаются:
+    // на них могут смотреть живые рендереры, а без ссылок их уберёт движок
+    static readonly BoundedCache<string, (string slot, Mesh mesh)[]> cache = new(256);
 
     struct Seg   // кость, приведённая к мировой системе контейнера: поле считается по этим отрезкам
     {
@@ -225,11 +227,17 @@ public static class BoneMesher
             smr.sharedMesh = mesh;
             smr.bones = all;
             smr.rootBone = skeleton;
-            smr.updateWhenOffscreen = true;
+            // НЕ СКИННИТЬ НЕВИДИМЫХ (01.10, стена рендереров): `updateWhenOffscreen` заставлял пересчитывать каждое существо
+            // за кадром. Границы — по мешу в системе скелета (она совпадает с контейнером) с запасом на будущую анимацию
+            smr.updateWhenOffscreen = false;
+            smr.localBounds = Padded(mesh.bounds);
             if (mat != null) smr.sharedMaterial = mat;
         }
         return skeleton;
     }
+
+    /// <summary>Границы скиннед-меша с запасом: поза и анимация не должны выводить тело из рамки отсечения.</summary>
+    public static Bounds Padded(Bounds b) { b.Expand(0.6f); return b; }
 
     // ── ПОЛЕ ──────────────────────────────────────────────────────────────────────────────────────────
 
