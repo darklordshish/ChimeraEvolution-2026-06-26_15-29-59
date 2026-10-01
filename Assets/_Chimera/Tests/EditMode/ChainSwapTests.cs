@@ -75,6 +75,68 @@ namespace Chimera.Tests.EditMode
             if (nest != null) CollectionAssert.Contains(leg, nest.host, "гнездо конца ноги осталось на вынутой кости");
         }
 
+        static SpeciesSO With(SpeciesSO chassis, SpeciesSO donor, params string[] slots)
+        {
+            var worn = chassis.organs.Where(o => !slots.Contains(o.slot)).ToList();
+            worn.InsertRange(0, donor.organs.Where(o => slots.Contains(o.slot)));
+            return ChainSwap.Compose(chassis, worn);
+        }
+
+        static Vector3 Start(SpeciesSO sp, string name)
+        {
+            var by = sp.bones.ToDictionary(b => b.name);
+            return SkeletonBuilder.Place(by[name], by, new Dictionary<string, (Vector3, Quaternion)>()).pos;
+        }
+
+        [Test]
+        public void WolfHeart_ReplacesHumanChest_NeckAndShouldersStay()
+        {
+            var h = Load("Человек"); var w = Load("Волк");
+            var c = With(h, w, BodySlots.Heart);
+            var names = c.bones.Select(b => b.name).ToList();
+            CollectionAssert.DoesNotContain(names, "грудь2", "человеческая грудь не вынута");
+            Assert.IsTrue(c.bones.Any(b => b.socket == BodySlots.Heart), "волчья грудь не встала");
+            // СИРОТЫ: шея и лопатки висели на груди человека — переехали на хребет, но в мире не сдвинулись
+            foreach (var n in new[] { "шея", "лопатка" })
+                Assert.Less(Vector3.Distance(Start(h, n), Start(c, n)), 1e-3f, $"«{n}» сдвинулась при смене груди");
+        }
+
+        [Test]
+        public void HumanMaw_ReplacesWolfHead_SensesRideWithIt()
+        {
+            var w = Load("Волк"); var h = Load("Человек");
+            var c = With(w, h, BodySlots.Maw);
+            var head = c.bones.Where(b => b.limb == "голова").Select(b => b.name).ToList();
+            CollectionAssert.Contains(head, "челюсть", "человеческая голова не встала");
+            Assert.AreEqual(w.bones.First(b => b.name == "голова").parent, c.bones.First(b => b.name == "голова").parent,
+                            "голова ушла с конца шеи");
+            // гнёзда, которые у донора сидят на его голове, приезжают с ней
+            foreach (var n in h.nests.Where(n => h.bones.Any(b => b.name == n.host && b.limb == "голова")))
+                CollectionAssert.Contains(head, c.nests.First(x => x.name == n.name).host, $"гнездо «{n.name}» осталось на вынутой голове");
+        }
+
+        [Test]
+        public void WolfMaw_OnHuman_LooksForward_AtHeadWidthCalibre()
+        {
+            // ГОЛОВА — ВЗГЛЯД (кадр 01.10): выравнивание по оси человеческой головы (она идёт к макушке) задирало волчью
+            // морду в небо. Морда смотрит вперёд у любого носителя, калибр — ширина головы
+            var h = Load("Человек"); var w = Load("Волк");
+            var c = With(h, w, BodySlots.Maw);
+            var axis = Tip(c, "голова") - Start(c, "голова");
+            Assert.Greater(axis.z, Mathf.Abs(axis.y), "волчья голова на человеке смотрит не вперёд");
+            float s = h.nests.First(n => n.name == "голова").unit / w.nests.First(n => n.name == "голова").unit;
+            Assert.AreEqual(w.bones.First(b => b.name == "голова").length * s, c.bones.First(b => b.name == "голова").length, 1e-4f,
+                            "голова мерена не шириной");
+        }
+
+        [Test]
+        public void SnakeMaw_OnWolf_AndWolfMaw_OnSnake_KeepOneRoot()
+        {
+            var w = Load("Волк"); var z = Load("Змея");
+            foreach (var c in new[] { With(w, z, BodySlots.Maw), With(z, w, BodySlots.Maw) })
+                Assert.AreEqual(1, c.bones.Count(b => string.IsNullOrEmpty(b.parent)), $"{c.name}: корней не один");
+        }
+
         [Test]
         public void SameComposition_SharesOneBody()
         {
