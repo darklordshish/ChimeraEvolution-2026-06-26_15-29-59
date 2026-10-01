@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using UnityEngine;
 
 /// <summary>ШКУРА ПО ПОЛЮ: кости задают скалярное поле, меш строится по его изоповерхности (спека 2026-08-18).
@@ -47,25 +48,26 @@ public static class BoneMesher
         public Quaternion inv;      // мир → локальная кость (нужно для сплющивания сечением)
     }
 
-    public static Transform Build(Transform container, SpeciesSO chassis, Material mat)
+    /// <summary>ПОЗА КОСТИ В СИСТЕМЕ КОНТЕЙНЕРА — чистая математика, без трансформов: её считают и сборка (ставит по ней
+    /// трансформы), и фоновый прогрев (`Warm` — по ней строит поле, пока тело живёт старой оболочкой). Одна функция на
+    /// оба пути, чтобы поза не раздвоилась.</summary>
+    struct Posed
     {
-        var bones = chassis.bones;
+        public Bone b;
+        public int side;                 // +1 правая/осевая, −1 зеркальная пара
+        public Vector3 pos, e, tip;      // начало, эйлер, конец
+        public Quaternion rot;           // мировой поворот (у мышцы — вдоль натяжения)
+        public bool muscle;
+    }
+
+    static List<Posed> Pose(SpeciesSO chassis)
+    {
         var byName = new Dictionary<string, Bone>();
-        foreach (var b in bones)
+        foreach (var b in chassis.bones)
             if (b != null && !string.IsNullOrEmpty(b.name)) byName[b.name] = b;
-
-        var skeleton = new GameObject("Skeleton").transform;
-        skeleton.SetParent(container, false);
-
-        // ── КОСТИ КАК ТРАНСФОРМЫ, ИЕРАРХИЕЙ. Ради этого всё и делалось: повернул плечо — поехала вся нога,
-        // потому что она его потомок. Пара (`mirrorX`) даёт два трансформа: зеркалить меш на лету нельзя,
-        // у скиннинга каждая вершина указывает на конкретную кость
         var placed = new Dictionary<string, (Vector3, Quaternion)>();
-        var xf = new Dictionary<(string, int), Transform>();
-        var segs = new List<Seg>();
-        var order = new List<Transform>();
-
-        foreach (var b in bones)
+        var list = new List<Posed>();
+        foreach (var b in chassis.bones)
         {
             if (b == null || string.IsNullOrEmpty(b.name)) continue;
             var (p, r) = SkeletonBuilder.Place(b, byName, placed);
@@ -77,20 +79,9 @@ public static class BoneMesher
                 // ЗЕРКАЛО — ОТРАЖЕНИЕМ ПОЗЫ, НЕ ОТРИЦАТЕЛЬНЫМ МАСШТАБОМ: минус в scale выворачивает
                 // нормали наизнанку, и левая половина зверя чернеет ровно так же, как «работает»
                 if (side < 0) { pos.x = -pos.x; e.y = -e.y; e.z = -e.z; }
-
-                var t = new GameObject(b.name + (side < 0 ? ".L" : "")).transform;
-                t.SetParent(skeleton, false);
-                t.localPosition = pos;
-                t.localEulerAngles = e;
-                if (!string.IsNullOrEmpty(b.parent))
-                {
-                    if (xf.TryGetValue((b.parent, side), out var pt)) t.SetParent(pt, true);       // поза уже
-                    else if (xf.TryGetValue((b.parent, +1), out var p0)) t.SetParent(p0, true);    // выставлена
-                }
-                xf[(b.name, side)] = t;
-
                 var rot = Quaternion.Euler(e);
                 var tip = pos + rot * (Vector3.up * b.length);
+                bool muscle = false;
 
                 // МЫШЦА НАТЯНУТА МЕЖДУ ДВУМЯ КОСТЯМИ: её конец не свободен, а живёт на кости-цели.
                 // Поэтому ни длины, ни угла ей не задают — и то, и другое СЛЕДУЕТ из положения костей.
@@ -103,24 +94,92 @@ public static class BoneMesher
                     tip = end;
                     // разворачиваем саму кость вдоль мышцы, чтобы сечение считалось поперёк неё
                     var dir = end - pos;
-                    if (dir.sqrMagnitude > 1e-8f)
-                    {
-                        rot = Quaternion.FromToRotation(Vector3.up, dir.normalized);
-                        t.localRotation = Quaternion.Inverse(t.parent.rotation) * rot;
-                    }
+                    if (dir.sqrMagnitude > 1e-8f) { rot = Quaternion.FromToRotation(Vector3.up, dir.normalized); muscle = true; }
                 }
-
-                segs.Add(new Seg
-                {
-                    a = pos, b = tip,
-                    r0 = b.r0, r1 = b.r1, sec = Mathf.Max(0.05f, b.section), dep = Mathf.Max(0.05f, b.depth),
-                    blend = b.blend > 0f ? b.blend : chassis.SkinBlend, layer = b.layer,
-                    bone = order.Count, slot = string.IsNullOrEmpty(b.socket) ? b.name : b.socket,
-                    inv = Quaternion.Inverse(rot),
-                });
-                order.Add(t);
+                list.Add(new Posed { b = b, side = side, pos = pos, e = e, tip = tip, rot = rot, muscle = muscle });
             }
         }
+        return list;
+    }
+
+    static List<Seg> Segs(List<Posed> pose, SpeciesSO chassis)
+    {
+        var segs = new List<Seg>(pose.Count);
+        for (int i = 0; i < pose.Count; i++)
+        {
+            var q = pose[i]; var b = q.b;
+            segs.Add(new Seg
+            {
+                a = q.pos, b = q.tip,
+                r0 = b.r0, r1 = b.r1, sec = Mathf.Max(0.05f, b.section), dep = Mathf.Max(0.05f, b.depth),
+                blend = b.blend > 0f ? b.blend : chassis.SkinBlend, layer = b.layer,
+                bone = i, slot = string.IsNullOrEmpty(b.socket) ? b.name : b.socket,
+                inv = Quaternion.Inverse(q.rot),
+            });
+        }
+        return segs;
+    }
+
+    static string KeyOf(SpeciesSO chassis) =>
+        (string.IsNullOrEmpty(chassis.meshKey) ? chassis.speciesName : chassis.meshKey) + "#" + chassis.bones.Length +
+        "#L" + chassis.BuildLayers + (Flat ? "#грани" : "");
+
+    // ── ФОН. Поле, изоповерхность и веса — чистая математика; Unity нужен только на `new Mesh`. Пересборка на графт
+    // стоит 50–350 мс (замер 29.09, лось — дороже всех), на главном потоке это рывок посреди боя. Поэтому тело при
+    // смене состава зовёт `Warm` и живёт старой оболочкой, пока задача не готова (`Ready`), а `Build` забирает
+    // посчитанное и только упаковывает в меши. Синхронные вызовы (спавн, инструменты, тесты) просто дожидаются
+    static readonly Dictionary<string, Task<SlotData[]>> pending = new();
+
+    static bool Alive(string key) => cache.TryGetValue(key, out var parts) && !parts.Any(p => p.mesh == null);
+
+    /// <summary>Оболочка этого тела уже есть или досчитана — `Build` не задержит кадр.</summary>
+    public static bool Ready(SpeciesSO chassis)
+    {
+        if (chassis == null || chassis.bones == null || chassis.bones.Length == 0) return true;
+        string key = KeyOf(chassis);
+        return Alive(key) || (pending.TryGetValue(key, out var t) && t.IsCompleted);
+    }
+
+    /// <summary>Начать считать оболочку в фоне, если её ещё нет и она не считается.</summary>
+    public static void Warm(SpeciesSO chassis)
+    {
+        if (chassis == null || chassis.bones == null || chassis.bones.Length == 0) return;
+        string key = KeyOf(chassis);
+        if (Alive(key) || pending.ContainsKey(key)) return;
+        var segs = Segs(Pose(chassis), chassis).Where(x => (int)x.layer < chassis.BuildLayers).ToList();
+        float cell = chassis.SkinCell, blend = chassis.SkinBlend, fur = chassis.SkinFur;
+        bool flat = Flat;
+        pending[key] = Task.Run(() => Compute(segs, cell, blend, fur, flat));
+    }
+
+    public static Transform Build(Transform container, SpeciesSO chassis, Material mat)
+    {
+        var skeleton = new GameObject("Skeleton").transform;
+        skeleton.SetParent(container, false);
+
+        // ── КОСТИ КАК ТРАНСФОРМЫ, ИЕРАРХИЕЙ. Ради этого всё и делалось: повернул плечо — поехала вся нога,
+        // потому что она его потомок. Пара (`mirrorX`) даёт два трансформа: зеркалить меш на лету нельзя,
+        // у скиннинга каждая вершина указывает на конкретную кость
+        var pose = Pose(chassis);
+        var xf = new Dictionary<(string, int), Transform>();
+        var order = new List<Transform>();
+        foreach (var q in pose)
+        {
+            var b = q.b;
+            var t = new GameObject(b.name + (q.side < 0 ? ".L" : "")).transform;
+            t.SetParent(skeleton, false);
+            t.localPosition = q.pos;
+            t.localEulerAngles = q.e;
+            if (!string.IsNullOrEmpty(b.parent))
+            {
+                if (xf.TryGetValue((b.parent, q.side), out var pt)) t.SetParent(pt, true);       // поза уже
+                else if (xf.TryGetValue((b.parent, +1), out var p0)) t.SetParent(p0, true);    // выставлена
+            }
+            xf[(b.name, q.side)] = t;
+            if (q.muscle) t.localRotation = Quaternion.Inverse(t.parent.rotation) * q.rot;
+            order.Add(t);
+        }
+        var segs = Segs(pose, chassis);
 
         var all = order.ToArray();
         var bind = new Matrix4x4[all.Length];
@@ -136,7 +195,7 @@ public static class BoneMesher
         //     Отсюда же следует химеризация: донорский модуль просто встаёт на место шассийного, и
         // пересчитать надо ОДНУ лапу, а не всю тушу. Задача шасси — согласовать стыки: где сустав, куда
         // смотрит, какой там радиус; модуль обязан прийти в эту точку и зайти внутрь соседа с запасом.
-        string key = (string.IsNullOrEmpty(chassis.meshKey) ? chassis.speciesName : chassis.meshKey) + "#" + bones.Length + "#L" + chassis.BuildLayers + (Flat ? "#грани" : "");
+        string key = KeyOf(chassis);
         // ЗАПИСЬ КЭША МОЖЕТ БЫТЬ МЁРТВОЙ. Кэш статический и переживает то, чего не переживают меши: выход из
         // Play, выгрузку сцены, `Resources.UnloadUnusedAssets` — ссылка из managed-словаря для Unity ссылкой
         // не считается, и неиспользуемый меш уничтожается. Словарь при этом отдаёт «Mesh», который равен null
@@ -144,8 +203,19 @@ public static class BoneMesher
         // Поймано 17.09: после прогона PlayMode-тестов кадр волка показал одни детали головы — в кэше
         // «Волк#18#L4» было 7 мешей, живых 0. В сборке тот же путь даёт перезапуск забега со сменой сцены
         if (!cache.TryGetValue(key, out var parts) || parts.Any(p => p.mesh == null))
-            cache[key] = parts = Polygonize(segs.Where(x => (int)x.layer < chassis.BuildLayers).ToList(),
-                                           bind, chassis.SkinCell, chassis.SkinBlend, chassis.SkinFur);
+        {
+            SlotData[] data = null;
+            if (pending.TryGetValue(key, out var task))
+            {
+                pending.Remove(key);
+                // фон досчитал — или дожидаемся его: синхронный вызов не считает второй раз. Упала задача — считаем здесь
+                try { data = task.Result; }
+                catch (System.Exception ex) { Debug.LogException(ex); }
+            }
+            data ??= Compute(segs.Where(x => (int)x.layer < chassis.BuildLayers).ToList(),
+                             chassis.SkinCell, chassis.SkinBlend, chassis.SkinFur, Flat);
+            cache[key] = parts = ToMeshes(data, bind, Flat);
+        }
 
         foreach (var (slot, mesh) in parts)
         {
@@ -191,7 +261,18 @@ public static class BoneMesher
 
     // ── ИЗОПОВЕРХНОСТЬ (Surface Nets) ─────────────────────────────────────────────────────────────────
 
-    static (string slot, Mesh mesh)[] Polygonize(List<Seg> segs, Matrix4x4[] bind, float cell, float blend, float fur)
+    /// <summary>Посчитанная оболочка одного слота — то, что фон отдаёт главному потоку.</summary>
+    sealed class SlotData
+    {
+        public string slot;
+        public List<Vector3> v, n;
+        public List<BoneWeight> w;
+        public List<int> t;
+    }
+
+    /// <summary>ПОЛЕ → ИЗОПОВЕРХНОСТЬ → ВЕСА. Без Unity API: идёт и в фоновом потоке. `flat` передаётся явно — статику
+    /// фон не читает, её может переключить стенд.</summary>
+    static SlotData[] Compute(List<Seg> segs, float cell, float blend, float fur, bool flat)
     {
         // сетка по габариту скелета с запасом на радиус и слияние
         Vector3 lo = new(9f, 9f, 9f), hi = new(-9f, -9f, -9f);
@@ -404,34 +485,45 @@ public static class BoneMesher
                              vertOf[VIdx(x, y, z)], vertOf[VIdx(x - 1, y, z)], s000, s000 ? i000 : iz);
                 }
 
-        // ── меш на слот: переиндексация, чтобы каждый нёс только свои вершины
-        var result = new List<(string, Mesh)>();
+        // ── слот: переиндексация, чтобы каждый нёс только свои вершины
+        var result = new List<SlotData>();
         foreach (var kv in perSlot)
         {
             var map = new Dictionary<int, int>();
-            var mv = new List<Vector3>(); var mn = new List<Vector3>();
-            var mw = new List<BoneWeight>(); var mt = new List<int>();
+            var d = new SlotData { slot = kv.Key, v = new List<Vector3>(), n = new List<Vector3>(), w = new List<BoneWeight>(), t = new List<int>() };
             foreach (int vi in kv.Value)
             {
                 // ГРАНЯМИ — вершина на каждый угол треугольника, без переиспользования: нормаль у грани своя
-                if (Flat || !map.TryGetValue(vi, out int local))
+                if (flat || !map.TryGetValue(vi, out int local))
                 {
-                    local = mv.Count;
-                    if (!Flat) map[vi] = local;
-                    mv.Add(verts[vi]); mn.Add(norms[vi]); mw.Add(weights[vi]);
+                    local = d.v.Count;
+                    if (!flat) map[vi] = local;
+                    d.v.Add(verts[vi]); d.n.Add(norms[vi]); d.w.Add(weights[vi]);
                 }
-                mt.Add(local);
+                d.t.Add(local);
             }
-            var mesh = new Mesh { name = kv.Key };
-            if (mv.Count > 65535) mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;   // разварка втрое множит вершины
-            mesh.SetVertices(mv); mesh.SetNormals(mn); mesh.SetTriangles(mt, 0);
-            if (Flat) mesh.RecalculateNormals();   // вершины не общие — нормаль грани вместо градиента поля
-            mesh.boneWeights = mw.ToArray();
-            mesh.bindposes = bind;
-            mesh.RecalculateBounds();
-            result.Add((kv.Key, mesh));
+            result.Add(d);
         }
         return result.ToArray();
+    }
+
+    /// <summary>Упаковка в меши — только главный поток.</summary>
+    static (string slot, Mesh mesh)[] ToMeshes(SlotData[] data, Matrix4x4[] bind, bool flat)
+    {
+        var result = new (string, Mesh)[data.Length];
+        for (int i = 0; i < data.Length; i++)
+        {
+            var d = data[i];
+            var mesh = new Mesh { name = d.slot };
+            if (d.v.Count > 65535) mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;   // разварка втрое множит вершины
+            mesh.SetVertices(d.v); mesh.SetNormals(d.n); mesh.SetTriangles(d.t, 0);
+            if (flat) mesh.RecalculateNormals();   // вершины не общие — нормаль грани вместо градиента поля
+            mesh.boneWeights = d.w.ToArray();
+            mesh.bindposes = bind;
+            mesh.RecalculateBounds();
+            result[i] = (d.slot, mesh);
+        }
+        return result;
     }
 
     /// <summary>ВЕС ИЗ ПОЛЯ: вершину держат те кости, что её вылепили. Две ближайшие делят вес по тому,

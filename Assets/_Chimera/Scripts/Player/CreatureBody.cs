@@ -185,8 +185,48 @@ public partial class CreatureBody : MonoBehaviour
     /// не дошёл, урон/скорость не получены). Идемпотентно (просто пересчёт).</summary>
     public void Refeed() => Recompute();
 
+    // ── МОДЕЛЬ ──────────────────────────────────────────────────────────────────────────────────────
+
+    bool morphBuilt;            // модель уже есть — значит, следующую можно досчитать в фоне
+    SpeciesSO morphPending;     // состав, чья оболочка считается в фоне; null — ждать нечего
+
+    /// <summary>Собрать модель по текущему составу и перепривязать всех, кто держит ссылки на её части.</summary>
+    void RebuildMorph()
+    {
+        morphPending = null;
+        var worn = WornInDrawOrder();
+        var blendedPlan = GetBlendedPlan(); // Ф6: смешение по Identity с локальностью (Пасть→голова, Руки/Ноги→хребет исключён); null = тождественность
+        MorphBuilder.Build(transform, chassis, worn, blendedPlan); // ИГРОК СТРОИТСЯ ТАК ЖЕ: его тело — такая же химера, без исключений
+        // ЧАСТИ НОВЫЕ — ВСЕ, КТО ДЕРЖИТ НА НИХ ССЫЛКИ, ПЕРЕ-СОБИРАЮТСЯ. Ссылка, снятая в Awake, к этому
+        // моменту мертва: на этом уже сгорели телеграф (замах не красился) и камуфляж (змея перестала
+        // исчезать — прятались префабные меши, которых нет)
+        mixer?.Rebuild();
+        if (TryGetComponent<Telegraph>(out var tg)) tg.RebuildRenderers(); // морф-части новые → телеграф пере-соберёт (иначе замах не красится)
+        if (camoComp != null) camoComp.Rebuild();                          // и камуфляж — иначе прячет пустоту
+        if (TryGetComponent<HitFlash>(out var hf)) hf.Rebuild();           // вспышка урона — иначе её нет вовсе
+        if (TryGetComponent<HeatSignature>(out var hs)) hs.Rebuild();      // тепловая подпись — иначе термозрение слепо
+        if (TryGetComponent<SnakeBodyChain>(out var chain)) chain.RebuildFromMorph(); // [ANIM] цепь тела берёт новые звенья (и заново гасит свои коллайдеры)
+        // Здесь стоял вызов JawController.Rebind(). Сам компонент убран 08.09: он не висел ни на одном
+        // префабе и ни в одной сцене, то есть не работал никогда, а внутри держал четыре независимых
+        // дефекта (брал одну из двух зеркальных костей челюсти, цеплялся к «Morph~dead», зубы за костью
+        // не шли — они примитивы органа, а не её потомки). Место под перепривязку челюсти правильное:
+        // когда компонент вернётся рабочим, строка встанет ровно сюда, рядом с цепью змеи
+        if (move != null) move.ReapplyFirstPerson(); // и своя голова снова спрятана от первого лица (части-то новые)
+        morphBuilt = true;
+    }
+
+    /// <summary>Фон досчитал оболочку ПОСЛЕДНЕГО состава — подмена одним кадром. Состав, сменившийся, пока считалось,
+    /// перезаписал `morphPending`: старый результат останется в кэше и не помешает.</summary>
+    void SwapPendingMorph()
+    {
+        if (morphPending == null || !BoneMesher.Ready(morphPending)) return;
+        RebuildMorph();
+        UpdateTint();
+    }
+
     void Update()
     {
+        SwapPendingMorph();
         int affSum = AffinitySum();
         if (affSum != lastAffinitySum) { lastAffinitySum = affSum; Recompute(); } // родство выросло → пересчёт
     }
@@ -371,24 +411,17 @@ public partial class CreatureBody : MonoBehaviour
         // СНОСИТ старый Morph, если остался от прежнего билда, и не строит). Гейт по скелету (Волк/Человек).
         if (chassis != null && chassis.sockets != null && chassis.sockets.Length > 0)
         {
-            var worn = WornInDrawOrder();
-            var blendedPlan = GetBlendedPlan(); // Ф6: смешение по Identity с локальностью (Пасть→голова, Руки/Ноги→хребет исключён); null = тождественность
-            MorphBuilder.Build(transform, chassis, worn, blendedPlan); // ИГРОК СТРОИТСЯ ТАК ЖЕ: его тело — такая же химера, без исключений
-            // ЧАСТИ НОВЫЕ — ВСЕ, КТО ДЕРЖИТ НА НИХ ССЫЛКИ, ПЕРЕ-СОБИРАЮТСЯ. Ссылка, снятая в Awake, к этому
-            // моменту мертва: на этом уже сгорели телеграф (замах не красился) и камуфляж (змея перестала
-            // исчезать — прятались префабные меши, которых нет)
-            mixer?.Rebuild();
-            if (TryGetComponent<Telegraph>(out var tg)) tg.RebuildRenderers(); // морф-части новые → телеграф пере-соберёт (иначе замах не красится)
-            if (camoComp != null) camoComp.Rebuild();                          // и камуфляж — иначе прячет пустоту
-            if (TryGetComponent<HitFlash>(out var hf)) hf.Rebuild();           // вспышка урона — иначе её нет вовсе
-            if (TryGetComponent<HeatSignature>(out var hs)) hs.Rebuild();      // тепловая подпись — иначе термозрение слепо
-            if (TryGetComponent<SnakeBodyChain>(out var chain)) chain.RebuildFromMorph(); // [ANIM] цепь тела берёт новые звенья (и заново гасит свои коллайдеры)
-            // Здесь стоял вызов JawController.Rebind(). Сам компонент убран 08.09: он не висел ни на одном
-            // префабе и ни в одной сцене, то есть не работал никогда, а внутри держал четыре независимых
-            // дефекта (брал одну из двух зеркальных костей челюсти, цеплялся к «Morph~dead», зубы за костью
-            // не шли — они примитивы органа, а не её потомки). Место под перепривязку челюсти правильное:
-            // когда компонент вернётся рабочим, строка встанет ровно сюда, рядом с цепью змеи
-            if (move != null) move.ReapplyFirstPerson(); // и своя голова снова спрятана от первого лица (части-то новые)
+            // ПЕРЕСБОРКА ОБОЛОЧКИ — В ФОНЕ, КОГДА ЕСТЬ ЧЕМ ЖИТЬ. Новый состав = новая оболочка, а она стоит 50–350 мс
+            // (замер 29.09); посреди боя это рывок. Тело, у которого уже есть модель, запускает расчёт в фоне и
+            // живёт старой, пока он не готов, а подмену делает `Update`. Первая сборка (спавн) — сразу: старой нет,
+            // и без неё существо было бы невидимым. В редакторе вне Play — сразу: инструменты ждут готовое тело
+            var shell = ChainSwap.Compose(chassis, WornInDrawOrder());
+            if (Application.isPlaying && morphBuilt && !BoneMesher.Ready(shell))
+            {
+                BoneMesher.Warm(shell);
+                morphPending = shell;
+            }
+            else RebuildMorph();
         }
 
         // ЦВЕТ ПО СОСТАВУ — У ВСЕХ, БЕЗУСЛОВНО. Это одна из главных индикаторных фич: по цвету читается,
