@@ -31,14 +31,24 @@ public static class SkeletonBuilder
             // `freeOrigin` — кость, которой родитель даёт лишь родство и поворот: начало берётся из
             // `origin` как смещение в КАДРЕ РОДИТЕЛЯ. Так сидят грудина, скула, глазница и ухо — они не
             // лежат на оси родителя, и доля вдоль неё ставит их не туда при любом значении
-            pos = b.freeOrigin ? ppos + prot * b.origin
-                               : ppos + prot * (Vector3.up * (par.length * b.attach));
-            rot = prot * rot;   // поворот НАСЛЕДУЕТСЯ: согнул плечо — поехала вся нога
+            (pos, rot) = Child(par, ppos, prot, b);
         }
 
         done[b.name] = (pos, rot);
         return (pos, rot);
     }
+
+    /// <summary>ШАГ ПОЗЫ: поза ребёнка из позы родителя — одна формула на всех, кто ставит кости (`Place` по именам,
+    /// `BodyTree.Pose` свёрткой сверху вниз). Корень цепи — `Root`.</summary>
+    public static (Vector3 pos, Quaternion rot) Child(Bone parent, Vector3 ppos, Quaternion prot, Bone b)
+    {
+        var pos = b.freeOrigin ? ppos + prot * b.origin
+                               : ppos + prot * (Vector3.up * (parent.length * b.attach));
+        return (pos, prot * Quaternion.Euler(b.dir));   // поворот НАСЛЕДУЕТСЯ: согнул плечо — поехала вся нога
+    }
+
+    /// <summary>Поза корня: своя точка старта и свой поворот.</summary>
+    public static (Vector3 pos, Quaternion rot) Root(Bone b) => (b.origin, Quaternion.Euler(b.dir));
 
     /// <summary>Конец кости — он же начало её детей.</summary>
     public static Vector3 Tip(Bone b, Vector3 pos, Quaternion rot) => pos + rot * (Vector3.up * b.length);
