@@ -164,7 +164,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4402482617069600778
+    - rid: 925335831098163210
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -2759,8 +2759,8 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: "\u0401\u0436"
     abilities:
-    - rid: 4402482617069600779
-    - rid: 4402482617069600780
+    - rid: 925335831098163211
+    - rid: 925335831098163212
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -2859,8 +2859,8 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: "\u0401\u0436"
     abilities:
-    - rid: 4402482617069600781
-    - rid: 4402482617069600782
+    - rid: 925335831098163213
+    - rid: 925335831098163214
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -3737,16 +3737,16 @@ MonoBehaviour:
   - name: "\u043A\u043E\u0437\u044B\u0440\u0451\u043A"
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     layer: 0
-    origin: {x: 0, y: 0.4827, z: -0.0858}
+    origin: {x: 0, y: 0.48267287, z: -0.08579384}
     socket: "\u0445\u0440\u0435\u0431\u0435\u0442"
     attach: 1
     freeOrigin: 1
-    length: 0.3214
+    length: 0.32137373
     endBone: 
     endAttach: 1
     dir: {x: -3.671, y: 0, z: 0}
-    r0: 0.18
-    r1: 0.16
+    r0: 0.17998947
+    r1: 0.159997
     section: 1.1
     depth: 1
     blend: 0.12
@@ -3757,25 +3757,25 @@ MonoBehaviour:
       a: 
       b: 
     rel:
-      at: 0
+      at: 0.7095
       offX: 0
-      offZ: 0
-      len: 0
-      r0: 0
-      r1: 0
+      offZ: -0.4493
+      len: 0.4724
+      r0: 0.9426
+      r1: 0.8379
   - name: "\u0433\u0440\u0443\u0434\u044C"
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     layer: 0
-    origin: {x: 0, y: 0.3784, z: 0.0612}
+    origin: {x: 0, y: 0.3783829, z: 0.061203573}
     socket: "\u0421\u0435\u0440\u0434\u0446\u0435"
     attach: 1
     freeOrigin: 1
-    length: 0.4001
+    length: 0.40008444
     endBone: 
     endAttach: 1
     dir: {x: 0.253, y: 0, z: 0}
-    r0: 0.13
-    r1: 0.16
+    r0: 0.12999393
+    r1: 0.15998983
     section: 1.05
     depth: 1
     blend: 0.12
@@ -3786,12 +3786,12 @@ MonoBehaviour:
       a: 
       b: 
     rel:
-      at: 0
+      at: 0.5562
       offX: 0
-      offZ: 0
-      len: 0
-      r0: 0
-      r1: 0
+      offZ: 0.3485
+      len: 0.5881
+      r0: 0.7402
+      r1: 0.911
   - name: "\u0448\u0435\u044F"
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     layer: 0
@@ -4030,7 +4030,7 @@ MonoBehaviour:
     span: {x: 0, y: 0}
   - name: "\u0421\u0435\u0440\u0434\u0446\u0435"
     host: "\u0433\u0440\u0443\u0434\u044C"
-    localPos: {x: 0, y: -0.000034758104, z: -0.000047792404}
+    localPos: {x: 0, y: -0.000017674052, z: -0.000051449526}
     localRot: {x: -0.7071074, y: 0, z: 0, w: 0.7071062}
     unit: 0.32
     mirror: 0
@@ -4094,7 +4094,7 @@ MonoBehaviour:
     span: {x: 0, y: 0}
   - name: "\u0418\u0433\u043B\u043E\u043C\u0451\u0442"
     host: "\u043A\u043E\u0437\u044B\u0440\u0451\u043A"
-    localPos: {x: 0, y: 0.23441435, z: -0.0895535}
+    localPos: {x: 0, y: 0.2344418, z: -0.08955793}
     localRot: {x: 0, y: 0.9912103, z: 0.13229638, w: 0}
     unit: 0.44
     mirror: 0
@@ -4150,7 +4150,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4402482617069600778
+    - rid: 925335831098163210
       type: {class: VolleyData, ns: , asm: Chimera.Runtime}
       data:
         damagePerQuill: 4
@@ -4165,14 +4165,14 @@ MonoBehaviour:
         windupTime: 0.5
         cooldown: 2.5
         blindAimError: 1.6
-    - rid: 4402482617069600779
+    - rid: 925335831098163211
       type: {class: RollData, ns: , asm: Chimera.Runtime}
       data:
         damage: 10
         bleedStacks: 1
         knockForce: 8
         radius: 1.2
-    - rid: 4402482617069600780
+    - rid: 925335831098163212
       type: {class: CurlData, ns: , asm: Chimera.Runtime}
       data:
         curlArmor: 0.6
@@ -4181,7 +4181,7 @@ MonoBehaviour:
         rollDrain: 40
         rollTurnSpeed: 90
         rollGravity: 20
-    - rid: 4402482617069600781
+    - rid: 925335831098163213
       type: {class: BiteData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
@@ -4193,7 +4193,7 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.4
         cooldown: 0.7
-    - rid: 4402482617069600782
+    - rid: 925335831098163214
       type: {class: ConstrictData, ns: , asm: Chimera.Runtime}
       data:
         maxStage: 1
