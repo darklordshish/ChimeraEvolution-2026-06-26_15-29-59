@@ -207,5 +207,35 @@ namespace Chimera.Tests.EditMode
                 Assert.Less(Vector3.Distance(want, got), 0.01f, $"{joint} волчьей цепи не на суставе человека");
             }
         }
+
+        /// <summary>Сустав ниже границы поля (письмо модельной линии 02.10): у волка `запястье` — на узле-риге `пясть` под
+        /// концом `предплечье`. Отрезок «предплечье + пясть» встаёт на запястье носителя целиком; пясть поля не даёт.</summary>
+        [Test]
+        public void RigNodeJoint_SegmentLandsOnCarrierJoint()
+        {
+            var wolf = WolfWithPart();
+            var bones = wolf.bones.Select(b => JsonUtility.FromJson<Bone>(JsonUtility.ToJson(b))).ToList();
+            var fore = bones.First(b => b.name == "предплечье");
+            var rig = new Bone { name = "пясть", parent = "предплечье", limb = fore.limb, layer = BodyLayer.Rig, attach = 1f,
+                                 length = 0.3f, r0 = 0.02f, r1 = 0.02f, mark = new BoneMarks { b = fore.mark.b } };
+            fore.mark = new BoneMarks { a = fore.mark?.a };
+            bones.Add(rig);
+            wolf.bones = bones.ToArray();
+
+            var human = Load("Человек");
+            var worn = human.organs.Where(o => o.slot != BodySlots.Arms).ToList();
+            worn.Insert(0, wolf.organs.First(o => o.slot == BodySlots.Arms));
+            var body = ChainSwap.Compose(human, worn);
+            Vector3 TipOf(SpeciesSO sp, string name)
+            {
+                var by = sp.bones.ToDictionary(b => b.name);
+                var (pos, rot) = SkeletonBuilder.Place(by[name], by, new Dictionary<string, (Vector3, Quaternion)>());
+                return SkeletonBuilder.Tip(by[name], pos, rot);
+            }
+            var wrist = TipOf(human, human.bones.First(b => b.limb == "перед" && b.mark?.b == "запястье").name);
+            Assert.Less(Vector3.Distance(TipOf(body, "пясть"), wrist), 0.01f, "узел-риг с меткой запястья не на запястье носителя");
+            Assert.Greater(Vector3.Distance(TipOf(body, "предплечье"), wrist), 0.02f, "предплечье легло на запястье — отрезок не цельный");
+            Assert.AreEqual(BodyLayer.Rig, body.bones.First(b => b.name == "пясть").layer);
+        }
     }
 }

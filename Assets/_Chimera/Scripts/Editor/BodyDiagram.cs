@@ -238,7 +238,7 @@ public static class BodyDiagram
         if (depth > 24) { t.AppendLine(pad + "└─ (!) ЦИКЛ В СКЕЛЕТЕ — обход оборван"); return; }
         string layer = b.layer == BodyLayer.Skeleton ? "кость"
                      : b.layer == BodyLayer.Muscle ? "мышца"
-                     : b.layer == BodyLayer.Feature ? "признак" : "рез";
+                     : b.layer == BodyLayer.Feature ? "признак" : b.layer == BodyLayer.Rig ? "риг" : "рез";
         string slot = string.IsNullOrEmpty(b.socket) ? "" : " · " + b.socket;
         string pair = b.mirrorX ? " · пара" : "";
         string endAt = string.IsNullOrEmpty(b.endBone) ? "" : $" → {b.endBone}";

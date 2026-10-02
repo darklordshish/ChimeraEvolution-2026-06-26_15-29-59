@@ -241,9 +241,12 @@ public static class ChainSwap
 
     public static bool FollowCarrierJoints = true;
 
-    /// <summary>Провести путь цепи донора через суставы носителя: кость с меткой конца `m` направляется и вытягивается к
-    /// концу кости носителя с той же меткой. Узлы вне пути (мышцы, лофт) едут за своей костью; их начала и гнёзда вдоль
-    /// оси растягиваются вместе с ней. Кости графта — свежие копии (`Scaled`), правятся на месте.</summary>
+    /// <summary>Провести путь цепи донора через суставы носителя. Путь режется на отрезки метками конца: отрезок — кости
+    /// от сустава до кости с меткой `m` включительно (у волка `предплечье` + узел-риг `пясть` до `запястье`). Отрезок
+    /// поворачивается ЦЕЛИКОМ — поворотом первой кости, он наследуется — так, чтобы его хорда легла на сустав носителя с
+    /// той же меткой, и масштабируется по длине на отношение хорд; изгибы внутри отрезка — донорские. Узлы вне пути (мышцы,
+    /// лофт) едут за своей костью, их начала и гнёзда вдоль оси растягиваются с ней. Кости графта — свежие копии
+    /// (`Scaled`), правятся на месте.</summary>
     static void FollowJoints(Tree<BodyNode> graft, Tree<BodyNode> cFocus, Dictionary<BodyNode, (Vector3 pos, Quaternion rot)> cPose,
                              Bone cParent, Vector3 cParentPos, Quaternion cParentRot)
     {
@@ -256,26 +259,45 @@ public static class ChainSwap
             var (cp, cr) = cPose[t.Value];
             joints[cb.mark.b] = SkeletonBuilder.Tip(cb, cp, cr);
         }
-        var node = graft; Bone parent = cParent; Vector3 ppos = cParentPos; Quaternion prot = cParentRot;
-        while (node != null)
+        // путь цепи: от корня вниз по костям своей конечности (ветвь с меткой впереди — та, что ведёт к суставу)
+        var path = new List<Tree<BodyNode>>();
+        for (var n = graft; n != null; )
         {
-            var b = node.Value.Bone;
-            var (pos, rot) = SkeletonBuilder.Child(parent, ppos, prot, b);
-            if (!string.IsNullOrEmpty(b.mark?.b) && joints.TryGetValue(b.mark.b, out var j))
+            path.Add(n);
+            var b0 = n.Value.Bone;
+            n = n.Kids.Where(t => t.Value.Bone.limb == b0.limb && t.Value.Bone.layer != BodyLayer.Muscle)
+                      .OrderByDescending(t => t.Subtrees().Any(x => !string.IsNullOrEmpty(x.Value.Bone.mark?.b))).FirstOrDefault();
+        }
+        Bone parent = cParent; Vector3 ppos = cParentPos; Quaternion prot = cParentRot;
+        int start = 0;
+        for (int i = 0; i < path.Count; i++)
+        {
+            var mark = path[i].Value.Bone.mark?.b;
+            if (string.IsNullOrEmpty(mark) || !joints.TryGetValue(mark, out var j)) continue;
+            // поза отрезка start..i как есть
+            var poses = new List<(Vector3 pos, Quaternion rot)>();
+            Bone pb = parent; Vector3 pp = ppos; Quaternion pr = prot;
+            for (int k = start; k <= i; k++) { var b = path[k].Value.Bone; var q = SkeletonBuilder.Child(pb, pp, pr, b); poses.Add(q); pb = b; pp = q.pos; pr = q.rot; }
+            var from = poses[0].pos;
+            var chord = SkeletonBuilder.Tip(path[i].Value.Bone, poses[^1].pos, poses[^1].rot) - from;
+            var to = j - from;
+            if (chord.sqrMagnitude > 1e-8f && to.sqrMagnitude > 1e-8f)
             {
-                var to = j - pos; float len = to.magnitude;
-                if (len > 1e-4f)
+                var turn = Quaternion.FromToRotation(chord, to);
+                var first = path[start].Value.Bone;
+                first.dir = (Quaternion.Inverse(prot) * (turn * poses[0].rot)).eulerAngles;
+                float k = to.magnitude / chord.magnitude;
+                for (int m = start; m <= i; m++)
                 {
-                    rot = Quaternion.FromToRotation(rot * Vector3.up, to / len) * rot;   // кратчайший поворот: крутка кости своя
-                    b.dir = (Quaternion.Inverse(prot) * rot).eulerAngles;
-                    float k = len / Mathf.Max(1e-4f, b.length);
-                    b.length = len;
-                    foreach (var kid in node.Kids) if (kid.Value.Bone.freeOrigin) kid.Value.Bone.origin.y *= k;
-                    foreach (var n in node.Value.Nests) { n.localPos.y *= k; n.span *= k; }
+                    var node = path[m];
+                    node.Value.Bone.length *= k;
+                    foreach (var kid in node.Kids) if (kid.Value.Bone.freeOrigin) kid.Value.Bone.origin.y *= k;   // вдоль оси; поперёк — радиус, он прежний
+                    foreach (var ns in node.Value.Nests) { ns.localPos.y *= k; ns.span *= k; }
                 }
             }
-            parent = b; ppos = pos; prot = rot;
-            node = node.Kids.FirstOrDefault(t => t.Value.Bone.limb == b.limb && !string.IsNullOrEmpty(t.Value.Bone.mark?.b));
+            // следующий отрезок начинается от новой позы конца этого
+            for (int m = start; m <= i; m++) { var b = path[m].Value.Bone; var q = SkeletonBuilder.Child(parent, ppos, prot, b); parent = b; ppos = q.pos; prot = q.rot; }
+            start = i + 1;
         }
     }
 

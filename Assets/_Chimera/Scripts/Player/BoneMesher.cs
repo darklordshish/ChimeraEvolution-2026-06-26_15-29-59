@@ -110,6 +110,7 @@ public static class BoneMesher
         for (int i = 0; i < pose.Count; i++)
         {
             var q = pose[i]; var b = q.b;
+            if (b.layer == BodyLayer.Rig) continue;   // только риг: сустав и метки без поля
             // ЧАСТЬ РИСУЕТ ДЕТАЛЬ (спека конструктора): кость остаётся в скелете — на ней висит деталь, — но поля не даёт
             if (chassis.fieldSkip != null && System.Array.IndexOf(chassis.fieldSkip, b.name) >= 0) continue;
             segs.Add(new Seg
