@@ -161,39 +161,113 @@ bpy.context.view_layer.objects.active = ob; bpy.ops.object.join(); me = ob.data
 rm = ob.modifiers.new('rm', 'REMESH'); rm.mode = 'VOXEL'; rm.voxel_size = 0.006
 bpy.ops.object.modifier_apply(modifier=rm.name)
 
-# срез плоскостью шва через плечевой сустав, перпендикулярно оси культи — граница = одна петля
+# срез плоскостью шва через плечевой сустав (граница = одна петля) и — v5 — по ЗАПЯСТЬЮ: лапа образца при прореживании
+# сливала пальцы в «веер» (критик 4.5/10), поэтому лапа строится процедурно ниже, а от образца берётся нога до запястья
+WRIST_CUT = 0.15
 bm = bmesh.new(); bm.from_mesh(me)
 bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], dist=1e-5,
                        plane_co=to_b(shoulder_s), plane_no=Vector(to_b(dir_u)) - Vector(to_b(np.zeros(3))), clear_outer=True)
+bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], dist=1e-5,
+                       plane_co=Vector((0, 0, WRIST_CUT)), plane_no=Vector((0, 0, 1)), clear_inner=True)
 bm.to_mesh(me); bm.free()
 m = ob.modifiers.new('dec', 'DECIMATE'); m.ratio = BUDGET / max(1, 2.0 * len(me.polygons))   # воксели — квады: треугольников вдвое
 bpy.ops.object.modifier_apply(modifier=m.name)
 bpy.ops.object.mode_set(mode='EDIT'); bpy.ops.mesh.select_all(action='SELECT'); bpy.ops.mesh.quads_convert_to_tris()
 bpy.ops.object.mode_set(mode='OBJECT')
 
-# КОЛЬЦО ШВА: петля среза → ровно 8 вершин (ближайшие к углам кольца, остальные растворены), вершины — на эллипсе шва
+# КОЛЬЦА: петля шва и петля запястья → ровно по 8 вершин (ближайшие к углам кольца, остальные растворены). Запястье —
+# задел под будущий шов «конец конечности» (письмо ГеймБосса 02.10): чистая петля из 8 вершин между предплечьем и лапой
 bm = bmesh.new(); bm.from_mesh(me)
 bnd = [v for v in bm.verts if v.is_boundary]
-print('петля среза: вершин %d, граничных рёбер %d' % (len(bnd), sum(1 for e in bm.edges if e.is_boundary)))
+seam_bnd = [v for v in bnd if v.co.z > 0.4]
+wr_bnd = [v for v in bnd if v.co.z <= 0.4]
+print('петли: шва %d вершин, запястья %d' % (len(seam_bnd), len(wr_bnd)))
+WRC = axis_s(WRIST_CUT)
+fwd0, lat0 = np.array([0.0, 0.0, 1.0]), np.array([-1.0, 0.0, 0.0])     # кольцо запястья горизонтально: вершина 0 — перёд
+wl = np.array([from_b(v.co) for v in wr_bnd]) - WRC
+wr_f = float(np.percentile(np.abs(wl @ fwd0), 85)); wr_l = float(np.percentile(np.abs(wl @ lat0), 85))
 
 
-def ang(v):
-    d = from_b(v.co) - shoulder_s
-    return math.atan2(-(d @ lat), d @ fwd) % (2 * math.pi)
+def reduce_loop(loop, center, f_, l_, af, al, k):
+    def ang(v):
+        d = from_b(v.co) - center
+        return math.atan2(-(d @ l_), d @ f_) % (2 * math.pi)
+    keep = []
+    for j in range(N_RING):
+        a_ = 2 * math.pi * j / N_RING
+        keep.append(min(loop, key=lambda v: abs((ang(v) - a_ + math.pi) % (2 * math.pi) - math.pi)))
+    bmesh.ops.dissolve_verts(bm, verts=[v for v in loop if v not in keep])
+    for j, v in enumerate(keep):
+        th = 2 * math.pi * j / N_RING
+        v.co = to_b(center + k * (f_ * af * math.cos(th) - l_ * al * math.sin(th)))
+    return keep
 
 
-keep_v = []
+keep_v = reduce_loop(seam_bnd, shoulder_s, fwd, lat, ax_f, ax_l, K_SEAM)
+wr_keep = reduce_loop(wr_bnd, WRC, fwd0, lat0, wr_f, wr_l, 1.0)
+
+# ЛАПА ВОЛКА — процедурная: подушка (два кольца по 8 и низ веером) и 4 пальца трубками по 6 граней с когтями-конусами.
+# Пальцы — отдельные оболочки, утопленные в подушку: ключ «двуногий» разводит их в пятерню (v5)
+
+
+def ring8(center, af, al):
+    return [bm.verts.new(to_b(center + fwd0 * af * math.cos(2 * math.pi * j / N_RING)
+                              - lat0 * al * math.sin(2 * math.pi * j / N_RING))) for j in range(N_RING)]
+
+
+def bridge(r0, r1):
+    for j in range(N_RING):
+        bm.faces.new([r0[j], r0[(j + 1) % N_RING], r1[(j + 1) % N_RING], r1[j]])
+
+
+# размер подушки — по стопе образца (вершины правой передней ноги ниже 6 см), а не по тонкой петле запястья: иначе лапа
+# волка выходила игрушечной
+foot_v = P[g[P[g, 1] < 0.06]]
+foot_c = np.array([WRC[0], 0.0, float(np.median(foot_v[:, 2]))])
+f_hl = float(np.percentile(np.abs(foot_v[:, 0] - WRC[0]), 90))                    # полуширина
+f_z0, f_z1 = float(np.percentile(foot_v[:, 2], 5)), float(np.percentile(foot_v[:, 2], 95))
+f_hf = (f_z1 - f_z0) / 2
+print('стопа образца: полуширина %.3f, длина %.3f' % (f_hl, f_z1 - f_z0))
+pad1 = ring8(np.array([WRC[0], 0.08, (WRC[2] + (f_z0 + f_z1) / 2) / 2]), max(wr_f * 1.2, f_hf * 0.75), max(wr_l * 1.1, f_hl * 0.85))
+pad2 = ring8(np.array([WRC[0], 0.035, (f_z0 + f_z1) / 2]), f_hf * 0.85, f_hl)
+bridge(wr_keep, pad1); bridge(pad1, pad2)
+bot = bm.verts.new(to_b(np.array([WRC[0], 0.005, (f_z0 + f_z1) / 2])))
 for j in range(N_RING):
-    a_ = 2 * math.pi * j / N_RING
-    keep_v.append(min(bnd, key=lambda v: abs((ang(v) - a_ + math.pi) % (2 * math.pi) - math.pi)))
-bmesh.ops.dissolve_verts(bm, verts=[v for v in bnd if v not in keep_v])
-for j, v in enumerate(keep_v):
-    th = 2 * math.pi * j / N_RING
-    v.co = to_b(shoulder_s + K_SEAM * (fwd * ax_f * math.cos(th) - lat * ax_l * math.sin(th)))
+    bm.faces.new([pad2[j], pad2[(j + 1) % N_RING], bot])
+toes = []                                                # [(основание, все вершины пальца, вершины когтя)]
+front_z = (f_z0 + f_z1) / 2 + f_hf * 0.85
+for i in range(4):
+    k_ = i - 1.5
+    base = np.array([WRC[0] + k_ * f_hl * 0.55, 0.03, front_z - 0.035])
+    ln = 0.07 if abs(k_) < 1 else 0.058
+    dir_t = np.array([k_ * 0.12, -0.25, 1.0]); dir_t /= np.linalg.norm(dir_t)
+    up_t = np.array([0.0, 1.0, 0.0]); up_t -= dir_t * up_t.dot(dir_t); up_t /= np.linalg.norm(up_t)
+    sd_t = np.cross(dir_t, up_t)
+    rings_t = []
+    for t, r in ((0.0, 0.021), (0.5, 0.019), (1.0, 0.014)):
+        c_ = base + dir_t * ln * t
+        rings_t.append([bm.verts.new(to_b(c_ + r * (up_t * math.cos(2 * math.pi * j / 6) + sd_t * math.sin(2 * math.pi * j / 6))))
+                        for j in range(6)])
+    for r0, r1 in zip(rings_t, rings_t[1:]):
+        for j in range(6):
+            bm.faces.new([r0[j], r0[(j + 1) % 6], r1[(j + 1) % 6], r1[j]])
+    bm.faces.new(rings_t[0][::-1])
+    tip = base + dir_t * ln
+    claw_base = [bm.verts.new(to_b(tip + 0.011 * (up_t * math.cos(2 * math.pi * j / 4) + sd_t * math.sin(2 * math.pi * j / 4))))
+                 for j in range(4)]
+    apex = bm.verts.new(to_b(tip + dir_t * 0.03 - up_t * 0.016))
+    for j in range(4):
+        bm.faces.new([claw_base[j], claw_base[(j + 1) % 4], apex])
+    bm.faces.new(claw_base[::-1])
+    toes.append((base, [v for r in rings_t for v in r] + claw_base + [apex], claw_base + [apex]))
+
 bmesh.ops.triangulate(bm, faces=bm.faces[:])
 bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
 bm.verts.index_update()
 seam_idx = [v.index for v in keep_v]
+wrist_idx = [v.index for v in wr_keep]
+pad_idx = set(v.index for v in pad1 + pad2 + [bot])
+toe_sets = [(base, [v.index for v in vs], set(v.index for v in cl)) for base, vs, cl in toes]
 bm.to_mesh(me); bm.free()
 
 # ── пересадка на суставы волка ──
@@ -246,42 +320,84 @@ key = ob.shape_key_add(name='двуногий', from_mix=False)
 seam_set = set(seam_idx)
 
 
-PAW_TOP = wrist_y + 0.04       # выше — предплечье (утолщается), ниже — лапа (пальцы длиннее)
+PAW_TOP = wrist_y + 0.04       # выше — предплечье, ниже — лапа
 
 
 def thick(y):
-    """Множитель толщины ключа `двуногий` по высоте на волке (02.10, калибр Donor подтверждён): предплечье и запястье
-    оборотня по листу — 0.097 роста, у детали в Donor было 0.065 при прежнем ключе ×1.2 → нужно ×1.8; плечо уже попадает
-    (0.10) — почти не трогаем; у кольца шва — 1 (01d §1.4)."""
-    # мускулистое предплечье оборотня — толще у локтя, сужается к запястью (лист: 0.097 в середине, 0.068 у запястья);
-    # ровный ×1.8 давал «валенок» — колонну одной толщины до лапы
-    return float(np.interp(y, [PAW_TOP, 0.30, 0.45, 0.58, E_[1], (E_[1] + S[1]) / 2, S[1] - 0.04, S[1]],
-                           [1.50, 2.10, 2.50, 1.75, 1.30, 1.00, 1.00, 1.0]))   # замер v3 по листу: предплечье 0.069 → 0.097 роста; верх ноги волка на человеке — плечо, там 0.15 → 0.10
+    """КЛЮЧ «двуногий», v5 (критик: v3 «колбаса» 3/10, v4 «колокол» 4.5/10). Множитель толщины по высоте на волке.
+    На человеке (калибр Donor) волчья кость `плечо` короче человеческой: сустав E (0.66) ложится на 0.71 роста, локоть
+    оборотня по листу — на ~0.65 роста ≈ 0.56 по высоте волка. Ритм листа: дельта 0.10 — локоть 0.065 — верх предплечья
+    0.085 — запястье 0.05: предплечье КЛИНОМ, пик сразу под локтем, к запястью −45 %."""
+    return float(np.interp(y, [PAW_TOP, 0.30, 0.42, 0.50, 0.56, 0.60, E_[1], (E_[1] + S[1]) / 2, S[1]],
+                           [0.85, 1.10, 1.45, 1.70, 1.05, 1.15, 1.05, 1.10, 1.0]))
 
 
-DROP = 0.06       # кисть ниже вдоль руки: лапа оборотня кончается на 0.33 роста, у детали было 0.37 (ключ активен только на
-                  # двуногом носителе — на волке лапа на земле)
+WR = np.array([W[0], wrist_y, W[2]])      # запястье волка на оси ноги — центр поворота кисти
 
 
-def drop(y):
-    return DROP * float(np.clip((0.45 - y) / (0.45 - PAW_TOP), 0, 1))
+def rot_x(rel, deg):
+    t = math.radians(deg); c, s_ = math.cos(t), math.sin(t)
+    return np.array([rel[0], c * rel[1] - s_ * rel[2], s_ * rel[1] + c * rel[2]])
 
+
+def hand(p):
+    """Кисть: волчья лапа (подошва вниз, пальцы вперёд) → кисть оборотня (пальцы вниз вдоль предплечья, ладонью назад).
+    Форма, не поза: кости кисти в графе нет (письмо ГеймБосса 02.10). Ладонь не шире верха предплечья (критик v4)"""
+    rel = rot_x(p - WR, 90.0)
+    rel[0] *= 0.85; rel[1] *= 1.25; rel[2] *= 0.7
+    return WR + rel
+
+
+toe_of = {}
+for t_i, (base, ids, claw) in enumerate(toe_sets):
+    for i in ids:
+        toe_of[i] = t_i
+base_t = [np.mean([hand(from_b(me.vertices[i].co)) for i in ids[:6]], axis=0) for base, ids, claw in toe_sets]
 
 for i, kv in enumerate(key.data):
     if i in seam_set:
         continue
     p = from_b(kv.co)
-    if p[1] > PAW_TOP:
-        ax = axis_o(p[1]); off = p - ax; off[1] = 0
-        p = ax + off * thick(p[1]) + np.array([0, p[1] - ax[1] - drop(p[1]), 0])
-    else:            # лапа-кисть оборотня: крупнее, пальцы длиннее вперёд
-        c0 = np.array([W[0], 0.0, W[2]])
-        rel = p - c0
-        rel[0] *= 1.25
-        rel[2] *= 1.5 if rel[2] > 0 else 1.15
-        rel[1] *= 1.15
-        p = c0 + rel - np.array([0, DROP, 0])
+    y = p[1]
+    if i in toe_of:
+        # ПАЛЬЦЫ — пятерня: длиннее ×1.8 от основания, веером врозь, когти загнуты к бедру (внутрь, −X) и к ладони
+        t_i = toe_of[i]; k_ = t_i - 1.5
+        q = hand(p); d = q - base_t[t_i]
+        d *= 1.8
+        d[0] += k_ * 0.25 * abs(d[1])
+        q = base_t[t_i] + d
+        if i in toe_sets[t_i][2]:
+            q += np.array([-0.018, 0.0, -0.012])
+        p = q
+    elif y > E_[1]:
+        # КУЛЬТЯ → ПЛЕЧО ОБОРОТНЯ: волчья лопатка (масса назад) в профиль мельче, купол дельты — наружу и вверх
+        ax = axis_o(y); off = p - ax; off[1] = 0
+        k = thick(y)
+        off[2] *= (0.4 if off[2] < 0 else 1.0) * k
+        dome = float(np.interp(y, [E_[1], (E_[1] + S[1]) / 2, S[1]], [0.0, 1.0, 0.5]))
+        off[0] *= k * (1.0 + 0.45 * dome) if off[0] > 0 else k
+        p = ax + off + np.array([0, y - ax[1] + 0.02 * dome, 0])
+    elif y > PAW_TOP:
+        ax = axis_o(y); off = p - ax; off[1] = 0
+        off *= thick(y)
+        # ТОЧКА ЛОКТЯ (олекранон) — клин назад у локтя человека; 2.5 см тонули (критик v4), теперь 4.5 см
+        if off[2] < 0:
+            off[2] -= 0.045 * float(np.clip(1 - abs(y - 0.56) / 0.05, 0, 1))
+        p = ax + off + np.array([0, y - ax[1], 0])
+    else:
+        p = hand(p)
     kv.co = to_b(p)
+
+# переход кисть ↔ предплечье: у вершин чуть выше лапы — половина поворота, иначе запястье рвётся
+for i, kv in enumerate(key.data):
+    if i in seam_set:
+        continue
+    p0 = from_b(me.vertices[i].co)
+    if PAW_TOP < p0[1] < PAW_TOP + 0.05:
+        w = (PAW_TOP + 0.05 - p0[1]) / 0.05
+        q = WR + rot_x(p0 - WR, 90.0 * 0.5 * w)
+        cur = from_b(kv.co)
+        kv.co = to_b(cur * (1 - 0.5 * w) + q * 0.5 * w)
 
 tris = sum(len(p.vertices) - 2 for p in me.polygons)
 print('нога: %d → %d тр (с культёй)' % (n0, tris))
