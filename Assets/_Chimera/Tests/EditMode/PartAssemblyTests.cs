@@ -179,5 +179,33 @@ namespace Chimera.Tests.EditMode
             CollectionAssert.DoesNotContain(body.fieldSkip, "лопатка", "вес у подмышки выключил поле лопатки волка");
             CollectionAssert.Contains(body.fieldSkip, "плечо");
         }
+
+        /// <summary>АДАПТАЦИЯ ПЛАНА — В КОСТЯХ (геймдизайнер 02.10): на носителе другого плана цепь с деталью встаёт по его
+        /// суставам — локоть и запястье волчьей руки там же, где у человека. Прежде цепь держала волчий зигзаг, а руку
+        /// разворачивал ключ формы, и локоть меша расходился с локтем кости.</summary>
+        [Test]
+        public void OtherPlan_ChainFollowsCarrierJoints()
+        {
+            var wolf = WolfWithPart();
+            var human = Load("Человек");
+            Assert.AreNotEqual(wolf.parts[0].plan, human.Plan);
+            var worn = human.organs.Where(o => o.slot != BodySlots.Arms).ToList();
+            worn.Insert(0, wolf.organs.First(o => o.slot == BodySlots.Arms));
+            var body = ChainSwap.Compose(human, worn);
+
+            Vector3 TipOf(SpeciesSO sp, System.Func<Bone, bool> pick)
+            {
+                var by = sp.bones.ToDictionary(b => b.name);
+                var b = sp.bones.First(pick);
+                var (pos, rot) = SkeletonBuilder.Place(b, by, new Dictionary<string, (Vector3, Quaternion)>());
+                return SkeletonBuilder.Tip(b, pos, rot);
+            }
+            foreach (var joint in new[] { "локоть", "запястье" })
+            {
+                var want = TipOf(human, b => b.limb == "перед" && b.mark?.b == joint);
+                var got = TipOf(body, b => b.limb == "перед" && b.mark?.b == joint);
+                Assert.Less(Vector3.Distance(want, got), 0.01f, $"{joint} волчьей цепи не на суставе человека");
+            }
+        }
     }
 }

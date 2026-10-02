@@ -97,6 +97,8 @@ public static class PartAssembly
         return skip.ToArray();
     }
 
+    public static bool UsePlanKey = true;   // для сравнения кадром: деталь без формы-ключа плана
+
     /// <summary>Поставить деталь на тело: меш переносится на кости носителя, скиннинг — к ним же.</summary>
     public static GameObject Place(Transform container, SpeciesSO body, BodyPart part, SpeciesSO donor, Material mat)
     {
@@ -129,7 +131,7 @@ public static class PartAssembly
         // АДАПТАЦИЯ ПЛАНА (спека конструктора §4): деталь другого плана встаёт с формой-ключом, названным планом носителя
         // («двуногий» — волчья нога на человеке, «рука-лапа» оборотня с листа). Ключ — форма, не поза: углы идут костями
         string plan = body.Plan;
-        if (!string.IsNullOrEmpty(part.plan) && part.plan != plan)
+        if (UsePlanKey && !string.IsNullOrEmpty(part.plan) && part.plan != plan)
         {
             int k = src.GetBlendShapeIndex(plan);
             if (k >= 0)
@@ -164,7 +166,7 @@ public static class PartAssembly
         for (int side = +1, s = 0; s < sides; s++, side = -1)
         {
             // кадр каждой кости детали: донор (поза графа, своя сторона) и носитель (трансформ собранного скелета)
-            var frames = new (Matrix4x4 toDonorLocal, Vector3 scale, Matrix4x4 carrier, int index)[partBones.Length];
+            var frames = new (Matrix4x4 toDonorLocal, Vector3 scale, Matrix4x4 carrier, int index, float dLen, float cLen)[partBones.Length];
             for (int i = 0; i < partBones.Length; i++)
             {
                 frames[i].index = -1;
@@ -178,7 +180,7 @@ public static class PartAssembly
                 var cb = cBy[cName];
                 float sLen = db.length > 1e-5f ? cb.length / db.length : 1f;
                 float sRad = db.r0 > 1e-5f ? cb.r0 / db.r0 : sLen;
-                frames[i] = (Matrix4x4.TRS(dp, dr, Vector3.one).inverse, new Vector3(sRad, sLen, sRad), toLocal * ct.localToWorldMatrix, BoneIndex(skinT));
+                frames[i] = (Matrix4x4.TRS(dp, dr, Vector3.one).inverse, new Vector3(sRad, sLen, sRad), toLocal * ct.localToWorldMatrix, BoneIndex(skinT), db.length, cb.length);
             }
 
             int start = verts.Count;
@@ -194,7 +196,14 @@ public static class PartAssembly
                     if (wt <= 0f || bi < 0 || bi >= frames.Length || frames[bi].index < 0) return;
                     var f = frames[bi];
                     var local = f.toDonorLocal.MultiplyPoint3x4(p0);
+                    // ВДОЛЬ КОСТИ ТЯНЕТСЯ ТОЛЬКО ТО, ЧТО НА НЕЙ: за концом кости (лапа волка ниже запястья — своей кости в графе
+                    // у неё нет) и до её начала форма идёт жёстко, поперечным калибром. Иначе кость, вытянутая к суставу
+                    // носителя, тянет за собой и лапу: на человеке она доставала до щиколоток (кадр 02.10)
+                    float y = local.y;
                     local = Vector3.Scale(local, f.scale);
+                    local.y = y < 0f ? y * f.scale.x
+                            : y > f.dLen ? f.cLen + (y - f.dLen) * f.scale.x
+                            : y * f.scale.y;
                     acc += f.carrier.MultiplyPoint3x4(local) * wt;
                     total += wt;
                     switch (slotIdx) { case 0: bw.boneIndex0 = f.index; bw.weight0 = wt; break; case 1: bw.boneIndex1 = f.index; bw.weight1 = wt; break;

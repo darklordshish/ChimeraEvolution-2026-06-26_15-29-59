@@ -71,7 +71,7 @@ public static class ChainSwap
         // (та же мина, что у `BoneMesher` по имени вида: ассет тот же, кости другие, ошибки нет)
         string key = chassis.speciesName + "#" + Stamp(chassis) + "|" +
                      string.Join(",", grafts.Select(g => g.e.slot + ":" + g.donor.speciesName + "#" + Stamp(g.donor))) +
-                     (parts.Count == 0 ? "" : "|калибр:" + PartCalibre + "|детали:" + string.Join(",", parts.Select(p => p.part.slot + ":" + p.donor.speciesName + "#" +
+                     (parts.Count == 0 ? "" : "|калибр:" + PartCalibre + (FollowCarrierJoints ? "|суставы" : "") + "|детали:" + string.Join(",", parts.Select(p => p.part.slot + ":" + p.donor.speciesName + "#" +
                                                                                                (p.part.mesh != null ? p.part.mesh.GetInstanceID() : 0))));
         if (cache.TryGetValue(key, out var hit) && hit != null) return hit;
 
@@ -111,7 +111,8 @@ public static class ChainSwap
             var dTree = BodyTree.From(donor, out _, graft: donor.speciesName);
             if (dTree == null) continue;
             bool hasPart = donor.parts != null && donor.parts.Any(p => p != null && p.slot == e.slot && p.mesh != null);
-            tree = e.kind == Kind.Chain ? SwapChain(tree, chassis, dTree, e.limb, e.upperEnd, e.slot, e.calibre, e.gaze, chassis.organs, worn, hasPart)
+            bool otherPlan = hasPart && donor.Plan != chassis.Plan;
+            tree = e.kind == Kind.Chain ? SwapChain(tree, chassis, dTree, e.limb, e.upperEnd, e.slot, e.calibre, e.gaze, chassis.organs, worn, hasPart, otherPlan)
                                         : SwapGroup(tree, dTree, e.slot, chassis.speciesName, donor.speciesName);
         }
         return BodyTree.Flatten(tree, loose);
@@ -155,7 +156,7 @@ public static class ChainSwap
 
     static Tree<BodyNode> SwapChain(Tree<BodyNode> carrier, SpeciesSO chassis, Tree<BodyNode> donor, string limb, string upperEnd,
                                     string slot, string calibre, bool gaze, IReadOnlyList<Organ> own, IReadOnlyList<Organ> worn,
-                                    bool hasPart = false)
+                                    bool hasPart = false, bool otherPlan = false)
     {
         var dRoot = ChainRoot(donor, limb, upperEnd);
         if (dRoot == null) return carrier;   // донору нечего дать (хвост змеи — звенья): детали органа встанут в гнездо, как прежде
@@ -212,6 +213,13 @@ public static class ChainSwap
             b.dir = (Quaternion.Inverse(cParentRot) * rootRot).eulerAngles;
         });
 
+        // АДАПТАЦИЯ ПЛАНА — В КОСТЯХ (геймдизайнер 02.10): на носителе другого плана цепь с деталью встаёт по суставам
+        // носителя — локоть и запястье там же, где у него. Прежде цепь держала донорский зигзаг, а руку разворачивал и
+        // вытягивал ключ формы `двуногий`: ключ делал позу, кости оставались волчьими, локоть меша расходился с локтем
+        // кости (кадр слоёв 02.10). Ключ — только форма (§4 спеки конструктора)
+        if (otherPlan && cParent != null && FollowCarrierJoints)
+            FollowJoints(graft, cFocus, cPose, cParent.Value.Bone, cPose[cParent.Value].pos, cParentRot);
+
         // КОРЕНЬ ГРАФА ЛЕЖИТ НА ЗЕМЛЕ — это стойка, а стойка за шасси (решение 8). У змеи голова и есть корень: Модельный
         // поставил её так, что нижняя точка на земле. Чужая голова, сев в ту же точку, свешивает челюсть, глаза и нос ниже
         // своей оси и уходит под землю (матрица 01.10: 10 поломок «ниже земли» на 5–10 см у змеи с любой чужой пастью).
@@ -229,6 +237,46 @@ public static class ChainSwap
         }
 
         return carrier.Replace(t => ReferenceEquals(t, cFocus), _ => graft);
+    }
+
+    public static bool FollowCarrierJoints = true;
+
+    /// <summary>Провести путь цепи донора через суставы носителя: кость с меткой конца `m` направляется и вытягивается к
+    /// концу кости носителя с той же меткой. Узлы вне пути (мышцы, лофт) едут за своей костью; их начала и гнёзда вдоль
+    /// оси растягиваются вместе с ней. Кости графта — свежие копии (`Scaled`), правятся на месте.</summary>
+    static void FollowJoints(Tree<BodyNode> graft, Tree<BodyNode> cFocus, Dictionary<BodyNode, (Vector3 pos, Quaternion rot)> cPose,
+                             Bone cParent, Vector3 cParentPos, Quaternion cParentRot)
+    {
+        string limb = cFocus.Value.Bone.limb;
+        var joints = new Dictionary<string, Vector3>();
+        foreach (var t in cFocus.Subtrees())
+        {
+            var cb = t.Value.Bone;
+            if (cb.limb != limb || string.IsNullOrEmpty(cb.mark?.b) || joints.ContainsKey(cb.mark.b)) continue;
+            var (cp, cr) = cPose[t.Value];
+            joints[cb.mark.b] = SkeletonBuilder.Tip(cb, cp, cr);
+        }
+        var node = graft; Bone parent = cParent; Vector3 ppos = cParentPos; Quaternion prot = cParentRot;
+        while (node != null)
+        {
+            var b = node.Value.Bone;
+            var (pos, rot) = SkeletonBuilder.Child(parent, ppos, prot, b);
+            if (!string.IsNullOrEmpty(b.mark?.b) && joints.TryGetValue(b.mark.b, out var j))
+            {
+                var to = j - pos; float len = to.magnitude;
+                if (len > 1e-4f)
+                {
+                    rot = Quaternion.FromToRotation(rot * Vector3.up, to / len) * rot;   // кратчайший поворот: крутка кости своя
+                    b.dir = (Quaternion.Inverse(prot) * rot).eulerAngles;
+                    float k = len / Mathf.Max(1e-4f, b.length);
+                    b.length = len;
+                    foreach (var kid in node.Kids) if (kid.Value.Bone.freeOrigin) kid.Value.Bone.origin.y *= k;
+                    foreach (var n in node.Value.Nests) { n.localPos.y *= k; n.span *= k; }
+                }
+            }
+            parent = b; ppos = pos; prot = rot;
+            node = node.Kids.FirstOrDefault(t => t.Value.Bone.limb == b.limb && !string.IsNullOrEmpty(t.Value.Bone.mark?.b));
+        }
     }
 
     /// <summary>ЦЕПИ У НОСИТЕЛЯ НЕТ (хвост человека): донорская растёт из гнезда этого места — оно и есть «корень хвоста ✎»
