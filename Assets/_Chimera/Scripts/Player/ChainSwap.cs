@@ -45,6 +45,11 @@ public static class ChainSwap
     };
 
     // ПОТОЛОК (01.10): составная копия — скрытый ScriptableObject, сам он не выгрузится; вытесненную уничтожаем
+    /// <summary>Калибр цепи с деталью: по суставу (радиус сустава носителя к донору — калибр носителя), по досягаемости
+    /// (длина цепи носителя к донору — рука достаёт туда же), донорский (деталь своего размера).</summary>
+    public enum PartScale { Joint, Reach, Donor }
+    public static PartScale PartCalibre = PartScale.Joint;
+
     static readonly BoundedCache<string, SpeciesSO> cache = new(256, so => { if (so == null) return; if (Application.isPlaying) Object.Destroy(so); else Object.DestroyImmediate(so); });
     static readonly Dictionary<Organ, SpeciesSO> owners = new();
 
@@ -63,7 +68,7 @@ public static class ChainSwap
         // (та же мина, что у `BoneMesher` по имени вида: ассет тот же, кости другие, ошибки нет)
         string key = chassis.speciesName + "#" + Stamp(chassis) + "|" +
                      string.Join(",", grafts.Select(g => g.e.slot + ":" + g.donor.speciesName + "#" + Stamp(g.donor))) +
-                     (parts.Count == 0 ? "" : "|детали:" + string.Join(",", parts.Select(p => p.part.slot + ":" + p.donor.speciesName + "#" +
+                     (parts.Count == 0 ? "" : "|калибр:" + PartCalibre + "|детали:" + string.Join(",", parts.Select(p => p.part.slot + ":" + p.donor.speciesName + "#" +
                                                                                                (p.part.mesh != null ? p.part.mesh.GetInstanceID() : 0))));
         if (cache.TryGetValue(key, out var hit) && hit != null) return hit;
 
@@ -102,7 +107,8 @@ public static class ChainSwap
         {
             var dTree = BodyTree.From(donor, out _, graft: donor.speciesName);
             if (dTree == null) continue;
-            tree = e.kind == Kind.Chain ? SwapChain(tree, chassis, dTree, e.limb, e.upperEnd, e.slot, e.calibre, e.gaze, chassis.organs, worn)
+            bool hasPart = donor.parts != null && donor.parts.Any(p => p != null && p.slot == e.slot && p.mesh != null);
+            tree = e.kind == Kind.Chain ? SwapChain(tree, chassis, dTree, e.limb, e.upperEnd, e.slot, e.calibre, e.gaze, chassis.organs, worn, hasPart)
                                         : SwapGroup(tree, dTree, e.slot, chassis.speciesName, donor.speciesName);
         }
         return BodyTree.Flatten(tree, loose);
@@ -145,7 +151,8 @@ public static class ChainSwap
     // ── ЦЕПЬ ─────────────────────────────────────────────────────────────────────────────────────────
 
     static Tree<BodyNode> SwapChain(Tree<BodyNode> carrier, SpeciesSO chassis, Tree<BodyNode> donor, string limb, string upperEnd,
-                                    string slot, string calibre, bool gaze, IReadOnlyList<Organ> own, IReadOnlyList<Organ> worn)
+                                    string slot, string calibre, bool gaze, IReadOnlyList<Organ> own, IReadOnlyList<Organ> worn,
+                                    bool hasPart = false)
     {
         var dRoot = ChainRoot(donor, limb, upperEnd);
         if (dRoot == null) return carrier;   // донору нечего дать (хвост змеи — звенья): детали органа встанут в гнездо, как прежде
@@ -170,6 +177,11 @@ public static class ChainSwap
         var cCal = calibre == null ? null : FindNest(carrier, calibre);
         var dCal = calibre == null ? null : FindNest(donor, calibre);
         if (cCal != null && dCal != null && dCal.unit > 1e-4f) s = sr = cCal.unit / dCal.unit;
+        // ЦЕПЬ С ДЕТАЛЬЮ — ОДИН МАСШТАБ (спека конструктора §4: калибр — один масштаб на шов). Деталь — авторская форма, и
+        // разный масштаб вдоль и поперёк превращает её в жердь (пилот 02.10: длина ×1.7, толщина ×0.6 на человеке). Какой
+        // именно масштаб — решение формы, пока выбирается кадром (`PartCalibre`)
+        if (hasPart) s = sr = PartCalibre == PartScale.Joint ? c.r0 / Mathf.Max(1e-4f, d.r0)
+                            : PartCalibre == PartScale.Reach ? s : 1f;
         // МЯГКОСТЬ СЛИЯНИЯ — РЕЖИМ ПОЛЯ НОСИТЕЛЯ: у волка граф грубый и слияние в 5–7 раз мягче человеческого, в тех же
         // метрах; перенесённое как есть, оно растекает чужую цепь по телу. Берём мягкость сустава носителя, а
         // распределение по узлам цепи — донорское
