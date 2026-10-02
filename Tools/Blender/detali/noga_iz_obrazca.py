@@ -213,10 +213,18 @@ MEDIAL = np.array([-1.0, 0.0, 0.0])
 flange = []
 for j in range(N_RING):
     th = 2 * math.pi * j / N_RING
-    flange.append(bm.verts.new(to_b(shoulder_s + dir_u * 0.005 + MEDIAL * 0.055
-                                    + K_SEAM * 0.75 * (fwd * ax_f * math.cos(th) - lat * ax_l * math.sin(th)))))
+    # v6f: фланец — выпуклым куполом наружу, чуть шире кольца, на 1.5 см глубже по оси, без втягивания к средней линии.
+    # «Щербину» под плечом (v6d–v6f) давал НЕ фланец: со скрытой культёй клин был тот же. Это была нижняя кромка дельты
+    # человека, висевшей на лопатке и потому не гаснувшей с рукой — исправлено в графе человека (дельта на плече, 02.10)
+    flange.append(bm.verts.new(to_b(shoulder_s + dir_u * 0.015 + MEDIAL * 0.01
+                                    + K_SEAM * 1.08 * (fwd * ax_f * math.cos(th) - lat * ax_l * math.sin(th)))))
 for j in range(N_RING):
     bm.faces.new([keep_v[j], keep_v[(j + 1) % N_RING], flange[(j + 1) % N_RING], flange[j]])
+# ТОРЕЦ ФЛАНЦА ЗАКРЫТ (v6f): оболочка детали замкнута — при отводе верх культи может выйти из поля плеча, и открытая труба
+# показала бы изнанку. На шасси-поле крышка внутри туши и не видна
+f_cap = bm.verts.new(sum((v.co for v in flange), Vector()) / N_RING)
+for j in range(N_RING):
+    bm.faces.new([flange[j], flange[(j + 1) % N_RING], f_cap])
 wr_keep = reduce_loop(wr_bnd, WRC, fwd0, lat0, wr_f, wr_l, 1.0)
 
 # ЛАПА ВОЛКА — процедурная: подушка (два кольца по 8 и низ веером) и 4 пальца трубками по 6 граней с когтями-конусами.
@@ -277,11 +285,11 @@ for i in range(4):
 # номера колец, лапы и пальцев — ДО подразбиения: новые вершины добавляются в конец, старые номера сохраняются
 bm.verts.index_update()
 seam_idx = [v.index for v in keep_v]
-flange_idx = [v.index for v in flange]
+flange_idx = [v.index for v in flange] + [f_cap.index]
 wrist_idx = [v.index for v in wr_keep]
 pad_idx = set(v.index for v in pad1 + pad2 + [bot])
 toe_sets = [(base, [v.index for v in vs], set(v.index for v in cl)) for base, vs, cl in toes]
-keep_set = set(keep_v) | set(flange) | set(wr_keep)
+keep_set = set(keep_v) | set(flange) | {f_cap} | set(wr_keep)
 
 # ПЕТЛИ ПОПЕРЁК ПОДМЫШКИ (v6e): внутренняя сторона от верха ноги до кольца шва — подразбить рёбра, чтобы при отводе было
 # чем гнуться; кольцо шва, фланец и лапа не трогаются
@@ -295,6 +303,10 @@ def armpit(v):
 sub_e = [e for e in bm.edges if all(armpit(v) and v not in keep_set for v in e.verts)]
 bmesh.ops.subdivide_edges(bm, edges=sub_e, cuts=1, use_grid_fill=True)
 print('подмышка: подразбито рёбер %d' % len(sub_e))
+# v6f: ЗУБЦЫ ПОД РУКОЙ при отводе — рваная геометрия образца в подмышке; сглаживание внутренней стороны (кольцо, фланец, лапа — нет)
+arm_v = [v for v in bm.verts if armpit(v) and v not in keep_set]
+for _ in range(6):
+    bmesh.ops.smooth_vert(bm, verts=arm_v, factor=0.5, use_axis_x=True, use_axis_y=True, use_axis_z=True)
 bmesh.ops.triangulate(bm, faces=bm.faces[:])
 bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
 bm.to_mesh(me); bm.free()

@@ -6,9 +6,9 @@
     "type": "плечо",
     "ring": [
       14,
-      28,
-      36,
-      35,
+      27,
+      34,
+      33,
       21,
       20,
       6,
@@ -16,14 +16,14 @@
     ],
     "ring_m": [
       [
-        0.09,
-        0.8021,
-        0.5252
+        0.0961,
+        0.7589,
+        0.4989
       ],
       [
-        0.0535,
-        0.8073,
-        0.5174
+        0.0546,
+        0.7636,
+        0.4903
       ],
       [
         0.0384,
@@ -57,9 +57,9 @@
       ]
     ],
     "center_m": [
-      0.09,
-      0.8196,
-      0.4983
+      0.0909,
+      0.8088,
+      0.4916
     ],
     "ellipse_m": [
       0.0322,
@@ -81,9 +81,9 @@
   "keys": [
     "двуногий"
   ],
-  "tris": 822,
-  "tris_main": 597,
-  "tris_stump": 351,
+  "tris": 830,
+  "tris_main": 601,
+  "tris_stump": 347,
   "source": "Anatomy/species/wolf/ref/mv/volk_mv_A.glb (лист volk-prirodnyj_meshy), выровнен obrazec_v_obj.py",
   "generator": "Tools/Blender/detali/noga_iz_obrazca.py"
 }
