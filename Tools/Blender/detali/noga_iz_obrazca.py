@@ -59,8 +59,16 @@ for l in open(src, encoding='utf-8'):
         F.append([int(t.split('/')[0]) - 1 for t in l.split()[1:]])
 P = np.array(V)
 zmin, zmax = P[:, 2].min(), P[:, 2].max(); L = zmax - zmin
-mid = (np.abs(P[:, 0]) < 0.04) & (P[:, 2] > zmin + L / 3) & (P[:, 2] < zmax - L / 3)
-belly = float(np.percentile(P[mid, 1], 5))
+# БРЮХО — только по срезам туши МЕЖДУ ногами (02.10, поправка v2): у образца передние ноги стоят почти на средней
+# линии, и 5-й перцентиль по всей средней трети ловил их — брюхо выходило 0.42 вместо ~0.6, а нога резалась вдвое короче.
+# Срез «без ног» — тот, где низ по бокам (|x| > 0.06) выше 0.3 м; брюхо — медиана нижней точки средней линии по таким срезам
+mins = []
+for z0 in np.linspace(zmin, zmax, 25)[1:-1]:
+    sl = P[np.abs(P[:, 2] - z0) < 0.03]
+    sd, md = sl[np.abs(sl[:, 0]) > 0.06], sl[np.abs(sl[:, 0]) < 0.04]
+    if len(sd) and len(md) and sd[:, 1].min() > 0.3:
+        mins.append(md[:, 1].min())
+belly = float(np.median(mins))
 legs = (P[:, 1] < belly - 0.03) & (np.abs(P[:, 0]) > 0.055)
 zc = float(np.median(P[legs, 2]))
 g = np.nonzero(legs & (P[:, 0] > 0) & (P[:, 2] > zc))[0]
@@ -86,79 +94,106 @@ def axis_s(y):
     return axis[i - 1] + (axis[i] - axis[i - 1]) * np.clip(t, 0, 1)
 
 
-inleg = np.zeros(len(P), bool)
-for i in np.nonzero((P[:, 1] < cut) & (P[:, 0] > 0))[0]:
-    ax = axis_s(P[i, 1]); inleg[i] = np.hypot(P[i, 0] - ax[0], P[i, 2] - ax[2]) < 0.13
-faces = [f for f in F if all(inleg[v] for v in f)]
-
+# НОГА — БУЛЕВЫМ ПЕРЕСЕЧЕНИЕМ замкнутого образца с замкнутой трубой вдоль оси ноги: кусок, выбранный гранями, у
+# образца рваный (открытые цепочки, дыры), и воксели его теряют. Труба: кольца по 16 вершин от земли до среза,
+# радиус 0.13 у лапы и 0.10 у груди (грива груди висит между ногами)
 bpy.ops.wm.read_factory_settings(use_empty=True)
-bm = bmesh.new(); vmap = {}
-for f in faces:
-    for v in f:
-        if v not in vmap:
-            vmap[v] = bm.verts.new(to_b(P[v]))
-for f in faces:
+bm = bmesh.new()
+sv = [bm.verts.new(to_b(p)) for p in P]
+for f in F:
     try:
-        bm.faces.new([vmap[v] for v in f])
+        bm.faces.new([sv[i] for i in f])
     except ValueError:
         pass
-bm.verts.ensure_lookup_table()
-low = min(bm.verts, key=lambda v: v.co.z); keep, stack = {low}, [low]
-while stack:
-    v = stack.pop()
-    for e in v.link_edges:
-        o = e.other_vert(v)
-        if o not in keep:
-            keep.add(o); stack.append(o)
-bmesh.ops.delete(bm, geom=[v for v in bm.verts if v not in keep], context='VERTS')
 me = bpy.data.meshes.new('Руки'); bm.to_mesh(me); bm.free()
 ob = bpy.data.objects.new('Руки', me); bpy.context.collection.objects.link(ob)
+bm = bmesh.new(); tube = []
+for y in list(np.arange(-0.02, cut - 0.01, 0.03)) + [cut]:
+    ax = axis_s(max(y, 0.02)); rad = 0.13 if y < 0.35 else (0.10 if y < 0.45 else 0.085)   # у груди уже: грива груди
+    tube.append([bm.verts.new(to_b(np.array([ax[0] + rad * math.cos(t), y, ax[2] + rad * math.sin(t)])))
+                 for t in np.linspace(0, 2 * math.pi, 16, endpoint=False)])
+for r0, r1 in zip(tube, tube[1:]):
+    for j in range(16):
+        bm.faces.new([r0[j], r0[(j + 1) % 16], r1[(j + 1) % 16], r1[j]])
+bm.faces.new(tube[0][::-1]); bm.faces.new(tube[-1])
+bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+vol = bpy.data.objects.new('объём', bpy.data.meshes.new('объём')); bm.to_mesh(vol.data); bm.free()
+bpy.context.collection.objects.link(vol)
 bpy.context.view_layer.objects.active = ob; ob.select_set(True)
-bpy.ops.object.mode_set(mode='EDIT'); bpy.ops.mesh.select_all(action='SELECT')
-bpy.ops.mesh.remove_doubles(threshold=0.0005); bpy.ops.object.mode_set(mode='OBJECT')
+bo = ob.modifiers.new('bo', 'BOOLEAN'); bo.operation = 'INTERSECT'; bo.object = vol; bo.solver = 'EXACT'
+bpy.ops.object.modifier_apply(modifier=bo.name)
+bpy.data.objects.remove(vol, do_unlink=True)
+
 n0 = sum(len(p.vertices) - 2 for p in me.polygons)
-m = ob.modifiers.new('dec', 'DECIMATE'); m.ratio = BUDGET / max(1, n0); bpy.ops.object.modifier_apply(modifier=m.name)
-bm = bmesh.new(); bm.from_mesh(me)
-plane_z = min(max(v.co.z for v in bm.verts), cut) - 0.03
-bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], dist=1e-5,
-                       plane_co=Vector((0, 0, plane_z)), plane_no=Vector((0, 0, 1)), clear_outer=True)
-bm.to_mesh(me); bm.free()
 
 # суставы образца
+plane_z = cut - 0.03
 elbow_s = axis_s(plane_z)
 wrist_y = 0.13
 shoulder_s = elbow_s + (S - E_) * ((elbow_s[1]) / max(1e-6, E_[1]))  # плечевая кость образца — того же наклона, длина по росту локтя
 print('образец: брюхо %.3f, локоть %s, плечо %s' % (belly, np.round(elbow_s, 3), np.round(shoulder_s, 3)))
-
-# ── культя и кольцо шва (ещё в осях образца) ──
-bm = bmesh.new(); bm.from_mesh(me)
-edges = [e for e in bm.edges if e.is_boundary and abs(e.verts[0].co.z - plane_z) < 1e-3]
-loopv = list({v for e in edges for v in e.verts})
-cen = np.mean([from_b(v.co) for v in loopv], axis=0)
-dir_u = (shoulder_s - cen) / np.linalg.norm(shoulder_s - cen)       # к телу
+dir_u = (shoulder_s - elbow_s) / np.linalg.norm(shoulder_s - elbow_s)        # к телу
 fwd = np.array([0.0, 0.0, 1.0]); fwd = fwd - dir_u * fwd.dot(dir_u); fwd /= np.linalg.norm(fwd)
 lat = np.cross(dir_u, fwd)
-lp = np.array([from_b(v.co) for v in loopv]) - cen
-ax_f = float(np.percentile(np.abs(lp @ fwd), 90)); ax_l = float(np.percentile(np.abs(lp @ lat), 90))
+
+# сечение культи — по верху ноги (вершины в полосе 4 см под срезом): полуоси вдоль «перёд» и «вбок»
+top = np.array([from_b(v.co) for v in me.vertices if abs(v.co.z - (plane_z - 0.02)) < 0.02])
+cen = top.mean(0) if len(top) else elbow_s
+ax_f = float(np.percentile(np.abs((top - cen) @ fwd), 85)); ax_l = float(np.percentile(np.abs((top - cen) @ lat), 85))
+
+# КУЛЬТЯ — закрытая труба 8-угольником от середины верха ноги до чуть выше плечевого сустава; нога и культя
+# сливаются ВОКСЕЛЯМИ в одну водонепроницаемую оболочку (верх образца рваный: открытые цепочки и дыры, сшивка петли с
+# кольцом на нём ненадёжна, v1–v2), затем срез плоскостью шва даёт одну чистую петлю
+bm = bmesh.new()
+rings = []
+K_SEAM = 0.55          # культя уже ноги: на шасси-поле туша у плеча узкая, культя должна прятаться внутри (v2: при 0.85 торчала из груди)
+for c_, k in ((cen - dir_u * 0.04, 1.0), (shoulder_s, K_SEAM), (shoulder_s + dir_u * 0.03, K_SEAM)):
+    rings.append([bm.verts.new(to_b(c_ + k * (fwd * ax_f * math.cos(2 * math.pi * j / N_RING)
+                                                 - lat * ax_l * math.sin(2 * math.pi * j / N_RING)))) for j in range(N_RING)])
+for r0, r1 in zip(rings, rings[1:]):
+    for j in range(N_RING):
+        bm.faces.new([r0[j], r0[(j + 1) % N_RING], r1[(j + 1) % N_RING], r1[j]])
+bm.faces.new(rings[0][::-1]); bm.faces.new(rings[-1])
+stub = bpy.data.objects.new('культя', bpy.data.meshes.new('культя')); bm.to_mesh(stub.data); bm.free()
+bpy.context.collection.objects.link(stub)
+bpy.ops.object.select_all(action='DESELECT'); ob.select_set(True); stub.select_set(True)
+bpy.context.view_layer.objects.active = ob; bpy.ops.object.join(); me = ob.data
+rm = ob.modifiers.new('rm', 'REMESH'); rm.mode = 'VOXEL'; rm.voxel_size = 0.006
+bpy.ops.object.modifier_apply(modifier=rm.name)
+
+# срез плоскостью шва через плечевой сустав, перпендикулярно оси культи — граница = одна петля
+bm = bmesh.new(); bm.from_mesh(me)
+bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], dist=1e-5,
+                       plane_co=to_b(shoulder_s), plane_no=Vector(to_b(dir_u)) - Vector(to_b(np.zeros(3))), clear_outer=True)
+bm.to_mesh(me); bm.free()
+m = ob.modifiers.new('dec', 'DECIMATE'); m.ratio = BUDGET / max(1, 2.0 * len(me.polygons))   # воксели — квады: треугольников вдвое
+bpy.ops.object.modifier_apply(modifier=m.name)
+bpy.ops.object.mode_set(mode='EDIT'); bpy.ops.mesh.select_all(action='SELECT'); bpy.ops.mesh.quads_convert_to_tris()
+bpy.ops.object.mode_set(mode='OBJECT')
+
+# КОЛЬЦО ШВА: петля среза → ровно 8 вершин (ближайшие к углам кольца, остальные растворены), вершины — на эллипсе шва
+bm = bmesh.new(); bm.from_mesh(me)
+bnd = [v for v in bm.verts if v.is_boundary]
+print('петля среза: вершин %d, граничных рёбер %d' % (len(bnd), sum(1 for e in bm.edges if e.is_boundary)))
 
 
-def ring(center, k):
-    vs = []
-    for j in range(N_RING):        # вершина 0 — перёд; против часовой при взгляде вдоль +dir (из детали к телу)
-        th = 2 * math.pi * j / N_RING
-        vs.append(bm.verts.new(to_b(center + k * (fwd * ax_f * math.cos(th) - lat * ax_l * math.sin(th)))))
-    return vs
+def ang(v):
+    d = from_b(v.co) - shoulder_s
+    return math.atan2(-(d @ lat), d @ fwd) % (2 * math.pi)
 
 
-r_mid = ring(cen + dir_u * 0.02, 0.95)
-r_seam = ring(shoulder_s, 0.85)
+keep_v = []
 for j in range(N_RING):
-    bm.faces.new([r_mid[j], r_mid[(j + 1) % N_RING], r_seam[(j + 1) % N_RING], r_seam[j]])
-bm.edges.ensure_lookup_table()
-bmesh.ops.bridge_loops(bm, edges=edges + [bm.edges.get((r_mid[j], r_mid[(j + 1) % N_RING])) for j in range(N_RING)])
+    a_ = 2 * math.pi * j / N_RING
+    keep_v.append(min(bnd, key=lambda v: abs((ang(v) - a_ + math.pi) % (2 * math.pi) - math.pi)))
+bmesh.ops.dissolve_verts(bm, verts=[v for v in bnd if v not in keep_v])
+for j, v in enumerate(keep_v):
+    th = 2 * math.pi * j / N_RING
+    v.co = to_b(shoulder_s + K_SEAM * (fwd * ax_f * math.cos(th) - lat * ax_l * math.sin(th)))
+bmesh.ops.triangulate(bm, faces=bm.faces[:])
 bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
 bm.verts.index_update()
-seam_idx = [v.index for v in r_seam]
+seam_idx = [v.index for v in keep_v]
 bm.to_mesh(me); bm.free()
 
 # ── пересадка на суставы волка ──
@@ -259,7 +294,7 @@ cen_m = seam_m.mean(0)
 json.dump(dict(species='Волк', slot='Руки', plan='четвероногий',
                seam=dict(type='плечо', ring=seam_idx, ring_m=[[round(c, 4) for c in p] for p in seam_m],
                          center_m=[round(c, 4) for c in cen_m],
-                         ellipse_m=[round(ax_f * 0.85, 4), round(ax_l * 0.85, 4)],
+                         ellipse_m=[round(ax_f * K_SEAM, 4), round(ax_l * K_SEAM, 4)],
                          note='метры тела волка, оси Unity; вершина 0 — перёд тела, обход против часовой при взгляде из детали к телу; '
                               'индексы — порядок вершин в Blender (Unity при плоских гранях делит вершины — сверять по ring_m)'),
                bones=['плечо', 'предплечье'], armature='граф волка в позе покоя (все узлы)', keys=['двуногий'],
