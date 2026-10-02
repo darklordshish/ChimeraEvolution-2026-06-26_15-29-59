@@ -101,5 +101,33 @@ namespace Chimera.Tests.EditMode
             var (r, _) = BoxCentroids(go, 1);
             Assert.Less(Vector3.Distance(r, Mid(body, "предплечье")), 0.01f, "бокс предплечья не сел на предплечье носителя");
         }
+
+        /// <summary>Культя видна только при адаптации плана: у волка плечевая кость в туше, у двуногого это плечо руки
+        /// (кадр модельной линии 02.10 — без культи «рука краба»).</summary>
+        [Test]
+        public void Stump_ShownOnlyOnOtherPlan()
+        {
+            var wolf = WolfWithPart();
+            var part = wolf.parts[0];
+            var stump = new Mesh();
+            var c = Mid(wolf, "плечо");
+            stump.SetVertices(new List<Vector3> { c, c + Vector3.up * 0.02f, c + Vector3.forward * 0.02f });
+            stump.SetTriangles(new[] { 0, 1, 2 }, 0);
+            stump.boneWeights = Enumerable.Repeat(new BoneWeight { boneIndex0 = 0, weight0 = 1f }, 3).ToArray();
+            trash.Add(stump);
+            part.stump = stump; part.stumpBones = new[] { "плечо" };
+
+            var own = Build(wolf, wolf.organs.ToList());
+            Assert.IsNull(own.GetComponentsInChildren<Transform>().FirstOrDefault(t => t.name == "культя"), "на своём плане культя в туше — не рисуется");
+
+            var human = Load("Человек");
+            Assert.AreNotEqual(part.plan, human.Plan, "человек должен быть другого плана, иначе тест ничего не проверяет");
+            var worn = human.organs.Where(o => o.slot != BodySlots.Arms).ToList();
+            worn.Insert(0, wolf.organs.First(o => o.slot == BodySlots.Arms));
+            var go = Build(human, worn);
+            Assert.IsNotNull(go.GetComponentsInChildren<Transform>().FirstOrDefault(t => t.name == "культя"), "на чужом плане культя — плечо руки, а её нет");
+            CollectionAssert.Contains(ChainSwap.Compose(human, worn).fieldSkip, PartAssembly.BodyName(ChainSwap.Compose(human, worn), wolf, "плечо"),
+                                      "видимая культя и поле рисуют плечо дважды");
+        }
     }
 }

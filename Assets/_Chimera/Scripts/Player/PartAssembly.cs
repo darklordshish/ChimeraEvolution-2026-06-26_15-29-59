@@ -43,17 +43,20 @@ public static class PartAssembly
     /// <summary>Кости, которыми деталь ВЛАДЕЕТ: те, к которым у её вершин есть вес. Арматура в FBX несёт весь граф вида (так
     /// и надо — поза покоя целиком), но владеет деталь только своей цепью: иначе она выключила бы поле всего тела
     /// (поймано на пилоте 02.10 — волк без единого отрезка поля).</summary>
-    public static string[] Weighted(BodyPart part)
+    public static string[] Weighted(BodyPart part) => Weighted(part.mesh, part.bones);
+
+    static string[] Weighted(Mesh mesh, string[] names)
     {
+        if (mesh == null || names == null) return new string[0];
         var used = new HashSet<int>();
-        foreach (var w in part.mesh.boneWeights)
+        foreach (var w in mesh.boneWeights)
         {
             if (w.weight0 > 0f) used.Add(w.boneIndex0);
             if (w.weight1 > 0f) used.Add(w.boneIndex1);
             if (w.weight2 > 0f) used.Add(w.boneIndex2);
             if (w.weight3 > 0f) used.Add(w.boneIndex3);
         }
-        return used.Where(i => i >= 0 && i < part.bones.Length).Select(i => part.bones[i]).ToArray();
+        return used.Where(i => i >= 0 && i < names.Length).Select(i => names[i]).ToArray();
     }
 
     /// <summary>Кости, которые поле не рисует: поддерево корня каждой детали (корень — кость, которой деталь владеет и
@@ -63,7 +66,9 @@ public static class PartAssembly
         var skip = new HashSet<string>();
         foreach (var (part, donor) in parts)
         {
-            var names = Weighted(part).Select(n => BodyName(body, donor, n)).Where(n => n != null).ToHashSet();
+            var own = Weighted(part).AsEnumerable();
+            if (part.StumpShown(body.Plan)) own = own.Concat(Weighted(part.stump, part.stumpBones));   // видимая культя — тоже её цепь
+            var names = own.Select(n => BodyName(body, donor, n)).Where(n => n != null).ToHashSet();
             foreach (var root in names.Where(n => !names.Contains(body.bones.First(b => b.name == n).parent ?? "")))
             {
                 var set = new HashSet<string> { root };
@@ -83,8 +88,22 @@ public static class PartAssembly
     /// <summary>Поставить деталь на тело: меш переносится на кости носителя, скиннинг — к ним же.</summary>
     public static GameObject Place(Transform container, SpeciesSO body, BodyPart part, SpeciesSO donor, Material mat)
     {
+        var go = Place(container, body, part, donor, mat, part.mesh, part.bones, part.toBody, part.slot);
+        // АДАПТАЦИЯ ПЛАНА ВКЛЮЧАЕТ КУЛЬТЮ: у волка плечевая кость в туше, у двуногого плечо — видимая рука (02.10, кадр
+        // модельной линии: без культи волчий локоть садился у плеча человека — «рука краба»)
+        if (go != null && part.StumpShown(body.Plan))
+        {
+            var st = Place(container, body, part, donor, mat, part.stump, part.stumpBones, part.stumpToBody, "культя");
+            if (st != null) st.transform.SetParent(go.transform, false);   // пустой узел масштаба 1: кадр тот же
+        }
+        return go;
+    }
+
+    static GameObject Place(Transform container, SpeciesSO body, BodyPart part, SpeciesSO donor, Material mat,
+                            Mesh src, string[] partBones, Matrix4x4 toBody, string name)
+    {
         var skeleton = container.Find("Skeleton");
-        if (skeleton == null || part.mesh == null || !part.mesh.isReadable) return null;
+        if (skeleton == null || src == null || !src.isReadable || partBones == null) return null;
         var xf = new Dictionary<string, Transform>();
         foreach (var t in skeleton.GetComponentsInChildren<Transform>(true)) if (!xf.ContainsKey(t.name)) xf[t.name] = t;
 
@@ -93,8 +112,7 @@ public static class PartAssembly
         var cBy = body.bones.ToDictionary(b => b.name);
         var toLocal = container.worldToLocalMatrix;
 
-        var src = part.mesh;
-        var toBody = part.toBody == default ? Matrix4x4.identity : part.toBody;
+        if (toBody == default) toBody = Matrix4x4.identity;
         var raw = src.vertices;
         // АДАПТАЦИЯ ПЛАНА (спека конструктора §4): деталь другого плана встаёт с формой-ключом, названным планом носителя
         // («двуногий» — волчья нога на человеке, «рука-лапа» оборотня с листа). Ключ — форма, не поза: углы идут костями
@@ -126,12 +144,12 @@ public static class PartAssembly
         for (int side = +1, s = 0; s < sides; s++, side = -1)
         {
             // кадр каждой кости детали: донор (поза графа, своя сторона) и носитель (трансформ собранного скелета)
-            var frames = new (Matrix4x4 toDonorLocal, Vector3 scale, Matrix4x4 carrier, int index)[part.bones.Length];
-            for (int i = 0; i < part.bones.Length; i++)
+            var frames = new (Matrix4x4 toDonorLocal, Vector3 scale, Matrix4x4 carrier, int index)[partBones.Length];
+            for (int i = 0; i < partBones.Length; i++)
             {
                 frames[i].index = -1;
-                if (!dBy.TryGetValue(part.bones[i], out var db)) continue;
-                string cName = BodyName(body, donor, part.bones[i]);
+                if (!dBy.TryGetValue(partBones[i], out var db)) continue;
+                string cName = BodyName(body, donor, partBones[i]);
                 if (cName == null || !xf.TryGetValue(side < 0 ? cName + ".L" : cName, out var ct)) continue;   // зеркальная кость — «.L»
                 var (dp, dr) = SkeletonBuilder.Place(db, dBy, dPlaced);
                 if (side < 0) { dp.x = -dp.x; var e = dr.eulerAngles; dr = Quaternion.Euler(e.x, -e.y, -e.z); }
@@ -174,7 +192,7 @@ public static class PartAssembly
             }
         }
 
-        var mesh = new Mesh { name = $"{part.slot} ({donor.speciesName}, деталь)" };
+        var mesh = new Mesh { name = $"{name} ({donor.speciesName}, деталь {part.slot})" };
         if (verts.Count > 65535) mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
         mesh.SetVertices(verts); mesh.SetTriangles(tris, 0);
         mesh.RecalculateNormals();   // вершины детали разварены по граням — нормаль грани, как у листа
@@ -182,7 +200,7 @@ public static class PartAssembly
         mesh.bindposes = bind.ToArray();
         mesh.RecalculateBounds();
 
-        var go = new GameObject(part.slot);   // ИМЯ = МЕСТО: контракт имён частей
+        var go = new GameObject(name);   // ИМЯ = МЕСТО: контракт имён частей (культя — внутри детали)
         go.transform.SetParent(container, false);
         go.AddComponent<BodyPartView>();   // метка для детекторов: этот рендерер — деталь, он несёт облик части целиком
         var smr = go.AddComponent<SkinnedMeshRenderer>();

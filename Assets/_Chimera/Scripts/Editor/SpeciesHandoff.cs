@@ -118,7 +118,8 @@ public static class SpeciesHandoff
             if (smr == null || smr.sharedMesh == null) { problems.Add($"«{stem}»: нет скиннед-меша в «{fbx}»"); continue; }
             var bones = smr.bones.Select(b => b != null ? b.name : "").ToArray();
             var graph = new HashSet<string>((species.bones ?? new Bone[0]).Select(b => b.name));
-            var missing = bones.Where(b => !graph.Contains(b)).ToList();
+            var missing = bones.Concat(stump != null ? stump.bones.Select(b => b != null ? b.name : "") : new string[0])
+                               .Where(b => !graph.Contains(b)).Distinct().ToList();
             if (missing.Count > 0) { problems.Add($"«{stem}»: кости меша не узлы графа: {string.Join(", ", missing)}"); continue; }
             if (d.seam?.ring != null && d.seam.ring.Length != 8) problems.Add($"«{stem}»: кольцо шва {d.seam.ring.Length} вершин, ждали 8");
 
@@ -127,6 +128,8 @@ public static class SpeciesHandoff
                 slot = d.slot, plan = d.plan, mesh = smr.sharedMesh, bones = bones, mirror = d.mirror,
                 toBody = smr.transform.localToWorldMatrix,   // корень FBX — начало тела (проверено линией: корень без поворота)
                 stump = stump != null ? stump.sharedMesh : null,
+                stumpBones = stump != null ? stump.bones.Select(b => b != null ? b.name : "").ToArray() : null,
+                stumpToBody = stump != null ? stump.transform.localToWorldMatrix : default,
                 seam = d.seam?.type, ring = d.seam?.ring,
                 ellipse = d.seam?.ellipse != null && d.seam.ellipse.Length >= 2 ? new Vector2(d.seam.ellipse[0], d.seam.ellipse[1]) : Vector2.zero,
                 keys = d.keys,
