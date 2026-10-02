@@ -16,6 +16,7 @@ ap.add_argument('src'); ap.add_argument('dst')
 ap.add_argument('--crop', default=None, help='x0,y0,x1,y1 — оставить только эту область (соседние фигуры листа)')
 ap.add_argument('--flip', action='store_true', help='отразить по горизонтали (морда должна смотреть вправо)')
 ap.add_argument('--porog', type=int, default=70, help='порог яркости фигуры (0–255)')
+ap.add_argument('--dyry', type=float, default=0.002, help='заливать только дыры меньше этой доли площади фигуры: просвет рука–корпус у человека — не дыра')
 ap.add_argument('--zakryt', type=int, default=4, help='радиус морфологического закрытия, px: тёмные щели гривы и тени — не дыры силуэта')
 a = ap.parse_args()
 
@@ -32,7 +33,13 @@ m = lab == (1 + int(np.argmax(sizes)))
 if a.zakryt > 0:
     yy, xx = np.ogrid[-a.zakryt:a.zakryt + 1, -a.zakryt:a.zakryt + 1]
     m = ndimage.binary_closing(m, structure=xx * xx + yy * yy <= a.zakryt * a.zakryt, iterations=1)
-m = ndimage.binary_fill_holes(m)
+filled = ndimage.binary_fill_holes(m)
+holes, nh = ndimage.label(filled & ~m)
+if nh:
+    hs = ndimage.sum(np.ones_like(m), holes, range(1, nh + 1))
+    for k, a_ in enumerate(hs):
+        if a_ < a.dyry * m.sum():
+            m[holes == k + 1] = True
 ys, xs = np.nonzero(m)
 m = m[ys.min():ys.max() + 1, xs.min():xs.max() + 1]          # обрезка по фигуре: низ фигуры — земля
 if a.flip:

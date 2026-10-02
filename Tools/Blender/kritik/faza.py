@@ -43,10 +43,33 @@ def apply(m, v):
     return [sum(m[i][k] * v[k] for k in range(3)) for i in range(3)]
 
 
+def resolve_rel(by):
+    """Узлы в долях родителя (`rel`, поставка 31) → метры, как `BodyChains.ResolveRel`: родитель раньше ребёнка, узел
+    получает `freeOrigin`, начало в кадре родителя, длину и радиусы. Без этого `world` падал на узлах без `origin`."""
+    def res(b, depth=0):
+        q = b.get('rel')
+        if not q or b.get('_rel_done') or depth > 64:
+            return
+        p = by.get(b['parent'])
+        if p is None:
+            return
+        res(p, depth + 1)
+        t = min(1.0, max(0.0, q['at']))
+        r = p['r0'] + (p['r1'] - p['r0']) * t
+        b['freeOrigin'] = True
+        b['origin'] = dict(x=q['offX'] * r * p['section'], y=q['at'] * p['length'], z=q['offZ'] * r * p['depth'])
+        b['length'] = q['len'] * p['length']
+        b['r0'], b['r1'] = q['r0'] * r, q['r1'] * r
+        b['_rel_done'] = True
+    for b in list(by.values()):
+        res(b)
+
+
 def world(doc):
     """Начало и поворот каждой кости в мире — `SkeletonBuilder.Place`: сустав на доле `attach` оси родителя или
     смещение `origin` в кадре родителя (`freeOrigin`), поворот наследуется."""
     by = {b['name']: b for b in doc['nodes']}
+    resolve_rel(by)
     done = {}
 
     def place(b, depth=0):

@@ -204,6 +204,15 @@ def reduce_loop(loop, center, f_, l_, af, al, k):
 
 
 keep_v = reduce_loop(seam_bnd, shoulder_s, fwd, lat, ax_f, ax_l, K_SEAM)
+# ФЛАНЕЦ — запас культи внутрь туши за кольцом шва (ГеймБосс 02.10: при отводе руки до ~30° в подмышке открывалась щель):
+# ещё одно кольцо на 4 см глубже по оси культи, чуть уже; кольцо шва остаётся петлёй из 8 вершин (уже не край)
+FLANGE = 0.04
+flange = []
+for j in range(N_RING):
+    th = 2 * math.pi * j / N_RING
+    flange.append(bm.verts.new(to_b(shoulder_s + dir_u * FLANGE + K_SEAM * 0.9 * (fwd * ax_f * math.cos(th) - lat * ax_l * math.sin(th)))))
+for j in range(N_RING):
+    bm.faces.new([keep_v[j], keep_v[(j + 1) % N_RING], flange[(j + 1) % N_RING], flange[j]])
 wr_keep = reduce_loop(wr_bnd, WRC, fwd0, lat0, wr_f, wr_l, 1.0)
 
 # ЛАПА ВОЛКА — процедурная: подушка (два кольца по 8 и низ веером) и 4 пальца трубками по 6 граней с когтями-конусами.
@@ -255,7 +264,7 @@ for i in range(4):
     tip = base + dir_t * ln
     claw_base = [bm.verts.new(to_b(tip + 0.011 * (up_t * math.cos(2 * math.pi * j / 4) + sd_t * math.sin(2 * math.pi * j / 4))))
                  for j in range(4)]
-    apex = bm.verts.new(to_b(tip + dir_t * 0.03 - up_t * 0.016))
+    apex = bm.verts.new(to_b(tip + dir_t * 0.022 - up_t * 0.012))   # v6: «меньше гротеска»
     for j in range(4):
         bm.faces.new([claw_base[j], claw_base[(j + 1) % 4], apex])
     bm.faces.new(claw_base[::-1])
@@ -265,6 +274,7 @@ bmesh.ops.triangulate(bm, faces=bm.faces[:])
 bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
 bm.verts.index_update()
 seam_idx = [v.index for v in keep_v]
+flange_idx = [v.index for v in flange]
 wrist_idx = [v.index for v in wr_keep]
 pad_idx = set(v.index for v in pad1 + pad2 + [bot])
 toe_sets = [(base, [v.index for v in vs], set(v.index for v in cl)) for base, vs, cl in toes]
@@ -308,28 +318,62 @@ bpy.ops.object.mode_set(mode='OBJECT')
 ob.parent = arm
 mod = ob.modifiers.new('Armature', 'ARMATURE'); mod.object = arm
 vg_s = ob.vertex_groups.new(name='плечо'); vg_f = ob.vertex_groups.new(name='предплечье')
+vg_l = ob.vertex_groups.new(name='лопатка')
+AX_U = (S - E_) / np.linalg.norm(S - E_)                          # ось кости `плечо` к телу
 for v in me.vertices:
-    y = from_b(v.co)[1]
+    pu = from_b(v.co)
+    y = pu[1]
     w = float(np.clip((y - (E_[1] - 0.03)) / 0.06, 0, 1))         # 1 — плечо, 0 — предплечье
-    if w > 0: vg_s.add([v.index], w, 'REPLACE')
-    if w < 1: vg_f.add([v.index], 1 - w, 'REPLACE')
+    # ПЕРЕХОД ЛОПАТКА → ПЛЕЧО по культе (ГеймБосс 02.10: лоскут в подмышке рвался при отводе): фланец и кольцо шва — на
+    # лопатке, дальше от тела вес плавно переходит к плечу; полоса дельты и подмышки — около 50/50
+    t = float((pu - S) @ AX_U)                                    # >0 — внутрь туши за суставом
+    wl = float(np.clip((t + 0.09) / 0.12, 0, 1)) if y > E_[1] - 0.01 else 0.0
+    ws, wf = w * (1 - wl), 1 - w
+    if wl > 0: vg_l.add([v.index], wl, 'REPLACE')
+    if ws > 0: vg_s.add([v.index], ws, 'REPLACE')
+    if wf > 0: vg_f.add([v.index], wf, 'REPLACE')
 
 # ── форма-ключ «двуногий» ──
 ob.shape_key_add(name='Basis', from_mix=False)
 key = ob.shape_key_add(name='двуногий', from_mix=False)
-seam_set = set(seam_idx)
+seam_set = set(seam_idx) | set(flange_idx)      # кольцо шва и фланец ключ не двигает (01d §1.4)
 
 
 PAW_TOP = wrist_y + 0.04       # выше — предплечье, ниже — лапа
 
 
 def thick(y):
-    """КЛЮЧ «двуногий», v5 (критик: v3 «колбаса» 3/10, v4 «колокол» 4.5/10). Множитель толщины по высоте на волке.
-    На человеке (калибр Donor) волчья кость `плечо` короче человеческой: сустав E (0.66) ложится на 0.71 роста, локоть
-    оборотня по листу — на ~0.65 роста ≈ 0.56 по высоте волка. Ритм листа: дельта 0.10 — локоть 0.065 — верх предплечья
-    0.085 — запястье 0.05: предплечье КЛИНОМ, пик сразу под локтем, к запястью −45 %."""
-    return float(np.interp(y, [PAW_TOP, 0.30, 0.42, 0.50, 0.56, 0.60, E_[1], (E_[1] + S[1]) / 2, S[1]],
-                           [0.85, 1.10, 1.45, 1.70, 1.05, 1.15, 1.05, 1.10, 1.0]))
+    """КЛЮЧ «двуногий» — предплечье (на человеке, калибр Donor, локоть оборотня ≈ 0.56 по высоте волка). Клином: пик под
+    локтем, к запястью −45 % (v5, критик). v6: обхват на 17 % меньше — геймдизайнер: «предплечья крупноваты»."""
+    # v6b (критик): «меньше» не значит «без формы» — снимать у запястья, плечелучевую под локтем оставить
+    return float(np.interp(y, [PAW_TOP, 0.30, 0.42, 0.50, 0.56], [0.65, 0.88, 1.30, 1.60, 1.00]))
+
+
+def bell(y, c, w):
+    return float(np.clip(1 - abs(y - c) / w, 0, 1))
+
+
+def upper_arm(off, y):
+    """ПЛЕЧО ОБОРОТНЯ (v6, геймдизайнер: «плоское вдоль тела, нет бицепса и трицепса»). На человеке плечо — волчья высота
+    0.56 … 0.82. В кадре кости: +X наружу, +Z вперёд, −Z назад. Купол дельты — наружу, вперёд и назад у плечевого сустава;
+    бицепс — спереди посередине; трицепс — сзади повыше; перехват к локтю. Волчья лопатка (масса назад в культе) — вдвое мельче."""
+    if off[2] < 0 and y > E_[1]:
+        off[2] *= 0.45
+    d = bell(y, 0.79, 0.04)                     # дельта вперёд-назад — только у сустава
+    dl = bell(y, 0.75, 0.09)                    # дельта наружу — ниже, клином к середине плеча (v6c: низ полкой, «наплечник»)
+    bi = bell(y, 0.66, 0.06)                    # бицепс
+    tri = bell(y, 0.71, 0.06)                   # трицепс
+    nk = bell(y, 0.575, 0.03)                   # перехват к локтю
+    k = 1.0 - 0.12 * nk
+    if off[0] > 0:
+        off[0] *= k * (1 + 0.55 * dl + 0.10 * bi)
+    else:
+        off[0] *= k
+    if off[2] > 0:
+        off[2] *= k * (1 + 0.35 * d + 0.45 * bi)
+    else:
+        off[2] *= k * (1 + 0.05 * d + 0.45 * tri)          # v6b: купол назад торчал «эполетом» за спину
+    return off
 
 
 WR = np.array([W[0], wrist_y, W[2]])      # запястье волка на оси ноги — центр поворота кисти
@@ -340,19 +384,35 @@ def rot_x(rel, deg):
     return np.array([rel[0], c * rel[1] - s_ * rel[2], s_ * rel[1] + c * rel[2]])
 
 
-def hand(p):
-    """Кисть: волчья лапа (подошва вниз, пальцы вперёд) → кисть оборотня (пальцы вниз вдоль предплечья, ладонью назад).
-    Форма, не поза: кости кисти в графе нет (письмо ГеймБосса 02.10). Ладонь не шире верха предплечья (критик v4)"""
+def rot_y(rel, deg):
+    t = math.radians(deg); c, s_ = math.cos(t), math.sin(t)
+    return np.array([c * rel[0] + s_ * rel[2], rel[1], -s_ * rel[0] + c * rel[2]])
+
+
+def hand0(p):
+    """Кисть в кадре «пальцы вниз, ладонь назад» (до доворота): волчья лапа повёрнута вокруг запястья на 90° по X;
+    ладонь не шире верха предплечья. Форма, не поза: кости кисти в графе нет (письмо ГеймБосса 02.10)"""
     rel = rot_x(p - WR, 90.0)
-    rel[0] *= 0.85; rel[1] *= 1.25; rel[2] *= 0.7
-    return WR + rel
+    # v6c: у самого запястья кисть уже (×0.6), к пальцам — ×0.85: верх подушки был шире запястья — «манжета» (критик)
+    f_ = float(np.clip(-rel[1] / 0.07, 0, 1))
+    rel[0] *= 0.6 + 0.25 * f_; rel[1] *= 1.25; rel[2] *= 0.35 + 0.10 * f_
+    return rel
+
+
+def place_hand(rel):
+    """v6: ЛАДОНЬЮ К БЕДРУ — доворот на 90° вокруг оси предплечья: ладонь (−Z) → внутрь (−X, к средней линии). В v5 ладонь
+    смотрела назад и веер пальцев лежал во фронтальной плоскости (геймдизайнер: «кисти развёрнуты ладонями вперёд»)"""
+    return WR + rot_y(rel, HAND_TURN)
+
+
+HAND_TURN = 55.0     # v6b: строго ребром (90°) кисть пропадала в анфас; на листе ладонь к бедру и вперёд на 30–45°
 
 
 toe_of = {}
 for t_i, (base, ids, claw) in enumerate(toe_sets):
     for i in ids:
         toe_of[i] = t_i
-base_t = [np.mean([hand(from_b(me.vertices[i].co)) for i in ids[:6]], axis=0) for base, ids, claw in toe_sets]
+base_t = [np.mean([hand0(from_b(me.vertices[i].co)) for i in ids[:6]], axis=0) for base, ids, claw in toe_sets]
 
 for i, kv in enumerate(key.data):
     if i in seam_set:
@@ -360,32 +420,33 @@ for i, kv in enumerate(key.data):
     p = from_b(kv.co)
     y = p[1]
     if i in toe_of:
-        # ПАЛЬЦЫ — пятерня: длиннее ×1.8 от основания, веером врозь, когти загнуты к бедру (внутрь, −X) и к ладони
+        # ПАЛЬЦЫ — хватка, а не грабли (критик v5, геймдизайнер «меньше гротеска»): средние длиннее (×1.6), крайние ×1.35;
+        # веер узкий; пальцы согнуты к ладони (−Z) тем сильнее, чем дальше от основания; когти — к ладони
         t_i = toe_of[i]; k_ = t_i - 1.5
-        q = hand(p); d = q - base_t[t_i]
-        d *= 1.8
-        d[0] += k_ * 0.25 * abs(d[1])
-        q = base_t[t_i] + d
+        q = hand0(p); d = q - base_t[t_i]
+        b_ = base_t[t_i] * np.array([0.6, 1.0, 1.0])          # основания пальцев ближе друг к другу — кисть, а не веер
+        d *= 1.6 if abs(k_) < 1 else 1.35
+        L_ = abs(d[1])
+        d[0] += k_ * 0.08 * L_
+        d[2] -= 0.55 * max(0.0, L_ - 0.02)
         if i in toe_sets[t_i][2]:
-            q += np.array([-0.018, 0.0, -0.012])
-        p = q
-    elif y > E_[1]:
-        # КУЛЬТЯ → ПЛЕЧО ОБОРОТНЯ: волчья лопатка (масса назад) в профиль мельче, купол дельты — наружу и вверх
+            # КОГТИ — длина ~0.3 пальца и загиб к ладони (v6c: «стали ногтями» — «скромнее» было про веер, а не про когти)
+            n_ = d / max(1e-6, np.linalg.norm(d))
+            d += n_ * 0.016
+            d[2] -= 0.018
+        p = place_hand(b_ + d)
+    elif y > 0.56:
         ax = axis_o(y); off = p - ax; off[1] = 0
-        k = thick(y)
-        off[2] *= (0.4 if off[2] < 0 else 1.0) * k
-        dome = float(np.interp(y, [E_[1], (E_[1] + S[1]) / 2, S[1]], [0.0, 1.0, 0.5]))
-        off[0] *= k * (1.0 + 0.45 * dome) if off[0] > 0 else k
-        p = ax + off + np.array([0, y - ax[1] + 0.02 * dome, 0])
+        off = upper_arm(off, y)
+        p = ax + off + np.array([0, y - ax[1], 0])
     elif y > PAW_TOP:
         ax = axis_o(y); off = p - ax; off[1] = 0
         off *= thick(y)
-        # ТОЧКА ЛОКТЯ (олекранон) — клин назад у локтя человека; 2.5 см тонули (критик v4), теперь 4.5 см
-        if off[2] < 0:
-            off[2] -= 0.045 * float(np.clip(1 - abs(y - 0.56) / 0.05, 0, 1))
+        if off[2] < 0:                           # точка локтя
+            off[2] -= 0.03 * bell(y, 0.56, 0.05)
         p = ax + off + np.array([0, y - ax[1], 0])
     else:
-        p = hand(p)
+        p = place_hand(hand0(p))
     kv.co = to_b(p)
 
 # переход кисть ↔ предплечье: у вершин чуть выше лапы — половина поворота, иначе запястье рвётся
@@ -395,7 +456,7 @@ for i, kv in enumerate(key.data):
     p0 = from_b(me.vertices[i].co)
     if PAW_TOP < p0[1] < PAW_TOP + 0.05:
         w = (PAW_TOP + 0.05 - p0[1]) / 0.05
-        q = WR + rot_x(p0 - WR, 90.0 * 0.5 * w)
+        q = WR + rot_y(rot_x(p0 - WR, 90.0 * 0.5 * w), HAND_TURN * 0.5 * w)
         cur = from_b(kv.co)
         kv.co = to_b(cur * (1 - 0.5 * w) + q * 0.5 * w)
 
@@ -418,6 +479,25 @@ if SHOT:
             key.value = val
             sc.render.filepath = SHOT.replace('.png', '-%s-%s.png' % (vw, kk)); bpy.ops.render.render(write_still=True)
     key.value = 0.0
+
+# ── ПРОВЕРКА ОТВОДА (ГеймБосс 02.10): кость `плечо` наружу на 0/15/30° вокруг оси «вперёд» — нет ли разрыва в подмышке
+if SHOT:
+    from mathutils import Matrix
+    bpy.context.view_layer.objects.active = arm; bpy.ops.object.mode_set(mode='POSE')
+    pb = arm.pose.bones['плечо']
+    head = pb.head.copy()
+    key.value = 1.0
+    cam.rotation_euler = (math.radians(90), 0, 0); cam.location = Vector((-0.09, -5, 0.6)); cam.data.ortho_scale = 0.8
+    for deg in (0, 15, 30):
+        pb.matrix_basis = Matrix.Identity(4)
+        bpy.context.view_layer.update()
+        # наружу для правой руки (Unity +X = Blender −X) — поворот вокруг оси «вперёд» (Blender −Y) через голову кости
+        Rm = Matrix.Translation(head) @ Matrix.Rotation(math.radians(deg), 4, Vector((0, 1, 0))) @ Matrix.Translation(-head)
+        pb.matrix = Rm @ pb.matrix
+        bpy.context.view_layer.update()
+        sc.render.filepath = SHOT.replace('.png', '-otvod-%02d.png' % deg); bpy.ops.render.render(write_still=True)
+    pb.matrix_basis = Matrix.Identity(4); key.value = 0.0
+    bpy.ops.object.mode_set(mode='OBJECT')
 
 # ── КУЛЬТЯ — ОТДЕЛЬНЫМ ОБЪЕКТОМ (ГеймБосс 02.10): выше подмышки (высота локтя графа) — скиннед-объект `культя` с кольцом
 # шва; на шасси-поле сборка её не рисует, верх ноги упирается в тушу. Веса и ключ переезжают вместе с гранями
@@ -456,7 +536,7 @@ json.dump(dict(species='Волк', slot='Руки', plan='четвероноги
                               'индексы — порядок вершин в Blender (Unity при плоских гранях делит вершины — сверять по ring_m)'),
                objects=dict(main='Руки', stump='культя', stump_note='культя — от подмышки (высота локтя графа %.3f) до кольца шва; '
                                                                  'на шасси-поле не рисуется, кольцо и индексы ring — в ней' % cut_y),
-               bones=['плечо', 'предплечье'], armature='граф волка в позе покоя (все узлы)', keys=['двуногий'],
+               bones=['лопатка', 'плечо', 'предплечье'], armature='граф волка в позе покоя (все узлы)', keys=['двуногий'],
                tris=tris, tris_main=tris_main, tris_stump=tris_stump, source='Anatomy/species/wolf/ref/mv/volk_mv_A.glb (лист volk-prirodnyj_meshy), выровнен obrazec_v_obj.py',
                generator='Tools/Blender/detali/noga_iz_obrazca.py'),
           open(passport, 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
