@@ -110,6 +110,8 @@ public static class BoneMesher
         for (int i = 0; i < pose.Count; i++)
         {
             var q = pose[i]; var b = q.b;
+            // ЧАСТЬ РИСУЕТ ДЕТАЛЬ (спека конструктора): кость остаётся в скелете — на ней висит деталь, — но поля не даёт
+            if (chassis.fieldSkip != null && System.Array.IndexOf(chassis.fieldSkip, b.name) >= 0) continue;
             segs.Add(new Seg
             {
                 a = q.pos, b = q.tip,
@@ -227,17 +229,22 @@ public static class BoneMesher
             smr.sharedMesh = mesh;
             smr.bones = all;
             smr.rootBone = skeleton;
-            // НЕ СКИННИТЬ НЕВИДИМЫХ (01.10, стена рендереров): `updateWhenOffscreen` заставлял пересчитывать каждое существо
-            // за кадром. Границы — по мешу в системе скелета (она совпадает с контейнером) с запасом на будущую анимацию
-            smr.updateWhenOffscreen = false;
-            smr.localBounds = Padded(mesh.bounds);
+            Cull(smr, mesh);
             if (mat != null) smr.sharedMaterial = mat;
         }
         return skeleton;
     }
 
-    /// <summary>Границы скиннед-меша с запасом: поза и анимация не должны выводить тело из рамки отсечения.</summary>
-    public static Bounds Padded(Bounds b) { b.Expand(0.6f); return b; }
+    /// <summary>НЕ СКИННИТЬ НЕВИДИМЫХ (01.10, стена рендереров) — В ИГРЕ: `updateWhenOffscreen` заставлял пересчитывать каждое
+    /// существо за кадром; границы — по мешу с запасом на будущую анимацию. В РЕДАКТОРЕ — точные границы: по ним меряют
+    /// стенд, кадры и детекторы, и запас раздувал их отчёты (человек «1.29 × 2.36 м», поймано 02.10).</summary>
+    public static void Cull(SkinnedMeshRenderer smr, Mesh mesh)
+    {
+        if (!Application.isPlaying) { smr.updateWhenOffscreen = true; return; }
+        smr.updateWhenOffscreen = false;
+        var b = mesh.bounds; b.Expand(0.6f);
+        smr.localBounds = b;
+    }
 
     // ── ПОЛЕ ──────────────────────────────────────────────────────────────────────────────────────────
 
@@ -282,6 +289,7 @@ public static class BoneMesher
     /// фон не читает, её может переключить стенд.</summary>
     static SlotData[] Compute(List<Seg> segs, float cell, float blend, float fur, bool flat)
     {
+        if (segs.Count == 0) return new SlotData[0];   // всё тело рисуют детали — поля нет, сетку не строим
         // сетка по габариту скелета с запасом на радиус и слияние
         Vector3 lo = new(9f, 9f, 9f), hi = new(-9f, -9f, -9f);
         foreach (var s in segs)

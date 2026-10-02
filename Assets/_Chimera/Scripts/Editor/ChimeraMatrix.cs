@@ -135,11 +135,25 @@ public static class ChimeraMatrix
         // И5 — опорная конечность шасси стоит на земле
         foreach (var limb in stance)
         {
+            // КОНЕЦ — ДЕТАЛЬ МЕСТА ИЛИ ДЕТАЛЬ-МЕШ ЧАСТИ (спека конструктора, 02.10): лапа теперь бывает частью меша детали,
+            // а не отдельным блоком. Низ — по вершинам после скиннинга: границы скиннед-рендерера с запасом и врут
             var ends = b.details.Where(r => r.name == limb).ToList();
-            if (ends.Count == 0) { Add("И5", limb, "у опорной конечности нет конца"); continue; }
-            float low = ends.Min(r => r.bounds.min.y);
+            var parts = b.shells.Where(r => r.name == limb && r.GetComponent<BodyPartView>() != null).ToList();
+            if (ends.Count == 0 && parts.Count == 0) { Add("И5", limb, "у опорной конечности нет конца"); continue; }
+            float low = ends.Select(r => r.bounds.min.y).Concat(parts.Select(Lowest)).DefaultIfEmpty(0f).Min();
             if (low > Foot) Add("И5", limb, $"низ в воздухе на {low:0.00} м");
         }
+    }
+
+    static float Lowest(Renderer r)
+    {
+        var m = new Mesh();
+        try
+        {
+            ((SkinnedMeshRenderer)r).BakeMesh(m, true);
+            return m.vertices.Select(v => r.transform.TransformPoint(v).y).DefaultIfEmpty(0f).Min();
+        }
+        finally { Object.DestroyImmediate(m); }
     }
 
     /// <summary>МЕСТА, КОТОРЫЕ КОРМИТ АУГМЕНТ: своё место плюс места, берущие форму из него (`formFrom` — глаза,
@@ -172,7 +186,10 @@ public static class ChimeraMatrix
             return b;
         }
 
-        public int Count(string place) => details.Count(r => r.name == place);
+        // ДЕТАЛЬ-МЕШ СЧИТАЕТСЯ НАРАВНЕ С КУСКАМИ (02.10): лапы волка теперь внутри его детали, а не отдельными блоками —
+        // без этого «дома» у Рук стало бы 0 деталей, и проверка «не рисуется» молча выключилась бы для любого гостя
+        public int Count(string place) => details.Count(r => r.name == place) +
+                                          shells.Count(r => r.name == place && r.GetComponent<BodyPartView>() != null);
 
         public List<string> StanceLimbs()
         {

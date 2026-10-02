@@ -88,6 +88,13 @@ public static class MorphBuilder
             foreach (var t in skeleton.GetComponentsInChildren<Transform>(true))
                 if (t != skeleton && !boneXf.ContainsKey(t.name)) boneXf[t.name] = t;
 
+        // ДЕТАЛИ (спека конструктора §10): авторский меш части встаёт на кости своей цепи; поле этой цепи не строилось
+        // (`fieldSkip`), а куски органа на этом месте не ставятся — деталь несёт облик части целиком
+        var covered = new HashSet<string>();
+        if (chassis.placedParts != null && skeleton != null)
+            foreach (var (part, donor) in chassis.placedParts)
+                if (PartAssembly.Place(container.transform, chassis, part, donor, PrimitiveMaterial()) != null) covered.Add(part.slot);
+
         // ГРАФ ХРЕБТА: место с `parent` не хранит своих координат — считаем их от родителя и НАСЛЕДУЕМ
         // его поворот. Поэтому наклон шеи тянет за собой голову, морду, уши и рога, а не оставляет их
         // висеть на прежней абсолютной высоте (спека 2026-08-05)
@@ -125,7 +132,7 @@ public static class MorphBuilder
             // погашено место или нет (П1: «погашено» отнимает у места форму куба, но не гнездо). Куски без роли — в
             // своё место; куски с ролью (уши, глаза, нос, ямки Чутья) — в место, которое берёт эту роль (`formFrom`)
             bool nested = false;
-            if (Nested(organ))
+            if (Nested(organ) && !covered.Contains(socket.name))
             {
                 NestParts(container.transform, chassis, socket, PartsFor(organ, PartRole.None), byBone, bonePos, boneXf, organBySocket);
                 nested = true;
@@ -302,8 +309,7 @@ public static class MorphBuilder
             smr.bones = boneList.ToArray();
             smr.rootBone = skeleton;
             smr.sharedMaterial = parts[0].sharedMaterial;
-            smr.updateWhenOffscreen = false;   // как у оболочки поля: невидимых не скинним, границы — с запасом
-            smr.localBounds = BoneMesher.Padded(mesh.bounds);
+            BoneMesher.Cull(smr, mesh);
             foreach (var p in parts) { p.gameObject.SetActive(false); Kill(p.gameObject); }
         }
     }

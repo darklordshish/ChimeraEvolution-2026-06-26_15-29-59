@@ -1,4 +1,7 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using UnityEditor;
 using UnityEngine;
 
 /// <summary>ПОСТАВКА ФОРМЫ: силуэтный граф вида приходит ФАЙЛОМ от модельной линии и задаёт форму вида
@@ -70,7 +73,58 @@ public static class SpeciesHandoff
             int n = ApplyLayouts(species, head, organs);
             Debug.Log($"[форма] {species.speciesName}: приняты раскладки из поставки — изменений {n}");
         }
+
+        // ДЕТАЛИ (спека конструктора §7, §10): паспорт `handoff/parts/<вид>-*.json` + меш `Models/Parts/<то же имя>.fbx`.
+        // Нет файлов — пусто, и это записывается явно (бутстрап не обнуляет поля, которые перестал присваивать)
+        species.parts = ReadParts(species, out var partProblems);
+        foreach (var p in partProblems) Debug.LogError($"[детали] {species.speciesName}: {p}");
+        if (species.parts.Length > 0) Debug.Log($"[детали] {species.speciesName}: принято деталей {species.parts.Length}");
         return graph;
+    }
+
+    [System.Serializable] class SeamDto { public string type; public int[] ring; public float[] ellipse; }
+    [System.Serializable] class DetailDto { public string species, slot, plan; public SeamDto seam; public bool mirror = true; public string[] keys; }
+    public const string PartsDir = Dir + "parts/";
+    public const string PartsMeshDir = "Assets/_Chimera/Models/Parts/";
+
+    /// <summary>Прочитать детали вида. Меш и порядок костей берутся из скиннед-рендерера FBX: индексы весов меша — это
+    /// порядок костей рендерера, а не паспорта. Меш обязан быть читаемым — сборка переносит его вершины.</summary>
+    public static BodyPart[] ReadParts(SpeciesSO species, out List<string> problems)
+    {
+        problems = new List<string>();
+        var list = new List<BodyPart>();
+        if (!System.IO.Directory.Exists(PartsDir)) return list.ToArray();
+        string prefix = Translit(species.speciesName) + "-";
+        foreach (var file in System.IO.Directory.GetFiles(PartsDir, prefix + "*.json"))
+        {
+            string stem = System.IO.Path.GetFileNameWithoutExtension(file);
+            DetailDto d;
+            try { d = JsonUtility.FromJson<DetailDto>(System.IO.File.ReadAllText(file)); }
+            catch (System.Exception e) { problems.Add($"«{stem}»: паспорт не разбирается — {e.Message}"); continue; }
+            if (d == null || string.IsNullOrEmpty(d.slot)) { problems.Add($"«{stem}»: в паспорте нет места (`slot`)"); continue; }
+            if (!string.IsNullOrEmpty(d.species) && d.species != species.speciesName) { problems.Add($"«{stem}»: паспорт назвал вид «{d.species}»"); continue; }
+
+            string fbx = PartsMeshDir + stem + ".fbx";
+            if (AssetImporter.GetAtPath(fbx) is ModelImporter mi && !mi.isReadable) { mi.isReadable = true; mi.SaveAndReimport(); }
+            var smr = AssetDatabase.LoadAllAssetsAtPath(fbx).OfType<GameObject>()
+                                   .SelectMany(g => g.GetComponentsInChildren<SkinnedMeshRenderer>(true)).FirstOrDefault();
+            if (smr == null || smr.sharedMesh == null) { problems.Add($"«{stem}»: нет скиннед-меша в «{fbx}»"); continue; }
+            var bones = smr.bones.Select(b => b != null ? b.name : "").ToArray();
+            var graph = new HashSet<string>((species.bones ?? new Bone[0]).Select(b => b.name));
+            var missing = bones.Where(b => !graph.Contains(b)).ToList();
+            if (missing.Count > 0) { problems.Add($"«{stem}»: кости меша не узлы графа: {string.Join(", ", missing)}"); continue; }
+            if (d.seam?.ring != null && d.seam.ring.Length != 8) problems.Add($"«{stem}»: кольцо шва {d.seam.ring.Length} вершин, ждали 8");
+
+            list.Add(new BodyPart
+            {
+                slot = d.slot, plan = d.plan, mesh = smr.sharedMesh, bones = bones, mirror = d.mirror,
+                toBody = smr.transform.localToWorldMatrix,   // корень FBX — начало тела (проверено линией: корень без поворота)
+                seam = d.seam?.type, ring = d.seam?.ring,
+                ellipse = d.seam?.ellipse != null && d.seam.ellipse.Length >= 2 ? new Vector2(d.seam.ellipse[0], d.seam.ellipse[1]) : Vector2.zero,
+                keys = d.keys,
+            });
+        }
+        return list.ToArray();
     }
 
     /// <summary>РАСКЛАДКИ ЧИТАЮТСЯ ИЗ ФАЙЛОВ, А НЕ ПЕРЕПИСЫВАЮТСЯ В КОД. Модельная линия предложила внести числа

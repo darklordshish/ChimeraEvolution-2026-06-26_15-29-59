@@ -109,6 +109,8 @@ public static class BodyTree
 
     public static Bone Clone(Bone b) => JsonUtility.FromJson<Bone>(JsonUtility.ToJson(b));
 
+    public static Bone[] Clone(Bone[] bones) => bones?.Select(Clone).ToArray();
+
     public static PlaceNest Clone(PlaceNest n) => new()
     {
         name = n.name, host = n.host, localPos = n.localPos, localRot = n.localRot,

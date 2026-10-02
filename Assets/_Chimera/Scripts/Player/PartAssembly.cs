@@ -1,0 +1,196 @@
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+
+/// <summary>СБОРКА ДЕТАЛЕЙ (спека конструктора §7, §10): деталь вида — авторский меш части — встаёт на кости своей цепи на
+/// любом шасси вместо оболочки поля.
+///
+/// КАК ПЕРЕНОСИТСЯ. Меш детали лежит в координатах тела своего вида (метры, поза покоя графа) и скиннингом привязан к
+/// узлам графа. Вершина переводится в кадр своей кости ДОНОРА (поза из графа донора), масштабируется вдоль кости
+/// отношением длин и поперёк — отношением радиусов кости носителя к кости донора, и ставится в тот же кадр кости
+/// НОСИТЕЛЯ. Кости цепи на носителе уже расставлены подстановкой (`ChainSwap`) — с её калибром, осью и зигзагом, поэтому
+/// деталь едет туда же, куда цепь, и отдельной геометрии стыка не нужно. На родном шасси кости те же — деталь встаёт как
+/// сделана. Левая сторона — зеркалом по X.
+///
+/// ЧТО ДЕТАЛЬ ЗАМЕЩАЕТ: оболочку поля своей цепи (кости от корня детали вниз — `fieldSkip`) и куски органа своего места
+/// (лапы, когти): деталь несёт облик части целиком. Стык с полем — перекрытием (культя детали уходит в тело).</summary>
+public static class PartAssembly
+{
+    /// <summary>Какие детали встают на это тело: для каждого места — деталь вида, чей орган там виден (родной — у шасси).</summary>
+    public static List<(BodyPart part, SpeciesSO donor)> Choose(SpeciesSO chassis, IReadOnlyList<Organ> worn)
+    {
+        var chosen = new List<(BodyPart, SpeciesSO)>();
+        if (worn == null) return chosen;
+        var slots = new HashSet<string>();
+        foreach (var o in worn) if (o != null && !string.IsNullOrEmpty(o.slot)) slots.Add(o.slot);
+        foreach (var slot in slots)
+        {
+            var organ = worn.First(o => o != null && o.slot == slot);   // видимый орган места (порядок — `WornInDrawOrder`)
+            var donor = chassis.organs != null && System.Array.IndexOf(chassis.organs, organ) >= 0 ? chassis : ChainSwap.OwnerOf(organ);
+            var part = donor?.parts?.FirstOrDefault(p => p != null && p.slot == slot && p.mesh != null && p.bones != null && p.bones.Length > 0);
+            if (part != null) chosen.Add((part, donor));
+        }
+        return chosen;
+    }
+
+    /// <summary>Имя кости детали на собранном теле: как в графе донора, или с суффиксом донора, если имя занял носитель.</summary>
+    public static string BodyName(SpeciesSO body, SpeciesSO donor, string bone)
+    {
+        if (body.bones.Any(b => b.name == bone + "~" + donor.speciesName)) return bone + "~" + donor.speciesName;
+        return body.bones.Any(b => b.name == bone) ? bone : null;
+    }
+
+    /// <summary>Кости, которыми деталь ВЛАДЕЕТ: те, к которым у её вершин есть вес. Арматура в FBX несёт весь граф вида (так
+    /// и надо — поза покоя целиком), но владеет деталь только своей цепью: иначе она выключила бы поле всего тела
+    /// (поймано на пилоте 02.10 — волк без единого отрезка поля).</summary>
+    public static string[] Weighted(BodyPart part)
+    {
+        var used = new HashSet<int>();
+        foreach (var w in part.mesh.boneWeights)
+        {
+            if (w.weight0 > 0f) used.Add(w.boneIndex0);
+            if (w.weight1 > 0f) used.Add(w.boneIndex1);
+            if (w.weight2 > 0f) used.Add(w.boneIndex2);
+            if (w.weight3 > 0f) used.Add(w.boneIndex3);
+        }
+        return used.Where(i => i >= 0 && i < part.bones.Length).Select(i => part.bones[i]).ToArray();
+    }
+
+    /// <summary>Кости, которые поле не рисует: поддерево корня каждой детали (корень — кость, которой деталь владеет и
+    /// чей родитель ей не принадлежит).</summary>
+    public static string[] FieldSkip(SpeciesSO body, IEnumerable<(BodyPart part, SpeciesSO donor)> parts)
+    {
+        var skip = new HashSet<string>();
+        foreach (var (part, donor) in parts)
+        {
+            var names = Weighted(part).Select(n => BodyName(body, donor, n)).Where(n => n != null).ToHashSet();
+            foreach (var root in names.Where(n => !names.Contains(body.bones.First(b => b.name == n).parent ?? "")))
+            {
+                var set = new HashSet<string> { root };
+                bool grew = true;
+                while (grew)
+                {
+                    grew = false;
+                    foreach (var b in body.bones)
+                        if (!set.Contains(b.name) && b.parent != null && set.Contains(b.parent)) { set.Add(b.name); grew = true; }
+                }
+                skip.UnionWith(set);
+            }
+        }
+        return skip.ToArray();
+    }
+
+    /// <summary>Поставить деталь на тело: меш переносится на кости носителя, скиннинг — к ним же.</summary>
+    public static GameObject Place(Transform container, SpeciesSO body, BodyPart part, SpeciesSO donor, Material mat)
+    {
+        var skeleton = container.Find("Skeleton");
+        if (skeleton == null || part.mesh == null || !part.mesh.isReadable) return null;
+        var xf = new Dictionary<string, Transform>();
+        foreach (var t in skeleton.GetComponentsInChildren<Transform>(true)) if (!xf.ContainsKey(t.name)) xf[t.name] = t;
+
+        var dBy = donor.bones.ToDictionary(b => b.name);
+        var dPlaced = new Dictionary<string, (Vector3, Quaternion)>();
+        var cBy = body.bones.ToDictionary(b => b.name);
+        var toLocal = container.worldToLocalMatrix;
+
+        var src = part.mesh;
+        var toBody = part.toBody == default ? Matrix4x4.identity : part.toBody;
+        var raw = src.vertices;
+        // АДАПТАЦИЯ ПЛАНА (спека конструктора §4): деталь другого плана встаёт с формой-ключом, названным планом носителя
+        // («двуногий» — волчья нога на человеке, «рука-лапа» оборотня с листа). Ключ — форма, не поза: углы идут костями
+        string plan = body.Plan;
+        if (!string.IsNullOrEmpty(part.plan) && part.plan != plan)
+        {
+            int k = src.GetBlendShapeIndex(plan);
+            if (k >= 0)
+            {
+                var dv = new Vector3[raw.Length];
+                src.GetBlendShapeFrameVertices(k, src.GetBlendShapeFrameCount(k) - 1, dv, null, null);
+                raw = raw.Select((v, i) => v + dv[i]).ToArray();
+            }
+        }
+        var sv = raw.Select(v => toBody.MultiplyPoint3x4(v)).ToArray(); var sw = src.boneWeights; var st = src.triangles;
+        if (toBody.determinant < 0f) for (int i = 0; i < st.Length; i += 3) (st[i + 1], st[i + 2]) = (st[i + 2], st[i + 1]);
+        int n = sv.Length;
+        int sides = part.mirror ? 2 : 1;
+        var verts = new List<Vector3>(n * sides); var weights = new List<BoneWeight>(n * sides); var tris = new List<int>(st.Length * sides);
+        var bones = new List<Transform>(); var bind = new List<Matrix4x4>();
+        int BoneIndex(Transform t)
+        {
+            int i = bones.IndexOf(t);
+            if (i >= 0) return i;
+            bones.Add(t); bind.Add(t.worldToLocalMatrix * container.localToWorldMatrix);
+            return bones.Count - 1;
+        }
+
+        for (int side = +1, s = 0; s < sides; s++, side = -1)
+        {
+            // кадр каждой кости детали: донор (поза графа, своя сторона) и носитель (трансформ собранного скелета)
+            var frames = new (Matrix4x4 toDonorLocal, Vector3 scale, Matrix4x4 carrier, int index)[part.bones.Length];
+            for (int i = 0; i < part.bones.Length; i++)
+            {
+                frames[i].index = -1;
+                if (!dBy.TryGetValue(part.bones[i], out var db)) continue;
+                string cName = BodyName(body, donor, part.bones[i]);
+                if (cName == null || !xf.TryGetValue(side < 0 ? cName + ".L" : cName, out var ct)) continue;   // зеркальная кость — «.L»
+                var (dp, dr) = SkeletonBuilder.Place(db, dBy, dPlaced);
+                if (side < 0) { dp.x = -dp.x; var e = dr.eulerAngles; dr = Quaternion.Euler(e.x, -e.y, -e.z); }
+                var cb = cBy[cName];
+                float sLen = db.length > 1e-5f ? cb.length / db.length : 1f;
+                float sRad = db.r0 > 1e-5f ? cb.r0 / db.r0 : sLen;
+                frames[i] = (Matrix4x4.TRS(dp, dr, Vector3.one).inverse, new Vector3(sRad, sLen, sRad), toLocal * ct.localToWorldMatrix, BoneIndex(ct));
+            }
+
+            int start = verts.Count;
+            for (int v = 0; v < n; v++)
+            {
+                var p0 = sv[v];
+                if (side < 0) p0.x = -p0.x;
+                var w = sw.Length == n ? sw[v] : new BoneWeight { boneIndex0 = 0, weight0 = 1f };
+                Vector3 acc = Vector3.zero; float total = 0f;
+                var bw = new BoneWeight();
+                void Add(int bi, float wt, int slotIdx)
+                {
+                    if (wt <= 0f || bi < 0 || bi >= frames.Length || frames[bi].index < 0) return;
+                    var f = frames[bi];
+                    var local = f.toDonorLocal.MultiplyPoint3x4(p0);
+                    local = Vector3.Scale(local, f.scale);
+                    acc += f.carrier.MultiplyPoint3x4(local) * wt;
+                    total += wt;
+                    switch (slotIdx) { case 0: bw.boneIndex0 = f.index; bw.weight0 = wt; break; case 1: bw.boneIndex1 = f.index; bw.weight1 = wt; break;
+                                       case 2: bw.boneIndex2 = f.index; bw.weight2 = wt; break; default: bw.boneIndex3 = f.index; bw.weight3 = wt; break; }
+                }
+                Add(w.boneIndex0, w.weight0, 0); Add(w.boneIndex1, w.weight1, 1); Add(w.boneIndex2, w.weight2, 2); Add(w.boneIndex3, w.weight3, 3);
+                if (total <= 0f) return null;   // вершина без кости носителя — деталь не встаёт, рисуется полем
+                verts.Add(acc / total);
+                bw.weight0 /= total; bw.weight1 /= total; bw.weight2 /= total; bw.weight3 /= total;
+                weights.Add(bw);
+            }
+            for (int i = 0; i < st.Length; i += 3)
+            {
+                tris.Add(start + st[i]);
+                tris.Add(start + (side < 0 ? st[i + 2] : st[i + 1]));
+                tris.Add(start + (side < 0 ? st[i + 1] : st[i + 2]));
+            }
+        }
+
+        var mesh = new Mesh { name = $"{part.slot} ({donor.speciesName}, деталь)" };
+        if (verts.Count > 65535) mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+        mesh.SetVertices(verts); mesh.SetTriangles(tris, 0);
+        mesh.RecalculateNormals();   // вершины детали разварены по граням — нормаль грани, как у листа
+        mesh.boneWeights = weights.ToArray();
+        mesh.bindposes = bind.ToArray();
+        mesh.RecalculateBounds();
+
+        var go = new GameObject(part.slot);   // ИМЯ = МЕСТО: контракт имён частей
+        go.transform.SetParent(container, false);
+        go.AddComponent<BodyPartView>();   // метка для детекторов: этот рендерер — деталь, он несёт облик части целиком
+        var smr = go.AddComponent<SkinnedMeshRenderer>();
+        smr.sharedMesh = mesh;
+        smr.bones = bones.ToArray();
+        smr.rootBone = skeleton;
+        smr.sharedMaterial = mat;
+        BoneMesher.Cull(smr, mesh);
+        return go;
+    }
+}

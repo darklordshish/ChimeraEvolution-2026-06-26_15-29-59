@@ -54,15 +54,20 @@ public static class ChainSwap
         if (chassis == null || worn == null || chassis.bones == null || chassis.bones.Length == 0) return chassis;
 
         var grafts = Grafts(chassis, worn);
-        if (grafts.Count == 0) return chassis;
+        // ДЕТАЛИ (спека конструктора): у органа, чей вид принёс деталь своего места, часть рисует деталь, а не поле. Это
+        // тоже составное тело — даже на родном шасси без прививок (волк со своей ногой-деталью)
+        var parts = PartAssembly.Choose(chassis, worn);
+        if (grafts.Count == 0 && parts.Count == 0) return chassis;
 
         // КЛЮЧ — СОСТАВ И ОТПЕЧАТОК СОДЕРЖИМОГО: по одним именам кэш отдавал бы старое тело после пересоздания видов
         // (та же мина, что у `BoneMesher` по имени вида: ассет тот же, кости другие, ошибки нет)
         string key = chassis.speciesName + "#" + Stamp(chassis) + "|" +
-                     string.Join(",", grafts.Select(g => g.e.slot + ":" + g.donor.speciesName + "#" + Stamp(g.donor)));
+                     string.Join(",", grafts.Select(g => g.e.slot + ":" + g.donor.speciesName + "#" + Stamp(g.donor))) +
+                     (parts.Count == 0 ? "" : "|детали:" + string.Join(",", parts.Select(p => p.part.slot + ":" + p.donor.speciesName + "#" +
+                                                                                               (p.part.mesh != null ? p.part.mesh.GetInstanceID() : 0))));
         if (cache.TryGetValue(key, out var hit) && hit != null) return hit;
 
-        var assembled = Assemble(chassis, grafts, worn, null);
+        (Bone[] bones, PlaceNest[] nests) assembled = grafts.Count == 0 ? (BodyTree.Clone(chassis.bones), chassis.nests) : Assemble(chassis, grafts, worn, null);
         if (assembled.bones == null) return chassis;
 
         var body = ScriptableObject.CreateInstance<SpeciesSO>();
@@ -72,6 +77,8 @@ public static class ChainSwap
         body.meshKey = key;
         body.organs = chassis.organs;   // ОРГАНЫ — ТЕ ЖЕ ОБЪЕКТЫ: копировать их незачем, а тождество нужно поиску владельца
         (body.bones, body.nests) = assembled;
+        body.placedParts = parts.ToArray();
+        body.fieldSkip = PartAssembly.FieldSkip(body, parts);
         cache[key] = body;
         return body;
     }
