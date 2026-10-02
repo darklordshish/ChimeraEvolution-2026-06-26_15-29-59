@@ -285,6 +285,29 @@ if SHOT:
             sc.render.filepath = SHOT.replace('.png', '-%s-%s.png' % (vw, kk)); bpy.ops.render.render(write_still=True)
     key.value = 0.0
 
+# ── КУЛЬТЯ — ОТДЕЛЬНЫМ ОБЪЕКТОМ (ГеймБосс 02.10): выше подмышки (высота локтя графа) — скиннед-объект `культя` с кольцом
+# шва; на шасси-поле сборка её не рисует, верх ноги упирается в тушу. Веса и ключ переезжают вместе с гранями
+bpy.ops.object.select_all(action='DESELECT'); ob.select_set(True); bpy.context.view_layer.objects.active = ob
+bpy.ops.object.mode_set(mode='EDIT')
+bm = bmesh.from_edit_mesh(me)
+cut_y = float(E_[1])
+bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], dist=1e-5,
+                       plane_co=Vector((0, 0, cut_y)), plane_no=Vector((0, 0, 1)))
+for f in bm.faces:
+    f.select = f.calc_center_median().z > cut_y
+for v in bm.verts:
+    v.select = any(f.select for f in v.link_faces)
+bmesh.update_edit_mesh(me)
+bpy.ops.mesh.separate(type='SELECTED')
+bpy.ops.object.mode_set(mode='OBJECT')
+stump = [o for o in bpy.context.selected_objects if o is not ob][0]
+stump.name = 'культя'; stump.data.name = 'культя'
+seam_b = [to_b(p) for p in seam_m]
+seam_idx = [min(range(len(stump.data.vertices)), key=lambda i: (stump.data.vertices[i].co - q).length) for q in seam_b]
+tris_main = sum(len(p.vertices) - 2 for p in ob.data.polygons)
+tris_stump = sum(len(p.vertices) - 2 for p in stump.data.polygons)
+print('разделено: Руки %d тр, культя %d тр (выше %.3f); кольцо в культе %s' % (tris_main, tris_stump, cut_y, seam_idx))
+
 # ── экспорт ──
 bpy.ops.object.select_all(action='SELECT')
 bpy.ops.export_scene.fbx(filepath=fbx, use_selection=True, apply_scale_options='FBX_SCALE_ALL', axis_forward='-Z',
@@ -297,8 +320,10 @@ json.dump(dict(species='Волк', slot='Руки', plan='четвероноги
                          ellipse_m=[round(ax_f * K_SEAM, 4), round(ax_l * K_SEAM, 4)],
                          note='метры тела волка, оси Unity; вершина 0 — перёд тела, обход против часовой при взгляде из детали к телу; '
                               'индексы — порядок вершин в Blender (Unity при плоских гранях делит вершины — сверять по ring_m)'),
+               objects=dict(main='Руки', stump='культя', stump_note='культя — от подмышки (высота локтя графа %.3f) до кольца шва; '
+                                                                 'на шасси-поле не рисуется, кольцо и индексы ring — в ней' % cut_y),
                bones=['плечо', 'предплечье'], armature='граф волка в позе покоя (все узлы)', keys=['двуногий'],
-               tris=tris, source='Anatomy/species/wolf/ref/mv/volk_mv_A.glb (лист volk-prirodnyj_meshy), выровнен obrazec_v_obj.py',
+               tris=tris, tris_main=tris_main, tris_stump=tris_stump, source='Anatomy/species/wolf/ref/mv/volk_mv_A.glb (лист volk-prirodnyj_meshy), выровнен obrazec_v_obj.py',
                generator='Tools/Blender/detali/noga_iz_obrazca.py'),
           open(passport, 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
 print('ГОТОВО: %d тр' % tris)
