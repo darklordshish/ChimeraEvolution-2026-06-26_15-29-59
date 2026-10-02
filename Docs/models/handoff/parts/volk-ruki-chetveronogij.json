@@ -73,6 +73,7 @@
     "stump_note": "культя — от подмышки (высота локтя графа 0.660) до кольца шва; на шасси-поле не рисуется, кольцо и индексы ring — в ней"
   },
   "bones": [
+    "лопатка",
     "плечо",
     "предплечье"
   ],
@@ -80,9 +81,9 @@
   "keys": [
     "двуногий"
   ],
-  "tris": 640,
+  "tris": 656,
   "tris_main": 550,
-  "tris_stump": 178,
+  "tris_stump": 194,
   "source": "Anatomy/species/wolf/ref/mv/volk_mv_A.glb (лист volk-prirodnyj_meshy), выровнен obrazec_v_obj.py",
   "generator": "Tools/Blender/detali/noga_iz_obrazca.py"
 }
