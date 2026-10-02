@@ -48,7 +48,10 @@ public static class ChainSwap
     /// <summary>Калибр цепи с деталью: по суставу (радиус сустава носителя к донору — калибр носителя), по досягаемости
     /// (длина цепи носителя к донору — рука достаёт туда же), донорский (деталь своего размера).</summary>
     public enum PartScale { Joint, Reach, Donor }
-    public static PartScale PartCalibre = PartScale.Joint;
+    // ДОНОРСКИЙ РАЗМЕР — по референсу оборотня (замер модельной линии 02.10, пропорции в долях роста): рука 0.47 против
+    // 0.48 у листа, лапа кончается на 0.36 против 0.33; масштаб по образцу 1.02. По суставу — 0.28 (короткая),
+    // по досягаемости — 0.78 (до земли)
+    public static PartScale PartCalibre = PartScale.Donor;
 
     static readonly BoundedCache<string, SpeciesSO> cache = new(256, so => { if (so == null) return; if (Application.isPlaying) Object.Destroy(so); else Object.DestroyImmediate(so); });
     static readonly Dictionary<Organ, SpeciesSO> owners = new();
