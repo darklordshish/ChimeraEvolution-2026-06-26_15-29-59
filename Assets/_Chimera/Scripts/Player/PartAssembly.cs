@@ -141,6 +141,14 @@ public static class PartAssembly
             return bones.Count - 1;
         }
 
+        // КОСТИ ВЫШЕ КОРНЯ ЦЕПИ — НОСИТЕЛЯ, НЕ ДОНОРА. Культя скиннится и к `лопатка` (переход весов к корпусу), но лопатка
+        // носителя не подставляется: у волка она длинная вдоль бока, у человека короткая. Переносить такие вершины кадром
+        // лопатки донора → лопатки носителя — растянуть их отношением чужих костей (лоскут в подмышке, кадр 02.10). Ставим
+        // их кадром КОРНЯ цепи (шов один), а весом оставляем на своей кости — она и поведёт их при движении
+        var mainRoot = Weighted(part).Where(b => dBy.ContainsKey(b)).FirstOrDefault(b => !Weighted(part).Contains(dBy[b].parent ?? ""));
+        var above = new HashSet<string>();
+        for (var a = mainRoot != null ? dBy[mainRoot].parent : null; a != null && dBy.TryGetValue(a, out var ab); a = ab.parent) above.Add(a);
+
         for (int side = +1, s = 0; s < sides; s++, side = -1)
         {
             // кадр каждой кости детали: донор (поза графа, своя сторона) и носитель (трансформ собранного скелета)
@@ -148,15 +156,17 @@ public static class PartAssembly
             for (int i = 0; i < partBones.Length; i++)
             {
                 frames[i].index = -1;
-                if (!dBy.TryGetValue(partBones[i], out var db)) continue;
-                string cName = BodyName(body, donor, partBones[i]);
-                if (cName == null || !xf.TryGetValue(side < 0 ? cName + ".L" : cName, out var ct)) continue;   // зеркальная кость — «.L»
+                string own = partBones[i], placeBy = above.Contains(own) ? mainRoot : own;
+                if (!dBy.TryGetValue(placeBy, out var db)) continue;
+                string cName = BodyName(body, donor, placeBy), skinName = BodyName(body, donor, own);
+                if (cName == null || skinName == null || !xf.TryGetValue(side < 0 ? cName + ".L" : cName, out var ct)
+                    || !xf.TryGetValue(side < 0 ? skinName + ".L" : skinName, out var skinT)) continue;   // зеркальная кость — «.L»
                 var (dp, dr) = SkeletonBuilder.Place(db, dBy, dPlaced);
                 if (side < 0) { dp.x = -dp.x; var e = dr.eulerAngles; dr = Quaternion.Euler(e.x, -e.y, -e.z); }
                 var cb = cBy[cName];
                 float sLen = db.length > 1e-5f ? cb.length / db.length : 1f;
                 float sRad = db.r0 > 1e-5f ? cb.r0 / db.r0 : sLen;
-                frames[i] = (Matrix4x4.TRS(dp, dr, Vector3.one).inverse, new Vector3(sRad, sLen, sRad), toLocal * ct.localToWorldMatrix, BoneIndex(ct));
+                frames[i] = (Matrix4x4.TRS(dp, dr, Vector3.one).inverse, new Vector3(sRad, sLen, sRad), toLocal * ct.localToWorldMatrix, BoneIndex(skinT));
             }
 
             int start = verts.Count;

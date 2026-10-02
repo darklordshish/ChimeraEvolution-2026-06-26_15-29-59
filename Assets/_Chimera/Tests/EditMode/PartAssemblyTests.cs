@@ -129,5 +129,38 @@ namespace Chimera.Tests.EditMode
             CollectionAssert.Contains(ChainSwap.Compose(human, worn).fieldSkip, PartAssembly.BodyName(ChainSwap.Compose(human, worn), wolf, "плечо"),
                                       "видимая культя и поле рисуют плечо дважды");
         }
+
+        /// <summary>Вершина культи на кости ВЫШЕ корня цепи (`лопатка` — переход весов к корпусу) ставится кадром корня
+        /// цепи, а не кадром чужой лопатки: лопатки волка и человека разные, перенос через них стягивал фланец культи в
+        /// шип (кадр 02.10, поставка v6).</summary>
+        [Test]
+        public void StumpAboveChainRoot_PlacedByChainRoot()
+        {
+            var wolf = WolfWithPart();
+            var part = wolf.parts[0];
+            var by = wolf.bones.ToDictionary(b => b.name);
+            var (shoulder, _) = SkeletonBuilder.Place(by["плечо"], by, new Dictionary<string, (Vector3, Quaternion)>());
+            var stump = new Mesh();
+            stump.SetVertices(new List<Vector3> { shoulder, shoulder + Vector3.up * 0.001f, shoulder + Vector3.forward * 0.001f });
+            stump.SetTriangles(new[] { 0, 1, 2 }, 0);
+            stump.boneWeights = Enumerable.Repeat(new BoneWeight { boneIndex0 = 0, weight0 = 1f }, 3).ToArray();
+            trash.Add(stump);
+            part.stump = stump; part.stumpBones = new[] { "лопатка" };
+
+            var human = Load("Человек");
+            var worn = human.organs.Where(o => o.slot != BodySlots.Arms).ToList();
+            worn.Insert(0, wolf.organs.First(o => o.slot == BodySlots.Arms));
+            var body = ChainSwap.Compose(human, worn);
+            var cby = body.bones.ToDictionary(b => b.name);
+            var (carrierShoulder, _) = SkeletonBuilder.Place(cby[PartAssembly.BodyName(body, wolf, "плечо")], cby, new Dictionary<string, (Vector3, Quaternion)>());
+
+            var go = Build(human, worn);
+            var smr = go.GetComponentsInChildren<SkinnedMeshRenderer>().First(r => r.name == "культя");
+            var m = new Mesh(); smr.BakeMesh(m, true);
+            var v = go.transform.Find("Morph").InverseTransformPoint(smr.transform.TransformPoint(m.vertices[0]));
+            Object.DestroyImmediate(m);
+            Assert.AreEqual(BodySlots.Arms, part.slot);
+            Assert.Less(Vector3.Distance(v, carrierShoulder), 0.01f, "вершина на лопатке ушла от плеча носителя — перенесена кадром чужой лопатки");
+        }
     }
 }
