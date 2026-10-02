@@ -162,5 +162,22 @@ namespace Chimera.Tests.EditMode
             Assert.AreEqual(BodySlots.Arms, part.slot);
             Assert.Less(Vector3.Distance(v, carrierShoulder), 0.01f, "вершина на лопатке ушла от плеча носителя — перенесена кадром чужой лопатки");
         }
+
+        /// <summary>Вес на кости ВЫШЕ шва (лопатка — переход к корпусу, поставка v6d) не делает её корнем цепи: поле лопатки
+        /// живо и у родного волка, и у носителя.</summary>
+        [Test]
+        public void WeightAboveSeam_DoesNotSkipCarrierBone()
+        {
+            var wolf = WolfWithPart();
+            var part = wolf.parts[0];
+            var mesh = Object.Instantiate(part.mesh); trash.Add(mesh);
+            var w = mesh.boneWeights; w[0] = new BoneWeight { boneIndex0 = 3, weight0 = 0.5f, boneIndex1 = 0, weight1 = 0.5f }; mesh.boneWeights = w;
+            part.mesh = mesh; part.bones = part.bones.Append("лопатка").ToArray(); part.seam = "плечо";
+
+            Assert.AreEqual("плечо", PartAssembly.ChainRoot(part, wolf), "корень цепи — кость на шве, а не верхняя кость с весом");
+            var body = ChainSwap.Compose(wolf, wolf.organs);
+            CollectionAssert.DoesNotContain(body.fieldSkip, "лопатка", "вес у подмышки выключил поле лопатки волка");
+            CollectionAssert.Contains(body.fieldSkip, "плечо");
+        }
     }
 }

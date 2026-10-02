@@ -59,17 +59,29 @@ public static class PartAssembly
         return used.Where(i => i >= 0 && i < names.Length).Select(i => names[i]).ToArray();
     }
 
-    /// <summary>Кости, которые поле не рисует: поддерево корня каждой детали (корень — кость, которой деталь владеет и
-    /// чей родитель ей не принадлежит).</summary>
+    /// <summary>КОРЕНЬ ЦЕПИ ДЕТАЛИ — кость, которая начинается на её шве (метка начала = тип шва, или метка конца родителя).
+    /// Не «верхняя кость с весом»: детали скиннятся и к кости носителя выше шва (лопатка — переход к корпусу, поставка
+    /// v6d), и такой корень выключил бы поле лопатки даже у родного волка. Шва нет — старое правило: верхняя кость с весом.</summary>
+    public static string ChainRoot(BodyPart part, SpeciesSO donor)
+    {
+        var weighted = Weighted(part);
+        var by = donor.bones.ToDictionary(b => b.name);
+        if (!string.IsNullOrEmpty(part.seam))
+            foreach (var n in weighted)
+                if (by.TryGetValue(n, out var b) && (b.mark?.a == part.seam
+                    || (b.parent != null && by.TryGetValue(b.parent, out var pb) && pb.mark?.b == part.seam))) return n;
+        return weighted.FirstOrDefault(n => by.ContainsKey(n) && !weighted.Contains(by[n].parent ?? ""));
+    }
+
+    /// <summary>Кости, которые поле не рисует: поддерево корня цепи каждой детали (`ChainRoot`).</summary>
     public static string[] FieldSkip(SpeciesSO body, IEnumerable<(BodyPart part, SpeciesSO donor)> parts)
     {
         var skip = new HashSet<string>();
         foreach (var (part, donor) in parts)
         {
-            var own = Weighted(part).AsEnumerable();
-            if (part.StumpShown(body.Plan)) own = own.Concat(Weighted(part.stump, part.stumpBones));   // видимая культя — тоже её цепь
-            var names = own.Select(n => BodyName(body, donor, n)).Where(n => n != null).ToHashSet();
-            foreach (var root in names.Where(n => !names.Contains(body.bones.First(b => b.name == n).parent ?? "")))
+            var chainRoot = ChainRoot(part, donor);
+            var root = chainRoot != null ? BodyName(body, donor, chainRoot) : null;
+            if (root != null)
             {
                 var set = new HashSet<string> { root };
                 bool grew = true;
@@ -145,7 +157,7 @@ public static class PartAssembly
         // носителя не подставляется: у волка она длинная вдоль бока, у человека короткая. Переносить такие вершины кадром
         // лопатки донора → лопатки носителя — растянуть их отношением чужих костей (лоскут в подмышке, кадр 02.10). Ставим
         // их кадром КОРНЯ цепи (шов один), а весом оставляем на своей кости — она и поведёт их при движении
-        var mainRoot = Weighted(part).Where(b => dBy.ContainsKey(b)).FirstOrDefault(b => !Weighted(part).Contains(dBy[b].parent ?? ""));
+        var mainRoot = ChainRoot(part, donor);
         var above = new HashSet<string>();
         for (var a = mainRoot != null ? dBy[mainRoot].parent : null; a != null && dBy.TryGetValue(a, out var ab); a = ab.parent) above.Add(a);
 
