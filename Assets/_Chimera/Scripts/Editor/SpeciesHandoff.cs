@@ -83,7 +83,8 @@ public static class SpeciesHandoff
     }
 
     [System.Serializable] class SeamDto { public string type; public int[] ring; public float[] ellipse; }
-    [System.Serializable] class DetailDto { public string species, slot, plan; public SeamDto seam; public bool mirror = true; public string[] keys; }
+    [System.Serializable] class ObjectsDto { public string main, stump; }
+    [System.Serializable] class DetailDto { public string species, slot, plan; public SeamDto seam; public bool mirror = true; public string[] keys; public ObjectsDto objects; }
     public const string PartsDir = Dir + "parts/";
     public const string PartsMeshDir = "Assets/_Chimera/Models/Parts/";
 
@@ -106,8 +107,14 @@ public static class SpeciesHandoff
 
             string fbx = PartsMeshDir + stem + ".fbx";
             if (AssetImporter.GetAtPath(fbx) is ModelImporter mi && !mi.isReadable) { mi.isReadable = true; mi.SaveAndReimport(); }
-            var smr = AssetDatabase.LoadAllAssetsAtPath(fbx).OfType<GameObject>()
-                                   .SelectMany(g => g.GetComponentsInChildren<SkinnedMeshRenderer>(true)).FirstOrDefault();
+            // ОСНОВНОЙ МЕШ И КУЛЬТЯ — РАЗНЫЕ ОБЪЕКТЫ FBX (поставка 02.10c): имена — в паспорте `objects`. Культя (подмышка →
+            // сустав, с кольцом шва) нужна только для сшивки кольцо-в-кольцо с деталью шасси; на шасси-поле её не рисуют
+            var smrs = AssetDatabase.LoadAllAssetsAtPath(fbx).OfType<GameObject>()
+                                    .SelectMany(g => g.GetComponentsInChildren<SkinnedMeshRenderer>(true)).Distinct().ToList();
+            string mainName = d.objects?.main, stumpName = d.objects?.stump;
+            var smr = !string.IsNullOrEmpty(mainName) ? smrs.FirstOrDefault(r => r.name == mainName) : smrs.FirstOrDefault();
+            var stump = !string.IsNullOrEmpty(stumpName) ? smrs.FirstOrDefault(r => r.name == stumpName) : null;
+            if (!string.IsNullOrEmpty(stumpName) && stump == null) problems.Add($"«{stem}»: нет объекта культи «{stumpName}»");
             if (smr == null || smr.sharedMesh == null) { problems.Add($"«{stem}»: нет скиннед-меша в «{fbx}»"); continue; }
             var bones = smr.bones.Select(b => b != null ? b.name : "").ToArray();
             var graph = new HashSet<string>((species.bones ?? new Bone[0]).Select(b => b.name));
@@ -119,6 +126,7 @@ public static class SpeciesHandoff
             {
                 slot = d.slot, plan = d.plan, mesh = smr.sharedMesh, bones = bones, mirror = d.mirror,
                 toBody = smr.transform.localToWorldMatrix,   // корень FBX — начало тела (проверено линией: корень без поворота)
+                stump = stump != null ? stump.sharedMesh : null,
                 seam = d.seam?.type, ring = d.seam?.ring,
                 ellipse = d.seam?.ellipse != null && d.seam.ellipse.Length >= 2 ? new Vector2(d.seam.ellipse[0], d.seam.ellipse[1]) : Vector2.zero,
                 keys = d.keys,
