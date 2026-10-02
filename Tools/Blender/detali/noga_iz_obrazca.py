@@ -213,7 +213,7 @@ MEDIAL = np.array([-1.0, 0.0, 0.0])
 flange = []
 for j in range(N_RING):
     th = 2 * math.pi * j / N_RING
-    flange.append(bm.verts.new(to_b(shoulder_s + dir_u * FLANGE + MEDIAL * 0.03
+    flange.append(bm.verts.new(to_b(shoulder_s + dir_u * 0.005 + MEDIAL * 0.055
                                     + K_SEAM * 0.75 * (fwd * ax_f * math.cos(th) - lat * ax_l * math.sin(th)))))
 for j in range(N_RING):
     bm.faces.new([keep_v[j], keep_v[(j + 1) % N_RING], flange[(j + 1) % N_RING], flange[j]])
@@ -274,14 +274,29 @@ for i in range(4):
     bm.faces.new(claw_base[::-1])
     toes.append((base, [v for r in rings_t for v in r] + claw_base + [apex], claw_base + [apex]))
 
-bmesh.ops.triangulate(bm, faces=bm.faces[:])
-bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+# номера колец, лапы и пальцев — ДО подразбиения: новые вершины добавляются в конец, старые номера сохраняются
 bm.verts.index_update()
 seam_idx = [v.index for v in keep_v]
 flange_idx = [v.index for v in flange]
 wrist_idx = [v.index for v in wr_keep]
 pad_idx = set(v.index for v in pad1 + pad2 + [bot])
 toe_sets = [(base, [v.index for v in vs], set(v.index for v in cl)) for base, vs, cl in toes]
+keep_set = set(keep_v) | set(flange) | set(wr_keep)
+
+# ПЕТЛИ ПОПЕРЁК ПОДМЫШКИ (v6e): внутренняя сторона от верха ноги до кольца шва — подразбить рёбра, чтобы при отводе было
+# чем гнуться; кольцо шва, фланец и лапа не трогаются
+
+
+def armpit(v):
+    q = from_b(v.co)
+    return elbow_s[1] - 0.06 < q[1] < shoulder_s[1] - 0.01 and q[0] < axis_s(q[1])[0] + 0.01
+
+
+sub_e = [e for e in bm.edges if all(armpit(v) and v not in keep_set for v in e.verts)]
+bmesh.ops.subdivide_edges(bm, edges=sub_e, cuts=1, use_grid_fill=True)
+print('подмышка: подразбито рёбер %d' % len(sub_e))
+bmesh.ops.triangulate(bm, faces=bm.faces[:])
+bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
 bm.to_mesh(me); bm.free()
 
 # ── пересадка на суставы волка ──
@@ -334,11 +349,14 @@ for v in me.vertices:
     wl = float(np.clip((t + 0.09) / 0.12, 0, 1)) if y > E_[1] - 0.01 else 0.0
     # ПОДМЫШКА (v6d, ГеймБосс: при отводе +10° внутренняя нижняя часть культи висела лоскутом — была целиком на `плечо`):
     # внутренняя сторона (к средней линии тела) до 16 см ниже сустава получает до половины веса на лопатку — тянется от корпуса
-    if y > E_[1] - 0.06:
+    # v6e (ГеймБосс: при +30° внутренняя сторона на 50/50 на коротком участке складывалась — коллапс линейного смешения):
+    # градиент длиннее и мягче — 0 → 40 % по всей внутренней стороне, до 30 см ниже сустава, края сглажены
+    if y > E_[1] - 0.16:
         ax_ = axis_o(y)
-        med = float(np.clip((ax_[0] - pu[0]) / 0.05, 0, 1))      # 1 — внутренняя сторона ноги (к x = 0)
-        down = float(np.clip((t + 0.16) / 0.16, 0, 1))
-        wl = max(wl, 0.5 * med * down)
+        med = float(np.clip((ax_[0] - pu[0]) / 0.07, 0, 1))
+        down = float(np.clip((t + 0.30) / 0.30, 0, 1))
+        sm = lambda u: u * u * (3 - 2 * u)
+        wl = max(wl, 0.4 * sm(med) * sm(down))
     ws, wf = w * (1 - wl), 1 - w
     if wl > 0: vg_l.add([v.index], wl, 'REPLACE')
     if ws > 0: vg_s.add([v.index], ws, 'REPLACE')

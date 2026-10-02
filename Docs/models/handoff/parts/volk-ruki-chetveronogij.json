@@ -5,14 +5,14 @@
   "seam": {
     "type": "плечо",
     "ring": [
-      16,
-      31,
-      42,
-      40,
-      23,
-      70,
+      14,
+      28,
+      36,
+      35,
+      21,
+      20,
       6,
-      17
+      15
     ],
     "ring_m": [
       [
@@ -81,9 +81,9 @@
   "keys": [
     "двуногий"
   ],
-  "tris": 656,
-  "tris_main": 550,
-  "tris_stump": 194,
+  "tris": 822,
+  "tris_main": 597,
+  "tris_stump": 351,
   "source": "Anatomy/species/wolf/ref/mv/volk_mv_A.glb (лист volk-prirodnyj_meshy), выровнен obrazec_v_obj.py",
   "generator": "Tools/Blender/detali/noga_iz_obrazca.py"
 }
