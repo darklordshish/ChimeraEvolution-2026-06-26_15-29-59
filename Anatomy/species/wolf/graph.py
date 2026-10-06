@@ -167,9 +167,12 @@ TAIL_SECTION = 0.70              # ширина поперёк (X) к глуби
 # ── УЗЛЫ ─────────────────────────────────────────────────────────────────────────────────────────────
 # Узел задаётся МИРОВЫМИ точками начала и конца (правая сторона), родителем и объёмом. Генератор сам
 # переводит их в `attach`/`freeOrigin`/`length`/`dir` — углы в суставах руками не считаются
-def node(name, socket, parent, a, b, r0, r1, section=1.0, depth=1.0, blend=0.0, mirror=False):
+def node(name, socket, parent, a, b, r0, r1, section=1.0, depth=1.0, blend=0.0, mirror=False, layer=0):
     return dict(name=name, socket=socket, parent=parent, a=a, b=b, r0=r0, r1=r1,
-                section=section, depth=depth, blend=blend, mirror=mirror)
+                section=section, depth=depth, blend=blend, mirror=mirror, layer=layer)
+
+
+RIG = 4     # `BodyLayer.Rig` (e571033): сустав, метки и ригблоки — поле узел не рисует
 
 
 def along(p, deg, length):
@@ -232,6 +235,10 @@ def build_nodes(preview_muzzle=False):
         # до запястья было стеблем в 2.5 см (замер механик 17.09d §4). Ниже — блоки на конце узла (`organs_layout.py`):
         # низ предплечья, пясть, лапа. Довод «запястье не согнётся» снят механиками: сгиб даст узел-риг без поля
         node('предплечье', 'Руки', 'плечо', ELBOW, FORE_END, 0.070, 0.052, section=1.00, blend=0.05, mirror=True),
+        # ПЯСТЬ — УЗЕЛ-РИГ до запястья (02.10): метка `запястье` стояла на конце поля (0.50), а сустав — на 0.19 (`WRIST`
+        # с листа). Химера с волчьей рукой ставила на запястье носителя точку на 31 см выше сустава, и всё ниже ехало
+        # жёстко — кисть висела у середины бедра. Поле узел не рисует: ногу ниже 0.50 рисуют блоки на `предплечье`
+        node('пясть', 'Руки', 'предплечье', FORE_END, WRIST, 0.030, 0.026, blend=0.0, mirror=True, layer=RIG),
         # ЗАДНЯЯ — бедро с массой ягодицы и ляжка по заднему краю: вместе дают собачий угол зада
         # конец бедра — колено: шар его конца выпирал вперёд за контур ноги, радиус меньше
         node('бедро', 'Ноги', 'крестец', HIP, STIFLE, 0.145, 0.066, section=0.75, blend=0.14, mirror=True),
@@ -274,7 +281,7 @@ def to_bones(nodes):
     for n in nodes:
         a, b = n['a'], n['b']
         ang, length = angle_of(a, b), dist(a, b)
-        bone = dict(name=n['name'], parent=n['parent'], layer=0, socket=n['socket'],
+        bone = dict(name=n['name'], parent=n['parent'], layer=n.get('layer', 0), socket=n['socket'],
                     origin=dict(x=0.0, y=0.0, z=0.0), attach=1.0, freeOrigin=False,
                     length=round(length, 4), endBone='', endAttach=1.0,
                     dir=dict(x=0.0, y=0.0, z=0.0),
@@ -309,7 +316,8 @@ RAZMETKA = {
     'грудь': ('хребет', None, None), 'загривок': ('хребет', None, None),     # бугры туши; загривок и грива — черта (29d)
     'шея': ('шея', 'основание шеи', 'основание черепа'), 'грива': ('шея', None, None),
     'голова': ('голова', None, None),
-    'лопатка': ('перед', None, 'плечо'), 'плечо': ('перед', None, 'локоть'), 'предплечье': ('перед', None, 'запястье'),
+    'лопатка': ('перед', None, 'плечо'), 'плечо': ('перед', None, 'локоть'), 'предплечье': ('перед', None, None),
+    'пясть': ('перед', None, 'запястье'),
     'бедро': ('зад', 'бедро', 'колено'), 'ляжка': ('зад', None, None), 'голень': ('зад', None, 'скакательный'),
     'хвост': ('хвост', 'корень хвоста', None), 'хвост_кисть': ('хвост', None, None),
 }

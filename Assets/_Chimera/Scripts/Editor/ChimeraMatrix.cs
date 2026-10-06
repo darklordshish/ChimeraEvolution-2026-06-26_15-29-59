@@ -81,7 +81,7 @@ public static class ChimeraMatrix
             {
                 if (c == d) continue;
                 var donorBody = Body.Build(d, Native(d), null);
-                var transferable = (d.organs ?? new Organ[0]).Where(o => o != null && !o.chassisOnly).ToList();
+                var transferable = (d.organs ?? new Organ[0]).Where(o => o != null && !o.chassisOnly && !o.nativeOnly).ToList();
 
                 // ЦЕЛИКОМ: донор отдаёт всё переносимое — тяжёлый микс, как на стенде 26.09
                 string allSlots = string.Join(",", transferable.Select(o => o.slot).Distinct());

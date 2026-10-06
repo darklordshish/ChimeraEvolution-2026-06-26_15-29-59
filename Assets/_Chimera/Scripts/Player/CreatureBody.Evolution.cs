@@ -18,7 +18,7 @@ public partial class CreatureBody
         // chassisOnly (ходовая часть) исключаем — её аугументом не крадут (нет в вариантах убийцы).
         var loot = new List<(string species, string organ)>();
         foreach (var sl in slots)
-            if (!sl.Empty && sl.Pick != null && sl.Pick.species != null && sl.Worn != null && !sl.Worn.chassisOnly)
+            if (!sl.Empty && sl.Pick != null && sl.Pick.species != null && sl.Worn != null && !sl.Worn.chassisOnly && !sl.Worn.nativeOnly)
                 loot.Add((sl.Pick.species, sl.Worn.organName));
         if (loot.Count == 0) return;
 
