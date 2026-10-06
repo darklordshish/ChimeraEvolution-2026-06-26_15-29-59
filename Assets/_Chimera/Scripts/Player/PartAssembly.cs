@@ -27,10 +27,32 @@ public static class PartAssembly
         {
             var organ = worn.First(o => o != null && o.slot == slot);   // видимый орган места (порядок — `WornInDrawOrder`)
             var donor = chassis.organs != null && System.Array.IndexOf(chassis.organs, organ) >= 0 ? chassis : ChainSwap.OwnerOf(organ);
-            var part = donor?.parts?.FirstOrDefault(p => p != null && p.slot == slot && p.mesh != null && p.bones != null && p.bones.Length > 0);
+            var candidates = donor?.parts?.Where(p => p != null && p.slot == slot && p.mesh != null && p.bones != null && p.bones.Length > 0).ToList();
+            if (candidates == null || candidates.Count == 0) continue;
+            GraftSeam.TryGetValue(slot, out var seam);
+            // ЧУЖОМУ ШАССИ — ТОЛЬКО ДЕТАЛЬ ШВА ПРИВИВКИ (спека `2026-10-06-ruki-kist.md`): у «Рук» это кисть от запястья. Вся
+            // передняя нога волка — облик самого волка, другому шасси она не ставится. Своему — облик целиком, кисть — запасом
+            var part = donor != chassis
+                ? (seam == null ? candidates[0] : candidates.FirstOrDefault(p => p.seam == seam))
+                : candidates.FirstOrDefault(p => seam == null || p.seam != seam) ?? candidates[0];
             if (part != null) chosen.Add((part, donor));
         }
         return chosen;
+    }
+
+    /// <summary>Шов, на котором аугмент места встаёт на чужое шасси. Нет строки — деталь места ставится целиком.</summary>
+    public static readonly Dictionary<string, string> GraftSeam = new() { { BodySlots.Arms, "запястье" } };
+
+    /// <summary>Кость тела, на которую встаёт кость детали: одноимённая (`BodyName`), а если такой нет — кость НОСИТЕЛЯ с той же
+    /// меткой конца в той же конечности. Так кисть волка (вес на его `пясть`, метка `запястье`) встаёт в кадр человеческого
+    /// предплечья, кончающегося тем же запястьем, — без подстановки цепи. Поле по метке не гасится: `FieldSkip` — по именам.</summary>
+    public static string Resolve(SpeciesSO body, SpeciesSO donor, string bone)
+    {
+        var name = BodyName(body, donor, bone);
+        if (name != null) return name;
+        var d = donor.bones.FirstOrDefault(b => b.name == bone);
+        if (string.IsNullOrEmpty(d?.mark?.b)) return null;
+        return body.bones.FirstOrDefault(b => b.limb == d.limb && b.mark?.b == d.mark.b)?.name;
     }
 
     /// <summary>Имя кости детали на собранном теле: как в графе донора, или с суффиксом донора, если имя занял носитель.</summary>
@@ -85,7 +107,29 @@ public static class PartAssembly
             if (!part.stump.isReadable) return false;
             need = need.Concat(Weighted(part.stump, part.stumpBones));
         }
-        return need.All(n => donorBones.Contains(n) && BodyName(body, donor, n) != null);
+        return need.All(n => donorBones.Contains(n) && SkinBone(body, donor, part, n) != null);
+    }
+
+    /// <summary>Кости донора ВЫШЕ корня цепи детали (у ноги — крестец, у руки — лопатка): к ним культя тянет вес к корпусу.</summary>
+    public static HashSet<string> AboveRoot(BodyPart part, SpeciesSO donor)
+    {
+        var above = new HashSet<string>();
+        var by = donor.bones.ToDictionary(b => b.name);
+        var root = ChainRoot(part, donor);
+        for (var a = root != null && by.TryGetValue(root, out var rb) ? rb.parent : null; a != null && by.TryGetValue(a, out var ab); a = ab.parent) above.Add(a);
+        return above;
+    }
+
+    /// <summary>Кость тела, которая ВЕДЁТ вершину детали: своя (`Resolve`), а для кости выше корня цепи, которой у носителя
+    /// нет (крестец волка у человека — `пояс1`), — кость, на которой цепь висит у носителя: переход к корпусу идёт к его
+    /// корпусу, а не к чужой кости.</summary>
+    public static string SkinBone(SpeciesSO body, SpeciesSO donor, BodyPart part, string bone)
+    {
+        var name = Resolve(body, donor, bone);
+        if (name != null || !AboveRoot(part, donor).Contains(bone)) return name;
+        var root = ChainRoot(part, donor);
+        var carrierRoot = root != null ? Resolve(body, donor, root) : null;
+        return carrierRoot != null ? body.bones.FirstOrDefault(b => b.name == carrierRoot)?.parent : null;
     }
 
     /// <summary>Кости, которые поле не рисует: поддерево корня цепи каждой детали (`ChainRoot`).</summary>
@@ -175,27 +219,27 @@ public static class PartAssembly
         // лопатки донора → лопатки носителя — растянуть их отношением чужих костей (лоскут в подмышке, кадр 02.10). Ставим
         // их кадром КОРНЯ цепи (шов один), а весом оставляем на своей кости — она и поведёт их при движении
         var mainRoot = ChainRoot(part, donor);
-        var above = new HashSet<string>();
-        for (var a = mainRoot != null ? dBy[mainRoot].parent : null; a != null && dBy.TryGetValue(a, out var ab); a = ab.parent) above.Add(a);
+        var above = AboveRoot(part, donor);
 
         for (int side = +1, s = 0; s < sides; s++, side = -1)
         {
             // кадр каждой кости детали: донор (поза графа, своя сторона) и носитель (трансформ собранного скелета)
-            var frames = new (Matrix4x4 toDonorLocal, Vector3 scale, Matrix4x4 carrier, int index, float dLen, float cLen)[partBones.Length];
+            var frames = new (Matrix4x4 toDonorLocal, Vector3 scale, Matrix4x4 carrier, int index, float dLen, float cLen, float tip)[partBones.Length];
             for (int i = 0; i < partBones.Length; i++)
             {
                 frames[i].index = -1;
                 string own = partBones[i], placeBy = above.Contains(own) ? mainRoot : own;
                 if (!dBy.TryGetValue(placeBy, out var db)) continue;
-                string cName = BodyName(body, donor, placeBy), skinName = BodyName(body, donor, own);
+                string cName = Resolve(body, donor, placeBy), skinName = SkinBone(body, donor, part, own);
                 if (cName == null || skinName == null || !xf.TryGetValue(side < 0 ? cName + ".L" : cName, out var ct)
-                    || !xf.TryGetValue(side < 0 ? skinName + ".L" : skinName, out var skinT)) continue;   // зеркальная кость — «.L»
+                    || !(side < 0 && xf.TryGetValue(skinName + ".L", out var skinT) || xf.TryGetValue(skinName, out skinT))) continue;   // осевая кость (пояс) зеркальной пары не имеет — ведёт она сама   // зеркальная кость — «.L»
                 var (dp, dr) = SkeletonBuilder.Place(db, dBy, dPlaced);
                 if (side < 0) { dp.x = -dp.x; var e = dr.eulerAngles; dr = Quaternion.Euler(e.x, -e.y, -e.z); }
                 var cb = cBy[cName];
                 float sLen = db.length > 1e-5f ? cb.length / db.length : 1f;
                 float sRad = db.r0 > 1e-5f ? cb.r0 / db.r0 : sLen;
-                frames[i] = (Matrix4x4.TRS(dp, dr, Vector3.one).inverse, new Vector3(sRad, sLen, sRad), toLocal * ct.localToWorldMatrix, BoneIndex(skinT), db.length, cb.length);
+                frames[i] = (Matrix4x4.TRS(dp, dr, Vector3.one).inverse, new Vector3(sRad, sLen, sRad), toLocal * ct.localToWorldMatrix, BoneIndex(skinT), db.length, cb.length,
+                             db.r1 > 1e-5f ? cb.r1 / db.r1 : sRad);   // за концом кости калибр — по суставу конца (кисть — по запястью)
             }
 
             int start = verts.Count;
@@ -215,10 +259,12 @@ public static class PartAssembly
                     // у неё нет) и до её начала форма идёт жёстко, поперечным калибром. Иначе кость, вытянутая к суставу
                     // носителя, тянет за собой и лапу: на человеке она доставала до щиколоток (кадр 02.10)
                     float y = local.y;
-                    local = Vector3.Scale(local, f.scale);
-                    local.y = y < 0f ? y * f.scale.x
-                            : y > f.dLen ? f.cLen + (y - f.dLen) * f.scale.x
-                            : y * f.scale.y;
+                    if (y > f.dLen) local = new Vector3(local.x * f.tip, f.cLen + (y - f.dLen) * f.tip, local.z * f.tip);
+                    else
+                    {
+                        local = Vector3.Scale(local, f.scale);
+                        local.y = y < 0f ? y * f.scale.x : y * f.scale.y;
+                    }
                     acc += f.carrier.MultiplyPoint3x4(local) * wt;
                     total += wt;
                     switch (slotIdx) { case 0: bw.boneIndex0 = f.index; bw.weight0 = wt; break; case 1: bw.boneIndex1 = f.index; bw.weight1 = wt; break;
