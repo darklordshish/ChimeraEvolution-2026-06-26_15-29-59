@@ -36,7 +36,9 @@ public static class SpeciesBootstrap
                 new OrganPart { scale = new Vector3(1.00f, 0.20f, 0.62f), offset = new Vector3(0.00f, 0.36f, 0.04f), shape = PartShape.Sphere }, // плечевой пояс («вешалка» ключиц) — размах 2H = 0.47
                 new OrganPart { scale = new Vector3(0.80f, 0.30f, 0.66f), offset = new Vector3(0.00f, -0.32f, 0.00f), shape = PartShape.Sphere }, // таз — клин 1.51H, снова шире талии (но уже плеч: мужской силуэт)
             } }, // СКЕЛЕТ: несущая структура шасси. chassisOnly — её не крадут графтом, как «Тело-хвост»
-            new Organ { organName = "Кисть",  slot = "Руки",   hotkey = "1", cost = 3, abilities = new AbilityData[] { new LimbStrikeData { damage = 8, knockForce = 0f, range = 1.6f, halfAngle = 60f, windupTime = 0.45f } }, visualParts = new[] {
+            // КИСТЬ ЧЕЛОВЕКА — ТОЛЬКО СВОЯ (геймдизайнер 06.10): человеческую руку не прививают другому шасси — волк на ладонях
+            // не нужен. Своя кисть носится и возвращается в свой слот (родной вариант №0), но не крадётся и не прививается
+            new Organ { organName = "Кисть",  slot = "Руки",   hotkey = "1", cost = 3, nativeOnly = true, abilities = new AbilityData[] { new LimbStrikeData { damage = 8, knockForce = 0f, range = 1.6f, halfAngle = 60f, windupTime = 0.45f } }, visualParts = new[] {
                 new OrganPart { scale = new Vector3(1.55f, 0.22f, 1.45f), offset = new Vector3(0.00f, 0.44f, 0.00f), shape = PartShape.Sphere }, // дельта — шапка плеча, 18 см: она замыкает «вешалку» ключиц
                 new OrganPart { scale = new Vector3(0.86f, 0.40f, 0.86f), offset = new Vector3(0.00f, 0.26f, 0.00f), shape = PartShape.Capsule }, // плечо
                 new OrganPart { scale = new Vector3(1.15f, 0.18f, 1.10f), offset = new Vector3(0.00f, 0.28f, 0.04f), shape = PartShape.Sphere }, // бицепс

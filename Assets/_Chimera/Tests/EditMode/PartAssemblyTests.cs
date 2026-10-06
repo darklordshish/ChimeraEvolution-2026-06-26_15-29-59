@@ -214,13 +214,17 @@ namespace Chimera.Tests.EditMode
         public void RigNodeJoint_SegmentLandsOnCarrierJoint()
         {
             var wolf = WolfWithPart();
-            var bones = wolf.bones.Select(b => JsonUtility.FromJson<Bone>(JsonUtility.ToJson(b))).ToList();
-            var fore = bones.First(b => b.name == "предплечье");
-            var rig = new Bone { name = "пясть", parent = "предплечье", limb = fore.limb, layer = BodyLayer.Rig, attach = 1f,
-                                 length = 0.3f, r0 = 0.02f, r1 = 0.02f, mark = new BoneMarks { b = fore.mark.b } };
-            fore.mark = new BoneMarks { a = fore.mark?.a };
-            bones.Add(rig);
-            wolf.bones = bones.ToArray();
+            // с поставки модельной линии 06.10 `пясть` есть у волка на самом деле; до неё — синтетика
+            if (!wolf.bones.Any(b => b.name == "пясть"))
+            {
+                var bones = wolf.bones.Select(b => JsonUtility.FromJson<Bone>(JsonUtility.ToJson(b))).ToList();
+                var fore = bones.First(b => b.name == "предплечье");
+                var rig = new Bone { name = "пясть", parent = "предплечье", limb = fore.limb, layer = BodyLayer.Rig, attach = 1f,
+                                     length = 0.3f, r0 = 0.02f, r1 = 0.02f, mark = new BoneMarks { b = fore.mark.b } };
+                fore.mark = new BoneMarks { a = fore.mark?.a };
+                bones.Add(rig);
+                wolf.bones = bones.ToArray();
+            }
 
             var human = Load("Человек");
             var worn = human.organs.Where(o => o.slot != BodySlots.Arms).ToList();

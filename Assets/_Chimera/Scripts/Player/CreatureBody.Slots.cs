@@ -236,6 +236,7 @@ public partial class CreatureBody
         foreach (var o in species.organs)
         {
             if (o.chassisOnly) continue;
+            if (o.nativeOnly && !native) continue;   // чужому шасси не прививается
             if (slotFilter != null && o.slot != slotFilter) continue;
             sl.variants.Add(new Variant { organ = o, species = species.speciesName, native = native });
         }

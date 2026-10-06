@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
@@ -207,6 +208,27 @@ namespace Chimera.Tests.EditMode
             var vars = body.GetVariants(1); // Пасть
             int wi = -1; for (int i = 0; i < vars.Count; i++) if (vars[i].organName == "Клык") wi = i;
             Assert.AreEqual(10, vars[wi].cost, "при 0 родства цена без скидки");
+        }
+
+        /// <summary>ТОЛЬКО СВОЕМУ ШАССИ (геймдизайнер 06.10): человеческая кисть — свой аугмент человека, но чужому шасси не
+        /// прививается: у волка её нет ни в слоте «Руки», ни в химерном. У самого человека она — родной вариант.</summary>
+        [Test]
+        public void NativeOnlyOrgan_NotOfferedToOtherChassis()
+        {
+            var hand = new Organ { organName = "Кисть", slot = "Руки", cost = 1, nativeOnly = true };
+            var human = MakeSpecies("Человек", 10, new[] { hand });
+            var wolf = MakeSpecies("Волк", 10, new[] { new Organ { organName = "Коготь", slot = "Руки", cost = 1 } });
+
+            var w = MakeBody(wolf, new[] { human });
+            w.GrantChimeraSlot();
+            for (int i = 0; i < w.SlotCount; i++)
+                CollectionAssert.DoesNotContain(w.GetVariants(i).Select(v => v.organName).ToList(), "Кисть",
+                                                $"человеческая кисть предложена волку в слоте {i}");
+
+            var h = MakeBody(human, new[] { wolf });
+            var vars = h.GetVariants(0);
+            Assert.IsTrue(vars.Any(v => v.organName == "Кисть" && v.native), "своя кисть пропала из своего слота");
+            Assert.IsTrue(vars.Any(v => v.organName == "Коготь"), "волчий коготь человеку не предложен");
         }
     }
 }
