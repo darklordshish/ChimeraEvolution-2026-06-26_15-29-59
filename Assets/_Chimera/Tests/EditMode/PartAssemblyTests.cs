@@ -237,5 +237,32 @@ namespace Chimera.Tests.EditMode
             Assert.Greater(Vector3.Distance(TipOf(body, "предплечье"), wrist), 0.02f, "предплечье легло на запястье — отрезок не цельный");
             Assert.AreEqual(BodyLayer.Rig, body.bones.First(b => b.name == "пясть").layer);
         }
+
+        /// <summary>Деталь, которая не встанет, поле не гасит (аудит Codex 04.10): кость с весом, которой нет у тела, — часть
+        /// рисуется полем, а не дырой.</summary>
+        [Test]
+        public void UnplaceablePart_KeepsField()
+        {
+            var wolf = WolfWithPart();
+            var part = wolf.parts[0];
+            part.bones = part.bones.Select(b => b == "предплечье" ? "нет-такой-кости" : b).ToArray();
+            var body = ChainSwap.Compose(wolf, wolf.organs);
+            Assert.IsFalse(body.placedParts != null && body.placedParts.Any(p => p.part == part), "неставимая деталь выбрана");
+            Assert.IsFalse(body.fieldSkip != null && body.fieldSkip.Contains("плечо"), "неставимая деталь выключила поле — дыра");
+        }
+
+        /// <summary>Шов из паспорта в метрах (`ellipse_m`, `ring_m`) — импорт читал `ellipse`, которого нет.</summary>
+        [Test]
+        public void SeamMetres_ReadFromPassport()
+        {
+            var pts = SpeciesHandoff.ReadRingM("{\"seam\": {\"ring_m\": [[0.1, 0.2, 0.3], [-1e-2, 2, 3.5]], \"ellipse_m\": [0.03, 0.05]}}");
+            Assert.AreEqual(2, pts.Length);
+            Assert.AreEqual(new Vector3(-0.01f, 2f, 3.5f), pts[1]);
+            var wolf = Load("Волк");
+            var real = wolf.parts?.FirstOrDefault(p => p != null && p.slot == BodySlots.Arms);
+            Assert.IsNotNull(real, "у волка нет детали «Руки»");
+            Assert.Greater(real.ellipse.x, 0f, "эллипс шва не доехал из паспорта (ellipse_m)");
+            Assert.AreEqual(8, real.ringM?.Length ?? 0, "точки кольца не доехали из паспорта (ring_m)");
+        }
     }
 }

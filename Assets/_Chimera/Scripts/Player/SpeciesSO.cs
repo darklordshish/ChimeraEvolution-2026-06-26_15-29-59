@@ -361,7 +361,8 @@ public class BodyPart
     public string[] bones;   // имена узлов графа в порядке индексов весов меша
     public string seam;      // тип шва (`плечо`, `бедро`, …)
     public int[] ring;       // вершины кольца шва по порядку (0 — спереди, против часовой при взгляде вдоль −Y)
-    public Vector2 ellipse;  // полуоси кольца в единицах детали
+    public Vector2 ellipse;  // полуоси кольца шва, метры тела донора (паспорт `ellipse_m`)
+    public Vector3[] ringM;  // точки кольца шва, метры тела донора (паспорт `ring_m`): индексы `ring` после импорта врут
     public bool mirror;      // пара: левая — зеркалом по X
     public string[] keys;    // формы-ключи (например, `двуногий`)
 

@@ -85,6 +85,10 @@ public static class ChainSwap
         body.meshKey = key;
         body.organs = chassis.organs;   // ОРГАНЫ — ТЕ ЖЕ ОБЪЕКТЫ: копировать их незачем, а тождество нужно поиску владельца
         (body.bones, body.nests) = assembled;
+        // ДЕТАЛЬ, КОТОРАЯ НЕ ВСТАНЕТ, ПОЛЕ НЕ ГАСИТ: поле выключается здесь, а деталь ставится позже, в билдере, и при
+        // отказе возвращала null — на месте части оставалась дыра (аудит Codex 04.10, вывод из порядка вызовов).
+        // Проверяем ставимость до выключения поля: не встаёт — часть рисуется полем, как было без детали
+        parts = parts.Where(p => PartAssembly.CanPlace(body, p.part, p.donor)).ToList();
         body.placedParts = parts.ToArray();
         body.fieldSkip = PartAssembly.FieldSkip(body, parts);
         cache[key] = body;

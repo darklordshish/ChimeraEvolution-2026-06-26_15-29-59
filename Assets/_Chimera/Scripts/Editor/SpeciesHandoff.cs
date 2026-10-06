@@ -82,10 +82,29 @@ public static class SpeciesHandoff
         return graph;
     }
 
-    [System.Serializable] class SeamDto { public string type; public int[] ring; public float[] ellipse; }
+    // ШОВ В ПАСПОРТЕ — В МЕТРАХ: `ellipse_m` (полуоси) и `ring_m` (точки кольца). Импорт читал `ellipse`, которого в паспорте
+    // нет, — в ассете лежал нулевой эллипс (аудит Codex 04.10). `ellipse` без суффикса читается как прежде, для старых паспортов.
+    // `ring_m` — массив массивов, JsonUtility такое не берёт: разбирается отдельно (`ReadRingM`)
+    [System.Serializable] class SeamDto { public string type; public int[] ring; public float[] ellipse; public float[] ellipse_m; }
     [System.Serializable] class ObjectsDto { public string main, stump; }
     [System.Serializable] class DetailDto { public string species, slot, plan; public SeamDto seam; public bool mirror = true; public string[] keys; public ObjectsDto objects; }
     public const string PartsDir = Dir + "parts/";
+
+    /// <summary>Точки кольца шва `seam.ring_m` — [[x,y,z], …] в метрах тела донора. Индексы `ring` после импорта врут: Unity
+    /// при плоских гранях делит вершины, а точки — нет (сверка по ним — оговорка паспорта). Нет поля — пусто.</summary>
+    public static Vector3[] ReadRingM(string json)
+    {
+        var m = System.Text.RegularExpressions.Regex.Match(json, @"""ring_m""\s*:\s*\[(.*?)\]\s*\]", System.Text.RegularExpressions.RegexOptions.Singleline);
+        if (!m.Success) return new Vector3[0];
+        var pts = new List<Vector3>();
+        foreach (System.Text.RegularExpressions.Match p in System.Text.RegularExpressions.Regex.Matches(m.Groups[1].Value + "]",
+                     @"\[\s*([-0-9.eE+]+)\s*,\s*([-0-9.eE+]+)\s*,\s*([-0-9.eE+]+)\s*\]"))
+        {
+            float F(int i) => float.Parse(p.Groups[i].Value, System.Globalization.CultureInfo.InvariantCulture);
+            pts.Add(new Vector3(F(1), F(2), F(3)));
+        }
+        return pts.ToArray();
+    }
     public const string PartsMeshDir = "Assets/_Chimera/Models/Parts/";
 
     /// <summary>Прочитать детали вида. Меш и порядок костей берутся из скиннед-рендерера FBX: индексы весов меша — это
@@ -131,7 +150,8 @@ public static class SpeciesHandoff
                 stumpBones = stump != null ? stump.bones.Select(b => b != null ? b.name : "").ToArray() : null,
                 stumpToBody = stump != null ? stump.transform.localToWorldMatrix : default,
                 seam = d.seam?.type, ring = d.seam?.ring,
-                ellipse = d.seam?.ellipse != null && d.seam.ellipse.Length >= 2 ? new Vector2(d.seam.ellipse[0], d.seam.ellipse[1]) : Vector2.zero,
+                ellipse = (d.seam?.ellipse_m ?? d.seam?.ellipse) is { Length: >= 2 } el ? new Vector2(el[0], el[1]) : Vector2.zero,
+                ringM = ReadRingM(System.IO.File.ReadAllText(file)),
                 keys = d.keys,
             });
         }

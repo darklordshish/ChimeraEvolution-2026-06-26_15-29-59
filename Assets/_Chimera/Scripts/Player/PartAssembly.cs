@@ -73,6 +73,21 @@ public static class PartAssembly
         return weighted.FirstOrDefault(n => by.ContainsKey(n) && !weighted.Contains(by[n].parent ?? ""));
     }
 
+    /// <summary>Встанет ли деталь на это тело: меш читается, и каждая кость, к которой у вершин есть вес (основного меша и
+    /// видимой культи), есть у тела. Иначе `Place` вернёт null, и выключенное заранее поле оставит дыру.</summary>
+    public static bool CanPlace(SpeciesSO body, BodyPart part, SpeciesSO donor)
+    {
+        if (part?.mesh == null || !part.mesh.isReadable || part.bones == null || donor?.bones == null) return false;
+        var donorBones = new HashSet<string>(donor.bones.Select(b => b.name));
+        var need = Weighted(part).AsEnumerable();
+        if (part.StumpShown(body.Plan))
+        {
+            if (!part.stump.isReadable) return false;
+            need = need.Concat(Weighted(part.stump, part.stumpBones));
+        }
+        return need.All(n => donorBones.Contains(n) && BodyName(body, donor, n) != null);
+    }
+
     /// <summary>Кости, которые поле не рисует: поддерево корня цепи каждой детали (`ChainRoot`).</summary>
     public static string[] FieldSkip(SpeciesSO body, IEnumerable<(BodyPart part, SpeciesSO donor)> parts)
     {
