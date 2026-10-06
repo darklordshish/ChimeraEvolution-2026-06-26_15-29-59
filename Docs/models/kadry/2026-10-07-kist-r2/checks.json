@@ -1,0 +1,33 @@
+{
+  "summary": {
+    "total": 285,
+    "passed": 282,
+    "failed": 1,
+    "skipped": 0,
+    "inconclusive": 2
+  },
+  "status": "completed",
+  "notPassed": [
+    {
+      "FullName": "Chimera.Tests.EditMode.BodyRulesMirrorTests.SizeOf_HandlesNullSocket_GracefullyOrThrowsArgument",
+      "Status": "Inconclusive",
+      "Duration": 0.000318,
+      "Message": "SizeOf(null) бросает NRE — нужен guard (ожидаемо красный до фикса)",
+      "StackTrace": "at Chimera.Tests.EditMode.BodyRulesMirrorTests.SizeOf_HandlesNullSocket_GracefullyOrThrowsArgument () [0x00029] in C:\\Users\\semion\\Documents\\Chimera_game\\ChimeraEvolution-codex\\Assets\\_Chimera\\Tests\\EditMode\\BodyRulesMirrorTests.cs:38\r\n"
+    },
+    {
+      "FullName": "Chimera.Tests.EditMode.ChimeraMatrixTests.ChimeraBreakages_DoNotGrow",
+      "Status": "Failed",
+      "Duration": 17.7122283,
+      "Message": "  НОВЫЕ поломки химер (2) — смотри Docs/Диаграммы/ХИМЕРЫ.md (unity command chimera-matrix):\nЛось+Волк [Коготь] И5 Руки\nЛось+Волк [всё] И5 Руки\r\n  Expected: <empty>\r\n  But was:  < \"Лось+Волк [Коготь] И5 Руки\", \"Лось+Волк [всё] И5 Руки\" >\r\n",
+      "StackTrace": "at Chimera.Tests.EditMode.ChimeraMatrixTests.ChimeraBreakages_DoNotGrow () [0x0002d] in C:\\Users\\semion\\Documents\\Chimera_game\\ChimeraEvolution-codex\\Assets\\_Chimera\\Tests\\EditMode\\ChimeraMatrixTests.cs:36\r\n"
+    },
+    {
+      "FullName": "Chimera.Tests.EditMode.ChimeraPlanTests.Chimera_KeepsCarrierTopology_AndMovesSomething",
+      "Status": "Inconclusive",
+      "Duration": 0.0275266,
+      "Message": "смешение пропорций не доходит до тела на графе: графт двигает погашенное место, а граф не смешивается — нужна спека смешения графа",
+      "StackTrace": "at Chimera.Tests.EditMode.ChimeraPlanTests.Chimera_KeepsCarrierTopology_AndMovesSomething () [0x000b0] in C:\\Users\\semion\\Documents\\Chimera_game\\ChimeraEvolution-codex\\Assets\\_Chimera\\Tests\\EditMode\\ChimeraPlanTests.cs:92\r\n"
+    }
+  ]
+}
