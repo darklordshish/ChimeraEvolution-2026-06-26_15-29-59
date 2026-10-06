@@ -48,8 +48,25 @@ public static class ChimeraMatrix
 
     /// <summary>РАЗНЫЕ ПОЛОМКИ — строки отчёта: «шасси, донор, аугмент, инвариант, место». По ним и ведётся долг: поставка,
     /// добавившая игл в уже сломанную клетку, умножит отдельные нарушения, но новой поломки не принесёт.</summary>
-    public static int Breakages(List<Violation> res) =>
-        res.Select(v => (v.chassis, v.donor, v.graft, v.inv, v.place)).Distinct().Count();
+    public static int Breakages(List<Violation> res) => BreakageKeys(res).Count;
+
+    /// <summary>Те же строки долга — текстом, отсортированно: «шасси+донор [аугмент] инвариант место». По ним сторож сверяет
+    /// СПИСОК, а не число: одна починилась, другая появилась — число то же, а поломка новая (аудит Codex 04.10).</summary>
+    public static List<string> BreakageKeys(List<Violation> res) =>
+        res.Select(v => $"{v.chassis}+{v.donor} [{v.graft}] {v.inv} {v.place}").Distinct().OrderBy(s => s, System.StringComparer.Ordinal).ToList();
+
+    public const string DebtFile = "Assets/_Chimera/Tests/EditMode/ChimeraMatrixDebt.txt";
+
+    /// <summary>Переписать список долга текущими поломками — только когда поломки ушли (починка) или решением; новые —
+    /// не вписывать молча.</summary>
+    [MenuItem("Chimera/Переписать долг матрицы химер")]
+    public static string WriteDebt()
+    {
+        var keys = BreakageKeys(Run(out _));
+        System.IO.File.WriteAllLines(DebtFile, keys);
+        AssetDatabase.Refresh();
+        return $"{DebtFile}: {keys.Count} строк";
+    }
 
     /// <summary>Все нарушения по матрице. `native` — нарушения тех же правил на чистых видах (должно быть пусто).</summary>
     public static List<Violation> Run(out List<Violation> native)
