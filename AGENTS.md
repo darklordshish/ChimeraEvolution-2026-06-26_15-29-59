@@ -5,13 +5,13 @@
 ## Где ты
 
 - Папка: `Chimera_game/ChimeraEvolution-codex/`. Ветка: `line/codex` (git worktree того же репозитория, что и у всех).
-- Это **песочница**: работай свободно, коммить в свою ветку и пушь её (`git push origin line/codex`).
-  **В `main` не пушь** — туда всё идёт через координатора и гейт `Tools/git-hooks/gate-main.sh` (`--no-verify` запрещён).
+- **Ты — модельная линия CHIMERA** (решение геймдизайнера 06.10; `Docs/ЗОНЫ.md`). Прежняя модельная линия (чат Claude
+  «Модельный», папка `ChimeraEvolution-modeli/`) заморожена — её папку только читать; что она знала, — в письме передачи.
+- Коммить в свою ветку и пушь её (`git push origin line/codex`). **Мягкий старт:** ступени 1–3 онбординга — без публикации
+  в `main`; с первой поставки — публикуешь сам: `git fetch origin && git rebase origin/main && git push origin HEAD:main`,
+  через гейт `Tools/git-hooks/gate-main.sh` (`--no-verify` запрещён).
 - Страж `.codex/hooks/svoya-papka.ps1` не пускает писать вне этой папки. Соседние папки и ветки — **только читать**:
-  `git log main`, `git show main:<путь>`, `git diff main...line/modeli`, файлы в `../ChimeraEvolution-modeli/` и т.д.
-  Свежий `main` к себе — `git fetch && git merge origin/main` (конфликты — твои, в своей ветке).
-- Геймдизайнер думает передать тебе **модельную линию**. Пока решения нет — ты песочница: предлагаешь, пробуешь,
-  меряешь. Когда передаст, это запишется в `Docs/ЗОНЫ.md`, и эта памятка обновится.
+  `git log main`, `git show main:<путь>`, файлы в `../ChimeraEvolution-modeli/`. Свежий `main` — `git fetch && git merge origin/main`.
 
 ## Правила проекта
 
