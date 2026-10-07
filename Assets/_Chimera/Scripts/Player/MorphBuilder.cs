@@ -153,7 +153,8 @@ public static class MorphBuilder
                 if (HasNodeParts(organ))
                 {
                     var (hp, hr) = Place(socket, byName, placed, 0, axisOf, byBone, bonePos, boneSockets);
-                    NodeParts(container.transform, socket, organ, hp, hr, SizeOf(socket, byName, 0), axisOf, byBone, bonePos);
+                    NodeParts(container.transform, socket, organ, hp, hr, SizeOf(socket, byName, 0), axisOf, byBone, bonePos,
+                              System.Array.IndexOf(chassis.stanceLimbs ?? new string[0], socket.name) >= 0);
                 }
                 continue;
             }
@@ -196,7 +197,8 @@ public static class MorphBuilder
             bool onlyNodeParts = false;
             if (HasNodeParts(organ))
             {
-                NodeParts(container.transform, socket, organ, pos, rot, sz, axisOf, byBone, bonePos);
+                NodeParts(container.transform, socket, organ, pos, rot, sz, axisOf, byBone, bonePos,
+                              System.Array.IndexOf(chassis.stanceLimbs ?? new string[0], socket.name) >= 0);
                 var rest = PartsWithoutNode(organ);
                 if (rest == null) onlyNodeParts = true;
                 else if (fromOther == null) fromOther = rest;
@@ -505,7 +507,7 @@ public static class MorphBuilder
 
         // ОПОРНЫЙ КОНЕЦ ДОТЯГИВАЕТСЯ ДО ЗЕМЛИ (П4): высота запястья — калибр шасси, поэтому тянется шток аугмента
         var shape = System.Array.IndexOf(chassis.stanceLimbs ?? new string[0], socket.name) >= 0
-                  ? ReachGround(parts, np, nr, unit) : null;
+                  ? ReachGround(parts, np, nr, Vector3.one * unit) : null;
 
         foreach (var pt in parts)
         {
@@ -530,7 +532,7 @@ public static class MorphBuilder
     /// <summary>ФОРМА КОНЦА, ВСТАВШЕГО НА ЗЕМЛЮ: для каждого куска — смещение и габарит (в единицах гнезда) после
     /// растяжения штока. Растяжение вдоль +Z гнезда кусочно-линейно: выше штока — как было, внутри — пропорционально,
     /// ниже — сдвиг на добавку. Добавка подбирается по реальному низу повёрнутых кусков за несколько шагов.</summary>
-    static Dictionary<OrganPart, (Vector3, Vector3)> ReachGround(List<OrganPart> parts, Vector3 np, Quaternion nr, float unit)
+    static Dictionary<OrganPart, (Vector3, Vector3)> ReachGround(List<OrganPart> parts, Vector3 np, Quaternion nr, Vector3 unit)
     {
         var shank = parts.FindAll(p => p.stretch);
         if (shank.Count == 0)
@@ -540,7 +542,7 @@ public static class MorphBuilder
             if (best != null) shank.Add(best);
         }
         float down = -(nr * Vector3.forward).y;               // сколько вниз даёт единица вдоль гнезда
-        if (shank.Count == 0 || down < 0.2f || unit <= 0f) return null;
+        if (shank.Count == 0 || down < 0.2f || unit.z <= 0f) return null;
 
         float top = float.MaxValue, bottom = float.MinValue;
         foreach (var p in shank) { top = Mathf.Min(top, p.offset.z - p.scale.z * 0.5f); bottom = Mathf.Max(bottom, p.offset.z + p.scale.z * 0.5f); }
@@ -563,20 +565,20 @@ public static class MorphBuilder
             }
             float low = LowestY(parts, shape, np, nr, unit);
             if (Mathf.Abs(low) < 0.002f) break;
-            add += low / down / unit;
+            add += low / down / unit.z;
         }
         return shape;
     }
 
-    static float LowestY(List<OrganPart> parts, Dictionary<OrganPart, (Vector3, Vector3)> shape, Vector3 np, Quaternion nr, float unit)
+    static float LowestY(List<OrganPart> parts, Dictionary<OrganPart, (Vector3, Vector3)> shape, Vector3 np, Quaternion nr, Vector3 unit)
     {
         float low = float.MaxValue;
         foreach (var pt in parts)
         {
             var (off, scl) = shape[pt];
-            Vector3 c = np + nr * (off * unit);
+            Vector3 c = np + nr * Vector3.Scale(off, unit);
             var rot = nr * Quaternion.Euler(pt.euler);
-            Vector3 half = scl * (unit * 0.5f);
+            Vector3 half = Vector3.Scale(scl, unit) * 0.5f;
             // полувысота повёрнутой коробки: проекции её полуосей на вертикаль
             float ext = Mathf.Abs((rot * Vector3.right).y) * half.x + Mathf.Abs((rot * Vector3.up).y) * half.y
                       + Mathf.Abs((rot * Vector3.forward).y) * half.z;
@@ -654,8 +656,21 @@ public static class MorphBuilder
     /// ему о его же теле. Особого случая при этом нет — меняется только поставщик кадра.</summary>
     static void NodeParts(Transform parent, BodySocket socket, Organ organ, Vector3 placePos, Quaternion placeRot,
                           Vector3 placeSize, Dictionary<string, Vector3> axisOf,
-                          Dictionary<string, Bone> byBone, Dictionary<string, (Vector3, Quaternion)> bonePos)
+                          Dictionary<string, Bone> byBone, Dictionary<string, (Vector3, Quaternion)> bonePos, bool stance = false)
     {
+        // ОПОРНЫЙ КОНЕЦ ДОТЯГИВАЕТСЯ ДО ЗЕМЛИ И НА УЗЛЕ (П4): стопа человека висит на конце `голень`, и на пальцеходящем
+        // шасси (волк, лось) цепь кончается у скакательного — стопа висела в 0.26–0.80 м над землёй (07.10, после ухода
+        // сечения лофта ниже щиколотки, которое прятало это). Тот же шток, что у гнёзд, — в единицах узла по осям
+        var shapes = new Dictionary<OrganPart, (Vector3, Vector3)>();
+        if (stance && byBone != null && bonePos != null)
+            foreach (var grp in organ.visualParts.Where(p => p != null && !string.IsNullOrEmpty(p.node)).GroupBy(p => p.node))
+            {
+                if (!byBone.TryGetValue(grp.Key, out var gn)) continue;
+                var (gp, gr) = SkeletonBuilder.Place(gn, byBone, bonePos);
+                var shape = ReachGround(grp.ToList(), gp + gr * (Vector3.up * gn.length), gr * Quaternion.Euler(-90f, 0f, 0f),
+                                        new Vector3(2f * gn.r1, 2f * gn.r1, gn.length));
+                if (shape != null) foreach (var kv in shape) shapes[kv.Key] = kv.Value;
+            }
         foreach (var pt in organ.visualParts)
         {
             if (pt == null || string.IsNullOrEmpty(pt.node)) continue;
@@ -688,9 +703,10 @@ public static class MorphBuilder
             }
 
             var unit = new Vector3(diameter, diameter, length);
-            Vector3 pos = end + frame * Vector3.Scale(pt.offset, unit);
+            var (ofs, scl) = shapes.TryGetValue(pt, out var sh) ? sh : (pt.offset, pt.scale);
+            Vector3 pos = end + frame * Vector3.Scale(ofs, unit);
             Vector3 euler = (frame * Quaternion.Euler(pt.euler)).eulerAngles;
-            Vector3 size = Vector3.Scale(pt.scale, unit);
+            Vector3 size = Vector3.Scale(scl, unit);
 
             Mark(Spawn(parent, socket.name, pos, euler, size, +1f, pt.shape, socket.solid, pt.block), pt);
             if (mirror) Mark(Spawn(parent, socket.name, pos, euler, size, -1f, pt.shape, socket.solid, pt.block), pt);

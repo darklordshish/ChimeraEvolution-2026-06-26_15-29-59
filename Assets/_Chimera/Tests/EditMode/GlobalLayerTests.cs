@@ -20,6 +20,7 @@ namespace Chimera.Tests.EditMode
         SpeciesSO WithGroup(string species, string group, float at, float r)
         {
             var sp = Object.Instantiate(Load(species)); sp.speciesName = species + "·проба"; trash.Add(sp);
+            foreach (var b in sp.bones) b.group = null;   // синтетика: настоящие группы шаблона не мешают пробе
             var arm = sp.bones.First(b => b.limb == "перед" && b.mark?.b == "локоть");
             var n = new Bone { name = "м." + group, parent = arm.name, limb = arm.limb, group = group, rel = new BoneRel { at = at, len = 0.3f, r0 = r, r1 = r * 0.8f } };
             sp.bones = sp.bones.Append(n).ToArray();

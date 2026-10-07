@@ -50,6 +50,7 @@ namespace Chimera.Tests.EditMode
         public void Detector_CatchesBrokenTemplateUse()
         {
             var human = Object.Instantiate(Load("Человек"));
+            foreach (var b in human.bones) b.group = null;   // проба — на чистом от групп человеке: свои 17 групп у него есть с 07.10
             try
             {
                 var arm = human.bones.First(b => b.limb == "перед" && b.mark?.b == "локоть");
@@ -70,6 +71,7 @@ namespace Chimera.Tests.EditMode
 
                 // СЕГМЕНТ ИЗ ДВУХ КОСТЕЙ (волк: `предплечье` + риг `пясть`): группа на верхней кости сегмента «до запястья»
                 var wolf = Object.Instantiate(Load("Волк"));
+                foreach (var b in wolf.bones) b.group = null;
                 try
                 {
                     var fore = wolf.bones.FirstOrDefault(b => b.limb == "перед" && b.mark?.b == "запястье");
