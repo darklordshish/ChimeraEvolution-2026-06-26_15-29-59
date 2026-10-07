@@ -166,7 +166,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925335956007944354
+    - rid: 925335958056075327
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -2764,8 +2764,8 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: "\u0401\u0436"
     abilities:
-    - rid: 925335956007944355
-    - rid: 925335956007944356
+    - rid: 925335958056075328
+    - rid: 925335958056075329
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -2865,8 +2865,8 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: "\u0401\u0436"
     abilities:
-    - rid: 925335956007944357
-    - rid: 925335956007944358
+    - rid: 925335958056075330
+    - rid: 925335958056075331
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -3742,6 +3742,7 @@ MonoBehaviour:
       len: 0
       r0: 0
       r1: 0
+    group: 
   - name: "\u043A\u043E\u0437\u044B\u0440\u0451\u043A"
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     layer: 0
@@ -3771,6 +3772,7 @@ MonoBehaviour:
       len: 0.4724
       r0: 0.9426
       r1: 0.8379
+    group: 
   - name: "\u0433\u0440\u0443\u0434\u044C"
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     layer: 0
@@ -3800,6 +3802,7 @@ MonoBehaviour:
       len: 0.5881
       r0: 0.7402
       r1: 0.911
+    group: 
   - name: "\u0448\u0435\u044F"
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     layer: 0
@@ -3829,6 +3832,7 @@ MonoBehaviour:
       len: 0
       r0: 0
       r1: 0
+    group: 
   - name: "\u0433\u043E\u043B\u043E\u0432\u0430"
     parent: "\u0448\u0435\u044F"
     layer: 0
@@ -3858,6 +3862,7 @@ MonoBehaviour:
       len: 0
       r0: 0
       r1: 0
+    group: 
   - name: "\u043F\u043B\u0435\u0447\u043E"
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     layer: 0
@@ -3887,6 +3892,7 @@ MonoBehaviour:
       len: 0
       r0: 0
       r1: 0
+    group: 
   - name: "\u043F\u0440\u0435\u0434\u043F\u043B\u0435\u0447\u044C\u0435"
     parent: "\u043F\u043B\u0435\u0447\u043E"
     layer: 0
@@ -3916,6 +3922,7 @@ MonoBehaviour:
       len: 0
       r0: 0
       r1: 0
+    group: 
   - name: "\u0431\u0435\u0434\u0440\u043E"
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     layer: 0
@@ -3945,6 +3952,7 @@ MonoBehaviour:
       len: 0
       r0: 0
       r1: 0
+    group: 
   - name: "\u0433\u043E\u043B\u0435\u043D\u044C"
     parent: "\u0431\u0435\u0434\u0440\u043E"
     layer: 0
@@ -3974,6 +3982,7 @@ MonoBehaviour:
       len: 0
       r0: 0
       r1: 0
+    group: 
   - name: "\u0445\u0432\u043E\u0441\u0442"
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     layer: 0
@@ -4003,6 +4012,7 @@ MonoBehaviour:
       len: 0
       r0: 0
       r1: 0
+    group: 
   skeletonHides:
   - "\u0445\u0440\u0435\u0431\u0435\u0442"
   - "\u0448\u0435\u044F"
@@ -4159,7 +4169,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 925335956007944354
+    - rid: 925335958056075327
       type: {class: VolleyData, ns: , asm: Chimera.Runtime}
       data:
         damagePerQuill: 4
@@ -4174,14 +4184,14 @@ MonoBehaviour:
         windupTime: 0.5
         cooldown: 2.5
         blindAimError: 1.6
-    - rid: 925335956007944355
+    - rid: 925335958056075328
       type: {class: RollData, ns: , asm: Chimera.Runtime}
       data:
         damage: 10
         bleedStacks: 1
         knockForce: 8
         radius: 1.2
-    - rid: 925335956007944356
+    - rid: 925335958056075329
       type: {class: CurlData, ns: , asm: Chimera.Runtime}
       data:
         curlArmor: 0.6
@@ -4190,7 +4200,7 @@ MonoBehaviour:
         rollDrain: 40
         rollTurnSpeed: 90
         rollGravity: 20
-    - rid: 925335956007944357
+    - rid: 925335958056075330
       type: {class: BiteData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
@@ -4202,7 +4212,7 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.4
         cooldown: 0.7
-    - rid: 925335956007944358
+    - rid: 925335958056075331
       type: {class: ConstrictData, ns: , asm: Chimera.Runtime}
       data:
         maxStage: 1

@@ -136,7 +136,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925335956007944350
+    - rid: 925335958056075323
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -206,7 +206,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925335956007944351
+    - rid: 925335958056075324
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -286,7 +286,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925335956007944352
+    - rid: 925335958056075325
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -509,7 +509,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925335956007944353
+    - rid: 925335958056075326
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -1212,6 +1212,7 @@ MonoBehaviour:
       len: 0
       r0: 0
       r1: 0
+    group: 
   - name: "\u043A\u0440\u0435\u0441\u0442\u0435\u0446"
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     layer: 0
@@ -1241,6 +1242,7 @@ MonoBehaviour:
       len: 0.211
       r0: 0.92
       r1: 0.56
+    group: 
   - name: "\u0433\u0440\u0443\u0434\u043D\u043E\u0439"
     parent: "\u0445\u0440\u0435\u0431\u0435\u0442"
     layer: 0
@@ -1270,6 +1272,7 @@ MonoBehaviour:
       len: 0.5697
       r0: 1
       r1: 1
+    group: 
   - name: "\u0433\u043E\u0440\u0431"
     parent: "\u0433\u0440\u0443\u0434\u043D\u043E\u0439"
     layer: 0
@@ -1299,6 +1302,7 @@ MonoBehaviour:
       len: 0.9396
       r0: 0.44
       r1: 0.54
+    group: 
   - name: "\u0433\u0440\u0438\u0432\u0430"
     parent: "\u0433\u043E\u0440\u0431"
     layer: 0
@@ -1328,6 +1332,7 @@ MonoBehaviour:
       len: 1.1027
       r0: 1
       r1: 0.6667
+    group: 
   - name: "\u0433\u0440\u0443\u0434\u044C"
     parent: "\u0433\u0440\u0443\u0434\u043D\u043E\u0439"
     layer: 0
@@ -1357,6 +1362,7 @@ MonoBehaviour:
       len: 1.6975
       r0: 0.66
       r1: 0.8
+    group: 
   - name: "\u0448\u0435\u044F"
     parent: "\u0433\u0440\u0443\u0434\u043D\u043E\u0439"
     layer: 0
@@ -1386,6 +1392,7 @@ MonoBehaviour:
       len: 0
       r0: 0
       r1: 0
+    group: 
   - name: "\u0433\u043E\u043B\u043E\u0432\u0430"
     parent: "\u0448\u0435\u044F"
     layer: 0
@@ -1415,6 +1422,7 @@ MonoBehaviour:
       len: 0
       r0: 0
       r1: 0
+    group: 
   - name: "\u0441\u0435\u0440\u044C\u0433\u0430"
     parent: "\u0448\u0435\u044F"
     layer: 0
@@ -1444,6 +1452,7 @@ MonoBehaviour:
       len: 0.4757
       r0: 0.5
       r1: 0.2353
+    group: 
   - name: "\u043B\u043E\u043F\u0430\u0442\u043A\u0430"
     parent: "\u0433\u0440\u0443\u0434\u043D\u043E\u0439"
     layer: 0
@@ -1473,6 +1482,7 @@ MonoBehaviour:
       len: 0
       r0: 0
       r1: 0
+    group: 
   - name: "\u043F\u043B\u0435\u0447\u043E"
     parent: "\u043B\u043E\u043F\u0430\u0442\u043A\u0430"
     layer: 0
@@ -1502,6 +1512,7 @@ MonoBehaviour:
       len: 0
       r0: 0
       r1: 0
+    group: 
   - name: "\u043F\u0440\u0435\u0434\u043F\u043B\u0435\u0447\u044C\u0435"
     parent: "\u043F\u043B\u0435\u0447\u043E"
     layer: 0
@@ -1531,6 +1542,7 @@ MonoBehaviour:
       len: 0
       r0: 0
       r1: 0
+    group: 
   - name: "\u0431\u0435\u0434\u0440\u043E"
     parent: "\u043A\u0440\u0435\u0441\u0442\u0435\u0446"
     layer: 0
@@ -1560,6 +1572,7 @@ MonoBehaviour:
       len: 0
       r0: 0
       r1: 0
+    group: 
   - name: "\u043B\u044F\u0436\u043A\u0430"
     parent: "\u0431\u0435\u0434\u0440\u043E"
     layer: 0
@@ -1589,6 +1602,7 @@ MonoBehaviour:
       len: 0.8462
       r0: 0.7652
       r1: 0.4464
+    group: 
   - name: "\u0433\u043E\u043B\u0435\u043D\u044C"
     parent: "\u0431\u0435\u0434\u0440\u043E"
     layer: 0
@@ -1618,6 +1632,7 @@ MonoBehaviour:
       len: 0
       r0: 0
       r1: 0
+    group: 
   - name: "\u0445\u0432\u043E\u0441\u0442"
     parent: "\u043A\u0440\u0435\u0441\u0442\u0435\u0446"
     layer: 0
@@ -1647,6 +1662,7 @@ MonoBehaviour:
       len: 0
       r0: 0
       r1: 0
+    group: 
   skeletonHides:
   - "\u0445\u0440\u0435\u0431\u0435\u0442"
   - "\u0448\u0435\u044F"
@@ -1813,7 +1829,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 925335956007944350
+    - rid: 925335958056075323
       type: {class: LimbStrikeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
@@ -1823,7 +1839,7 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.45
         cooldown: 1.1
-    - rid: 925335956007944351
+    - rid: 925335958056075324
       type: {class: ChargeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
@@ -1843,7 +1859,7 @@ MonoBehaviour:
         stompForce: 13
         plowForce: 6
         plowRadius: 1.6
-    - rid: 925335956007944352
+    - rid: 925335958056075325
       type: {class: BellowData, ns: , asm: Chimera.Runtime}
       data:
         fearRadius: 10
@@ -1851,7 +1867,7 @@ MonoBehaviour:
         fearMoraleHit: 2
         cooldown: 10
         cueTime: 1.2
-    - rid: 925335956007944353
+    - rid: 925335958056075326
       type: {class: AntlerData, ns: , asm: Chimera.Runtime}
       data:
         damage: 12
