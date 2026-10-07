@@ -64,6 +64,29 @@ public static class Stand
         return Row(items, view, aspect);
     }
 
+    /// <summary>РЯД СТУПЕНЕЙ ГЛОБАЛЬНОГО СЛОЯ (спека `2026-10-07-globalnyj-sloj-shablon-plana.md`, срез 4): шасси · шасси,
+    /// сдвинутое к цели на `G1` · на `G2` · чистая цель. Только глобальный слой — без аугментов: массы групп шаблона
+    /// смешаны `GlobalLayer.Blend`, органы у копий родные. `g1`/`g2` ≤ 0 — текущие `GlobalLayer.G1`/`G2`.</summary>
+    public static string Stages(string chassisAsset, string targetAsset, float g1, float g2, string view, float aspect)
+    {
+        var chassis = AssetDatabase.LoadAssetAtPath<SpeciesSO>(chassisAsset);
+        var target = AssetDatabase.LoadAssetAtPath<SpeciesSO>(targetAsset);
+        if (chassis == null || target == null) return "вид не найден";
+        if (g1 <= 0f) g1 = GlobalLayer.G1;
+        if (g2 <= 0f) g2 = GlobalLayer.G2;
+        var items = new List<(SpeciesSO, List<Organ>, string, BodySocket[])> { (chassis, Native(chassis), chassis.speciesName, null) };
+        foreach (var (g, label) in new[] { (g1, "ст.1"), (g2, "ст.2") })
+        {
+            var copy = Object.Instantiate(chassis);
+            copy.speciesName = chassis.speciesName + " → " + target.speciesName + " g" + g.ToString("0.##");   // кэш оболочки — по имени
+            copy.name = copy.speciesName;
+            copy.bones = GlobalLayer.Blend(chassis, target, g);
+            items.Add((copy, Native(copy), label + " g=" + g.ToString("0.##"), null));
+        }
+        items.Add((target, Native(target), target.speciesName, null));
+        return Row(items, view, aspect);
+    }
+
     /// <summary>ПОЛОСКА ПО ОСИ: одно и то же тело при `min · канон · max` одного параметра, в ряд.
     ///
     /// Зачем: пока ось проверяется только на готовом звере, поздно и дорого. Полоска ловит три вещи —
