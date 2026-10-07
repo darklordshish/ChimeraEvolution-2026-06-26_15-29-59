@@ -167,9 +167,12 @@ TAIL_SECTION = 0.70              # ширина поперёк (X) к глуби
 # ── УЗЛЫ ─────────────────────────────────────────────────────────────────────────────────────────────
 # Узел задаётся МИРОВЫМИ точками начала и конца (правая сторона), родителем и объёмом. Генератор сам
 # переводит их в `attach`/`freeOrigin`/`length`/`dir` — углы в суставах руками не считаются
-def node(name, socket, parent, a, b, r0, r1, section=1.0, depth=1.0, blend=0.0, mirror=False, layer=0):
-    return dict(name=name, socket=socket, parent=parent, a=a, b=b, r0=r0, r1=r1,
-                section=section, depth=depth, blend=blend, mirror=mirror, layer=layer)
+def node(name, socket, parent, a, b, r0, r1, section=1.0, depth=1.0, blend=0.0, mirror=False, layer=0, group=None):
+    d = dict(name=name, socket=socket, parent=parent, a=a, b=b, r0=r0, r1=r1,
+             section=section, depth=depth, blend=blend, mirror=mirror, layer=layer)
+    if group:
+        d['group'] = group
+    return d
 
 
 RIG = 4     # `BodyLayer.Rig` (e571033): сустав, метки и ригблоки — поле узел не рисует
@@ -287,6 +290,8 @@ def to_bones(nodes):
                     dir=dict(x=0.0, y=0.0, z=0.0),
                     r0=n['r0'], r1=n['r1'], section=n['section'], depth=n['depth'],
                     blend=n['blend'], chain=0, mirrorX=n['mirror'])
+        if n.get('group'):
+            bone['group'] = n['group']
         if not n['parent']:
             bone['origin'] = dict(x=round(a[0], 4), y=round(a[1], 4), z=round(a[2], 4))
             bone['dir']['x'] = round(ang, 3)
@@ -309,6 +314,96 @@ def to_bones(nodes):
 
 HIDES = ['хребет', 'шея', 'голова', 'Шкура', 'Сердце', 'Руки', 'Ноги', 'Хвост']
 
+# ── ШАБЛОН ПЛАНА «четвероногий» (спека `2026-10-07-globalnyj-sloj-shablon-plana.md`, вариант А геймдизайнера 07.10) ───────
+# Те же 17 групп, что у двуногого (`plan-dvunogij.json`): таблица планов по именам тождественна. Три узла волка — уже
+# группы по смыслу: `грудь` — «грудная клетка», `крестец` — «таз», `ляжка` — «задняя бедра». ИМЕНА УЗЛОВ НЕ МЕНЯЮТСЯ —
+# группа пишется полем `group`: арматура деталей волка (FBX «Волк · Руки», «Волк · Кисть») несёт имена узлов, и сборка
+# отвергает деталь, чьи кости не узлы графа (`SpeciesHandoff.ReadParts`; переименование 07.10 так сняло ногу-деталь).
+# ОСТАЛЬНЫЕ ГРУППЫ ПЕРВЫМ СРЕЗОМ СТОЯТ ВНУТРИ ОБОЛОЧКИ — анатомически на своих местах (по карте мышечных масс дизайн-линии
+# `Docs/design/myshechnye-gruppy/volk.png`), но не выпирая: силуэт волка принят по листу, и шаблон его не меняет. Массу
+# волка держат стержни и крупные узлы. Числа групп по листу (подбор по маскам) — шаг 2 спеки, вместе с таблицей оборотня:
+# тогда массы перейдут из стержней в группы. Прежний граф: CHIMERA_TELO=прежний.
+GROUP_OF = {'грудь': 'грудная клетка', 'крестец': 'таз', 'ляжка': 'задняя бедра'}
+INSET = 0.006            # группа внутри оболочки хозяина на этот зазор
+#        группа, слот, родитель (кость цепи), хозяин геометрии, доля, направление (x, y, z), полудлина, толщина
+GROUPS = [
+    ('живот', 'хребет', 'хребет', 'хребет', 0.28, (0, -1, 0), 0.13, 0.05),
+    ('грудная', 'Сердце', 'грудной', 'грудь', 0.92, (0.45, -0.55, 0.70), 0.07, 0.04),
+    ('широчайшая', 'хребет', 'грудной', 'грудной', 0.25, (0.8, 0.55, 0), 0.12, 0.05),
+    ('ягодица', 'хребет', 'хребет', 'крестец', 0.30, (0.7, 0.7, 0), 0.09, 0.05),
+    ('трапеция', 'шея', 'шея', 'шея', 0.15, (0.5, 0.85, 0), 0.10, 0.04),
+    ('дельта.перед', 'Руки', 'плечо', 'плечо', 0.15, (0.6, 0, 0.8), 0.05, 0.03),
+    ('дельта', 'Руки', 'плечо', 'плечо', 0.15, (1, 0, 0), 0.05, 0.03),
+    ('дельта.зад', 'Руки', 'плечо', 'плечо', 0.15, (0.6, 0, -0.8), 0.05, 0.03),
+    ('бицепс', 'Руки', 'плечо', 'плечо', 0.50, (0, 0, 1), 0.06, 0.03),
+    ('трицепс', 'Руки', 'плечо', 'плечо', 0.55, (0, 0, -1), 0.07, 0.035),
+    ('разгибатели', 'Руки', 'предплечье', 'предплечье', 0.40, (0.6, 0, 0.8), 0.06, 0.03),
+    ('сгибатели', 'Руки', 'предплечье', 'предплечье', 0.40, (-0.4, 0, -0.9), 0.06, 0.03),
+    ('квадрицепс', 'Ноги', 'бедро', 'бедро', 0.45, (0, 0, 1), 0.10, 0.05),
+    ('икра', 'Ноги', 'голень', 'голень', 0.25, (0, 0, -1), 0.07, 0.035),
+]
+
+
+def _unit(v):
+    n = math.sqrt(sum(c * c for c in v))
+    return tuple(c / n for c in v)
+
+
+def _inset(name, socket, parent, host, t, u, h, c, wide=0.8):
+    """Веретено группы внутри оболочки хозяина: ось параллельна кости хозяина (генератор волка держит узлы в плоскости
+    YZ), центр — на (оболочка в сторону u) − толщина − зазор; сечение сплющено до толщины c вдоль u и wide·c поперёк."""
+    a, b = host['a'], host['b']
+    L = dist(a, b)
+    y = tuple((q - p) / L for p, q in zip(a, b))
+    x = (1.0, 0.0, 0.0)
+    z = (x[1] * y[2] - x[2] * y[1], x[2] * y[0] - x[0] * y[2], x[0] * y[1] - x[1] * y[0])
+    u = _unit(u)
+    ux = sum(p * q for p, q in zip(u, x))
+    uz = sum(p * q for p, q in zip(u, z))
+    r = host['r0'] + (host['r1'] - host['r0']) * t
+    env = r * math.sqrt((ux * host['section']) ** 2 + (uz * host['depth']) ** 2)
+    o = env - c - INSET
+    ctr = tuple(p + (q - p) * t + uu * o for p, q, uu in zip(a, b, u))
+    p0 = tuple(round(cc - yy * 0.15 * h, 4) for cc, yy in zip(ctr, y))
+    p1 = tuple(round(cc + yy * 0.15 * h, 4) for cc, yy in zip(ctr, y))
+    sx = math.sqrt((ux * c) ** 2 + (uz * wide * c) ** 2) / h
+    sz = math.sqrt((uz * c) ** 2 + (ux * wide * c) ** 2) / h
+    mirror = host['mirror'] or abs(ctr[0]) > 1e-6
+    return node(name, socket, parent, p0, p1, round(h, 4), round(h, 4), section=round(sx, 3), depth=round(sz, 3),
+                blend=0.01, mirror=mirror, group=name)
+
+
+def template_nodes(nodes):
+    out = []
+    for n in nodes:
+        n = dict(n)
+        if n['name'] in GROUP_OF:
+            n['group'] = GROUP_OF[n['name']]
+        out.append(n)
+    by = {n['name']: n for n in out}
+    for name, socket, parent, host, t, u, h, c in GROUPS:
+        out.append(_inset(name, socket, parent, by[host], t, u, h, c))
+    return out
+
+
+RAZMETKA_SHABLON = {
+    'хребет': ('хребет', None, None), 'крестец': ('хребет', None, None), 'грудной': ('хребет', None, None),
+    'грудь': ('хребет', None, None), 'загривок': ('хребет', None, None),
+    'живот': ('хребет', None, None), 'грудная': ('хребет', None, None), 'широчайшая': ('хребет', None, None),
+    'ягодица': ('хребет', None, None),
+    'шея': ('шея', 'основание шеи', 'основание черепа'), 'грива': ('шея', None, None), 'трапеция': ('шея', None, None),
+    'голова': ('голова', None, None),
+    'лопатка': ('перед', None, 'плечо'), 'плечо': ('перед', None, 'локоть'), 'предплечье': ('перед', None, None),
+    'пясть': ('перед', None, 'запястье'),
+    'дельта.перед': ('перед', None, None), 'дельта': ('перед', None, None), 'дельта.зад': ('перед', None, None),
+    'бицепс': ('перед', None, None), 'трицепс': ('перед', None, None),
+    'разгибатели': ('перед', None, None), 'сгибатели': ('перед', None, None),
+    'бедро': ('зад', 'бедро', 'колено'), 'ляжка': ('зад', None, None), 'квадрицепс': ('зад', None, None),
+    'голень': ('зад', None, 'скакательный'), 'икра': ('зад', None, None),
+    'хвост': ('хвост', 'корень хвоста', None), 'хвост_кисть': ('хвост', None, None),
+}
+
+
 
 # ── РАЗМЕТКА ЦЕПЕЙ (`Anatomy/tools/razmetka.py`, письмо механик 29c): узел → (цепь, метка начала, метка конца) ──
 RAZMETKA = {
@@ -330,8 +425,11 @@ def main():
     args = ap.parse_args()
 
     nodes = build_nodes(args.preview_muzzle)
+    old = os.environ.get('CHIMERA_TELO') == 'прежний'
+    if not old:
+        nodes = template_nodes(nodes)
     bones = to_bones(nodes)
-    R.apply(bones, RAZMETKA, 'Волк')
+    R.apply(bones, RAZMETKA if old else RAZMETKA_SHABLON, 'Волк')
     R.rel_all(bones)
     doc = dict(species='Волк', hides=HIDES, nodes=bones)
     os.makedirs(os.path.dirname(args.out), exist_ok=True)

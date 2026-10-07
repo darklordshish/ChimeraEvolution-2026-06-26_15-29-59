@@ -60,6 +60,7 @@
       "blend": 0.12,
       "chain": 0,
       "mirrorX": false,
+      "group": "таз",
       "limb": "хребет",
       "mark": {},
       "rel": {
@@ -120,6 +121,7 @@
       "blend": 0.18,
       "chain": 0,
       "mirrorX": false,
+      "group": "грудная клетка",
       "limb": "хребет",
       "mark": {},
       "rel": {
@@ -432,6 +434,7 @@
       "blend": 0.12,
       "chain": 0,
       "mirrorX": true,
+      "group": "задняя бедра",
       "limb": "зад",
       "mark": {},
       "rel": {
@@ -535,6 +538,440 @@
         "len": 0.9131,
         "r0": 1.0,
         "r1": 0.6591
+      }
+    },
+    {
+      "name": "живот",
+      "parent": "хребет",
+      "layer": 0,
+      "socket": "хребет",
+      "attach": 1.0,
+      "freeOrigin": true,
+      "endBone": "",
+      "endAttach": 1.0,
+      "dir": {
+        "x": 0.0,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "section": 0.308,
+      "depth": 0.385,
+      "blend": 0.01,
+      "chain": 0,
+      "mirrorX": false,
+      "group": "живот",
+      "limb": "хребет",
+      "mark": {},
+      "rel": {
+        "at": 0.2583,
+        "offX": 0.0,
+        "offZ": 0.68,
+        "len": 0.0433,
+        "r0": 0.7429,
+        "r1": 0.7429
+      }
+    },
+    {
+      "name": "грудная",
+      "parent": "грудной",
+      "layer": 0,
+      "socket": "Сердце",
+      "attach": 1.0,
+      "freeOrigin": true,
+      "endBone": "",
+      "endAttach": 1.0,
+      "dir": {
+        "x": 0.204,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "section": 0.376,
+      "depth": 0.4,
+      "blend": 0.01,
+      "chain": 0,
+      "mirrorX": true,
+      "group": "грудная",
+      "limb": "хребет",
+      "mark": {},
+      "rel": {
+        "at": 1.0055,
+        "offX": 0.1913,
+        "offZ": 1.1039,
+        "len": 0.0526,
+        "r0": 0.3889,
+        "r1": 0.3889
+      }
+    },
+    {
+      "name": "широчайшая",
+      "parent": "грудной",
+      "layer": 0,
+      "socket": "хребет",
+      "attach": 1.0,
+      "freeOrigin": true,
+      "endBone": "",
+      "endAttach": 1.0,
+      "dir": {
+        "x": -0.024,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "section": 0.392,
+      "depth": 0.362,
+      "blend": 0.01,
+      "chain": 0,
+      "mirrorX": true,
+      "group": "широчайшая",
+      "limb": "хребет",
+      "mark": {},
+      "rel": {
+        "at": 0.2137,
+        "offX": 0.5614,
+        "offZ": -0.2693,
+        "len": 0.0895,
+        "r0": 0.7134,
+        "r1": 0.7134
+      }
+    },
+    {
+      "name": "ягодица",
+      "parent": "хребет",
+      "layer": 0,
+      "socket": "хребет",
+      "attach": 1.0,
+      "freeOrigin": true,
+      "endBone": "",
+      "endAttach": 1.0,
+      "dir": {
+        "x": -187.441,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "section": 0.501,
+      "depth": 0.5,
+      "blend": 0.01,
+      "chain": 0,
+      "mirrorX": true,
+      "group": "ягодица",
+      "limb": "хребет",
+      "mark": {},
+      "rel": {
+        "at": -0.0299,
+        "offX": 0.4327,
+        "offZ": -0.2446,
+        "len": 0.03,
+        "r0": 0.5143,
+        "r1": 0.5143
+      }
+    },
+    {
+      "name": "трапеция",
+      "parent": "шея",
+      "layer": 0,
+      "socket": "шея",
+      "attach": 1.0,
+      "freeOrigin": true,
+      "endBone": "",
+      "endAttach": 1.0,
+      "dir": {
+        "x": -0.001,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "section": 0.323,
+      "depth": 0.354,
+      "blend": 0.01,
+      "chain": 0,
+      "mirrorX": true,
+      "group": "трапеция",
+      "limb": "шея",
+      "mark": {},
+      "rel": {
+        "at": 0.1807,
+        "offX": 0.3461,
+        "offZ": -0.4569,
+        "len": 0.0682,
+        "r0": 0.714,
+        "r1": 0.714
+      }
+    },
+    {
+      "name": "дельта.перед",
+      "parent": "плечо",
+      "layer": 0,
+      "socket": "Руки",
+      "attach": 1.0,
+      "freeOrigin": true,
+      "endBone": "",
+      "endAttach": 1.0,
+      "dir": {
+        "x": 0.098,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "section": 0.487,
+      "depth": 0.501,
+      "blend": 0.01,
+      "chain": 0,
+      "mirrorX": true,
+      "group": "дельта.перед",
+      "limb": "перед",
+      "mark": {},
+      "rel": {
+        "at": 0.0513,
+        "offX": 0.2501,
+        "offZ": -0.2422,
+        "len": 0.0801,
+        "r0": 0.6726,
+        "r1": 0.6726
+      }
+    },
+    {
+      "name": "дельта",
+      "parent": "плечо",
+      "layer": 0,
+      "socket": "Руки",
+      "attach": 1.0,
+      "freeOrigin": true,
+      "endBone": "",
+      "endAttach": 1.0,
+      "dir": {
+        "x": 0.098,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "section": 0.6,
+      "depth": 0.48,
+      "blend": 0.01,
+      "chain": 0,
+      "mirrorX": true,
+      "group": "дельта",
+      "limb": "перед",
+      "mark": {},
+      "rel": {
+        "at": 0.11,
+        "offX": 0.4174,
+        "offZ": 0.0,
+        "len": 0.0801,
+        "r0": 0.6796,
+        "r1": 0.6796
+      }
+    },
+    {
+      "name": "дельта.зад",
+      "parent": "плечо",
+      "layer": 0,
+      "socket": "Руки",
+      "attach": 1.0,
+      "freeOrigin": true,
+      "endBone": "",
+      "endAttach": 1.0,
+      "dir": {
+        "x": 0.098,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "section": 0.487,
+      "depth": 0.501,
+      "blend": 0.01,
+      "chain": 0,
+      "mirrorX": true,
+      "group": "дельта.зад",
+      "limb": "перед",
+      "mark": {},
+      "rel": {
+        "at": 0.1683,
+        "offX": 0.2553,
+        "offZ": 0.2472,
+        "len": 0.0801,
+        "r0": 0.6867,
+        "r1": 0.6867
+      }
+    },
+    {
+      "name": "бицепс",
+      "parent": "плечо",
+      "layer": 0,
+      "socket": "Руки",
+      "attach": 1.0,
+      "freeOrigin": true,
+      "endBone": "",
+      "endAttach": 1.0,
+      "dir": {
+        "x": 0.141,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "section": 0.342,
+      "depth": 0.427,
+      "blend": 0.01,
+      "chain": 0,
+      "mirrorX": true,
+      "group": "бицепс",
+      "limb": "перед",
+      "mark": {},
+      "rel": {
+        "at": 0.3894,
+        "offX": 0.0,
+        "offZ": -0.276,
+        "len": 0.0962,
+        "r0": 0.8579,
+        "r1": 0.8579
+      }
+    },
+    {
+      "name": "трицепс",
+      "parent": "плечо",
+      "layer": 0,
+      "socket": "Руки",
+      "attach": 1.0,
+      "freeOrigin": true,
+      "endBone": "",
+      "endAttach": 1.0,
+      "dir": {
+        "x": -0.061,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "section": 0.342,
+      "depth": 0.427,
+      "blend": 0.01,
+      "chain": 0,
+      "mirrorX": true,
+      "group": "трицепс",
+      "limb": "перед",
+      "mark": {},
+      "rel": {
+        "at": 0.5411,
+        "offX": 0.0,
+        "offZ": 0.2148,
+        "len": 0.1122,
+        "r0": 1.0299,
+        "r1": 1.0299
+      }
+    },
+    {
+      "name": "разгибатели",
+      "parent": "предплечье",
+      "layer": 0,
+      "socket": "Руки",
+      "attach": 1.0,
+      "freeOrigin": true,
+      "endBone": "",
+      "endAttach": 1.0,
+      "dir": {
+        "x": -0.123,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "section": 0.437,
+      "depth": 0.464,
+      "blend": 0.01,
+      "chain": 0,
+      "mirrorX": true,
+      "group": "разгибатели",
+      "limb": "перед",
+      "mark": {},
+      "rel": {
+        "at": 0.3618,
+        "offX": 0.2504,
+        "offZ": -0.3292,
+        "len": 0.1115,
+        "r0": 0.9451,
+        "r1": 0.9451
+      }
+    },
+    {
+      "name": "сгибатели",
+      "parent": "предплечье",
+      "layer": 0,
+      "socket": "Руки",
+      "attach": 1.0,
+      "freeOrigin": true,
+      "endBone": "",
+      "endAttach": 1.0,
+      "dir": {
+        "x": -0.123,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "section": 0.415,
+      "depth": 0.481,
+      "blend": 0.01,
+      "chain": 0,
+      "mirrorX": true,
+      "group": "сгибатели",
+      "limb": "перед",
+      "mark": {},
+      "rel": {
+        "at": 0.3247,
+        "offX": -0.1668,
+        "offZ": 0.3725,
+        "len": 0.1115,
+        "r0": 0.9352,
+        "r1": 0.9352
+      }
+    },
+    {
+      "name": "квадрицепс",
+      "parent": "бедро",
+      "layer": 0,
+      "socket": "Ноги",
+      "attach": 1.0,
+      "freeOrigin": true,
+      "endBone": "",
+      "endAttach": 1.0,
+      "dir": {
+        "x": -0.004,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "section": 0.375,
+      "depth": 0.469,
+      "blend": 0.01,
+      "chain": 0,
+      "mirrorX": true,
+      "group": "квадрицепс",
+      "limb": "зад",
+      "mark": {},
+      "rel": {
+        "at": 0.4543,
+        "offX": 0.0,
+        "offZ": -0.4014,
+        "len": 0.1177,
+        "r0": 0.9165,
+        "r1": 0.9165
+      }
+    },
+    {
+      "name": "икра",
+      "parent": "голень",
+      "layer": 0,
+      "socket": "Ноги",
+      "attach": 1.0,
+      "freeOrigin": true,
+      "endBone": "",
+      "endAttach": 1.0,
+      "dir": {
+        "x": -0.154,
+        "y": 0.0,
+        "z": 0.0
+      },
+      "section": 0.291,
+      "depth": 0.364,
+      "blend": 0.01,
+      "chain": 0,
+      "mirrorX": true,
+      "group": "икра",
+      "limb": "зад",
+      "mark": {},
+      "rel": {
+        "at": 0.2502,
+        "offX": 0.0,
+        "offZ": 0.1458,
+        "len": 0.0732,
+        "r0": 0.9033,
+        "r1": 0.9033
       }
     }
   ]
