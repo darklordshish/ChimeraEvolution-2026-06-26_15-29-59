@@ -178,32 +178,10 @@ public partial class CreatureBody
         return clone;
     }
 
-    static BodySocket CloneSocket(BodySocket s)
-    {
-        return new BodySocket
-        {
-            name = s.name,
-            localPos = s.localPos,
-            baseSize = s.baseSize,
-            baseEuler = s.baseEuler,
-            mirrorX = s.mirrorX,
-            solid = s.solid,
-            inner = s.inner,
-            graft = s.graft,
-            parent = s.parent,
-            attach = s.attach,
-            attachOffset = s.attachOffset,
-            parts = s.parts,
-            chain = s.chain,
-            chainTaper = s.chainTaper,
-            linkDiameter = s.linkDiameter,
-            sizeRel = s.sizeRel,
-            formFrom = s.formFrom,
-            formRole = s.formRole,
-            linkLength = s.linkLength,
-            linkTaper = s.linkTaper,
-        };
-    }
+    /// <summary>КОПИЯ МЕСТА — ЦЕЛИКОМ, СЕРИАЛИЗАЦИЕЙ. Прежде поля переписывались вручную, и новое поле `chainForward` в
+    /// список не попало: у химеры змеи шея раскладывалась назад от хребта, и вся цепь оказывалась в 3 м от головы —
+    /// 125 строк матрицы (07.10). Так же копируются кости (`BodyTree.Clone`). Сторож — `BlendPlanCloneTests`.</summary>
+    public static BodySocket CloneSocket(BodySocket s) => JsonUtility.FromJson<BodySocket>(JsonUtility.ToJson(s));
 
     static BodySocket FindSocket(SpeciesSO species, string name)
     {
