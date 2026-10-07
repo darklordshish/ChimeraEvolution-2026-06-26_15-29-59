@@ -10,10 +10,10 @@ using UnityEngine;
 /// Ступени — пороги признания спеки двух слоёв §2.2 (0.65 / 0.85; ступень 3 — только родное шасси). Сила ступеней
 /// `G1`, `G2` выбирается кадром «человек · ст.1 · ст.2 · волк» (развилка геймдизайнера).
 ///
-/// Смешение одной группы: положение вдоль сегмента и смещения поперёк — линейно; длина и радиусы — в логарифмах (они
-/// мультипликативны: спека двух слоёв §4.3, «смешивать всё сложением — системная ошибка», 11.09). Положение считается в
-/// долях СЕГМЕНТА между метками, а не кости: предплечье волка — две кости, человека — одна. Группа шасси без пары у цели
-/// гаснет (радиус × (1 − g)); группа цели без пары у шасси растёт из нуля (радиус × g) на том же сегменте шасси.</summary>
+/// Смешение одной группы: положение вдоль сегмента и смещения поперёк — линейно; длина, радиусы и сечение — в логарифмах
+/// (они мультипликативны: спека двух слоёв §4.3, «смешивать всё сложением — системная ошибка», 11.09). Сравниваются доли
+/// МАСШТАБА ЦЕПИ (см. `Blend`). Группа шасси без пары у цели гаснет (радиус × (1 − g)); группа цели без пары у шасси
+/// растёт из нуля (радиус × g) на том же сегменте шасси.</summary>
 public static class GlobalLayer
 {
     public static float G1 = 0.35f;   // ступень 1 — небольшие общие изменения (по кадру среза 4)
@@ -56,28 +56,37 @@ public static class GlobalLayer
     /// <summary>Есть ли у тела массы шаблона — без них глобальному слою нечего смешивать (пока виды не переведены).</summary>
     public static bool HasGroups(SpeciesSO sp) => sp?.bones != null && sp.bones.Any(b => !string.IsNullOrEmpty(b.group) && b.rel != null && b.rel.On);
 
-    /// <summary>Кости шасси, сдвинутые к цели на `g`: числа групп смешаны, метры узлов в долях пересчитаны.</summary>
+    /// <summary>Кости шасси, сдвинутые к цели на `g`: числа групп смешаны, метры узлов в долях пересчитаны.
+    ///
+    /// СРАВНИВАЮТСЯ ДОЛИ МАСШТАБА ЦЕПИ, А НЕ ДОЛИ КОСТИ-ХОЗЯИНА. Узел `rel` записан в долях радиуса хозяина, а радиус
+    /// хозяина — авторское число вида: хребет человека тонкий (r 0.07), волка толстый (0.18). Грудная клетка 0.13 и 0.15 м
+    /// записана как 1.99 и 0.91 — смешение по долям хозяина сдувало торс человека к волку вдвое (кадр ступеней 07.10).
+    /// Поэтому положение, длина, радиусы и смещения переводятся в метры и делятся на масштаб цепи `S`: сегмент между
+    /// метками у конечностей и шеи, длина торса между корнями задних и передних конечностей у хребта.</summary>
     public static Bone[] Blend(SpeciesSO chassis, SpeciesSO target, float g)
     {
         var bones = BodyTree.Clone(chassis.bones).ToList();
         if (target?.bones == null || g <= 0f) return bones.ToArray();
         var cBy = bones.ToDictionary(b => b.name);
         var tBy = target.bones.ToDictionary(b => b.name);
+        var cPose = Poses(cBy); var tPose = Poses(tBy);
         var tGroups = target.bones.Where(b => !string.IsNullOrEmpty(b.group) && b.rel != null && b.rel.On).ToList();
 
         foreach (var c in bones.Where(b => !string.IsNullOrEmpty(b.group) && b.rel != null && b.rel.On).ToList())
         {
             var t = tGroups.FirstOrDefault(x => x.group == c.group);
-            if (t == null) { c.rel.r0 *= 1f - g; c.rel.r1 *= 1f - g; continue; }   // у цели такой массы нет — гаснет
-            var (cOff, cSeg, cLen) = Segment(cBy, c.parent);
-            var (tOff, tSeg, tLen) = Segment(tBy, t.parent);
-            float cAt = (cOff + c.rel.at * cLen) / cSeg, tAt = (tOff + t.rel.at * tLen) / tSeg;
-            c.rel.at = (Mathf.Lerp(cAt, tAt, g) * cSeg - cOff) / cLen;
-            c.rel.len = LogLerp(c.rel.len * cLen / cSeg, t.rel.len * tLen / tSeg, g) * cSeg / cLen;
-            c.rel.r0 = LogLerp(c.rel.r0, t.rel.r0, g);
-            c.rel.r1 = LogLerp(c.rel.r1, t.rel.r1, g);
-            c.rel.offX = Mathf.Lerp(c.rel.offX, t.rel.offX, g);
-            c.rel.offZ = Mathf.Lerp(c.rel.offZ, t.rel.offZ, g);
+            if (t == null || !cBy.TryGetValue(c.parent ?? "", out var cHost) || !tBy.TryGetValue(t.parent ?? "", out var tHost))
+            { c.rel.r0 *= 1f - g; c.rel.r1 *= 1f - g; continue; }   // у цели такой массы нет — гаснет
+            var cf = Frame(cBy, cPose, cHost); var tf = Frame(tBy, tPose, tHost);
+            var cm = Metric(c, cHost, cf); var tm = Metric(t, tHost, tf);
+            Apply(c, cHost, cf, new Metrics
+            {
+                u = Mathf.Lerp(cm.u, tm.u, g), len = LogLerp(cm.len, tm.len, g),
+                r0 = LogLerp(cm.r0, tm.r0, g), r1 = LogLerp(cm.r1, tm.r1, g),
+                x = Mathf.Lerp(cm.x, tm.x, g), z = Mathf.Lerp(cm.z, tm.z, g),
+            });
+            c.section = LogLerp(c.section, t.section, g);   // сечение массы — множитель, тоже в логарифмах
+            c.depth = LogLerp(c.depth, t.depth, g);
         }
 
         // у шасси такой массы нет — растёт из нуля на том же сегменте шасси
@@ -91,11 +100,9 @@ public static class GlobalLayer
             var n = BodyTree.Clone(t);
             n.name = t.name + "~" + target.speciesName;
             n.parent = host.name;
-            var (tOff, tSeg, tLen) = Segment(tBy, t.parent);
-            var (cOff, cSeg, cLen) = Segment(cBy, host.name);
-            n.rel.at = ((tOff + t.rel.at * tLen) / tSeg * cSeg - cOff) / cLen;
-            n.rel.len = t.rel.len * tLen / tSeg * cSeg / cLen;
-            n.rel.r0 *= g; n.rel.r1 *= g;
+            var m = Metric(t, tHost, Frame(tBy, tPose, tHost));
+            m.r0 *= g; m.r1 *= g;
+            Apply(n, host, Frame(cBy, cPose, host), m);
             bones.Add(n);
             cBy[n.name] = n;
         }
@@ -106,6 +113,82 @@ public static class GlobalLayer
     }
 
     static float LogLerp(float a, float b, float g) => a > 1e-6f && b > 1e-6f ? Mathf.Exp(Mathf.Lerp(Mathf.Log(a), Mathf.Log(b), g)) : Mathf.Lerp(a, b, g);
+
+    /// <summary>Группа в долях масштаба цепи: `u` — начало вдоль сегмента, остальное — метры / `S`.</summary>
+    struct Metrics { public float u, len, r0, r1, x, z; }
+
+    /// <summary>Сегмент хозяина: начало хозяина на оси сегмента `c0` (м), проекция оси хозяина на ось сегмента `k`,
+    /// масштаб цепи `S` (м).</summary>
+    struct SegFrame { public float c0, k, S; }
+
+    static Metrics Metric(Bone n, Bone host, SegFrame f)
+    {
+        var q = n.rel; float R = BodyChains.RadiusAt(host, q.at), L = Mathf.Max(1e-4f, host.length);
+        return new Metrics
+        {
+            u = (f.c0 + q.at * L * f.k) / f.S, len = q.len * L / f.S,
+            r0 = q.r0 * R / f.S, r1 = q.r1 * R / f.S,
+            x = q.offX * R * host.section / f.S, z = q.offZ * R * host.depth / f.S,
+        };
+    }
+
+    static void Apply(Bone n, Bone host, SegFrame f, Metrics m)
+    {
+        var q = n.rel; float L = Mathf.Max(1e-4f, host.length);
+        q.at = (m.u * f.S - f.c0) / (L * (Mathf.Abs(f.k) > 0.2f ? f.k : 1f));
+        float R = Mathf.Max(1e-5f, BodyChains.RadiusAt(host, q.at));
+        q.len = m.len * f.S / L;
+        q.r0 = m.r0 * f.S / R; q.r1 = m.r1 * f.S / R;
+        q.offX = m.x * f.S / (R * Mathf.Max(1e-4f, host.section));
+        q.offZ = m.z * f.S / (R * Mathf.Max(1e-4f, host.depth));
+    }
+
+    /// <summary>Сегмент кости `host`. У хребта меток нет — сегмент торса между корнями задних и передних конечностей
+    /// (тазобедренный сустав → плечевой пояс), ось хозяина проецируется на него. У прочих цепей — кости между метками:
+    /// вверх до кости, кончающейся меткой, вниз до своей метки конца (предплечье волка — две кости, человека — одна).</summary>
+    static SegFrame Frame(Dictionary<string, Bone> by, Dictionary<string, (Vector3 pos, Quaternion rot)> pose, Bone host)
+    {
+        if (host.limb == "хребет" && pose.TryGetValue(host.name, out var hp)
+            && LimbRoot(by, pose, "зад") is Vector3 hip && LimbRoot(by, pose, "перед") is Vector3 shoulder)
+        {
+            var d = shoulder - hip; float S = d.magnitude;
+            if (S > 1e-3f)
+            {
+                d /= S;
+                return new SegFrame { c0 = Vector3.Dot(hp.pos - hip, d), k = Vector3.Dot(hp.rot * Vector3.up, d), S = S };
+            }
+        }
+        var (before, seg, _) = Segment(by, host.name);
+        return new SegFrame { c0 = before, k = 1f, S = seg };
+    }
+
+    /// <summary>Корень цепи конечности на средней линии: первая кость цепи, чей родитель из другой цепи.</summary>
+    static Vector3? LimbRoot(Dictionary<string, Bone> by, Dictionary<string, (Vector3 pos, Quaternion rot)> pose, string limb)
+    {
+        var root = by.Values.FirstOrDefault(b => b.limb == limb && string.IsNullOrEmpty(b.group)
+                                                 && (b.parent == null || !by.TryGetValue(b.parent, out var p) || p.limb != limb));
+        if (root == null || !pose.TryGetValue(root.name, out var rp)) return null;
+        var v = rp.pos; v.x = 0f;
+        return v;
+    }
+
+    /// <summary>Позы костей по именам — та же формула, что у сборки (`SkeletonBuilder.Root`/`Child`).</summary>
+    static Dictionary<string, (Vector3 pos, Quaternion rot)> Poses(Dictionary<string, Bone> by)
+    {
+        var pose = new Dictionary<string, (Vector3 pos, Quaternion rot)>();
+        bool Get(Bone b, int depth)
+        {
+            if (pose.ContainsKey(b.name)) return true;
+            if (depth > 64) return false;
+            if (string.IsNullOrEmpty(b.parent) || !by.TryGetValue(b.parent, out var p)) { pose[b.name] = SkeletonBuilder.Root(b); return true; }
+            if (!Get(p, depth + 1)) return false;
+            var pp = pose[p.name];
+            pose[b.name] = SkeletonBuilder.Child(p, pp.pos, pp.rot, b);
+            return true;
+        }
+        foreach (var b in by.Values) Get(b, 0);
+        return pose;
+    }
 
     /// <summary>Сегмент кости `host` между метками: (смещение начала кости от начала сегмента, длина сегмента, длина кости).
     /// Путь — по костям той же цепи без групп; вверх до кости, кончающейся меткой, вниз до своей метки конца.</summary>

@@ -47,9 +47,10 @@ namespace Chimera.Tests.EditMode
             var full = Group(GlobalLayer.Blend(a, b, 1f), "бицепс").rel;
             Assert.AreEqual(0.6f, full.at, 1e-4f);
             Assert.AreEqual(2.0f, full.r0, 1e-4f);
-            var half = Group(GlobalLayer.Blend(a, b, 0.5f), "бицепс").rel;
-            Assert.AreEqual(1.0f, half.r0, 1e-4f, "радиус смешивается в логарифмах: √(0.5·2) = 1");
-            Assert.AreEqual(0.45f, half.at, 1e-4f, "положение — линейно");
+            var half = Group(GlobalLayer.Blend(a, b, 0.5f), "бицепс");
+            float ma = Group(a.bones, "бицепс").r0, mb = Group(b.bones, "бицепс").r0;
+            Assert.AreEqual(Mathf.Sqrt(ma * mb), half.r0, 1e-5f, "радиус в метрах смешивается в логарифмах: √(a·b)");
+            Assert.AreEqual(0.45f, half.rel.at, 1e-4f, "положение — линейно");
         }
 
         [Test]
@@ -80,6 +81,41 @@ namespace Chimera.Tests.EditMode
             int expect = share >= GlobalLayer.MediumAt ? 2 : share >= GlobalLayer.WeakAt ? 1 : 0;
             Assert.AreEqual(expect, step);
             if (step > 0) Assert.AreSame(wolf, target);
+        }
+
+        /// <summary>ДОЛИ ХОЗЯИНА НЕ СРАВНИМЫ МЕЖДУ ВИДАМИ (кадр ступеней 07.10): хребет человека тонкий, волка толстый, и та же
+        /// грудная клетка в метрах записана как 1.99 и 0.91 радиуса хозяина. Смешение идёт в долях масштаба цепи: радиус
+        /// группы на ступени — между своим и волчьим, приведённым к торсу человека, а не вдвое меньше обоих.</summary>
+        [Test]
+        public void CrossSpecies_MassStaysBetween_InChainScale()
+        {
+            var human = Load("Человек"); var wolf = Load("Волк");
+            Assume.That(GlobalLayer.HasGroups(human) && GlobalLayer.HasGroups(wolf), "виды не на шаблоне");
+            float torsoH = Torso(human), torsoW = Torso(wolf);
+            var blended = GlobalLayer.Blend(human, wolf, 0.5f);
+            foreach (var g in new[] { "грудная клетка", "живот", "таз" })
+            {
+                float h = Group(human.bones, g).r1, w = Group(wolf.bones, g).r1 * torsoH / torsoW, m = Group(blended, g).r1;
+                Assert.That(m, Is.InRange(Mathf.Min(h, w) * 0.98f, Mathf.Max(h, w) * 1.02f), $"«{g}»: человек {h:0.000}, волк в торсе человека {w:0.000}, ступень {m:0.000}");
+            }
+        }
+
+        static float Torso(SpeciesSO sp)
+        {
+            var by = sp.bones.ToDictionary(b => b.name);
+            Vector3 Root(string limb)
+            {
+                var r = sp.bones.First(b => b.limb == limb && string.IsNullOrEmpty(b.group) && (!by.TryGetValue(b.parent ?? "", out var p) || p.limb != limb));
+                var (pos, _) = PoseOf(by, r); pos.x = 0; return pos;
+            }
+            return (Root("перед") - Root("зад")).magnitude;
+        }
+
+        static (Vector3, Quaternion) PoseOf(System.Collections.Generic.Dictionary<string, Bone> by, Bone b)
+        {
+            if (string.IsNullOrEmpty(b.parent) || !by.TryGetValue(b.parent, out var p)) return SkeletonBuilder.Root(b);
+            var (pp, pr) = PoseOf(by, p);
+            return SkeletonBuilder.Child(p, pp, pr, b);
         }
 
         [Test]
