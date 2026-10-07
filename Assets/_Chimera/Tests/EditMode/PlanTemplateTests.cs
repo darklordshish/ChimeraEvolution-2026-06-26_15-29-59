@@ -81,6 +81,11 @@ namespace Chimera.Tests.EditMode
                 }
                 finally { Object.DestroyImmediate(wolf); }
 
+                var notYet = new PlanTemplate { plan = human.Plan, species = new[] { "Другой" }, groups = extra.groups };
+                Assert.IsEmpty(notYet.Check(human), "непереведённый вид проверен полностью");
+                var notYetWrong = new PlanTemplate { plan = human.Plan, species = new[] { "Другой" }, groups = new PlanGroup[0] };
+                Assert.IsNotEmpty(notYetWrong.Check(human), "у непереведённого вида группа вне шаблона не поймана");
+
                 var empty = new PlanTemplate { plan = human.Plan, groups = new PlanGroup[0] };
                 Assert.IsNotEmpty(empty.Check(human), "группа вне шаблона не поймана");
 

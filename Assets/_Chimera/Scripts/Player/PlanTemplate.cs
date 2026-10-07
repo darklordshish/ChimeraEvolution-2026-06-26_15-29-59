@@ -21,6 +21,11 @@ public class PlanTemplate
 {
     public string plan;
     public PlanGroup[] groups;
+    // ПЕРЕВЕДЁННЫЕ ВИДЫ (просьба модельной линии 07.10): перевод на шаблон идёт по виду — волк раньше лося и ежа. Вид из
+    // списка проверяется полностью, остальные виды плана — только «нет групп вне шаблона». Пусто — проверяются все
+    public string[] species;
+
+    public bool Covers(SpeciesSO sp) => species == null || species.Length == 0 || System.Array.IndexOf(species, sp.speciesName) >= 0;
 
     public static PlanTemplate Parse(string json) => JsonUtility.FromJson<PlanTemplate>(json);
 
@@ -33,7 +38,7 @@ public class PlanTemplate
         var by = new Dictionary<string, Bone>();
         foreach (var b in sp.bones) if (b != null && !by.ContainsKey(b.name)) by[b.name] = b;
         var known = new HashSet<string>(groups.Select(g => g.name));
-        foreach (var g in groups)
+        foreach (var g in Covers(sp) ? groups : new PlanGroup[0])
         {
             var nodes = sp.bones.Where(b => b.group == g.name).ToList();
             if (nodes.Count != 1) { bad.Add($"{sp.speciesName}: группа «{g.name}» — узлов {nodes.Count}, нужен один"); continue; }
