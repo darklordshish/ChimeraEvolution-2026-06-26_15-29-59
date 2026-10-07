@@ -307,5 +307,70 @@ namespace Chimera.Tests.EditMode
             Assert.Greater(real.ellipse.x, 0f, "эллипс шва не доехал из паспорта (ellipse_m)");
             Assert.AreEqual(8, real.ringM?.Length ?? 0, "точки кольца не доехали из паспорта (ring_m)");
         }
+        /// <summary>Кисть волка из точек вокруг его запястья: `pts(tip, axis)` — вершины в теле волка, вес 1 на кость с меткой
+        /// `запястье`. Возвращает копию волка с этой деталью.</summary>
+        SpeciesSO WolfWithHand(System.Func<Vector3, Vector3, List<Vector3>> pts, out string wristBoneName)
+        {
+            var wolf = Object.Instantiate(Load("Волк")); wolf.speciesName = "Волк"; trash.Add(wolf);
+            var by = wolf.bones.ToDictionary(b => b.name);
+            var wristBone = wolf.bones.First(b => b.limb == "перед" && b.mark?.b == "запястье");
+            wristBoneName = wristBone.name;
+            var (wp, wr) = SkeletonBuilder.Place(wristBone, by, new Dictionary<string, (Vector3, Quaternion)>());
+            var verts = pts(SkeletonBuilder.Tip(wristBone, wp, wr), wr * Vector3.up);
+            var tris = new List<int>();
+            for (int i = 0; i + 2 < verts.Count; i += 3) { tris.Add(i); tris.Add(i + 1); tris.Add(i + 2); }
+            var mesh = new Mesh(); mesh.SetVertices(verts); mesh.SetTriangles(tris, 0);
+            mesh.boneWeights = Enumerable.Repeat(new BoneWeight { boneIndex0 = 0, weight0 = 1f }, verts.Count).ToArray();
+            trash.Add(mesh);
+            wolf.parts = new[] { new BodyPart { slot = BodySlots.Arms, plan = "четвероногий", mesh = mesh, bones = new[] { wristBone.name }, mirror = false, seam = "запястье" } };
+            return wolf;
+        }
+
+        static List<Vector3> Baked(GameObject go)
+        {
+            var smr = go.GetComponentsInChildren<SkinnedMeshRenderer>().First(x => x.sharedMesh.name.Contains("деталь"));
+            var m = new Mesh(); smr.BakeMesh(m, true);
+            var root = go.transform.Find("Morph");
+            var res = m.vertices.Select(v => root.InverseTransformPoint(smr.transform.TransformPoint(v))).ToList();
+            Object.DestroyImmediate(m);
+            return res;
+        }
+
+        /// <summary>КАЛИБР НА КОЛЬЦЕ ЗАПЯСТЬЯ НЕПРЕРЫВЕН (письмо модельной линии 07.10): точка за долю миллиметра до конца кости и
+        /// за долю миллиметра после — соседи и на носителе. Прежде на кости брался радиус начала, за концом — конца, и кольцо
+        /// у лося расходилось на ≈4.5 см («манжета»).</summary>
+        [Test]
+        public void HandRing_CalibreContinuousAcrossWrist()
+        {
+            var wolf = WolfWithHand((tip, axis) =>
+            {
+                var side = Vector3.Cross(axis, Vector3.forward).normalized * 0.03f;
+                return new List<Vector3> { tip - axis * 1e-4f + side, tip + axis * 1e-4f + side, tip + axis * 0.02f };
+            }, out _);
+            var human = Load("Человек");   // не опорная — подгонки к земле нет, виден только калибр
+            var worn = human.organs.Where(o => o.slot != BodySlots.Arms).ToList();
+            worn.Insert(0, wolf.organs.First(o => o.slot == BodySlots.Arms));
+            var v = Baked(Build(human, worn));
+            Assert.Less(Vector3.Distance(v[0], v[1]), 0.005f, "калибр прыгает на кольце запястья");
+        }
+
+        /// <summary>КИСТЬ НА ОПОРНОЙ КОНЕЧНОСТИ СТОИТ НА ЗЕМЛЕ (стойка за шасси): волчья кисть на лосе — низ на земле, а не в
+        /// воздухе (письмо модельной линии 07.10: коготь висел в 4 см).</summary>
+        [Test]
+        public void HandOnStanceLimb_ReachesGround()
+        {
+            // кисть настоящей длины: у самого волка достаёт до земли (как лапа под запястьем)
+            var wolf = WolfWithHand((tip, axis) =>
+            {
+                float h = tip.y / Mathf.Max(0.1f, -axis.y);
+                return new List<Vector3> { tip + axis * 0.3f * h, tip + axis * 0.6f * h + Vector3.forward * 0.02f, tip + axis * h };
+            }, out _);
+            var moose = Load("Лось");
+            Assert.IsTrue(moose.stanceLimbs != null && moose.stanceLimbs.Contains(BodySlots.Arms), "у лося «Руки» — опорные");
+            var worn = moose.organs.Where(o => o.slot != BodySlots.Arms).ToList();
+            worn.Insert(0, wolf.organs.First(o => o.slot == BodySlots.Arms));
+            var low = Baked(Build(moose, worn)).Min(p => p.y);
+            Assert.AreEqual(0f, low, 0.01f, "низ кисти на опорной конечности не на земле");
+        }
     }
 }
