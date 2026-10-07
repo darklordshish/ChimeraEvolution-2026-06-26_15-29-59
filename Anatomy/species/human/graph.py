@@ -54,9 +54,12 @@ def lerp(a, b, t): return tuple(x + (y - x) * t for x, y in zip(a, b))
 CUT = 3   # слой вычитания (`BodyLayer.Cut`): узел вырезает объём из собранного тела — борозда, а не нарост
 
 
-def node(name, socket, parent, a, b, r0, r1, section=1.0, depth=1.0, blend=0.0, mirror=False, layer=0):
-    return dict(name=name, socket=socket, parent=parent, a=tuple(a), b=tuple(b), r0=r0, r1=r1,
-                section=section, depth=depth, blend=blend, mirror=mirror, layer=layer)
+def node(name, socket, parent, a, b, r0, r1, section=1.0, depth=1.0, blend=0.0, mirror=False, layer=0, group=None):
+    d = dict(name=name, socket=socket, parent=parent, a=tuple(a), b=tuple(b), r0=r0, r1=r1,
+             section=section, depth=depth, blend=blend, mirror=mirror, layer=layer)
+    if group:
+        d['group'] = group
+    return d
 
 
 # ── ЛИСТ ─────────────────────────────────────────────────────────────────────────────────────────────
@@ -139,7 +142,7 @@ ELBOW = tuple(round(c, 4) for c in v_add(SHOULDER, v_mul(_dir(ARM_OUT, 0.7), ARM
 WRIST = tuple(round(c, 4) for c in v_add(ELBOW, v_mul(_dir(FORE_OUT, 13.0 + FORE_BEND), ARM_LENGTHS[1])))
 HIP = (0.088, 0.960, -0.005)
 KNEE = (0.138, 0.500, -0.030)
-ANKLE = (0.176, 0.085, -0.062)
+ANKLE = (0.186, 0.085, -0.062)    # 07.10: +1 см наружу — центр щиколотки листа 0.183–0.19 (стержень голени теперь на кости, не на сечениях листа)
 
 # те же суставы У ЛИСТА (анфас; у колена и голеностопа — середины перехватов, у локтя и запястья — самые узкие строки)
 REF_SHOULDER, REF_ELBOW, REF_WRIST = (0.190, 1.455), (0.253, 1.205), (0.311, 0.975)
@@ -511,7 +514,182 @@ def _nodes():
 
 
 def build_nodes():
-    return _nodes() + relief()
+    if os.environ.get('CHIMERA_TELO') == 'лофт':
+        return _nodes() + relief()
+    return template_nodes()
+
+
+# ── ШАБЛОН ПЛАНА «двуногий» (спека `2026-10-07-globalnyj-sloj-shablon-plana.md`, вариант А геймдизайнера 07.10) ──────────
+# Тело — кости-стержни и мышечные группы. Сечения лофта (19 узлов) ушли: их числа — уровни листа (`arm_level`, `leg_level`,
+# `torso_level`) — стали ЦЕЛЬЮ подгонки. Стержень сегмента берёт среднее эллиптическое сечение листа на станциях (линейно
+# по длине кости); каждая группа закрывает остаток там, где лист выпирает сильнее стержня в её сторону. Направления — по
+# остаткам листа (07.10): бицепс — вперёд, трицепс — назад, разгибатели — наружу (под локтем до +1.7 см), сгибатели —
+# внутрь, квадрицепс — вперёд-наружу (+2.5 / +1.9 см на середине бедра), задняя бедра — назад, икра — назад-наружу
+# (+3.9 / +3.0 см на трети голени), широчайшая — наружу на груди. Числа групп в графе — доли (`rel`) кости; имена групп — из шаблона
+# `Docs/models/handoff/plan-dvunogij.json`. Черты человека (челюсть, морда, надбровье) — вне шаблона.
+# Прежнее тело-лофт собирается как раньше: CHIMERA_TELO=лофт (сравнение и откат).
+CORE_MIN = 0.036          # нижний предел радиуса стержня (клетка 0.042)
+CORE_K = 1.0             # стержень — среднее сечение листа; выпуклость сверх него дают группы (0.92 сужало все конечности: анфас 0.84 → 0.79)
+
+
+def _stations(kind):
+    """Станции сегмента: (t вдоль кости, центр листа в мире, полуширина, полуглубина) и концы кости."""
+    if kind in ('плечо', 'предплечье'):
+        up = kind == 'плечо'
+        a, b = (SHOULDER, ELBOW) if up else (ELBOW, WRIST)
+        return a, b, [(t,) + arm_level(t, up) for t in (UPPER_T if up else FORE_T)]
+    a, b, ys = (HIP, KNEE, THIGH) if kind == 'бедро' else (KNEE, ANKLE, SHIN)
+    return a, b, [((a[1] - y) / (a[1] - b[1]),) + leg_level(y) for y in ys]
+
+
+def _core(st):
+    """Эллипс стержня: общее отношение полуосей (как `loft(uniform)`), радиус — наименьшие квадраты линейно по t."""
+    sec = sum(w / min(w, d) for _, _, w, d in st) / len(st)
+    dep = sum(d / min(w, d) for _, _, w, d in st) / len(st)
+    rs = [(w * sec + d * dep) / (sec * sec + dep * dep) for _, _, w, d in st]
+    ts = [s_[0] for s_ in st]
+    # ПО СУСТАВАМ, а не наименьшими квадратами (кадр 07.10): МНК по всем станциям тянул концы кости вверх — у колена, локтя
+    # и запястья стержень выходил толще сустава, конечности шли трубами, а брюшкам мышц оставалось 0–2 см. Стержень — линия
+    # через крайние станции (суставы), брюшки — группы
+    k = (rs[-1] - rs[0]) / max(1e-9, ts[-1] - ts[0])
+    r0, r1 = rs[0] - k * ts[0], rs[0] + k * (1 - ts[0])
+    return CORE_K * r0, CORE_K * r1, sec, dep
+
+
+def _ext(ux, uz, w, d):
+    return math.sqrt((ux * w) ** 2 + (uz * d) ** 2)
+
+
+# ЗАПАС НА КЛЕТКУ у веретена: сплющенный узел поле на клетке 0.042 съедает по 5–7 мм с бока (срезы 07.10: бедро уже лофта
+# на 2 см, голень на 3) — как `ARM_GROW` и `ARM_FIT` у лофта рук
+MUSCLE_GROW = 0.012
+ARM_CORE_GROW = 0.004     # стержень рук (0.008 — руки шире листа на 1.32–1.41)
+HIP_K = 1.0              # стержень бедра у тазобедренного конца (0.92 проверено 07.10 — хуже: 0.834 против 0.836)
+LEG_GROW = 0.006          # то же для стержня ног: у лофта ног запаса не было, но было по 4–6 сечений внахлёст
+
+
+def _muscle(name, socket, parent, a, b, st, core, u, rmax=0.060, blend=0.015, wide=0.7):
+    """Группа — ВЕРЕТЕНО по остатку «лист − стержень» в направлении u = (x, z) мира. Остаток по станциям даёт пик (брюшко)
+    и полудлину h (где остаток падает до трети). Узел — короткая капсула радиуса h вдоль кости: её торцы и дают колокол
+    по длине. Поперёк она сплющена (`section`/`depth`) до толщины c: снаружи ровно до цели листа на пике (центр на E − c),
+    вбок — 0.7 c. Капсула постоянного радиуса (первая проба 07.10) давала цилиндр: квадрицепс торчал шишкой, икра — трубкой.
+    Остатка нет — веретено внутри стержня (шаблон требует узел)."""
+    r0, r1, sec, dep = core
+    ux, uz = u
+    L = v_len(v_sub(b, a))
+    res = []
+    for t, c, w, d in st:
+        ax = lerp(a, b, t)
+        E = ux * (c[0] - ax[0]) + uz * (c[2] - ax[2]) + _ext(ux, uz, w, d)
+        cr = (r0 + (r1 - r0) * t) * _ext(ux, uz, sec, dep)
+        res.append((t, E, E - cr))
+    i = max(range(len(res)), key=lambda j: res[j][2])
+    tp, Ep, ep = res[i]
+
+    def cross(k, frac):                      # t, где остаток падает до frac пика, от станции k в сторону соседей
+        out = []
+        for step in (-1, 1):
+            j = k
+            while 0 <= j + step < len(res) and res[j + step][2] > frac * ep:
+                j += step
+            if 0 <= j + step < len(res):
+                (t0, _, e0), (t1, _, e1) = res[j], res[j + step]
+                f = (e0 - frac * ep) / max(1e-9, e0 - e1)
+                out.append(t0 + (t1 - t0) * f)
+            else:
+                out.append(res[j][0])
+        return out
+    ta, tb = cross(i, 0.3) if ep > 0.003 else (tp - 0.15, tp + 0.15)
+    # брюшко — на ПИКЕ остатка, а не в середине отрезка: у икры хвост остатка тянется к лодыжке, и середина съезжала на 10 см
+    # ниже брюшка листа (срез 07.10); полудлина — по более короткой стороне от пика, чтобы колокол не вылезал за брюшко
+    tm = tp
+    h = max(0.04, min(0.16, 1.2 * min(tp - ta, tb - tp) * L if min(tp - ta, tb - tp) > 0 else (tb - ta) * L / 2))
+    c = max(0.022, min(rmax, (ep if ep > 0.003 else 0.0) + 0.020 + MUSCLE_GROW))
+    E = Ep
+    o = E - c - (0 if ep > 0.003 else 0.006)
+    ax0, ax1 = lerp(a, b, max(0.0, tm - 0.15 * h / L)), lerp(a, b, min(1.0, tm + 0.15 * h / L))
+    p0 = _round3((ax0[0] + ux * o, ax0[1], ax0[2] + uz * o))
+    p1 = _round3((ax1[0] + ux * o, ax1[1], ax1[2] + uz * o))
+    sx = math.sqrt((ux * c) ** 2 + (uz * wide * c) ** 2) / h
+    sz = math.sqrt((uz * c) ** 2 + (ux * wide * c) ** 2) / h
+    return node(name, socket, parent, p0, p1, round(h, 4), round(h, 4), section=round(sx, 3), depth=round(sz, 3),
+                blend=blend, mirror=True, group=name)
+
+
+def _rename(n, name, parent=None, group=True):
+    n = dict(n)
+    n['name'] = name
+    if parent:
+        n['parent'] = parent
+    if group:
+        n['group'] = name
+    return n
+
+
+def template_nodes():
+    loft_nodes = {n['name']: n for n in _nodes()}
+    out = [loft_nodes[k] for k in ('хребет', 'шея', 'голова', 'челюсть', 'морда', 'надбровье', 'лопатка')]
+    torso_w = [torso_level(y) for y in TORSO_WAIST]
+    torso_c = [torso_level(y) for y in TORSO_CHEST]
+    (c, w, d) = torso_c[0]
+    torso_c[0] = ((c[0], c[1], c[2] + 0.010), w, d - 0.010)
+    pelvis, belly = loft('пояс', 'хребет', 'хребет', torso_w, k_first=0.65)
+    chest = loft('грудь', 'Сердце', 'хребет', [torso_c[0], torso_c[-1]])[0]
+    out += [_rename(pelvis, 'таз'), _rename(belly, 'живот'), _rename(chest, 'грудная клетка')]
+    # ШИРОЧАЙШАЯ — остаток ширины груди над одним узлом «грудная клетка» (V к подмышкам), наружу
+    ca, cb = chest['a'], chest['b']
+    st_c = [((y - ca[1]) / (cb[1] - ca[1]),) + torso_level(y) for y in TORSO_CHEST]
+    core_c = (chest['r0'], chest['r1'], chest['section'], chest['depth'])
+    out.append(_muscle('широчайшая', 'Сердце', 'хребет', ca, cb, st_c, core_c, (0.6, -0.8), rmax=0.050))   # наружу-назад: спина на 1.20–1.25 у лофта на 2 см глубже
+    out += [_rename(loft_nodes['грудная'], 'грудная', parent='хребет'),
+            _rename(loft_nodes['ягодица'], 'ягодица', parent='хребет'),
+            _rename(loft_nodes['трапеция'], 'трапеция')]
+    # КОНЕЧНОСТИ — стержень по листу, группы по остатку
+    for kind, socket, parent, groups in (
+            ('плечо', 'Руки', 'лопатка', [('бицепс', (0, 1)), ('трицепс', (0, -1))]),
+            ('предплечье', 'Руки', 'плечо', [('разгибатели', (1, 0)), ('сгибатели', (-1, 0))]),
+            ('бедро', 'Ноги', 'таз', [('квадрицепс', (0.45, 0.89)), ('задняя бедра', (0, -1))]),
+            ('голень', 'Ноги', 'бедро', [('икра', (0.6, -0.8))])):     # икре — предел толщины 0.07 (ниже)
+        a, b, st = _stations(kind)
+        core = _core(st)
+        bone = dict(loft_nodes[kind])
+        bone['parent'] = parent
+        # НИЖНИЙ ПРЕДЕЛ СТЕРЖНЯ: одна капсула тоньше ~3.6 см на клетке 0.042 рвётся — предплечье у запястья пропадало, кисть
+        # висела отдельно (кадр 07.10). Лофт держал запястье несколькими узлами внахлёст, у стержня соседей нет
+        # ЗАПАС СТЕРЖНЯ НА КЛЕТКУ (срезы 07.10): одиночная капсула с вытянутым сечением рисуется меньше номинала — плечо
+        # выходило на 1.4 см уже и на 2.5 мельче лофта. Колено и запястье не раздуваются: у них запаса нет
+        g0, g1 = {'плечо': (ARM_CORE_GROW, ARM_CORE_GROW), 'предплечье': (ARM_CORE_GROW, 0.0),
+                  'бедро': (LEG_GROW, 0.0), 'голень': (0.0, 0.0)}[kind]
+        bone['r0'], bone['r1'] = round(max(core[0] + g0, CORE_MIN), 4), round(max(core[1] + g1, CORE_MIN), 4)
+        if kind == 'бедро':
+            bone['r0'] = round(HIP_K * bone['r0'], 4)   # верх бедра у паха шире листа на 4–8 пкс анфас (сверка 07.10)
+        bone['section'], bone['depth'] = round(core[2], 3), round(core[3], 3)
+        out.append(bone)
+        if kind == 'плечо':
+            out += [_rename(loft_nodes['дельта-перед'], 'дельта.перед'), _rename(loft_nodes['дельта'], 'дельта'),
+                    _rename(loft_nodes['дельта-зад'], 'дельта.зад')]
+        for gname, u in groups:
+            # ИКРА — круглая поперёк (wide 1.0): у листа она выходит и наружу, и внутрь; сплющенная наружу-назад
+            # внутреннюю сторону не закрывала — недобор 2.7 см на ногу на 0.37–0.46 (сверка с листом 07.10)
+            out.append(_muscle(gname, socket, kind, a, b, st, core, u, rmax=0.070 if gname == 'икра' else 0.060,
+                               wide={'икра': 1.0, 'квадрицепс': 0.9}.get(gname, 0.7)))
+    return out
+
+
+RAZMETKA_SHABLON = {
+    'хребет': ('хребет', None, None), 'таз': ('хребет', None, None), 'живот': ('хребет', None, None),
+    'грудная клетка': ('хребет', None, None), 'широчайшая': ('хребет', None, None), 'грудная': ('хребет', None, None),
+    'ягодица': ('хребет', None, None),
+    'шея': ('шея', 'основание шеи', 'основание черепа'), 'трапеция': ('шея', None, None),
+    'голова': ('голова', None, None), 'челюсть': ('голова', None, None), 'морда': ('голова', None, None),
+    'надбровье': ('голова', None, None),
+    'лопатка': ('перед', None, 'плечо'), 'плечо': ('перед', None, 'локоть'),
+    'дельта.перед': ('перед', None, None), 'дельта': ('перед', None, None), 'дельта.зад': ('перед', None, None),
+    'бицепс': ('перед', None, None), 'трицепс': ('перед', None, None),
+    'предплечье': ('перед', None, 'запястье'), 'разгибатели': ('перед', None, None), 'сгибатели': ('перед', None, None),
+    'бедро': ('зад', 'бедро', 'колено'), 'квадрицепс': ('зад', None, None), 'задняя бедра': ('зад', None, None),
+    'голень': ('зад', None, 'скакательный'), 'икра': ('зад', None, None),
+}
 
 
 HIDES = ['хребет', 'шея', 'голова', 'Шкура', 'Сердце', 'Руки', 'Ноги']
@@ -563,6 +741,8 @@ def to_bones(nodes):
                     length=round(length, 4), endBone='', endAttach=1.0, dir=dict(x=0.0, y=0.0, z=0.0),
                     r0=n['r0'], r1=n['r1'], section=n['section'], depth=n['depth'],
                     blend=n['blend'], chain=0, mirrorX=n['mirror'])
+        if n.get('group'):
+            bone['group'] = n['group']
         if not n['parent']:
             rel = rw
             bone['origin'] = dict(x=round(a[0], 4), y=round(a[1], 4), z=round(a[2], 4))
@@ -611,7 +791,7 @@ def main():
     args = ap.parse_args()
     nodes = build_nodes()
     bones = to_bones(nodes)
-    R.apply(bones, RAZMETKA, 'Человек')
+    R.apply(bones, RAZMETKA if os.environ.get('CHIMERA_TELO') == 'лофт' else RAZMETKA_SHABLON, 'Человек')
     R.rel_all(bones)
     os.makedirs(os.path.dirname(args.out), exist_ok=True)
     with open(args.out, 'w', encoding='utf-8') as f:
