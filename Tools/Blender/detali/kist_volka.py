@@ -39,31 +39,48 @@ def bridge(a,b):
 seam=ring(W,r,r,W,r,r)
 # Переход от узкого запястья к подушке. В ключе — запястье, ладонь, костяшки.
 rows=[seam]
+# r3 (Модельный, 07.10; критик r2: «подушка тяжела сзади — башмак»): у листа лапа — пясть, которая внизу расходится дугой
+# из четырёх пальцев; сзади только малая пястная подушка. В r2 тело подушки было 15 см в ширину и уходило назад на 4–5 см
+# за ось — масса стояла под пяткой. Теперь кольца — продолжение пясти: полуширина 2.7 → 3.4 см, зад не дальше 2.3 см
+# от оси; массу низа и ширину лапы (≈10 см) дают пальцы.
+# Ключ двуногого (последние три числа: вдоль кисти, полуширина, толщина) — r3b по критику: ладонь была вдвое длиннее
+# пальцев и кончалась «полкой», из-под которой торчали пальцы. Теперь ладонь 7.6 см до костяшек (было 13.3), костяшки —
+# самое широкое и толстое место, пальцы начинаются на нём
 for y,dx,dz,zoff,depth,halfwidth,thickness in [
-    (.155,.030,.029,.002,.025,.028,.023),
-    (.125,.037,.035,.004,.055,.035,.021),
-    (.075,.075,.067,.018,.090,.048,.022),
-    (.035,.078,.072,.031,.120,.047,.018),
-    (.006,.072,.060,.025,.133,.043,.015)]:
+    (.155,.027,.026,.003,.020,.030,.024),
+    (.120,.030,.028,.006,.038,.036,.024),
+    (.085,.032,.030,.010,.055,.044,.025),
+    (.055,.034,.030,.014,.068,.047,.025),
+    (.030,.033,.026,.014,.076,.044,.021)]:
     rows.append(ring(Vector((W.x,y,W.z+zoff)),dx,dz,W+axis*depth,halfwidth,thickness,True))
 for a,b in zip(rows,rows[1:]):bridge(a,b)
-bottom=vertex(Vector((W.x,0,W.z+.025)),W+axis*.140)
+bottom=vertex(Vector((W.x,.026,W.z-.013)),W+axis*.080)        # пястная подушка — сзади и выше пальцев: в анфас её не видно
 for j in range(8):faces.append((rows[-1][j],rows[-1][(j+1)%8],bottom))
-# Четыре пальца с отдельными гранёными когтями. Основания скрыты внутри подушки.
+# Четыре пальца с отдельными гранёными когтями. Основания скрыты внутри низа пясти.
+# r3: пальцы — ДУГОЙ (средние впереди, крайние отстают на 1.2 см), короче (4.8/4.0 см против 7/5.8) и толще у основания —
+# они и есть масса низа лапы (критик r2: «основания пальцев — отдельные бруски»); наклон вниз сильнее — палец лежит
+# на земле подушечкой, а не торчит вперёд трубкой
 for finger in range(4):
     offset=finger-1.5
-    base=Vector((W.x+offset*.042,.032,W.z+.075))
-    length=.070 if abs(offset)<1 else .058
-    direction=Vector((offset*.12,-.20,1)).normalized()
+    outer=abs(offset)>1
+    # r3b: крайние прижаты к средним до касания у основания, без разлёта («лепестки»), и стоят выше — лапа компактный овал
+    base=Vector((W.x+offset*.016,.036 if outer else .030,W.z+.022-(.012 if outer else 0)))
+    length=.040 if outer else .048
+    klen=.080 if outer else .095          # ключ: пальцы кисти — 1.25 ладони, с когтями ≈1.6 (у оборотня ≈1.3 с когтями)
+    direction=Vector((offset*.04,-.40,1)).normalized()
     up=Vector((0,1,0));up=(up-direction*up.dot(direction)).normalized(); lateral=direction.cross(up)
-    keybase=W+axis*.105+Vector((0,0,offset*.025))
+    # r3c (критик C: «обод-манжета и пальцы-грабли»): основания пальцев заходят на кольцо костяшек и перекрывают его —
+    # четыре бугра костяшек вместо обода; пальцы толще ×1.4, узел среднего сустава на 30 % толще основания
+    keybase=W+axis*.068+Vector((0,0,offset*.023))
     loops=[]
-    for t,rad in [(0,.021),(.5,.019),(1,.014)]:
+    # палец «боб»: у основания кольцо выше, к кончику спад — коготь продолжает дугу (критик: «карандаш в бруске»);
+    # в ключе — узел среднего сустава толще и излом к ладони ~25°
+    for t,rad,krad,lift,bend in [(0,.018 if outer else .019,.029,.004,0.),(.5,.016 if outer else .017,.037,.001,-.010),(1,.011 if outer else .012,.016,-.005,-.032)]:
         ids=[]
         for j in range(6):
             q=2*math.pi*j/6
-            p=base+direction*length*t+rad*(up*math.cos(q)+lateral*math.sin(q))
-            k=keybase+axis*(length*t)+Vector((-.024*t*t,0,offset*.004*t))+rad*.70*Vector((math.cos(q),0,math.sin(q)))
+            p=base+direction*length*t+up*lift+rad*(up*math.cos(q)+lateral*math.sin(q))
+            k=keybase+axis*(klen*t)+Vector((bend,0,offset*.018*t))+krad*.70*Vector((math.cos(q),0,math.sin(q)))   # веер расходится к кончикам
             ids.append(vertex(p,k))
         loops.append(ids)
     for a,b in zip(loops,loops[1:]):bridge(a,b)
@@ -71,8 +88,9 @@ for finger in range(4):
     claw=[]
     for j in range(4):
         q=2*math.pi*j/4
-        claw.append(vertex(base+direction*length+.010*(up*math.cos(q)+lateral*math.sin(q)),keybase+axis*length+Vector((-.024,0,offset*.004))+.007*Vector((math.cos(q),0,math.sin(q)))))
-    tip=vertex(base+direction*(length+.022)-up*.008,keybase+axis*(length+.017)+Vector((-.044,0,offset*.004)))
+        claw.append(vertex(base+direction*length+up*-.005+.009*(up*math.cos(q)+lateral*math.sin(q)),keybase+axis*klen+Vector((-.032,0,offset*.018))+.009*Vector((math.cos(q),0,math.sin(q)))))   # основание когтя ≈0.8 кончика пальца
+    # когти по плану разные (критик): у лапы короткий тупой вперёд-вниз, у кисти длинный загнутый к ладони
+    tip=vertex(base+direction*(length+.011)-up*.008,keybase+axis*(klen+.026)+Vector((-.060,0,offset*.020)))
     for j in range(4):faces.append((claw[j],claw[(j+1)%4],tip))
     faces.append(tuple(reversed(claw)))
 mesh=bpy.data.meshes.new('Кисть');mesh.from_pydata(verts,[],faces);mesh.update()
