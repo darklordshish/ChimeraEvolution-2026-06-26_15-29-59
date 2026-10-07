@@ -372,5 +372,33 @@ namespace Chimera.Tests.EditMode
             var low = Baked(Build(moose, worn)).Min(p => p.y);
             Assert.AreEqual(0f, low, 0.01f, "низ кисти на опорной конечности не на земле");
         }
+        /// <summary>ПОДТЯГИВАНИЕ К РОДНОЙ КИСТИ (спека рук §5): при `HandPull` = 1 кисть волка на человеке — длины родной
+        /// человеческой кисти (из раскладки органов), при 0 — по запястью, как прежде.</summary>
+        [Test]
+        public void HandPull_OneMatchesCarrierHandLength()
+        {
+            var human = Load("Человек");
+            Assert.Greater(human.handLength, 0.05f, "длина родной кисти человека не доехала из раскладки органов");
+            var wolf = WolfWithHand((tip, axis) =>
+            {
+                float h = tip.y / Mathf.Max(0.1f, -axis.y);
+                return new List<Vector3> { tip + axis * 0.3f * h, tip + axis * 0.6f * h + Vector3.forward * 0.02f, tip + axis * h };
+            }, out _);
+            var worn = human.organs.Where(o => o.slot != BodySlots.Arms).ToList();
+            worn.Insert(0, wolf.organs.First(o => o.slot == BodySlots.Arms));
+            var fore = human.bones.First(b => b.limb == "перед" && b.mark?.b == "запястье").name;
+            var hb = human.bones.ToDictionary(b => b.name);
+            var (hp, hr) = SkeletonBuilder.Place(hb[fore], hb, new Dictionary<string, (Vector3, Quaternion)>());
+            var wrist = SkeletonBuilder.Tip(hb[fore], hp, hr);
+            float Len() => Baked(Build(human, worn)).Max(p => (p - wrist).magnitude);
+            try
+            {
+                PartAssembly.HandPull = 0f; float l0 = Len();
+                PartAssembly.HandPull = 1f; float l1 = Len();
+                Assert.AreEqual(human.handLength, l1, human.handLength * 0.1f, "при w = 1 кисть не длины родной");
+                Assert.Greater(Mathf.Abs(l0 - l1), 1e-3f, "ручка ничего не меняет");
+            }
+            finally { PartAssembly.HandPull = 0f; }
+        }
     }
 }

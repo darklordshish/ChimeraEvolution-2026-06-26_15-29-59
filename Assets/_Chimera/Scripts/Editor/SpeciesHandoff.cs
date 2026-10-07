@@ -35,7 +35,8 @@ public static class SpeciesHandoff
 
     [System.Serializable] class Calibre { public float[] baseSize; public float[] sizeRel; }
     [System.Serializable] class PlaceDto { public string name, parent; public float attach; public float[] attachOffset, sizeRel, baseEuler; }
-    [System.Serializable] class PartDto { public string node, block, role; public float[] offset, scale, euler, color; public bool nest, stretch; }
+    [System.Serializable] class PartDto { public string node, block, role; public float[] offset, scale, euler, color; public bool nest, stretch; public MetresDto metres; }
+    [System.Serializable] class MetresDto { public float[] centre, size; }
     [System.Serializable] class HeadLayout { public Calibre head; public PlaceDto[] places; public PartDto muzzle; public PartDto[] teeth, senses; public NestDto[] mawNests; }
     [System.Serializable] class OrganDto { public string slot, organ; public PartDto[] parts; public NestDto[] nests; }
     [System.Serializable] class OrgansLayout { public OrganDto[] organs; }
@@ -259,8 +260,13 @@ public static class SpeciesHandoff
         if (!string.IsNullOrEmpty(organsJson))
         {
             var l = JsonUtility.FromJson<OrgansLayout>(organsJson);
+            species.handLength = 0f;   // присваивается явно: бутстрап не обнуляет поля, которые перестал писать
             foreach (var leg in l.organs ?? new OrganDto[0])
             {
+                if (leg.slot == BodySlots.Arms)
+                    foreach (var p in leg.parts ?? new PartDto[0])
+                        if (p.metres?.size != null && p.metres.size.Length >= 3)
+                            species.handLength = Mathf.Max(species.handLength, Mathf.Max(p.metres.size[0], Mathf.Max(p.metres.size[1], p.metres.size[2])));
                 var organ = FindOrgan(species, leg.slot, leg.organ);
                 if (organ == null) { Debug.LogError($"[форма] {species.speciesName}: раскладка кусков органов называет орган «{leg.organ}» на слоте «{leg.slot}», которого у вида нет"); continue; }
                 var parts = new System.Collections.Generic.List<OrganPart>();

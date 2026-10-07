@@ -41,6 +41,11 @@ public static class PartAssembly
     }
 
     /// <summary>Шов, на котором аугмент места встаёт на чужое шасси. Нет строки — деталь места ставится целиком.</summary>
+    /// <summary>ПОДТЯГИВАНИЕ КИСТИ К РОДНОЙ (спека рук §5, геймдизайнер 06.10: «чуть к кисти подтянуть у человека»): калибр
+    /// кисти на не опорной конечности — смесь по запястью и по длине родной кисти носителя, `w` — вес второй меры (0 —
+    /// только запястье). Выбирается кадром; пока не выбран — 0.</summary>
+    public static float HandPull = 0f;
+
     /// <summary>Пределы подгонки кисти на опорной конечности к земле (общий масштаб вокруг сустава).</summary>
     public const float StanceFitMin = 0.67f, StanceFitMax = 1.5f;   // волчьей кисти на лосе нужно ×1.05; предел — от раздувания в разы
 
@@ -227,8 +232,8 @@ public static class PartAssembly
         // КИСТЬ НА ОПОРНОЙ КОНЕЧНОСТИ НОСИТЕЛЯ СТОИТ НА ЗЕМЛЕ (стойка за шасси, решение 8 спеки двух слоёв): волчья кисть на
         // лосе висела когтем в 4 см над землёй (письмо модельной линии 07.10). Кисть за суставом подгоняется общим масштабом
         // вокруг сустава — форма та же, низ на земле. Земля — y = 0 в кадре контейнера (высоты от земли)
-        bool stanceHand = !string.IsNullOrEmpty(part.seam) && GraftSeam.TryGetValue(part.slot, out var graftSeam) && graftSeam == part.seam
-                          && body.stanceLimbs != null && System.Array.IndexOf(body.stanceLimbs, part.slot) >= 0;
+        bool hand = !string.IsNullOrEmpty(part.seam) && GraftSeam.TryGetValue(part.slot, out var graftSeam) && graftSeam == part.seam;
+        bool stanceHand = hand && body.stanceLimbs != null && System.Array.IndexOf(body.stanceLimbs, part.slot) >= 0;
         for (int side = +1, s = 0; s < sides; s++, side = -1)
         {
             // кадр каждой кости детали: донор (поза графа, своя сторона) и носитель (трансформ собранного скелета)
@@ -290,6 +295,17 @@ public static class PartAssembly
                 if (beyond) { past.Add(verts.Count - 1); joint = anchor; }
                 bw.weight0 /= total; bw.weight1 /= total; bw.weight2 /= total; bw.weight3 /= total;
                 weights.Add(bw);
+            }
+            // НЕ ОПОРНАЯ — ПОДТЯГИВАНИЕ К РОДНОЙ КИСТИ: длина кисти идёт к длине родной в степени `HandPull` (смешение в
+            // логарифмах, как вся пропорция). Масштаб общий, вокруг сустава — форма та же
+            if (hand && !stanceHand && HandPull > 0f && body.handLength > 0f && past.Count > 0)
+            {
+                float len = past.Max(i => (verts[i] - joint).magnitude);
+                if (len > 1e-4f)
+                {
+                    float k = Mathf.Pow(body.handLength / len, HandPull);
+                    foreach (int i in past) verts[i] = joint + (verts[i] - joint) * k;
+                }
             }
             if (stanceHand && past.Count > 0)
             {
