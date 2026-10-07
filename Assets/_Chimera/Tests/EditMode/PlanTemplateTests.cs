@@ -68,6 +68,19 @@ namespace Chimera.Tests.EditMode
                 var wrongSeg = new PlanTemplate { plan = human.Plan, groups = new[] { new PlanGroup { name = "проба", limb = "перед", endMark = "запястье" } } };
                 Assert.IsNotEmpty(wrongSeg.Check(human), "группа на чужом сегменте не поймана");
 
+                // СЕГМЕНТ ИЗ ДВУХ КОСТЕЙ (волк: `предплечье` + риг `пясть`): группа на верхней кости сегмента «до запястья»
+                var wolf = Object.Instantiate(Load("Волк"));
+                try
+                {
+                    var fore = wolf.bones.FirstOrDefault(b => b.limb == "перед" && b.mark?.b == "запястье");
+                    var upper = fore != null && fore.layer == BodyLayer.Rig ? wolf.bones.First(b => b.name == fore.parent) : fore;
+                    var g = new Bone { name = "проба2", parent = upper.name, limb = upper.limb, group = "сгибатели", rel = new BoneRel { at = 0.3f, len = 0.3f, r0 = 0.5f, r1 = 0.4f } };
+                    wolf.bones = wolf.bones.Append(g).ToArray();
+                    var tw = new PlanTemplate { plan = wolf.Plan, groups = new[] { new PlanGroup { name = "сгибатели", limb = "перед", endMark = "запястье" } } };
+                    Assert.IsEmpty(tw.Check(wolf), "группа на верхней кости сегмента из двух костей не прошла");
+                }
+                finally { Object.DestroyImmediate(wolf); }
+
                 var empty = new PlanTemplate { plan = human.Plan, groups = new PlanGroup[0] };
                 Assert.IsNotEmpty(empty.Check(human), "группа вне шаблона не поймана");
 

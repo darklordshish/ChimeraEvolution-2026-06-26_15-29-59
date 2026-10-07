@@ -13,8 +13,9 @@ using UnityEngine;
 ///                      { "a": "двуногий", "b": "четвероногий", "pairs": [ { "a": "дельта.перед", "b": "плечевая.перед" },
 ///                                                                        { "a": "ягодица", "b": "" } ] }
 /// </code>
-/// `endMark` — метка конца кости, на которой сидит группа (`локоть` — плечо, `запястье` — предплечье); пусто — любая кость
-/// цепи `limb` (хребет без меток). Пустая сторона пары — группа без пары: растёт из нуля или гаснет по ступени.</summary>
+/// `endMark` — метка конца СЕГМЕНТА, на котором сидит группа (`локоть` — плечо, `запястье` — предплечье); пусто — любая
+/// кость цепи `limb` (хребет без меток). Сегмент — кости цепи между метками: у волка предплечье — `предплечье` и узел-риг
+/// `пясть`, у человека — одна кость (вопрос модельной линии 07.10). Доли группы при смешении переводятся в доли сегмента. Пустая сторона пары — группа без пары: растёт из нуля или гаснет по ступени.</summary>
 [System.Serializable]
 public class PlanTemplate
 {
@@ -40,12 +41,26 @@ public class PlanTemplate
             if (n.rel == null) bad.Add($"{sp.speciesName}: группа «{g.name}» ({n.name}) не в долях — нет `rel`");
             if (n.parent == null || !by.TryGetValue(n.parent, out var host)) { bad.Add($"{sp.speciesName}: группа «{g.name}» ({n.name}) без кости"); continue; }
             if (host.limb != g.limb) bad.Add($"{sp.speciesName}: группа «{g.name}» на цепи «{host.limb}», по шаблону «{g.limb}»");
-            if (!string.IsNullOrEmpty(g.endMark) && host.mark?.b != g.endMark)
-                bad.Add($"{sp.speciesName}: группа «{g.name}» на кости «{host.name}» (конец «{host.mark?.b}»), по шаблону — кончающейся «{g.endMark}»");
+            if (!string.IsNullOrEmpty(g.endMark) && SegmentEnd(sp, by, host) != g.endMark)
+                bad.Add($"{sp.speciesName}: группа «{g.name}» на кости «{host.name}» сегмента до «{SegmentEnd(sp, by, host)}», по шаблону — до «{g.endMark}»");
         }
         foreach (var b in sp.bones.Where(b => !string.IsNullOrEmpty(b.group) && !known.Contains(b.group)))
             bad.Add($"{sp.speciesName}: узел «{b.name}» — группа «{b.group}», которой нет в шаблоне «{plan}»");
         return bad;
+    }
+
+    /// <summary>Метка конца сегмента, которому принадлежит кость: своя метка конца, а без неё — первая метка вниз по цепи
+    /// (через ребёнка той же цепи, не группу и не сечение лофта без меток впереди).</summary>
+    public static string SegmentEnd(SpeciesSO sp, Dictionary<string, Bone> by, Bone b)
+    {
+        for (int guard = 0; b != null && guard < 64; guard++)
+        {
+            if (!string.IsNullOrEmpty(b.mark?.b)) return b.mark.b;
+            var cur = b;
+            b = sp.bones.FirstOrDefault(k => k.parent == cur.name && k.limb == cur.limb && string.IsNullOrEmpty(k.group)
+                                             && sp.bones.Any(x => x == k && (!string.IsNullOrEmpty(x.mark?.b) || sp.bones.Any(y => y.parent == x.name))));
+        }
+        return null;
     }
 }
 
