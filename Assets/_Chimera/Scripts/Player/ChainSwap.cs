@@ -66,17 +66,33 @@ public static class ChainSwap
         // ДЕТАЛИ (спека конструктора): у органа, чей вид принёс деталь своего места, часть рисует деталь, а не поле. Это
         // тоже составное тело — даже на родном шасси без прививок (волк со своей ногой-деталью)
         var parts = PartAssembly.Choose(chassis, worn);
-        if (grafts.Count == 0 && parts.Count == 0) return chassis;
+        // ГЛОБАЛЬНЫЙ СЛОЙ (спека 07.10): ступень по составу; без масс шаблона у шасси смешивать нечего
+        var (target, step) = GlobalLayer.Step(chassis, worn);
+        float g = GlobalLayer.HasGroups(chassis) && target != null ? GlobalLayer.G(step) : 0f;
+        if (grafts.Count == 0 && parts.Count == 0 && g <= 0f) return chassis;
 
         // КЛЮЧ — СОСТАВ И ОТПЕЧАТОК СОДЕРЖИМОГО: по одним именам кэш отдавал бы старое тело после пересоздания видов
         // (та же мина, что у `BoneMesher` по имени вида: ассет тот же, кости другие, ошибки нет)
         string key = chassis.speciesName + "#" + Stamp(chassis) + "|" +
                      string.Join(",", grafts.Select(g => g.e.slot + ":" + g.donor.speciesName + "#" + Stamp(g.donor))) +
                      (parts.Count == 0 ? "" : "|калибр:" + PartCalibre + (FollowCarrierJoints ? "|суставы" : "") + "|детали:" + string.Join(",", parts.Select(p => p.part.slot + ":" + p.donor.speciesName + "#" +
-                                                                                               (p.part.mesh != null ? p.part.mesh.GetInstanceID() : 0))));
+                                                                                               (p.part.mesh != null ? p.part.mesh.GetInstanceID() : 0)))) +
+                     (g > 0f ? "|глоб:" + target.speciesName + "#" + Stamp(target) + ":" + g.ToString("F3", System.Globalization.CultureInfo.InvariantCulture) : "");
         if (cache.TryGetValue(key, out var hit) && hit != null) return hit;
 
-        (Bone[] bones, PlaceNest[] nests) assembled = grafts.Count == 0 ? (BodyTree.Clone(chassis.bones), chassis.nests) : Assemble(chassis, grafts, worn, null);
+        // СНАЧАЛА ШАССИ ИДЁТ К ЦЕЛИ, ПОТОМ АУГМЕНТЫ ПО ШВАМ СДВИНУТОГО ТЕЛА (`body = local ∘ global`)
+        var shifted = chassis;
+        if (g > 0f)
+        {
+            shifted = ScriptableObject.CreateInstance<SpeciesSO>();
+            JsonUtility.FromJsonOverwrite(JsonUtility.ToJson(chassis), shifted);
+            shifted.hideFlags = HideFlags.HideAndDontSave;
+            shifted.organs = chassis.organs;
+            shifted.bones = GlobalLayer.Blend(chassis, target, g);
+        }
+        (Bone[] bones, PlaceNest[] nests) assembled;
+        try { assembled = grafts.Count == 0 ? (BodyTree.Clone(shifted.bones), shifted.nests) : Assemble(shifted, grafts, worn, null); }
+        finally { if (shifted != chassis) { if (Application.isPlaying) Object.Destroy(shifted); else Object.DestroyImmediate(shifted); } }
         if (assembled.bones == null) return chassis;
 
         var body = ScriptableObject.CreateInstance<SpeciesSO>();
@@ -98,8 +114,8 @@ public static class ChainSwap
 
     /// <summary>СБОРКА ТЕЛА: `body = local ∘ global` (спека конструктора §5, находка математика консилиума). Глобальный слой —
     /// `zipWith` по форме дерева ШАССИ, а локальный `Replace` эту форму меняет, поэтому определён только этот порядок:
-    /// сначала шасси идёт к виду-цели, затем по швам уже смещённого носителя вставляются части-аугменты. Глобального
-    /// слоя в коде ещё нет — его место ровно здесь, ПЕРЕД циклом подстановок. Порядок самих подстановок на тело не влияет
+    /// сначала шасси идёт к виду-цели (`GlobalLayer`, сдвиг делает `Compose` до вызова), затем по швам уже смещённого
+    /// носителя вставляются части-аугменты. Порядок самих подстановок на тело не влияет
     /// (сторож `ChainSwapTests.SlotOrder_DoesNotChangeBody`); `slotOrder` — только для этого сторожа.</summary>
     static (Bone[] bones, PlaceNest[] nests) Assemble(SpeciesSO chassis,
         List<((string slot, string limb, string upperEnd, Kind kind, string calibre, bool gaze) e, SpeciesSO donor)> grafts,
@@ -107,8 +123,6 @@ public static class ChainSwap
     {
         var tree = BodyTree.From(chassis, out var loose);
         if (tree == null) { Debug.LogWarning($"[тело] {chassis.speciesName}: граф не дерево (корней не один) — не подставляю"); return (null, null); }
-
-        // ГЛОБАЛЬНЫЙ СЛОЙ (идентичность → вид-цель) — сюда, когда появится
 
         var order = slotOrder == null ? grafts : grafts.OrderBy(g => IndexOf(slotOrder, g.e.slot)).ToList();
         foreach (var (e, donor) in order)
