@@ -85,8 +85,8 @@ namespace Chimera.Tests.EditMode
         [Test]
         public void Compose_ShiftsGroupsBeforeAugments()
         {
-            var human = WithGroup("Человек", "бицепс", 0.3f, 0.5f);
-            var wolf = Load("Волк");   // массы шаблона у волка ещё нет — группа человека гаснет по ступени
+            var human = WithGroup("Человек", "проба.глоб", 0.3f, 0.5f);
+            var wolf = Load("Волк");   // такой группы у волка нет — у человека она гаснет по ступени
             var worn = human.organs.ToList();
             foreach (var w in wolf.organs.Where(o => o != null && !o.chassisOnly))
             {
@@ -96,7 +96,7 @@ namespace Chimera.Tests.EditMode
             var (_, step) = GlobalLayer.Step(human, worn);
             Assume.That(step, Is.GreaterThan(0), "состав не дотянул до ступени — проверять нечего");
             var body = ChainSwap.Compose(human, worn);
-            float r = Group(body.bones, "бицепс").rel.r0;
+            float r = Group(body.bones, "проба.глоб").rel.r0;
             Assert.AreEqual(0.5f * (1f - GlobalLayer.G(step)), r, 1e-4f, "глобальный слой не дошёл до сборки");
         }
     }
