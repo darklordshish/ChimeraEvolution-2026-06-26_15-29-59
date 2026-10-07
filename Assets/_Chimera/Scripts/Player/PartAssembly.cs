@@ -43,8 +43,22 @@ public static class PartAssembly
     /// <summary>Шов, на котором аугмент места встаёт на чужое шасси. Нет строки — деталь места ставится целиком.</summary>
     /// <summary>ПОДТЯГИВАНИЕ КИСТИ К РОДНОЙ (спека рук §5, геймдизайнер 06.10: «чуть к кисти подтянуть у человека»): калибр
     /// кисти на не опорной конечности — смесь по запястью и по длине родной кисти носителя, `w` — вес второй меры (0 —
-    /// только запястье). Выбирается кадром; пока не выбран — 0.</summary>
-    public static float HandPull = 0f;
+    /// только запястье). Выбран кадром 07.10: w = 1 — кисть длины родной (сравнение `Docs/models/kadry/2026-10-07-kist-kalibr/`).</summary>
+    public static float HandPull = 1f;
+
+    /// <summary>МАСШТАБ КИСТИ ВОКРУГ СУСТАВА — НАРАСТАЮЩИЙ: 1 в плоскости сустава, `k` на самом дальнем вдоль кости кончике. Общий масштаб
+    /// раздувал бы и кольцо шва — на стыке с предплечьем снова «манжета» (поймал сторож непрерывности, 07.10). Кончик
+    /// приходит туда же, куда при общем масштабе: и длина родной кисти, и земля достигаются.</summary>
+    static void Taper(List<Vector3> verts, List<int> idx, Vector3 joint, Vector3 axis, float k)
+    {
+        float far = idx.Max(i => Vector3.Dot(verts[i] - joint, axis));   // кончик — дальше всех вдоль кости
+        if (far < 1e-4f) return;
+        foreach (int i in idx)
+        {
+            var d = verts[i] - joint;
+            verts[i] = joint + d * Mathf.Lerp(1f, k, Mathf.Clamp01(Vector3.Dot(d, axis) / far));
+        }
+    }
 
     /// <summary>Пределы подгонки кисти на опорной конечности к земле (общий масштаб вокруг сустава).</summary>
     public const float StanceFitMin = 0.67f, StanceFitMax = 1.5f;   // волчьей кисти на лосе нужно ×1.05; предел — от раздувания в разы
@@ -256,13 +270,13 @@ public static class PartAssembly
             }
 
             int start = verts.Count;
-            var past = new List<int>(); var joint = Vector3.zero;   // вершины за концом кости (кисть) и сустав, на котором она сидит
+            var past = new List<int>(); var joint = Vector3.zero; var jointAxis = Vector3.up;   // вершины за концом кости (кисть) и сустав, на котором она сидит
             for (int v = 0; v < n; v++)
             {
                 var p0 = sv[v];
                 if (side < 0) p0.x = -p0.x;
                 var w = sw.Length == n ? sw[v] : new BoneWeight { boneIndex0 = 0, weight0 = 1f };
-                Vector3 acc = Vector3.zero, anchor = Vector3.zero; float total = 0f; bool beyond = true;
+                Vector3 acc = Vector3.zero, anchor = Vector3.zero, axisDir = Vector3.up; float total = 0f; bool beyond = true;
                 var bw = new BoneWeight();
                 void Add(int bi, float wt, int slotIdx)
                 {
@@ -284,6 +298,7 @@ public static class PartAssembly
                         beyond = false;
                     }
                     anchor = f.carrier.MultiplyPoint3x4(new Vector3(0f, f.cLen, 0f));
+                    axisDir = f.carrier.MultiplyVector(Vector3.up).normalized;
                     acc += f.carrier.MultiplyPoint3x4(local) * wt;
                     total += wt;
                     switch (slotIdx) { case 0: bw.boneIndex0 = f.index; bw.weight0 = wt; break; case 1: bw.boneIndex1 = f.index; bw.weight1 = wt; break;
@@ -292,7 +307,7 @@ public static class PartAssembly
                 Add(w.boneIndex0, w.weight0, 0); Add(w.boneIndex1, w.weight1, 1); Add(w.boneIndex2, w.weight2, 2); Add(w.boneIndex3, w.weight3, 3);
                 if (total <= 0f) return null;   // вершина без кости носителя — деталь не встаёт, рисуется полем
                 verts.Add(acc / total);
-                if (beyond) { past.Add(verts.Count - 1); joint = anchor; }
+                if (beyond) { past.Add(verts.Count - 1); joint = anchor; jointAxis = axisDir; }
                 bw.weight0 /= total; bw.weight1 /= total; bw.weight2 /= total; bw.weight3 /= total;
                 weights.Add(bw);
             }
@@ -301,11 +316,7 @@ public static class PartAssembly
             if (hand && !stanceHand && HandPull > 0f && body.handLength > 0f && past.Count > 0)
             {
                 float len = past.Max(i => (verts[i] - joint).magnitude);
-                if (len > 1e-4f)
-                {
-                    float k = Mathf.Pow(body.handLength / len, HandPull);
-                    foreach (int i in past) verts[i] = joint + (verts[i] - joint) * k;
-                }
+                if (len > 1e-4f) Taper(verts, past, joint, jointAxis, Mathf.Pow(body.handLength / len, HandPull));
             }
             if (stanceHand && past.Count > 0)
             {
@@ -315,7 +326,7 @@ public static class PartAssembly
                     // ПОДГОНКА — ПОПРАВКА, А НЕ ЗАМЕНА КАЛИБРА: волчьей кисти на лосе нужно ≈ +5 %. Больше половины — значит,
                     // не сходится сам калибр или план, и раздувать кисть в разы (тест: 40×) — прятать это
                     float k = Mathf.Clamp(joint.y / (joint.y - low), StanceFitMin, StanceFitMax);
-                    foreach (int i in past) verts[i] = joint + (verts[i] - joint) * k;
+                    Taper(verts, past, joint, jointAxis, k);
                 }
             }
             for (int i = 0; i < st.Length; i += 3)

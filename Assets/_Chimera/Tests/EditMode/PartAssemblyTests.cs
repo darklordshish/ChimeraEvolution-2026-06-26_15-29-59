@@ -131,7 +131,9 @@ namespace Chimera.Tests.EditMode
             var fore = human.bones.First(b => b.limb == "перед" && b.mark?.b == "запястье").name;
             Assert.IsFalse(body.fieldSkip != null && body.fieldSkip.Contains(fore), "кисть выключила поле предплечья носителя");
 
-            var go = Build(human, worn);
+            float was = PartAssembly.HandPull; PartAssembly.HandPull = 0f;   // здесь сторожится посадка, а не подтягивание
+            GameObject go;
+            try { go = Build(human, worn); } finally { PartAssembly.HandPull = was; }
             var (r, _) = BoxCentroids(go, 0);
             var hb = human.bones.ToDictionary(b => b.name);
             var (hp, hr) = SkeletonBuilder.Place(hb[fore], hb, new Dictionary<string, (Vector3, Quaternion)>());
@@ -391,6 +393,7 @@ namespace Chimera.Tests.EditMode
             var (hp, hr) = SkeletonBuilder.Place(hb[fore], hb, new Dictionary<string, (Vector3, Quaternion)>());
             var wrist = SkeletonBuilder.Tip(hb[fore], hp, hr);
             float Len() => Baked(Build(human, worn)).Max(p => (p - wrist).magnitude);
+            float was = PartAssembly.HandPull;
             try
             {
                 PartAssembly.HandPull = 0f; float l0 = Len();
@@ -398,7 +401,7 @@ namespace Chimera.Tests.EditMode
                 Assert.AreEqual(human.handLength, l1, human.handLength * 0.1f, "при w = 1 кисть не длины родной");
                 Assert.Greater(Mathf.Abs(l0 - l1), 1e-3f, "ручка ничего не меняет");
             }
-            finally { PartAssembly.HandPull = 0f; }
+            finally { PartAssembly.HandPull = was; }
         }
     }
 }
