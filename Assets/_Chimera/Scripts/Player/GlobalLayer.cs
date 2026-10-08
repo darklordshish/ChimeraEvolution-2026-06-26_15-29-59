@@ -72,26 +72,37 @@ public static class GlobalLayer
         var cPose = Poses(cBy); var tPose = Poses(tBy);
         var tGroups = target.bones.Where(b => !string.IsNullOrEmpty(b.group) && b.rel != null && b.rel.On).ToList();
 
+        // ЦЕЛЬ — ТЕЛО ВИДА НА ПЛАНЕ ШАССИ (спека 08.10): волк на двуногом, а не четвероногий волк. Нет поставки — числа
+        // родного плана цели (как до 08.10) и строка долга в `MissingBodies`, а не молча
+        var body = BodyOn(target, chassis.Plan);
+        bool native = target.Plan == chassis.Plan;
+        if (body == null)
+        {
+            MissingBodies.Add(target.speciesName + " на плане «" + chassis.Plan + "»");
+            body = BodyOn(target, target.Plan);
+            native = true;
+        }
+
         foreach (var c in bones.Where(b => !string.IsNullOrEmpty(b.group) && b.rel != null && b.rel.On).ToList())
         {
-            var t = tGroups.FirstOrDefault(x => x.group == c.group);
-            if (t == null || !cBy.TryGetValue(c.parent ?? "", out var cHost) || !tBy.TryGetValue(t.parent ?? "", out var tHost))
+            if (!body.TryGetValue(c.group, out var t) || !cBy.TryGetValue(c.parent ?? "", out var cHost))
             { c.rel.r0 *= 1f - g; c.rel.r1 *= 1f - g; continue; }   // у цели такой массы нет — гаснет
-            var cf = Frame(cBy, cPose, cHost); var tf = Frame(tBy, tPose, tHost);
-            var cm = Metric(c, cHost, cf); var tm = Metric(t, tHost, tf);
+            var cf = Frame(cBy, cPose, cHost);
+            var cm = Metric(c, cHost, cf);
             Apply(c, cHost, cf, new Metrics
             {
-                u = Mathf.Lerp(cm.u, tm.u, g), len = LogLerp(cm.len, tm.len, g),
-                r0 = LogLerp(cm.r0, tm.r0, g), r1 = LogLerp(cm.r1, tm.r1, g),
-                x = Mathf.Lerp(cm.x, tm.x, g), z = Mathf.Lerp(cm.z, tm.z, g),
+                u = Mathf.Lerp(cm.u, t.u, g), len = LogLerp(cm.len, t.len, g),
+                r0 = LogLerp(cm.r0, t.r0, g), r1 = LogLerp(cm.r1, t.r1, g),
+                x = Mathf.Lerp(cm.x, t.x, g), z = Mathf.Lerp(cm.z, t.z, g),
             });
             c.section = LogLerp(c.section, t.section, g);   // сечение массы — множитель, тоже в логарифмах
             c.depth = LogLerp(c.depth, t.depth, g);
         }
 
-        // у шасси такой массы нет — растёт из нуля на том же сегменте шасси
+        // у шасси такой массы нет — растёт из нуля на том же сегменте шасси. Только когда цель на своём плане: тело на
+        // чужом плане — группы ЕГО шаблона, а шасси этого плана полно по сторожу шаблона
         var have = new HashSet<string>(bones.Where(b => !string.IsNullOrEmpty(b.group)).Select(b => b.group));
-        foreach (var t in tGroups.Where(t => !have.Contains(t.group)))
+        foreach (var t in native ? tGroups.Where(t => !have.Contains(t.group)) : Enumerable.Empty<Bone>())
         {
             if (t.parent == null || !tBy.TryGetValue(t.parent, out var tHost)) continue;
             var end = PlanTemplate.SegmentEnd(target, tBy, tHost);
@@ -110,6 +121,30 @@ public static class GlobalLayer
         var arr = bones.ToArray();
         BodyChains.ResolveRel(arr);   // доли → метры: узлы в долях считаются заново
         return arr;
+    }
+
+    /// <summary>Пары «вид на плане», которых не нашлось в поставке, — долг модельной линии (спека 08.10 §4.5).</summary>
+    public static readonly HashSet<string> MissingBodies = new();
+
+    /// <summary>ТЕЛО ВИДА НА ПЛАНЕ — числа групп в долях масштаба цепи. Свой план — из графа вида; чужой — поставка
+    /// `planBodies`; нет поставки — null. Функция «план → (группа → числа)» тотальна там, где тело задано.</summary>
+    public static Dictionary<string, GroupNumbers> BodyOn(SpeciesSO sp, string plan)
+    {
+        if (sp?.bones == null) return null;
+        if (sp.Plan != plan)
+            return sp.planBodies?.FirstOrDefault(b => b != null && b.plan == plan)?.groups?
+                     .Where(n => n != null && !string.IsNullOrEmpty(n.name)).GroupBy(n => n.name).ToDictionary(x => x.Key, x => x.First());
+        var by = new Dictionary<string, Bone>();
+        foreach (var b in sp.bones) if (b != null && !by.ContainsKey(b.name)) by[b.name] = b;
+        var pose = Poses(by);
+        var body = new Dictionary<string, GroupNumbers>();
+        foreach (var n in sp.bones.Where(b => !string.IsNullOrEmpty(b.group) && b.rel != null && b.rel.On))
+        {
+            if (body.ContainsKey(n.group) || !by.TryGetValue(n.parent ?? "", out var host)) continue;
+            var m = Metric(n, host, Frame(by, pose, host));
+            body[n.group] = new GroupNumbers { name = n.group, u = m.u, len = m.len, r0 = m.r0, r1 = m.r1, x = m.x, z = m.z, section = n.section, depth = n.depth };
+        }
+        return body;
     }
 
     static float LogLerp(float a, float b, float g) => a > 1e-6f && b > 1e-6f ? Mathf.Exp(Mathf.Lerp(Mathf.Log(a), Mathf.Log(b), g)) : Mathf.Lerp(a, b, g);

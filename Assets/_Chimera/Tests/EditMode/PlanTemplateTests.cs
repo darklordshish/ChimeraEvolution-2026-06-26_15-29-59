@@ -44,6 +44,32 @@ namespace Chimera.Tests.EditMode
             }
         }
 
+        /// <summary>ТЕЛА НА ЧУЖИХ ПЛАНАХ (спека 08.10 §4.1): каждая поставка `<вид>-na-*.json` читается без замечаний; самотест
+        /// сверки — полное тело проходит, пропуск группы, лишняя группа, свой план и нулевая длина ловятся.</summary>
+        [Test]
+        public void PlanBodies_AreComplete_AndDetectorCatches()
+        {
+            var templates = Templates();
+            if (templates.Length == 0) Assert.Pass("шаблонов планов ещё нет");
+            foreach (var sp in Species.Select(Load).Where(s => s != null))
+            {
+                SpeciesHandoff.ReadPlanBodies(sp, SpeciesHandoff.Dir + SpeciesHandoff.Translit(sp.speciesName), out var problems);
+                Assert.IsEmpty(problems, sp.speciesName + ":\n" + string.Join("\n", problems));
+            }
+
+            var human = Load("Человек"); var wolf = Load("Волк");
+            var t = templates.First(x => x.plan == human.Plan);
+            PlanBody Body() => new PlanBody { plan = human.Plan, groups = t.groups.Select(g => new GroupNumbers { name = g.name, len = 0.1f, r0 = 0.1f, r1 = 0.1f }).ToArray() };
+            Assert.IsEmpty(SpeciesHandoff.CheckPlanBody(wolf, Body(), t), "полное тело не прошло");
+            var b = Body(); b.groups = b.groups.Skip(1).ToArray();
+            Assert.IsNotEmpty(SpeciesHandoff.CheckPlanBody(wolf, b, t), "пропуск группы не пойман");
+            b = Body(); b.groups = b.groups.Append(new GroupNumbers { name = "нет такой", len = 0.1f }).ToArray();
+            Assert.IsNotEmpty(SpeciesHandoff.CheckPlanBody(wolf, b, t), "лишняя группа не поймана");
+            Assert.IsNotEmpty(SpeciesHandoff.CheckPlanBody(human, Body(), t), "тело на своём плане не поймано");
+            b = Body(); b.groups[0].len = 0f;
+            Assert.IsNotEmpty(SpeciesHandoff.CheckPlanBody(wolf, b, t), "нулевая длина не поймана");
+        }
+
         /// <summary>Самотест детектора: синтетическая группа на плече человека проходит; без долей, с лишней группой шаблона,
         /// с группой вне шаблона и на чужом сегменте — ловится.</summary>
         [Test]

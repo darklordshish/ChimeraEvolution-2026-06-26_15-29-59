@@ -89,7 +89,8 @@ namespace Chimera.Tests.EditMode
         [Test]
         public void CrossSpecies_MassStaysBetween_InChainScale()
         {
-            var human = Load("Человек"); var wolf = Load("Волк");
+            var human = Load("Человек");
+            var wolf = Object.Instantiate(Load("Волк")); wolf.planBodies = null; trash.Add(wolf);   // родные числа волка: сторож единиц, не поставки
             Assume.That(GlobalLayer.HasGroups(human) && GlobalLayer.HasGroups(wolf), "виды не на шаблоне");
             float torsoH = Torso(human), torsoW = Torso(wolf);
             var blended = GlobalLayer.Blend(human, wolf, 0.5f);
@@ -98,6 +99,58 @@ namespace Chimera.Tests.EditMode
                 float h = Group(human.bones, g).r1, w = Group(wolf.bones, g).r1 * torsoH / torsoW, m = Group(blended, g).r1;
                 Assert.That(m, Is.InRange(Mathf.Min(h, w) * 0.98f, Mathf.Max(h, w) * 1.02f), $"«{g}»: человек {h:0.000}, волк в торсе человека {w:0.000}, ступень {m:0.000}");
             }
+        }
+
+        /// <summary>ТЕЛО НА ЧУЖОМ ПЛАНЕ (спека 08.10 §4.2): числа шасси, выгруженные `BodyOn` и поданные как тело цели на его
+        /// плане, при g = 1 возвращают шасси до микрона — формат поставки и смешение говорят на одном языке.</summary>
+        [Test]
+        public void ForeignBody_OfChassisNumbers_IsIdentity()
+        {
+            var human = Load("Человек");
+            Assume.That(GlobalLayer.HasGroups(human), "человек не на шаблоне");
+            var wolf = WithBody("Волк", GlobalLayer.BodyOn(human, human.Plan).Values.ToArray(), human.Plan);
+            var blended = GlobalLayer.Blend(human, wolf, 1f);
+            foreach (var h in human.bones.Where(b => !string.IsNullOrEmpty(b.group)))
+            {
+                var m = Group(blended, h.group);
+                Assert.AreEqual(h.r0, m.r0, 1e-5f, h.group + ": r0");
+                Assert.AreEqual(h.r1, m.r1, 1e-5f, h.group + ": r1");
+                Assert.AreEqual(h.length, m.length, 1e-5f, h.group + ": длина");
+                Assert.That((h.origin - m.origin).magnitude, Is.LessThan(1e-5f), h.group + ": начало");
+            }
+        }
+
+        /// <summary>Цель пары разных планов — ТЕЛО ВИДА НА ПЛАНЕ ШАССИ, а не его родные числа (спека 08.10 §2 п.1): поставка
+        /// «грудная клетка вдвое толще» даёт при g = 1 грудную клетку вдвое толще человеческой.</summary>
+        [Test]
+        public void ForeignBody_IsTheTarget()
+        {
+            var human = Load("Человек");
+            Assume.That(GlobalLayer.HasGroups(human), "человек не на шаблоне");
+            var nums = GlobalLayer.BodyOn(human, human.Plan).Values.Select(n => JsonUtility.FromJson<GroupNumbers>(JsonUtility.ToJson(n))).ToArray();
+            nums.First(n => n.name == "грудная клетка").r1 *= 2f;
+            var wolf = WithBody("Волк", nums, human.Plan);
+            GlobalLayer.MissingBodies.Clear();
+            var blended = GlobalLayer.Blend(human, wolf, 1f);
+            Assert.AreEqual(2f * Group(human.bones, "грудная клетка").r1, Group(blended, "грудная клетка").r1, 1e-5f);
+            Assert.IsEmpty(GlobalLayer.MissingBodies, "тело есть — долга быть не должно");
+        }
+
+        /// <summary>ДОЛГ ТЕЛ НА ЧУЖИХ ПЛАНАХ (спека 08.10 §4.5): пары «вид на плане шасси», которые нужны сейчас, — четыре вида
+        /// на двуногом. Пришла поставка — строку убрать; список сверяется в обе стороны, как долг матрицы.</summary>
+        [Test]
+        public void ForeignBodies_Debt()
+        {
+            var expected = new[] { "Волк", "Лось", "Ёж", "Змея" };   // ждут поставки модельной линии (срезы 1 и 3)
+            var missing = new[] { "Волк", "Лось", "Ёж", "Змея" }.Where(n => GlobalLayer.BodyOn(Load(n), "двуногий") == null).ToArray();
+            CollectionAssert.AreEquivalent(expected, missing, "долг тел на двуногом изменился — поправь список (пришла поставка или пропала)");
+        }
+
+        SpeciesSO WithBody(string species, GroupNumbers[] groups, string plan)
+        {
+            var sp = Object.Instantiate(Load(species)); sp.speciesName = species + "·тело"; trash.Add(sp);
+            sp.planBodies = new[] { new PlanBody { species = species, plan = plan, groups = groups } };
+            return sp;
         }
 
         static float Torso(SpeciesSO sp)

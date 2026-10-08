@@ -75,12 +75,67 @@ public static class SpeciesHandoff
             Debug.Log($"[форма] {species.speciesName}: приняты раскладки из поставки — изменений {n}");
         }
 
+        species.planBodies = ReadPlanBodies(species, stem, out var bodyProblems);
+        foreach (var p in bodyProblems) Debug.LogError($"[тела на планах] {species.speciesName}: {p}");
+        if (species.planBodies.Length > 0) Debug.Log($"[тела на планах] {species.speciesName}: принято {species.planBodies.Length}");
+
         // ДЕТАЛИ (спека конструктора §7, §10): паспорт `handoff/parts/<вид>-*.json` + меш `Models/Parts/<то же имя>.fbx`.
         // Нет файлов — пусто, и это записывается явно (бутстрап не обнуляет поля, которые перестал присваивать)
         species.parts = ReadParts(species, out var partProblems);
         foreach (var p in partProblems) Debug.LogError($"[детали] {species.speciesName}: {p}");
         if (species.parts.Length > 0) Debug.Log($"[детали] {species.speciesName}: принято деталей {species.parts.Length}");
         return graph;
+    }
+
+    /// <summary>ТЕЛА НА ЧУЖИХ ПЛАНАХ (спека `2026-10-08-vid-na-chuzhom-plane.md`): `<вид>-na-*.json`, план — внутри файла.
+    /// Сверка: план чужой (свой вычисляется из графа), группы — ровно группы шаблона плана, числа конечны. Файл с замечанием
+    /// не принимается целиком: полутело хуже отсутствия — отсутствие видно в долге, полутело тянет химеру криво молча.
+    /// Нет файлов — пусто, и это записывается явно (бутстрап не обнуляет поля, которые перестал присваивать).</summary>
+    public static PlanBody[] ReadPlanBodies(SpeciesSO species, string stem, out List<string> problems)
+    {
+        problems = new List<string>();
+        var dir = System.IO.Path.GetDirectoryName(stem);
+        var name = System.IO.Path.GetFileName(stem) + "-na-";
+        if (!System.IO.Directory.Exists(dir)) return new PlanBody[0];
+        var templates = System.IO.Directory.GetFiles(Dir, "plan-*.json").Where(f => !System.IO.Path.GetFileName(f).Contains("__"))
+                                  .Select(f => PlanTemplate.Parse(System.IO.File.ReadAllText(f))).ToList();
+        var bodies = new List<PlanBody>();
+        foreach (var f in System.IO.Directory.GetFiles(dir, name + "*.json"))
+        {
+            var file = System.IO.Path.GetFileName(f);
+            PlanBody b;
+            try { b = JsonUtility.FromJson<PlanBody>(System.IO.File.ReadAllText(f)); }
+            catch (System.Exception e) { problems.Add($"{file}: не читается — {e.Message}"); continue; }
+            var bad = CheckPlanBody(species, b, templates.FirstOrDefault(t => t.plan == b?.plan));
+            if (bad.Count > 0) { problems.AddRange(bad.Select(x => file + ": " + x)); continue; }
+            if (bodies.Any(x => x.plan == b.plan)) { problems.Add($"{file}: второе тело на плане «{b.plan}»"); continue; }
+            bodies.Add(b);
+        }
+        return bodies.ToArray();
+    }
+
+    /// <summary>Замечания к телу на плане: см. `ReadPlanBodies`. Общая сверка для импорта и сторожа.</summary>
+    public static List<string> CheckPlanBody(SpeciesSO species, PlanBody b, PlanTemplate template)
+    {
+        var bad = new List<string>();
+        if (b == null || string.IsNullOrEmpty(b.plan)) { bad.Add("нет поля `plan`"); return bad; }
+        if (b.plan == species.Plan) bad.Add($"план «{b.plan}» — свой: тело на своём плане вычисляется из графа, поставка не нужна");
+        if (template == null) { bad.Add($"шаблона плана «{b.plan}» нет"); return bad; }
+        var names = (b.groups ?? new GroupNumbers[0]).Select(n => n?.name).ToList();
+        foreach (var g in template.groups.Select(g => g.name))
+        {
+            int k = names.Count(n => n == g);
+            if (k != 1) bad.Add($"группа «{g}» — записей {k}, нужна одна");
+        }
+        foreach (var n in names.Where(n => !template.groups.Any(g => g.name == n))) bad.Add($"группа «{n}» — нет в шаблоне «{b.plan}»");
+        foreach (var n in b.groups ?? new GroupNumbers[0])
+        {
+            if (n == null) continue;
+            var v = new[] { n.u, n.len, n.r0, n.r1, n.x, n.z, n.section, n.depth };
+            if (v.Any(x => float.IsNaN(x) || float.IsInfinity(x))) bad.Add($"группа «{n.name}» — нечисло");
+            else if (n.len <= 0f || n.r0 < 0f || n.r1 < 0f || n.section <= 0f || n.depth <= 0f) bad.Add($"группа «{n.name}» — длина, радиусы и сечения должны быть положительны");
+        }
+        return bad;
     }
 
     // ШОВ В ПАСПОРТЕ — В МЕТРАХ: `ellipse_m` (полуоси) и `ring_m` (точки кольца). Импорт читал `ellipse`, которого в паспорте

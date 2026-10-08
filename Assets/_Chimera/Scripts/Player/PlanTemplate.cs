@@ -113,3 +113,24 @@ public class GroupPair
 {
     public string a, b;
 }
+
+/// <summary>ТЕЛО ВИДА НА ПЛАНЕ (спека `2026-10-08-vid-na-chuzhom-plane.md`): числа групп шаблона плана. На своём плане вид их
+/// не хранит — они вычисляются из графа (`GlobalLayer.BodyOn`); на чужом — поставка модельной линии
+/// `Docs/models/handoff/<вид>-na-<план>.json`, снятая с последней колонки листа ступеней («волк на двуногом»).</summary>
+[System.Serializable]
+public class PlanBody
+{
+    public string species, plan;
+    public GroupNumbers[] groups;
+}
+
+/// <summary>Числа одной группы в ДОЛЯХ МАСШТАБА ЦЕПИ (спека 08.10 §2 п.4): `u` — начало вдоль сегмента; `len`, `r0`, `r1`,
+/// `x`, `z` — метры, делённые на масштаб цепи (сегмент между метками; у хребта — торс между корнями конечностей);
+/// `section`, `depth` — множители сечения самой массы. От костей вида не зависят, метров не содержат.</summary>
+[System.Serializable]
+public class GroupNumbers
+{
+    public string name;
+    public float u, len, r0, r1, x, z;
+    public float section = 1f, depth = 1f;
+}

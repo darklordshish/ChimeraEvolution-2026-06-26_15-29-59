@@ -106,7 +106,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925335963517585407
+    - rid: 925335981820477440
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -166,7 +166,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925335963569750016
+    - rid: 925335981820477441
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -344,7 +344,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925335963569750017
+    - rid: 925335981820477442
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -1990,6 +1990,7 @@ MonoBehaviour:
   stanceLimbs:
   - "\u041D\u043E\u0433\u0438"
   handLength: 0.2
+  planBodies: []
   parts: []
   skinCell: 0.042
   skinBlend: 0.05
@@ -1998,7 +1999,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 925335963517585407
+    - rid: 925335981820477440
       type: {class: LimbStrikeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 8
@@ -2008,7 +2009,7 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.45
         cooldown: 1.1
-    - rid: 925335963569750016
+    - rid: 925335981820477441
       type: {class: KickData, ns: , asm: Chimera.Runtime}
       data:
         damage: 4
@@ -2016,7 +2017,7 @@ MonoBehaviour:
         reach: 1.8
         radius: 1.6
         cooldown: 1
-    - rid: 925335963569750017
+    - rid: 925335981820477442
       type: {class: ScreamData, ns: , asm: Chimera.Runtime}
       data:
         cooldown: 12
