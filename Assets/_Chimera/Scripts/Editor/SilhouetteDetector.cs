@@ -48,13 +48,14 @@ public static class SilhouetteDetector
         sb.AppendLine("| вид | ракурс | IoU | масштаб листа | маска тела |");
         sb.AppendLine("|---|---|---|---|---|");
         int measured = 0;
+        var zones = new StringBuilder();
         foreach (var (asset, file) in Species)
         {
             var sp = AssetDatabase.LoadAssetAtPath<SpeciesSO>($"Assets/_Chimera/Data/{asset}.asset");
             if (sp == null) continue;
             foreach (var (view, eye) in Views)
             {
-                var body = BodyMask(sp, eye);
+                var body = BodyMask(sp, eye, out float mpp);
                 string bodyPng = $"{file}-{view}.png";
                 File.WriteAllBytes(OutDir + bodyPng, ToPng(body));
                 var target = TargetMask(asset, view);
@@ -62,8 +63,13 @@ public static class SilhouetteDetector
                 if (target != null)
                 {
                     var (best, s) = Compare(body, target);
-                    var (bm, sm) = Compare(body, Mirror(target));   // профиль листа смотрит в другую сторону
-                    if (bm > best) { best = bm; s = sm; }
+                    var mirrored = Mirror(target);
+                    var (bm, sm) = Compare(body, mirrored);   // профиль листа смотрит в другую сторону
+                    if (bm > best) { best = bm; s = sm; target = mirrored; }
+                    zones.AppendLine($"### {asset} · {view}");
+                    zones.AppendLine();
+                    if (best < 0.3f) zones.AppendLine("> IoU ниже 0.3 — тело и лист в разных позах (змея на листе с поднятой головой или клубком): пояса по высоте не говорящие.\n");
+                    zones.AppendLine(Zones(body, target, mpp, view == "profile"));
                     iou = best.ToString("F2", CultureInfo.InvariantCulture);
                     scale = s.ToString("F2", CultureInfo.InvariantCulture);
                     measured++;
@@ -71,6 +77,14 @@ public static class SilhouetteDetector
                 sb.AppendLine($"| {asset} | {view} | {iou} | {scale} | `Силуэты/{bodyPng}` |");
             }
         }
+        sb.AppendLine();
+        sb.AppendLine("## Где и насколько — по поясам");
+        sb.AppendLine();
+        sb.AppendLine("> Лист приведён к ВЫСОТЕ тела (не к масштабу лучшего IoU — тот прячет ошибку пропорций), метры — тела.");
+        sb.AppendLine("> «тело к листу» ×1.00 — совпало; ×0.70 — тело на 30 % уже/тоньше листа. Пояса длины — каждый в долях своей длины.");
+        sb.AppendLine("> Низ туши — от верха вниз до первого просвета: рога над головой (лось) дают просвет раньше — там пояс длины не о туше.");
+        sb.AppendLine();
+        sb.Append(zones);
         File.WriteAllText(Report, sb.ToString());
         AssetDatabase.Refresh();
         return $"{Report} обновлена: сверено {measured} из {Species.Length * Views.Length} (маски листов есть не у всех)";
@@ -93,8 +107,12 @@ public static class SilhouetteDetector
 
     /// <summary>Маска тела вида в ракурсе `eye`: тело строится в стороне от сцены, ортокамера по оси, фон белый — фигура
     /// всё, что от фона отличается.</summary>
-    public static bool[,] BodyMask(SpeciesSO sp, Vector3 eye)
+    public static bool[,] BodyMask(SpeciesSO sp, Vector3 eye) => BodyMask(sp, eye, out _);
+
+    /// <summary>То же с масштабом кадра: `metresPerPx` — метров тела на пиксель маски (ортокамера).</summary>
+    public static bool[,] BodyMask(SpeciesSO sp, Vector3 eye, out float metresPerPx)
     {
+        metresPerPx = 0f;
         var origin = new Vector3(0f, -5000f, 0f);
         var go = new GameObject("~СИЛУЭТ");
         go.transform.position = origin;
@@ -114,6 +132,7 @@ public static class SilhouetteDetector
             cam.backgroundColor = Color.white;
             float extent = Mathf.Max(b.size.y, Vector3.Scale(b.size, Vector3.one - Abs(eye)).magnitude) * 0.55f;
             cam.orthographicSize = extent;
+            metresPerPx = 2f * extent / Px;
             cam.transform.position = b.center + eye * (b.extents.magnitude + 5f);
             cam.transform.rotation = Quaternion.LookRotation(-eye, Vector3.up);
             cam.nearClipPlane = 0.1f;
@@ -219,6 +238,99 @@ public static class SilhouetteDetector
             if (iou > best) { best = iou; bestS = s; }
         }
         return (best, bestS);
+    }
+
+    /// <summary>ГДЕ И НАСКОЛЬКО (спека хранилища, этап 3): IoU — одно число, а модельной линии нужно «голова уже на 30%,
+    /// брюхо ниже на 8 см». Лист приводится к ВЫСОТЕ тела (а не к масштабу лучшего IoU — тот прячет ошибку пропорций в
+    /// масштаб), метры — по кадру тела. Пояса по высоте (сверху вниз) — ширина силуэта; в профиль ещё пояса по длине (от
+    /// хвоста к морде, каждый в долях СВОЕЙ длины) — верх, низ и толщина. Итог — крупнейшие расхождения словами.</summary>
+    public static string Zones(bool[,] body, bool[,] target, float mpp, bool profile, int bands = 10)
+    {
+        var bb = Box(body); var tb = Box(target);
+        if (bb.w == 0 || tb.w == 0 || mpp <= 0f) return "";
+        float H = bb.h * mpp, tm = H / tb.h;   // метров на пиксель: тело — по кадру, лист — приведённый к высоте тела
+        var sb = new StringBuilder();
+        var diffs = new List<(string where, float b, float t, bool level)>();   // level — высота края: «выше/ниже», а не отношение
+        string M(float v) => v.ToString("0.00", CultureInfo.InvariantCulture);
+        float lb = bb.w * mpp, lt = tb.w * tm;
+        sb.AppendLine($"высота {M(H)} м (лист приведён к ней) · {(profile ? "длина" : "ширина")} силуэта: тело {M(lb)} м, лист {M(lt)} м ({Pct(lb, lt)})");
+        if (Mathf.Abs(Mathf.Log(lb / lt)) > 0.05f) diffs.Add(((profile ? "длина" : "ширина") + " силуэта целиком", lb, lt, false));
+
+        sb.AppendLine();
+        sb.AppendLine("| пояс высоты, м | ширина тела | ширина листа | тело к листу |");
+        sb.AppendLine("|---|---|---|---|");
+        for (int i = 0; i < bands; i++)
+        {
+            float f1 = 1f - (float)i / bands, f0 = 1f - (float)(i + 1) / bands;   // сверху вниз
+            float wb = RowExtent(body, bb, f0, f1) * mpp, wt = RowExtent(target, tb, f0, f1) * tm;
+            string band = $"{M(f0 * H)}–{M(f1 * H)}";
+            sb.AppendLine($"| {band} | {M(wb)} | {M(wt)} | {Pct(wb, wt)} |");
+            if (Mathf.Max(wb, wt) > 0.04f * H) diffs.Add(($"ширина на высоте {band} м", wb, wt, false));
+        }
+        if (profile)
+        {
+            sb.AppendLine();
+            sb.AppendLine("| пояс длины (от хвоста к морде) | верх тела / листа, м | низ туши тела / листа, м | толщина туши: тело к листу |");
+            sb.AppendLine("|---|---|---|---|");
+            for (int j = 0; j < bands; j++)
+            {
+                float g0 = (float)j / bands, g1 = (float)(j + 1) / bands;
+                var (tb0, bb0) = ColumnSpan(body, bb, g0, g1); var (tt0, bt0) = ColumnSpan(target, tb, g0, g1);
+                float topB = tb0 * mpp, botB = bb0 * mpp, topT = tt0 * tm, botT = bt0 * tm;
+                string band = $"{j * 100 / bands}–{(j + 1) * 100 / bands}%";
+                sb.AppendLine($"| {band} | {M(topB)} / {M(topT)} | {M(botB)} / {M(botT)} | {Pct(topB - botB, topT - botT)} |");
+                if (Mathf.Max(topB - botB, topT - botT) > 0.04f * H) diffs.Add(($"толщина туши в поясе длины {band}", topB - botB, topT - botT, false));
+                if (Mathf.Abs(topB - topT) > 0.05f * H) diffs.Add(($"верх силуэта в поясе длины {band}", topB, topT, true));
+                if (Mathf.Abs(botB - botT) > 0.05f * H) diffs.Add(($"низ туши в поясе длины {band}", botB, botT, true));
+            }
+        }
+        // РАНГ — РАЗНИЦА В МЕТРАХ: отношение у края возле земли (низ 0.01 м против 0.32) раздувается в тысячи процентов
+        var top = diffs.OrderByDescending(d => Mathf.Abs(d.b - d.t)).Take(6).ToList();
+        if (top.Count > 0)
+        {
+            sb.AppendLine();
+            sb.AppendLine("**Крупнейшие расхождения:** " + string.Join("; ", top.Select(d =>
+                d.level ? $"{d.where}: тело {M(d.b)} м, лист {M(d.t)} м — {(d.b < d.t ? "ниже" : "выше")} на {M(Mathf.Abs(d.b - d.t))} м"
+                        : $"{d.where}: тело {M(d.b)} м, лист {M(d.t)} м — {(d.b < d.t ? "меньше" : "больше")} на {(d.t > 1e-4f ? Mathf.Abs(1f - d.b / d.t) * 100f : 0f):0}%")) + ".");
+        }
+        return sb.ToString();
+    }
+
+    static string Pct(float b, float t) => t <= 1e-6f ? "—" : (b / t).ToString("×0.00", CultureInfo.InvariantCulture);
+
+    /// <summary>Наибольший поперечник маски в полосе высоты [f0, f1] (доли высоты фигуры от низа), пикселей.</summary>
+    static float RowExtent(bool[,] m, (int x, int y, int w, int h) b, float f0, float f1)
+    {
+        int y0 = b.y + Mathf.FloorToInt(f0 * b.h), y1 = b.y + Mathf.Max(Mathf.FloorToInt(f0 * b.h) + 1, Mathf.CeilToInt(f1 * b.h));
+        int best = 0;
+        for (int y = y0; y < Mathf.Min(y1, b.y + b.h); y++)
+        {
+            int l = -1, r = -1;
+            for (int x = b.x; x < b.x + b.w; x++) if (m[x, y]) { if (l < 0) l = x; r = x; }
+            if (l >= 0) best = Mathf.Max(best, r - l + 1);
+        }
+        return best;
+    }
+
+    /// <summary>Верх фигуры и низ ТУШИ (пикселей над её низом) в полосе длины [g0, g1] — доли своей длины слева направо.
+    /// Низ туши — от верха вниз до первого просвета: в поясе с лапой «низ силуэта» — земля, и разница поставленных
+    /// иначе лап читалась бы как «брюхо на метр выше». По каждому столбцу пояса, затем медиана.</summary>
+    static (float top, float bottom) ColumnSpan(bool[,] m, (int x, int y, int w, int h) b, float g0, float g1)
+    {
+        int x0 = b.x + Mathf.FloorToInt(g0 * b.w), x1 = b.x + Mathf.Max(Mathf.FloorToInt(g0 * b.w) + 1, Mathf.CeilToInt(g1 * b.w));
+        var tops = new List<int>(); var bots = new List<int>();
+        for (int x = x0; x < Mathf.Min(x1, b.x + b.w); x++)
+        {
+            int y = b.y + b.h - 1;
+            while (y >= b.y && !m[x, y]) y--;
+            if (y < b.y) continue;
+            int t = y;
+            while (y >= b.y && m[x, y]) y--;
+            tops.Add(t - b.y + 1); bots.Add(y + 1 - b.y);
+        }
+        if (tops.Count == 0) return (0f, 0f);
+        tops.Sort(); bots.Sort();
+        return (tops[tops.Count / 2], bots[bots.Count / 2]);
     }
 
     static (int x, int y, int w, int h) Box(bool[,] m)
