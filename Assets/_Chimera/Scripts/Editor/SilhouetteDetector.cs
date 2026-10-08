@@ -11,22 +11,23 @@ using UnityEngine;
 /// стыки; ни то ни другое не говорит, похоже ли тело на лист, — а цель формы именно лист, не фото.
 ///
 /// Камера — как у стенда модельной линии (`Kadr.cs`): `profile` — глаз с +X, морда вправо; `front` — глаз с +Z. Маски
-/// листов — `Docs/models/handoff/silhouettes/&lt;вид&gt;-&lt;ракурс&gt;.png` (фигура тёмная на белом или на прозрачном, низ —
-/// земля). Сравнение — логикой сверки линии (`Tools/Blender/kritik/igra_sverka.py`): масштаб листа подбирается в ±15 % от
+/// листов — из ВИТРИНЫ референсов (спека `2026-10-08-hranilishche-referensov.md`: мерить только по витрине):
+/// `Референсы/витрина/&lt;вид&gt;/masks/орто-&lt;ракурс&gt;.png`, а нет ортопары — `вид-&lt;ракурс&gt;.png` (фигура тёмная на белом,
+/// низ — земля). Профиль листа может смотреть в любую сторону — сравнивается и отражённая маска, берётся лучшая. Сравнение — логикой сверки линии (`Tools/Blender/kritik/igra_sverka.py`): масштаб листа подбирается в ±15 % от
 /// высоты тела (у листа метров нет), фигуры выравниваются по земле и по центру; итог — лучший IoU и его масштаб. Далёкий
 /// от 1 масштаб значит, что пропорции расходятся сильнее, чем высота.
 ///
 /// Маски тел кладутся рядом (`Docs/Диаграммы/Силуэты/`) — модельной линии видно, с чем её мерили.</summary>
 public static class SilhouetteDetector
 {
-    public const string TargetDir = "Docs/models/handoff/silhouettes/";
+    public const string TargetDir = "Референсы/витрина/";
     const string OutDir = "Docs/Диаграммы/Силуэты/";
     const string Report = "Docs/Диаграммы/СИЛУЭТЫ.md";
     const int Px = 384;   // сторона кадра маски тела
 
     public static readonly (string asset, string file)[] Species =
     {
-        ("Волк", "volk"), ("Лось", "los"), ("Ёж", "ezh"), ("Змея", "zmeya"), ("Человек", "chelovek"),
+        ("Волк", "volk"), ("Лось", "los"), ("Ёж", "ezh"), ("Змея", "zmeya"), ("Человек", "chelovek"),   // file — имя маски тела
     };
     public static readonly (string name, Vector3 eye)[] Views = { ("profile", Vector3.right), ("front", Vector3.forward) };
 
@@ -41,7 +42,7 @@ public static class SilhouetteDetector
         sb.AppendLine("# Сверка силуэтов с листами");
         sb.AppendLine();
         sb.AppendLine("> Генерируется `chimera-silhouette` (`SilhouetteDetector`). Тело — настоящим билдером, маска — ортокамерой;");
-        sb.AppendLine("> лист — маска модельной линии `Docs/models/handoff/silhouettes/`. IoU — лучший в ±15 % масштаба листа;");
+        sb.AppendLine("> лист — маска витрины `Референсы/витрина/<вид>/masks/` (`орто-*`, иначе `вид-*`; профиль — и отражённый). IoU — лучший в ±15 % масштаба листа;");
         sb.AppendLine("> 1.00 — силуэты совпали, масштаб далёкий от 1 — пропорции расходятся сильнее высоты.");
         sb.AppendLine();
         sb.AppendLine("| вид | ракурс | IoU | масштаб листа | маска тела |");
@@ -56,11 +57,13 @@ public static class SilhouetteDetector
                 var body = BodyMask(sp, eye);
                 string bodyPng = $"{file}-{view}.png";
                 File.WriteAllBytes(OutDir + bodyPng, ToPng(body));
-                var target = LoadMask(TargetDir + $"{file}-{view}.png");
+                var target = TargetMask(asset, view);
                 string iou = "— нет маски листа", scale = "";
                 if (target != null)
                 {
                     var (best, s) = Compare(body, target);
+                    var (bm, sm) = Compare(body, Mirror(target));   // профиль листа смотрит в другую сторону
+                    if (bm > best) { best = bm; s = sm; }
                     iou = best.ToString("F2", CultureInfo.InvariantCulture);
                     scale = s.ToString("F2", CultureInfo.InvariantCulture);
                     measured++;
@@ -71,6 +74,21 @@ public static class SilhouetteDetector
         File.WriteAllText(Report, sb.ToString());
         AssetDatabase.Refresh();
         return $"{Report} обновлена: сверено {measured} из {Species.Length * Views.Length} (маски листов есть не у всех)";
+    }
+
+    /// <summary>Маска листа из витрины: папка вида — его имя строчными (`Волк` → `волк`), ортопара важнее вида.</summary>
+    static bool[,] TargetMask(string asset, string view)
+    {
+        string dir = TargetDir + asset.ToLowerInvariant() + "/masks/";
+        return LoadMask(dir + $"орто-{view}.png") ?? LoadMask(dir + $"вид-{view}.png");
+    }
+
+    static bool[,] Mirror(bool[,] m)
+    {
+        int w = m.GetLength(0), h = m.GetLength(1);
+        var r = new bool[w, h];
+        for (int x = 0; x < w; x++) for (int y = 0; y < h; y++) r[x, y] = m[w - 1 - x, y];
+        return r;
     }
 
     /// <summary>Маска тела вида в ракурсе `eye`: тело строится в стороне от сцены, ортокамера по оси, фон белый — фигура
