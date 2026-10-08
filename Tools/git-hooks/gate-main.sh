@@ -36,10 +36,12 @@ $out"
 say "детектор спек чист"
 
 # 2. EditMode — если публикация задевает Unity. quotePath=false: иначе git берёт кириллический путь в кавычки
-# ("Assets/_Chimera/Data/\320\222…"), `^Assets/` не совпадает, и правка ассета вида уходила без тестов (поймано 24.09)
+# ("Assets/_Chimera/Data/\320\222…"), `^Assets/` не совпадает, и правка ассета вида уходила без тестов (поймано 24.09).
+# Поставки `Docs/models/handoff/` — тоже Unity: их читают `SpeciesHandoff` и тесты (`PlanTemplateTests`,
+# `PartsImportTests`), сломанная поставка роняет EditMode (предложение модельной линии 07.10)
 base=$(git merge-base "$sha" "refs/remotes/$remote/main" 2>/dev/null || true)
 if [ "${CHIMERA_GATE_TESTS:-}" != "always" ] && [ -n "$base" ] &&
-   ! git -c core.quotePath=false diff --name-only "$base" "$sha" | grep -qE '^(Assets|Packages|ProjectSettings|Tools/Agent)/'; then
+   ! git -c core.quotePath=false diff --name-only "$base" "$sha" | grep -qE '^(Assets|Packages|ProjectSettings|Tools/Agent|Docs/models/handoff)/'; then
   say "Unity не задет — тесты не нужны"
   exit 0
 fi
