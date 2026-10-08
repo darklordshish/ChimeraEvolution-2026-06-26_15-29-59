@@ -154,7 +154,7 @@ namespace Chimera.Tests.EditMode
         [Test]
         public void ForeignBodies_Debt()
         {
-            var expected = new[] { "Волк", "Лось", "Ёж", "Змея" };   // ждут поставки модельной линии (срезы 1 и 3)
+            var expected = new[] { "Лось", "Ёж", "Змея" };   // ждут поставки модельной линии (срез 3); волк на двуногом — поставка 08.10
             var missing = new[] { "Волк", "Лось", "Ёж", "Змея" }.Where(n => GlobalLayer.BodyOn(Load(n), "двуногий") == null).ToArray();
             CollectionAssert.AreEquivalent(expected, missing, "долг тел на двуногом изменился — поправь список (пришла поставка или пропала)");
         }
