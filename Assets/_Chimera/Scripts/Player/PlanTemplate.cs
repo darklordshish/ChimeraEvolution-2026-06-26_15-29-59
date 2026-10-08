@@ -122,6 +122,19 @@ public class PlanBody
 {
     public string species, plan;
     public GroupNumbers[] groups;
+    public HeadNumbers head;   // посадка шеи и головы (спека 08.10 §2 п.3); `neckLen` = 0 — не задано, голова не смешивается
+}
+
+/// <summary>ШЕЯ И ГОЛОВА В ГЛОБАЛЬНОМ СЛОЕ (спека 08.10 §2 п.3). Длины и радиусы — в долях торса (между корнями задних и
+/// передних конечностей); наклоны — градусы в сагиттальной плоскости: `neckPitch` — шея от оси торса к брюху (+) или к
+/// спине (−), `headPitch` — голова от оси шеи, так же. Ось головы — соглашение ПЛАНА: у двуногого — вдоль черепа вверх,
+/// у четвероногих — вдоль морды; поэтому тело на чужом плане задаётся в соглашении того плана.</summary>
+[System.Serializable]
+public class HeadNumbers
+{
+    public float neckLen, neckR0, neckR1, neckPitch;
+    public float headLen, headR0, headR1, headPitch;
+    public bool On => neckLen > 0f && headLen > 0f;
 }
 
 /// <summary>Числа одной группы в ДОЛЯХ МАСШТАБА ЦЕПИ (спека 08.10 §2 п.4): `u` — начало вдоль сегмента; `len`, `r0`, `r1`,

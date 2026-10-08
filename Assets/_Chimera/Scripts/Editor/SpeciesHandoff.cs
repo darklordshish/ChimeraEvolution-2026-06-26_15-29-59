@@ -135,6 +135,15 @@ public static class SpeciesHandoff
             if (v.Any(x => float.IsNaN(x) || float.IsInfinity(x))) bad.Add($"группа «{n.name}» — нечисло");
             else if (n.len <= 0f || n.r0 < 0f || n.r1 < 0f || n.section <= 0f || n.depth <= 0f) bad.Add($"группа «{n.name}» — длина, радиусы и сечения должны быть положительны");
         }
+        var h = b.head;   // необязателен: нет — голова к этому телу не смешивается
+        if (h != null && (h.neckLen != 0f || h.headLen != 0f))
+        {
+            var v = new[] { h.neckLen, h.neckR0, h.neckR1, h.neckPitch, h.headLen, h.headR0, h.headR1, h.headPitch };
+            if (v.Any(x => float.IsNaN(x) || float.IsInfinity(x))) bad.Add("`head` — нечисло");
+            else if (h.neckLen <= 0f || h.headLen <= 0f || h.neckR0 <= 0f || h.neckR1 <= 0f || h.headR0 <= 0f || h.headR1 <= 0f)
+                bad.Add("`head` — длины и радиусы шеи и головы должны быть положительны");
+            else if (Mathf.Abs(h.neckPitch) > 180f || Mathf.Abs(h.headPitch) > 180f) bad.Add("`head` — наклон вне ±180°");
+        }
         return bad;
     }
 

@@ -13,7 +13,9 @@ namespace Chimera.Tests.EditMode
     {
         readonly List<Object> trash = new();
         [SetUp] public void SetUp() => ChainSwap.ResetCache();
-        [TearDown] public void TearDown() { foreach (var o in trash) if (o != null) Object.DestroyImmediate(o); trash.Clear(); ChainSwap.ResetCache(); }
+        float kHead;
+        [SetUp] public void KeepKHead() => kHead = GlobalLayer.KHead;
+        [TearDown] public void TearDown() { foreach (var o in trash) if (o != null) Object.DestroyImmediate(o); trash.Clear(); ChainSwap.ResetCache(); GlobalLayer.KHead = kHead; }
 
         static SpeciesSO Load(string n) => AssetDatabase.LoadAssetAtPath<SpeciesSO>($"Assets/_Chimera/Data/{n}.asset");
 
@@ -109,7 +111,17 @@ namespace Chimera.Tests.EditMode
             var human = Load("Человек");
             Assume.That(GlobalLayer.HasGroups(human), "человек не на шаблоне");
             var wolf = WithBody("Волк", GlobalLayer.BodyOn(human, human.Plan).Values.ToArray(), human.Plan);
+            wolf.planBodies[0].head = GlobalLayer.HeadOn(human, human.Plan);
+            GlobalLayer.KHead = 1f;
             var blended = GlobalLayer.Blend(human, wolf, 1f);
+            var hBy = human.bones.ToDictionary(b => b.name); var mBy = blended.ToDictionary(b => b.name);
+            foreach (var n in new[] { "шея", "голова" })
+            {
+                var (hp, hr) = PoseOf(hBy, hBy[n]); var (mp, mr) = PoseOf(mBy, mBy[n]);
+                Assert.That((hp - mp).magnitude, Is.LessThan(1e-4f), n + ": начало");
+                Assert.That(Quaternion.Angle(hr, mr), Is.LessThan(0.01f), n + ": поворот");
+                Assert.AreEqual(hBy[n].length, mBy[n].length, 1e-5f, n + ": длина");
+            }
             foreach (var h in human.bones.Where(b => !string.IsNullOrEmpty(b.group)))
             {
                 var m = Group(blended, h.group);
@@ -144,6 +156,44 @@ namespace Chimera.Tests.EditMode
             var expected = new[] { "Волк", "Лось", "Ёж", "Змея" };   // ждут поставки модельной линии (срезы 1 и 3)
             var missing = new[] { "Волк", "Лось", "Ёж", "Змея" }.Where(n => GlobalLayer.BodyOn(Load(n), "двуногий") == null).ToArray();
             CollectionAssert.AreEquivalent(expected, missing, "долг тел на двуногом изменился — поправь список (пришла поставка или пропала)");
+        }
+
+        /// <summary>ПОСАДКА ГОЛОВЫ (спека 08.10 §2 п.3): при g = 1 и `KHead` = 1 шея и голова встают ровно под наклоны и в
+        /// пропорции цели; голова остаётся на конце шеи; при `KHead` = 0 шея и голова шасси не тронуты.</summary>
+        [Test]
+        public void Head_TakesTargetPosture_ScaledByKHead()
+        {
+            var human = Load("Человек");
+            var h = GlobalLayer.HeadOn(human, human.Plan);
+            Assume.That(h != null && h.On, "у человека не нашлось шеи и головы");
+            var t = JsonUtility.FromJson<HeadNumbers>(JsonUtility.ToJson(h));
+            t.neckPitch += 30f; t.headPitch -= 15f; t.neckLen *= 1.5f; t.headR0 *= 1.3f;
+            var wolf = WithBody("Волк", GlobalLayer.BodyOn(human, human.Plan).Values.ToArray(), human.Plan);
+            wolf.planBodies[0].head = t;
+
+            GlobalLayer.KHead = 1f;
+            var shifted = Object.Instantiate(human); shifted.speciesName = "Человек·голова"; trash.Add(shifted);
+            shifted.bones = GlobalLayer.Blend(human, wolf, 1f);
+            var m = GlobalLayer.HeadOn(shifted, shifted.Plan);
+            Assert.AreEqual(t.neckPitch, m.neckPitch, 0.05f, "наклон шеи");
+            Assert.AreEqual(t.headPitch, m.headPitch, 0.05f, "наклон головы от шеи");
+            Assert.AreEqual(t.neckLen, m.neckLen, 1e-4f, "длина шеи");
+            Assert.AreEqual(t.headR0, m.headR0, 1e-4f, "радиус головы");
+
+            // голова на конце шеи: зазор между концом шеи и началом головы тот же, что у шасси
+            float Gap(Bone[] bones)
+            {
+                var by = bones.ToDictionary(b => b.name);
+                var (np, nr) = PoseOf(by, by["шея"]); var (hp, _) = PoseOf(by, by["голова"]);
+                return (np + nr * Vector3.up * by["шея"].length - hp).magnitude;
+            }
+            Assert.AreEqual(Gap(human.bones), Gap(shifted.bones), 1e-4f, "голова оторвалась от шеи или вошла в неё");
+
+            GlobalLayer.KHead = 0f;
+            var untouched = GlobalLayer.Blend(human, wolf, 1f).ToDictionary(b => b.name);
+            var hBy = human.bones.ToDictionary(b => b.name);
+            foreach (var n in new[] { "шея", "голова" })
+                Assert.That(Quaternion.Angle(PoseOf(hBy, hBy[n]).Item2, PoseOf(untouched, untouched[n]).Item2), Is.LessThan(0.01f), n + ": KHead = 0, а поворот изменился");
         }
 
         SpeciesSO WithBody(string species, GroupNumbers[] groups, string plan)

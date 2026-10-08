@@ -118,10 +118,106 @@ public static class GlobalLayer
             cBy[n.name] = n;
         }
 
+        // ШЕЯ И ГОЛОВА — частью силы ступени (`KHead`): пропорции, наклон, посадка; блоки головы едут за узлами
+        float gh = g * Mathf.Clamp01(KHead);
+        var th = HeadOn(target, chassis.Plan);
+        if (gh > 0f && th != null && th.On) BlendHead(bones, cBy, th, gh);
+
         var arr = bones.ToArray();
         BodyChains.ResolveRel(arr);   // доли → метры: узлы в долях считаются заново
         return arr;
     }
+
+    /// <summary>Доля силы ступени, которая достаётся шее и голове (спека 08.10 §2 п.3: «частично должна меняться»).
+    /// Подбирается кадром ступеней с аугментами и без.</summary>
+    public static float KHead = 0.5f;
+
+    /// <summary>Шея и голова вида на плане: свой план — из графа, чужой — блок `head` поставки (нет — null).</summary>
+    public static HeadNumbers HeadOn(SpeciesSO sp, string plan)
+    {
+        if (sp?.bones == null) return null;
+        if (sp.Plan != plan)
+        {
+            var h = sp.planBodies?.FirstOrDefault(b => b != null && b.plan == plan)?.head;
+            return h != null && h.On ? h : null;
+        }
+        var by = new Dictionary<string, Bone>();
+        foreach (var b in sp.bones) if (b != null && !by.ContainsKey(b.name)) by[b.name] = b;
+        return MeasureHead(by, Poses(by));
+    }
+
+    static HeadNumbers MeasureHead(Dictionary<string, Bone> by, Dictionary<string, (Vector3 pos, Quaternion rot)> pose)
+    {
+        var neck = ChainRoot(by, "шея"); var head = ChainRoot(by, "голова");
+        if (neck == null || head == null || !TorsoAxes(by, pose, out var d, out var v, out var S)) return null;
+        float pn = Pitch(pose[neck.name].rot * Vector3.up, d, v), ph = Pitch(pose[head.name].rot * Vector3.up, d, v);
+        return new HeadNumbers
+        {
+            neckLen = neck.length / S, neckR0 = neck.r0 / S, neckR1 = neck.r1 / S, neckPitch = pn,
+            headLen = head.length / S, headR0 = head.r0 / S, headR1 = head.r1 / S, headPitch = Mathf.DeltaAngle(pn, ph),
+        };
+    }
+
+    static void BlendHead(List<Bone> bones, Dictionary<string, Bone> by, HeadNumbers t, float g)
+    {
+        var pose = Poses(by);
+        var c = MeasureHead(by, pose);
+        if (c == null || !TorsoAxes(by, pose, out var d, out var v, out var S)) return;
+        var neck = ChainRoot(by, "шея"); var head = ChainRoot(by, "голова");
+
+        float oldNeck = neck.length;
+        neck.length = LogLerp(c.neckLen, t.neckLen, g) * S;
+        // голова со своим началом (`freeOrigin`) сидит смещением ОТ НАЧАЛА шеи: длинная шея иначе проткнула бы её,
+        // короткая — оторвала. Сдвиг вдоль оси шеи на прирост длины держит зазор шеи и головы прежним
+        if (head.parent == neck.name && head.freeOrigin) head.origin += Vector3.up * (neck.length - oldNeck);
+        neck.r0 = LogLerp(c.neckR0, t.neckR0, g) * S; neck.r1 = LogLerp(c.neckR1, t.neckR1, g) * S;
+        head.length = LogLerp(c.headLen, t.headLen, g) * S;
+        head.r0 = LogLerp(c.headR0, t.headR0, g) * S; head.r1 = LogLerp(c.headR1, t.headR1, g) * S;
+
+        float pn = c.neckPitch + Mathf.DeltaAngle(c.neckPitch, t.neckPitch) * g;
+        float ph = c.headPitch + Mathf.DeltaAngle(c.headPitch, t.headPitch) * g;
+        Turn(by, neck, pn, d, v);
+        Turn(by, head, pn + ph, d, v);   // поза шеи уже новая: голова считается от неё
+    }
+
+    /// <summary>Повернуть кость так, чтобы её ось легла под наклоном `pitch` в сагиттальной плоскости торса; боковая
+    /// составляющая оси не трогается. Поворот наследуется детьми (`dir` — относительно родителя).</summary>
+    static void Turn(Dictionary<string, Bone> by, Bone b, float pitch, Vector3 d, Vector3 v)
+    {
+        var pose = Poses(by);
+        var (_, rot) = pose[b.name];
+        var w = rot * Vector3.up;
+        float side = Vector3.Dot(w, Vector3.Cross(d, v));
+        float plane = Mathf.Sqrt(Mathf.Max(0f, 1f - side * side));
+        var w2 = (d * Mathf.Cos(pitch * Mathf.Deg2Rad) + v * Mathf.Sin(pitch * Mathf.Deg2Rad)) * plane + Vector3.Cross(d, v) * side;
+        if (Vector3.Angle(w, w2) < 1e-3f) return;
+        var world = Quaternion.FromToRotation(w, w2) * rot;
+        var parentRot = b.parent != null && pose.TryGetValue(b.parent, out var pp) ? pp.rot : Quaternion.identity;
+        b.dir = (Quaternion.Inverse(parentRot) * world).eulerAngles;
+    }
+
+    /// <summary>Наклон оси `w` в сагиттальной плоскости торса: от оси торса `d` к брюху `v`, градусы.</summary>
+    static float Pitch(Vector3 w, Vector3 d, Vector3 v) => Mathf.Atan2(Vector3.Dot(w, v), Vector3.Dot(w, d)) * Mathf.Rad2Deg;
+
+    /// <summary>Оси торса: `d` — от тазобедренного к плечевому поясу, `v` — к брюху (составляющая «вперёд» мира, +Z, поперёк
+    /// `d`: у двуногого это грудь, у четвероногого — низ), `S` — длина торса.</summary>
+    static bool TorsoAxes(Dictionary<string, Bone> by, Dictionary<string, (Vector3 pos, Quaternion rot)> pose, out Vector3 d, out Vector3 v, out float S)
+    {
+        d = v = Vector3.zero; S = 0f;
+        if (!(LimbRoot(by, pose, "зад") is Vector3 hip) || !(LimbRoot(by, pose, "перед") is Vector3 shoulder)) return false;
+        d = shoulder - hip; S = d.magnitude;
+        if (S < 1e-3f) return false;
+        d /= S;
+        v = Vector3.forward - Vector3.Dot(Vector3.forward, d) * d;
+        if (v.sqrMagnitude < 1e-6f) return false;
+        v.Normalize();
+        return true;
+    }
+
+    /// <summary>Корень цепи: кость цепи без группы и не в долях, чей родитель из другой цепи.</summary>
+    static Bone ChainRoot(Dictionary<string, Bone> by, string limb) =>
+        by.Values.FirstOrDefault(b => b.limb == limb && string.IsNullOrEmpty(b.group) && (b.rel == null || !b.rel.On)
+                                      && (b.parent == null || !by.TryGetValue(b.parent, out var p) || p.limb != limb));
 
     /// <summary>Пары «вид на плане», которых не нашлось в поставке, — долг модельной линии (спека 08.10 §4.5).</summary>
     public static readonly HashSet<string> MissingBodies = new();

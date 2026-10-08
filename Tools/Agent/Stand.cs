@@ -87,6 +87,33 @@ public static class Stand
         return Row(items, view, aspect);
     }
 
+    /// <summary>ТОТ ЖЕ РЯД С АУГМЕНТАМИ (спека `2026-10-08-vid-na-chuzhom-plane.md` §2 п.3: «надо смотреть, как с аугментами
+    /// смотреться будет»): на ступенях и на шасси — органы цели в слотах `slots` («Пасть,Чутьё»), поставленные тем же путём,
+    /// что в игре (`BodyProbe.ChimeraPlan`). Глобальный слой — силой `g` ступени, а не по составу: группы у копии сняты
+    /// после смешения, иначе сборка сдвинула бы тело второй раз.</summary>
+    public static string StagesWorn(string chassisAsset, string targetAsset, string slots, float g1, float g2, string view, float aspect)
+    {
+        var chassis = AssetDatabase.LoadAssetAtPath<SpeciesSO>(chassisAsset);
+        var target = AssetDatabase.LoadAssetAtPath<SpeciesSO>(targetAsset);
+        if (chassis == null || target == null) return "вид не найден";
+        if (g1 <= 0f) g1 = GlobalLayer.G1;
+        if (g2 <= 0f) g2 = GlobalLayer.G2;
+        var items = new List<(SpeciesSO, List<Organ>, string, BodySocket[])>();
+        foreach (var (g, label) in new[] { (0f, chassis.speciesName), (g1, "ст.1"), (g2, "ст.2") })
+        {
+            var copy = Object.Instantiate(chassis);
+            copy.speciesName = chassis.speciesName + " → " + target.speciesName + " g" + g.ToString("0.##") + " +" + slots + " k" + GlobalLayer.KHead.ToString("0.##");
+            copy.name = copy.speciesName;
+            copy.bones = GlobalLayer.Blend(chassis, target, g);
+            foreach (var b in copy.bones) b.group = null;
+            var plan = BodyProbe.ChimeraPlan(copy, target, slots, out var mixed, out _);
+            if (mixed == null) return "графт не встал: у цели нет органа на «" + slots + "»";
+            items.Add((copy, mixed, (g > 0f ? label + " g=" + g.ToString("0.##") : label) + " +" + slots, plan));
+        }
+        items.Add((target, Native(target), target.speciesName, null));
+        return Row(items, view, aspect);
+    }
+
     /// <summary>ПОЛОСКА ПО ОСИ: одно и то же тело при `min · канон · max` одного параметра, в ряд.
     ///
     /// Зачем: пока ось проверяется только на готовом звере, поздно и дорого. Полоска ловит три вещи —
