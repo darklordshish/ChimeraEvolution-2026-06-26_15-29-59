@@ -81,6 +81,7 @@ public static class Stand
             copy.speciesName = chassis.speciesName + " → " + target.speciesName + " g" + g.ToString("0.##");   // кэш оболочки — по имени
             copy.name = copy.speciesName;
             copy.bones = GlobalLayer.Blend(chassis, target, g);
+            copy.nests = GlobalLayer.FollowNests(chassis, copy.bones);
             items.Add((copy, Native(copy), label + " g=" + g.ToString("0.##"), null));
         }
         items.Add((target, Native(target), target.speciesName, null));
@@ -105,6 +106,7 @@ public static class Stand
             copy.speciesName = chassis.speciesName + " → " + target.speciesName + " g" + g.ToString("0.##") + " +" + slots + " k" + GlobalLayer.KHead.ToString("0.##");
             copy.name = copy.speciesName;
             copy.bones = GlobalLayer.Blend(chassis, target, g);
+            copy.nests = GlobalLayer.FollowNests(chassis, copy.bones);
             foreach (var b in copy.bones) b.group = null;
             var plan = BodyProbe.ChimeraPlan(copy, target, slots, out var mixed, out _);
             if (mixed == null) return "графт не встал: у цели нет органа на «" + slots + "»";

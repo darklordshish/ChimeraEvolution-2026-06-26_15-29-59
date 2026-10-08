@@ -89,6 +89,7 @@ public static class ChainSwap
             shifted.hideFlags = HideFlags.HideAndDontSave;
             shifted.organs = chassis.organs;
             shifted.bones = GlobalLayer.Blend(chassis, target, g);
+            shifted.nests = GlobalLayer.FollowNests(chassis, shifted.bones);   // калибр аугментов — по сдвинутому телу
         }
         (Bone[] bones, PlaceNest[] nests) assembled;
         try { assembled = grafts.Count == 0 ? (BodyTree.Clone(shifted.bones), shifted.nests) : Assemble(shifted, grafts, worn, null); }

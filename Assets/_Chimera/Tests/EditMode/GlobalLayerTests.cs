@@ -243,6 +243,26 @@ namespace Chimera.Tests.EditMode
             foreach (var k in segW.Keys.Intersect(segE.Keys)) Assert.AreEqual(segE[k], m[k], 1e-4f, k + ": длина отрезка не дошла до цели");
         }
 
+        /// <summary>ГНЁЗДА ЕДУТ ЗА КОСТЬЮ (кадр оборотня 08.10: «Пасть» садилась в калибр голой головы шасси): голова цели
+        /// шире в 1.3 раза — гнездо `голова` шире в 1.3 раза, и аугмент «Пасть» берёт калибр сдвинутого тела.</summary>
+        [Test]
+        public void Nests_FollowBlendedBones()
+        {
+            var human = Load("Человек");
+            var h = GlobalLayer.HeadOn(human, human.Plan);
+            var nest = human.nests?.FirstOrDefault(n => n.name == "голова");
+            Assume.That(h != null && h.On && nest != null, "у человека нет головы или гнезда «голова»");
+            var t = JsonUtility.FromJson<HeadNumbers>(JsonUtility.ToJson(h));
+            t.headR0 *= 1.3f; t.headR1 *= 1.3f;
+            var wolf = WithBody("Волк", GlobalLayer.BodyOn(human, human.Plan).Values.ToArray(), human.Plan);
+            wolf.planBodies[0].head = t;
+            GlobalLayer.KHead = 1f;
+            var bones = GlobalLayer.Blend(human, wolf, 1f);
+            var moved = GlobalLayer.FollowNests(human, bones).First(n => n.name == "голова");
+            float k = nest.host == "голова" ? 1.3f : 1f;
+            Assert.AreEqual(nest.unit * k, moved.unit, 1e-4f, "единица гнезда головы не пошла за головой");
+        }
+
         static SegmentNumbers[] Segs(Dictionary<string, float> d) =>
             d.Select(kv => new SegmentNumbers { limb = kv.Key.Split('→')[0], end = kv.Key.Split('→')[1], len = kv.Value }).ToArray();
 

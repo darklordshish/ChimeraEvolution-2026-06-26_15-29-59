@@ -216,6 +216,29 @@ public static class GlobalLayer
         return y;
     }
 
+    /// <summary>ГНЁЗДА ЕДУТ ЗА СВОЕЙ КОСТЬЮ. Гнездо записано в метрах кадра кости-хозяина, а его единица — мера кости (ширина
+    /// головы, диаметр конца конечности). Глобальный слой меняет кость — гнездо обязано меняться так же: поперёк — по
+    /// толщине кости, вдоль — по длине, единица — по толщине. Иначе калибр аугмента застревает в шасси: «Пасть» садилась
+    /// в ширину голой человеческой головы, сколько ни раздувай голову ступенью (кадр оборотня 08.10).</summary>
+    public static PlaceNest[] FollowNests(SpeciesSO chassis, Bone[] blended)
+    {
+        if (chassis?.nests == null) return null;
+        var before = new Dictionary<string, Bone>();
+        foreach (var b in chassis.bones ?? new Bone[0]) if (b != null && !before.ContainsKey(b.name)) before[b.name] = b;
+        var after = new Dictionary<string, Bone>();
+        foreach (var b in blended ?? new Bone[0]) if (b != null && !after.ContainsKey(b.name)) after[b.name] = b;
+        return chassis.nests.Select(n =>
+        {
+            var c = BodyTree.Clone(n);
+            if (n?.host == null || !before.TryGetValue(n.host, out var o) || !after.TryGetValue(n.host, out var m)) return c;
+            float radial = (o.r0 + o.r1) > 1e-6f ? (m.r0 + m.r1) / (o.r0 + o.r1) : 1f;
+            float axial = o.length > 1e-6f ? m.length / o.length : 1f;
+            c.localPos = new Vector3(n.localPos.x * radial, n.localPos.y * axial, n.localPos.z * radial);
+            c.unit = n.unit * radial;
+            return c;
+        }).ToArray();
+    }
+
     /// <summary>Доля силы ступени, которая достаётся шее и голове (спека 08.10 §2 п.3: «частично должна меняться»).
     /// Подбирается кадром ступеней с аугментами и без.</summary>
     public static float KHead = 0.5f;
