@@ -69,6 +69,12 @@ public static class GlobalLayer
         if (target?.bones == null || g <= 0f) return bones.ToArray();
         var cBy = bones.ToDictionary(b => b.name);
         var tBy = target.bones.ToDictionary(b => b.name);
+
+        // ДЛИНЫ ОТРЕЗКОВ — ПЕРВЫМИ: массы ниже смешиваются в долях масштаба цепи, и при g = 1 совпасть с целью и по длине,
+        // и по толщине они могут только на уже перемеренных отрезках
+        var ts = SegmentsOn(target, chassis.Plan);
+        if (ts != null) BlendSegments(chassis, cBy, ts, g);
+
         var cPose = Poses(cBy); var tPose = Poses(tBy);
         var tGroups = target.bones.Where(b => !string.IsNullOrEmpty(b.group) && b.rel != null && b.rel.On).ToList();
 
@@ -83,7 +89,10 @@ public static class GlobalLayer
             native = true;
         }
 
-        foreach (var c in bones.Where(b => !string.IsNullOrEmpty(b.group) && b.rel != null && b.rel.On).ToList())
+        // ЦЕЛЬ НЕ НА ШАБЛОНЕ (лось и ёж до шага 6 спеки 07.10): групп у неё нет вовсе — это «чисел нет», а не «масс нет».
+        // Иначе все массы шасси гасли бы как «группы без пары»: волк с органами ежа терял бы треть мышц на ступени 1
+        bool masses = body.Count > 0;
+        foreach (var c in masses ? bones.Where(b => !string.IsNullOrEmpty(b.group) && b.rel != null && b.rel.On).ToList() : new List<Bone>())
         {
             if (!body.TryGetValue(c.group, out var t) || !cBy.TryGetValue(c.parent ?? "", out var cHost))
             { c.rel.r0 *= 1f - g; c.rel.r1 *= 1f - g; continue; }   // у цели такой массы нет — гаснет
@@ -126,6 +135,85 @@ public static class GlobalLayer
         var arr = bones.ToArray();
         BodyChains.ResolveRel(arr);   // доли → метры: узлы в долях считаются заново
         return arr;
+    }
+
+    /// <summary>ОТРЕЗКИ КОНЕЧНОСТЕЙ вида на плане: длина кости между суставными метками в долях торса, ключ — «цепь→метка
+    /// конца». Свой план — из графа, чужой — `segments` поставки (нет — null: длины не смешиваются).</summary>
+    public static Dictionary<string, float> SegmentsOn(SpeciesSO sp, string plan)
+    {
+        if (sp?.bones == null) return null;
+        if (sp.Plan != plan)
+        {
+            var s = sp.planBodies?.FirstOrDefault(b => b != null && b.plan == plan)?.segments;
+            return s == null || s.Length == 0 ? null
+                 : s.Where(x => x != null && x.len > 0f).GroupBy(x => x.limb + "→" + x.end).ToDictionary(x => x.Key, x => x.First().len);
+        }
+        var by = new Dictionary<string, Bone>();
+        foreach (var b in sp.bones) if (b != null && !by.ContainsKey(b.name)) by[b.name] = b;
+        if (!TorsoAxes(by, Poses(by), out _, out _, out var S)) return null;
+        return LimbSegments(by).ToDictionary(kv => kv.Key, kv => kv.Value.Sum(b => b.length) / S);
+    }
+
+    /// <summary>Отрезки конечностей `перед` и `зад`: кости от кончающейся меткой вверх по цепи до предыдущей метки.
+    /// Только скелет графа — без групп и узлов в долях (те едут за отрезком сами).</summary>
+    static Dictionary<string, List<Bone>> LimbSegments(Dictionary<string, Bone> by)
+    {
+        var segs = new Dictionary<string, List<Bone>>();
+        foreach (var end in by.Values.Where(b => (b.limb == "перед" || b.limb == "зад") && Plain(b) && !string.IsNullOrEmpty(b.mark?.b)))
+        {
+            var list = new List<Bone> { end };
+            // вверх — до предыдущей метки конца или до метки НАЧАЛА у самой кости (бедро начинается меткой «бедро»: таз
+            // над ним — та же цепь, но не отрезок «до колена»)
+            for (var p = end; string.IsNullOrEmpty(p.mark?.a) && p.parent != null && by.TryGetValue(p.parent, out var pp)
+                              && pp.limb == end.limb && Plain(pp) && string.IsNullOrEmpty(pp.mark?.b) && list.Count < 16; p = pp)
+                list.Insert(0, pp);
+            segs[end.limb + "→" + end.mark.b] = list;
+        }
+        return segs;
+    }
+
+    static bool Plain(Bone b) => string.IsNullOrEmpty(b.group) && (b.rel == null || !b.rel.On);
+
+    /// <summary>Длины отрезков шасси к долям цели: отрезок масштабируется целиком (все его кости и начала детей со своим
+    /// началом вдоль оси), торс — калибр шасси — не трогается. Потом корень опускается или поднимается так, чтобы низ
+    /// опорных конечностей остался на прежней высоте: короткие ноги не вешают тело в воздухе.</summary>
+    static void BlendSegments(SpeciesSO chassis, Dictionary<string, Bone> by, Dictionary<string, float> target, float g)
+    {
+        if (!TorsoAxes(by, Poses(by), out _, out _, out var S)) return;
+        float before = Lowest(by, chassis);
+        foreach (var kv in LimbSegments(by))
+        {
+            if (!target.TryGetValue(kv.Key, out var t)) continue;   // у цели такого отрезка нет — длина шасси
+            float cur = kv.Value.Sum(b => b.length) / S;
+            if (cur <= 1e-5f || t <= 1e-5f) continue;
+            float k = LogLerp(cur, t, g) / cur;
+            if (Mathf.Abs(k - 1f) < 1e-6f) continue;
+            foreach (var b in kv.Value)
+            {
+                b.length *= k;
+                foreach (var child in by.Values.Where(x => x.parent == b.name && x.freeOrigin && Plain(x)))
+                    child.origin = new Vector3(child.origin.x, child.origin.y * k, child.origin.z);
+            }
+        }
+        float after = Lowest(by, chassis);
+        var root = by.Values.FirstOrDefault(b => string.IsNullOrEmpty(b.parent) || !by.ContainsKey(b.parent));
+        if (root != null && !float.IsInfinity(before) && !float.IsInfinity(after)) root.origin += Vector3.up * (before - after);
+    }
+
+    /// <summary>Нижняя точка опорных конечностей (концы костей цепей опоры шасси), метры.</summary>
+    static float Lowest(Dictionary<string, Bone> by, SpeciesSO chassis)
+    {
+        var limbs = new List<string>();
+        if (chassis.stanceLimbs != null && System.Array.IndexOf(chassis.stanceLimbs, BodySlots.Legs) >= 0) limbs.Add("зад");
+        if (chassis.stanceLimbs != null && System.Array.IndexOf(chassis.stanceLimbs, BodySlots.Arms) >= 0) limbs.Add("перед");
+        var pose = Poses(by);
+        float y = float.PositiveInfinity;
+        foreach (var b in by.Values.Where(b => limbs.Contains(b.limb) && Plain(b) && pose.ContainsKey(b.name)))
+        {
+            var (p, r) = pose[b.name];
+            y = Mathf.Min(y, Mathf.Min(p.y, (p + r * Vector3.up * b.length).y));
+        }
+        return y;
     }
 
     /// <summary>Доля силы ступени, которая достаётся шее и голове (спека 08.10 §2 п.3: «частично должна меняться»).

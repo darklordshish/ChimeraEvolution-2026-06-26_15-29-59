@@ -123,6 +123,15 @@ public class PlanBody
     public string species, plan;
     public GroupNumbers[] groups;
     public HeadNumbers head;   // посадка шеи и головы (спека 08.10 §2 п.3); `neckLen` = 0 — не задано, голова не смешивается
+    public SegmentNumbers[] segments;   // длины отрезков конечностей; пусто — длины шасси не смешиваются
+}
+
+/// <summary>Отрезок конечности: цепь (`перед`/`зад`), метка его конца (`локоть`, `колено`…) и длина в долях торса.</summary>
+[System.Serializable]
+public class SegmentNumbers
+{
+    public string limb, end;
+    public float len;
 }
 
 /// <summary>ШЕЯ И ГОЛОВА В ГЛОБАЛЬНОМ СЛОЕ (спека 08.10 §2 п.3). Длины и радиусы — в долях торса (между корнями задних и

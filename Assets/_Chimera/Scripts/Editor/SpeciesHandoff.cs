@@ -135,6 +135,15 @@ public static class SpeciesHandoff
             if (v.Any(x => float.IsNaN(x) || float.IsInfinity(x))) bad.Add($"группа «{n.name}» — нечисло");
             else if (n.len <= 0f || n.r0 < 0f || n.r1 < 0f || n.section <= 0f || n.depth <= 0f) bad.Add($"группа «{n.name}» — длина, радиусы и сечения должны быть положительны");
         }
+        foreach (var s in b.segments ?? new SegmentNumbers[0])   // необязательны: нет — длины шасси не смешиваются
+        {
+            if (s == null) continue;
+            if (s.limb != "перед" && s.limb != "зад") bad.Add($"отрезок «{s.limb}→{s.end}» — цепь не конечность");
+            else if (string.IsNullOrEmpty(s.end)) bad.Add($"отрезок цепи «{s.limb}» без метки конца");
+            else if (float.IsNaN(s.len) || float.IsInfinity(s.len) || s.len <= 0f) bad.Add($"отрезок «{s.limb}→{s.end}» — длина должна быть положительна");
+        }
+        foreach (var dup in (b.segments ?? new SegmentNumbers[0]).Where(s => s != null).GroupBy(s => s.limb + "→" + s.end).Where(x => x.Count() > 1))
+            bad.Add($"отрезок «{dup.Key}» записан {dup.Count()} раза");
         var h = b.head;   // необязателен: нет — голова к этому телу не смешивается
         if (h != null && (h.neckLen != 0f || h.headLen != 0f))
         {

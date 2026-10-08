@@ -112,6 +112,7 @@ namespace Chimera.Tests.EditMode
             Assume.That(GlobalLayer.HasGroups(human), "человек не на шаблоне");
             var wolf = WithBody("Волк", GlobalLayer.BodyOn(human, human.Plan).Values.ToArray(), human.Plan);
             wolf.planBodies[0].head = GlobalLayer.HeadOn(human, human.Plan);
+            wolf.planBodies[0].segments = Segs(GlobalLayer.SegmentsOn(human, human.Plan));
             GlobalLayer.KHead = 1f;
             var blended = GlobalLayer.Blend(human, wolf, 1f);
             var hBy = human.bones.ToDictionary(b => b.name); var mBy = blended.ToDictionary(b => b.name);
@@ -195,6 +196,55 @@ namespace Chimera.Tests.EditMode
             foreach (var n in new[] { "шея", "голова" })
                 Assert.That(Quaternion.Angle(PoseOf(hBy, hBy[n]).Item2, PoseOf(untouched, untouched[n]).Item2), Is.LessThan(0.01f), n + ": KHead = 0, а поворот изменился");
         }
+
+        /// <summary>ДЛИНЫ ОТРЕЗКОВ (короткие ноги Хеджхалка — лист `stupeni-chelovek-ezh`): при g = 1 отрезок «до колена»
+        /// берёт долю цели, остальные отрезки не тронуты, а низ ног остаётся на прежней высоте — тело опускается, а не
+        /// повисает. Масса на отрезке едет с ним: её доля длины отрезка та же.</summary>
+        [Test]
+        public void Segments_TakeTargetLength_FeetStayOnGround()
+        {
+            var human = Load("Человек");
+            var segs = GlobalLayer.SegmentsOn(human, human.Plan);
+            Assume.That(segs != null && segs.ContainsKey("зад→колено"), "у человека нет отрезка «до колена»");
+            var t = new Dictionary<string, float>(segs) { ["зад→колено"] = segs["зад→колено"] * 0.7f };
+            var wolf = WithBody("Волк", GlobalLayer.BodyOn(human, human.Plan).Values.ToArray(), human.Plan);
+            wolf.planBodies[0].segments = Segs(t);
+
+            var shifted = Object.Instantiate(human); shifted.speciesName = "Человек·отрезки"; trash.Add(shifted);
+            shifted.bones = GlobalLayer.Blend(human, wolf, 1f);
+            var m = GlobalLayer.SegmentsOn(shifted, shifted.Plan);
+            foreach (var kv in t) Assert.AreEqual(kv.Value, m[kv.Key], 1e-4f, kv.Key);
+
+            float Low(Bone[] bones)
+            {
+                var by = bones.ToDictionary(b => b.name);
+                return bones.Where(b => b.limb == "зад" && string.IsNullOrEmpty(b.group) && (b.rel == null || !b.rel.On))
+                            .Min(b => { var (p, r) = PoseOf(by, b); return Mathf.Min(p.y, (p + r * Vector3.up * b.length).y); });
+            }
+            Assert.AreEqual(Low(human.bones), Low(shifted.bones), 1e-4f, "низ ног сдвинулся: тело повисло или ушло в землю");
+            Assert.Less(shifted.bones.First(b => b.name == "хребет").origin.y, human.bones.First(b => b.name == "хребет").origin.y, "короткое бедро, а таз не опустился");
+        }
+
+        /// <summary>Цель НЕ НА ШАБЛОНЕ (групп нет вовсе — лось и ёж до перевода): массы шасси не гаснут, а длины отрезков
+        /// всё равно тянутся к цели — метки суставов есть у всех видов.</summary>
+        [Test]
+        public void TargetWithoutTemplate_KeepsMasses_BlendsSegments()
+        {
+            var wolf = Load("Волк");
+            Assume.That(GlobalLayer.HasGroups(wolf), "волк не на шаблоне");
+            var bare = Object.Instantiate(Load("Ёж")); bare.speciesName = "Ёж·без групп"; trash.Add(bare);
+            foreach (var b in bare.bones) b.group = null;
+            var blended = GlobalLayer.Blend(wolf, bare, 1f);
+            foreach (var w in wolf.bones.Where(b => !string.IsNullOrEmpty(b.group)))
+                Assert.AreEqual(w.rel.r0, Group(blended, w.group).rel.r0, 1e-5f, w.group + ": масса шасси погасла у цели без шаблона");
+            var segW = GlobalLayer.SegmentsOn(wolf, wolf.Plan); var segE = GlobalLayer.SegmentsOn(bare, bare.Plan);
+            var shifted = Object.Instantiate(wolf); shifted.speciesName = "Волк·отрезки"; trash.Add(shifted); shifted.bones = blended;
+            var m = GlobalLayer.SegmentsOn(shifted, shifted.Plan);
+            foreach (var k in segW.Keys.Intersect(segE.Keys)) Assert.AreEqual(segE[k], m[k], 1e-4f, k + ": длина отрезка не дошла до цели");
+        }
+
+        static SegmentNumbers[] Segs(Dictionary<string, float> d) =>
+            d.Select(kv => new SegmentNumbers { limb = kv.Key.Split('→')[0], end = kv.Key.Split('→')[1], len = kv.Value }).ToArray();
 
         SpeciesSO WithBody(string species, GroupNumbers[] groups, string plan)
         {
