@@ -21,7 +21,7 @@ fail() { say "СТОП: $*"; exit 1; }
 
 # проверяется ровно то, что уходит: публикуется HEAD, а рабочее дерево чистое
 [ "$(git rev-parse HEAD)" = "$sha" ] || fail "публикуется не HEAD ($sha) — переключись на коммит, который отправляешь"
-dirty=$(git status --porcelain -- Assets Packages ProjectSettings Docs Tools/Agent)
+dirty=$(git status --porcelain -- Assets Packages ProjectSettings Docs Tools/Agent Референсы)
 [ -z "$dirty" ] || fail "есть незакоммиченное — тесты проверили бы не то, что уходит:
 $dirty"
 
@@ -34,6 +34,13 @@ done
 out=$(PYTHONIOENCODING=utf-8 "$py" Docs/tools/spec_status.py 2>&1) || fail "детектор спек красный:
 $out"
 say "детектор спек чист"
+
+# 1б. каталог референсов (спека `2026-10-08-hranilishche-referensov.md`): витрина и архив — ровно то, что названо в каталоге
+if [ -f Docs/tools/refs_catalog.py ]; then
+  out=$(PYTHONIOENCODING=utf-8 "$py" Docs/tools/refs_catalog.py 2>&1) || fail "каталог референсов разошёлся с диском:
+$out"
+  say "каталог референсов чист"
+fi
 
 # 2. EditMode — если публикация задевает Unity. quotePath=false: иначе git берёт кириллический путь в кавычки
 # ("Assets/_Chimera/Data/\320\222…"), `^Assets/` не совпадает, и правка ассета вида уходила без тестов (поймано 24.09).
