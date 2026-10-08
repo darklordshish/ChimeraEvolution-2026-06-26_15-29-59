@@ -78,7 +78,7 @@ public static class Stand
         foreach (var (g, label) in new[] { (g1, "ст.1"), (g2, "ст.2") })
         {
             var copy = Object.Instantiate(chassis);
-            copy.speciesName = chassis.speciesName + " → " + target.speciesName + " g" + g.ToString("0.##");   // кэш оболочки — по имени
+            copy.speciesName = chassis.speciesName + " → " + target.speciesName + " g" + g.ToString("0.##") + " k" + GlobalLayer.KHead.ToString("0.##");   // кэш оболочки — по имени: kHead тоже меняет тело
             copy.name = copy.speciesName;
             copy.bones = GlobalLayer.Blend(chassis, target, g);
             copy.nests = GlobalLayer.FollowNests(chassis, copy.bones);
