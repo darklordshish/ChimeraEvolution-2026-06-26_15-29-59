@@ -126,10 +126,12 @@ def hind_leg():
     который на клетке торчал назад рваным шипом"""
     n = node_by_name('голень')
     d = sub(n['b'], n['a'])
-    low = segment(n, n['b'], add(G.HOCK, mul(unit(d), 0.03)), 0.100, 0.105, d, 0.07)
-    fet = fetlock_below(G.HOCK, 12.9)
-    shank = segment(n, G.HOCK, fet, 0.070, 0.082, sub(fet, G.HOCK), 0.05)
-    foot = paw(n, fet, (0.098, 0.065, 0.125), 0.028)
+    # ЛИСТ 08.10: плюсна почти отвесна (4° вперёд против 12.9° снимка) и толще — 8–9 см в профиль у листа против
+    # 7–8 у снимка; в 3/4 прежние бруски под массивным бедром листа читались прутьями
+    low = segment(n, n['b'], add(G.HOCK, mul(unit(d), 0.03)), 0.120, 0.125, d, 0.07)
+    fet = fetlock_below(G.HOCK, 4.0)
+    shank = segment(n, G.HOCK, fet, 0.080, 0.092, sub(fet, G.HOCK), 0.05)
+    foot = paw(n, fet, (0.110, 0.070, 0.140), 0.030)
     return dict(slot='Ноги', organ='Волчьи ноги', parts=[low, shank, foot])
 
 
