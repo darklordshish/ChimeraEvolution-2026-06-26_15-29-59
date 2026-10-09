@@ -46,6 +46,26 @@ k = opt['back'] / back
 me.transform(Matrix.Scale(k, 4))
 print('масштаб по спине: спина %.3f → %.3f (×%.3f)' % (back, opt['back'], k))
 
+# 1а. КОРЕНЬ ХВОСТА (критик, проход 3: «отодвинуть, не заполнив, — половина правки»; до рига обязательно — иначе на махе
+# порвётся): между хвостом и ляжками у образца щель от крупа почти до скакательного. Заполнитель — эллипсоид круп→ляжки у
+# корня хвоста; меш с ним сплавляется вокселями `--voxel`, хвост выходит из цельного крупа
+if opt.get('fill', 0) > 0:
+    V = [v.co for v in me.vertices]
+    yh = min(v.y for v in V); L = max(v.y for v in V) - yh
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=16, radius=1.0,
+                                         location=(0, yh + 0.845 * L, 0.78 * opt['back']))
+    fl = bpy.context.active_object
+    fl.scale = (0.13, 0.07, 0.22)
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    # БУЛЕВО ОБЪЕДИНЕНИЕ, а не воксели всего тела: вокселизация заглаживала поверхность, и прореживание складывало бок в
+    # картон (проход 4, проба). Объединение трогает меш только там, где заполнитель
+    bpy.context.view_layer.objects.active = ob
+    bo = ob.modifiers.new('fill', 'BOOLEAN'); bo.operation = 'UNION'; bo.object = fl; bo.solver = 'EXACT'
+    bpy.ops.object.modifier_apply(modifier=bo.name)
+    bpy.data.objects.remove(fl, do_unlink=True)
+    me = ob.data
+    print('корень хвоста: заполнитель объединён, вершин %d' % len(me.vertices))
+
 # 2. симметрия: оставить половину знака `half` и отзеркалить
 bm = bmesh.new(); bm.from_mesh(me)
 bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], dist=1e-5, plane_co=(0, 0, 0),
@@ -99,6 +119,26 @@ if head:
         v.co = piv2 + Vector((r.x, r.y * c + r.z * s_, -r.y * s_ + r.z * c))
 zs = [v.co.z for v in me.vertices]
 print('после посадки: верх %.3f' % max(zs))
+
+# ГЛАЗНИЦА И НАДБРОВЬЕ (критик, проход 3: глаза в анфас не вернулись — глазница и надбровье мелкие): глаз — на 0.115 м выше
+# кончика носа и на 0.21 позади (ортопара), на поверхности головы. Глазница внутрь на `--eye` м, надбровье — полкой над ней
+eye = opt.get('eye', 0.0)
+if eye > 0:
+    nose = min(me.vertices, key=lambda v: v.co.y).co.copy()
+    ye, ze = nose.y + 0.21, nose.z + 0.115
+    near = [v for v in me.vertices if abs(v.co.y - ye) < 0.02 and abs(v.co.z - ze) < 0.02]
+    xe = max(abs(v.co.x) for v in near)
+    E = Vector((xe, ye, ze)); Bw = Vector((xe, ye - 0.005, ze + 0.035))
+    for v in me.vertices:
+        q = Vector((abs(v.co.x), v.co.y, v.co.z)); sg = 1 if v.co.x >= 0 else -1
+        de = (q - E).length
+        if de < 0.035:
+            v.co.x -= sg * eye * (1 - de / 0.035) ** 2
+        db = (q - Bw).length
+        if db < 0.03:
+            k = (1 - db / 0.03) ** 2
+            v.co.x += sg * 0.5 * eye * k; v.co.y -= 0.6 * eye * k
+    print('глазница: глаз у (%.3f %.3f %.3f), вглубь %.3f' % (xe, ye, ze, eye))
 
 # 5–7. ЗОННЫЕ ПРАВКИ (критик r(б)1): плавные, по зонам вдоль тела (доля длины от морды) и по высоте
 V = [v.co for v in me.vertices]
@@ -163,51 +203,89 @@ for v in me.vertices:
 # (зубец растёт к хвосту и обрывается). Зоны: гребень затылок → холка (вверх), щёки и воротник (вбок). Край кисти хвоста — пока нет
 saw_a = opt.get('saw', 0.0)
 if saw_a > 0:
+    import random
+    rnd = random.Random(7)
     V = [v.co for v in me.vertices]
     y0 = min(v.y for v in V); L = max(v.y for v in V) - y0
     NB = 120
-    top = [-1.0] * NB; side = [0.0] * NB
+    top = [-1.0] * NB; side = [0.0] * NB; front = {}
     for v in me.vertices:
         b = min(NB - 1, int((v.co.y - y0) / L * NB))
         if abs(v.co.x) < 0.08:
             top[b] = max(top[b], v.co.z)
         side[b] = max(side[b], abs(v.co.x))
 
-    def saw(d, d0, period):
-        f = ((d - d0) / period) % 1.0
-        return f if f < 0.8 else (1.0 - f) * 4.0     # медленный рост, резкий обрыв
+    def teeth(a, b):
+        """Зубцы НЕРАВНОГО шага 3–8 см (критик, проход 3: равный шаг торчком — «гребень дракона»)."""
+        t = [a]
+        while t[-1] < b:
+            t.append(t[-1] + rnd.uniform(0.03, 0.08))
+        return t
+    CREST = teeth(y0 + 0.17 * L, y0 + 0.50 * L)          # гребень — до плеча, гаснет
+    BIB = teeth(0.55 * opt['back'], 1.00 * opt['back'])  # манишка — по высоте
+    CHEEK = teeth(0.80 * opt['back'], 1.30 * opt['back'])
 
+    def phase(x, T):
+        for a, b in zip(T, T[1:]):
+            if a <= x < b:
+                f = (x - a) / (b - a)
+                return (f if f < 0.8 else (1 - f) * 4.0) * min(1.0, (b - a) / 0.06)
+        return 0.0
+    for v in me.vertices:                                  # передняя кромка груди по высоте
+        d = (v.co.y - y0) / L
+        if 0.20 < d < 0.40 and abs(v.co.x) < 0.06:
+            zb = int(v.co.z / 0.02)
+            front[zb] = min(front.get(zb, 9.0), v.co.y)
+    TAN = math.tan(math.radians(25))                       # кончик назад, 20–30° к поверхности
     for v in me.vertices:
         d = (v.co.y - y0) / L
         b = min(NB - 1, int(d * NB))
-        # гребень: от затылка до холки, у верхней кромки по средней линии
-        if 0.17 < d < 0.42 and top[b] > 0:
-            w = sm((0.05 - (top[b] - v.co.z)) / 0.05) * sm((0.10 - abs(v.co.x)) / 0.05) * sm((d - 0.17) / 0.03) * sm((0.42 - d) / 0.04)
-            v.co.z += saw_a * w * saw(d, 0.17, 0.035)
-            v.co.y += 0.4 * saw_a * w * saw(d, 0.17, 0.035)
-        # щёки и воротник: боковая кромка за глазами
-        if 0.15 < d < 0.30 and v.co.z > 0.85:
+        if 0.17 < d < 0.50 and top[b] > 0:                 # гребень: затылок → холка → гаснет на плечо
+            w = sm((0.05 - (top[b] - v.co.z)) / 0.05) * sm((0.10 - abs(v.co.x)) / 0.05) * sm((d - 0.17) / 0.03) * sm((0.50 - d) / 0.12)
+            f = saw_a * w * phase(v.co.y, CREST)
+            v.co.y += f; v.co.z += f * TAN
+        if 0.15 < d < 0.30 and v.co.z > 0.80 * opt['back']:  # щёки и воротник: вбок-назад
             w = sm((0.04 - (side[b] - abs(v.co.x))) / 0.04) * sm((d - 0.15) / 0.03) * sm((0.30 - d) / 0.04)
-            k = saw((v.co.z - 0.85), 0.0, 0.09)
-            v.co.x += (1 if v.co.x > 0 else -1) * 0.8 * saw_a * w * k
+            f = saw_a * w * phase(v.co.z, CHEEK)
+            v.co.x += (1 if v.co.x > 0 else -1) * f * TAN; v.co.y += f
+        zb = int(v.co.z / 0.02)                            # МАНИШКА остриём вниз — главный признак в анфас после ушей
+        if opt.get('bib', 0) > 0 and 0.20 < d < 0.40 and zb in front and abs(v.co.x) < 0.07 and 0.55 * opt['back'] < v.co.z < 1.0 * opt['back']:
+            w = sm((0.025 - (v.co.y - front[zb])) / 0.025) * sm((0.07 - abs(v.co.x)) / 0.03)
+            f = 0.6 * saw_a * w * phase(v.co.z, BIB)          # глубже и шире — «медальон» на груди (проход 4)
+            v.co.z -= f; v.co.y -= f * TAN
     print('рваный контур: зубец %.3f м' % saw_a)
+
+B_ = opt['back']
+
+
+def joint(c, y0, L):
+    """КОЛЬЦА НА СУСТАВАХ (критик, проход 3: «важнее всего по деформации»): полосы сгибов держат плотность прохода `mid` —
+    несколько колец на сгиб — и не растворяются в плоскости. Локоть, запястье, колено, скакательный, основание шеи, корень
+    хвоста; доля длины от морды, высота в метрах."""
+    d = (c.y - y0) / L; z = c.z
+    return ((0.28 < d < 0.46 and abs(z - 0.62 * B_) < 0.05) or (0.25 < d < 0.46 and 0.14 < z < 0.26)
+            or (0.62 < d < 0.84 and 0.48 < z < 0.64 and abs(c.x) > 0.05) or (0.72 < d < 0.96 and 0.30 < z < 0.45)
+            or (0.24 < d < 0.32 and z > 0.75 * B_) or (0.80 < d < 0.89 and z > 0.72 * B_))
+
 
 # 4. плотность: сначала равномерно до `mid` (уровень, на котором голова и лапы читаются — критик: 6000), потом ТОЛЬКО
 # тело (без головы и лап) — до `budget`. Вес группы в Decimate: 0 — вершину не трогать. Планарное растворение по углу
 # дало веера на весь бок (проба 09.10) — грани по формам ставятся руками, не им
-n0 = len(me.polygons)
+n0 = sum(len(p.vertices) - 2 for p in me.polygons)   # в треугольниках: после вокселей грани — четырёхугольники
 m = ob.modifiers.new('dec', 'DECIMATE'); m.ratio = opt['mid'] / max(1, n0); m.use_symmetry = True; m.symmetry_axis = 'X'
 bpy.ops.object.modifier_apply(modifier=m.name)
 n1 = len(me.polygons)
+print('  равномерно: %d тр' % n1)
 if opt['budget'] < n1:
     vg = ob.vertex_groups.new(name='тело')
     V = [v.co for v in me.vertices]
     y0 = min(v.y for v in V); L = max(v.y for v in V) - y0
-    body = [v.index for v in me.vertices if (v.co.y - y0) > 0.24 * L and v.co.z > 0.12]
+    body = [v.index for v in me.vertices if (v.co.y - y0) > 0.24 * L and v.co.z > 0.12 and not joint(v.co, y0, L)]
     vg.add(body, 1.0, 'REPLACE')
     m = ob.modifiers.new('dec2', 'DECIMATE'); m.ratio = opt['budget'] / n1; m.vertex_group = 'тело'
     m.vertex_group_factor = 1.0; m.use_symmetry = True; m.symmetry_axis = 'X'
     bpy.ops.object.modifier_apply(modifier=m.name)
+    print('  тело: %d тр (вершин тела %d)' % (len(me.polygons), len(body)))
 # 9. ПЛОСКОСТИ ПО МЫШЕЧНЫМ ГРУППАМ (критик, проход 2: дешёвый путь без вееров): грань относится к группе карты мышц
 # (`витрина/волк/мышцы.png`) по месту на теле; ограниченное растворение по углу `--groups` собирает многоугольники ТОЛЬКО внутри
 # группы (граница групп — материал), затем «красивая» триангуляция. Голова и лапы не трогаются
@@ -219,7 +297,7 @@ if ga > 0:
 
     def group(c):
         d = (c.y - y0) / L; z = c.z
-        if d < 0.20 or z < 0.10: return 0                      # голова, лапы
+        if d < 0.20 or z < 0.10 or joint(c, y0, L): return 0   # голова, лапы, суставы
         if d < 0.30: return 1 if z > 0.75 * B_ else 2          # шея / манишка
         if d < 0.45: return 3 if z > 0.62 * B_ else 4          # лопатка+плечо / предплечье
         if d < 0.62: return 5 if z > 0.62 * B_ else (6 if z > 0.45 * B_ else 4)   # рёбра / низ груди
@@ -236,7 +314,14 @@ if ga > 0:
     bmesh.ops.dissolve_limit(bm, angle_limit=math.radians(ga), verts=verts, edges=edges, delimit={'MATERIAL'})
     bmesh.ops.triangulate(bm, faces=bm.faces[:], quad_method='BEAUTY', ngon_method='BEAUTY')
     bm.to_mesh(me); bm.free()
+    # ДЛИННЫЕ ТОНКИЕ ГРАНИ (критик, проход 3: грань поперёк рёбер от локтя к паху) — рёбра длиннее `--long` делятся
+    bm = bmesh.new(); bm.from_mesh(me)
+    longe = [e for e in bm.edges if e.calc_length() > opt.get('long', 0.28)]
+    bmesh.ops.subdivide_edges(bm, edges=longe, cuts=1)
+    bmesh.ops.triangulate(bm, faces=bm.faces[:], quad_method='BEAUTY', ngon_method='BEAUTY')
+    bm.to_mesh(me); bm.free()
     print('плоскости по группам: угол %.0f°, тр %d' % (ga, len(me.polygons)))
+    print('  длинных рёбер разделено: %d' % len(longe))
 bm = bmesh.new(); bm.from_mesh(me); bmesh.ops.triangulate(bm, faces=bm.faces[:]); bm.to_mesh(me); bm.free()
 for p in me.polygons:
     p.use_smooth = False
