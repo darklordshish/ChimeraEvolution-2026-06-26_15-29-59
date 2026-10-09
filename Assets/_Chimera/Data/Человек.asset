@@ -106,7 +106,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925336003067249310
+    - rid: 925336004366172312
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -166,7 +166,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925336003067249311
+    - rid: 925336004366172313
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -344,7 +344,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925336003067249312
+    - rid: 925336004366172314
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -1018,6 +1018,7 @@ MonoBehaviour:
     section: 1.6
     depth: 1
     blend: 0.02
+    weld: 0
     chain: 0
     mirrorX: 0
     limb: "\u0445\u0440\u0435\u0431\u0435\u0442"
@@ -1048,6 +1049,7 @@ MonoBehaviour:
     section: 1
     depth: 1.18
     blend: 0.04
+    weld: 0
     chain: 0
     mirrorX: 0
     limb: "\u0448\u0435\u044F"
@@ -1078,6 +1080,7 @@ MonoBehaviour:
     section: 1.08
     depth: 1.2
     blend: 0.03
+    weld: 0
     chain: 0
     mirrorX: 0
     limb: "\u0433\u043E\u043B\u043E\u0432\u0430"
@@ -1108,6 +1111,7 @@ MonoBehaviour:
     section: 1
     depth: 1
     blend: 0.02
+    weld: 0
     chain: 0
     mirrorX: 1
     limb: "\u0433\u043E\u043B\u043E\u0432\u0430"
@@ -1138,6 +1142,7 @@ MonoBehaviour:
     section: 1.25
     depth: 1
     blend: 0.02
+    weld: 0
     chain: 0
     mirrorX: 0
     limb: "\u0433\u043E\u043B\u043E\u0432\u0430"
@@ -1168,6 +1173,7 @@ MonoBehaviour:
     section: 1
     depth: 1
     blend: 0.02
+    weld: 0
     chain: 0
     mirrorX: 1
     limb: "\u0433\u043E\u043B\u043E\u0432\u0430"
@@ -1198,6 +1204,7 @@ MonoBehaviour:
     section: 1.35
     depth: 1
     blend: 0.04
+    weld: 0
     chain: 0
     mirrorX: 1
     limb: "\u043F\u0435\u0440\u0435\u0434"
@@ -1228,6 +1235,7 @@ MonoBehaviour:
     section: 2.31
     depth: 1.538
     blend: 0.008
+    weld: 0
     chain: 0
     mirrorX: 0
     limb: "\u0445\u0440\u0435\u0431\u0435\u0442"
@@ -1258,6 +1266,7 @@ MonoBehaviour:
     section: 1.342
     depth: 1
     blend: 0.008
+    weld: 0
     chain: 0
     mirrorX: 0
     limb: "\u0445\u0440\u0435\u0431\u0435\u0442"
@@ -1288,6 +1297,7 @@ MonoBehaviour:
     section: 1.341
     depth: 1
     blend: 0.008
+    weld: 0
     chain: 0
     mirrorX: 0
     limb: "\u0445\u0440\u0435\u0431\u0435\u0442"
@@ -1318,6 +1328,7 @@ MonoBehaviour:
     section: 0.555
     depth: 0.611
     blend: 0.015
+    weld: 0
     chain: 0
     mirrorX: 1
     limb: "\u0445\u0440\u0435\u0431\u0435\u0442"
@@ -1348,6 +1359,7 @@ MonoBehaviour:
     section: 0.6
     depth: 1
     blend: 0.015
+    weld: 0
     chain: 0
     mirrorX: 1
     limb: "\u0445\u0440\u0435\u0431\u0435\u0442"
@@ -1378,6 +1390,7 @@ MonoBehaviour:
     section: 1
     depth: 1
     blend: 0.02
+    weld: 0
     chain: 0
     mirrorX: 1
     limb: "\u0445\u0440\u0435\u0431\u0435\u0442"
@@ -1408,6 +1421,7 @@ MonoBehaviour:
     section: 1.35
     depth: 1
     blend: 0.04
+    weld: 0
     chain: 0
     mirrorX: 1
     limb: "\u0448\u0435\u044F"
@@ -1438,6 +1452,7 @@ MonoBehaviour:
     section: 1
     depth: 1.567
     blend: 0.02
+    weld: 0
     chain: 0
     mirrorX: 1
     limb: "\u043F\u0435\u0440\u0435\u0434"
@@ -1468,6 +1483,7 @@ MonoBehaviour:
     section: 1
     depth: 1
     blend: 0.012
+    weld: 0
     chain: 0
     mirrorX: 1
     limb: "\u043F\u0435\u0440\u0435\u0434"
@@ -1498,6 +1514,7 @@ MonoBehaviour:
     section: 1
     depth: 1
     blend: 0.012
+    weld: 0
     chain: 0
     mirrorX: 1
     limb: "\u043F\u0435\u0440\u0435\u0434"
@@ -1528,6 +1545,7 @@ MonoBehaviour:
     section: 1
     depth: 1
     blend: 0.012
+    weld: 0
     chain: 0
     mirrorX: 1
     limb: "\u043F\u0435\u0440\u0435\u0434"
@@ -1558,6 +1576,7 @@ MonoBehaviour:
     section: 0.389
     depth: 0.556
     blend: 0.015
+    weld: 0
     chain: 0
     mirrorX: 1
     limb: "\u043F\u0435\u0440\u0435\u0434"
@@ -1588,6 +1607,7 @@ MonoBehaviour:
     section: 0.44
     depth: 0.628
     blend: 0.015
+    weld: 0
     chain: 0
     mirrorX: 1
     limb: "\u043F\u0435\u0440\u0435\u0434"
@@ -1618,6 +1638,7 @@ MonoBehaviour:
     section: 1.043
     depth: 1.261
     blend: 0.02
+    weld: 0
     chain: 0
     mirrorX: 1
     limb: "\u043F\u0435\u0440\u0435\u0434"
@@ -1648,6 +1669,7 @@ MonoBehaviour:
     section: 1.002
     depth: 0.702
     blend: 0.015
+    weld: 0
     chain: 0
     mirrorX: 1
     limb: "\u043F\u0435\u0440\u0435\u0434"
@@ -1678,6 +1700,7 @@ MonoBehaviour:
     section: 1.041
     depth: 0.729
     blend: 0.015
+    weld: 0
     chain: 0
     mirrorX: 1
     limb: "\u043F\u0435\u0440\u0435\u0434"
@@ -1708,6 +1731,7 @@ MonoBehaviour:
     section: 1
     depth: 1.253
     blend: 0.02
+    weld: 0
     chain: 0
     mirrorX: 1
     limb: "\u0437\u0430\u0434"
@@ -1738,6 +1762,7 @@ MonoBehaviour:
     section: 0.408
     depth: 0.434
     blend: 0.015
+    weld: 0
     chain: 0
     mirrorX: 1
     limb: "\u0437\u0430\u0434"
@@ -1768,6 +1793,7 @@ MonoBehaviour:
     section: 0.669
     depth: 0.955
     blend: 0.015
+    weld: 0
     chain: 0
     mirrorX: 1
     limb: "\u0437\u0430\u0434"
@@ -1798,6 +1824,7 @@ MonoBehaviour:
     section: 1
     depth: 1.255
     blend: 0.02
+    weld: 0
     chain: 0
     mirrorX: 1
     limb: "\u0437\u0430\u0434"
@@ -1828,6 +1855,7 @@ MonoBehaviour:
     section: 0.566
     depth: 0.566
     blend: 0.015
+    weld: 0
     chain: 0
     mirrorX: 1
     limb: "\u0437\u0430\u0434"
@@ -1999,7 +2027,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 925336003067249310
+    - rid: 925336004366172312
       type: {class: LimbStrikeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 8
@@ -2009,7 +2037,7 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.45
         cooldown: 1.1
-    - rid: 925336003067249311
+    - rid: 925336004366172313
       type: {class: KickData, ns: , asm: Chimera.Runtime}
       data:
         damage: 4
@@ -2017,7 +2045,7 @@ MonoBehaviour:
         reach: 1.8
         radius: 1.6
         cooldown: 1
-    - rid: 925336003067249312
+    - rid: 925336004366172314
       type: {class: ScreamData, ns: , asm: Chimera.Runtime}
       data:
         cooldown: 12
