@@ -85,21 +85,21 @@ def part(n, block, centre, size, axis_dir, up_hint=None):
                 metres=dict(centre=r(centre), size=r(size)))
 
 
-def segment(n, start, end, width, depth, overlap_dir=None, overlap=0.0):
+def segment(n, start, end, width, depth, overlap_dir=None, overlap=0.0, block='брусок'):
     """Брусок между двумя точками мира: начинается раньше `start` на `overlap` вдоль `overlap_dir` (шов перекрыт)."""
     if overlap_dir is not None:
         start = sub(start, mul(unit(overlap_dir), overlap))
     axis = sub(end, start)
     length = math.sqrt(dot(axis, axis))
     centre = add(start, mul(unit(axis), length * 0.5))
-    return part(n, 'брусок', centre, (width, depth, length), axis)
+    return part(n, block, centre, (width, depth, length), axis)
 
 
-def paw(n, fetlock, size, ahead):
+def paw(n, fetlock, size, ahead, block='лапа'):
     """Лапа подушкой на земле: низ в Y = 0, сгиб над путовым суставом, пальцы вперёд."""
     w, h, l = size
     centre = (fetlock[0], h * 0.5, fetlock[2] + ahead)
-    return part(n, 'лапа', centre, (w, h, l), (0.0, 0.0, 1.0))
+    return part(n, block, centre, (w, h, l), (0.0, 0.0, 1.0))
 
 
 def fetlock_below(p, deg):
@@ -128,12 +128,15 @@ def hind_leg():
     d = sub(n['b'], n['a'])
     # ЛИСТ 08.10: плюсна почти отвесна (4° вперёд против 12.9° снимка) и толще — 8–9 см в профиль у листа против
     # 7–8 у снимка; в 3/4 прежние бруски под массивным бедром листа читались прутьями
-    low = segment(n, n['b'], add(G.HOCK, mul(unit(d), 0.03)), 0.120, 0.125, d, 0.07)
+    # БЛОКИ ДИЗАЙН-ЛИНИИ (09.10, `Tools/Blender/bloki-codex/`): голень к скакательному с сужением, плюсна, лапа с пальцами
+    # и когтями — вместо брусков, которые под массивным бедром листа читались прутьями. Плюсна блока сужена посередине —
+    # калибр 10 × 11 см, чтобы в самом узком месте она была не тоньше плюсны листа (8–9 см); лапа по листу 12.5 × 17 см
+    low = segment(n, n['b'], add(G.HOCK, mul(unit(d), 0.03)), 0.120, 0.125, d, 0.07, block='скакательный волка')
     # 4° — плюсна почти отвесна (стойка и крупный план ноги 09.10). НЕ до центра лапы: лапа выступает пальцами вперёд, и наклон
     # «скакательный → центр лапы» (15°) выносил лапу вперёд — волчьи ноги на еже уходили под землю, на лосе висели (матрица)
     fet = fetlock_below(G.HOCK, 4.0)
-    shank = segment(n, G.HOCK, fet, 0.080, 0.092, sub(fet, G.HOCK), 0.05)
-    foot = paw(n, fet, (0.110, 0.070, 0.140), 0.030)
+    shank = segment(n, G.HOCK, fet, 0.100, 0.110, sub(fet, G.HOCK), 0.05, block='плюсна волка')
+    foot = paw(n, fet, (0.125, 0.080, 0.170), 0.040, block='лапа волка')
     return dict(slot='Ноги', organ='Волчьи ноги', parts=[low, shank, foot])
 
 

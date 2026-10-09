@@ -117,6 +117,9 @@ def layout():
     # носа скатом (стоп). Высота 0.18, центр ниже на 1 см: низ клина прежний, верх у основания ниже на 3 см — клин
     # уходит под лоб, и череп сам даёт скат
     m_h, m_w = 0.18, 0.14
+    # ...МОРДА ПО ЛИСТУ 09.10: голова выросла на 9 %, а морда Codex сужается к носу сильнее клина — в калибре 0.14 × 0.18 она
+    # торчала из черепа тонкой трубкой. По листу у основания морда 0.20 высотой (стоп → низ челюсти), шире на пятую часть
+    m_h, m_w = 0.20, 0.17
     m_b0 = round((jaw_b + 0.002 + stop_b + 0.005) / 2 - 0.20 / 2, 3)
     m_b1 = round(m_b0 + m_h, 3)
     m_len = m_a1 - m_a0
@@ -164,6 +167,9 @@ def layout():
     return places, (m_w, m_h, m_len), (m_a, m_b)
 
 
+# БЛОКИ ГОЛОВЫ — ДИЗАЙН-ЛИНИИ (09.10, `Tools/Blender/bloki-codex/`): морда со щеками и линией губ, ухо с раковиной, мочка с
+# ноздрями, глаз, изогнутый клык. Масштабы и места прежние — блоки подменяют `клин`, `ухо`, `капля`, `глаз`, `игла` один в один
+# (габарит 1×1×1); общие блоки остаются другим видам
 def senses():
     """ПРИЗНАКИ ЧУВСТВ БЛОКАМИ (решение геймдизайнера 17.09: «нормальные, а не из примитивов»). Части органа Чутья по
     ролям, в калибре и кадре места-адреса. Цвет глаза не задаётся: это канал механики (чем зверь воспринимает мир).
@@ -171,9 +177,9 @@ def senses():
       • глаз — миндаль вдоль головы: у 3.2 см куба места он 1.8 × 1.9 × 4.2 см, половина тонет в черепе;
       • мочка — капля тупым концом вперёд, чуть приплюснута."""
     return [
-        dict(role='Ear', block='ухо', offset=[0, 0, 0], scale=[1, 1, 1], euler=[0, 0, 0]),
-        dict(role='Eye', block='глаз', offset=[0, 0, 0], scale=[0.56, 0.60, 1.30], euler=[0, 0, 0]),
-        dict(role='Nose', block='капля', offset=[0, 0, 0], scale=[1.0, 0.85, 1.0], euler=[0, 0, 0]),
+        dict(role='Ear', block='ухо волка', offset=[0, 0, 0], scale=[1, 1, 1], euler=[0, 0, 0]),
+        dict(role='Eye', block='глаз волка', offset=[0, 0, 0], scale=[0.56, 0.60, 1.30], euler=[0, 0, 0]),
+        dict(role='Nose', block='мочка волка', offset=[0, 0, 0], scale=[1.0, 0.85, 1.0], euler=[0, 0, 0]),
     ]
 
 
@@ -207,7 +213,7 @@ def teeth(muzzle, centre):
     out = []
     for side in (+1, -1):
         s = '(пр)' if side > 0 else '(лев)'
-        out.append(dict(name='клык верхний ' + s, block='игла', euler=[180, 0, 0], color=white,
+        out.append(dict(name='клык верхний ' + s, block='клык волка', euler=[180, 0, 0], color=white,
                         offset=[round(side * (edge_x - 0.009) / W_, 3), round(y / H_, 3), round(t, 3)],
                         scale=[round(thick / W_, 3), round(length / H_, 3), round(thick / L_, 3)]))
     return out
@@ -223,7 +229,7 @@ def main():
     doc = dict(
         head=dict(baseSize=list(head_size), sizeRel=list(rel(head_size, NECK_CALIBRE))),
         places=places,
-        muzzle=dict(block='клин', offset=[0, 0, 0], scale=[1, 1, 1]),
+        muzzle=dict(block='морда волка', offset=[0, 0, 0], scale=[1, 1, 1]),
         teeth=teeth(muzzle, centre),
         senses=senses(),
     )
