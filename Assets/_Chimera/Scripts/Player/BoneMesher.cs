@@ -44,6 +44,7 @@ public static class BoneMesher
     {
         public Vector3 a, b;        // начало и конец кости
         public float r0, r1, sec, dep, blend;
+        public float weld;          // доля слияния с чужим местом (`Bone.weld`; 0 — общая `Weld`)
         public BodyLayer layer;
         public int bone;            // индекс в массиве костей скиннинга
         public string slot;
@@ -117,7 +118,7 @@ public static class BoneMesher
             {
                 a = q.pos, b = q.tip,
                 r0 = b.r0, r1 = b.r1, sec = Mathf.Max(0.05f, b.section), dep = Mathf.Max(0.05f, b.depth),
-                blend = b.blend > 0f ? b.blend : chassis.SkinBlend, layer = b.layer,
+                blend = b.blend > 0f ? b.blend : chassis.SkinBlend, layer = b.layer, weld = b.weld,
                 bone = i, slot = string.IsNullOrEmpty(b.socket) ? b.name : b.socket,
                 inv = Quaternion.Inverse(q.rot),
             });
@@ -379,7 +380,7 @@ public static class BoneMesher
                         if (owner[i] == sid) field[i] = Smin(field[i], d, s.blend);
                         else
                         {
-                            float f = Smin(field[i], d, s.blend * Weld);
+                            float f = Smin(field[i], d, s.blend * (s.weld > 0f ? s.weld : Weld));
                             if (d < field[i]) owner[i] = sid;
                             field[i] = f;
                         }
