@@ -1,0 +1,19 @@
+{
+  "species": "Волк",
+  "graph": "Docs/models/handoff/volk-graph.json",
+  "head": "Docs/models/handoff/volk-head-layout.json",
+  "organs": "Docs/models/handoff/volk-organs-layout.json",
+  "cell": 0.042,
+  "frames": {
+    "front": ["nose", 0, 0.78, 0.85], "34front": ["yaw:35:8", 0.0, 0.78, 1.15], "side": ["profile", 0.0, 0.78, 1.2],
+    "back": ["back", 0, 0.78, 0.85], "34back": ["yaw:145:12", 0.0, 0.78, 1.15]
+  },
+  "mirror": ["side"],
+  "ref": {
+    "ref_01_list_vid": "Референсы/витрина/волк/вид.png",
+    "ref_02_orto_stoyka": "Референсы/витрина/волк/орто.png",
+    "ref_03_zadnyaya_noga": "Референсы/витрина/волк/задняя-нога.png",
+    "ref_04_szadi_3-4": "Референсы/витрина/волк/сзади-3-4.png",
+    "ref_05_myshcy": "Референсы/витрина/волк/мышцы.png"
+  }
+}
