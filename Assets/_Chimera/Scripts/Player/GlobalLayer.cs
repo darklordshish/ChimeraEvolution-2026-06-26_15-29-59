@@ -241,7 +241,7 @@ public static class GlobalLayer
 
     /// <summary>Доля силы ступени, которая достаётся шее и голове (спека 08.10 §2 п.3: «частично должна меняться»).
     /// Подбирается кадром ступеней с аугментами и без.</summary>
-    public static float KHead = 0.5f;
+    public static float KHead = 1f;   // выбор геймдизайнера 09.10 по кадру итерации 3: при 0.5 голова не доходит до калибра волка
 
     /// <summary>Шея и голова вида на плане: свой план — из графа, чужой — блок `head` поставки (нет — null).</summary>
     public static HeadNumbers HeadOn(SpeciesSO sp, string plan)
