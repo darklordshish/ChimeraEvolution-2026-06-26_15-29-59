@@ -146,7 +146,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925335991897030900
+    - rid: 925335992176476364
     visualScale: {x: 1, y: 1, z: 1.2}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -216,7 +216,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925335991897030901
+    - rid: 925335992176476365
     visualScale: {x: 1, y: 1, z: 1.2}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -414,9 +414,9 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: "\u0412\u043E\u043B\u043A"
     abilities:
-    - rid: 925335991897030902
-    - rid: 925335991897030903
-    - rid: 925335991897030904
+    - rid: 925335992176476366
+    - rid: 925335992176476367
+    - rid: 925335992176476368
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -2151,8 +2151,8 @@ MonoBehaviour:
     - name: "\u0442\u0430\u0437"
       u: -0.0117
       len: 0.2361
-      r0: 0.1423
-      r1: 0.1317
+      r0: 0.1617
+      r1: 0.1496
       x: 0
       z: 0.0268
       section: 2.31
@@ -2161,20 +2161,20 @@ MonoBehaviour:
       u: 0.2159
       len: 0.2334
       r0: 0.175
-      r1: 0.2255
+      r1: 0.1765
       x: 0
       z: 0.0517
       section: 1.342
-      depth: 1.2
+      depth: 1
     - name: "\u0433\u0440\u0443\u0434\u043D\u0430\u044F \u043A\u043B\u0435\u0442\u043A\u0430"
-      u: 0.443
-      len: 0.3594
-      r0: 0.2031
-      r1: 0.2981
+      u: 0.493
+      len: 0.3306
+      r0: 0.1678
+      r1: 0.3162
       x: 0
-      z: 0.0688
+      z: 0.1733
       section: 1.341
-      depth: 1.7
+      depth: 1.15
     - name: "\u0448\u0438\u0440\u043E\u0447\u0430\u0439\u0448\u0430\u044F"
       u: 0.5276
       len: 0.0432
@@ -2182,8 +2182,8 @@ MonoBehaviour:
       r1: 0.1438
       x: 0.1018
       z: -0.0942
-      section: 0.999
-      depth: 1.0998
+      section: 1.2765
+      depth: 1.4053
     - name: "\u0433\u0440\u0443\u0434\u043D\u0430\u044F"
       u: 0.7282
       len: 0.2166
@@ -2196,8 +2196,8 @@ MonoBehaviour:
     - name: "\u044F\u0433\u043E\u0434\u0438\u0446\u0430"
       u: 0.0486
       len: 0.1671
-      r0: 0.124
-      r1: 0.1068
+      r0: 0.1465
+      r1: 0.1262
       x: 0.1069
       z: -0.0826
       section: 1
@@ -2214,8 +2214,8 @@ MonoBehaviour:
     - name: "\u0434\u0435\u043B\u044C\u0442\u0430.\u043F\u0435\u0440\u0435\u0434"
       u: 0.0713
       len: 0.3922
-      r0: 0.1437
-      r1: 0.0719
+      r0: 0.1688
+      r1: 0.0844
       x: 0.0075
       z: -0.1556
       section: 1
@@ -2223,8 +2223,8 @@ MonoBehaviour:
     - name: "\u0434\u0435\u043B\u044C\u0442\u0430"
       u: 0.05
       len: 0.3806
-      r0: 0.1437
-      r1: 0.0719
+      r0: 0.175
+      r1: 0.0875
       x: 0.0916
       z: -0.0153
       section: 1
@@ -2232,8 +2232,8 @@ MonoBehaviour:
     - name: "\u0434\u0435\u043B\u044C\u0442\u0430.\u0437\u0430\u0434"
       u: 0.0791
       len: 0.3903
-      r0: 0.1509
-      r1: 0.0719
+      r0: 0.1771
+      r1: 0.0844
       x: -0.0056
       z: 0.1509
       section: 1
@@ -2245,8 +2245,8 @@ MonoBehaviour:
       r1: 0.324
       x: -0.0006
       z: -0.1231
-      section: 0.4754
-      depth: 0.6796
+      section: 0.5619
+      depth: 0.8031
     - name: "\u0442\u0440\u0438\u0446\u0435\u043F\u0441"
       u: 0.3659
       len: 0.0647
@@ -2254,8 +2254,8 @@ MonoBehaviour:
       r1: 0.3655
       x: 0.0006
       z: 0.1481
-      section: 0.6212
-      depth: 0.8866
+      section: 0.7247
+      depth: 1.0344
     - name: "\u0440\u0430\u0437\u0433\u0438\u0431\u0430\u0442\u0435\u043B\u0438"
       u: 0.2263
       len: 0.0581
@@ -2281,8 +2281,8 @@ MonoBehaviour:
       r1: 0.3793
       x: 0.0509
       z: -0.0999
-      section: 0.5335
-      depth: 0.5675
+      section: 0.6905
+      depth: 0.7345
     - name: "\u0437\u0430\u0434\u043D\u044F\u044F \u0431\u0435\u0434\u0440\u0430"
       u: 0.9912
       len: 0.0129
@@ -2290,8 +2290,8 @@ MonoBehaviour:
       r1: 0.2158
       x: -0.0004
       z: 0.0781
-      section: 0.4549
-      depth: 0.6494
+      section: 0.5352
+      depth: 0.764
     - name: "\u0438\u043A\u0440\u0430"
       u: 0.2556
       len: 0.0885
@@ -2303,12 +2303,12 @@ MonoBehaviour:
       depth: 0.4528
     head:
       neckLen: 0.3546
-      neckR0: 0.1803
-      neckR1: 0.1493
+      neckR0: 0.2479
+      neckR1: 0.206
       neckPitch: 45
-      headLen: 0.2384
-      headR0: 0.1859
-      headR1: 0.2057
+      headLen: 0.2225
+      headR0: 0.2437
+      headR1: 0.2695
       headPitch: -45
     segments:
     - limb: "\u043F\u0435\u0440\u0435\u0434"
@@ -2540,7 +2540,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 925335991897030900
+    - rid: 925335992176476364
       type: {class: LimbStrikeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 18
@@ -2550,7 +2550,7 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.45
         cooldown: 1.1
-    - rid: 925335991897030901
+    - rid: 925335992176476365
       type: {class: LeapData, ns: , asm: Chimera.Runtime}
       data:
         damage: 12
@@ -2562,7 +2562,7 @@ MonoBehaviour:
         hitRadius: 1.3
         windupTime: 0.5
         staminaCost: 30
-    - rid: 925335991897030902
+    - rid: 925335992176476366
       type: {class: BiteData, ns: , asm: Chimera.Runtime}
       data:
         damage: 14
@@ -2574,7 +2574,7 @@ MonoBehaviour:
         halfAngle: 55
         windupTime: 0.45
         cooldown: 0.7
-    - rid: 925335991897030903
+    - rid: 925335992176476367
       type: {class: HowlData, ns: , asm: Chimera.Runtime}
       data:
         radius: 14
@@ -2583,7 +2583,7 @@ MonoBehaviour:
         fearMoraleHit: 2
         cooldown: 10
         cueTime: 0.4
-    - rid: 925335991897030904
+    - rid: 925335992176476368
       type: {class: ConstrictData, ns: , asm: Chimera.Runtime}
       data:
         maxStage: 1
