@@ -380,6 +380,56 @@ def morda():
         (+0.50, ring(0.14, 0.16, cy=-0.27, ch=0.55)),      # острый кончик носа
     ])
 
+# ── БЛОКИ ДИЗАЙН-ЛИНИИ (Codex, `Experiments/wolf-blocks-2026-10-05`, взяты модельной линией 09.10) ────────────────────
+# Меши по листу волка `Референсы/витрина/волк/вид.png`: морда со щеками и линией губ, ухо с раковиной, мочка с ноздрями,
+# глаз, изогнутый клык; задняя нога — сужения и утолщения вместо бруска, лапа с пальцами и когтями. Лежат в
+# `Tools/Blender/bloki-codex/` как OBJ В ОСЯХ UNITY, габарит 1×1×1 (контракт §7.4 — тот же, что у блоков выше), поэтому
+# кладутся теми же вершинами (−x, −z, y). Общие `клин`, `ухо`, `лапа`, `брусок` не заменены: ими рисуют другие виды.
+# Лапа у Codex — 1 690 треугольников: прореживается до бюджета детали (кисть r3 — 240), потом габарит возвращается в 1×1×1
+CODEX = os.path.join(HERE, 'bloki-codex')
+CODEX_BLOCKS = [('морда волка', 'wolf_muzzle', None), ('ухо волка', 'wolf_ear', None), ('глаз волка', 'wolf_eye', None),
+                ('мочка волка', 'wolf_nose', None), ('клык волка', 'wolf_fang', None),
+                ('скакательный волка', 'wolf_hind_hock', None), ('плюсна волка', 'wolf_hind_metatarsal', None),
+                ('лапа волка', 'wolf_hind_paw', 300)]
+
+
+def codex(name, stem, budget):
+    vs, fs = [], []
+    for line in open(os.path.join(CODEX, stem + '.obj'), encoding='utf-8'):
+        p = line.split()
+        if not p:
+            continue
+        if p[0] == 'v':
+            x, y, z = map(float, p[1:4])
+            vs.append((-x, -z, y))                       # Unity → Blender, как у лофтов
+        elif p[0] == 'f':
+            fs.append([int(q.split('/')[0]) - 1 for q in p[1:]])
+    me = bpy.data.meshes.new(name)
+    me.from_pydata(vs, [], fs)
+    ob = bpy.data.objects.new(name, me)
+    bpy.context.collection.objects.link(ob)
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    bmesh.ops.triangulate(bm, faces=bm.faces)
+    bm.to_mesh(me)
+    bm.free()
+    if budget and len(me.polygons) > budget:
+        bpy.context.view_layer.objects.active = ob
+        m = ob.modifiers.new('прорежено', 'DECIMATE')
+        m.ratio = budget / len(me.polygons)
+        bpy.ops.object.modifier_apply(modifier=m.name)
+        # прореживание сдвигает крайние вершины — габарит возвращается в 1×1×1 с центром в нуле
+        co = [v.co.copy() for v in me.vertices]
+        lo = [min(c[i] for c in co) for i in range(3)]
+        hi = [max(c[i] for c in co) for i in range(3)]
+        for v in me.vertices:
+            v.co = [(v.co[i] - (lo[i] + hi[i]) / 2) / (hi[i] - lo[i]) for i in range(3)]
+    for p in me.polygons:
+        p.use_smooth = False
+    return ob
+
+
 BLOCKS = [klin, brusok, kaplya, lapa, ukho, glaz, bulava, kopyto, rog, lopata, igla, zveno, chashka, kist, stopa, nos, rylo, morda]
 
 
@@ -389,6 +439,8 @@ def main():
     print('ригблоки → %s' % OUT)
     for make in BLOCKS:
         ok &= fit_unit(make())
+    for name, stem, budget in CODEX_BLOCKS:
+        ok &= fit_unit(codex(name, stem, budget))
     if not ok:
         print('ЭКСПОРТ ОТМЕНЁН: габарит блока не 1×1×1')
         sys.exit(1)

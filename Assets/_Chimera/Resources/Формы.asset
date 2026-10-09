@@ -49,3 +49,20 @@ MonoBehaviour:
     mesh: {fileID: 76131771405287278, guid: 1bdb60cb08a85c548aeb09ec1bcc9631, type: 3}
   - name: "\u043C\u043E\u0440\u0434\u0430"
     mesh: {fileID: 5041068719522747226, guid: 1bdb60cb08a85c548aeb09ec1bcc9631, type: 3}
+  - name: "\u043C\u043E\u0447\u043A\u0430 \u0432\u043E\u043B\u043A\u0430"
+    mesh: {fileID: -6897611869067839090, guid: 1bdb60cb08a85c548aeb09ec1bcc9631, type: 3}
+  - name: "\u0441\u043A\u0430\u043A\u0430\u0442\u0435\u043B\u044C\u043D\u044B\u0439
+      \u0432\u043E\u043B\u043A\u0430"
+    mesh: {fileID: -6391187414655299556, guid: 1bdb60cb08a85c548aeb09ec1bcc9631, type: 3}
+  - name: "\u043C\u043E\u0440\u0434\u0430 \u0432\u043E\u043B\u043A\u0430"
+    mesh: {fileID: -4362629262262004655, guid: 1bdb60cb08a85c548aeb09ec1bcc9631, type: 3}
+  - name: "\u043B\u0430\u043F\u0430 \u0432\u043E\u043B\u043A\u0430"
+    mesh: {fileID: -2086661010647333798, guid: 1bdb60cb08a85c548aeb09ec1bcc9631, type: 3}
+  - name: "\u0443\u0445\u043E \u0432\u043E\u043B\u043A\u0430"
+    mesh: {fileID: -1458387970482099790, guid: 1bdb60cb08a85c548aeb09ec1bcc9631, type: 3}
+  - name: "\u043F\u043B\u044E\u0441\u043D\u0430 \u0432\u043E\u043B\u043A\u0430"
+    mesh: {fileID: 4807009031981258310, guid: 1bdb60cb08a85c548aeb09ec1bcc9631, type: 3}
+  - name: "\u0433\u043B\u0430\u0437 \u0432\u043E\u043B\u043A\u0430"
+    mesh: {fileID: 6562481058480616931, guid: 1bdb60cb08a85c548aeb09ec1bcc9631, type: 3}
+  - name: "\u043A\u043B\u044B\u043A \u0432\u043E\u043B\u043A\u0430"
+    mesh: {fileID: 6816007284889392344, guid: 1bdb60cb08a85c548aeb09ec1bcc9631, type: 3}
