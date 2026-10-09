@@ -333,6 +333,47 @@ def retarget(p):
 
 for v in me.vertices:
     v.co = to_b(retarget(from_b(v.co)))
+
+# СЕЧЕНИЕ ПРЕДПЛЕЧЬЯ ПО ЛИСТУ (09.10, критик r1 4/10; срез подтвердил): у образца Meshy оно круглое и книзу колоколом —
+# на 0.50 м 14 × 16 см. У листа волка — овал: вбок 9–10 см по всей длине, в профиль 14 см у локтя → 9 у запястья.
+# Поясами по 3 см между запястьем и локтем: полуоси пояса (90-й перцентиль) приводятся к целевым; кольца шва и запястья
+# (контракт стыка) не трогаются, переход к ним — плавный
+FA_LAT = 0.048
+FA_FWD = (0.045, 0.070)            # у запястья, у локтя
+ring_set = set(seam_idx) | set(flange_idx) | set(wrist_idx)
+P_ = np.array([from_b(v.co) for v in me.vertices])
+WR = G['пясть']['b'] if 'пясть' in G else W        # НАСТОЯЩЕЕ запястье: `W` здесь — конец поля предплечья (0.50)
+y_lo, y_hi = WR[1] + 0.03, E_[1] + 0.03
+leg_i = [i for i in range(len(P_)) if y_lo <= P_[i, 1] < y_hi and i not in ring_set and P_[i, 1] > 0.12]
+D_ = {i: P_[i] - axis_o(P_[i, 1]) for i in leg_i}
+
+
+def half_axes(yc):
+    """Полуоси сечения у высоты yc: 90-й перцентиль по вершинам в поясе ±4 см (кольца у трубы редкие)."""
+    b = [D_[i] for i in leg_i if abs(P_[i, 1] - yc) < 0.04]
+    if len(b) < 4:
+        return None
+    b = np.array(b)
+    return float(np.percentile(np.abs(b[:, 0]), 90)), float(np.percentile(np.abs(b[:, 2]), 90))
+
+
+for i in leg_i:
+    y = P_[i, 1]
+    ha = half_axes(y)
+    if ha is None:
+        continue
+    t = float(np.clip((y - WR[1]) / (E_[1] - WR[1]), 0, 1))
+    kl = FA_LAT / max(ha[0], 1e-3); kf = (FA_FWD[0] + (FA_FWD[1] - FA_FWD[0]) * t) / max(ha[1], 1e-3)
+    kl, kf = min(kl, 1.0), min(kf, 1.0)            # только сужать: колокол и круг, а не раздувать тонкое
+    fade = max(0.0, min(1.0, (y - y_lo) / 0.03, (y_hi - y) / 0.04))     # к кольцам запястья и шва — плавно
+    d = D_[i]
+    q = axis_o(y) + np.array([d[0] * (1 + (kl - 1) * fade), d[1], d[2] * (1 + (kf - 1) * fade)])
+    me.vertices[i].co = to_b(q)
+for yc in np.arange(WR[1] + 0.05, E_[1], 0.08):
+    ha = half_axes(yc)
+    if ha:
+        print('  было у %.2f: %.3f × %.3f' % (yc, 2 * ha[0], 2 * ha[1]))
+print('предплечье по листу: вбок %.3f, в профиль %.3f → %.3f' % (2 * FA_LAT, 2 * FA_FWD[0], 2 * FA_FWD[1]))
 seam_m = np.array([from_b(me.vertices[i].co) for i in seam_idx])
 print('кольцо шва: центр %s (плечо графа %s), средний радиус %.4f м' % (np.round(seam_m.mean(0), 3), np.round(S, 3),
       np.mean(np.linalg.norm(seam_m - seam_m.mean(0), axis=1))))
@@ -603,7 +644,10 @@ if SHOT:
 bpy.ops.object.select_all(action='DESELECT'); ob.select_set(True); bpy.context.view_layer.objects.active = ob
 bpy.ops.object.mode_set(mode='EDIT')
 bm = bmesh.from_edit_mesh(me)
-cut_y = float(E_[1])
+# РЕЗ НА 5 СМ ВЫШЕ ЛОКТЯ (на 14 плечевая часть выходила из груди планкой, на 8 — светлой гранью над контуром, критик r3) (09.10, критик r2 «срезанные торцы над передними ногами»): у волка по листу дно груди у ноги на
+# 0.70–0.72, а рез стоял на локте (0.64) — на своём поле культю не рисуют, поле плеча детали выключено, и между грудью и
+# верхом ноги светились щель и срезанная труба; плечевой кости не было вовсе. Теперь нога уходит в тушу, торец внутри
+cut_y = float(E_[1]) + 0.05
 bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], dist=1e-5,
                        plane_co=Vector((0, 0, cut_y)), plane_no=Vector((0, 0, 1)))
 for f in bm.faces:
