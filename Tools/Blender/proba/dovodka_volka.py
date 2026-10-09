@@ -52,10 +52,13 @@ print('масштаб по спине: спина %.3f → %.3f (×%.3f)' % (bac
 if opt.get('fill', 0) > 0:
     V = [v.co for v in me.vertices]
     yh = min(v.y for v in V); L = max(v.y for v in V) - yh
+    # ЦЕНТР НИЖЕ ЛИНИИ КРУПА (проход 4: верх эллипсоида на 0.78 + 0.22 вылез кочкой 4–5 см над крупом — «пень на крупе»):
+    # верх на 0.90 спины — внутри крупа; вниз до ляжек (щель в профиль), вбок до ляжек
+    zc = opt.get('fillz', 0.62) * opt['back']
     bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=16, radius=1.0,
-                                         location=(0, yh + 0.845 * L, 0.78 * opt['back']))
+                                         location=(0, yh + 0.85 * L, zc))
     fl = bpy.context.active_object
-    fl.scale = (0.13, 0.07, 0.22)
+    fl.scale = (0.12, 0.08, 0.90 * opt['back'] - zc)
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
     # БУЛЕВО ОБЪЕДИНЕНИЕ, а не воксели всего тела: вокселизация заглаживала поверхность, и прореживание складывало бок в
     # картон (проход 4, проба). Объединение трогает меш только там, где заполнитель
@@ -265,7 +268,12 @@ def joint(c, y0, L):
     d = (c.y - y0) / L; z = c.z
     return ((0.28 < d < 0.46 and abs(z - 0.62 * B_) < 0.05) or (0.25 < d < 0.46 and 0.14 < z < 0.26)
             or (0.62 < d < 0.84 and 0.48 < z < 0.64 and abs(c.x) > 0.05) or (0.72 < d < 0.96 and 0.30 < z < 0.45)
-            or (0.24 < d < 0.32 and z > 0.75 * B_) or (0.80 < d < 0.89 and z > 0.72 * B_))
+            or (0.24 < d < 0.32 and z > 0.75 * B_) or (0.80 < d < 0.89 and z > 0.72 * B_)
+            # проход 4 (критик): плечевой, тазобедренный, поясница поперёк (стая кружит — поворот корпуса), сгиб пальцев
+            or (0.32 < d < 0.44 and abs(z - 0.78 * B_) < 0.06 and abs(c.x) > 0.08)
+            or (0.70 < d < 0.82 and abs(z - 0.80 * B_) < 0.06 and abs(c.x) > 0.06)
+            or (0.58 < d < 0.68 and z > 0.60 * B_)
+            or (z < 0.06))
 
 
 # 4. плотность: сначала равномерно до `mid` (уровень, на котором голова и лапы читаются — критик: 6000), потом ТОЛЬКО
@@ -322,6 +330,32 @@ if ga > 0:
     bm.to_mesh(me); bm.free()
     print('плоскости по группам: угол %.0f°, тр %d' % (ga, len(me.polygons)))
     print('  длинных рёбер разделено: %d' % len(longe))
+# ЧИСТКА ДО РИГА (критик, проход 4: «проверить машиной», `proverka_mesha.py`): слить совпавшие вершины, убрать вырожденные
+# грани, закрыть дыры — неманифолд после булевой и прореживания рвётся при скиннинге
+bm = bmesh.new(); bm.from_mesh(me)
+bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=1e-4)
+bmesh.ops.dissolve_degenerate(bm, edges=bm.edges[:], dist=1e-5)
+loose = [e for e in bm.edges if not e.link_faces]
+bmesh.ops.delete(bm, geom=loose, context='EDGES')
+bad = [e for e in bm.edges if len(e.link_faces) > 2]
+if bad:
+    bmesh.ops.delete(bm, geom=list({f for e in bad for f in e.link_faces}), context='FACES')
+bmesh.ops.holes_fill(bm, edges=[e for e in bm.edges if e.is_boundary], sides=0)
+# ...щель на шве зеркала (средняя линия, 2–4 мм — прореживание раздвинуло пары): вершины у X=0 на краю — на плоскость, слить
+edge_v = [v for v in bm.verts if v.is_boundary and abs(v.co.x) < 0.005]
+for v in edge_v:
+    v.co.x = 0.0
+bmesh.ops.remove_doubles(bm, verts=edge_v, dist=0.002)
+# узелок после слияния (ребро без граней / на трёх гранях): снять грани вокруг и закрыть дыру одним многоугольником
+for _ in range(3):
+    bad = [e for e in bm.edges if not e.is_manifold]
+    if not bad:
+        break
+    vs = {v for e in bad for v in e.verts}
+    bmesh.ops.delete(bm, geom=list({f for v in vs for f in v.link_faces}), context='FACES')
+    bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context='VERTS')
+    bmesh.ops.holes_fill(bm, edges=[e for e in bm.edges if e.is_boundary], sides=0)
+bm.to_mesh(me); bm.free()
 bm = bmesh.new(); bm.from_mesh(me); bmesh.ops.triangulate(bm, faces=bm.faces[:]); bm.to_mesh(me); bm.free()
 for p in me.polygons:
     p.use_smooth = False
