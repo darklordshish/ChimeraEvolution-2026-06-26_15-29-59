@@ -136,7 +136,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925335992176476355
+    - rid: 925336003067249316
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -206,7 +206,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925335992176476356
+    - rid: 925336003067249317
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -286,7 +286,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925335992176476357
+    - rid: 925336003067249318
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -509,7 +509,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925335992176476358
+    - rid: 925336003067249319
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -1831,7 +1831,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 925335992176476355
+    - rid: 925336003067249316
       type: {class: LimbStrikeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
@@ -1841,7 +1841,7 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.45
         cooldown: 1.1
-    - rid: 925335992176476356
+    - rid: 925336003067249317
       type: {class: ChargeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
@@ -1861,7 +1861,7 @@ MonoBehaviour:
         stompForce: 13
         plowForce: 6
         plowRadius: 1.6
-    - rid: 925335992176476357
+    - rid: 925336003067249318
       type: {class: BellowData, ns: , asm: Chimera.Runtime}
       data:
         fearRadius: 10
@@ -1869,7 +1869,7 @@ MonoBehaviour:
         fearMoraleHit: 2
         cooldown: 10
         cueTime: 1.2
-    - rid: 925335992176476358
+    - rid: 925336003067249319
       type: {class: AntlerData, ns: , asm: Chimera.Runtime}
       data:
         damage: 12
