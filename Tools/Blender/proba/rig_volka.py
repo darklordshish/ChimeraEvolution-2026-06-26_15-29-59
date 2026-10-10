@@ -13,7 +13,7 @@
   4. НАРЕЗКА: грань идёт в слот, чьи кости весят в ней больше; мелкие островки и зубцы границы приглаживаются. Вершины
      шва у соседних объектов совпадают по месту и весам; затенение плоское — нормаль у грани своя, ступени на шве нет.
 
-  blender -b --factory-startup -P rig_volka.py -- меш.obj скелет.json выход.fbx [--muzzle градусы — как в доводке] [--shvy 1 — швы кусков] [--blend файл.blend] [--shots префикс]
+  blender -b --factory-startup -P rig_volka.py -- меш.obj скелет.json выход.fbx [--muzzle градусы — как в доводке] [--shvy 1 — швы кусков] [--pasporta папка] [--blend файл.blend] [--shots префикс]
 Печатает отчёт «РИГ: …»: посадка, расхождения меша со скелетом, треугольники по объектам, вершины по костям.
 """
 import sys, math, json, os
@@ -795,6 +795,40 @@ for sl in ORDER:
     for vi in parts[sl][1]:
         seam.setdefault(vi, []).append(sl)
 REP.append('вершин на швах: %d (общих у двух и более объектов)' % sum(1 for l in seam.values() if len(l) > 1))
+
+# ---------- паспорта кусков ----------
+# `--pasporta папка`: паспорт детали на каждый кусок (формат `Docs/models/handoff/parts/*.json`; поля `fbx` и `fit` — по
+# письму механик 10.10: меш берётся объектом из модели вида, `fit: ring` — кусок встаёт в кадр кости шва целиком).
+# Числа — из тех же переменных, что построили кольцо: паспорт с FBX разойтись не может. Оси Unity: (−x, z, −y) Blender
+if SHVY and 'pasporta' in opt:
+    def U(q):
+        return [round(-q.x, 5), round(q.z, 5), round(-q.y, 5)]
+    for fname, seam_name, slot, main, extra_obj, bones_, fit in (
+            ('volk-golova-kusok.json', 'основание черепа', 'Пасть', 'голова', {'polost': 'голова.полость', 'zuby': 'голова.зубы'},
+             ['голова', 'шея', 'челюсть'], 'ring'),
+            ('volk-hvost-kusok.json', 'корень хвоста', 'Хвост', 'Хвост', {}, ['хвост', 'хвост_кисть'], None)):
+        d = SEAMS[seam_name]
+        ring_pts = [d['c'] + Vector((1, 0, 0)) * (d['r'][0] * math.sin(2 * math.pi * k_ / d['n'])) + d['up'] * (d['r'][1] * math.cos(2 * math.pi * k_ / d['n']))
+                    for k_ in range(d['n'])]
+        objs = dict(main=main); objs.update(extra_obj)
+        pas = {
+            'species': 'Волк', 'slot': slot, 'plan': 'четвероногий',
+            'seam': {'type': seam_name, 'ring': list(range(d['n'])), 'ring_m': [U(q) for q in ring_pts], 'center_m': U(d['c']),
+                     'ellipse_m': [d['r'][0], d['r'][1]], 'axis_out': U(d['ax']), 'up': U(d['up']), 'bone': d['bone'],
+                     'on_bone_m': round(d['at'], 4), 'overhang_m': round(d['over'], 4),
+                     'note': 'метры тела волка, оси Unity; кольцо плоское, поперёк кости; вершина 0 — на «верху», дальше к −X Unity; '
+                             'ellipse_m — вбок × по «верху»; overhang_m — на сколько кусок свисает за шов вдоль оси к телу носителя'},
+            'objects': objs, 'fbx': 'Assets/_Chimera/Models/volk_mesh.fbx', 'mirror': False,
+            'bones': bones_, 'armature': 'все узлы графа волка + челюсть', 'keys': [],
+            'tris': sum(len(parts[o_][0].data.polygons) for o_ in objs.values()), 'tris_main': len(parts[main][0].data.polygons),
+            'generator': 'Tools/Blender/proba/rig_volka.py --muzzle 4.5 --shvy 1 --pasporta …',
+            'source': 'Референсы/работа/модельная/2026-10-09-proba-b/volk_b9.obj; швы — Docs/models/POSTAVKA-2026-10-10b-volk-shvy.md',
+        }
+        if fit:
+            pas['fit'] = fit
+        with open(os.path.join(os.path.abspath(opt['pasporta']), fname), 'w', encoding='utf-8') as fh:
+            json.dump(pas, fh, ensure_ascii=False, indent=2)
+        REP.append('паспорт куска: %s (%s, слот %s, %d тр)' % (fname, seam_name, slot, pas['tris']))
 
 # ---------- экспорт ----------
 bpy.ops.object.select_all(action='SELECT')
