@@ -70,6 +70,23 @@ public static class BodyMeshCheck
         return bone + ": повёрнута на " + deg.ToString(CultureInfo.InvariantCulture) + "°, родитель — " + t.parent.name;
     }
 
+    /// <summary>Переставить камеру кадра (`ПрофильCam`): азимут от морды по часовой (0 — анфас, 90 — профиль, 180 — сзади),
+    /// наклон вниз, полурамка в метрах и точка прицела в системе тела. `ShotSpecies` умеет только три оси.</summary>
+    public static string Cam(float yaw, float pitch, float half, float x, float y, float z)
+    {
+        var root = GameObject.Find("~ШОТ");
+        if (root == null) return "тела нет";
+        var body = root.transform.Find("тело");
+        var cam = root.GetComponentInChildren<Camera>();
+        var dir = Quaternion.AngleAxis(yaw, Vector3.up) * Quaternion.AngleAxis(-pitch, Vector3.right) * Vector3.forward;
+        var at = body.TransformPoint(new Vector3(x, y, z));
+        dir = body.TransformDirection(dir);
+        cam.transform.position = at + dir * 12f;
+        cam.transform.rotation = Quaternion.LookRotation(-dir, Vector3.up);
+        cam.orthographicSize = half; cam.farClipPlane = 40f;
+        return "камера: азимут " + yaw.ToString(CultureInfo.InvariantCulture) + "°, полурамка " + half.ToString(CultureInfo.InvariantCulture) + " м";
+    }
+
     static void Add(Transform[] bones, int i, float w, Vector3 p, Dictionary<Transform, Vector3> sum, Dictionary<Transform, float> cnt, HashSet<int> used)
     {
         if (w <= 0f || bones[i] == null) return;

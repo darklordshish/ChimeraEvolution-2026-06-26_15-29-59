@@ -38,6 +38,10 @@ if hi_hi > hi_lo:
     me.transform(Matrix.Rotation(math.pi, 4, 'Z'))
 FWD = -1.0                                 # морда в −Y: «вперёд» = −Y
 
+def sm(t):
+    t = min(1.0, max(0.0, t)); return t * t * (3 - 2 * t)
+
+
 # 1. масштаб по линии спины — за гривой (середина длины задевает гриву: 1.25 вместо 1.19)
 V = [v.co for v in me.vertices]
 y0, y1 = min(v.y for v in V), max(v.y for v in V); ym = (y0 + y1) / 2; L = y1 - y0
@@ -144,13 +148,40 @@ if eye > 0:
             v.co.x += sg * 0.5 * eye * k; v.co.y -= 0.6 * eye * k
     print('глазница: глаз у (%.3f %.3f %.3f), вглубь %.3f' % (xe, ye, ze, eye))
 
+# СТОП (критик 10.10, проход 7; профиль листа подтверждает: кончик носа и спинка у образца на 2–3 см выше листа, морда —
+# клин от лба): морда поворачивается вниз на `--muzzle` градусов вокруг переносицы (0.20 м от носа), полная сила до 0.12 м,
+# ноль за 0.23 — лоб и глаза на месте, между лбом и спинкой носа встаёт угол. После глазницы: та ищет глаз от кончика носа
+mz = math.radians(opt.get('muzzle', 0.0))
+if mz:
+    yf = min(v.co.y for v in me.vertices)
+    pv = Vector((0.0, yf + 0.20, 1.20))
+    for v in me.vertices:
+        d = v.co.y - yf
+        if d >= 0.23 or v.co.z < 0.95:
+            continue
+        t = sm((0.23 - d) / 0.11)
+        r = v.co - pv
+        c, s_ = math.cos(-mz * t), math.sin(-mz * t)
+        v.co = pv + Vector((r.x, r.y * c + r.z * s_, -r.y * s_ + r.z * c))
+    # ...и сама ПЕРЕНОСИЦА вниз на `--stop` м (критик, b8: поворот одной морды подогнал силуэт, но излом «лоб — спинка носа»
+    # уменьшил с 27° до 17°; просил опустить переносицу, а не кончик носа): верх спинки в 2–5 см перед глазами
+    st = opt.get('stop', 0.0)
+    if st:
+        yf = min(v.co.y for v in me.vertices)
+        top = {}
+        for v in me.vertices:
+            b = int((v.co.y - yf) / 0.01)
+            if abs(v.co.x) < 0.05: top[b] = max(top.get(b, 0), v.co.z)
+        for v in me.vertices:
+            d = v.co.y - yf; b = int(d / 0.01)
+            if 0.10 < d < 0.22 and b in top:
+                v.co.z -= st * sm(1 - abs(d - 0.165) / 0.055) * sm((0.045 - (top[b] - v.co.z)) / 0.045) * sm((0.07 - abs(v.co.x)) / 0.04)
+    print('стоп: морда вниз на %.1f°, переносица на %.3f м' % (opt['muzzle'], st))
+
 # 5–7. ЗОННЫЕ ПРАВКИ (критик r(б)1): плавные, по зонам вдоль тела (доля длины от морды) и по высоте
 V = [v.co for v in me.vertices]
 y0 = min(v.y for v in V); L = max(v.y for v in V) - y0
 
-
-def sm(t):
-    t = min(1.0, max(0.0, t)); return t * t * (3 - 2 * t)
 
 
 def side_centres(sel):
@@ -241,16 +272,18 @@ if saw_a > 0:
             zb = int(v.co.z / 0.02)
             front[zb] = min(front.get(zb, 9.0), v.co.y)
     TAN = math.tan(math.radians(25))                       # кончик назад, 20–30° к поверхности
+    # гребень: растяжка по листу (`--len`) вытягивала зубцы на четверть и клала их под 15° (критик 10.10) — круче и короче
+    TANC = math.tan(math.radians(opt.get('crest', 25))); GILL = opt.get('gill', 1.0)
     for v in me.vertices:
         d = (v.co.y - y0) / L
         b = min(NB - 1, int(d * NB))
         if 0.17 < d < 0.50 and top[b] > 0:                 # гребень: затылок → холка → гаснет на плечо
             w = sm((0.05 - (top[b] - v.co.z)) / 0.05) * sm((0.10 - abs(v.co.x)) / 0.05) * sm((d - 0.17) / 0.03) * sm((0.50 - d) / 0.12)
             f = saw_a * w * phase(v.co.y, CREST)
-            v.co.y += f; v.co.z += f * TAN
+            v.co.y += f; v.co.z += f * TANC
         if 0.15 < d < 0.30 and v.co.z > 0.80 * opt['back']:  # щёки и воротник: вбок-назад
             w = sm((0.04 - (side[b] - abs(v.co.x))) / 0.04) * sm((d - 0.15) / 0.03) * sm((0.30 - d) / 0.04)
-            f = saw_a * w * phase(v.co.z, CHEEK)
+            f = GILL * saw_a * w * phase(v.co.z, CHEEK)     # `--gill` < 1: сзади зубцы воротника торчали «жабрами» на 4–5 см
             v.co.x += (1 if v.co.x > 0 else -1) * f * TAN; v.co.y += f
         zb = int(v.co.z / 0.02)                            # МАНИШКА остриём вниз — главный признак в анфас после ушей
         if opt.get('bib', 0) > 0 and 0.20 < d < 0.40 and zb in front and abs(v.co.x) < 0.07 and 0.55 * opt['back'] < v.co.z < 1.0 * opt['back']:
@@ -358,6 +391,20 @@ if opt.get('len', 0) > 0:
                 break
     print('длина по листу: +%.3f м' % (max(v.co.y for v in me.vertices) - yn - L))
 
+# ХВОСТ УЖЕ (критик 10.10, проход 7; срезы подтвердили: полуширина хвоста до 13.5 см при тазе 24.5 — сзади «доска»,
+# закрывающая талию и бёдра): хвост по X ×`--tailw`, у корня ещё уже, наибольшая ширина — на 40 % длины (z ≈ 0.70)
+tw = opt.get('tailw', 1.0)
+if tw < 1:
+    yn = min(v.co.y for v in me.vertices)
+    for v in me.vertices:
+        n, z = v.co.y - yn, v.co.z
+        if abs(v.co.x) > 0.16:
+            continue
+        w = sm((n - 1.76) / 0.05) if z > 0.70 else sm((n - 1.79) / 0.03)
+        k = tw * (1 + 0.22 * sm(1 - abs(z - 0.70) / 0.18)) * (1 - 0.12 * sm((z - 0.86) / 0.10))
+        v.co.x *= 1 + (min(1.0, k) - 1) * w
+    print('хвост: ширина ×%.2f' % tw)
+
 # ЧИСТКА ДО РИГА (критик, проход 4: «проверить машиной», `proverka_mesha.py`): слить совпавшие вершины, убрать вырожденные
 # грани, закрыть дыры — неманифолд после булевой и прореживания рвётся при скиннинге
 bm = bmesh.new(); bm.from_mesh(me)
@@ -375,10 +422,14 @@ for v in edge_v:
     v.co.x = 0.0
 bmesh.ops.remove_doubles(bm, verts=edge_v, dist=0.002)
 # узелок после слияния (ребро без граней / на трёх гранях): снять грани вокруг и закрыть дыру одним многоугольником
-for _ in range(3):
+# Триангуляция — ВНУТРИ цикла (проход 7): диагональ четырёхугольника на средней линии совпала с существующим ребром, и
+# ребро на четырёх гранях (плавник под грудью) появлялось уже после проверки
+for _ in range(4):
+    bmesh.ops.triangulate(bm, faces=bm.faces[:])
     bad = [e for e in bm.edges if not e.is_manifold]
     if not bad:
         break
+    print('  узелок: рёбер %d' % len(bad), ['%.3f %.3f %.3f (%d)' % (*((e.verts[0].co + e.verts[1].co) / 2), len(e.link_faces)) for e in bad[:4]])
     vs = {v for e in bad for v in e.verts}
     bmesh.ops.delete(bm, geom=list({f for v in vs for f in v.link_faces}), context='FACES')
     bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context='VERTS')
