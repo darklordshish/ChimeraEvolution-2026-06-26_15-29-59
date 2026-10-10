@@ -11,7 +11,12 @@ using UnityEngine;
 /// привязки каждой кости берётся от НАШЕЙ кости, как это делает `BoneMesher` для поля.
 ///
 /// КОСТЬ СВЕРХ ГРАФА (у волка — `челюсть`): её в скелете нет, она создаётся под своим родителем по имени, в том месте,
-/// где стоит в модели.</summary>
+/// где стоит в модели.
+///
+/// СВОЙ ЦВЕТ — ОТДЕЛЬНЫМ ОБЪЕКТОМ. Игра красит рендерер целиком (цвет по составу, эмоции, телеграф), поэтому кусок со
+/// своей окраской — полость рта, зубы — в модели отдельный объект `слот.что` (`голова.полость`, `голова.зубы`) с
+/// материалом нужного цвета. Рендерер получает имя слота (контракт имён цел), а цвет материала уходит в `PartMark`:
+/// микшер держит его базой вместо цвета состава, как у глаз из блоков.</summary>
 public static class BodyMesh
 {
     /// <summary>Выключатель для инструментов: стенд и кадры сравнивают меш вида с его же полем. Тест, который его
@@ -91,7 +96,13 @@ public static class BodyMesh
                 cache[key] = skinned;
             }
 
-            var go = new GameObject(src.name);                  // ИМЯ = СЛОТ: контракт имён частей
+            int dot = src.name.IndexOf('.');
+            var go = new GameObject(dot > 0 ? src.name.Substring(0, dot) : src.name);   // ИМЯ = СЛОТ: контракт имён частей
+            if (dot > 0 && src.sharedMaterial != null && src.sharedMaterial.HasProperty("_BaseColor"))
+            {
+                var own = src.sharedMaterial.GetColor("_BaseColor"); own.a = 1f;
+                go.AddComponent<PartMark>().own = own;
+            }
             go.transform.SetParent(container, false);
             var smr = go.AddComponent<SkinnedMeshRenderer>();
             smr.sharedMesh = skinned;

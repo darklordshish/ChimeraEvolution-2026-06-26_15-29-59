@@ -147,6 +147,24 @@ namespace Chimera.Tests.EditMode
         }
 
         [Test]
+        public void DottedObject_KeepsSlotName_AndCarriesItsOwnColor()
+        {
+            Species().bodyMesh = Model();
+            var src = model.GetComponentInChildren<SkinnedMeshRenderer>();
+            src.name = "голова.зубы";
+            var mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            mat.SetColor("_BaseColor", new Color(0.9f, 0.88f, 0.8f, 1f));
+            src.sharedMaterial = mat;
+            Build(so.organs.ToList());
+            Object.DestroyImmediate(mat);
+
+            var smr = go.GetComponentsInChildren<SkinnedMeshRenderer>(true).Single();
+            Assert.AreEqual("голова", smr.name, "кусок со своим цветом носит имя слота — иначе его не спрячет первое лицо");
+            Assert.IsTrue(smr.TryGetComponent<PartMark>(out var mark) && mark.HasOwn, "свой цвет объекта не дошёл до паспорта детали");
+            Assert.Less(Mathf.Abs(mark.own.r - 0.9f), 1e-3f);
+        }
+
+        [Test]
         public void Graft_ReturnsBodyToField()
         {
             Species().bodyMesh = Model();
