@@ -130,7 +130,9 @@ public static class ChainSwap
         {
             var dTree = BodyTree.From(donor, out _, graft: donor.speciesName);
             if (dTree == null) continue;
-            bool hasPart = donor.parts != null && donor.parts.Any(p => p != null && p.slot == e.slot && p.mesh != null);
+            // кусок, встающий кольцом, калибр цепи не трогает: он ставится жёстко своим масштабом шва, а кость остаётся
+            // мерой для гнёзд (голова — по ширине, сторож `WolfMaw_OnHuman_LooksForward_AtHeadWidthCalibre`)
+            bool hasPart = donor.parts != null && donor.parts.Any(p => p != null && p.slot == e.slot && p.mesh != null && !p.ringFit);
             bool otherPlan = hasPart && donor.Plan != chassis.Plan;
             tree = e.kind == Kind.Chain ? SwapChain(tree, chassis, dTree, e.limb, e.upperEnd, e.slot, e.calibre, e.gaze, chassis.organs, worn, hasPart, otherPlan)
                                         : SwapGroup(tree, dTree, e.slot, chassis.speciesName, donor.speciesName);

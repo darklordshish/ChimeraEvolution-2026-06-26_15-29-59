@@ -111,13 +111,16 @@ public static class MorphBuilder
         var whole = new HashSet<string>();
         if (chassis.placedParts != null && skeleton != null)
             foreach (var (part, donor) in chassis.placedParts)
-                if (PartAssembly.Place(container.transform, chassis, part, donor, PrimitiveMaterial()) != null)
-                {
-                    covered.Add(part.slot);
-                    string rootBone = part.ringFit ? PartAssembly.ChainRoot(part, donor) : null;
-                    string place = rootBone != null ? donor.bones.FirstOrDefault(b => b.name == rootBone)?.socket : null;
-                    if (!string.IsNullOrEmpty(place)) whole.Add(place);
-                }
+            {
+                var placedPart = PartAssembly.Place(container.transform, chassis, part, donor, PrimitiveMaterial());
+                if (placedPart == null) continue;
+                covered.Add(part.slot);
+                string rootBone = part.ringFit ? PartAssembly.ChainRoot(part, donor) : null;
+                string place = rootBone != null ? donor.bones.FirstOrDefault(b => b.name == rootBone)?.socket : null;
+                if (string.IsNullOrEmpty(place)) continue;
+                whole.Add(place);
+                placedPart.GetComponent<BodyPartView>().whole = place;
+            }
 
         // ГРАФ ХРЕБТА: место с `parent` не хранит своих координат — считаем их от родителя и НАСЛЕДУЕМ
         // его поворот. Поэтому наклон шеи тянет за собой голову, морду, уши и рога, а не оставляет их

@@ -132,6 +132,7 @@ public static class ChimeraMatrix
             foreach (var o in fed)
                 foreach (var place in Fed(d, o.slot))
                 {
+                    if (b.CarriedWhole(c, place)) continue;   // место несёт кусок целиком (голова с ушами и зубами)
                     int want = donorBody.Count(place), got = b.Count(place);
                     if (want > 0 && got < want) Add("И1", place, $"деталей {got} из {want} ({o.organName})");
                 }
@@ -205,6 +206,20 @@ public static class ChimeraMatrix
 
         // ДЕТАЛЬ-МЕШ СЧИТАЕТСЯ НАРАВНЕ С КУСКАМИ (02.10): лапы волка теперь внутри его детали, а не отдельными блоками —
         // без этого «дома» у Рук стало бы 0 деталей, и проверка «не рисуется» молча выключилась бы для любого гостя
+        /// <summary>Место нарисовано куском, несущим целое место: само это место или любое, что на нём висит.</summary>
+        public bool CarriedWhole(SpeciesSO chassis, string place)
+        {
+            var wholes = shells.Select(r => r.GetComponent<BodyPartView>()).Where(v => v != null && !string.IsNullOrEmpty(v.whole)).Select(v => v.whole).ToList();
+            if (wholes.Count == 0) return false;
+            var by = chassis.sockets.Where(s => s != null && !string.IsNullOrEmpty(s.name)).GroupBy(s => s.name).ToDictionary(g => g.Key, g => g.First());
+            for (int guard = 0; place != null && guard < 16; guard++)
+            {
+                if (wholes.Contains(place)) return true;
+                place = by.TryGetValue(place, out var s) && !string.IsNullOrEmpty(s.parent) ? s.parent : null;
+            }
+            return false;
+        }
+
         public int Count(string place) => details.Count(r => r.name == place) +
                                           shells.Count(r => r.name == place && r.GetComponent<BodyPartView>() != null);
 

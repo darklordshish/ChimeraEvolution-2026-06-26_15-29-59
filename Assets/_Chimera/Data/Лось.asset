@@ -136,7 +136,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925336004366172318
+    - rid: 925336028761292848
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -206,7 +206,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925336004366172319
+    - rid: 925336028761292849
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -286,7 +286,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925336004366172320
+    - rid: 925336028761292850
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -509,7 +509,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925336004366172321
+    - rid: 925336028761292851
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -618,6 +618,7 @@ MonoBehaviour:
     carries: []
     visualSegments: 0
     visualTaper: 0
+  bodyMesh: {fileID: 0}
   eatsMeat: 0
   massive: 1
   baseHp: 70
@@ -1847,7 +1848,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 925336004366172318
+    - rid: 925336028761292848
       type: {class: LimbStrikeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
@@ -1857,7 +1858,7 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.45
         cooldown: 1.1
-    - rid: 925336004366172319
+    - rid: 925336028761292849
       type: {class: ChargeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
@@ -1877,7 +1878,7 @@ MonoBehaviour:
         stompForce: 13
         plowForce: 6
         plowRadius: 1.6
-    - rid: 925336004366172320
+    - rid: 925336028761292850
       type: {class: BellowData, ns: , asm: Chimera.Runtime}
       data:
         fearRadius: 10
@@ -1885,7 +1886,7 @@ MonoBehaviour:
         fearMoraleHit: 2
         cooldown: 10
         cueTime: 1.2
-    - rid: 925336004366172321
+    - rid: 925336028761292851
       type: {class: AntlerData, ns: , asm: Chimera.Runtime}
       data:
         damage: 12

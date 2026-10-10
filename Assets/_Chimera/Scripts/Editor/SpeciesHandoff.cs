@@ -167,7 +167,9 @@ public static class SpeciesHandoff
     // `ring_m` — массив массивов, JsonUtility такое не берёт: разбирается отдельно (`ReadRingM`)
     [System.Serializable] class SeamDto { public string type; public int[] ring; public float[] ellipse; public float[] ellipse_m; }
     [System.Serializable] class ObjectsDto { public string main, stump; }
-    [System.Serializable] class DetailDto { public string species, slot, plan; public SeamDto seam; public bool mirror = true; public string[] keys; public ObjectsDto objects; }
+    // `fbx` — КУСОК МЕША ВИДА (пилот Б, 10.10): меш берётся не из `Models/Parts/<паспорт>.fbx`, а объектом `objects.main` из
+    // названной модели (модель вида режется по швам, отдельного файла у куска нет). `fit: "ring"` — посадка кольцом
+    [System.Serializable] class DetailDto { public string species, slot, plan, fbx, fit; public SeamDto seam; public bool mirror = true; public string[] keys; public ObjectsDto objects; }
     public const string PartsDir = Dir + "parts/";
 
     /// <summary>Точки кольца шва `seam.ring_m` — [[x,y,z], …] в метрах тела донора. Индексы `ring` после импорта врут: Unity
@@ -204,7 +206,7 @@ public static class SpeciesHandoff
             if (d == null || string.IsNullOrEmpty(d.slot)) { problems.Add($"«{stem}»: в паспорте нет места (`slot`)"); continue; }
             if (!string.IsNullOrEmpty(d.species) && d.species != species.speciesName) { problems.Add($"«{stem}»: паспорт назвал вид «{d.species}»"); continue; }
 
-            string fbx = PartsMeshDir + stem + ".fbx";
+            string fbx = !string.IsNullOrEmpty(d.fbx) ? d.fbx : PartsMeshDir + stem + ".fbx";
             if (AssetImporter.GetAtPath(fbx) is ModelImporter mi && !mi.isReadable) { mi.isReadable = true; mi.SaveAndReimport(); }
             // ОСНОВНОЙ МЕШ И КУЛЬТЯ — РАЗНЫЕ ОБЪЕКТЫ FBX (поставка 02.10c): имена — в паспорте `objects`. Культя (подмышка →
             // сустав, с кольцом шва) нужна только для сшивки кольцо-в-кольцо с деталью шасси; на шасси-поле её не рисуют
@@ -215,12 +217,21 @@ public static class SpeciesHandoff
             var stump = !string.IsNullOrEmpty(stumpName) ? smrs.FirstOrDefault(r => r.name == stumpName) : null;
             if (!string.IsNullOrEmpty(stumpName) && stump == null) problems.Add($"«{stem}»: нет объекта культи «{stumpName}»");
             if (smr == null || smr.sharedMesh == null) { problems.Add($"«{stem}»: нет скиннед-меша в «{fbx}»"); continue; }
-            var bones = smr.bones.Select(b => b != null ? b.name : "").ToArray();
             var graph = new HashSet<string>((species.bones ?? new Bone[0]).Select(b => b.name));
+            // КОСТЬ СВЕРХ ГРАФА (`челюсть`) У ДЕТАЛИ — ЕЁ БЛИЖАЙШИЙ ПРЕДОК ИЗ ГРАФА: сборка деталей ставит вершины кадрами костей
+            // графа, а у носителя такой кости нет вовсе. Пасть куска на чужом теле поэтому закрыта; открывать — отдельный долг
+            string InGraph(Transform t)
+            {
+                string own = t != null ? t.name : "";
+                while (t != null && !graph.Contains(t.name)) t = t.parent;
+                return t != null ? t.name : own;
+            }
+            var bones = smr.bones.Select(InGraph).ToArray();
             var missing = bones.Concat(stump != null ? stump.bones.Select(b => b != null ? b.name : "") : new string[0])
                                .Where(b => !graph.Contains(b)).Distinct().ToList();
             if (missing.Count > 0) { problems.Add($"«{stem}»: кости меша не узлы графа: {string.Join(", ", missing)}"); continue; }
-            if (d.seam?.ring != null && d.seam.ring.Length != 8) problems.Add($"«{stem}»: кольцо шва {d.seam.ring.Length} вершин, ждали 8");
+            // валентность кольца — по спеке конструктора §7: 8 у конечностей и хвоста, 12 у шеи
+            if (d.seam?.ring != null && d.seam.ring.Length != 8 && d.seam.ring.Length != 12) problems.Add($"«{stem}»: кольцо шва {d.seam.ring.Length} вершин, ждали 8 или 12");
 
             list.Add(new BodyPart
             {
@@ -233,6 +244,7 @@ public static class SpeciesHandoff
                 ellipse = (d.seam?.ellipse_m ?? d.seam?.ellipse) is { Length: >= 2 } el ? new Vector2(el[0], el[1]) : Vector2.zero,
                 ringM = ReadRingM(System.IO.File.ReadAllText(file)),
                 keys = d.keys,
+                ringFit = d.fit == "ring",
             });
         }
         return list.ToArray();

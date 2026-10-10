@@ -27,7 +27,10 @@ public static class PartAssembly
         {
             var organ = worn.First(o => o != null && o.slot == slot);   // видимый орган места (порядок — `WornInDrawOrder`)
             var donor = chassis.organs != null && System.Array.IndexOf(chassis.organs, organ) >= 0 ? chassis : ChainSwap.OwnerOf(organ);
-            var candidates = donor?.parts?.Where(p => p != null && p.slot == slot && p.mesh != null && p.bones != null && p.bones.Length > 0).ToList();
+            // КУСОК МЕША ВИДА (`ringFit`) — ТОЛЬКО ЧУЖОМУ ТЕЛУ: у своего шасси он уже есть в меше вида, а на своём же поле
+            // голова-кусок проглотила бы чужие уши, глаза и рога на ней (матрица 10.10: 12 новых И1 у Волк+…)
+            var candidates = donor?.parts?.Where(p => p != null && p.slot == slot && p.mesh != null && p.bones != null && p.bones.Length > 0
+                                                     && !(p.ringFit && donor == chassis)).ToList();
             if (candidates == null || candidates.Count == 0) continue;
             GraftSeam.TryGetValue(slot, out var seam);
             // ЧУЖОМУ ШАССИ — ТОЛЬКО ДЕТАЛЬ ШВА ПРИВИВКИ (спека `2026-10-06-ruki-kist.md`): у «Рук» это кисть от запястья. Вся
@@ -122,6 +125,8 @@ public static class PartAssembly
     public static bool CanPlace(SpeciesSO body, BodyPart part, SpeciesSO donor)
     {
         if (part?.mesh == null || !part.mesh.isReadable || part.bones == null || donor?.bones == null) return false;
+        // посадке кольцом нужен шов у носителя: у змеи шеи с «основанием черепа» нет — кусок не ставится, работает прежний путь
+        if (part.ringFit && SeamEllipse(body, part.seam) == Vector2.zero) return false;
         var donorBones = new HashSet<string>(donor.bones.Select(b => b.name));
         var need = Weighted(part).AsEnumerable();
         if (part.StumpShown(body.Plan))
