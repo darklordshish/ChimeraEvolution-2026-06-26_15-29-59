@@ -44,12 +44,18 @@ public static class SpeciesHandoff
     [System.Serializable] class NestDto { public string name, host; public float[] pos, dir; public float unit; public bool mirror, proposed; public SurfaceDto surface; }
     [System.Serializable] class PlacesLayout { public string species; public NestDto[] places; }
 
+    public static string BodyMeshPath(string speciesName) => "Assets/_Chimera/Models/" + Translit(speciesName) + "_mesh.fbx";
+
     /// <summary>Применить поставку вида целиком: граф, раскладку головы, раскладку кусков органов (ноги, рога). Каждый файл
     /// независим — нет раскладки, значит те места и органы остаются, какими их задал бутстрап.</summary>
     public static bool Apply(SpeciesSO species)
     {
         if (species == null) return false;
         bool graph = ApplyGraph(species);
+        // МЕШ ЧИСТОГО ВИДА (спека 09.10): лежит файл — вид без графта рисуется им. Нет файла — пишем пустое ЯВНО
+        // (бутстрап не обнуляет поля, которые перестал присваивать), и вид рисуется полем
+        species.bodyMesh = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(BodyMeshPath(species.speciesName));
+        if (species.bodyMesh != null) Debug.Log($"[форма] {species.speciesName}: меш чистого вида — «{BodyMeshPath(species.speciesName)}»");
 
         string stem = Dir + Translit(species.speciesName);
         string head = System.IO.File.Exists(stem + "-head-layout.json") ? System.IO.File.ReadAllText(stem + "-head-layout.json") : null;

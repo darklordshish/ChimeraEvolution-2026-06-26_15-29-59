@@ -31,9 +31,13 @@ public static class MorphBuilder
         }
         if (chassis == null || chassis.sockets == null || chassis.sockets.Length == 0 || wornOrgans == null) return;
 
+        // ЧИСТЫЙ ВИД РИСУЕТ ЕГО МЕШ (спека 09.10): решаем ДО состава — у родного тела со своей деталью `Compose` тоже
+        // отдаёт копию, а чистым его делают органы, а не то, как собрано поле
+        bool bodyMesh = BodyMesh.Fits(chassis, wornOrgans, plan);
+
         // АУГМЕНТ ПОДСТАВЛЯЕТ СВОЮ ЦЕПЬ (спека двух слоёв §3, решение 13): дальше строится составное тело — скелет с
         // донорскими цепями и их гнёздами. Здесь, а не у тела, — чтобы кадры, матрица и стенд строили ТО ЖЕ, что игра
-        chassis = ChainSwap.Compose(chassis, wornOrgans);
+        if (!bodyMesh) chassis = ChainSwap.Compose(chassis, wornOrgans);
 
         // орган на СОКЕТ по его `slot` — место следует из механики, отдельного поля-адреса нет.
         // НА ОБЩЕМ СОКЕТЕ ВИДЕН ПЕРВЫЙ: порядок задаёт тело (`CreatureBody.WornInDrawOrder`, решение 14 спеки двух
@@ -53,6 +57,17 @@ public static class MorphBuilder
         container.transform.SetParent(root, false);
         container.transform.localPosition = Vector3.up * footY;
         container.transform.localRotation = Quaternion.identity;
+
+        // МЕШ ВИДА НЕСЁТ ВСЁ ВИДИМОЕ: зубы, уши, глаза, лапы — в нём же, поэтому ни поле, ни детали органов не строятся.
+        // Скелет тот же, что у поля: на нём гнёзда и метки, его двигает анимация
+        if (bodyMesh)
+        {
+            var bodySkeleton = BoneMesher.Build(container.transform, chassis, PrimitiveMaterial(), field: false);
+            if (BodyMesh.Place(container.transform, bodySkeleton, chassis.bodyMesh, PrimitiveMaterial()) > 0) return;
+            // в модели ни одного годного объекта — строим полем, как если бы её не было (ошибка уже в консоли)
+            bodySkeleton.name = "Skeleton~dead"; bodySkeleton.gameObject.SetActive(false); Kill(bodySkeleton.gameObject);
+            chassis = ChainSwap.Compose(chassis, wornOrgans);
+        }
 
         // СКЕЛЕТ ЗАБИРАЕТ СВОИ МЕСТА (спека 2026-08-18). Кость называет место, форму которого строит она;
         // старый сокет-план это место пропускает, иначе кость и место лепят одно и то же вдвоём. Само место

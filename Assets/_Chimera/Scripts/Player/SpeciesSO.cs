@@ -15,6 +15,11 @@ public class SpeciesSO : ScriptableObject
     public int mutagenPool = 10;      // ёмкость пула, когда вид = шасси
     public Organ[] organs;
 
+    /// <summary>МЕШ ЧИСТОГО ВИДА (спека 09.10): модель с арматурой по именам костей графа и объектом на слот. Есть и
+    /// состав родной — тело рисует он (`BodyMesh`), с первым графтом — поле. Пусто = вид рисуется полем всегда.
+    /// Ставит `SpeciesHandoff` по файлу `Models/<вид>_mesh.fbx`.</summary>
+    public GameObject bodyMesh;
+
     /// <summary>СОСТАВНОЕ ТЕЛО (`ChainSwap`): ключ кэша оболочки вместо имени вида. Пусто у ассетов видов; у копии в
     /// памяти — «шасси|слот:донор…», чтобы химера не получила оболочку чистого вида молча.</summary>
     [System.NonSerialized] public string meshKey;            // органы вида (по одному на покрываемый слот)

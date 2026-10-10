@@ -158,7 +158,8 @@ public static class BoneMesher
         pending[key] = Task.Run(() => Compute(segs, cell, blend, fur, flat));
     }
 
-    public static Transform Build(Transform container, SpeciesSO chassis, Material mat)
+    /// <summary>`field: false` — только скелет: тело рисует меш вида (`BodyMesh`), оболочка поля не нужна.</summary>
+    public static Transform Build(Transform container, SpeciesSO chassis, Material mat, bool field = true)
     {
         var skeleton = new GameObject("Skeleton").transform;
         skeleton.SetParent(container, false);
@@ -185,6 +186,7 @@ public static class BoneMesher
             if (q.muscle) t.localRotation = Quaternion.Inverse(t.parent.rotation) * q.rot;
             order.Add(t);
         }
+        if (!field) return skeleton;
         var segs = Segs(pose, chassis);
 
         var all = order.ToArray();
