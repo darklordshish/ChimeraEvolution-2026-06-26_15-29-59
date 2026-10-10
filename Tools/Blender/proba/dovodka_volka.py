@@ -8,7 +8,7 @@
   3. ПОСАДКА ГОЛОВЫ И ШЕИ: поворот вверх вокруг основания шеи на `--neck` градусов, плавно от Z0 до Z1 вдоль тела.
   4. ПЛОТНОСТЬ: равномерно до `--mid` (6000: голова и лапы читаются), затем только тело — до `--budget`.
 
-  blender -b --factory-startup -P dovodka_volka.py -- вход.obj выход.obj [--half 1] [--neck 11] [--mid 6000] [--budget 3500]
+  blender -b --factory-startup -P dovodka_volka.py -- вход.obj выход.obj [--half 1] [--neck 11] [--mid 6000] [--budget 3500] [--len 1]
 Оси OBJ на входе и выходе — как у `blender_pyat_kamer.py` (вперёд −Z, вверх Y); в Blender морда в +Y? — проверяется по
 верху (уши) и разворачивается в −Y.
 """
@@ -58,7 +58,8 @@ if opt.get('fill', 0) > 0:
     bpy.ops.mesh.primitive_uv_sphere_add(segments=32, ring_count=16, radius=1.0,
                                          location=(0, yh + 0.85 * L, zc))
     fl = bpy.context.active_object
-    fl.scale = (0.12, 0.08, 0.90 * opt['back'] - zc)
+    # проход 5: до ляжек заполнитель связал хвост с бёдрами перемычкой — теперь только внутри крупа (низ `--fillz`)
+    fl.scale = (0.11, 0.08, 0.90 * opt['back'] - zc)
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
     # БУЛЕВО ОБЪЕДИНЕНИЕ, а не воксели всего тела: вокселизация заглаживала поверхность, и прореживание складывало бок в
     # картон (проход 4, проба). Объединение трогает меш только там, где заполнитель
@@ -330,6 +331,33 @@ if ga > 0:
     bm.to_mesh(me); bm.free()
     print('плоскости по группам: угол %.0f°, тр %d' % (ga, len(me.polygons)))
     print('  длинных рёбер разделено: %d' % len(longe))
+# ЗЕРКАЛО ПОСЛЕ ПРОРЕЖИВАНИЯ (критик, проход 5: «днище ящика» под грудью — дыра шва зеркала, закрытая плоской гранью):
+# прореживание раздвигало пары у X = 0. Теперь левая половина срезается и отражается заново со склейкой шва
+bm = bmesh.new(); bm.from_mesh(me)
+bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], dist=1e-5, plane_co=(0, 0, 0),
+                       plane_no=(1, 0, 0), clear_inner=True)
+for v in bm.verts:
+    if abs(v.co.x) < 2e-3:
+        v.co.x = 0.0
+bm.to_mesh(me); bm.free()
+mm = ob.modifiers.new('mir2', 'MIRROR'); mm.use_axis[0] = True; mm.use_clip = True; mm.merge_threshold = 1e-4
+bpy.ops.object.modifier_apply(modifier=mm.name)
+
+# ДЛИНА ПО ЛИСТУ (проход 6, перед ригом): образец Hunyuan сжат по длине за головой — «нос к носу» с маской
+# `витрина/волк/masks/орто-profile` передняя нога стоит на 7 см, задняя на 17 см ближе к носу, чем на листе (IoU профиля
+# 0.74). Растяжка вдоль тела по узлам «м от носа → сдвиг назад» (подобрана по IoU, сглажена до пяти узлов): 0.90.
+# Скелет графа снят с того же листа — после растяжки суставы меша ложатся на кости без правки графа
+if opt.get('len', 0) > 0:
+    KN = ((0.0, 0.0), (0.30, 0.0), (0.62, 0.08), (1.20, 0.16), (1.62, 0.175), (1.95, 0.109))
+    yn = min(v.co.y for v in me.vertices)
+    for v in me.vertices:
+        d = v.co.y - yn
+        for (a0, s0), (a1, s1) in zip(KN, KN[1:]):
+            if d <= a1 or a1 == KN[-1][0]:
+                v.co.y += s0 + (s1 - s0) * min(1.0, max(0.0, (d - a0) / (a1 - a0)))
+                break
+    print('длина по листу: +%.3f м' % (max(v.co.y for v in me.vertices) - yn - L))
+
 # ЧИСТКА ДО РИГА (критик, проход 4: «проверить машиной», `proverka_mesha.py`): слить совпавшие вершины, убрать вырожденные
 # грани, закрыть дыры — неманифолд после булевой и прореживания рвётся при скиннинге
 bm = bmesh.new(); bm.from_mesh(me)

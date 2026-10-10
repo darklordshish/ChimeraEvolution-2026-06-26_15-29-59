@@ -14,7 +14,7 @@ bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.wm.obj_import(filepath=a[0], forward_axis='NEGATIVE_Z', up_axis='Y')
 ob = [o for o in bpy.data.objects if o.type == 'MESH'][0]
 bm = bmesh.new(); bm.from_mesh(ob.data)
-bm.verts.ensure_lookup_table()
+bm.verts.ensure_lookup_table(); bm.faces.ensure_lookup_table()
 nonman = [e for e in bm.edges if not e.is_manifold]
 boundary = [e for e in bm.edges if e.is_boundary]
 degen = [f for f in bm.faces if f.calc_area() < 1e-8]
@@ -49,4 +49,7 @@ print('ПРОВЕРКА: граней %d, неманифолд %d, гранич�
 for e in (nonman + boundary)[:12]:
     c = (e.verts[0].co + e.verts[1].co) / 2
     print('  ребро у (%.3f %.3f %.3f), граней %d' % (c.x, c.y, c.z, len(e.link_faces)))
+for i, j in inter[:12]:
+    c = bm.faces[i].calc_center_median()
+    print('  пересечение у (%.3f %.3f %.3f)' % (c.x, c.y, c.z))
 print('ЧИСТО' if not (nonman or boundary or degen or inter or asym) else 'ЕСТЬ ЗАМЕЧАНИЯ')
