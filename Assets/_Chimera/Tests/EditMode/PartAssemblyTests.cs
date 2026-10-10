@@ -48,6 +48,7 @@ namespace Chimera.Tests.EditMode
             trash.Add(mesh);
             // АРМАТУРА — ВЕСЬ ГРАФ, КАК В FBX ЛИНИИ: лишняя кость `хребет` без весов. Деталь ею не владеет — поле хребта живо
             wolf.parts = new[] { new BodyPart { slot = slot, plan = "четвероногий", mesh = mesh, bones = bones.Append("хребет").ToArray(), mirror = true } };
+            wolf.bodyMesh = null;   // сторожим деталь на поле: с мешем вида родной волк рисуется им целиком, и детали не ставятся
             return wolf;
         }
 

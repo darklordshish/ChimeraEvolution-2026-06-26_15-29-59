@@ -197,7 +197,7 @@ public static class ChimeraMatrix
             var cc = b.go.AddComponent<CharacterController>();
             cc.height = 2f;
             cc.center = new Vector3(0f, 1f, 0f);
-            MorphBuilder.Build(b.go.transform, s, worn, plan);
+            using (BodyMesh.FieldOnly()) MorphBuilder.Build(b.go.transform, s, worn, plan);
             foreach (var r in b.go.GetComponentsInChildren<Renderer>())
                 (r is SkinnedMeshRenderer ? b.shells : b.details).Add(r);
             return b;

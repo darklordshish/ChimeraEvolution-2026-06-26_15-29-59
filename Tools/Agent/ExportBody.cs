@@ -22,7 +22,7 @@ public static class ExportBody
         try
         {
             var cc = go.AddComponent<CharacterController>(); cc.height = 2f; cc.center = Vector3.up;
-            MorphBuilder.Build(go.transform, sp, sp.organs?.Where(o => o != null).ToList(), null);
+            using (BodyMesh.FieldOnly()) MorphBuilder.Build(go.transform, sp, sp.organs?.Where(o => o != null).ToList(), null);
             var field = new StringBuilder(); var parts = new StringBuilder();
             int vf = 0, vp = 0, tf = 0, tp = 0;
             foreach (var r in go.GetComponentsInChildren<Renderer>())

@@ -18,6 +18,18 @@ public static class BodyMesh
     /// трогает, возвращает значение в `TearDown` — статика переживает прогон.</summary>
     public static bool Enabled = true;
 
+    /// <summary>ДЕТЕКТОРЫ КОНСТРУКТОРА МЕРЯЮТ ЯЗЫК КОНСТРУКТОРА. Матрица химер, карта тел и выгрузка скелета считают детали
+    /// органов и кости оболочки — у меша вида их нет, и чистый донор дал бы «деталей 0»: поломки химер «ушли» бы сами
+    /// (поймано 10.10 на первом же FBX — четыре И1 у Змея+Волк). `using (BodyMesh.FieldOnly())` строит тело полем.</summary>
+    public static System.IDisposable FieldOnly() => new Off();
+
+    sealed class Off : System.IDisposable
+    {
+        readonly bool was = Enabled;
+        public Off() => Enabled = false;
+        public void Dispose() => Enabled = was;
+    }
+
     // привязка зависит от позы скелета, а она — от данных вида: ключ по содержимому (исходный меш × матрицы),
     // иначе после пересоздания видов меш остался бы привязан к прежним костям молча
     static readonly BoundedCache<string, Mesh> cache = new(64);

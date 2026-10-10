@@ -28,7 +28,8 @@ public static class SkeletonExport
         try
         {
             var cc = go.AddComponent<CharacterController>(); cc.height = 2f; cc.center = Vector3.up;
-            MorphBuilder.Build(go.transform, sp, sp.organs?.Where(o => o != null).ToList(), null);
+            // полем: кости рига — это кости оболочки; у меша вида рендерер несёт только те, на которых есть веса
+            using (BodyMesh.FieldOnly()) MorphBuilder.Build(go.transform, sp, sp.organs?.Where(o => o != null).ToList(), null);
             var skeleton = go.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == "Skeleton");
             if (skeleton == null) return "скелет не найден — тело собрано без поля?";
             string V(Vector3 u) => string.Format(CultureInfo.InvariantCulture, "[{0:0.#####},{1:0.#####},{2:0.#####}]", -u.x, -u.z, u.y);

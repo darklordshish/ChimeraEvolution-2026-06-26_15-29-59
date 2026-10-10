@@ -126,7 +126,7 @@ public static class BodyProbe
             if (species.organs != null)
                 foreach (var o in species.organs) if (o != null) worn.Add(o);
 
-            MorphBuilder.Build(go.transform, species, worn, plan);
+            using (BodyMesh.FieldOnly()) MorphBuilder.Build(go.transform, species, worn, plan);
 
             // РОДСТВО БЕРЁМ ИЗ ДАННЫХ, А НЕ ИЗ ИЕРАРХИИ. Билдер кладёт детали ПЛОСКО в контейнер `Morph`,
             // поэтому у всех `Transform.parent` один и тот же — искать по нему стык бессмысленно, таблица
