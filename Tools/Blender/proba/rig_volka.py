@@ -78,7 +78,7 @@ yA, zA, yB, zB = yn + 0.02, 1.083, yn + 0.225, 1.106
 SL = (zB - zA) / (yB - yA)
 P0 = Vector((0, yA, zA)); PN = Vector((0, -SL, 1)).normalized()
 NC = yn + 0.22                      # угол рта
-JOINT = Vector((0, yn + 0.325, 1.135))   # челюстной сустав: под передним краем уха
+JOINT = Vector((0, yn + 0.325, 1.155))   # челюстной сустав: под передним краем основания уха (критик 10.10: выше на 2 см)
 H_UP, H_LO, INSET = 0.016, 0.012, 0.03
 TT, FF = (0.0, 0.4, 1.0), (0.0, 0.7, 1.0)   # кольца полости: доля пути от губы к оси и доля подъёма
 
@@ -159,7 +159,19 @@ bmesh.ops.remove_doubles(bm, verts=new_verts, dist=1e-5)
 new_verts = [v for v in new_verts if v.is_valid]
 # ось нёба и дна у задней стенки слилась попарно; стенка у оси — ребро «нёбо—дно» общее для двух половин
 bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
-n_skin = len(bm.faces)
+# КОЖА ДЛЯ ПРОВЕРКИ ЗУБОВ (критик 10.10: в закрытой пасти зубы прокалывали губу белыми точками): зуб обязан сидеть под
+# наружной кожей не мельче 2 мм; ближайшая грань полости не в счёт — в полости зубу и место
+from mathutils.bvhtree import BVHTree
+bm.faces.ensure_lookup_table()
+SKIN_BVH = BVHTree.FromBMesh(bm)
+POCK = [all(v[TAG] in (1, 2) or v is UP[0] or v is UP[-1] for v in f.verts) and any(v in set(new_verts) for v in f.verts) for f in bm.faces]
+
+
+def hidden(p, margin=0.002):
+    co, no, idx, d = SKIN_BVH.find_nearest(p)
+    return POCK[idx] or ((p - co).dot(no) < 0 and d >= margin)
+
+
 
 
 def lip_point(ch, s_arc, side):
@@ -188,11 +200,19 @@ def tooth(ch, s_arc, sign, H, tag, length, along, across, inset=0.007):
     """Зуб — закрытая пирамида: основание утоплено в десну на 2 мм, вершина — к противоположной челюсти и чуть внутрь."""
     for side in (1, -1):
         p, dr = lip_point(ch, s_arc, side)
-        b, inw = surf(p, sign, H, inset)
-        b = b + PN * (sign * 0.002)
-        tip = b - PN * (sign * (length + 0.002)) + inw * (0.12 * length)
-        cr = dr.cross(PN).normalized()
-        q = [b + dr * (sx * along / 2) + cr * (sy * across / 2) for sx, sy in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
+        ins, ln = inset, length
+        for _ in range(40):                              # глубже от губы, затем короче — пока зуб не спрячется под кожу
+            b, inw = surf(p, sign, H, ins)
+            b = b + PN * (sign * 0.002)
+            tip = b - PN * (sign * (ln + 0.002)) + inw * (0.12 * ln)
+            cr = dr.cross(PN).normalized()
+            q = [b + dr * (sx * along / 2) + cr * (sy * across / 2) for sx, sy in ((-1, -1), (1, -1), (1, 1), (-1, 1))]
+            if all(hidden(x) for x in q + [tip, (b + tip) / 2]):
+                break
+            if ins < 0.016: ins += 0.0015
+            else: ln *= 0.93
+        if side == 1:
+            TEETH.append((sign, s_arc, ins, ln))
         vs = [bm.verts.new(x) for x in q] + [bm.verts.new(tip)]
         for v in vs:
             v[TAG] = tag
@@ -200,10 +220,11 @@ def tooth(ch, s_arc, sign, H, tag, length, along, across, inset=0.007):
         bmesh.ops.recalc_face_normals(bm, faces=fs)
 
 
+TEETH = []
 #        дуга от середины, длина, вдоль губы, поперёк
-UPPER = ((0.008, 0.007, 0.006, 0.005), (0.021, 0.008, 0.006, 0.005), (0.046, 0.026, 0.011, 0.010),
+UPPER = ((0.008, 0.007, 0.006, 0.005), (0.021, 0.008, 0.006, 0.005), (0.046, 0.036, 0.015, 0.013),
          (0.078, 0.008, 0.012, 0.006), (0.104, 0.009, 0.014, 0.007), (0.136, 0.011, 0.020, 0.008))
-LOWER = ((0.007, 0.006, 0.006, 0.005), (0.019, 0.007, 0.006, 0.005), (0.033, 0.021, 0.010, 0.009),
+LOWER = ((0.007, 0.006, 0.006, 0.005), (0.019, 0.007, 0.006, 0.005), (0.031, 0.029, 0.013, 0.012),
          (0.064, 0.007, 0.011, 0.006), (0.090, 0.008, 0.013, 0.007), (0.120, 0.010, 0.018, 0.008))
 for s_arc, ln, al, ac in UPPER:
     tooth(UP, s_arc, 1, H_UP, 2, ln, al, ac)
@@ -212,8 +233,8 @@ for s_arc, ln, al, ac in LOWER:
 # язык: клин на дне, от задней стенки почти до резцов; верх чуть ниже линии смыкания
 y0t, y1t = yF + 0.035, yC - 0.008
 tv = []
-for y, hw in ((y0t, 0.008), ((y0t + y1t) / 2, 0.015), (y1t, 0.014)):
-    zt, zb = zpl(y) - 0.0015 * PN.z, zpl(y) - (H_LO + 0.002)
+for y, hw in ((y0t, 0.006), ((y0t + y1t) / 2, 0.011), (y1t, 0.011)):   # уже и ниже зубного ряда (критик 10.10: плита во всю челюсть — «второе дно»)
+    zt, zb = zpl(y) - 0.004, zpl(y) - (H_LO + 0.002)
     tv.append([bm.verts.new((sx * hw * kx, y, z)) for sx, kx, z in ((-1, 1, zt - 0.003), (1, 1, zt - 0.003), (1, 0.8, zb), (-1, 0.8, zb))])
 tf = [bm.faces.new((tv[0][3], tv[0][2], tv[0][1], tv[0][0])), bm.faces.new((tv[2][0], tv[2][1], tv[2][2], tv[2][3]))]
 for r0, r1 in zip(tv, tv[1:]):
@@ -241,6 +262,7 @@ n_lip = len(UP)
 bm.to_mesh(me); bm.free()
 for p in me.polygons:
     p.use_smooth = False
+REP.append('зубы (сторона +X; дуга от середины губы → отступ от губы, длина): ' + ', '.join('%s %.3f → %.4f, %.3f' % ('верх' if sg > 0 else 'низ', a_, i_, l_) for sg, a_, i_, l_ in TEETH))
 REP.append('пасть: губа %d вершин, разрез и полость +%d тр, зубы и язык %d тр; сустав челюсти (%.3f %.3f %.3f)'
            % (n_lip, len(me.polygons) - n_extra - n_orig, n_extra, *JOINT))
 
@@ -331,13 +353,17 @@ for v in me.vertices:
     w['голова'] = w.get('голова', 0) + hw
     # нижняя челюсть
     s_ = sd(co)
-    if tagv[v.index] == 1: jw = 1.0
-    elif tagv[v.index] == 2: jw = 0.0
+    # у угла рта губы стянуты перепонкой (критик 10.10: при 35° виден сквозной клин до самого угла): на последних 4.5 см
+    # перед углом верх и низ сходятся весами к половине — раствор растёт от угла плавно
+    web = 0.5 * sm((NC - co.y) / 0.045)
+    if tagv[v.index] == 1: jw = 0.5 + web
+    elif tagv[v.index] == 2: jw = 0.5 - web
     elif co.y < NC: jw = 1.0 if s_ < -1e-4 else 0.0
     else: jw = sm((-s_ + 0.015) / 0.03) * (1 - sm((co.y - NC) / (NJ - NC))) * sm((s_ + 0.11) / 0.04)
-    if tagv[v.index] in (1, 2): w = {'голова': 1.0}
+    if tagv[v.index] in (1, 2): w = {}
     w = {k_: x * (1 - jw) for k_, x in w.items()}
     if jw > 0: w['челюсть'] = jw
+    if tagv[v.index] in (1, 2) and jw < 1: w['голова'] = 1 - jw
     # плюсна и задняя лапа — жёстко на `голень`: ниже скакательного кости в графе нет, блоки поля висят там же
     if co.y > 0.2 and abs(co.x) > 0.04:
         sfx = '.L' if co.x > 0 else ''
