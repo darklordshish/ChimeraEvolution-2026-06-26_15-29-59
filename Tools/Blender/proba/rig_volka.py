@@ -100,6 +100,7 @@ for v in me.vertices:
 
 bm = bmesh.new(); bm.from_mesh(me)
 TAG = bm.verts.layers.int.new('jawtag')          # 1 — на челюсть, 2 — на голову жёстко
+PART = bm.faces.layers.int.new('part')           # 0 — кожа, 1 — полость рта и язык, 2 — зубы: свой цвет — свой объект
 faces = [f for f in bm.faces if f.calc_center_median().y < NC]
 geom = set(faces)
 for f in faces:
@@ -167,6 +168,10 @@ SKIN_BVH = BVHTree.FromBMesh(bm)
 POCK = [all(v[TAG] in (1, 2) or v is UP[0] or v is UP[-1] for v in f.verts) and any(v in set(new_verts) for v in f.verts) for f in bm.faces]
 
 
+for k_, f in enumerate(bm.faces):
+    f[PART] = 1 if POCK[k_] else 0
+
+
 def hidden(p, margin=0.002):
     co, no, idx, d = SKIN_BVH.find_nearest(p)
     return POCK[idx] or ((p - co).dot(no) < 0 and d >= margin)
@@ -218,6 +223,8 @@ def tooth(ch, s_arc, sign, H, tag, length, along, across, inset=0.007):
             v[TAG] = tag
         fs = [bm.faces.new((vs[k_], vs[(k_ + 1) % 4], vs[4])) for k_ in range(4)] + [bm.faces.new((vs[3], vs[2], vs[1], vs[0]))]
         bmesh.ops.recalc_face_normals(bm, faces=fs)
+        for f in fs:
+            f[PART] = 2
 
 
 TEETH = []
@@ -243,6 +250,8 @@ for r in tv:
     for v in r:
         v[TAG] = 1
 bmesh.ops.recalc_face_normals(bm, faces=tf)
+for f in tf:
+    f[PART] = 1
 bmesh.ops.triangulate(bm, faces=bm.faces[:], quad_method='BEAUTY', ngon_method='BEAUTY')
 bm.faces.ensure_lookup_table()
 EXTRA = bm.faces.layers.int.new('extra')         # зубы и язык: отдельные острова, в автовеса не идут
@@ -427,7 +436,11 @@ for nm in ('лопатка', 'плечо', 'предплечье', 'пясть')
     SLOT[nm] = SLOT[nm + '.L'] = 'Руки'
 for nm in ('бедро', 'голень', 'пятка'):
     SLOT[nm] = SLOT[nm + '.L'] = 'Ноги'
-ORDER = ['голова', 'шея', 'хребет', 'Руки', 'Ноги', 'Хвост']
+# СВОЙ ЦВЕТ — ОТДЕЛЬНЫМ ОБЪЕКТОМ (механики, `c04c3a7`): игра красит рендерер целиком, поэтому полость рта с языком и зубы —
+# объекты `слот.что` с материалом своего цвета; рендерер в игре получит имя слота, цвет уйдёт в паспорт детали
+OWN = {'голова.полость': (0.035, 0.006, 0.007, 1.0), 'голова.зубы': (0.90, 0.88, 0.80, 1.0)}   # линейные: в игре полость ≈ (0.21 0.07 0.08)
+ORDER = ['голова', 'шея', 'хребет', 'Руки', 'Ноги', 'Хвост'] + list(OWN)
+part = [d.value for d in me.attributes['part'].data]
 extra = [d.value for d in me.attributes['extra'].data]
 F = [tuple(p.vertices) for p in me.polygons]
 fslot = []
@@ -436,7 +449,8 @@ for k_, f in enumerate(F):
     for vi in f:
         for nm, x in W[vi].items():
             sc[SLOT[nm]] = sc.get(SLOT[nm], 0) + x
-    fslot.append('голова' if extra[k_] or all(me.vertices[vi].co.y - yn < 0.27 for vi in f) else max(sc, key=sc.get))
+    fslot.append('голова.полость' if part[k_] == 1 else 'голова.зубы' if part[k_] == 2
+                 else 'голова' if all(me.vertices[vi].co.y - yn < 0.27 for vi in f) else max(sc, key=sc.get))
 edge_f = {}
 for k_, f in enumerate(F):
     for x, y in ((f[0], f[1]), (f[1], f[2]), (f[2], f[0])):
@@ -447,14 +461,14 @@ for fs in edge_f.values():
         nb[fs[0]].append(fs[1]); nb[fs[1]].append(fs[0])
 for _ in range(3):                                   # зубцы границы: грань, у которой двое из трёх соседей чужие, уходит к ним
     for k_ in range(len(F)):
-        if extra[k_]:
+        if part[k_]:
             continue
-        o = [fslot[j] for j in nb[k_] if fslot[j] != fslot[k_]]
+        o = [fslot[j] for j in nb[k_] if fslot[j] != fslot[k_] and not part[j]]
         if len(o) >= 2 and o.count(o[0]) >= 2:
             fslot[k_] = o[0]
 done = set()                                         # островки: кусок слота меньше 12 граней уходит к соседу
 for k_ in range(len(F)):
-    if k_ in done or extra[k_]:
+    if k_ in done or part[k_]:
         continue
     comp, st = [], [k_]
     while st:
@@ -464,7 +478,7 @@ for k_ in range(len(F)):
         done.add(u); comp.append(u)
         st.extend(j for j in nb[u] if fslot[j] == fslot[k_] and j not in done)
     if len(comp) < 12:
-        o = [fslot[j] for u in comp for j in nb[u] if fslot[j] != fslot[k_]]
+        o = [fslot[j] for u in comp for j in nb[u] if fslot[j] != fslot[k_] and not part[j]]
         if o:
             to = max(set(o), key=o.count)
             for u in comp:
@@ -481,6 +495,10 @@ for sl in ORDER:
     m.update()
     for p in m.polygons:
         p.use_smooth = False
+    if sl in OWN:
+        mt = bpy.data.materials.new(sl); mt.diffuse_color = OWN[sl]; mt.use_nodes = True
+        mt.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = OWN[sl]
+        m.materials.append(mt)
     o = bpy.data.objects.new(sl, m); bpy.context.scene.collection.objects.link(o)
     assert o.name == sl, 'имя объекта изменено: ' + o.name
     groups = {}
@@ -522,7 +540,7 @@ tot = 0
 REP.append('треугольники по объектам:')
 for sl in ORDER:
     n = len(parts[sl][0].data.polygons); tot += n
-    REP.append('  %-7s %5d тр, %4d вершин' % (sl, n, len(parts[sl][1])))
+    REP.append('  %-14s %5d тр, %4d вершин' % (sl, n, len(parts[sl][1])))
 REP.append('  всего   %5d тр (зубы и язык %d)' % (tot, n_extra))
 cnt = {}
 for w in W:
@@ -585,13 +603,14 @@ if 'shots' in opt:
             pb.matrix = Matrix.Translation(h) @ Matrix.Rotation(math.radians(rot[nm]), 4, 'X') @ Matrix.Translation(-h) @ pb.matrix
             bpy.context.view_layer.update()
 
-    COL = {'голова': (0.85, 0.3, 0.3, 1), 'шея': (0.9, 0.75, 0.3, 1), 'хребет': (0.4, 0.7, 0.4, 1), 'Руки': (0.3, 0.55, 0.9, 1),
+    COL = {'голова.полость': OWN['голова.полость'], 'голова.зубы': OWN['голова.зубы'], 'голова': (0.85, 0.3, 0.3, 1), 'шея': (0.9, 0.75, 0.3, 1), 'хребет': (0.4, 0.7, 0.4, 1), 'Руки': (0.3, 0.55, 0.9, 1),
            'Ноги': (0.65, 0.4, 0.85, 1), 'Хвост': (0.3, 0.8, 0.8, 1)}
     for sl in ORDER:
         parts[sl][0].color = COL[sl]
     sh.color_type = 'OBJECT'
     shot('narezka', (0, 0, 0.8), 2.8, ['side', '34f', '34b', 'front', 'back'])
-    sh.color_type = 'SINGLE'
+    for sl in ORDER:
+        parts[sl][0].color = OWN.get(sl, (0.72, 0.72, 0.72, 1))
     hc = (0, yn + 0.20, 1.20)
     shot('zakryta', hc, 0.55, ['side', '34f', 'low'])
     pose({'челюсть': 35})
