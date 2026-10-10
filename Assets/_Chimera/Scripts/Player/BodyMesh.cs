@@ -39,6 +39,11 @@ public static class BodyMesh
     // иначе после пересоздания видов меш остался бы привязан к прежним костям молча
     static readonly BoundedCache<string, Mesh> cache = new(64);
 
+    /// <summary>ПЕРЕИМПОРТ МОДЕЛИ НЕ МЕНЯЕТ ИДЕНТИФИКАТОР МЕША: Unity подменяет содержимое под тем же `GetInstanceID`, и
+    /// кэш молча отдавал прежнюю геометрию (поймано 10.10 модельной линией: в ассете «голова» 1 686 тр, в собранном
+    /// теле — 796). В редакторе кэш сбрасывает импорт модели (`BodyMeshImport`); в игре переимпорта не бывает.</summary>
+    public static void ResetCache() => cache.Clear();
+
     /// <summary>Тело рисуется мешем вида: меш есть, смешения пропорций нет и каждый надетый орган — родной.</summary>
     public static bool Fits(SpeciesSO chassis, IReadOnlyList<Organ> worn, BodySocket[] plan)
     {
