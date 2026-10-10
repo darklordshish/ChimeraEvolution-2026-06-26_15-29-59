@@ -106,9 +106,18 @@ public static class MorphBuilder
         // ДЕТАЛИ (спека конструктора §10): авторский меш части встаёт на кости своей цепи; поле этой цепи не строилось
         // (`fieldSkip`), а куски органа на этом месте не ставятся — деталь несёт облик части целиком
         var covered = new HashSet<string>();
+        // КУСОК, ВСТАВШИЙ КОЛЬЦОМ, НЕСЁТ ВСЁ СВОЁ МЕСТО (пилот Б): волчья голова приезжает с ушами, глазами и носом, поэтому
+        // места, висящие на её месте, не рисуются — иначе человеческие уши торчали бы из волчьего черепа
+        var whole = new HashSet<string>();
         if (chassis.placedParts != null && skeleton != null)
             foreach (var (part, donor) in chassis.placedParts)
-                if (PartAssembly.Place(container.transform, chassis, part, donor, PrimitiveMaterial()) != null) covered.Add(part.slot);
+                if (PartAssembly.Place(container.transform, chassis, part, donor, PrimitiveMaterial()) != null)
+                {
+                    covered.Add(part.slot);
+                    string rootBone = part.ringFit ? PartAssembly.ChainRoot(part, donor) : null;
+                    string place = rootBone != null ? donor.bones.FirstOrDefault(b => b.name == rootBone)?.socket : null;
+                    if (!string.IsNullOrEmpty(place)) whole.Add(place);
+                }
 
         // ГРАФ ХРЕБТА: место с `parent` не хранит своих координат — считаем их от родителя и НАСЛЕДУЕМ
         // его поворот. Поэтому наклон шеи тянет за собой голову, морду, уши и рога, а не оставляет их
@@ -141,6 +150,13 @@ public static class MorphBuilder
         foreach (var socket in sockets)
         {
             if (socket == null || string.IsNullOrEmpty(socket.name)) continue;
+            if (whole.Count > 0)
+            {
+                bool inside = false;
+                for (var s = socket; s != null && !inside; s = !string.IsNullOrEmpty(s.parent) && byName.TryGetValue(s.parent, out var up) ? up : null)
+                    inside = whole.Contains(s.name);
+                if (inside) continue;
+            }
             organBySocket.TryGetValue(socket.name, out var organ);
 
             // ГНЕЗДО (спека 26.09): аугмент, адресованный гнёздами, встаёт в гнездо ШАССИ — в его кадре и единицах,

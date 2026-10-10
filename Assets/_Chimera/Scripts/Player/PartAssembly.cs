@@ -180,6 +180,27 @@ public static class PartAssembly
 
     public static bool UsePlanKey = true;   // для сравнения кадром: деталь без формы-ключа плана
 
+    /// <summary>Эллипс шва на теле (полуоси, метры): из паспорта своей детали с этим швом — кольцо, которое модельная линия
+    /// поставила на меше вида; нет детали — по полю: конец кости, кончающейся этим швом (радиус × сечение и × глубина).</summary>
+    public static Vector2 SeamEllipse(SpeciesSO sp, string seam)
+    {
+        var own = sp.parts?.FirstOrDefault(p => p != null && p.seam == seam && p.ellipse.x > 0f && p.ellipse.y > 0f);
+        if (own != null) return own.ellipse;
+        var b = sp.bones?.FirstOrDefault(x => x.mark?.b == seam);
+        if (b != null) return new Vector2(b.r1 * Mathf.Max(0.05f, b.section), b.r1 * Mathf.Max(0.05f, b.depth));
+        b = sp.bones?.FirstOrDefault(x => x.mark?.a == seam);
+        return b != null ? new Vector2(b.r0 * Mathf.Max(0.05f, b.section), b.r0 * Mathf.Max(0.05f, b.depth)) : Vector2.zero;
+    }
+
+    /// <summary>Масштаб куска при посадке кольцом: площадь шва носителя к площади шва донора, корнем (форма кольца не
+    /// правится — кусок не сшивается, стык закрывает юбка или перекрытие).</summary>
+    public static float RingScale(SpeciesSO body, SpeciesSO donor, BodyPart part)
+    {
+        if (body == donor || string.IsNullOrEmpty(part.seam) || part.ellipse.x <= 0f || part.ellipse.y <= 0f) return 1f;
+        var c = SeamEllipse(body, part.seam);
+        return c.x > 0f && c.y > 0f ? Mathf.Sqrt(c.x * c.y / (part.ellipse.x * part.ellipse.y)) : 1f;
+    }
+
     /// <summary>Поставить деталь на тело: меш переносится на кости носителя, скиннинг — к ним же.</summary>
     public static GameObject Place(Transform container, SpeciesSO body, BodyPart part, SpeciesSO donor, Material mat)
     {
@@ -248,6 +269,8 @@ public static class PartAssembly
         // вокруг сустава — форма та же, низ на земле. Земля — y = 0 в кадре контейнера (высоты от земли)
         bool hand = !string.IsNullOrEmpty(part.seam) && GraftSeam.TryGetValue(part.slot, out var graftSeam) && graftSeam == part.seam;
         bool stanceHand = hand && body.stanceLimbs != null && System.Array.IndexOf(body.stanceLimbs, part.slot) >= 0;
+        int ringRoot = part.ringFit && mainRoot != null ? System.Array.IndexOf(partBones, mainRoot) : -1;
+        float ringK = ringRoot >= 0 ? RingScale(body, donor, part) : 1f;
         for (int side = +1, s = 0; s < sides; s++, side = -1)
         {
             // кадр каждой кости детали: донор (поза графа, своя сторона) и носитель (трансформ собранного скелета)
@@ -282,6 +305,16 @@ public static class PartAssembly
                 {
                     if (wt <= 0f || bi < 0 || bi >= frames.Length || frames[bi].index < 0) return;
                     var f = frames[bi];
+                    if (ringRoot >= 0 && frames[ringRoot].index >= 0)
+                    {
+                        // посадка кольцом: место — кадром кости шва и одним масштабом, вес — на своей кости
+                        var rf = frames[ringRoot];
+                        acc += rf.carrier.MultiplyPoint3x4(rf.toDonorLocal.MultiplyPoint3x4(p0) * ringK) * wt;
+                        total += wt; beyond = false;
+                        switch (slotIdx) { case 0: bw.boneIndex0 = f.index; bw.weight0 = wt; break; case 1: bw.boneIndex1 = f.index; bw.weight1 = wt; break;
+                                           case 2: bw.boneIndex2 = f.index; bw.weight2 = wt; break; default: bw.boneIndex3 = f.index; bw.weight3 = wt; break; }
+                        return;
+                    }
                     var local = f.toDonorLocal.MultiplyPoint3x4(p0);
                     // ВДОЛЬ КОСТИ ТЯНЕТСЯ ТОЛЬКО ТО, ЧТО НА НЕЙ: за концом кости (лапа волка ниже запястья — своей кости в графе
                     // у неё нет) и до её начала форма идёт жёстко, поперечным калибром. Иначе кость, вытянутая к суставу
