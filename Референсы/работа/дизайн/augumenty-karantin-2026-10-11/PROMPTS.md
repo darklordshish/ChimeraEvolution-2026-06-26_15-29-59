@@ -1,0 +1,74 @@
+# Промпты: аугументы / Протокол карантина
+
+Встроенный imagegen. Референс стиля: ../interfejs-2026-10-11/03-protokol-karantina.png. Три начальные генерации и две адресные правки подписей.
+
+## 01 / КАТАЛОГ ВИДОВ
+
+```text
+Create ONE full-screen PC GAME BODY-AUGMENT SELECTION MENU concept for CHIMERA. Landscape 16:10 high resolution, sharp readable Russian interface. NOT a collage, NOT a website, NOT combat scene. This is a developed concept in the PROTOCOL QUARANTINE visual style of the reference image: use it ONLY as palette/type/material inspiration, discard its layout and incorrect anatomy labels. Off-white enamel anatomy examination plate, charcoal-black atlas background, oxidized teal selection, vermilion reserved for errors, large condensed sans headings, restrained scientific rules/ticks, premium precise utilitarian laboratory typography. ZERO parchment, ZERO gold fantasy filigree, ZERO neon magical circles. Background tiny hint of dark laboratory at outermost edge, UI fills 95% canvas. Composition and ergonomic controls are primary.
+Narrative: scientist rebuilds himself through organic chimerization, not surgical/mechanical implants. Stars in animal-shaped CONSTELLATIONS are selectable organs, not progression unlocks. Small white nodes linked by thin white lines inside subtle animal line silhouette; focused node larger teal halo plus organ pictogram and SHORT name. All stars stay in constellation, dragging copies a small glyph, does not tear the constellation. Only one active drag line visible. Animal silhouettes wolf, snake, eagle or scorpion as specified in layout. Human is also a donor. No generic rectangular loot inventory replacing star maps.
+Permanent body destination is an anatomical standing muscular biped human with subtle wolf forearms, dark shorts; legible six primary socket callouts EXACTLY 'Пасть', 'Чутьё', 'Руки', 'Сердце', 'Шкура', 'Ноги'. No 'Голова', 'Лёгкие', 'Желудок' or 'Мышцы' as slots. Large clickable callout boxes beside anatomy, never stacked over figure. Below/alongside anatomy a clearly separate compact rail titled 'ХИМЕРНЫЕ СЛОТЫ', two LARGE target cells 'Х01 · ХВОСТ ЗМЕИ' occupied and 'Х02 · ПУСТО' available. Do not depict extra physical limbs at UI rails; rails are abstract slots.
+Demonstrated task: selected star 'НЮХ' within wolf constellation 'ВОЛК / LUPUS', affinity 'Родство 64 / 100'. Drag ghost 'НЮХ' is hovering over X02 empty chimera target, active line connects source node to target only. BOTH Чутьё native socket and X02 are highlighted with different labeled outcomes. Nearby concise preview:
+'В Чутьё: заменить'
+'Аналитика будет потеряна'
+'В Х02: добавить'
+'Аналитика сохранится'
+'Стоимость в Х02: 6'
+Stable bottom budget bar 'МУТАГЕН 18 → 24 / 30' showing current fill and hatched prospective added segment. 'Свободно после: 6'. Tiny heading 'Пример значений' makes sample budget explicit. Never add fake +/- stats or numerical discounts. This demonstrates destination-dependent cost not a universal price on star.
+Top navigation 'ТЕЛО' selected, 'АТЛАС', 'ИССЛЕДОВАНИЕ', 'ESC · НАЗАД'; biome controls 'Все биомы', 'Лес', 'Горы', 'Пустыня'. Search 'Найти вид или орган'. Always show enabled 'Человек' option somewhere. Biome filters change donor source only, existing body never disappears. Future eagle/scorpion content visibly marked 'ПЛАН' or 'КОНЦЕПТ': they illustrate scalable future UI, not playable released species. Keep specimen labels large readable. No modal confirm/apply/save-assembly button. Drop commits immediately; Escape cancels drag only. Small footer 'Тяни звезду в гнездо · ПКМ — снять'. Use sparse precise Russian labels, no lorem ipsum, no tiny nonsense essay.
+
+EXPLORATION LABEL: 01 / КАТАЛОГ ВИДОВ
+LAYOUT: A fixed THREE-COLUMN scientific catalog: narrow left 17% width biome tabs and searchable species list: Человек, Волк (selected), Змея, Лось, Ёж, Орёл with ПЛАН. Middle 42% large single detailed WOLF animal constellation with 7-8 large functional star nodes in anatomical locations (muzzle node Пасть, ear Нюх selected, chest Сердце, forepaw Коготь, rearleg Ноги, torso Шкура, tail Хвост). Short node labels distributed with no crossing. Right 41% permanent off-white anatomical body panel and chimera rail. Selected node detail card at lower middle, immediately adjacent to target area. Drag path short from rightmost atlas node to X02. Budget bottom full width. Strong column alignment, restful roomy atlas, body and target cell very legible. A small selected heading says 'ВОЛК / LUPUS'. This is the easiest beginner workflow.
+```
+
+## 02 / СРАВНИТЕЛЬНЫЙ СТОЛ
+
+```text
+Create ONE full-screen PC GAME BODY-AUGMENT SELECTION MENU concept for CHIMERA. Landscape 16:10 high resolution, sharp readable Russian interface. NOT a collage, NOT a website, NOT combat scene. This is a developed concept in the PROTOCOL QUARANTINE visual style of the reference image: use it ONLY as palette/type/material inspiration, discard its layout and incorrect anatomy labels. Off-white enamel anatomy examination plate, charcoal-black atlas background, oxidized teal selection, vermilion reserved for errors, large condensed sans headings, restrained scientific rules/ticks, premium precise utilitarian laboratory typography. ZERO parchment, ZERO gold fantasy filigree, ZERO neon magical circles. Background tiny hint of dark laboratory at outermost edge, UI fills 95% canvas. Composition and ergonomic controls are primary.
+Narrative: scientist rebuilds himself through organic chimerization, not surgical/mechanical implants. Stars in animal-shaped CONSTELLATIONS are selectable organs, not progression unlocks. Small white nodes linked by thin white lines inside subtle animal line silhouette; focused node larger teal halo plus organ pictogram and SHORT name. All stars stay in constellation, dragging copies a small glyph, does not tear the constellation. Only one active drag line visible. Animal silhouettes wolf, snake, eagle or scorpion as specified in layout. Human is also a donor. No generic rectangular loot inventory replacing star maps.
+Permanent body destination is an anatomical standing muscular biped human with subtle wolf forearms, dark shorts; legible six primary socket callouts EXACTLY 'Пасть', 'Чутьё', 'Руки', 'Сердце', 'Шкура', 'Ноги'. No 'Голова', 'Лёгкие', 'Желудок' or 'Мышцы' as slots. Large clickable callout boxes beside anatomy, never stacked over figure. Below/alongside anatomy a clearly separate compact rail titled 'ХИМЕРНЫЕ СЛОТЫ', two LARGE target cells 'Х01 · ХВОСТ ЗМЕИ' occupied and 'Х02 · ПУСТО' available. Do not depict extra physical limbs at UI rails; rails are abstract slots.
+Demonstrated task: selected star 'НЮХ' within wolf constellation 'ВОЛК / LUPUS', affinity 'Родство 64 / 100'. Drag ghost 'НЮХ' is hovering over X02 empty chimera target, active line connects source node to target only. BOTH Чутьё native socket and X02 are highlighted with different labeled outcomes. Nearby concise preview:
+'В Чутьё: заменить'
+'Аналитика будет потеряна'
+'В Х02: добавить'
+'Аналитика сохранится'
+'Стоимость в Х02: 6'
+Stable bottom budget bar 'МУТАГЕН 18 → 24 / 30' showing current fill and hatched prospective added segment. 'Свободно после: 6'. Tiny heading 'Пример значений' makes sample budget explicit. Never add fake +/- stats or numerical discounts. This demonstrates destination-dependent cost not a universal price on star.
+Top navigation 'ТЕЛО' selected, 'АТЛАС', 'ИССЛЕДОВАНИЕ', 'ESC · НАЗАД'; biome controls 'Все биомы', 'Лес', 'Горы', 'Пустыня'. Search 'Найти вид или орган'. Always show enabled 'Человек' option somewhere. Biome filters change donor source only, existing body never disappears. Future eagle/scorpion content visibly marked 'ПЛАН' or 'КОНЦЕПТ': they illustrate scalable future UI, not playable released species. Keep specimen labels large readable. No modal confirm/apply/save-assembly button. Drop commits immediately; Escape cancels drag only. Small footer 'Тяни звезду в гнездо · ПКМ — снять'. Use sparse precise Russian labels, no lorem ipsum, no tiny nonsense essay.
+
+EXPLORATION LABEL: 02 / СРАВНИТЕЛЬНЫЙ СТОЛ
+LAYOUT: COMPARE WORKBENCH: compact horizontal global biome filter/search bar at top. Left 58% main area contains TWO LARGE SIDE-BY-SIDE PINNED CONSTELLATION BOARDS, card A 'ВОЛК / LUPUS · ЛЕС', card B 'ОРЁЛ / AQUILA · ГОРЫ · ПЛАН'. Both complete recognizable animal outlines formed by linked star-organ nodes, no generic skill tree. Pin icons 'Закреплено' on board headers. Wolf board has active selected НЮХ node; eagle is subdued concept specimen, no invented abilities. Along bottom of donor region a narrow permanent species switcher 'Человек · Волк · Змея · Лось · Ёж · Орёл · Скорпион' future species marked plan by small badges. Right 42% fixed full-height off-white anatomy/body and X01/X02 rail. A clean COMPARISON/PLACEMENT strip spans bottom above budget, showing selected НЮХ and replace-vs-add outcomes. Highlight current human Чутьё on body and chimera X02. Main star nodes large, labels do not collide. This layout emphasizes comparing across biomes without losing fixed body location; no panels overlap, no more than two full constellations on screen. Do not illustrate literal eagle transplant or wings.
+The WOLF selected teal star is explicitly labeled НЮХ near head; no other label may attach to selected node. Anatomical full animal silhouette extremely faint, star nodes and connections are primary, not a detailed animal portrait with decorative dots. Prioritize large nodes and show both pinned boards at equal useful size. No Latin biological species names invented as constellation names.
+```
+
+## 03 / ОБЩИЙ АТЛАС
+
+```text
+Create ONE full-screen PC GAME BODY-AUGMENT SELECTION MENU concept for CHIMERA. Landscape 16:10 high resolution, sharp readable Russian interface. NOT a collage, NOT a website, NOT combat scene. This is a developed concept in the PROTOCOL QUARANTINE visual style of the reference image: use it ONLY as palette/type/material inspiration, discard its layout and incorrect anatomy labels. Off-white enamel anatomy examination plate, charcoal-black atlas background, oxidized teal selection, vermilion reserved for errors, large condensed sans headings, restrained scientific rules/ticks, premium precise utilitarian laboratory typography. ZERO parchment, ZERO gold fantasy filigree, ZERO neon magical circles. Background tiny hint of dark laboratory at outermost edge, UI fills 95% canvas. Composition and ergonomic controls are primary.
+Narrative: scientist rebuilds himself through organic chimerization, not surgical/mechanical implants. Stars in animal-shaped CONSTELLATIONS are selectable organs, not progression unlocks. Small white nodes linked by thin white lines inside subtle animal line silhouette; focused node larger teal halo plus organ pictogram and SHORT name. All stars stay in constellation, dragging copies a small glyph, does not tear the constellation. Only one active drag line visible. Animal silhouettes wolf, snake, eagle or scorpion as specified in layout. Human is also a donor. No generic rectangular loot inventory replacing star maps.
+Permanent body destination is an anatomical standing muscular biped human with subtle wolf forearms, dark shorts; legible six primary socket callouts EXACTLY 'Пасть', 'Чутьё', 'Руки', 'Сердце', 'Шкура', 'Ноги'. No 'Голова', 'Лёгкие', 'Желудок' or 'Мышцы' as slots. Large clickable callout boxes beside anatomy, never stacked over figure. Below/alongside anatomy a clearly separate compact rail titled 'ХИМЕРНЫЕ СЛОТЫ', two LARGE target cells 'Х01 · ХВОСТ ЗМЕИ' occupied and 'Х02 · ПУСТО' available. Do not depict extra physical limbs at UI rails; rails are abstract slots.
+Demonstrated task: selected star 'НЮХ' within wolf constellation 'ВОЛК / LUPUS', affinity 'Родство 64 / 100'. Drag ghost 'НЮХ' is hovering over X02 empty chimera target, active line connects source node to target only. BOTH Чутьё native socket and X02 are highlighted with different labeled outcomes. Nearby concise preview:
+'В Чутьё: заменить'
+'Аналитика будет потеряна'
+'В Х02: добавить'
+'Аналитика сохранится'
+'Стоимость в Х02: 6'
+Stable bottom budget bar 'МУТАГЕН 18 → 24 / 30' showing current fill and hatched prospective added segment. 'Свободно после: 6'. Tiny heading 'Пример значений' makes sample budget explicit. Never add fake +/- stats or numerical discounts. This demonstrates destination-dependent cost not a universal price on star.
+Top navigation 'ТЕЛО' selected, 'АТЛАС', 'ИССЛЕДОВАНИЕ', 'ESC · НАЗАД'; biome controls 'Все биомы', 'Лес', 'Горы', 'Пустыня'. Search 'Найти вид или орган'. Always show enabled 'Человек' option somewhere. Biome filters change donor source only, existing body never disappears. Future eagle/scorpion content visibly marked 'ПЛАН' or 'КОНЦЕПТ': they illustrate scalable future UI, not playable released species. Keep specimen labels large readable. No modal confirm/apply/save-assembly button. Drop commits immediately; Escape cancels drag only. Small footer 'Тяни звезду в гнездо · ПКМ — снять'. Use sparse precise Russian labels, no lorem ipsum, no tiny nonsense essay.
+
+EXPLORATION LABEL: 03 / ОБЩИЙ АТЛАС
+LAYOUT: A spatial cartographic ATLAS layout fundamentally different from columns. Central off-white rectangular body examination plate occupying middle 35% width, anatomy and slot callouts fixed; X01 and X02 horizontal rail directly below body. Around it on continuous charcoal star chart four separated animal CONSTELLATION ISLANDS: upper left big focused WOLF/LUPUS/ЛЕС with selected НЮХ node, lower left smaller SNAKE/SERPENS/ЛЕС, upper right EAGLE/AQUILA/ГОРЫ marked ПЛАН, lower right SCORPION/SCORPIUS/ПУСТЫНЯ marked ПЛАН. Nearby floating ORGAN information card at bottom left with concise replace/add comparison. Atlas controls top: 'Все биомы', search, 'По гнезду: Чутьё', zoom minus/plus. Small locator 'К выбранному виду'. Human donor option in top species shortcuts. Focused wolf clearly larger and labels readable, others show silhouette and node dots with only selected category nodes emphasized, no dozens of tiny labels. ONE thin drag path from wolf НЮХ toward X02, no web of lines across body. Budget bottom fixed. Spatial exploration with same permanent body; a precise scientific wall chart, not magical cosmic background. Gray plan badges keep future content honest.
+Selected wolf node MUST be labeled НЮХ, never Шкура. Zoom applies only to sky, central body panel stays fixed and sized for comfortable drop. Animal silhouettes are faint scientific chalk engravings behind nodes, no detailed giant wolf portrait. Clearly distinct rectangular body plate and large chimera drop targets. Use concise short labels, no fabricated stats. This is a high-clarity ATLAS user interface screenshot.
+```
+
+## Правка листа 1
+
+```text
+undefined
+```
+
+## Правка листа 3
+
+```text
+undefined
+```
