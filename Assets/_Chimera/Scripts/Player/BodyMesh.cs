@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 /// <summary>ЧИСТЫЙ ВИД — ЦЕЛЬНЫМ МЕШЕМ (спека `2026-10-09-chistyj-vid-meshem.md`, §2 п.3–4). Меш вида — модель с
@@ -56,7 +57,7 @@ public static class BodyMesh
 
     /// <summary>Поставить объекты модели на скелет: рендерер на объект, имя рендерера = имя объекта (слот).
     /// Возвращает число поставленных рендереров.</summary>
-    public static int Place(Transform container, Transform skeleton, GameObject model, Material mat)
+    public static int Place(Transform container, Transform skeleton, GameObject model, Material mat, ICollection<string> skipSlots = null)
     {
         var bones = new Dictionary<string, Transform>();
         foreach (var t in skeleton.GetComponentsInChildren<Transform>(true))
@@ -72,6 +73,8 @@ public static class BodyMesh
         {
             var mesh = src.sharedMesh;
             if (mesh == null || src.bones.Length == 0) continue;
+            // место несёт чужой кусок (химера на меше вида): свой объект этого слота со всеми `слот.что` не ставится
+            if (skipSlots != null && skipSlots.Contains(SlotOf(src.name))) continue;
             var srcBind = mesh.bindposes;
             int k = System.Array.FindIndex(src.bones, b => b != null);
             if (k < 0 || srcBind.Length != src.bones.Length)
@@ -125,6 +128,26 @@ public static class BodyMesh
             placed++;
         }
         return placed;
+    }
+
+    static string SlotOf(string objectName) { int dot = objectName.IndexOf('.'); return dot > 0 ? objectName.Substring(0, dot) : objectName; }
+
+    /// <summary>ХИМЕРА НА МЕШЕ ВИДА (пилот Б): тело — объекты меша шасси, а место, которое несёт чужой кусок целиком, отдано
+    /// куску. Годится, когда КАЖДЫЙ чужой орган приехал таким куском и общий слой тело не двигал: меш привязан к позе
+    /// покоя своего вида, сдвинутые пропорции он пока не повторит. Иначе тело собирается полем, как прежде.</summary>
+    public static bool FitsChimera(SpeciesSO chassis, SpeciesSO body, IReadOnlyList<Organ> worn, BodySocket[] plan)
+    {
+        if (!Enabled || !PartAssembly.WholePieces || chassis == null || chassis.bodyMesh == null || plan != null || worn == null) return false;
+        if (body == chassis || body.placedParts == null || body.placedParts.Length == 0 || chassis.organs == null) return false;
+        var (_, step) = GlobalLayer.Step(chassis, worn);
+        if (step > 0 && GlobalLayer.HasGroups(chassis)) return false;
+        foreach (var o in worn)
+        {
+            if (o == null || System.Array.IndexOf(chassis.organs, o) >= 0) continue;
+            var owner = ChainSwap.OwnerOf(o);
+            if (!body.placedParts.Any(p => p.part.ringFit && p.part.slot == o.slot && p.donor == owner)) return false;
+        }
+        return true;
     }
 
     /// <summary>Наша кость для кости модели: по имени; нет такой — создаём под родителем там, где она стоит в модели.</summary>

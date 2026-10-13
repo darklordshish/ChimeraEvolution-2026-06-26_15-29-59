@@ -37,7 +37,9 @@ public static class MorphBuilder
 
         // АУГМЕНТ ПОДСТАВЛЯЕТ СВОЮ ЦЕПЬ (спека двух слоёв §3, решение 13): дальше строится составное тело — скелет с
         // донорскими цепями и их гнёздами. Здесь, а не у тела, — чтобы кадры, матрица и стенд строили ТО ЖЕ, что игра
+        var pureChassis = chassis;
         if (!bodyMesh) chassis = ChainSwap.Compose(chassis, wornOrgans);
+        bool meshChimera = !bodyMesh && BodyMesh.FitsChimera(pureChassis, chassis, wornOrgans, plan);
 
         // орган на СОКЕТ по его `slot` — место следует из механики, отдельного поля-адреса нет.
         // НА ОБЩЕМ СОКЕТЕ ВИДЕН ПЕРВЫЙ: порядок задаёт тело (`CreatureBody.WornInDrawOrder`, решение 14 спеки двух
@@ -67,6 +69,29 @@ public static class MorphBuilder
             // в модели ни одного годного объекта — строим полем, как если бы её не было (ошибка уже в консоли)
             bodySkeleton.name = "Skeleton~dead"; bodySkeleton.gameObject.SetActive(false); Kill(bodySkeleton.gameObject);
             chassis = ChainSwap.Compose(chassis, wornOrgans);
+        }
+
+        // ХИМЕРА НА МЕШЕ ВИДА (пилот Б): скелет — составного тела (цепь головы уже донорская), объекты меша шасси встают
+        // на него все, кроме мест, отданных чужим кускам; куски — сборкой деталей. Поле и детали органов не строятся
+        if (meshChimera)
+        {
+            var chimeraSkeleton = BoneMesher.Build(container.transform, chassis, PrimitiveMaterial(), field: false);
+            var given = new HashSet<string>();
+            foreach (var (part, donor) in chassis.placedParts)
+            {
+                string rootBone = PartAssembly.ChainRoot(part, donor);
+                string place = rootBone != null ? donor.bones.FirstOrDefault(b => b.name == rootBone)?.socket : null;
+                if (!string.IsNullOrEmpty(place)) given.Add(place);
+            }
+            BodyMesh.Place(container.transform, chimeraSkeleton, pureChassis.bodyMesh, PrimitiveMaterial(), given);
+            foreach (var (part, donor) in chassis.placedParts)
+            {
+                var piece = PartAssembly.Place(container.transform, chassis, part, donor, PrimitiveMaterial());
+                if (piece == null) continue;
+                string rootBone = PartAssembly.ChainRoot(part, donor);
+                piece.GetComponent<BodyPartView>().whole = rootBone != null ? donor.bones.FirstOrDefault(b => b.name == rootBone)?.socket : null;
+            }
+            return;
         }
 
         // СКЕЛЕТ ЗАБИРАЕТ СВОИ МЕСТА (спека 2026-08-18). Кость называет место, форму которого строит она;

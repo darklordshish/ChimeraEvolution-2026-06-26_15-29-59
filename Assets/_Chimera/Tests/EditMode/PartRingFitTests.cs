@@ -84,6 +84,27 @@ namespace Chimera.Tests.EditMode
             return v.Max(p => (p - c).magnitude);
         }
 
+        /// <summary>ХИМЕРА НА МЕШЕ ВИДА: у шасси есть меш, чужой орган приехал куском — тело остаётся объектами меша шасси,
+        /// место куска отдано куску, поле не строится. Язык формы у вида и химеры один (вариант Б спеки).</summary>
+        [Test]
+        public void MeshChassis_WithForeignPiece_KeepsItsMesh_AndGivesThePlaceAway()
+        {
+            var wolf = Load("Волк"); var human = Load("Человек");
+            var head = Head(wolf);
+            if (human.bodyMesh == null) Assert.Inconclusive("у человека нет меша вида — `Models/chelovek_mesh.fbx` не принят");
+            var go = Build(human, With(human, wolf, head.slot));
+
+            var piece = Whole(go);
+            Assert.IsNotNull(piece, "кусок на меш шасси не встал");
+            var own = go.GetComponentsInChildren<SkinnedMeshRenderer>(true).Where(r => r.GetComponent<BodyPartView>() == null).ToList();
+            CollectionAssert.IsNotEmpty(own, "тело шасси не нарисовано");
+            var src = new HashSet<string>(human.bodyMesh.GetComponentsInChildren<SkinnedMeshRenderer>(true).Select(r => r.sharedMesh.vertexCount + "|" + r.name.Split('.')[0]));
+            foreach (var r in own)
+                Assert.IsTrue(src.Contains(r.sharedMesh.vertexCount + "|" + r.name), $"рендерер «{r.name}» — не объект меша шасси: тело собрано полем");
+            CollectionAssert.DoesNotContain(own.Select(r => r.name), piece.whole, "своя голова шасси осталась под чужой");
+            CollectionAssert.IsEmpty(go.GetComponentsInChildren<MeshRenderer>(true), "у химеры на меше детали органов не рисуются");
+        }
+
         [Test]
         public void OwnChassis_NeverTakesItsWholePiece()
         {
