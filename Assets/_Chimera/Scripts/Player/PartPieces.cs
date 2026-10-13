@@ -130,7 +130,21 @@ public static partial class PartAssembly
         if (Union && Claimed(part, donor) == null && !string.IsNullOrEmpty(part.slot)) k *= UnionScale;
         bool gaze = Gaze(part, donor);
         var toBody = part.toBody == default ? Matrix4x4.identity : part.toBody;
-        var sv = part.mesh.vertices.Select(v => toBody.MultiplyPoint3x4(v)).ToArray();
+        // ФОРМА-КЛЮЧ ПЛАНА НОСИТЕЛЯ (спека конструктора §4, как у деталей конечностей): воротник гривы сделан под шею
+        // четвероногого — масса внизу, под шеей; на двуногом это борода-нагрудник. Ключ «двуногий» перекладывает её на
+        // плечи и спину (поставка модельной линии 13.10). Ключ — форма, прибавляется ДО посадки; нет ключа — меш как есть
+        var raw = part.mesh.vertices;
+        if (UsePlanKey && !string.IsNullOrEmpty(part.plan) && part.plan != body.Plan)
+        {
+            int key = part.mesh.GetBlendShapeIndex(body.Plan);
+            if (key >= 0)
+            {
+                var dv = new Vector3[raw.Length];
+                part.mesh.GetBlendShapeFrameVertices(key, part.mesh.GetBlendShapeFrameCount(key) - 1, dv, null, null);
+                for (int i = 0; i < raw.Length; i++) raw[i] += dv[i];
+            }
+        }
+        var sv = raw.Select(v => toBody.MultiplyPoint3x4(v)).ToArray();
         var sw = part.mesh.boneWeights; var st = part.mesh.triangles;
         bool flip = toBody.determinant < 0f;
         int n = sv.Length, sides = part.mirror ? 2 : 1;
