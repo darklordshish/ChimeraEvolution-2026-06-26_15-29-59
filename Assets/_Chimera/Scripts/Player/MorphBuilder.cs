@@ -91,6 +91,7 @@ public static class MorphBuilder
                 if (piece == null) continue;
                 piece.GetComponent<BodyPartView>().whole = PartAssembly.Claimed(part, donor);
             }
+            PartAssembly.ApplyWelds(container.transform);   // проёмы тела — к общим кольцам сваренных кусков
             return;
         }
 

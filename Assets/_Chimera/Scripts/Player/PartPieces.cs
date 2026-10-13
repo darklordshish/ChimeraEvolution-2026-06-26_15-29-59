@@ -19,8 +19,86 @@ public static partial class PartAssembly
     /// стыке нет по построению. Шов носителя — ПОСАДОЧНОЕ МЕСТО на сплошной коже: кусок садится ПОВЕРХ, свой объект
     /// носителя под ним остаётся, а кусок обязан накрыть область места. Шов носителя — кольцо его снимаемой детали
     /// (уши): кусок её ЗАМЕНЯЕТ. Место целиком (голова, хвост) — всегда замена.</summary>
-    public static bool Over(SpeciesSO body, BodyPart part, SpeciesSO donor) =>
-        Claimed(part, donor) == null && Seam(body, part.seam, out var s) && s.skin;
+    public static bool Over(SpeciesSO body, BodyPart part, SpeciesSO donor) => Mode(body, part, donor) == Fit.Over;
+
+    /// <summary>СПОСОБ ПОСАДКИ КУСКА. `Over` — слияние поверх; `Replace` — замена снимаемой детали носителя, кусок как есть;
+    /// `Weld` — замена со СВАРКОЙ КОЛЕЦ: кольцо куска и ответное кольцо носителя сводятся к общему, сдвиг затухает в
+    /// полосе у шва по обе стороны. Сварка — обычная практика модульных персонажей (кольцо шва с одинаковыми вершинами,
+    /// полоса затухания; FaceGen держит такое кольцо шеи), а подгонка двух несовпадающих краёв друг к другу — то, что
+    /// SnapPaste (Sharf 2006) делает мягкой регистрацией; у нас соответствие вершин задано нарезкой, искать его не надо.
+    /// `Rule` — решают данные носителя.</summary>
+    public enum Fit { Rule, Over, Replace, Weld }
+
+    /// <summary>Навязать способ всем кускам органов — для ряда кадром («разные слияния на разных частях», геймдизайнер 13.10).</summary>
+    public static Fit ForceFit = Fit.Rule;
+
+    /// <summary>Общее кольцо сварки — степенное среднее радиусов двух колец: −∞ — меньшее (кусок сжимается к проёму),
+    /// 0 — геометрическое, +∞ — большее (проём растягивается к куску).</summary>
+    public static float WeldNorm = 0f;
+
+    /// <summary>Ширина полосы затухания сварки в средних радиусах общего кольца.</summary>
+    public static float WeldBand = 1.5f;
+
+    public static Fit Mode(SpeciesSO body, BodyPart part, SpeciesSO donor)
+    {
+        if (Claimed(part, donor) != null) return Fit.Replace;
+        bool seat = Seam(body, part.seam, out var s) && s.skin;
+        bool ring = CarrierRing(body, part.seam) != null;
+        if (ForceFit == Fit.Over && seat) return Fit.Over;
+        if (ForceFit == Fit.Replace && ring) return Fit.Replace;
+        if (ForceFit == Fit.Weld && ring && part.ringM != null && part.ringM.Length == CarrierRing(body, part.seam).ringM.Length) return Fit.Weld;
+        return seat ? Fit.Over : Fit.Replace;
+    }
+
+    /// <summary>Снимаемая деталь носителя с кольцом этого шва (лицо человека под морду): её кольцо — ответное кольцо проёма.</summary>
+    static BodyPart CarrierRing(SpeciesSO body, string seam) =>
+        body.parts?.FirstOrDefault(p => p != null && p.seam == seam && p.seamFrame && p.ringM != null && p.ringM.Length > 2);
+
+    /// <summary>Сварки, ждущие тела носителя: кусок свой край уже подвинул, проём носителя двигает `ApplyWelds`.</summary>
+    struct Weld { public Vector3[] ring, shift; public float band; }
+    static readonly List<Weld> welds = new();
+
+    static Vector3 Blend(Vector3 v, Vector3[] ring, Vector3[] shift, float band)
+    {
+        float near = float.MaxValue, total = 0f; var acc = Vector3.zero;
+        for (int i = 0; i < ring.Length; i++)
+        {
+            float d2 = (v - ring[i]).sqrMagnitude;
+            near = Mathf.Min(near, d2);
+            float w = 1f / (d2 + 1e-6f);
+            acc += shift[i] * w; total += w;
+        }
+        float t = Mathf.Clamp01(1f - Mathf.Sqrt(near) / band);
+        return v + acc / total * (t * t * (3f - 2f * t));
+    }
+
+    /// <summary>Подвинуть проёмы носителя к общим кольцам: рендереры тела (не куски), у которых есть вершины на кольце.</summary>
+    public static void ApplyWelds(Transform container)
+    {
+        if (welds.Count == 0) return;
+        foreach (var smr in container.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        {
+            if (smr.GetComponent<BodyPartView>() != null || smr.sharedMesh == null || !smr.sharedMesh.isReadable || smr.bones.Length == 0) continue;
+            // вершины меша → система тела: (кость в покое) × (её привязка)
+            var toBody = container.worldToLocalMatrix * smr.bones[0].localToWorldMatrix * smr.sharedMesh.bindposes[0];
+            var v = smr.sharedMesh.vertices.Select(p => toBody.MultiplyPoint3x4(p)).ToArray();
+            bool moved = false;
+            foreach (var w in welds)
+            {
+                if (!v.Any(p => w.ring.Any(r => (p - r).sqrMagnitude < 4e-6f))) continue;   // кольца этого шва у объекта нет
+                for (int i = 0; i < v.Length; i++) v[i] = Blend(v[i], w.ring, w.shift, w.band);
+                moved = true;
+            }
+            if (!moved) continue;
+            var mesh = Object.Instantiate(smr.sharedMesh);
+            mesh.hideFlags = HideFlags.HideAndDontSave;
+            var back = toBody.inverse;
+            mesh.vertices = v.Select(p => back.MultiplyPoint3x4(p)).ToArray();
+            mesh.RecalculateNormals(); mesh.RecalculateBounds();
+            smr.sharedMesh = mesh;
+        }
+        welds.Clear();
+    }
 
     /// <summary>ФУНКЦИОНАЛ МАСШТАБА — степенное среднее отношений полуосей шва (носитель к донору): p = 0 — геометрическое
     /// (площадь шва), 1 — арифметическое, 2 — среднеквадратичное, +∞ — супремум (большее отношение: кусок накрывает
@@ -110,7 +188,9 @@ public static partial class PartAssembly
         if (string.IsNullOrEmpty(part.seam) || part.ellipse.x <= 0f || part.ellipse.y <= 0f) return 1f;
         var c = SeamEllipse(body, part.seam);
         if (c.x <= 0f || c.y <= 0f) return 1f;
-        float p = !float.IsNaN(RingNorm) ? RingNorm : Over(body, part, donor) ? float.PositiveInfinity : 0f;
+        // есть посадочное место — кусок обязан его накрыть (супремум), как бы он ни сел; иначе — по площади кольца
+        bool cover = Claimed(part, donor) == null && Seam(body, part.seam, out var seat) && seat.skin;
+        float p = !float.IsNaN(RingNorm) ? RingNorm : cover ? float.PositiveInfinity : 0f;
         return PowerMean(c.x / part.ellipse.x, c.y / part.ellipse.y, p);
     }
 
@@ -137,6 +217,11 @@ public static partial class PartAssembly
         var skeleton = container.Find("Skeleton");
         if (skeleton == null || part.mesh == null || !part.mesh.isReadable || part.bones == null) return null;
         if (!Seam(body, part.seam, out var c)) return null;
+        // замена и сварка сажают кусок на кольцо снимаемой детали носителя, слияние — на посадочное место
+        var mode = Mode(body, part, donor);
+        var carrierRing = mode == Fit.Over ? null : CarrierRing(body, part.seam);
+        if (carrierRing != null)
+            c = new BodySeat { seam = part.seam, bone = carrierRing.seamBone ?? c.bone, center = carrierRing.seamCenter, axis = carrierRing.seamAxis, up = carrierRing.seamUp, ellipse = c.ellipse };
         BodySeat d;
         if (part.seamFrame) d = new BodySeat { center = part.seamCenter, axis = part.seamAxis, up = part.seamUp, ellipse = part.ellipse };
         else if (!Seam(donor, part.seam, out d)) return null;
@@ -230,6 +315,25 @@ public static partial class PartAssembly
                 tris.Add(map[swap ? st[i + 2] : st[i + 1]]);
                 tris.Add(map[swap ? st[i + 1] : st[i + 2]]);
             }
+        }
+
+        // СВАРКА КОЛЕЦ: кольцо куска (уже на носителе) и ответное кольцо проёма сводятся к общему
+        if (mode == Fit.Weld && sides == 1 && carrierRing != null)
+        {
+            var rot0 = gaze ? Quaternion.identity : Quaternion.LookRotation(c.axis.normalized, c.up.normalized) * Quaternion.Inverse(Quaternion.LookRotation(d.axis.normalized, d.up.normalized));
+            int m = part.ringM.Length;
+            var q = new Vector3[m]; var target = new Vector3[m]; float mean = 0f;
+            for (int i = 0; i < m; i++)
+            {
+                q[i] = c.center + rot0 * (part.ringM[i] - d.center) * k;
+                Vector3 a = carrierRing.ringM[i] - c.center, b = q[i] - c.center;
+                target[i] = c.center + (a + b).normalized * PowerMean(a.magnitude, b.magnitude, WeldNorm) + c.axis.normalized * Vector3.Dot((a + b) * 0.5f, c.axis.normalized);
+                mean += (target[i] - c.center).magnitude / m;
+            }
+            float band = mean * WeldBand;
+            var own = Enumerable.Range(0, m).Select(i => target[i] - q[i]).ToArray();
+            for (int i = 0; i < verts.Count; i++) verts[i] = Blend(verts[i], q, own, band);
+            welds.Add(new Weld { ring = carrierRing.ringM, shift = Enumerable.Range(0, m).Select(i => target[i] - carrierRing.ringM[i]).ToArray(), band = band });
         }
 
         string name0 = !string.IsNullOrEmpty(part.slot) ? part.slot : part.objectSlot;
