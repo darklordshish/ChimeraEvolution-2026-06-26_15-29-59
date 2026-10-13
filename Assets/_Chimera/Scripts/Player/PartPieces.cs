@@ -90,11 +90,14 @@ public static partial class PartAssembly
     /// мировой поворот донора — морда смотрит вперёд у любого носителя. Шеи у видов не гомологичны по наклону: совмести
     /// кадры швов — и волчья морда на отвесной шее человека уставится в небо. Остальные куски встают кадром шва, ось к
     /// оси и «верх» к «верху»: хвост — и воротник гривы, который иначе торчит назад вдоль волчьей шеи, а манишкой
-    /// закрывает лицо (кадр и разбор модельной линии 13.10).</summary>
+    /// закрывает лицо (кадр и разбор модельной линии 13.10).
+    ///     То же у кусков, чей шов лежит на самой голове (морда, уши, мочка): волчье ухо стоит торчком, а посадочное
+    /// кольцо уха человека смотрит вбок — кадром шва уши легли горизонтально, «коровьи» (кадр 13.10).</summary>
     static bool Gaze(BodyPart part, SpeciesSO donor)
     {
         var root = ChainRoot(part, donor);
-        return root != null && Claimed(part, donor) != null && donor.bones.FirstOrDefault(b => b.name == root)?.limb == "голова";
+        if (root == null || donor.bones.FirstOrDefault(b => b.name == root)?.limb != "голова") return false;
+        return Claimed(part, donor) != null || donor.bones.FirstOrDefault(b => b.name == part.seamBone)?.limb == "голова";
     }
 
     static bool CanPlaceRing(SpeciesSO body, BodyPart part, SpeciesSO donor) =>
@@ -150,9 +153,16 @@ public static partial class PartAssembly
                 lead[i] = t != null ? BoneIndex(t) : -1;
             }
 
-            int start = verts.Count;
+            // ПАРНЫЙ КУСОК В ОДНОМ ОБЪЕКТЕ (оба уха — объект `Чутьё`): шов дан для одной стороны, и на каждую сторону идёт
+            // только её половина меша — иначе оба уха садятся на одно кольцо и зеркалятся вторым заходом (четыре уха, 13.10)
+            bool half = part.mirror && Mathf.Abs(d.center.x) > 1e-4f;
+            var map = new int[n];
+
             for (int v = 0; v < n; v++)
             {
+                map[v] = -1;
+                if (half && sv[v].x * d.center.x < 0f) continue;
+                map[v] = verts.Count;
                 var p = sv[v];
                 if (side < 0) p = MirrorX(p);
                 verts.Add(cC + rot * (p - dC) * k);
@@ -173,9 +183,10 @@ public static partial class PartAssembly
             bool swap = flip ^ (side < 0);
             for (int i = 0; i < st.Length; i += 3)
             {
-                tris.Add(start + st[i]);
-                tris.Add(start + (swap ? st[i + 2] : st[i + 1]));
-                tris.Add(start + (swap ? st[i + 1] : st[i + 2]));
+                if (map[st[i]] < 0 || map[st[i + 1]] < 0 || map[st[i + 2]] < 0) continue;
+                tris.Add(map[st[i]]);
+                tris.Add(map[swap ? st[i + 2] : st[i + 1]]);
+                tris.Add(map[swap ? st[i + 1] : st[i + 2]]);
             }
         }
 
