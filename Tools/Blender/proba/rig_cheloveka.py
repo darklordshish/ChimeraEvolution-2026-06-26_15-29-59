@@ -386,7 +386,7 @@ zt = BN['таз']['head'][2] + 0.03
 back = max((v.co for v in me.vertices if abs(v.co.x) < 0.03 and abs(v.co.z - zt) < 0.03), key=lambda c: c.y)
 # хвост у двуногого отведён от ног: ось 30° ниже горизонта (у волка 50°), место уже — кусок встаёт мельче (первый кадр
 # оборотня 13.10: хвост висел вдоль ног, k ≈ 0.8, спереди виден между ног)
-TAX = Vector((0, 0.87, -0.50)).normalized(); TW = Vector((0, 0.50, 0.87)).normalized(); TR = (0.036, 0.032)
+TAX = Vector((0, 0.966, -0.259)).normalized(); TW = Vector((0, 0.259, 0.966)).normalized()      # 15° ниже горизонтали (13.10: при 30° кончик хвоста виден в анфас между бёдер); TR = (0.036, 0.032)
 REP.append('посадочное кольцо «корень хвоста» (на сплошной коже, 8): центр (%.3f %.3f %.3f), ось наружу (%.2f %.2f %.2f), «верх» (%.2f %.2f %.2f), '
            'полуоси %.3f × %.3f м; кость `таз`' % (0.0, back.y, back.z, *TAX, *TW, *TR))
 SEAM = dict(c=cc, ax=AX, up=WN, r=(rx, rw), at=(CR - nh).length, tail_c=Vector((0, back.y, back.z)), tail_ax=TAX, tail_up=TW)
