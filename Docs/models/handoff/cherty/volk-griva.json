@@ -118,7 +118,9 @@
     "шея"
   ],
   "armature": "все узлы графа волка + челюсть",
-  "keys": [],
+  "keys": [
+    "двуногий"
+  ],
   "tris": 1168,
   "tris_main": 1168,
   "generator": "Tools/Blender/proba/rig_volka.py --muzzle 4.5 --shvy 2 --pasporta …",

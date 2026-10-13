@@ -924,6 +924,24 @@ for sl in ORDER:
 for b in arm.bones:
     b.use_deform = True
 
+# ФОРМА-КЛЮЧ «двуногий» У ВОРОТНИКА (13.10, первый оборотень из кусков): у волка масса гривы вентральная — манишка на
+# 0.35 м ниже оси шеи при 0.20 над ней. На вертикальной шее человека это борода-нагрудник, а загривок голый (кадры
+# механик `Оборотень-пилот-2026-10-10/черты2-*`, тот же вид даёт `oboroten_predprosmotr.py`). Ключ в кадре шва
+# (x вбок, h — дорсальная сторона, t вдоль оси, t < 0 — к телу): вентральная сторона короче на 45 % и ближе к оси на
+# 40 %, дорсальная длиннее на 90 %, к низу воротник шире на 20 % — грива ложится на плечи и спину. Чистому волку ключ
+# не нужен (вес 0); на двуногом носителе его включает посадка
+if SHVY >= 2 and 'Шкура' in parts:
+    go = parts['Шкура'][0]
+    cK, upK, axK = SEAMS['грива']['c'], SEAMS['грива']['up'], SEAMS['грива']['ax']
+    RK = Matrix((upK.cross(axK).normalized(), upK, axK)).transposed()
+    go.shape_key_add(name='Basis')
+    kb = go.shape_key_add(name='двуногий')
+    for v in go.data.vertices:
+        x_, h_, t_ = (v.co - cK) @ RK
+        dors, vent = sm(h_ / 0.12), sm(-h_ / 0.12)
+        kb.data[v.index].co = cK + RK @ Vector((x_ * (1 + 0.20 * sm(-t_ / 0.25)), h_ * (1 - 0.40 * vent), t_ * (1 + 0.9 * dors - 0.45 * vent)))
+    REP.append('форма-ключ «двуногий» у объекта `Шкура`: вершин %d' % len(go.data.vertices))
+
 # ---------- отчёт ----------
 allv = [x for x in V]
 tip_ear = max(allv, key=lambda p: p.z)
@@ -987,7 +1005,7 @@ if SHVY and 'pasporta' in opt:
             ('volk-golova-kusok.json', 'основание черепа', None, dict(main='голова', morda='Пасть', polost='Пасть.полость', zuby='Пасть.зубы'),
              ['голова', 'шея', 'челюсть'], 'ring', False, dict(trait='голова', step=2, also=['Пасть', 'Пасть.полость', 'Пасть.зубы'],
                                                               center_biped_m=U(Vector((0, yn + 0.37, 1.12))))),
-            ('volk-griva.json', 'грива', None, dict(main='Шкура'), ['голова', 'шея'], 'ring', False, dict(trait='грива', step=1)),
+            ('volk-griva.json', 'грива', None, dict(main='Шкура'), ['голова', 'шея'], 'ring', False, dict(trait='грива', step=1, keys=['двуногий'])),
             ('volk-hvost-kusok.json', 'корень хвоста', None, dict(main='Хвост'), ['хвост', 'хвост_кисть'], None, False, dict(trait='хвост', step=1)),
         )
     else:
@@ -1017,7 +1035,7 @@ if SHVY and 'pasporta' in opt:
             pas['slot'] = slot
         if fit:
             pas['fit'] = fit
-        pas.update(extra_f)
+        pas.update(extra_f)                                   # в том числе `keys` — формы-ключи адаптации к плану тела
         if mirror:
             pas['seam']['note'] += '; кольцо дано для стороны −X Unity (+X Blender), вторая сторона — зеркалом по X'
         sub = 'parts' if slot else 'cherty'           # черта шасси — не деталь органа: читатель деталей её не берёт
