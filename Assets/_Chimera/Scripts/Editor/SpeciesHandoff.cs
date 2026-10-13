@@ -179,7 +179,7 @@ public static class SpeciesHandoff
     public const string TraitsDir = Dir + "cherty/";
     // `fbx` — КУСОК МЕША ВИДА (пилот Б, 10.10): меш берётся не из `Models/Parts/<паспорт>.fbx`, а объектом `objects.main` из
     // названной модели (модель вида режется по швам, отдельного файла у куска нет). `fit: "ring"` — посадка кольцом
-    [System.Serializable] class DetailDto { public string species, slot, plan, fbx, fit, trait; public int step; public SeamDto seam; public bool mirror = true; public string[] keys; public ObjectsDto objects; }
+    [System.Serializable] class DetailDto { public string species, slot, plan, fbx, fit, trait; public int step; public float[] center_biped_m; public SeamDto seam; public bool mirror = true; public string[] keys; public ObjectsDto objects; }
     public const string PartsDir = Dir + "parts/";
 
     /// <summary>Точки кольца шва `seam.ring_m` — [[x,y,z], …] в метрах тела донора. Индексы `ring` после импорта врут: Unity
@@ -295,7 +295,8 @@ public static class SpeciesHandoff
                 piece = piece, objectSlot = piece ? SlotOf(smr.name) : null, passport = stem, own = piece ? OwnColor(smr) : default,
                 seamFrame = d.seam?.center_m is { Length: >= 3 },
                 seamCenter = V(d.seam?.center_m, Vector3.zero), seamAxis = V(d.seam?.axis_out, Vector3.up), seamUp = V(d.seam?.up, Vector3.forward),
-                seamBone = d.seam?.bone,
+                seamBone = d.seam?.bone, mainSlot = piece ? SlotOf(smr.name) : null,
+                seamBiped = d.center_biped_m is { Length: >= 3 }, seamCenterBiped = V(d.center_biped_m, Vector3.zero),
                 // ступень черты: из паспорта, а пока её там нет — целая голова с поздней ступени (общая форма вида), прочее с первой
                 step = d.step > 0 ? d.step : d.trait == "голова" ? 2 : 1,
             });
@@ -313,6 +314,7 @@ public static class SpeciesHandoff
                         toBody = es.transform.localToWorldMatrix, seam = main.seam, ellipse = main.ellipse, ringFit = true, piece = true,
                         objectSlot = SlotOf(es.name), passport = stem, own = OwnColor(es), seamFrame = main.seamFrame,
                         seamCenter = main.seamCenter, seamAxis = main.seamAxis, seamUp = main.seamUp, seamBone = main.seamBone, step = main.step,
+                        mainSlot = main.mainSlot, seamBiped = main.seamBiped, seamCenterBiped = main.seamCenterBiped,
                     });
                 }
         }

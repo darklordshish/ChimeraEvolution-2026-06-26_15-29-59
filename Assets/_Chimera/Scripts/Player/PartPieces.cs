@@ -40,7 +40,7 @@ public static partial class PartAssembly
         var root = ChainRoot(part, donor);
         var place = root != null ? donor.bones.FirstOrDefault(b => b.name == root)?.socket : null;
         if (string.IsNullOrEmpty(place)) return null;
-        return !part.piece || part.objectSlot == place ? place : null;
+        return !part.piece || (part.mainSlot ?? part.objectSlot) == place ? place : null;
     }
 
     /// <summary>ШОВ НА ТЕЛЕ: посадочное место (кольцо на сплошной коже), иначе кольцо своей детали или черты с этим швом,
@@ -86,13 +86,15 @@ public static partial class PartAssembly
         return c.x > 0f && c.y > 0f ? Mathf.Sqrt(c.x * c.y / (part.ellipse.x * part.ellipse.y)) : 1f;
     }
 
-    /// <summary>ГОЛОВА — ВЗГЛЯД (кадр 01.10): кусок, сидящий на цепи головы, держит мировой поворот донора — морда смотрит
-    /// вперёд у любого носителя. Шеи у видов не гомологичны по наклону: совмести кадры швов — и волчья морда на отвесной
-    /// шее человека уставится в небо. Остальные куски (хвост) встают кадром шва: ось к оси, «верх» к «верху».</summary>
+    /// <summary>ГОЛОВА — ВЗГЛЯД (кадр 01.10): кусок, ЗАБРАВШИЙ место на цепи головы (целая голова со своей мордой), держит
+    /// мировой поворот донора — морда смотрит вперёд у любого носителя. Шеи у видов не гомологичны по наклону: совмести
+    /// кадры швов — и волчья морда на отвесной шее человека уставится в небо. Остальные куски встают кадром шва, ось к
+    /// оси и «верх» к «верху»: хвост — и воротник гривы, который иначе торчит назад вдоль волчьей шеи, а манишкой
+    /// закрывает лицо (кадр и разбор модельной линии 13.10).</summary>
     static bool Gaze(BodyPart part, SpeciesSO donor)
     {
         var root = ChainRoot(part, donor);
-        return root != null && donor.bones.FirstOrDefault(b => b.name == root)?.limb == "голова";
+        return root != null && Claimed(part, donor) != null && donor.bones.FirstOrDefault(b => b.name == root)?.limb == "голова";
     }
 
     static bool CanPlaceRing(SpeciesSO body, BodyPart part, SpeciesSO donor) =>
@@ -133,6 +135,7 @@ public static partial class PartAssembly
         for (int side = +1, s = 0; s < sides; s++, side = -1)
         {
             Vector3 dC = d.center, dA = d.axis, dU = d.up, cC = c.center, cA = c.axis, cU = c.up;
+            if (part.seamBiped && body.Plan == "двуногий" && part.plan != body.Plan) dC = part.seamCenterBiped;
             if (side < 0) { dC = MirrorX(dC); dA = MirrorX(dA); dU = MirrorX(dU); cC = MirrorX(cC); cA = MirrorX(cA); cU = MirrorX(cU); }
             var rot = gaze ? Quaternion.identity : Frame(cA, cU) * Quaternion.Inverse(Frame(dA, dU));
 

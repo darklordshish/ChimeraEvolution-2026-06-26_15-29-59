@@ -146,7 +146,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925336096604160015
+    - rid: 925336096663928962
     visualScale: {x: 1, y: 1, z: 1.2}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -216,7 +216,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925336096604160016
+    - rid: 925336096663928963
     visualScale: {x: 1, y: 1, z: 1.2}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -415,9 +415,9 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: "\u0412\u043E\u043B\u043A"
     abilities:
-    - rid: 925336096604160017
-    - rid: 925336096604160018
-    - rid: 925336096604160019
+    - rid: 925336096663928964
+    - rid: 925336096663928965
+    - rid: 925336096663928966
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -2552,6 +2552,9 @@ MonoBehaviour:
     seamAxis: {x: 0, y: 1, z: 0}
     seamUp: {x: 0, y: 0, z: 1}
     seamBone: 
+    seamBiped: 0
+    seamCenterBiped: {x: 0, y: 0, z: 0}
+    mainSlot: 
     step: 1
     keys:
     - "\u0434\u0432\u0443\u043D\u043E\u0433\u0438\u0439"
@@ -2676,6 +2679,9 @@ MonoBehaviour:
     seamAxis: {x: -0, y: 0, z: 1}
     seamUp: {x: -0, y: 1, z: -0}
     seamBone: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    seamBiped: 0
+    seamCenterBiped: {x: 0, y: 0, z: 0}
+    mainSlot: "\u0427\u0443\u0442\u044C\u0451"
     step: 1
     keys: []
   - slot: "\u041F\u0430\u0441\u0442\u044C"
@@ -2803,6 +2809,9 @@ MonoBehaviour:
     seamAxis: {x: 0, y: -0.32852, z: 0.9445}
     seamUp: {x: 0, y: 0.9445, z: 0.32852}
     seamBone: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    seamBiped: 0
+    seamCenterBiped: {x: 0, y: 0, z: 0}
+    mainSlot: "\u041F\u0430\u0441\u0442\u044C"
     step: 1
     keys: []
   - slot: "\u041F\u0430\u0441\u0442\u044C"
@@ -2918,6 +2927,9 @@ MonoBehaviour:
     seamAxis: {x: 0, y: -0.32852, z: 0.9445}
     seamUp: {x: 0, y: 0.9445, z: 0.32852}
     seamBone: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    seamBiped: 0
+    seamCenterBiped: {x: 0, y: 0, z: 0}
+    mainSlot: "\u041F\u0430\u0441\u0442\u044C"
     step: 1
     keys: []
   - slot: "\u041F\u0430\u0441\u0442\u044C"
@@ -3033,6 +3045,9 @@ MonoBehaviour:
     seamAxis: {x: 0, y: -0.32852, z: 0.9445}
     seamUp: {x: 0, y: 0.9445, z: 0.32852}
     seamBone: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    seamBiped: 0
+    seamCenterBiped: {x: 0, y: 0, z: 0}
+    mainSlot: "\u041F\u0430\u0441\u0442\u044C"
     step: 1
     keys: []
   - slot: "\u0420\u0443\u043A\u0438"
@@ -3168,6 +3183,9 @@ MonoBehaviour:
     seamAxis: {x: 0, y: 1, z: 0}
     seamUp: {x: 0, y: 0, z: 1}
     seamBone: 
+    seamBiped: 0
+    seamCenterBiped: {x: 0, y: 0, z: 0}
+    mainSlot: 
     step: 1
     keys:
     - "\u0434\u0432\u0443\u043D\u043E\u0433\u0438\u0439"
@@ -3292,6 +3310,9 @@ MonoBehaviour:
     seamAxis: {x: -0.11155, y: 0.96947, z: 0.21836}
     seamUp: {x: 0.02496, y: -0.21693, z: 0.97587}
     seamBone: "\u0433\u043E\u043B\u043E\u0432\u0430"
+    seamBiped: 0
+    seamCenterBiped: {x: 0, y: 0, z: 0}
+    mainSlot: "\u0427\u0443\u0442\u044C\u0451"
     step: 1
     keys: []
   traits:
@@ -3420,6 +3441,9 @@ MonoBehaviour:
     seamAxis: {x: -0, y: 0.61157, z: 0.79119}
     seamUp: {x: -0, y: 0.79119, z: -0.61157}
     seamBone: "\u0448\u0435\u044F"
+    seamBiped: 1
+    seamCenterBiped: {x: -0, y: 1.12, z: 0.77306}
+    mainSlot: "\u0433\u043E\u043B\u043E\u0432\u0430"
     step: 2
     keys: []
   - slot: 
@@ -3535,6 +3559,9 @@ MonoBehaviour:
     seamAxis: {x: -0, y: 0.61157, z: 0.79119}
     seamUp: {x: -0, y: 0.79119, z: -0.61157}
     seamBone: "\u0448\u0435\u044F"
+    seamBiped: 1
+    seamCenterBiped: {x: -0, y: 1.12, z: 0.77306}
+    mainSlot: "\u0433\u043E\u043B\u043E\u0432\u0430"
     step: 2
     keys: []
   - slot: 
@@ -3650,6 +3677,9 @@ MonoBehaviour:
     seamAxis: {x: -0, y: 0.61157, z: 0.79119}
     seamUp: {x: -0, y: 0.79119, z: -0.61157}
     seamBone: "\u0448\u0435\u044F"
+    seamBiped: 1
+    seamCenterBiped: {x: -0, y: 1.12, z: 0.77306}
+    mainSlot: "\u0433\u043E\u043B\u043E\u0432\u0430"
     step: 2
     keys: []
   - slot: 
@@ -3765,6 +3795,9 @@ MonoBehaviour:
     seamAxis: {x: -0, y: 0.61157, z: 0.79119}
     seamUp: {x: -0, y: 0.79119, z: -0.61157}
     seamBone: "\u0448\u0435\u044F"
+    seamBiped: 1
+    seamCenterBiped: {x: -0, y: 1.12, z: 0.77306}
+    mainSlot: "\u0433\u043E\u043B\u043E\u0432\u0430"
     step: 2
     keys: []
   - slot: 
@@ -3892,6 +3925,9 @@ MonoBehaviour:
     seamAxis: {x: -0, y: 0.61157, z: 0.79119}
     seamUp: {x: -0, y: 0.79119, z: -0.61157}
     seamBone: "\u0448\u0435\u044F"
+    seamBiped: 0
+    seamCenterBiped: {x: 0, y: 0, z: 0}
+    mainSlot: "\u0428\u043A\u0443\u0440\u0430"
     step: 1
     keys: []
   - slot: 
@@ -4015,6 +4051,9 @@ MonoBehaviour:
     seamAxis: {x: -0, y: -0.7646, z: -0.6445}
     seamUp: {x: -0, y: 0.6445, z: -0.7646}
     seamBone: "\u0445\u0432\u043E\u0441\u0442"
+    seamBiped: 0
+    seamCenterBiped: {x: 0, y: 0, z: 0}
+    mainSlot: "\u0425\u0432\u043E\u0441\u0442"
     step: 1
     keys: []
   seats: []
@@ -4025,7 +4064,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 925336096604160015
+    - rid: 925336096663928962
       type: {class: LimbStrikeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 18
@@ -4035,7 +4074,7 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.45
         cooldown: 1.1
-    - rid: 925336096604160016
+    - rid: 925336096663928963
       type: {class: LeapData, ns: , asm: Chimera.Runtime}
       data:
         damage: 12
@@ -4047,7 +4086,7 @@ MonoBehaviour:
         hitRadius: 1.3
         windupTime: 0.5
         staminaCost: 30
-    - rid: 925336096604160017
+    - rid: 925336096663928964
       type: {class: BiteData, ns: , asm: Chimera.Runtime}
       data:
         damage: 14
@@ -4059,7 +4098,7 @@ MonoBehaviour:
         halfAngle: 55
         windupTime: 0.45
         cooldown: 0.7
-    - rid: 925336096604160018
+    - rid: 925336096663928965
       type: {class: HowlData, ns: , asm: Chimera.Runtime}
       data:
         radius: 14
@@ -4068,7 +4107,7 @@ MonoBehaviour:
         fearMoraleHit: 2
         cooldown: 10
         cueTime: 0.4
-    - rid: 925336096604160019
+    - rid: 925336096663928966
       type: {class: ConstrictData, ns: , asm: Chimera.Runtime}
       data:
         maxStage: 1
