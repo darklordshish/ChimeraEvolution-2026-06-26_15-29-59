@@ -41,9 +41,11 @@ public static partial class PartAssembly
 
     public static Fit Mode(SpeciesSO body, BodyPart part, SpeciesSO donor)
     {
-        if (Claimed(part, donor) != null) return Fit.Replace;
-        bool seat = Seam(body, part.seam, out var s) && s.skin;
         bool ring = CarrierRing(body, part.seam) != null;
+        // место целиком (голова, хвост) — всегда замена; сварить её кольцо с кольцом носителя можно, слить поверх — нет
+        if (Claimed(part, donor) != null)
+            return ForceFit == Fit.Weld && ring && part.ringM != null && part.ringM.Length == CarrierRing(body, part.seam).ringM.Length ? Fit.Weld : Fit.Replace;
+        bool seat = Seam(body, part.seam, out var s) && s.skin;
         if (ForceFit == Fit.Over && seat) return Fit.Over;
         if (ForceFit == Fit.Replace && ring) return Fit.Replace;
         if (ForceFit == Fit.Weld && ring && part.ringM != null && part.ringM.Length == CarrierRing(body, part.seam).ringM.Length) return Fit.Weld;
@@ -52,7 +54,12 @@ public static partial class PartAssembly
 
     /// <summary>Снимаемая деталь носителя с кольцом этого шва (лицо человека под морду): её кольцо — ответное кольцо проёма.</summary>
     static BodyPart CarrierRing(SpeciesSO body, string seam) =>
-        body.parts?.FirstOrDefault(p => p != null && p.seam == seam && p.seamFrame && p.ringM != null && p.ringM.Length > 2);
+        (body.parts ?? new BodyPart[0]).Concat(body.traits ?? new BodyPart[0])
+            .FirstOrDefault(p => p != null && p.seam == seam && p.seamFrame && p.ringM != null && p.ringM.Length > 2);
+
+    /// <summary>Чьё кольцо остаётся на месте при сварке: 0 — носителя (кусок тянется к телу: шея под поднятой головой),
+    /// 1 — куска, 0.5 — встречаются посередине.</summary>
+    public static float WeldShare = 0f;
 
     /// <summary>Сварки, ждущие тела носителя: кусок свой край уже подвинул, проём носителя двигает `ApplyWelds`.</summary>
     struct Weld { public Vector3[] ring, shift; public float band; }
@@ -323,14 +330,23 @@ public static partial class PartAssembly
             var rot0 = gaze ? Quaternion.identity : Quaternion.LookRotation(c.axis.normalized, c.up.normalized) * Quaternion.Inverse(Quaternion.LookRotation(d.axis.normalized, d.up.normalized));
             int m = part.ringM.Length;
             var q = new Vector3[m]; var target = new Vector3[m]; float mean = 0f;
+            // кольцо куска — там же, куда встали его вершины (у головы на двуногом центр посадки свой, кольцо уезжает с ней)
+            var dC0 = part.seamBiped && body.Plan == "двуногий" && part.plan != body.Plan ? part.seamCenterBiped : d.center;
+            Vector3 cc = Vector3.zero, qc = Vector3.zero;
             for (int i = 0; i < m; i++)
             {
-                q[i] = c.center + rot0 * (part.ringM[i] - d.center) * k;
-                Vector3 a = carrierRing.ringM[i] - c.center, b = q[i] - c.center;
-                target[i] = c.center + (a + b).normalized * PowerMean(a.magnitude, b.magnitude, WeldNorm) + c.axis.normalized * Vector3.Dot((a + b) * 0.5f, c.axis.normalized);
-                mean += (target[i] - c.center).magnitude / m;
+                q[i] = c.center + rot0 * (part.ringM[i] - dC0) * k;
+                cc += carrierRing.ringM[i] / m; qc += q[i] / m;
             }
-            float band = mean * WeldBand;
+            // общее кольцо: радиус вокруг СВОЕГО центра у каждого кольца, центр — между центрами по `WeldShare`
+            var mid = Vector3.Lerp(cc, qc, WeldShare);
+            for (int i = 0; i < m; i++)
+            {
+                Vector3 a = carrierRing.ringM[i] - cc, b = q[i] - qc;
+                target[i] = mid + (a + b).normalized * PowerMean(a.magnitude, b.magnitude, WeldNorm);
+                mean += (target[i] - mid).magnitude / m;
+            }
+            float band = mean * WeldBand + (qc - cc).magnitude;   // кольца разошлись — полоса длиннее на это расстояние
             var own = Enumerable.Range(0, m).Select(i => target[i] - q[i]).ToArray();
             for (int i = 0; i < verts.Count; i++) verts[i] = Blend(verts[i], q, own, band);
             welds.Add(new Weld { ring = carrierRing.ringM, shift = Enumerable.Range(0, m).Select(i => target[i] - carrierRing.ringM[i]).ToArray(), band = band });
