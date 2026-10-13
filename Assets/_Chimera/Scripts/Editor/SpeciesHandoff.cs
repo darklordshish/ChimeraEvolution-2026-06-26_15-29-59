@@ -90,6 +90,12 @@ public static class SpeciesHandoff
         species.parts = ReadParts(species, out var partProblems);
         foreach (var p in partProblems) Debug.LogError($"[детали] {species.speciesName}: {p}");
         if (species.parts.Length > 0) Debug.Log($"[детали] {species.speciesName}: принято деталей {species.parts.Length}");
+        // ЧЕРТЫ И ПОСАДОЧНЫЕ МЕСТА (пилот Б, 13.10) — тем же заходом; пусто пишется явно
+        species.traits = ReadTraits(species, out var traitProblems);
+        foreach (var p in traitProblems) Debug.LogError($"[черты] {species.speciesName}: {p}");
+        species.seats = ReadSeats(species);
+        if (species.traits.Length > 0 || species.seats.Length > 0)
+            Debug.Log($"[черты] {species.speciesName}: кусков-черт {species.traits.Length}, посадочных мест {species.seats.Length}");
         return graph;
     }
 
@@ -165,11 +171,15 @@ public static class SpeciesHandoff
     // ШОВ В ПАСПОРТЕ — В МЕТРАХ: `ellipse_m` (полуоси) и `ring_m` (точки кольца). Импорт читал `ellipse`, которого в паспорте
     // нет, — в ассете лежал нулевой эллипс (аудит Codex 04.10). `ellipse` без суффикса читается как прежде, для старых паспортов.
     // `ring_m` — массив массивов, JsonUtility такое не берёт: разбирается отдельно (`ReadRingM`)
-    [System.Serializable] class SeamDto { public string type; public int[] ring; public float[] ellipse; public float[] ellipse_m; }
-    [System.Serializable] class ObjectsDto { public string main, stump; }
+    // КАДР ШВА (поставка 13.10): `center_m`, `axis_out` (от тела к куску), `up` — метры тела, оси Unity; `bone` — кость шва
+    [System.Serializable] class SeamDto { public string type, bone; public int[] ring; public float[] ellipse, ellipse_m, center_m, axis_out, up; }
+    // кусок бывает из нескольких объектов модели: к основному — морда (у целой головы), полость и зубы со своим цветом
+    [System.Serializable] class ObjectsDto { public string main, stump, morda, polost, zuby; }
+    [System.Serializable] class SeatDto { public string species, kind; public SeamDto seam; }
+    public const string TraitsDir = Dir + "cherty/";
     // `fbx` — КУСОК МЕША ВИДА (пилот Б, 10.10): меш берётся не из `Models/Parts/<паспорт>.fbx`, а объектом `objects.main` из
     // названной модели (модель вида режется по швам, отдельного файла у куска нет). `fit: "ring"` — посадка кольцом
-    [System.Serializable] class DetailDto { public string species, slot, plan, fbx, fit; public SeamDto seam; public bool mirror = true; public string[] keys; public ObjectsDto objects; }
+    [System.Serializable] class DetailDto { public string species, slot, plan, fbx, fit, trait; public int step; public SeamDto seam; public bool mirror = true; public string[] keys; public ObjectsDto objects; }
     public const string PartsDir = Dir + "parts/";
 
     /// <summary>Точки кольца шва `seam.ring_m` — [[x,y,z], …] в метрах тела донора. Индексы `ring` после импорта врут: Unity
@@ -191,19 +201,47 @@ public static class SpeciesHandoff
 
     /// <summary>Прочитать детали вида. Меш и порядок костей берутся из скиннед-рендерера FBX: индексы весов меша — это
     /// порядок костей рендерера, а не паспорта. Меш обязан быть читаемым — сборка переносит его вершины.</summary>
-    public static BodyPart[] ReadParts(SpeciesSO species, out List<string> problems)
+    public static BodyPart[] ReadParts(SpeciesSO species, out List<string> problems) => ReadPassports(species, PartsDir, true, out problems);
+
+    /// <summary>ЧЕРТЫ ВИДА (`handoff/cherty/<вид>-*.json`): куски без органа — грива, хвост, целая голова. Формат паспорта
+    /// тот же, места (`slot`) нет: черта приезжает ступенью идентичности, а не графтом.</summary>
+    public static BodyPart[] ReadTraits(SpeciesSO species, out List<string> problems) => ReadPassports(species, TraitsDir, false, out problems);
+
+    /// <summary>ПОСАДОЧНЫЕ МЕСТА (`handoff/<вид>-*.json` с `kind: "посадочное место…"`): шов на сплошной коже под кусок,
+    /// которого у вида нет. Лежат рядом с графом: это место тела, а не деталь.</summary>
+    public static BodySeat[] ReadSeats(SpeciesSO species)
+    {
+        var list = new List<BodySeat>();
+        foreach (var file in System.IO.Directory.GetFiles(Dir, Translit(species.speciesName) + "-*.json"))
+        {
+            SeatDto d;
+            try { d = JsonUtility.FromJson<SeatDto>(System.IO.File.ReadAllText(file)); } catch { continue; }
+            if (d?.kind == null || !d.kind.StartsWith("посадочное место") || d.seam == null || string.IsNullOrEmpty(d.seam.type)) continue;
+            if (d.seam.center_m is not { Length: >= 3 } || d.seam.ellipse_m is not { Length: >= 2 })
+            { Debug.LogError($"[места] {species.speciesName}: «{file}» — у посадочного места нет центра или эллипса, не принято"); continue; }
+            list.Add(new BodySeat
+            {
+                seam = d.seam.type, bone = d.seam.bone, center = V(d.seam.center_m, Vector3.zero),
+                axis = V(d.seam.axis_out, Vector3.up), up = V(d.seam.up, Vector3.forward),
+                ellipse = new Vector2(d.seam.ellipse_m[0], d.seam.ellipse_m[1]),
+            });
+        }
+        return list.ToArray();
+    }
+
+    static BodyPart[] ReadPassports(SpeciesSO species, string dir, bool needSlot, out List<string> problems)
     {
         problems = new List<string>();
         var list = new List<BodyPart>();
-        if (!System.IO.Directory.Exists(PartsDir)) return list.ToArray();
+        if (!System.IO.Directory.Exists(dir)) return list.ToArray();
         string prefix = Translit(species.speciesName) + "-";
-        foreach (var file in System.IO.Directory.GetFiles(PartsDir, prefix + "*.json"))
+        foreach (var file in System.IO.Directory.GetFiles(dir, prefix + "*.json"))
         {
             string stem = System.IO.Path.GetFileNameWithoutExtension(file);
             DetailDto d;
             try { d = JsonUtility.FromJson<DetailDto>(System.IO.File.ReadAllText(file)); }
             catch (System.Exception e) { problems.Add($"«{stem}»: паспорт не разбирается — {e.Message}"); continue; }
-            if (d == null || string.IsNullOrEmpty(d.slot)) { problems.Add($"«{stem}»: в паспорте нет места (`slot`)"); continue; }
+            if (d == null || (needSlot && string.IsNullOrEmpty(d.slot))) { problems.Add($"«{stem}»: в паспорте нет места (`slot`)"); continue; }
             if (!string.IsNullOrEmpty(d.species) && d.species != species.speciesName) { problems.Add($"«{stem}»: паспорт назвал вид «{d.species}»"); continue; }
 
             string fbx = !string.IsNullOrEmpty(d.fbx) ? d.fbx : PartsMeshDir + stem + ".fbx";
@@ -227,6 +265,14 @@ public static class SpeciesHandoff
                 return t != null ? t.name : own;
             }
             var bones = smr.bones.Select(InGraph).ToArray();
+            bool piece = !string.IsNullOrEmpty(d.fbx);
+            static string SlotOf(string n) { int dot = n.IndexOf('.'); return dot > 0 ? n.Substring(0, dot) : n; }
+            // свой цвет — только у объекта `слот.что` с материалом (полость, зубы, мочка); остальное красится по составу
+            static Color OwnColor(SkinnedMeshRenderer r)
+            {
+                if (r.name.IndexOf('.') <= 0 || r.sharedMaterial == null || !r.sharedMaterial.HasProperty("_BaseColor")) return default;
+                var c = r.sharedMaterial.GetColor("_BaseColor"); c.a = 1f; return c;
+            }
             var missing = bones.Concat(stump != null ? stump.bones.Select(b => b != null ? b.name : "") : new string[0])
                                .Where(b => !graph.Contains(b)).Distinct().ToList();
             if (missing.Count > 0) { problems.Add($"«{stem}»: кости меша не узлы графа: {string.Join(", ", missing)}"); continue; }
@@ -244,8 +290,31 @@ public static class SpeciesHandoff
                 ellipse = (d.seam?.ellipse_m ?? d.seam?.ellipse) is { Length: >= 2 } el ? new Vector2(el[0], el[1]) : Vector2.zero,
                 ringM = ReadRingM(System.IO.File.ReadAllText(file)),
                 keys = d.keys,
-                ringFit = d.fit == "ring",
+                // кусок меша вида всегда встаёт жёстко по шву; `fit` в паспорте остаётся для деталей из `Models/Parts`
+                ringFit = d.fit == "ring" || piece,
+                piece = piece, objectSlot = piece ? SlotOf(smr.name) : null, passport = stem, own = piece ? OwnColor(smr) : default,
+                seamFrame = d.seam?.center_m is { Length: >= 3 },
+                seamCenter = V(d.seam?.center_m, Vector3.zero), seamAxis = V(d.seam?.axis_out, Vector3.up), seamUp = V(d.seam?.up, Vector3.forward),
+                seamBone = d.seam?.bone,
+                // ступень черты: из паспорта, а пока её там нет — целая голова с поздней ступени (общая форма вида), прочее с первой
+                step = d.step > 0 ? d.step : d.trait == "голова" ? 2 : 1,
             });
+            // ОСТАЛЬНЫЕ ОБЪЕКТЫ КУСКА — отдельными записями с тем же швом: у каждого свой меш, свои кости и свой цвет
+            if (piece)
+                foreach (var extra in new[] { d.objects?.morda, d.objects?.polost, d.objects?.zuby })
+                {
+                    if (string.IsNullOrEmpty(extra)) continue;
+                    var es = smrs.FirstOrDefault(r => r.name == extra);
+                    if (es == null || es.sharedMesh == null) { problems.Add($"«{stem}»: нет объекта «{extra}» в «{fbx}»"); continue; }
+                    var main = list[list.Count - 1];
+                    list.Add(new BodyPart
+                    {
+                        slot = main.slot, plan = main.plan, mesh = es.sharedMesh, bones = es.bones.Select(InGraph).ToArray(), mirror = main.mirror,
+                        toBody = es.transform.localToWorldMatrix, seam = main.seam, ellipse = main.ellipse, ringFit = true, piece = true,
+                        objectSlot = SlotOf(es.name), passport = stem, own = OwnColor(es), seamFrame = main.seamFrame,
+                        seamCenter = main.seamCenter, seamAxis = main.seamAxis, seamUp = main.seamUp, seamBone = main.seamBone, step = main.step,
+                    });
+                }
         }
         return list.ToArray();
     }

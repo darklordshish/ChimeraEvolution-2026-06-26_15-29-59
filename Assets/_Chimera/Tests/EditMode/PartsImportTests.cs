@@ -23,8 +23,9 @@ namespace Chimera.Tests.EditMode
                     ? Directory.GetFiles(SpeciesHandoff.PartsDir, prefix + "*.json").Length : 0;
                 var read = SpeciesHandoff.ReadParts(sp, out var problems);
                 Assert.IsEmpty(problems, $"{n}: детали отвергнуты при чтении:\n" + string.Join("\n", problems));
-                Assert.AreEqual(passports, read.Length, $"{n}: паспортов {passports}, прочитано деталей {read.Length}");
-                Assert.AreEqual(passports, sp.parts?.Count(p => p != null) ?? 0, $"{n}: в ассете деталей не столько, сколько паспортов — пересоздай виды");
+                // паспорт куска меша вида даёт несколько записей (морда + полость + зубы) — считаются паспорта, не записи
+                Assert.AreEqual(passports, read.Select(p => p.passport).Distinct().Count(), $"{n}: паспортов {passports}, прочитано {read.Length} записей не от всех");
+                Assert.AreEqual(read.Length, sp.parts?.Count(p => p != null) ?? 0, $"{n}: в ассете деталей не столько, сколько читается из паспортов — пересоздай виды");
             }
         }
     }

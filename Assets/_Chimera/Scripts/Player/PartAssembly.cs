@@ -14,7 +14,7 @@ using UnityEngine;
 ///
 /// ЧТО ДЕТАЛЬ ЗАМЕЩАЕТ: оболочку поля своей цепи (кости от корня детали вниз — `fieldSkip`) и куски органа своего места
 /// (лапы, когти): деталь несёт облик части целиком. Стык с полем — перекрытием (культя детали уходит в тело).</summary>
-public static class PartAssembly
+public static partial class PartAssembly
 {
     /// <summary>Какие детали встают на это тело: для каждого места — деталь вида, чей орган там виден (родной — у шасси).</summary>
     public static List<(BodyPart part, SpeciesSO donor)> Choose(SpeciesSO chassis, IReadOnlyList<Organ> worn)
@@ -27,11 +27,18 @@ public static class PartAssembly
         {
             var organ = worn.First(o => o != null && o.slot == slot);   // видимый орган места (порядок — `WornInDrawOrder`)
             var donor = chassis.organs != null && System.Array.IndexOf(chassis.organs, organ) >= 0 ? chassis : ChainSwap.OwnerOf(organ);
-            // КУСОК МЕША ВИДА (`ringFit`) — ТОЛЬКО ЧУЖОМУ ТЕЛУ: у своего шасси он уже есть в меше вида, а на своём же поле
-            // голова-кусок проглотила бы чужие уши, глаза и рога на ней (матрица 10.10: 12 новых И1 у Волк+…)
-            var candidates = donor?.parts?.Where(p => p != null && p.slot == slot && p.mesh != null && p.bones != null && p.bones.Length > 0
-                                                     && !(p.ringFit && (donor == chassis || !WholePieces))).ToList();
-            if (candidates == null || candidates.Count == 0) continue;
+            var all = donor?.parts?.Where(p => p != null && p.slot == slot && p.mesh != null && p.bones != null && p.bones.Length > 0).ToList();
+            if (all == null || all.Count == 0) continue;
+            // КУСКИ МЕША ВИДА — ТОЛЬКО ЧУЖОМУ ТЕЛУ И ВСЕ РАЗОМ: место органа — несколько объектов (морда, полость, зубы; уши и
+            // мочка). У своего шасси они уже есть в меше вида, а на своём же поле кусок проглотил бы чужие уши и рога
+            // (матрица 10.10: 12 новых И1 у Волк+…)
+            if (MeshPieces && donor != chassis && all.Any(p => p.piece))
+            {
+                foreach (var p in all.Where(p => p.piece)) chosen.Add((p, donor));
+                continue;
+            }
+            var candidates = all.Where(p => !p.piece).ToList();
+            if (candidates.Count == 0) continue;
             GraftSeam.TryGetValue(slot, out var seam);
             // ЧУЖОМУ ШАССИ — ТОЛЬКО ДЕТАЛЬ ШВА ПРИВИВКИ (спека `2026-10-06-ruki-kist.md`): у «Рук» это кисть от запястья. Вся
             // передняя нога волка — облик самого волка, другому шасси она не ставится. Своему — облик целиком, кисть — запасом
@@ -42,12 +49,6 @@ public static class PartAssembly
         }
         return chosen;
     }
-
-    /// <summary>ЦЕЛАЯ ГОЛОВА ОТ ПАСТИ — ТОЛЬКО ДЛЯ КАДРОВ ПИЛОТА, В ИГРЕ ВЫКЛЮЧЕНО (геймдизайнер 10.10: «внешний вид и модель
-    /// должны отражать данные»). По данным голова разнесена: Пасть — морда и зубы, Чутьё — уши, глаза, нос, а грива и хвост —
-    /// черты шасси, проступающие глобальным слоем (спека 27.09, решения 4 и 11). Кусок «голова с гривой» на одном органе
-    /// этому противоречит; он остаётся механизмом посадки по шву, пока модельная линия не нарежет голову по органам.</summary>
-    public static bool WholePieces = false;
 
     /// <summary>Шов, на котором аугмент места встаёт на чужое шасси. Нет строки — деталь места ставится целиком.</summary>
     /// <summary>ПОДТЯГИВАНИЕ КИСТИ К РОДНОЙ (спека рук §5, геймдизайнер 06.10: «чуть к кисти подтянуть у человека»): калибр
@@ -131,8 +132,8 @@ public static class PartAssembly
     public static bool CanPlace(SpeciesSO body, BodyPart part, SpeciesSO donor)
     {
         if (part?.mesh == null || !part.mesh.isReadable || part.bones == null || donor?.bones == null) return false;
-        // посадке кольцом нужен шов у носителя: без него масштаб куска взять неоткуда — кусок не ставится, работает прежний путь
-        if (part.ringFit && SeamEllipse(body, part.seam) == Vector2.zero) return false;
+        // посадке кольцом нужен шов у носителя: без него ни места, ни масштаба — кусок не ставится, работает прежний путь
+        if (part.ringFit) return CanPlaceRing(body, part, donor);
         var donorBones = new HashSet<string>(donor.bones.Select(b => b.name));
         var need = Weighted(part).AsEnumerable();
         if (part.StumpShown(body.Plan))
@@ -171,6 +172,8 @@ public static class PartAssembly
         var skip = new HashSet<string>();
         foreach (var (part, donor) in parts)
         {
+            // кусок, не забравший место (грива, морда, уши на чужой голове), поля под собой не гасит: он сидит ПОВЕРХ тела
+            if (part.piece && Claimed(part, donor) == null) continue;
             var chainRoot = ChainRoot(part, donor);
             var root = chainRoot != null ? BodyName(body, donor, chainRoot) : null;
             if (root != null)
@@ -191,30 +194,10 @@ public static class PartAssembly
 
     public static bool UsePlanKey = true;   // для сравнения кадром: деталь без формы-ключа плана
 
-    /// <summary>Эллипс шва на теле (полуоси, метры): из паспорта своей детали с этим швом — кольцо, которое модельная линия
-    /// поставила на меше вида; нет детали — по полю: конец кости, кончающейся этим швом (радиус × сечение и × глубина).</summary>
-    public static Vector2 SeamEllipse(SpeciesSO sp, string seam)
-    {
-        var own = sp.parts?.FirstOrDefault(p => p != null && p.seam == seam && p.ellipse.x > 0f && p.ellipse.y > 0f);
-        if (own != null) return own.ellipse;
-        var b = sp.bones?.FirstOrDefault(x => x.mark?.b == seam);
-        if (b != null) return new Vector2(b.r1 * Mathf.Max(0.05f, b.section), b.r1 * Mathf.Max(0.05f, b.depth));
-        b = sp.bones?.FirstOrDefault(x => x.mark?.a == seam);
-        return b != null ? new Vector2(b.r0 * Mathf.Max(0.05f, b.section), b.r0 * Mathf.Max(0.05f, b.depth)) : Vector2.zero;
-    }
-
-    /// <summary>Масштаб куска при посадке кольцом: площадь шва носителя к площади шва донора, корнем (форма кольца не
-    /// правится — кусок не сшивается, стык закрывает юбка или перекрытие).</summary>
-    public static float RingScale(SpeciesSO body, SpeciesSO donor, BodyPart part)
-    {
-        if (body == donor || string.IsNullOrEmpty(part.seam) || part.ellipse.x <= 0f || part.ellipse.y <= 0f) return 1f;
-        var c = SeamEllipse(body, part.seam);
-        return c.x > 0f && c.y > 0f ? Mathf.Sqrt(c.x * c.y / (part.ellipse.x * part.ellipse.y)) : 1f;
-    }
-
     /// <summary>Поставить деталь на тело: меш переносится на кости носителя, скиннинг — к ним же.</summary>
     public static GameObject Place(Transform container, SpeciesSO body, BodyPart part, SpeciesSO donor, Material mat)
     {
+        if (part.ringFit) return PlaceRing(container, body, part, donor, mat);
         var go = Place(container, body, part, donor, mat, part.mesh, part.bones, part.toBody, part.slot);
         // АДАПТАЦИЯ ПЛАНА ВКЛЮЧАЕТ КУЛЬТЮ: у волка плечевая кость в туше, у двуногого плечо — видимая рука (02.10, кадр
         // модельной линии: без культи волчий локоть садился у плеча человека — «рука краба»)
@@ -280,8 +263,6 @@ public static class PartAssembly
         // вокруг сустава — форма та же, низ на земле. Земля — y = 0 в кадре контейнера (высоты от земли)
         bool hand = !string.IsNullOrEmpty(part.seam) && GraftSeam.TryGetValue(part.slot, out var graftSeam) && graftSeam == part.seam;
         bool stanceHand = hand && body.stanceLimbs != null && System.Array.IndexOf(body.stanceLimbs, part.slot) >= 0;
-        int ringRoot = part.ringFit && mainRoot != null ? System.Array.IndexOf(partBones, mainRoot) : -1;
-        float ringK = ringRoot >= 0 ? RingScale(body, donor, part) : 1f;
         for (int side = +1, s = 0; s < sides; s++, side = -1)
         {
             // кадр каждой кости детали: донор (поза графа, своя сторона) и носитель (трансформ собранного скелета)
@@ -316,16 +297,6 @@ public static class PartAssembly
                 {
                     if (wt <= 0f || bi < 0 || bi >= frames.Length || frames[bi].index < 0) return;
                     var f = frames[bi];
-                    if (ringRoot >= 0 && frames[ringRoot].index >= 0)
-                    {
-                        // посадка кольцом: место — кадром кости шва и одним масштабом, вес — на своей кости
-                        var rf = frames[ringRoot];
-                        acc += rf.carrier.MultiplyPoint3x4(rf.toDonorLocal.MultiplyPoint3x4(p0) * ringK) * wt;
-                        total += wt; beyond = false;
-                        switch (slotIdx) { case 0: bw.boneIndex0 = f.index; bw.weight0 = wt; break; case 1: bw.boneIndex1 = f.index; bw.weight1 = wt; break;
-                                           case 2: bw.boneIndex2 = f.index; bw.weight2 = wt; break; default: bw.boneIndex3 = f.index; bw.weight3 = wt; break; }
-                        return;
-                    }
                     var local = f.toDonorLocal.MultiplyPoint3x4(p0);
                     // ВДОЛЬ КОСТИ ТЯНЕТСЯ ТОЛЬКО ТО, ЧТО НА НЕЙ: за концом кости (лапа волка ниже запястья — своей кости в графе
                     // у неё нет) и до её начала форма идёт жёстко, поперечным калибром. Иначе кость, вытянутая к суставу

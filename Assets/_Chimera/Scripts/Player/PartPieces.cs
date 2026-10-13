@@ -1,0 +1,200 @@
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+
+/// <summary>КУСКИ МЕША ВИДА (пилот Б, спека `2026-10-09-chistyj-vid-meshem.md` §7). Модель вида нарезана по тому, чему
+/// принадлежит часть: кусок ОРГАНА приезжает на чужое тело графтом (морда — Пасть, уши и мочка — Чутьё), кусок-ЧЕРТА —
+/// ступенью идентичности (грива, хвост, целая голова как общая форма вида; спека 27.09, решения 4 и 11, и спека 08.10
+/// §2 п.3). Кусок не переносится «кость к кости», как деталь конечности: он встаёт ЖЁСТКО, по шву — центр шва донора
+/// в центр шва носителя, один масштаб по отношению эллипсов. Шов носителя — его посадочное место, кольцо его детали
+/// или, если модельная линия их ещё не дала, сустав графа с той же меткой.</summary>
+public static partial class PartAssembly
+{
+    /// <summary>КУСКИ ВКЛЮЧАЮТСЯ ТОЛЬКО ДЛЯ КАДРОВ И СТОРОЖЕЙ ПИЛОТА; в игре выключено, пока нарезаны не все виды и нет
+    /// ответных мест у носителей (лицо и уши человека). Выключено — графт рисуется как прежде, блоками и полем.</summary>
+    public static bool MeshPieces = false;
+
+    /// <summary>Показать черты этого вида на любом теле, не дожидаясь ступени по составу, — для кадров и сторожей.</summary>
+    public static SpeciesSO ForceTraits;
+    public static int ForceStep = 2;
+
+    /// <summary>Куски-черты, проступившие на теле: черты вида-цели, чья ступень уже достигнута.</summary>
+    public static List<(BodyPart part, SpeciesSO donor)> Traits(SpeciesSO chassis, IReadOnlyList<Organ> worn)
+    {
+        var res = new List<(BodyPart, SpeciesSO)>();
+        if (!MeshPieces || chassis == null) return res;
+        var (target, step) = GlobalLayer.Step(chassis, worn);
+        if (ForceTraits != null && ForceTraits != chassis) { target = ForceTraits; step = ForceStep; }
+        if (target?.traits == null || step <= 0) return res;
+        foreach (var t in target.traits)
+            if (t != null && t.mesh != null && t.bones != null && t.bones.Length > 0 && Mathf.Max(1, t.step) <= step) res.Add((t, target));
+        return res;
+    }
+
+    /// <summary>МЕСТО, КОТОРОЕ КУСОК НЕСЁТ ЦЕЛИКОМ — со всем, что на нём висит. Кусок-голова (объект `голова`) несёт место
+    /// `голова`: уши, глаза и нос носителя под ним не рисуются. Грива и морда сидят на той же кости, но места не забирают:
+    /// имя их объекта — другой слот. Null — кусок место не забирает.</summary>
+    public static string Claimed(BodyPart part, SpeciesSO donor)
+    {
+        if (part == null || !part.ringFit || donor?.bones == null) return null;
+        var root = ChainRoot(part, donor);
+        var place = root != null ? donor.bones.FirstOrDefault(b => b.name == root)?.socket : null;
+        if (string.IsNullOrEmpty(place)) return null;
+        return !part.piece || part.objectSlot == place ? place : null;
+    }
+
+    /// <summary>ШОВ НА ТЕЛЕ: посадочное место (кольцо на сплошной коже), иначе кольцо своей детали или черты с этим швом,
+    /// иначе сустав графа с такой меткой (центр — на оси кости, эллипс — радиус × сечение и × глубина).</summary>
+    public static bool Seam(SpeciesSO sp, string seam, out BodySeat found)
+    {
+        found = null;
+        if (sp == null || string.IsNullOrEmpty(seam)) return false;
+        found = sp.seats?.FirstOrDefault(s => s != null && s.seam == seam);
+        if (found != null) return true;
+        var own = (sp.parts ?? new BodyPart[0]).Concat(sp.traits ?? new BodyPart[0])
+                  .FirstOrDefault(p => p != null && p.seam == seam && p.seamFrame && p.ellipse.x > 0f && p.ellipse.y > 0f);
+        if (own != null)
+        {
+            found = new BodySeat { seam = seam, bone = own.seamBone, center = own.seamCenter, axis = own.seamAxis, up = own.seamUp, ellipse = own.ellipse };
+            return true;
+        }
+        if (sp.bones == null) return false;
+        var by = sp.bones.Where(b => b != null).GroupBy(b => b.name).ToDictionary(g => g.Key, g => g.First());
+        var posed = new Dictionary<string, (Vector3, Quaternion)>();
+        var end = sp.bones.FirstOrDefault(b => b?.mark?.b == seam);
+        var start = end == null ? sp.bones.FirstOrDefault(b => b?.mark?.a == seam) : null;
+        var bone = end ?? start;
+        if (bone == null) return false;
+        var (p, r) = SkeletonBuilder.Place(bone, by, posed);
+        float rad = end != null ? bone.r1 : bone.r0;
+        found = new BodySeat
+        {
+            seam = seam, bone = bone.name, center = end != null ? SkeletonBuilder.Tip(bone, p, r) : p, axis = r * Vector3.up, up = r * Vector3.forward,
+            ellipse = new Vector2(rad * Mathf.Max(0.05f, bone.section), rad * Mathf.Max(0.05f, bone.depth)),
+        };
+        return found.ellipse.x > 0f && found.ellipse.y > 0f;
+    }
+
+    public static Vector2 SeamEllipse(SpeciesSO sp, string seam) => Seam(sp, seam, out var s) ? s.ellipse : Vector2.zero;
+
+    /// <summary>Масштаб куска: площадь шва носителя к площади шва донора, корнем. Форма кольца не правится — кусок не
+    /// сшивается, стык закрывает юбка или перекрытие.</summary>
+    public static float RingScale(SpeciesSO body, SpeciesSO donor, BodyPart part)
+    {
+        if (string.IsNullOrEmpty(part.seam) || part.ellipse.x <= 0f || part.ellipse.y <= 0f) return 1f;
+        var c = SeamEllipse(body, part.seam);
+        return c.x > 0f && c.y > 0f ? Mathf.Sqrt(c.x * c.y / (part.ellipse.x * part.ellipse.y)) : 1f;
+    }
+
+    /// <summary>ГОЛОВА — ВЗГЛЯД (кадр 01.10): кусок, сидящий на цепи головы, держит мировой поворот донора — морда смотрит
+    /// вперёд у любого носителя. Шеи у видов не гомологичны по наклону: совмести кадры швов — и волчья морда на отвесной
+    /// шее человека уставится в небо. Остальные куски (хвост) встают кадром шва: ось к оси, «верх» к «верху».</summary>
+    static bool Gaze(BodyPart part, SpeciesSO donor)
+    {
+        var root = ChainRoot(part, donor);
+        return root != null && donor.bones.FirstOrDefault(b => b.name == root)?.limb == "голова";
+    }
+
+    static bool CanPlaceRing(SpeciesSO body, BodyPart part, SpeciesSO donor) =>
+        Seam(body, part.seam, out var seat) && (part.seamFrame || Seam(donor, part.seam, out _))
+        && (!string.IsNullOrEmpty(seat.bone) || Weighted(part).Any(n => SkinBone(body, donor, part, n) != null));
+
+    static GameObject PlaceRing(Transform container, SpeciesSO body, BodyPart part, SpeciesSO donor, Material mat)
+    {
+        var skeleton = container.Find("Skeleton");
+        if (skeleton == null || part.mesh == null || !part.mesh.isReadable || part.bones == null) return null;
+        if (!Seam(body, part.seam, out var c)) return null;
+        BodySeat d;
+        if (part.seamFrame) d = new BodySeat { center = part.seamCenter, axis = part.seamAxis, up = part.seamUp, ellipse = part.ellipse };
+        else if (!Seam(donor, part.seam, out d)) return null;
+
+        var xf = new Dictionary<string, Transform>();
+        foreach (var t in skeleton.GetComponentsInChildren<Transform>(true)) if (!xf.ContainsKey(t.name)) xf[t.name] = t;
+
+        float k = RingScale(body, donor, part);
+        bool gaze = Gaze(part, donor);
+        var toBody = part.toBody == default ? Matrix4x4.identity : part.toBody;
+        var sv = part.mesh.vertices.Select(v => toBody.MultiplyPoint3x4(v)).ToArray();
+        var sw = part.mesh.boneWeights; var st = part.mesh.triangles;
+        bool flip = toBody.determinant < 0f;
+        int n = sv.Length, sides = part.mirror ? 2 : 1;
+        var verts = new List<Vector3>(n * sides); var weights = new List<BoneWeight>(n * sides); var tris = new List<int>(st.Length * sides);
+        var bones = new List<Transform>(); var bind = new List<Matrix4x4>();
+        int BoneIndex(Transform t)
+        {
+            int i = bones.IndexOf(t);
+            if (i >= 0) return i;
+            bones.Add(t); bind.Add(t.worldToLocalMatrix * container.localToWorldMatrix);
+            return bones.Count - 1;
+        }
+
+        static Vector3 MirrorX(Vector3 v) => new(-v.x, v.y, v.z);
+        static Quaternion Frame(Vector3 axis, Vector3 up) => Quaternion.LookRotation(axis.normalized, up.normalized);
+        for (int side = +1, s = 0; s < sides; s++, side = -1)
+        {
+            Vector3 dC = d.center, dA = d.axis, dU = d.up, cC = c.center, cA = c.axis, cU = c.up;
+            if (side < 0) { dC = MirrorX(dC); dA = MirrorX(dA); dU = MirrorX(dU); cC = MirrorX(cC); cA = MirrorX(cA); cU = MirrorX(cU); }
+            var rot = gaze ? Quaternion.identity : Frame(cA, cU) * Quaternion.Inverse(Frame(dA, dU));
+
+            // кость, ведущая вершины: своя на носителе, а если у него такой нет (хвост у человека) — кость посадочного места
+            var lead = new int[part.bones.Length];
+            for (int i = 0; i < lead.Length; i++)
+            {
+                string name = SkinBone(body, donor, part, part.bones[i]) ?? c.bone;
+                Transform t = null;
+                if (name != null && !(side < 0 && xf.TryGetValue(name + ".L", out t))) xf.TryGetValue(name, out t);
+                if (t == null && c.bone != null) xf.TryGetValue(c.bone, out t);
+                lead[i] = t != null ? BoneIndex(t) : -1;
+            }
+
+            int start = verts.Count;
+            for (int v = 0; v < n; v++)
+            {
+                var p = sv[v];
+                if (side < 0) p = MirrorX(p);
+                verts.Add(cC + rot * (p - dC) * k);
+                var w = sw.Length == n ? sw[v] : new BoneWeight { boneIndex0 = 0, weight0 = 1f };
+                var bw = new BoneWeight(); float total = 0f;
+                void Add(int bi, float wt, int slot)
+                {
+                    if (wt <= 0f || bi < 0 || bi >= lead.Length || lead[bi] < 0) return;
+                    total += wt;
+                    switch (slot) { case 0: bw.boneIndex0 = lead[bi]; bw.weight0 = wt; break; case 1: bw.boneIndex1 = lead[bi]; bw.weight1 = wt; break;
+                                    case 2: bw.boneIndex2 = lead[bi]; bw.weight2 = wt; break; default: bw.boneIndex3 = lead[bi]; bw.weight3 = wt; break; }
+                }
+                Add(w.boneIndex0, w.weight0, 0); Add(w.boneIndex1, w.weight1, 1); Add(w.boneIndex2, w.weight2, 2); Add(w.boneIndex3, w.weight3, 3);
+                if (total <= 0f) return null;   // вершину некому вести — кусок не встаёт
+                bw.weight0 /= total; bw.weight1 /= total; bw.weight2 /= total; bw.weight3 /= total;
+                weights.Add(bw);
+            }
+            bool swap = flip ^ (side < 0);
+            for (int i = 0; i < st.Length; i += 3)
+            {
+                tris.Add(start + st[i]);
+                tris.Add(start + (swap ? st[i + 2] : st[i + 1]));
+                tris.Add(start + (swap ? st[i + 1] : st[i + 2]));
+            }
+        }
+
+        string name0 = !string.IsNullOrEmpty(part.slot) ? part.slot : part.objectSlot;
+        var mesh = new Mesh { name = $"{name0} ({donor.speciesName}, кусок)" };
+        if (verts.Count > 65535) mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+        mesh.SetVertices(verts); mesh.SetTriangles(tris, 0);
+        mesh.RecalculateNormals();
+        mesh.boneWeights = weights.ToArray();
+        mesh.bindposes = bind.ToArray();
+        mesh.RecalculateBounds();
+
+        var go = new GameObject(name0);   // ИМЯ = СЛОТ: контракт имён частей
+        go.transform.SetParent(container, false);
+        go.AddComponent<BodyPartView>();
+        if (part.own.a > 0f) go.AddComponent<PartMark>().own = part.own;   // свой цвет куска (полость, зубы, мочка)
+        var smr = go.AddComponent<SkinnedMeshRenderer>();
+        smr.sharedMesh = mesh;
+        smr.bones = bones.ToArray();
+        smr.rootBone = skeleton;
+        smr.sharedMaterial = mat;
+        BoneMesher.Cull(smr, mesh);
+        return go;
+    }
+}

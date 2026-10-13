@@ -66,6 +66,7 @@ public static class ChainSwap
         // ДЕТАЛИ (спека конструктора): у органа, чей вид принёс деталь своего места, часть рисует деталь, а не поле. Это
         // тоже составное тело — даже на родном шасси без прививок (волк со своей ногой-деталью)
         var parts = PartAssembly.Choose(chassis, worn);
+        parts.AddRange(PartAssembly.Traits(chassis, worn));   // куски-черты вида-цели — по ступени идентичности
         // ГЛОБАЛЬНЫЙ СЛОЙ (спека 07.10): ступень по составу; без масс шаблона у шасси смешивать нечего
         var (target, step) = GlobalLayer.Step(chassis, worn);
         float g = GlobalLayer.HasGroups(chassis) && target != null ? GlobalLayer.G(step) : 0f;
@@ -130,9 +131,9 @@ public static class ChainSwap
         {
             var dTree = BodyTree.From(donor, out _, graft: donor.speciesName);
             if (dTree == null) continue;
-            // кусок, встающий кольцом, калибр цепи не трогает: он ставится жёстко своим масштабом шва, а кость остаётся
+            // кусок меша вида калибр цепи не трогает: он ставится жёстко своим масштабом шва, а кость остаётся
             // мерой для гнёзд (голова — по ширине, сторож `WolfMaw_OnHuman_LooksForward_AtHeadWidthCalibre`)
-            bool hasPart = donor.parts != null && donor.parts.Any(p => p != null && p.slot == e.slot && p.mesh != null && !p.ringFit);
+            bool hasPart = donor.parts != null && donor.parts.Any(p => p != null && p.slot == e.slot && p.mesh != null && !p.piece);
             bool otherPlan = hasPart && donor.Plan != chassis.Plan;
             tree = e.kind == Kind.Chain ? SwapChain(tree, chassis, dTree, e.limb, e.upperEnd, e.slot, e.calibre, e.gaze, chassis.organs, worn, hasPart, otherPlan)
                                         : SwapGroup(tree, dTree, e.slot, chassis.speciesName, donor.speciesName);

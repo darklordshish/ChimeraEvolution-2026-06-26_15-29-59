@@ -79,17 +79,16 @@ public static class MorphBuilder
             var given = new HashSet<string>();
             foreach (var (part, donor) in chassis.placedParts)
             {
-                string rootBone = PartAssembly.ChainRoot(part, donor);
-                string place = rootBone != null ? donor.bones.FirstOrDefault(b => b.name == rootBone)?.socket : null;
-                if (!string.IsNullOrEmpty(place)) given.Add(place);
+                if (!string.IsNullOrEmpty(part.objectSlot)) given.Add(part.objectSlot);   // свой объект того же слота — под куском
+                string place = PartAssembly.Claimed(part, donor);
+                if (place != null) given.Add(place);
             }
             BodyMesh.Place(container.transform, chimeraSkeleton, pureChassis.bodyMesh, PrimitiveMaterial(), given);
             foreach (var (part, donor) in chassis.placedParts)
             {
                 var piece = PartAssembly.Place(container.transform, chassis, part, donor, PrimitiveMaterial());
                 if (piece == null) continue;
-                string rootBone = PartAssembly.ChainRoot(part, donor);
-                piece.GetComponent<BodyPartView>().whole = rootBone != null ? donor.bones.FirstOrDefault(b => b.name == rootBone)?.socket : null;
+                piece.GetComponent<BodyPartView>().whole = PartAssembly.Claimed(part, donor);
             }
             return;
         }
@@ -139,10 +138,9 @@ public static class MorphBuilder
             {
                 var placedPart = PartAssembly.Place(container.transform, chassis, part, donor, PrimitiveMaterial());
                 if (placedPart == null) continue;
-                covered.Add(part.slot);
-                string rootBone = part.ringFit ? PartAssembly.ChainRoot(part, donor) : null;
-                string place = rootBone != null ? donor.bones.FirstOrDefault(b => b.name == rootBone)?.socket : null;
-                if (string.IsNullOrEmpty(place)) continue;
+                if (!string.IsNullOrEmpty(part.slot)) covered.Add(part.slot);
+                string place = PartAssembly.Claimed(part, donor);
+                if (place == null) continue;
                 whole.Add(place);
                 placedPart.GetComponent<BodyPartView>().whole = place;
             }

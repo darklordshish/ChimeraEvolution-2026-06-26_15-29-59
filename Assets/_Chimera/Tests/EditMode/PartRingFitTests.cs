@@ -6,31 +6,34 @@ using UnityEngine;
 
 namespace Chimera.Tests.EditMode
 {
-    /// <summary>КУСОК МЕША ВИДА НА ЧУЖОМ ТЕЛЕ — посадка кольцом (пилот Б, спека `2026-10-09-chistyj-vid-meshem.md`). Кусок
-    /// встаёт целиком, одним масштабом по отношению эллипсов шва, и несёт своё место со всем, что на нём висит. Правила
-    /// выбора сняты с матрицы химер 10.10: первая версия ставила кусок и своему шасси (пропали чужие уши и рога на волке)
-    /// и змее, где детали повисли в воздухе. В игре целые куски выключены (`PartAssembly.WholePieces`) — сторож включает их сам.</summary>
+    /// <summary>КУСКИ МЕША ВИДА НА ЧУЖОМ ТЕЛЕ (пилот Б, спека `2026-10-09-chistyj-vid-meshem.md` §7). Кусок встаёт жёстко по
+    /// шву: центр шва донора в центр шва носителя, один масштаб по отношению эллипсов. Куски ОРГАНОВ приезжают графтом,
+    /// куски-ЧЕРТЫ (грива, хвост, целая голова) — ступенью идентичности; место целиком забирает только кусок, названный
+    /// этим местом. Правила выбора сняты с матрицы химер 10.10: первая версия ставила кусок и своему шасси (пропали чужие
+    /// уши и рога на волке). В игре куски выключены (`PartAssembly.MeshPieces`) — сторож включает их сам.</summary>
     public class PartRingFitTests
     {
         static SpeciesSO Load(string n) => AssetDatabase.LoadAssetAtPath<SpeciesSO>($"Assets/_Chimera/Data/{n}.asset");
         readonly List<Object> trash = new();
 
-        [SetUp] public void SetUp() { PartAssembly.WholePieces = true; ChainSwap.ResetCache(); }
+        [SetUp] public void SetUp() { PartAssembly.MeshPieces = true; PartAssembly.ForceTraits = null; ChainSwap.ResetCache(); }
         [TearDown]
         public void TearDown()
         {
-            PartAssembly.WholePieces = false;
+            PartAssembly.MeshPieces = false; PartAssembly.ForceTraits = null; PartAssembly.ForceStep = 2;
             foreach (var o in trash) if (o != null) Object.DestroyImmediate(o);
             trash.Clear();
             ChainSwap.ResetCache();
         }
 
-        static BodyPart Head(SpeciesSO wolf)
+        static BodyPart Trait(SpeciesSO sp, string objectSlot)
         {
-            var p = wolf.parts?.FirstOrDefault(x => x != null && x.ringFit);
-            if (p == null) Assert.Inconclusive("у волка нет куска с посадкой кольцом — паспорт `volk-golova-kusok` не принят");
+            var p = sp.traits?.FirstOrDefault(x => x != null && x.objectSlot == objectSlot);
+            if (p == null) Assert.Inconclusive($"у вида «{sp.speciesName}» нет куска-черты «{objectSlot}» — паспорта `handoff/cherty/` не приняты");
             return p;
         }
+
+        static List<Organ> Native(SpeciesSO sp) => sp.organs.Where(o => o != null).ToList();
 
         static List<Organ> With(SpeciesSO chassis, SpeciesSO donor, string slot)
         {
@@ -47,35 +50,7 @@ namespace Chimera.Tests.EditMode
             return go;
         }
 
-        static BodyPartView Whole(GameObject go) =>
-            go.GetComponentsInChildren<BodyPartView>(true).FirstOrDefault(v => !string.IsNullOrEmpty(v.whole));
-
-        [Test]
-        public void WolfHead_OnHuman_SitsWhole_AtSeamScale_AndHidesCarrierFace()
-        {
-            var wolf = Load("Волк"); var human = Load("Человек");
-            var head = Head(wolf);
-            var go = Build(human, With(human, wolf, head.slot));
-
-            var piece = Whole(go);
-            Assert.IsNotNull(piece, "кусок на чужое тело не встал");
-            Assert.AreEqual("голова", piece.whole, "кусок головы обязан назвать место, которое несёт целиком");
-            Assert.AreEqual(head.slot, piece.name, "имя рендерера куска — слот (контракт имён частей)");
-
-            // места на голове носителя не рисуются: голова приехала со своими ушами, глазами и носом
-            var onHead = new[] { "уши", "глаза", "нос" };
-            var drawn = go.GetComponentsInChildren<Renderer>(true).Where(r => r.GetComponent<BodyPartView>() == null).Select(r => r.name);
-            CollectionAssert.IsEmpty(drawn.Where(onHead.Contains), "под целой головой нарисованы места носителя");
-
-            // масштаб — один, по шву: габарит куска на носителе = габарит в теле донора × k
-            float k = PartAssembly.RingScale(ChainSwap.Compose(human, With(human, wolf, head.slot)), wolf, head);
-            Assert.That(k, Is.InRange(0.3f, 1f), "шея человека тоньше волчьей — масштаб обязан быть меньше единицы");
-            var own = head.mesh.vertices.Select(v => head.toBody.MultiplyPoint3x4(v)).ToArray();
-            float donorSpan = Span(own);
-            var smr = piece.GetComponent<SkinnedMeshRenderer>();
-            float carrierSpan = Span(smr.sharedMesh.vertices);
-            Assert.AreEqual(donorSpan * k, carrierSpan, donorSpan * 0.01f, "кусок растянут не одним масштабом шва");
-        }
+        static List<BodyPartView> Pieces(GameObject go) => go.GetComponentsInChildren<BodyPartView>(true).ToList();
 
         // наибольшее расстояние от центра вершин — мера размера, не зависящая от поворота куска
         static float Span(Vector3[] v)
@@ -84,53 +59,100 @@ namespace Chimera.Tests.EditMode
             return v.Max(p => (p - c).magnitude);
         }
 
-        /// <summary>ХИМЕРА НА МЕШЕ ВИДА: у шасси есть меш, чужой орган приехал куском — тело остаётся объектами меша шасси,
-        /// место куска отдано куску, поле не строится. Язык формы у вида и химеры один (вариант Б спеки).</summary>
+        static Vector3[] Posed(SkinnedMeshRenderer smr, Transform root)
+        {
+            var m = new Mesh(); smr.BakeMesh(m, true);
+            var v = m.vertices.Select(p => root.InverseTransformPoint(smr.transform.TransformPoint(p))).ToArray();
+            Object.DestroyImmediate(m);
+            return v;
+        }
+
+        /// <summary>ОБОРОТЕНЬ ПОЗДНЕЙ СТУПЕНИ НА МЕШЕ ЧЕЛОВЕКА: черты волка проступили — целая голова забрала место головы,
+        /// грива села воротником и места не забрала, хвост встал на посадочное кольцо крестца. Тело — объекты меша человека.</summary>
         [Test]
-        public void MeshChassis_WithForeignPiece_KeepsItsMesh_AndGivesThePlaceAway()
+        public void WolfTraits_OnHumanMesh_HeadTakesItsPlace_ManeAndTailSitOnTop()
         {
             var wolf = Load("Волк"); var human = Load("Человек");
-            var head = Head(wolf);
+            var head = Trait(wolf, "голова"); Trait(wolf, "Шкура"); Trait(wolf, "Хвост");
             if (human.bodyMesh == null) Assert.Inconclusive("у человека нет меша вида — `Models/chelovek_mesh.fbx` не принят");
-            var go = Build(human, With(human, wolf, head.slot));
+            PartAssembly.ForceTraits = wolf; PartAssembly.ForceStep = 2;
+            var go = Build(human, Native(human));
+            var root = go.transform.Find("Morph");
 
-            var piece = Whole(go);
-            Assert.IsNotNull(piece, "кусок на меш шасси не встал");
+            var pieces = Pieces(go);
+            CollectionAssert.IsSubsetOf(new[] { "голова", "Шкура", "Хвост" }, pieces.Select(p => p.name).ToList(), "проступили не все черты волка");
+            var whole = pieces.Where(p => !string.IsNullOrEmpty(p.whole)).Select(p => p.whole).Distinct().ToList();
+            CollectionAssert.AreEquivalent(new[] { "голова", "Хвост" }, whole, "место целиком забирают голова и хвост; грива и морда — нет");
+
+            // тело — меш человека без его головы: ни поля, ни деталей органов
             var own = go.GetComponentsInChildren<SkinnedMeshRenderer>(true).Where(r => r.GetComponent<BodyPartView>() == null).ToList();
-            CollectionAssert.IsNotEmpty(own, "тело шасси не нарисовано");
             var src = new HashSet<string>(human.bodyMesh.GetComponentsInChildren<SkinnedMeshRenderer>(true).Select(r => r.sharedMesh.vertexCount + "|" + r.name.Split('.')[0]));
+            CollectionAssert.IsNotEmpty(own, "тело шасси не нарисовано");
             foreach (var r in own)
                 Assert.IsTrue(src.Contains(r.sharedMesh.vertexCount + "|" + r.name), $"рендерер «{r.name}» — не объект меша шасси: тело собрано полем");
-            CollectionAssert.DoesNotContain(own.Select(r => r.name), piece.whole, "своя голова шасси осталась под чужой");
+            CollectionAssert.DoesNotContain(own.Select(r => r.name), "голова", "своя голова шасси осталась под чужой");
             CollectionAssert.IsEmpty(go.GetComponentsInChildren<MeshRenderer>(true), "у химеры на меше детали органов не рисуются");
+
+            // голова: один масштаб шва и взгляд вперёд — морда дальше всего по +Z, а не вверх
+            Assert.IsTrue(PartAssembly.Seam(human, head.seam, out var neck), "у человека нет шва шеи");
+            float k = Mathf.Sqrt(neck.ellipse.x * neck.ellipse.y / (head.ellipse.x * head.ellipse.y));
+            Assert.That(k, Is.InRange(0.3f, 1f), "шея человека тоньше волчьей — масштаб обязан быть меньше единицы");
+            var skull = pieces.First(p => p.name == "голова").GetComponent<SkinnedMeshRenderer>();
+            var donorVerts = head.mesh.vertices.Select(v => head.toBody.MultiplyPoint3x4(v)).ToArray();
+            Assert.AreEqual(Span(donorVerts) * k, Span(skull.sharedMesh.vertices), Span(donorVerts) * 0.01f, "голова растянута не одним масштабом шва");
+            // морда (объект `Пасть` целой головы) лежит впереди шеи, а не над ней: самая дальняя точка черепа — кончик уха
+            var muzzle = Posed(pieces.First(p => p.name == BodySlots.Maw).GetComponent<SkinnedMeshRenderer>(), root);
+            var nose = muzzle.Aggregate(Vector3.zero, (a, b) => a + b) / muzzle.Length - neck.center;
+            Assert.Greater(nose.z, Mathf.Abs(nose.y), "волчья голова на человеке смотрит не вперёд");
+
+            // хвост: сел на посадочное кольцо крестца и уходит от него наружу, а не внутрь тела
+            Assert.IsTrue(PartAssembly.Seam(human, "корень хвоста", out var seat), "у человека нет посадочного места хвоста");
+            var tail = Posed(pieces.First(p => p.name == "Хвост").GetComponent<SkinnedMeshRenderer>(), root);
+            Assert.Less(tail.Min(p => (p - seat.center).magnitude), 0.08f, "хвост не у посадочного кольца");
+            var tip = tail.OrderByDescending(p => (p - seat.center).magnitude).First() - seat.center;
+            Assert.Greater(Vector3.Dot(tip.normalized, seat.axis.normalized), 0.3f, "хвост направлен не наружу от крестца");
         }
 
         [Test]
-        public void OwnChassis_NeverTakesItsWholePiece()
+        public void TraitsAppearByStep_HeadOnlyAtLateStep()
+        {
+            var wolf = Load("Волк"); var human = Load("Человек");
+            Trait(wolf, "голова"); Trait(wolf, "Шкура");
+            PartAssembly.ForceTraits = wolf; PartAssembly.ForceStep = 1;
+            var names = Pieces(Build(human, Native(human))).Select(p => p.name).ToList();
+            CollectionAssert.Contains(names, "Шкура", "грива — черта первой ступени");
+            CollectionAssert.DoesNotContain(names, "голова", "целая голова — общая форма вида, проступает с поздней ступени");
+        }
+
+        [Test]
+        public void OwnChassis_NeverTakesItsPieces()
         {
             var wolf = Load("Волк"); var elk = Load("Лось");
-            Head(wolf);
-            // волк с чужим Чутьём — на поле, и своя голова-кусок проглотила бы лосиные уши
-            var go = Build(wolf, With(wolf, elk, BodySlots.Sense));
-            Assert.IsNull(Whole(go), "своему шасси кусок меша вида не ставится");
+            // волк с чужим Чутьём — на поле; свои куски ему не ставятся (своя голова проглотила бы лосиные уши)
+            CollectionAssert.IsEmpty(Pieces(Build(wolf, With(wolf, elk, BodySlots.Sense))).Where(p => p.GetComponent<SkinnedMeshRenderer>().sharedMesh.name.Contains("кусок")),
+                                     "своему шасси кусок меша вида не ставится");
         }
 
         [Test]
-        public void Snake_KeepsOldPath()
+        public void OrganPiece_WithoutCarrierSeam_KeepsOldPath()
         {
             var wolf = Load("Волк"); var snake = Load("Змея");
-            var head = Head(wolf);
-            Assert.IsNull(Whole(Build(snake, With(snake, wolf, head.slot))), "кусок встал на змею: её голова — единственный узел графа, тело — звенья; матрица 10.10 дала семь И2");
+            var muzzle = wolf.parts?.FirstOrDefault(p => p != null && p.piece && p.slot == BodySlots.Maw);
+            if (muzzle == null) Assert.Inconclusive("у волка нет куска морды — паспорт `volk-morda` не принят");
+            Assert.IsFalse(PartAssembly.Seam(snake, muzzle.seam, out _), "у змеи появился шов морды — правило пора пересмотреть");
+            CollectionAssert.IsEmpty(Pieces(Build(snake, With(snake, wolf, BodySlots.Maw))).Where(p => p.GetComponent<SkinnedMeshRenderer>().sharedMesh.name.Contains("кусок")),
+                                     "кусок встал на тело без шва");
         }
 
         [Test]
-        public void InGame_WholePiecesAreOff()
+        public void InGame_PiecesAreOff()
         {
-            PartAssembly.WholePieces = false;
+            PartAssembly.MeshPieces = false;
             ChainSwap.ResetCache();
             var wolf = Load("Волк"); var human = Load("Человек");
-            var head = Head(wolf);
-            Assert.IsNull(Whole(Build(human, With(human, wolf, head.slot))), "целая голова от одного органа выключена до нарезки по органам");
+            PartAssembly.ForceTraits = wolf;
+            var go = Build(human, With(human, wolf, BodySlots.Maw));
+            CollectionAssert.IsEmpty(Pieces(go).Where(p => p.GetComponent<SkinnedMeshRenderer>().sharedMesh.name.Contains("кусок")), "куски меша вида в игре выключены");
         }
     }
 }

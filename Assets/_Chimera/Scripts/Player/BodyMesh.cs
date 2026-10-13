@@ -52,7 +52,7 @@ public static class BodyMesh
         if (chassis.bones == null || chassis.bones.Length == 0 || chassis.organs == null) return false;
         foreach (var o in worn)
             if (o != null && System.Array.IndexOf(chassis.organs, o) < 0) return false;
-        return true;
+        return PartAssembly.Traits(chassis, worn).Count == 0;   // проступили чужие черты — тело уже составное
     }
 
     /// <summary>Поставить объекты модели на скелет: рендерер на объект, имя рендерера = имя объекта (слот).
@@ -138,7 +138,7 @@ public static class BodyMesh
     public static bool FitsChimera(SpeciesSO chassis, SpeciesSO body, IReadOnlyList<Organ> worn, BodySocket[] plan)
     {
         // план мест (смешение пропорций по идентичности) здесь не помеха: он двигает места деталей, а детали у меша не рисуются
-        if (!Enabled || !PartAssembly.WholePieces || chassis == null || chassis.bodyMesh == null || worn == null) return false;
+        if (!Enabled || !PartAssembly.MeshPieces || chassis == null || chassis.bodyMesh == null || worn == null) return false;
         if (body == chassis || body.placedParts == null || body.placedParts.Length == 0 || chassis.organs == null) return false;
         var (_, step) = GlobalLayer.Step(chassis, worn);
         if (step > 0 && GlobalLayer.HasGroups(chassis)) return false;
@@ -146,7 +146,7 @@ public static class BodyMesh
         {
             if (o == null || System.Array.IndexOf(chassis.organs, o) >= 0) continue;
             var owner = ChainSwap.OwnerOf(o);
-            if (!body.placedParts.Any(p => p.part.ringFit && p.part.slot == o.slot && p.donor == owner)) return false;
+            if (!body.placedParts.Any(p => p.part.piece && p.part.slot == o.slot && p.donor == owner)) return false;
         }
         return true;
     }
