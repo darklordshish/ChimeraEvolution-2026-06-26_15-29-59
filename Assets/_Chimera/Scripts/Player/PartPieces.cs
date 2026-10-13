@@ -14,15 +14,27 @@ public static partial class PartAssembly
     /// ответных мест у носителей (лицо и уши человека). Выключено — графт рисуется как прежде, блоками и полем.</summary>
     public static bool MeshPieces = false;
 
-    /// <summary>СЛИЯНИЕ ВМЕСТО ЗАМЕНЫ (идея геймдизайнера 13.10: «не заменять, а сливать… дизъюнкция»). Для непрозрачных тел
-    /// объединение бесплатно: нарисуй оба — и буфер глубины покажет ровно внешнюю оболочку A ∪ B. Поэтому кусок, не
-    /// забравший место целиком (морда, уши, грива), можно сажать ПОВЕРХ тела носителя, не снимая его часть: щели на стыке
-    /// не бывает по построению. Снимать приходится только то, что торчит СКВОЗЬ кусок. Пока — ручка для сравнения кадром:
-    /// включено — свои объекты носителя под такими кусками остаются.</summary>
-    public static bool Union = false;
+    /// <summary>СЛИЯНИЕ ИЛИ ЗАМЕНА — РЕШАЮТ ДАННЫЕ НОСИТЕЛЯ (идея геймдизайнера 13.10: «не заменять, а сливать… дизъюнкция»).
+    /// Для непрозрачных тел объединение бесплатно: нарисуй оба — и буфер глубины покажет внешнюю оболочку A ∪ B, щели на
+    /// стыке нет по построению. Шов носителя — ПОСАДОЧНОЕ МЕСТО на сплошной коже: кусок садится ПОВЕРХ, свой объект
+    /// носителя под ним остаётся, а кусок обязан накрыть область места. Шов носителя — кольцо его снимаемой детали
+    /// (уши): кусок её ЗАМЕНЯЕТ. Место целиком (голова, хвост) — всегда замена.</summary>
+    public static bool Over(SpeciesSO body, BodyPart part, SpeciesSO donor) =>
+        Claimed(part, donor) == null && Seam(body, part.seam, out var s) && s.skin;
 
-    /// <summary>Множитель масштаба кусков органов при слиянии: кусок обязан накрыть то, поверх чего сел (кадром).</summary>
-    public static float UnionScale = 1f;
+    /// <summary>ФУНКЦИОНАЛ МАСШТАБА — степенное среднее отношений полуосей шва (носитель к донору): p = 0 — геометрическое
+    /// (площадь шва), 1 — арифметическое, 2 — среднеквадратичное, +∞ — супремум (большее отношение: кусок накрывает
+    /// область целиком). По умолчанию правило выбирает само: слияние — супремум, замена — геометрическое. Значение
+    /// здесь — ручка для ряда кадром («поиграть с функционалами», геймдизайнер 13.10); NaN — правило.</summary>
+    public static float RingNorm = float.NaN;
+
+    public static float PowerMean(float a, float b, float p)
+    {
+        if (float.IsPositiveInfinity(p)) return Mathf.Max(a, b);
+        if (float.IsNegativeInfinity(p)) return Mathf.Min(a, b);
+        if (Mathf.Abs(p) < 1e-4f) return Mathf.Sqrt(a * b);
+        return Mathf.Pow((Mathf.Pow(a, p) + Mathf.Pow(b, p)) * 0.5f, 1f / p);
+    }
 
     /// <summary>Показать черты этого вида на любом теле, не дожидаясь ступени по составу, — для кадров и сторожей.</summary>
     public static SpeciesSO ForceTraits;
@@ -59,8 +71,12 @@ public static partial class PartAssembly
     {
         found = null;
         if (sp == null || string.IsNullOrEmpty(seam)) return false;
-        found = sp.seats?.FirstOrDefault(s => s != null && s.seam == seam);
-        if (found != null) return true;
+        var seat = sp.seats?.FirstOrDefault(s => s != null && s.seam == seam);
+        if (seat != null)
+        {
+            found = new BodySeat { seam = seat.seam, bone = seat.bone, center = seat.center, axis = seat.axis, up = seat.up, ellipse = seat.ellipse, skin = true };
+            return true;
+        }
         var own = (sp.parts ?? new BodyPart[0]).Concat(sp.traits ?? new BodyPart[0])
                   .FirstOrDefault(p => p != null && p.seam == seam && p.seamFrame && p.ellipse.x > 0f && p.ellipse.y > 0f);
         if (own != null)
@@ -93,7 +109,9 @@ public static partial class PartAssembly
     {
         if (string.IsNullOrEmpty(part.seam) || part.ellipse.x <= 0f || part.ellipse.y <= 0f) return 1f;
         var c = SeamEllipse(body, part.seam);
-        return c.x > 0f && c.y > 0f ? Mathf.Sqrt(c.x * c.y / (part.ellipse.x * part.ellipse.y)) : 1f;
+        if (c.x <= 0f || c.y <= 0f) return 1f;
+        float p = !float.IsNaN(RingNorm) ? RingNorm : Over(body, part, donor) ? float.PositiveInfinity : 0f;
+        return PowerMean(c.x / part.ellipse.x, c.y / part.ellipse.y, p);
     }
 
     /// <summary>ГОЛОВА — ВЗГЛЯД (кадр 01.10): кусок, ЗАБРАВШИЙ место на цепи головы (целая голова со своей мордой), держит
@@ -127,7 +145,6 @@ public static partial class PartAssembly
         foreach (var t in skeleton.GetComponentsInChildren<Transform>(true)) if (!xf.ContainsKey(t.name)) xf[t.name] = t;
 
         float k = RingScale(body, donor, part);
-        if (Union && Claimed(part, donor) == null && !string.IsNullOrEmpty(part.slot)) k *= UnionScale;
         bool gaze = Gaze(part, donor);
         var toBody = part.toBody == default ? Matrix4x4.identity : part.toBody;
         // ФОРМА-КЛЮЧ ПЛАНА НОСИТЕЛЯ (спека конструктора §4, как у деталей конечностей): воротник гривы сделан под шею

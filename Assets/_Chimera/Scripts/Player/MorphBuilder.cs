@@ -81,7 +81,7 @@ public static class MorphBuilder
             {
                 string place = PartAssembly.Claimed(part, donor);
                 // свой объект того же слота — под куском: снимается, если кусок его заменяет; при слиянии остаётся
-                if (!string.IsNullOrEmpty(part.objectSlot) && (place != null || !PartAssembly.Union)) given.Add(part.objectSlot);
+                if (!string.IsNullOrEmpty(part.objectSlot) && !PartAssembly.Over(chassis, part, donor)) given.Add(part.objectSlot);
                 if (place != null) given.Add(place);
             }
             BodyMesh.Place(container.transform, chimeraSkeleton, pureChassis.bodyMesh, PrimitiveMaterial(), given);

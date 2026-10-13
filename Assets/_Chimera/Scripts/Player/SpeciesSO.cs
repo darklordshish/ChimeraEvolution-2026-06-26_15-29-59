@@ -370,6 +370,7 @@ public class BodySeat
     public string bone;      // кость, которая ведёт севший кусок
     public Vector3 center, axis, up;
     public Vector2 ellipse;  // полуоси: вбок × по «верху»
+    [System.NonSerialized] public bool skin;   // место на сплошной коже (из `seats`): кусок садится поверх, а не заменяет
 }
 
 [System.Serializable]
