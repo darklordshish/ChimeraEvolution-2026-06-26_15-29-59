@@ -137,7 +137,8 @@ public static class BodyMesh
     /// покоя своего вида, сдвинутые пропорции он пока не повторит. Иначе тело собирается полем, как прежде.</summary>
     public static bool FitsChimera(SpeciesSO chassis, SpeciesSO body, IReadOnlyList<Organ> worn, BodySocket[] plan)
     {
-        if (!Enabled || !PartAssembly.WholePieces || chassis == null || chassis.bodyMesh == null || plan != null || worn == null) return false;
+        // план мест (смешение пропорций по идентичности) здесь не помеха: он двигает места деталей, а детали у меша не рисуются
+        if (!Enabled || !PartAssembly.WholePieces || chassis == null || chassis.bodyMesh == null || worn == null) return false;
         if (body == chassis || body.placedParts == null || body.placedParts.Length == 0 || chassis.organs == null) return false;
         var (_, step) = GlobalLayer.Step(chassis, worn);
         if (step > 0 && GlobalLayer.HasGroups(chassis)) return false;
