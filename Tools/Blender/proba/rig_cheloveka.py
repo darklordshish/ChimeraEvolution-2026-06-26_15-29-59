@@ -14,7 +14,7 @@
      нет) — только числом в отчёте и паспорте.
   4. НАРЕЗКА: грань идёт в слот, чьи кости весят в ней больше; зубцы и островки приглаживаются.
 
-  blender -b --factory-startup -P rig_cheloveka.py -- меш.obj скелет.json граф.json выход.fbx [--organy 1 — лицо и уши кусками] [--pasporta папка] [--blend файл] [--shots префикс]
+  blender -b --factory-startup -P rig_cheloveka.py -- меш.obj скелет.json граф.json выход.fbx [--organy 1 — уши кусками, посадочное место морды на сплошном лице] [--lico 1 — прежний рез лица кольцом 12] [--pasporta папка] [--blend файл] [--shots префикс]
 """
 import sys, math, json, os
 import bpy, bmesh
@@ -330,18 +330,29 @@ if int(float(opt.get('organy', 0))):
     FT, FB = Vector((0, yf + float(opt.get('ft', 0.030)), 1.722)), Vector((0, yf + float(opt.get('fb', 0.107)), 1.612))     # переносица → под подбородком
     FN = Vector((0, (FT - FB).z, -(FT - FB).y)).normalized(); FN = FN if FN.y > 0 else -FN
     nose_f = min((f for f in bm.faces if in_head(f)), key=lambda f: f.calc_center_median().y)
-    # снизу лицо не доходит до кольца шеи: иначе граница области упирается в открытый край и не замыкается
-    face = region(nose_f, lambda f: in_head(f) and (f.calc_center_median() - FT).dot(FN) < 0 and f.calc_center_median().z > 1.635
-                  and all(not v[RG] for v in f.verts))
-    Lf, Ls_ = cut_loop(face, 'шов лица')
-    cf = sum((v.co for v in Lf), Vector()) / len(Lf); cf = Vector((0, cf.y, cf.z)); cf = cf - FN * (cf - FT).dot(FN)
     wf = Vector((0, FN.z, -FN.y)); wf = wf if wf.z > 0 else -wf
-    rr = ring_seam(Lf, Ls_, cf, XU, wf, 12, 401, 3, False)
-    PIECE_SEAMS['основание морды'] = dict(n=12, bone='голова', c=cf, ax=-FN, up=wf, u=XU, r=rr, at=(cf - HB).length)
-    head_f.difference_update(face)
+    # С 13.10 ЛИЦО НЕ СНИМАЕТСЯ: чужая морда садится ПОВЕРХ сплошной кожи (слияние, решение геймдизайнера; сварка колец
+    # снята — авторский меш не деформируется). Вместо кольца в коже — ПОСАДОЧНОЕ МЕСТО: лицевая область, которую морда
+    # обязана накрыть. Полуширина — по скулам, по «верху» — половина хорды «переносица → под подбородком»; центр —
+    # середина хорды, поднятая на 0.015 по «верху» (спинка чужой морды накрывает нос) и утопленная на 0.010 (край куска
+    # уходит под кожу) — подобрано на стенде `oboroten_predprosmotr.py --sliyanie 1`. Прежний рез — `--lico 1`.
+    cheek = max(abs(v.co.x) for v in bm.verts if v[VP] == 1 and v.co.y < yf + 0.075 and 1.64 < v.co.z < 1.72)
+    FACE_PLACE = dict(c=(FT + FB) / 2 + wf * 0.015 + FN * 0.010, ax=-FN, up=wf, u=XU, r=(round(cheek, 3), round((FT - FB).length / 2, 3)))
+    FACE_PLACE['at'] = (FACE_PLACE['c'] - HB).length
+    seeds_ = [(4, s_) for s_ in ear_seeds]
+    if int(float(opt.get('lico', 0))):
+        # снизу лицо не доходит до кольца шеи: иначе граница области упирается в открытый край и не замыкается
+        face = region(nose_f, lambda f: in_head(f) and (f.calc_center_median() - FT).dot(FN) < 0 and f.calc_center_median().z > 1.635
+                      and all(not v[RG] for v in f.verts))
+        Lf, Ls_ = cut_loop(face, 'шов лица')
+        cf = sum((v.co for v in Lf), Vector()) / len(Lf); cf = Vector((0, cf.y, cf.z)); cf = cf - FN * (cf - FT).dot(FN)
+        rr = ring_seam(Lf, Ls_, cf, XU, wf, 12, 401, 3, False)
+        PIECE_SEAMS['основание морды'] = dict(n=12, bone='голова', c=cf, ax=-FN, up=wf, u=XU, r=rr, at=(cf - HB).length)
+        head_f.difference_update(face)
+        seeds_.insert(0, (3, nose_f.verts[0]))
     # куски — по связности
     bm.verts.ensure_lookup_table()
-    for piece, seed in [(3, nose_f.verts[0])] + [(4, s_) for s_ in ear_seeds]:
+    for piece, seed in seeds_:
         seen, st = set(), [seed]
         while st:
             u_ = st.pop()
@@ -380,13 +391,15 @@ for nm_, d_ in PIECE_SEAMS.items():
     REP.append('шов «%s»: кольцо %d на кости `голова`, %.3f м от её начала; центр (%.3f %.3f %.3f), ось наружу (%.2f %.2f %.2f), «верх» (%.2f %.2f %.2f), '
                'полуоси %.3f × %.3f м' % (nm_, d_['n'], d_['at'], *d_['c'], *d_['ax'], *d_['up'], *d_['r']))
 if PIECE_SEAMS:
-    REP.append('открытых рёбер всего %d (ждём %d: шея 24, лицо 24, уши 16 — у черепа закрыты)' % (bnd_n, 64))
+    REP.append('открытых рёбер всего %d (ждём %d: шея 24, уши 16 — у черепа закрыты%s)' % (bnd_n, 64 if 'основание морды' in PIECE_SEAMS else 40, '; лицо 24' if 'основание морды' in PIECE_SEAMS else '; лицо сплошное'))
+    REP.append('посадочное место «основание морды» (сплошная кожа): центр (%.3f %.3f %.3f), полуоси %.3f × %.3f м' % (*FACE_PLACE['c'], *FACE_PLACE['r']))
 # посадочное кольцо хвоста — на сплошной коже крестца: точка кожи на средней линии сзади на высоте начала кости `таз`
 zt = BN['таз']['head'][2] + 0.03
 back = max((v.co for v in me.vertices if abs(v.co.x) < 0.03 and abs(v.co.z - zt) < 0.03), key=lambda c: c.y)
 # хвост у двуногого отведён от ног: ось 30° ниже горизонта (у волка 50°), место уже — кусок встаёт мельче (первый кадр
 # оборотня 13.10: хвост висел вдоль ног, k ≈ 0.8, спереди виден между ног)
-TAX = Vector((0, 0.966, -0.259)).normalized(); TW = Vector((0, 0.259, 0.966)).normalized()      # 15° ниже горизонтали (13.10: при 30° кончик хвоста виден в анфас между бёдер); TR = (0.036, 0.032)
+# 15° ниже горизонтали (13.10: при 30° кончик хвоста виден в анфас между бёдер)
+TAX = Vector((0, 0.966, -0.259)).normalized(); TW = Vector((0, 0.259, 0.966)).normalized(); TR = (0.036, 0.032)
 REP.append('посадочное кольцо «корень хвоста» (на сплошной коже, 8): центр (%.3f %.3f %.3f), ось наружу (%.2f %.2f %.2f), «верх» (%.2f %.2f %.2f), '
            'полуоси %.3f × %.3f м; кость `таз`' % (0.0, back.y, back.z, *TAX, *TW, *TR))
 SEAM = dict(c=cc, ax=AX, up=WN, r=(rx, rw), at=(CR - nh).length, tail_c=Vector((0, back.y, back.z)), tail_ax=TAX, tail_up=TW)
@@ -503,7 +516,7 @@ for k_, w in enumerate(W):
 bpy.data.objects.remove(skin, do_unlink=True)
 
 # ---------- 4. НАРЕЗКА ----------
-ORDER = ['голова', 'шея', 'хребет', 'Сердце', 'Руки', 'Ноги'] + (['Пасть', 'Чутьё'] if PIECE_SEAMS else [])
+ORDER = ['голова', 'шея', 'хребет', 'Сердце', 'Руки', 'Ноги'] + (['Пасть'] if 'основание морды' in PIECE_SEAMS else []) + (['Чутьё'] if PIECE_SEAMS else [])
 slot_of = lambda nm: SOCKET[nm[:-2] if nm.endswith('.L') else nm]
 F = [tuple(p.vertices) for p in me.polygons]
 fslot, fixed = [], []
@@ -622,7 +635,15 @@ if 'pasporta' in opt:
                                           'side': U(d_['u']), 'bone': 'голова', 'on_bone_m': round(d_['at'], 4), 'overhang_m': 0.0,
                                           'note': note + ('; кольцо дано для стороны −X Unity (+X Blender), вторая — зеркалом по X' if mirror else '')})))
     if PIECE_SEAMS:
-        head['also'] = ['Пасть', 'Чутьё']
+        head['also'] = (['Пасть'] if 'основание морды' in PIECE_SEAMS else []) + ['Чутьё']
+        d_ = FACE_PLACE
+        extra_p.append(('../chelovek-osnovanie-mordy.json', dict(common, kind='посадочное место на сплошной коже', bones=['голова'],
+            seam={'type': 'основание морды', 'ring': list(range(12)), 'center_m': U(d_['c']), 'ellipse_m': list(d_['r']), 'axis_out': U(d_['ax']),
+                  'up': U(d_['up']), 'side': U(d_['u']), 'bone': 'голова', 'on_bone_m': round(d_['at'], 4),
+                  'note': 'метры тела человека, оси Unity; ПОСАДКА ЧУЖОЙ МОРДЫ ПОВЕРХ ЛИЦА (слияние, 13.10): кожа под местом сплошная, кольца в меше '
+                          'нет — `ring` только валентность. ellipse_m — лицевая область, которую морда обязана накрыть: вбок — полуширина по скулам, '
+                          'по «верху» — половина хорды «переносица → под подбородком». center_m — середина хорды, поднятая на 0.015 по «верху» '
+                          '(спинка чужой морды накрывает нос) и утопленная на 0.010 против оси (край куска уходит под кожу)'})))
     for fname, pas in [('../cherty/chelovek-golova-kusok.json', head), ('../chelovek-koren-hvosta.json', tail)] + extra_p:     # посадочное место — не деталь: рядом с графом, не в parts/
         with open(os.path.join(os.path.abspath(opt['pasporta']), fname), 'w', encoding='utf-8') as fh:
             json.dump(pas, fh, ensure_ascii=False, indent=2)

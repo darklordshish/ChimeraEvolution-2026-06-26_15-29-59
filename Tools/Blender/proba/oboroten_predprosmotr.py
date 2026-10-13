@@ -102,7 +102,7 @@ if opt['organy'] > 0:
         return max(r) if opt['kmax'] > 0 else sum(r) / 2
     # `--sliyanie 1` — СЛИЯНИЕ ПОВЕРХ ТЕЛА (решение 13.10, `PartAssembly.Union`): человеческое лицо не снимается, морда
     # садится на посадочное место `chelovek-osnovanie-mordy.json` (лицевая область); `--glub` — утопить шов в голову, м
-    sl = opt['sliyanie'] > 0
+    sl = opt['sliyanie'] > 0 or not os.path.exists(os.path.join(hand, 'parts/chelovek-lico.json'))   # с 13.10 лицо у человека сплошное
     hm, vm = pas('chelovek-osnovanie-mordy.json' if sl else 'parts/chelovek-lico.json')['seam'], pas('parts/volk-morda.json')['seam']
     km = kk(hm, vm)
     put(['Пасть', 'Пасть.полость', 'Пасть.зубы', 'Чутьё.мочка'], B(vm['center_m']), None,
