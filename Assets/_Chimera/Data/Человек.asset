@@ -106,7 +106,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925336099964060212
+    - rid: 925336099964060267
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -166,7 +166,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925336099964060213
+    - rid: 925336099964060268
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -344,7 +344,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925336099964060214
+    - rid: 925336099964060269
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -2385,8 +2385,8 @@ MonoBehaviour:
   - seam: "\u043A\u043E\u0440\u0435\u043D\u044C \u0445\u0432\u043E\u0441\u0442\u0430"
     bone: "\u0442\u0430\u0437"
     center: {x: -0, y: 0.95609, z: -0.11189}
-    axis: {x: -0, y: -0.49828, z: -0.86701}
-    up: {x: -0, y: 0.86701, z: -0.49828}
+    axis: {x: -0, y: -0.25882, z: -0.96592}
+    up: {x: -0, y: 0.96592, z: -0.25882}
     ellipse: {x: 0.036, y: 0.032}
   - seam: "\u043E\u0441\u043D\u043E\u0432\u0430\u043D\u0438\u0435 \u043C\u043E\u0440\u0434\u044B"
     bone: "\u0433\u043E\u043B\u043E\u0432\u0430"
@@ -2401,7 +2401,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 925336099964060212
+    - rid: 925336099964060267
       type: {class: LimbStrikeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 8
@@ -2411,7 +2411,7 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.45
         cooldown: 1.1
-    - rid: 925336099964060213
+    - rid: 925336099964060268
       type: {class: KickData, ns: , asm: Chimera.Runtime}
       data:
         damage: 4
@@ -2419,7 +2419,7 @@ MonoBehaviour:
         reach: 1.8
         radius: 1.6
         cooldown: 1
-    - rid: 925336099964060214
+    - rid: 925336099964060269
       type: {class: ScreamData, ns: , asm: Chimera.Runtime}
       data:
         cooldown: 12
