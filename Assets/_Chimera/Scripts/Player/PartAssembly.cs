@@ -131,7 +131,7 @@ public static class PartAssembly
     public static bool CanPlace(SpeciesSO body, BodyPart part, SpeciesSO donor)
     {
         if (part?.mesh == null || !part.mesh.isReadable || part.bones == null || donor?.bones == null) return false;
-        // посадке кольцом нужен шов у носителя: у змеи шеи с «основанием черепа» нет — кусок не ставится, работает прежний путь
+        // посадке кольцом нужен шов у носителя: без него масштаб куска взять неоткуда — кусок не ставится, работает прежний путь
         if (part.ringFit && SeamEllipse(body, part.seam) == Vector2.zero) return false;
         var donorBones = new HashSet<string>(donor.bones.Select(b => b.name));
         var need = Weighted(part).AsEnumerable();
