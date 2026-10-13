@@ -13,7 +13,7 @@
   4. НАРЕЗКА: грань идёт в слот, чьи кости весят в ней больше; мелкие островки и зубцы границы приглаживаются. Вершины
      шва у соседних объектов совпадают по месту и весам; затенение плоское — нормаль у грани своя, ступени на шве нет.
 
-  blender -b --factory-startup -P rig_volka.py -- меш.obj скелет.json выход.fbx [--muzzle градусы — как в доводке] [--shvy 1 — швы кусков] [--pasporta папка] [--blend файл.blend] [--shots префикс]
+  blender -b --factory-startup -P rig_volka.py -- меш.obj скелет.json выход.fbx [--muzzle градусы — как в доводке] [--shvy 1 — швы кусков, 2 — и голова по органам] [--pasporta папка] [--blend файл.blend] [--shots префикс]
 Печатает отчёт «РИГ: …»: посадка, расхождения меша со скелетом, треугольники по объектам, вершины по костям.
 """
 import sys, math, json, os
@@ -494,6 +494,7 @@ if SHVY:
     for piece, L, aL, fc in ((0, Lb, aB, 3), (1, Ls, aS, 4)):
         rA, a12 = ring(CA, WN, 0.12, 0.14, 12, 51, piece)
         rR, _ = ring(CR, WN, 0.085, 0.10, 12, 1, piece)
+        if piece == 1: HEAD_RING = rR
         new_f += bridge(L, aL, rA, a12, fc) + bridge(rA, a12, rR, a12, fc)
     over = max((CR - v.co).dot(AX) for v in Ls)
     SEAMS['основание черепа'] = dict(n=12, bone='шея', c=CR, ax=AX, up=WN, r=(0.085, 0.10), at=(CR - nh).length, edge=len(Ls), over=over)
@@ -524,6 +525,125 @@ if SHVY:
     SEAMS['корень хвоста'] = dict(n=8, bone='хвост', c=cc, ax=AT, up=WT, r=(rx, rw), at=(cc - th_).dot(AT), edge=len(Lt),
                                   over=max((v.co - cc).dot(AT) for v in Lt))
 
+
+    # ---------- НАРЕЗКА ГОЛОВЫ ПО ОРГАНАМ (`--shvy 2`; решение геймдизайнера 13.10, спека `2026-10-08-vid-na-chuzhom-plane.md` §2 п.3) ----------
+    #   морда с челюстями, зубами, языком и полостью — орган Пасть: шов «основание морды», кольцо 12 за углом рта;
+    #   уши и мочка — орган Нюх (слот Чутьё): шов «основание уха», кольцо 8 на ухо; мочка — отдельный островок на конце морды;
+    #   грива — черта шасси: воротник с тем же кольцом 12 «основание черепа», отделён от черепа вторым швом;
+    #   череп с глазницами остаётся куском общей формы вида (целая голова = череп + морда) со своим кольцом 12.
+    RINGS = {}
+    if SHVY >= 2:
+        PARTF = bm.faces.layers.int['part']
+        head_set = lambda f: f.is_valid and f in head
+
+        def ring_seam(Lp, Lb_, c, w, n, code, piece, u=None, k=0.92):
+            """Шов куска: новое кольцо из n точек эллипса чуть уже кромки и полоса «кромка → кольцо» у куска и у тела.
+            Стягивать кромку по секторам нельзя: у редкой кромки (основание уха — 9–10 вершин) сектора остаются пустыми."""
+            global XU
+            keep_u = XU
+            if u is not None:
+                XU = u                                    # кольцо не в плоскости X тела: углы и точки — в своём базисе
+            rx_ = k * max(abs((v.co - c).dot(XU)) for v in Lp); rw_ = k * max(abs((v.co - c).dot(w)) for v in Lp)
+            for pc_, L in ((piece, Lp), (1, Lb_)):
+                L, aL = ordered(L, c, w)
+                r_, an = ring(c, w, rx_, rw_, n, code, pc_)
+                for f_ in bridge(L, aL, r_, an, 8):
+                    f_[PARTF] = 0; f_[EXF] = 0
+                    new_f.append(f_)
+            XU = keep_u
+            return rx_, rw_
+
+        def tidy(codes):
+            """После стягивания: снять висячие лоскуты, закрыть треугольные дырки у кольца."""
+            flap = [f for f in bm.faces if all(e.is_boundary for e in f.edges)]
+            if flap:
+                bmesh.ops.delete(bm, geom=flap, context='FACES')
+                bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context='VERTS')
+            for _ in range(8):
+                stray = [v for v in bm.verts if not v[RG] and sum(1 for e in v.link_edges if e.is_boundary) == 2]
+                if not stray:
+                    break
+                v = stray[0]; nbv = [e.other_vert(v) for e in v.link_edges if e.is_boundary]
+                if bm.faces.get((v, nbv[0], nbv[1])) is None:
+                    f_ = bm.faces.new((v, nbv[0], nbv[1])); f_[FC] = 0; f_[PARTF] = 0; f_[EXF] = 0
+                else:
+                    break
+
+        # --- уши ---
+        for sgn, code in ((1, 201), (-1, 301)):
+            tip = max((f for f in bm.faces if head_set(f) and f.calc_center_median().x * sgn > 0.08), key=lambda f: f.calc_center_median().z)
+
+            def in_ear(f, sgn=sgn):
+                c_ = f.calc_center_median()
+                return head_set(f) and c_.x * sgn > 0.085 and c_.z > float(opt.get('ez', 1.40)) and c_.y - yn < 0.42
+            ear = region(tip, in_ear)
+            Le, Lh = cut_loop(ear, 'шов уха')
+            ce = sum((v.co for v in Le), Vector()) / len(Le)
+            tipc = tip.calc_center_median()
+            axe = (tipc - ce).normalized()
+            we = (Vector((0, -1, 0)) - axe * axe.dot(Vector((0, -1, 0)))).normalized()      # «верх» кольца уха — вперёд, к морде
+            ue = axe.cross(we).normalized(); ue = ue if ue.x > 0 else -ue      # кольцо уха лежит не в плоскости X: свой базис
+            rr = ring_seam(Le, Lh, ce, we, 8, code, 4, ue)
+            if sgn == 1:
+                SEAMS['основание уха'] = dict(n=8, bone='голова', c=ce, ax=axe, up=we, u=ue, r=rr, at=(ce - Vector(BN['голова']['head'])).length,
+                                              edge=len(Le), over=0.0)
+            head.difference_update(ear)
+        tidy(None)
+
+        # --- морда (Пасть) ---
+        MT, MB = Vector((0, yn + float(opt.get('mt', 0.17)), 1.27)), Vector((0, yn + float(opt.get('mb', 0.25)), 1.04))    # стоп → под челюстью за углом рта
+        MN = Vector((0, (MT - MB).z, -(MT - MB).y)).normalized(); MN = MN if MN.y > 0 else -MN       # к черепу
+        nose_f2 = min((f for f in bm.faces if head_set(f)), key=lambda f: f.calc_center_median().y)
+        # ниже челюсти плоскость шва уходит назад под гриву — без нижней границы область утекала в манишку (кольцо 41 см)
+        muzzle = region(nose_f2, lambda f: head_set(f) and (f.calc_center_median() - MT).dot(MN) < 0 and f.calc_center_median().z > 1.0)
+        Lm, Lsk0 = cut_loop(muzzle, 'шов морды')
+        cm = sum((v.co for v in Lm), Vector()) / len(Lm); cm = Vector((0, cm.y, cm.z))
+        cm = cm - MN * (cm - MT).dot(MN)
+        wm = Vector((0, MN.z, -MN.y)); wm = wm if wm.z > 0 else -wm
+        rr = ring_seam(Lm, Lsk0, cm, wm, 12, 401, 3)
+        SEAMS['основание морды'] = dict(n=12, bone='голова', c=cm, ax=-MN, up=wm, r=rr, at=(cm - Vector(BN['голова']['head'])).length,
+                                         edge=len(Lm), over=0.0)
+        head.difference_update(muzzle)
+        tidy(None)
+
+        # --- череп ↔ грива ---
+        ST, SB = Vector((0, yn + float(opt.get('st', 0.46)), 1.44)), Vector((0, yn + float(opt.get('sb', 0.27)), 1.00))    # за ушами → под челюстью
+        SN = Vector((0, (ST - SB).z, -(ST - SB).y)).normalized(); SN = SN if SN.y > 0 else -SN
+        seed_p = Vector((0, yn + 0.27, 1.36))
+        skull_seed = min((f for f in bm.faces if head_set(f) and not f[FC]), key=lambda f: (f.calc_center_median() - seed_p).length)
+
+        def in_skull(f):
+            c_ = f.calc_center_median()
+            return head_set(f) and not f[FC] and (c_ - ST).dot(SN) < 0 and (abs(c_.x) < float(opt.get('sx', 0.15)) or c_.z > 1.33)
+        skull = region(skull_seed, in_skull)
+        Lsk, Lco = cut_loop(skull, 'шов гривы')
+        collar_seed = Lco[0]
+        Lsk, aSk = ordered(Lsk, CR, WN); Lco, aCo = ordered(Lco, CR, WN)
+        rS, a12 = ring(CR, WN, 0.085, 0.10, 12, 1, 1)                       # своё кольцо «основание черепа» у черепа
+        new_f += bridge(Lsk, aSk, rS, a12, 6)
+        new_f += bridge(Lco, aCo, HEAD_RING, a12, 7)                         # передняя изнанка воротника — к его же кольцу
+        SEAMS['грива'] = dict(n=12, bone='шея', c=CR, ax=AX, up=WN, r=(0.085, 0.10), at=(CR - nh).length, edge=len(Lco),
+                              over=SEAMS['основание черепа']['over'])
+
+        # --- мочка носа: у образца её нет (критик 10.10) — островок на конце морды ---
+        tipv = min((v for v in bm.verts if v.link_faces and abs(v.co.x) < 0.02), key=lambda v: v.co.y).co.copy()
+        lob = []
+        for dy, hw, z0_, z1_ in ((-0.010, 0.016, -0.004, 0.018), (0.012, 0.024, -0.012, 0.024), (0.034, 0.020, -0.008, 0.020)):
+            lob.append([bm.verts.new((tipv.x + sx * hw, tipv.y + dy, tipv.z + z)) for sx, z in ((-1, z0_), (1, z0_), (1, z1_), (-1, z1_))])
+        lf = [bm.faces.new((lob[0][0], lob[0][1], lob[0][2], lob[0][3])), bm.faces.new((lob[2][3], lob[2][2], lob[2][1], lob[2][0]))]
+        for r0, r1 in zip(lob, lob[1:]):
+            lf += [bm.faces.new((r0[k_], r1[k_], r1[(k_ + 1) % 4], r0[(k_ + 1) % 4])) for k_ in range(4)]
+        bmesh.ops.recalc_face_normals(bm, faces=lf)
+        lf = bmesh.ops.triangulate(bm, faces=lf)['faces']
+        for f in lf:
+            f[EXF] = 1; f[PARTF] = 3; f[FC] = 0
+        TAGL = bm.verts.layers.int['jawtag']
+        for r in lob:
+            for v in r:
+                v[TAGL] = 2; v[VP] = 7; v[RG] = 0
+        SEAMS['мочка'] = dict(n=8, bone='голова', c=tipv + Vector((0, 0.012, 0.006)), ax=Vector((0, -1, 0)), up=Vector((0, 0, 1)), r=(0.024, 0.018),
+                              at=0.0, edge=0, over=0.0)
+
     # куски — связные области: от носа и от кончика хвоста
     bm.verts.ensure_lookup_table(); bm.faces.ensure_lookup_table()
     for piece, seed in ((1, min(bm.verts, key=lambda v: v.co.y)),
@@ -535,18 +655,48 @@ if SHVY:
                 continue
             seen.add(u); u[VP] = piece
             st.extend(e.other_vert(u) for e in u.link_edges)
-    for f in bm.faces:                                   # зубы и язык — с головой
-        if f[EXF]:
+    if SHVY >= 2:                                        # 1 череп, 3 морда, 4 уши, 6 воротник, 7 мочка
+        bm.verts.ensure_lookup_table()
+        lob_v = {v for r in lob for v in r}
+        seeds = [(6, collar_seed), (1, skull_seed.verts[0]), (3, min((v for v in bm.verts if v.link_faces and v not in lob_v), key=lambda v: v.co.y))]
+        seeds += [(4, max((v for v in bm.verts if v.co.x * sg_ > 0.08 and v.link_faces), key=lambda v: v.co.z)) for sg_ in (1, -1)]
+        for v in bm.verts:                               # прежняя разметка «всё от носа — голова» здесь не действует
+            if v[VP] == 1: v[VP] = 0
+        for piece, seed in seeds:
+            seen, st = set(), [seed]
+            while st:
+                u = st.pop()
+                if u in seen:
+                    continue
+                seen.add(u); u[VP] = piece
+                st.extend(e.other_vert(u) for e in u.link_edges)
+        for v in lob_v:
+            v[VP] = 7
+    for f in bm.faces:                                   # зубы и язык — с пастью (в старой нарезке — с головой); мочка — сама
+        if f[EXF] and not (SHVY >= 2 and f[bm.faces.layers.int['part']] == 3):
             for v in f.verts:
-                v[VP] = 1
+                v[VP] = 3 if SHVY >= 2 else 1
     bmesh.ops.recalc_face_normals(bm, faces=[f for f in bm.faces if not f[EXF]])
-    # скрытая шея смотрит наружу от оси, изнанка юбки — к оси (к телу носителя)
-    for f in new_f:
-        if f.is_valid:
-            c_ = f.calc_center_median()
-            out_ = c_ - (CA + AX * (c_ - CA).dot(AX))
-            if f[FC] in (3, 4) and f.normal.dot(out_ if f[FC] == 3 else -out_) < 0:
-                f.normal_flip()
+    # ОРИЕНТАЦИЯ — ПО ЗНАКУ ОБЪЁМА КУСКА: у замкнутого воротника с двумя изнанками пересчёт нормалей выворачивал часть
+    # граней (в кадре с отсечением задних граней грива рассыпалась на клочки). Кусок с отрицательным объёмом — целиком наизнанку
+    seenf = set()
+    for f0 in bm.faces:
+        if f0 in seenf:
+            continue
+        comp, st = [], [f0]
+        while st:
+            f = st.pop()
+            if f in seenf:
+                continue
+            seenf.add(f); comp.append(f)
+            st.extend(g for e in f.edges for g in e.link_faces if g is not f)
+        vol = 0.0
+        for f in comp:
+            vs_ = [l.vert.co for l in f.loops]
+            for k_ in range(1, len(vs_) - 1):
+                vol += vs_[0].dot(vs_[k_].cross(vs_[k_ + 1]))
+        if vol < 0:
+            bmesh.ops.reverse_faces(bm, faces=comp)
     bnd_n = sum(1 for e in bm.edges if e.is_boundary)
     bm.to_mesh(me); bm.free()
     for p_ in me.polygons:
@@ -555,7 +705,7 @@ if SHVY:
         REP.append('шов «%s»: кольцо %d вершин на кости `%s`, %.3f м от её начала; центр (%.3f %.3f %.3f), ось наружу (%.2f %.2f %.2f), '
                    '«верх» (%.2f %.2f %.2f), полуоси вбок %.3f × по «верху» %.3f м; кромка куска %d вершин; кусок свисает за шов на %.3f м вдоль оси'
                    % (nm, d['n'], d['bone'], d['at'], *d['c'], *d['ax'], *d['up'], *d['r'], d['edge'], d['over']))
-    REP.append('швы: граничных рёбер %d (ждём 40: два кольца по 12 и два по 8)' % bnd_n)
+    REP.append('швы: граничных рёбер %d (ждём %d)' % (bnd_n, 40 if SHVY < 2 else 24 + 16 + 32 + 24))     # шея и череп, хвост, уши, морда; воротник замкнут
 
 tagv = [d.value for d in me.attributes['jawtag'].data]
 vpv = [d.value for d in me.attributes['piece'].data] if SHVY else [0] * len(me.vertices)
@@ -619,8 +769,13 @@ for v in me.vertices:
     # хвост — `хвост`, `хвост_кисть`. Кольцо шва у куска и у тела весит одинаково, иначе шов разойдётся в движении
     if SHVY:
         r_ = rgv[v.index]
+        pv_ = vpv[v.index]
         if 1 <= r_ < 100: w = {'шея': 1.0}
-        elif r_ > 100: w = {'хвост': 1.0}
+        elif 100 < r_ < 200: w = {'хвост': 1.0}
+        elif r_ > 200: w = {'голова': 1.0}                 # кольца ушей и морды — на черепе
+        elif pv_ in (4, 7): w = {'голова': 1.0}            # уши и мочка жёсткие
+        elif pv_ == 3: w = {k_: x for k_, x in w.items() if k_ in ('голова', 'челюсть')} or {'голова': 1.0}
+        elif pv_ == 6: w = {k_: x for k_, x in w.items() if k_ in ('голова', 'шея')} or {'шея': 1.0}
         elif vpv[v.index] == 1:
             w = {k_: x for k_, x in w.items() if k_ in ('голова', 'шея', 'челюсть')} or {'шея': 1.0}
         elif vpv[v.index] == 2:
@@ -636,7 +791,7 @@ def swap(w):
     return {(k_[:-2] if k_.endswith('.L') else (k_ + '.L' if k_ in LIMB else k_)): x for k_, x in w.items()}
 
 
-RCL = lambda r_: 0 if r_ == 0 else 1 + (r_ > 50) + (r_ > 100)      # класс кольца: зеркальная вершина кольца носит другой номер
+RCL = lambda r_: 0 if r_ == 0 else 1 + (r_ > 50) + (r_ > 100) + (r_ > 200) + (r_ > 400)      # класс кольца: зеркальная вершина кольца носит другой номер
 kdm = kdtree.KDTree(len(me.vertices))
 for v in me.vertices:
     kdm.insert(v.co, v.index)
@@ -667,8 +822,14 @@ for nm in ('бедро', 'голень', 'пятка'):
     SLOT[nm] = SLOT[nm + '.L'] = 'Ноги'
 # СВОЙ ЦВЕТ — ОТДЕЛЬНЫМ ОБЪЕКТОМ (механики, `c04c3a7`): игра красит рендерер целиком, поэтому полость рта с языком и зубы —
 # объекты `слот.что` с материалом своего цвета; рендерер в игре получит имя слота, цвет уйдёт в паспорт детали
-OWN = {'голова.полость': (0.035, 0.006, 0.007, 1.0), 'голова.зубы': (0.90, 0.88, 0.80, 1.0)}   # линейные: в игре полость ≈ (0.21 0.07 0.08)
-ORDER = ['голова', 'шея', 'хребет', 'Руки', 'Ноги', 'Хвост'] + list(OWN)
+# ИМЯ ОБЪЕКТА = СЛОТ, точка — ТОЛЬКО у кусков со своим цветом: игра читает цвет материала у любого объекта `слот.что`, а
+# без материала Unity подставляет серый по умолчанию — уши и грива покрасились бы им вместо цвета состава. Поэтому уши —
+# `Чутьё`, грива — `Шкура` (покров), а с точкой — полость, зубы и мочка, у которых цвет свой
+MAW = 'Пасть' if SHVY >= 2 else 'голова'             # чьи полость и зубы: при нарезке по органам — Пасти
+OWN = {MAW + '.полость': (0.035, 0.006, 0.007, 1.0), MAW + '.зубы': (0.90, 0.88, 0.80, 1.0)}   # линейные: в игре полость ≈ (0.21 0.07 0.08)
+if SHVY >= 2:
+    OWN['Чутьё.мочка'] = (0.012, 0.011, 0.012, 1.0)
+ORDER = ['голова', 'шея', 'хребет', 'Руки', 'Ноги', 'Хвост'] + (['Пасть', 'Чутьё', 'Шкура'] if SHVY >= 2 else []) + list(OWN)
 part = [d.value for d in me.attributes['part'].data]
 extra = [d.value for d in me.attributes['extra'].data]
 forced = [d.value for d in me.attributes['forced'].data] if SHVY else [0] * len(me.polygons)
@@ -683,12 +844,13 @@ for k_, f in enumerate(F):
         pc = vpv[f[0]]
         for bad_ in ('голова', 'Хвост'):
             sc.pop(bad_, None)
-        sl_ = 'голова' if pc == 1 else 'Хвост' if pc == 2 else 'шея' if forced[k_] == 3 else (max(sc, key=sc.get) if sc else 'хребет')
-        fslot.append('голова.полость' if part[k_] == 1 else 'голова.зубы' if part[k_] == 2 else sl_)
+        sl_ = ({1: 'голова', 2: 'Хвост', 3: 'Пасть', 4: 'Чутьё', 6: 'Шкура'}.get(pc)
+               or ('шея' if forced[k_] == 3 else (max(sc, key=sc.get) if sc else 'хребет')))
+        fslot.append(MAW + '.полость' if part[k_] == 1 else MAW + '.зубы' if part[k_] == 2 else 'Чутьё.мочка' if part[k_] == 3 else sl_)
         if pc or forced[k_]:
             part[k_] = part[k_] or 9                     # дальше границу не приглаживать
         continue
-    fslot.append('голова.полость' if part[k_] == 1 else 'голова.зубы' if part[k_] == 2
+    fslot.append(MAW + '.полость' if part[k_] == 1 else MAW + '.зубы' if part[k_] == 2
                  else 'голова' if all(me.vertices[vi].co.y - yn < 0.27 for vi in f) else max(sc, key=sc.get))
 edge_f = {}
 for k_, f in enumerate(F):
@@ -803,32 +965,56 @@ REP.append('вершин на швах: %d (общих у двух и более
 if SHVY and 'pasporta' in opt:
     def U(q):
         return [round(-q.x, 5), round(q.z, 5), round(-q.y, 5)]
-    for fname, seam_name, slot, main, extra_obj, bones_, fit in (
-            ('volk-golova-kusok.json', 'основание черепа', 'Пасть', 'голова', {'polost': 'голова.полость', 'zuby': 'голова.зубы'},
-             ['голова', 'шея', 'челюсть'], 'ring'),
-            ('volk-hvost-kusok.json', 'корень хвоста', 'Хвост', 'Хвост', {}, ['хвост', 'хвост_кисть'], None)):
+    NOTE = ('метры тела волка, оси Unity; кольцо плоское; вершина 0 — на «верху», дальше в сторону `side` (у осевых швов — к −X Unity); '
+            'ellipse_m — вбок × по «верху»; overhang_m — на сколько кусок свисает за шов вдоль оси к телу носителя')
+    if SHVY >= 2:
+        # (файл, шов, слот или None для черты, объекты, кости, fit, зеркальная пара, доп. поля)
+        PIECES = (
+            ('volk-morda.json', 'основание морды', 'Пасть', dict(main='Пасть', polost='Пасть.полость', zuby='Пасть.зубы'), ['голова', 'челюсть'], 'ring', False,
+             dict(jaw_joint_m=U(JOINT), jaw_bone='челюсть')),
+            ('volk-ushi.json', 'основание уха', 'Чутьё', dict(main='Чутьё'), ['голова'], 'ring', True, {}),
+            ('volk-mochka.json', 'мочка', 'Чутьё', dict(main='Чутьё.мочка'), ['голова'], None, False, dict(seat='нос')),
+            ('volk-golova-kusok.json', 'основание черепа', None, dict(main='голова', morda='Пасть', polost='Пасть.полость', zuby='Пасть.зубы'),
+             ['голова', 'шея', 'челюсть'], 'ring', False, dict(trait='голова', also=['Пасть', 'Пасть.полость', 'Пасть.зубы'])),
+            ('volk-griva.json', 'грива', None, dict(main='Шкура'), ['голова', 'шея'], 'ring', False, dict(trait='грива')),
+            ('volk-hvost-kusok.json', 'корень хвоста', None, dict(main='Хвост'), ['хвост', 'хвост_кисть'], None, False, dict(trait='хвост')),
+        )
+    else:
+        PIECES = (
+            ('volk-golova-kusok.json', 'основание черепа', 'Пасть', dict(main='голова', polost='голова.полость', zuby='голова.зубы'),
+             ['голова', 'шея', 'челюсть'], 'ring', False, {}),
+            ('volk-hvost-kusok.json', 'корень хвоста', 'Хвост', dict(main='Хвост'), ['хвост', 'хвост_кисть'], None, False, {}),
+        )
+    for fname, seam_name, slot, objs, bones_, fit, mirror, extra_f in PIECES:
         d = SEAMS[seam_name]
-        ring_pts = [d['c'] + Vector((1, 0, 0)) * (d['r'][0] * math.sin(2 * math.pi * k_ / d['n'])) + d['up'] * (d['r'][1] * math.cos(2 * math.pi * k_ / d['n']))
+        uu = d.get('u', Vector((1, 0, 0)))
+        ring_pts = [d['c'] + uu * (d['r'][0] * math.sin(2 * math.pi * k_ / d['n'])) + d['up'] * (d['r'][1] * math.cos(2 * math.pi * k_ / d['n']))
                     for k_ in range(d['n'])]
-        objs = dict(main=main); objs.update(extra_obj)
+        seam_type = 'основание черепа' if seam_name == 'грива' else seam_name
         pas = {
-            'species': 'Волк', 'slot': slot, 'plan': 'четвероногий',
-            'seam': {'type': seam_name, 'ring': list(range(d['n'])), 'ring_m': [U(q) for q in ring_pts], 'center_m': U(d['c']),
-                     'ellipse_m': [d['r'][0], d['r'][1]], 'axis_out': U(d['ax']), 'up': U(d['up']), 'bone': d['bone'],
-                     'on_bone_m': round(d['at'], 4), 'overhang_m': round(d['over'], 4),
-                     'note': 'метры тела волка, оси Unity; кольцо плоское, поперёк кости; вершина 0 — на «верху», дальше к −X Unity; '
-                             'ellipse_m — вбок × по «верху»; overhang_m — на сколько кусок свисает за шов вдоль оси к телу носителя'},
-            'objects': objs, 'fbx': 'Assets/_Chimera/Models/volk_mesh.fbx', 'mirror': False,
+            'species': 'Волк', 'plan': 'четвероногий',
+            'seam': {'type': seam_type, 'ring': list(range(d['n'])), 'ring_m': [U(q) for q in ring_pts], 'center_m': U(d['c']),
+                     'ellipse_m': [round(d['r'][0], 4), round(d['r'][1], 4)], 'axis_out': U(d['ax']), 'up': U(d['up']), 'side': U(uu), 'bone': d['bone'],
+                     'on_bone_m': round(d['at'], 4), 'overhang_m': round(d['over'], 4), 'note': NOTE},
+            'objects': objs, 'fbx': 'Assets/_Chimera/Models/volk_mesh.fbx', 'mirror': mirror,
             'bones': bones_, 'armature': 'все узлы графа волка + челюсть', 'keys': [],
-            'tris': sum(len(parts[o_][0].data.polygons) for o_ in objs.values()), 'tris_main': len(parts[main][0].data.polygons),
-            'generator': 'Tools/Blender/proba/rig_volka.py --muzzle 4.5 --shvy 1 --pasporta …',
-            'source': 'Референсы/работа/модельная/2026-10-09-proba-b/volk_b9.obj; швы — Docs/models/POSTAVKA-2026-10-10b-volk-shvy.md',
+            'tris': sum(len(parts[o_][0].data.polygons) for o_ in objs.values()), 'tris_main': len(parts[objs['main']][0].data.polygons),
+            'generator': 'Tools/Blender/proba/rig_volka.py --muzzle 4.5 --shvy %d --pasporta …' % SHVY,
+            'source': 'Референсы/работа/модельная/2026-10-09-proba-b/volk_b9.obj',
         }
+        if slot:
+            pas['slot'] = slot
         if fit:
             pas['fit'] = fit
-        with open(os.path.join(os.path.abspath(opt['pasporta']), fname), 'w', encoding='utf-8') as fh:
+        pas.update(extra_f)
+        if mirror:
+            pas['seam']['note'] += '; кольцо дано для стороны −X Unity (+X Blender), вторая сторона — зеркалом по X'
+        sub = 'parts' if slot else 'cherty'           # черта шасси — не деталь органа: читатель деталей её не берёт
+        dst = os.path.join(os.path.abspath(opt['pasporta']), '..', sub) if SHVY >= 2 else os.path.abspath(opt['pasporta'])
+        os.makedirs(dst, exist_ok=True)
+        with open(os.path.join(dst, fname), 'w', encoding='utf-8') as fh:
             json.dump(pas, fh, ensure_ascii=False, indent=2)
-        REP.append('паспорт куска: %s (%s, слот %s, %d тр)' % (fname, seam_name, slot, pas['tris']))
+        REP.append('паспорт: %s/%s (%s, %s, %d тр)' % (sub if SHVY >= 2 else 'parts', fname, seam_name, 'слот ' + slot if slot else 'черта', pas['tris']))
 
 # ---------- экспорт ----------
 bpy.ops.object.select_all(action='SELECT')
@@ -876,10 +1062,10 @@ if 'shots' in opt:
             pb.matrix = Matrix.Translation(h) @ Matrix.Rotation(math.radians(rot[nm]), 4, 'X') @ Matrix.Translation(-h) @ pb.matrix
             bpy.context.view_layer.update()
 
-    COL = {'голова.полость': OWN['голова.полость'], 'голова.зубы': OWN['голова.зубы'], 'голова': (0.85, 0.3, 0.3, 1), 'шея': (0.9, 0.75, 0.3, 1), 'хребет': (0.4, 0.7, 0.4, 1), 'Руки': (0.3, 0.55, 0.9, 1),
+    COL = {'Пасть': (0.95, 0.55, 0.75, 1), 'Чутьё': (1.0, 0.95, 0.3, 1), 'Шкура': (0.55, 0.35, 0.2, 1), 'голова': (0.85, 0.3, 0.3, 1), 'шея': (0.9, 0.75, 0.3, 1), 'хребет': (0.4, 0.7, 0.4, 1), 'Руки': (0.3, 0.55, 0.9, 1),
            'Ноги': (0.65, 0.4, 0.85, 1), 'Хвост': (0.3, 0.8, 0.8, 1)}
     for sl in ORDER:
-        parts[sl][0].color = COL[sl]
+        parts[sl][0].color = COL.get(sl, OWN.get(sl, (0.7, 0.7, 0.7, 1)))
     sh.color_type = 'OBJECT'
     shot('narezka', (0, 0, 0.8), 2.8, ['side', '34f', '34b', 'front', 'back'])
     for sl in ORDER:
