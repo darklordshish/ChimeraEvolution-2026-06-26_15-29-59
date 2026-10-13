@@ -430,17 +430,24 @@ if 'pasporta' in opt:
         return [round(-q.x, 5), round(q.z, 5), round(-q.y, 5)]
     ring_pts = [SEAM['c'] + XU * (SEAM['r'][0] * math.sin(math.pi / 6 * k_)) + SEAM['up'] * (SEAM['r'][1] * math.cos(math.pi / 6 * k_)) for k_ in range(12)]
     tail_pts = [SEAM['tail_c'] + XU * (0.045 * math.sin(math.pi / 4 * k_)) + SEAM['tail_up'] * (0.040 * math.cos(math.pi / 4 * k_)) for k_ in range(8)]
-    pas = {'species': 'Человек', 'plan': 'двуногий', 'fbx': 'Assets/_Chimera/Models/chelovek_mesh.fbx',
-           'seams': [
-               {'type': 'основание черепа', 'kind': 'разрез', 'object': 'голова', 'ring': list(range(12)), 'ring_m': [U(q) for q in ring_pts],
-                'center_m': U(SEAM['c']), 'ellipse_m': [round(SEAM['r'][0], 4), round(SEAM['r'][1], 4)], 'axis_out': U(SEAM['ax']), 'up': U(SEAM['up']),
-                'bone': 'шея', 'on_bone_m': round(SEAM['at'], 4)},
-               {'type': 'корень хвоста', 'kind': 'посадка на сплошной коже', 'ring': list(range(8)), 'ring_m': [U(q) for q in tail_pts],
-                'center_m': U(SEAM['tail_c']), 'ellipse_m': [0.045, 0.040], 'axis_out': U(SEAM['tail_ax']), 'up': U(SEAM['tail_up']), 'bone': 'таз'}],
-           'note': 'метры тела человека, оси Unity; вершина 0 кольца — на «верху» (дорсальная сторона), дальше к −X Unity',
-           'generator': 'Tools/Blender/proba/rig_cheloveka.py'}
-    with open(os.path.join(os.path.abspath(opt['pasporta']), 'chelovek-shvy.json'), 'w', encoding='utf-8') as fh:
-        json.dump(pas, fh, ensure_ascii=False, indent=2)
+    note = 'метры тела человека, оси Unity; кольцо плоское, поперёк кости; вершина 0 — на «верху» (дорсальная сторона), дальше к −X Unity; ellipse_m — вбок × по «верху»'
+    common = {'species': 'Человек', 'plan': 'двуногий', 'fbx': 'Assets/_Chimera/Models/chelovek_mesh.fbx', 'mirror': False,
+              'armature': 'все узлы графа человека', 'keys': [], 'generator': 'Tools/Blender/proba/rig_cheloveka.py --pasporta …',
+              'source': 'Референсы/работа/модельная/2026-10-10-proba-chelovek/'}
+    # голова человека — кусок с тем же швом, что волчья (формат и поля — как `volk-golova-kusok.json`, письмо механик 13.10)
+    head = dict(common, slot='Пасть', fit='ring', objects={'main': 'голова'}, bones=['голова', 'шея'],
+                tris=len(parts['голова'][0].data.polygons), tris_main=len(parts['голова'][0].data.polygons),
+                seam={'type': 'основание черепа', 'ring': list(range(12)), 'ring_m': [U(q) for q in ring_pts], 'center_m': U(SEAM['c']),
+                      'ellipse_m': [round(SEAM['r'][0], 4), round(SEAM['r'][1], 4)], 'axis_out': U(SEAM['ax']), 'up': U(SEAM['up']),
+                      'bone': 'шея', 'on_bone_m': round(SEAM['at'], 4), 'overhang_m': 0.0, 'note': note})
+    # посадочное кольцо хвоста — на СПЛОШНОЙ коже: не край куска, а место (центр, ось, эллипс, порядок вершин)
+    tail = dict(common, kind='посадочное место на сплошной коже', bones=['таз'],
+                seam={'type': 'корень хвоста', 'ring': list(range(8)), 'ring_m': [U(q) for q in tail_pts], 'center_m': U(SEAM['tail_c']),
+                      'ellipse_m': [0.045, 0.040], 'axis_out': U(SEAM['tail_ax']), 'up': U(SEAM['tail_up']), 'bone': 'таз', 'note': note})
+    for fname, pas in (('chelovek-golova-kusok.json', head), ('chelovek-koren-hvosta.json', tail)):
+        with open(os.path.join(os.path.abspath(opt['pasporta']), fname), 'w', encoding='utf-8') as fh:
+            json.dump(pas, fh, ensure_ascii=False, indent=2)
+        REP.append('паспорт: ' + fname)
 
 # ---------- экспорт ----------
 bpy.ops.object.select_all(action='SELECT')
