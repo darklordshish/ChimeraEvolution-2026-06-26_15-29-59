@@ -444,7 +444,7 @@ if 'pasporta' in opt:
     tail = dict(common, kind='посадочное место на сплошной коже', bones=['таз'],
                 seam={'type': 'корень хвоста', 'ring': list(range(8)), 'ring_m': [U(q) for q in tail_pts], 'center_m': U(SEAM['tail_c']),
                       'ellipse_m': [0.045, 0.040], 'axis_out': U(SEAM['tail_ax']), 'up': U(SEAM['tail_up']), 'bone': 'таз', 'note': note})
-    for fname, pas in (('chelovek-golova-kusok.json', head), ('chelovek-koren-hvosta.json', tail)):
+    for fname, pas in (('chelovek-golova-kusok.json', head), ('../chelovek-koren-hvosta.json', tail)):     # посадочное место — не деталь: рядом с графом, не в parts/
         with open(os.path.join(os.path.abspath(opt['pasporta']), fname), 'w', encoding='utf-8') as fh:
             json.dump(pas, fh, ensure_ascii=False, indent=2)
         REP.append('паспорт: ' + fname)
