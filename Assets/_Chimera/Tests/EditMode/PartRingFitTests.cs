@@ -95,7 +95,8 @@ namespace Chimera.Tests.EditMode
 
             // голова: один масштаб шва и взгляд вперёд — морда дальше всего по +Z, а не вверх
             Assert.IsTrue(PartAssembly.Seam(human, head.seam, out var neck), "у человека нет шва шеи");
-            float k = Mathf.Sqrt(neck.ellipse.x * neck.ellipse.y / (head.ellipse.x * head.ellipse.y));
+            // голова обязана накрыть культю шеи — масштаб по большему из отношений полуосей
+            float k = Mathf.Max(neck.ellipse.x / head.ellipse.x, neck.ellipse.y / head.ellipse.y);
             Assert.That(k, Is.InRange(0.3f, 1f), "шея человека тоньше волчьей — масштаб обязан быть меньше единицы");
             var skull = pieces.First(p => p.name == "голова").GetComponent<SkinnedMeshRenderer>();
             var donorVerts = head.mesh.vertices.Select(v => head.toBody.MultiplyPoint3x4(v)).ToArray();

@@ -201,8 +201,10 @@ public static partial class PartAssembly
         if (string.IsNullOrEmpty(part.seam) || part.ellipse.x <= 0f || part.ellipse.y <= 0f) return 1f;
         var c = SeamEllipse(body, part.seam);
         if (c.x <= 0f || c.y <= 0f) return 1f;
-        // есть посадочное место — кусок обязан его накрыть (супремум), как бы он ни сел; иначе — по площади кольца
-        bool cover = Claimed(part, donor) == null && Seam(body, part.seam, out var seat) && seat.skin;
+        // кусок обязан НАКРЫТЬ то, на что сел (супремум): посадочное место на сплошной коже — или культю носителя, если он
+        // забрал место целиком (голова на закрытой шее: кольца видов разной формы, по площади одна ось даёт недобор и
+        // сверху видно внутрь шеи). Замена снимаемой детали (уши) — по площади кольца
+        bool cover = Claimed(part, donor) != null || (Seam(body, part.seam, out var seat) && seat.skin);
         float p = !float.IsNaN(RingNorm) ? RingNorm : cover ? float.PositiveInfinity : 0f;
         return PowerMean(c.x / part.ellipse.x, c.y / part.ellipse.y, p);
     }
