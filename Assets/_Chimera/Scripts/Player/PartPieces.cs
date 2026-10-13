@@ -14,6 +14,16 @@ public static partial class PartAssembly
     /// ответных мест у носителей (лицо и уши человека). Выключено — графт рисуется как прежде, блоками и полем.</summary>
     public static bool MeshPieces = false;
 
+    /// <summary>СЛИЯНИЕ ВМЕСТО ЗАМЕНЫ (идея геймдизайнера 13.10: «не заменять, а сливать… дизъюнкция»). Для непрозрачных тел
+    /// объединение бесплатно: нарисуй оба — и буфер глубины покажет ровно внешнюю оболочку A ∪ B. Поэтому кусок, не
+    /// забравший место целиком (морда, уши, грива), можно сажать ПОВЕРХ тела носителя, не снимая его часть: щели на стыке
+    /// не бывает по построению. Снимать приходится только то, что торчит СКВОЗЬ кусок. Пока — ручка для сравнения кадром:
+    /// включено — свои объекты носителя под такими кусками остаются.</summary>
+    public static bool Union = false;
+
+    /// <summary>Множитель масштаба кусков органов при слиянии: кусок обязан накрыть то, поверх чего сел (кадром).</summary>
+    public static float UnionScale = 1f;
+
     /// <summary>Показать черты этого вида на любом теле, не дожидаясь ступени по составу, — для кадров и сторожей.</summary>
     public static SpeciesSO ForceTraits;
     public static int ForceStep = 2;
@@ -117,6 +127,7 @@ public static partial class PartAssembly
         foreach (var t in skeleton.GetComponentsInChildren<Transform>(true)) if (!xf.ContainsKey(t.name)) xf[t.name] = t;
 
         float k = RingScale(body, donor, part);
+        if (Union && Claimed(part, donor) == null && !string.IsNullOrEmpty(part.slot)) k *= UnionScale;
         bool gaze = Gaze(part, donor);
         var toBody = part.toBody == default ? Matrix4x4.identity : part.toBody;
         var sv = part.mesh.vertices.Select(v => toBody.MultiplyPoint3x4(v)).ToArray();
