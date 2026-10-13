@@ -7,8 +7,8 @@
   "keys": [],
   "generator": "Tools/Blender/proba/rig_cheloveka.py --pasporta …",
   "source": "Референсы/работа/модельная/2026-10-10-proba-chelovek/",
-  "slot": "Пасть",
-  "fit": "ring",
+  "trait": "голова",
+  "step": 2,
   "objects": {
     "main": "голова"
   },

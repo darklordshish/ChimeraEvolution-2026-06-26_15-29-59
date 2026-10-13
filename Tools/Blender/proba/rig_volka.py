@@ -536,7 +536,7 @@ if SHVY:
         PARTF = bm.faces.layers.int['part']
         head_set = lambda f: f.is_valid and f in head
 
-        def ring_seam(Lp, Lb_, c, w, n, code, piece, u=None, k=0.92):
+        def ring_seam(Lp, Lb_, c, w, n, code, piece, u=None, k=0.92, cap=False):
             """Шов куска: новое кольцо из n точек эллипса чуть уже кромки и полоса «кромка → кольцо» у куска и у тела.
             Стягивать кромку по секторам нельзя: у редкой кромки (основание уха — 9–10 вершин) сектора остаются пустыми."""
             global XU
@@ -547,9 +547,17 @@ if SHVY:
             for pc_, L in ((piece, Lp), (1, Lb_)):
                 L, aL = ordered(L, c, w)
                 r_, an = ring(c, w, rx_, rw_, n, code, pc_)
-                for f_ in bridge(L, aL, r_, an, 8):
-                    f_[PARTF] = 0; f_[EXF] = 0
+                fs_ = bridge(L, aL, r_, an, 8)
+                if cap and pc_ == 1:
+                    # основание уха на черепе — СПЛОШНАЯ кожа (механики 13.10: голова-черта на теле с чужим Чутьём иначе
+                    # безухая с дырами): кольцо черепа закрыто веером, кольцо остаётся посадочным местом
+                    cv = bm.verts.new(c); cv[VP] = 1; cv[RG] = code + 50
+                    fs_ += [bm.faces.new((cv, r_[k_], r_[(k_ + 1) % n])) for k_ in range(n)]
+                for f_ in fs_:
+                    f_[PARTF] = 0; f_[EXF] = 0; f_[FC] = 8
                     new_f.append(f_)
+                if pc_ == 1:
+                    head.update(fs_)                  # полоса и заглушка у черепа — часть головы: иначе при делении «череп ↔ грива» уходили воротнику
             XU = keep_u
             return rx_, rw_
 
@@ -583,7 +591,7 @@ if SHVY:
             axe = (tipc - ce).normalized()
             we = (Vector((0, -1, 0)) - axe * axe.dot(Vector((0, -1, 0)))).normalized()      # «верх» кольца уха — вперёд, к морде
             ue = axe.cross(we).normalized(); ue = ue if ue.x > 0 else -ue      # кольцо уха лежит не в плоскости X: свой базис
-            rr = ring_seam(Le, Lh, ce, we, 8, code, 4, ue)
+            rr = ring_seam(Le, Lh, ce, we, 8, code, 4, ue, cap=True)
             if sgn == 1:
                 SEAMS['основание уха'] = dict(n=8, bone='голова', c=ce, ax=axe, up=we, u=ue, r=rr, at=(ce - Vector(BN['голова']['head'])).length,
                                               edge=len(Le), over=0.0)
@@ -614,7 +622,7 @@ if SHVY:
 
         def in_skull(f):
             c_ = f.calc_center_median()
-            return head_set(f) and not f[FC] and (c_ - ST).dot(SN) < 0 and (abs(c_.x) < float(opt.get('sx', 0.15)) or c_.z > 1.33)
+            return head_set(f) and f[FC] in (0, 8) and (c_ - ST).dot(SN) < 0 and (abs(c_.x) < float(opt.get('sx', 0.15)) or c_.z > 1.33)
         skull = region(skull_seed, in_skull)
         Lsk, Lco = cut_loop(skull, 'шов гривы')
         collar_seed = Lco[0]
@@ -705,7 +713,7 @@ if SHVY:
         REP.append('шов «%s»: кольцо %d вершин на кости `%s`, %.3f м от её начала; центр (%.3f %.3f %.3f), ось наружу (%.2f %.2f %.2f), '
                    '«верх» (%.2f %.2f %.2f), полуоси вбок %.3f × по «верху» %.3f м; кромка куска %d вершин; кусок свисает за шов на %.3f м вдоль оси'
                    % (nm, d['n'], d['bone'], d['at'], *d['c'], *d['ax'], *d['up'], *d['r'], d['edge'], d['over']))
-    REP.append('швы: граничных рёбер %d (ждём %d)' % (bnd_n, 40 if SHVY < 2 else 24 + 16 + 32 + 24))     # шея и череп, хвост, уши, морда; воротник замкнут
+    REP.append('швы: граничных рёбер %d (ждём %d)' % (bnd_n, 40 if SHVY < 2 else 24 + 16 + 16 + 24))     # шея и череп, хвост, уши (у черепа закрыты), морда; воротник замкнут
 
 tagv = [d.value for d in me.attributes['jawtag'].data]
 vpv = [d.value for d in me.attributes['piece'].data] if SHVY else [0] * len(me.vertices)
@@ -975,9 +983,10 @@ if SHVY and 'pasporta' in opt:
             ('volk-ushi.json', 'основание уха', 'Чутьё', dict(main='Чутьё'), ['голова'], 'ring', True, {}),
             ('volk-mochka.json', 'мочка', 'Чутьё', dict(main='Чутьё.мочка'), ['голова'], None, False, dict(seat='нос')),
             ('volk-golova-kusok.json', 'основание черепа', None, dict(main='голова', morda='Пасть', polost='Пасть.полость', zuby='Пасть.зубы'),
-             ['голова', 'шея', 'челюсть'], 'ring', False, dict(trait='голова', also=['Пасть', 'Пасть.полость', 'Пасть.зубы'])),
-            ('volk-griva.json', 'грива', None, dict(main='Шкура'), ['голова', 'шея'], 'ring', False, dict(trait='грива')),
-            ('volk-hvost-kusok.json', 'корень хвоста', None, dict(main='Хвост'), ['хвост', 'хвост_кисть'], None, False, dict(trait='хвост')),
+             ['голова', 'шея', 'челюсть'], 'ring', False, dict(trait='голова', step=2, also=['Пасть', 'Пасть.полость', 'Пасть.зубы'],
+                                                              center_biped_m=U(Vector((0, yn + 0.37, 1.12))))),
+            ('volk-griva.json', 'грива', None, dict(main='Шкура'), ['голова', 'шея'], 'ring', False, dict(trait='грива', step=1)),
+            ('volk-hvost-kusok.json', 'корень хвоста', None, dict(main='Хвост'), ['хвост', 'хвост_кисть'], None, False, dict(trait='хвост', step=1)),
         )
     else:
         PIECES = (

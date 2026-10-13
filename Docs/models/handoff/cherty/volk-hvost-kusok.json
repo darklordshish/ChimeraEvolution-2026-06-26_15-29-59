@@ -99,5 +99,6 @@
   "tris_main": 414,
   "generator": "Tools/Blender/proba/rig_volka.py --muzzle 4.5 --shvy 2 --pasporta …",
   "source": "Референсы/работа/модельная/2026-10-09-proba-b/volk_b9.obj",
-  "trait": "хвост"
+  "trait": "хвост",
+  "step": 1
 }

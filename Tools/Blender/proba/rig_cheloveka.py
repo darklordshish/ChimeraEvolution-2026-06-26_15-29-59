@@ -225,9 +225,11 @@ REP.append('шов «основание черепа»: кольцо 12 на к�
 # посадочное кольцо хвоста — на сплошной коже крестца: точка кожи на средней линии сзади на высоте начала кости `таз`
 zt = BN['таз']['head'][2] + 0.03
 back = max((v.co for v in me.vertices if abs(v.co.x) < 0.03 and abs(v.co.z - zt) < 0.03), key=lambda c: c.y)
-TAX = Vector((0, 0.64, -0.76)); TW = Vector((0, 0.76, 0.64))
+# хвост у двуногого отведён от ног: ось 30° ниже горизонта (у волка 50°), место уже — кусок встаёт мельче (первый кадр
+# оборотня 13.10: хвост висел вдоль ног, k ≈ 0.8, спереди виден между ног)
+TAX = Vector((0, 0.87, -0.50)).normalized(); TW = Vector((0, 0.50, 0.87)).normalized(); TR = (0.036, 0.032)
 REP.append('посадочное кольцо «корень хвоста» (на сплошной коже, 8): центр (%.3f %.3f %.3f), ось наружу (%.2f %.2f %.2f), «верх» (%.2f %.2f %.2f), '
-           'полуоси 0.045 × 0.040 м; кость `таз`' % (0.0, back.y, back.z, *TAX, *TW))
+           'полуоси %.3f × %.3f м; кость `таз`' % (0.0, back.y, back.z, *TAX, *TW, *TR))
 SEAM = dict(c=cc, ax=AX, up=WN, r=(rx, rw), at=(CR - nh).length, tail_c=Vector((0, back.y, back.z)), tail_ax=TAX, tail_up=TW)
 
 # ---------- веса ----------
@@ -429,13 +431,14 @@ if 'pasporta' in opt:
     def U(q):
         return [round(-q.x, 5), round(q.z, 5), round(-q.y, 5)]
     ring_pts = [SEAM['c'] + XU * (SEAM['r'][0] * math.sin(math.pi / 6 * k_)) + SEAM['up'] * (SEAM['r'][1] * math.cos(math.pi / 6 * k_)) for k_ in range(12)]
-    tail_pts = [SEAM['tail_c'] + XU * (0.045 * math.sin(math.pi / 4 * k_)) + SEAM['tail_up'] * (0.040 * math.cos(math.pi / 4 * k_)) for k_ in range(8)]
+    tail_pts = [SEAM['tail_c'] + XU * (TR[0] * math.sin(math.pi / 4 * k_)) + SEAM['tail_up'] * (TR[1] * math.cos(math.pi / 4 * k_)) for k_ in range(8)]
     note = 'метры тела человека, оси Unity; кольцо плоское, поперёк кости; вершина 0 — на «верху» (дорсальная сторона), дальше к −X Unity; ellipse_m — вбок × по «верху»'
     common = {'species': 'Человек', 'plan': 'двуногий', 'fbx': 'Assets/_Chimera/Models/chelovek_mesh.fbx', 'mirror': False,
               'armature': 'все узлы графа человека', 'keys': [], 'generator': 'Tools/Blender/proba/rig_cheloveka.py --pasporta …',
               'source': 'Референсы/работа/модельная/2026-10-10-proba-chelovek/'}
     # голова человека — кусок с тем же швом, что волчья (формат и поля — как `volk-golova-kusok.json`, письмо механик 13.10)
-    head = dict(common, slot='Пасть', fit='ring', objects={'main': 'голова'}, bones=['голова', 'шея'],
+    # целая голова — черта (общая форма вида), как у волка: лежит в cherty/, шов носителя механики читают и оттуда
+    head = dict(common, trait='голова', step=2, objects={'main': 'голова'}, bones=['голова', 'шея'],
                 tris=len(parts['голова'][0].data.polygons), tris_main=len(parts['голова'][0].data.polygons),
                 seam={'type': 'основание черепа', 'ring': list(range(12)), 'ring_m': [U(q) for q in ring_pts], 'center_m': U(SEAM['c']),
                       'ellipse_m': [round(SEAM['r'][0], 4), round(SEAM['r'][1], 4)], 'axis_out': U(SEAM['ax']), 'up': U(SEAM['up']),
@@ -443,8 +446,9 @@ if 'pasporta' in opt:
     # посадочное кольцо хвоста — на СПЛОШНОЙ коже: не край куска, а место (центр, ось, эллипс, порядок вершин)
     tail = dict(common, kind='посадочное место на сплошной коже', bones=['таз'],
                 seam={'type': 'корень хвоста', 'ring': list(range(8)), 'ring_m': [U(q) for q in tail_pts], 'center_m': U(SEAM['tail_c']),
-                      'ellipse_m': [0.045, 0.040], 'axis_out': U(SEAM['tail_ax']), 'up': U(SEAM['tail_up']), 'bone': 'таз', 'note': note})
-    for fname, pas in (('chelovek-golova-kusok.json', head), ('../chelovek-koren-hvosta.json', tail)):     # посадочное место — не деталь: рядом с графом, не в parts/
+                      'ellipse_m': list(TR), 'axis_out': U(SEAM['tail_ax']), 'up': U(SEAM['tail_up']), 'bone': 'таз', 'note': note})
+    os.makedirs(os.path.join(os.path.abspath(opt['pasporta']), '..', 'cherty'), exist_ok=True)
+    for fname, pas in (('../cherty/chelovek-golova-kusok.json', head), ('../chelovek-koren-hvosta.json', tail)):     # посадочное место — не деталь: рядом с графом, не в parts/
         with open(os.path.join(os.path.abspath(opt['pasporta']), fname), 'w', encoding='utf-8') as fh:
             json.dump(pas, fh, ensure_ascii=False, indent=2)
         REP.append('паспорт: ' + fname)

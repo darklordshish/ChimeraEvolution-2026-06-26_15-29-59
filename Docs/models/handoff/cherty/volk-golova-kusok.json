@@ -123,15 +123,21 @@
   ],
   "armature": "все узлы графа волка + челюсть",
   "keys": [],
-  "tris": 956,
-  "tris_main": 346,
+  "tris": 1040,
+  "tris_main": 430,
   "generator": "Tools/Blender/proba/rig_volka.py --muzzle 4.5 --shvy 2 --pasporta …",
   "source": "Референсы/работа/модельная/2026-10-09-proba-b/volk_b9.obj",
   "fit": "ring",
   "trait": "голова",
+  "step": 2,
   "also": [
     "Пасть",
     "Пасть.полость",
     "Пасть.зубы"
+  ],
+  "center_biped_m": [
+    -0.0,
+    1.12,
+    0.77306
   ]
 }

@@ -106,7 +106,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925336096467845678
+    - rid: 925336096604160000
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -166,7 +166,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925336096467845679
+    - rid: 925336096604160001
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -344,7 +344,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925336096467845680
+    - rid: 925336096604160002
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -2020,8 +2020,9 @@ MonoBehaviour:
   - "\u041D\u043E\u0433\u0438"
   handLength: 0.2
   planBodies: []
-  parts:
-  - slot: "\u041F\u0430\u0441\u0442\u044C"
+  parts: []
+  traits:
+  - slot: 
     plan: "\u0434\u0432\u0443\u043D\u043E\u0433\u0438\u0439"
     mesh: {fileID: -5477225813733660356, guid: 8a09266c105ebb54680e62aac98ef95e, type: 3}
     toBody:
@@ -2137,16 +2138,15 @@ MonoBehaviour:
     seamAxis: {x: -0, y: 0.98639, z: 0.16443}
     seamUp: {x: -0, y: 0.16443, z: -0.98639}
     seamBone: "\u0448\u0435\u044F"
-    step: 1
+    step: 2
     keys: []
-  traits: []
   seats:
   - seam: "\u043A\u043E\u0440\u0435\u043D\u044C \u0445\u0432\u043E\u0441\u0442\u0430"
     bone: "\u0442\u0430\u0437"
     center: {x: -0, y: 0.95609, z: -0.11189}
-    axis: {x: -0, y: -0.76, z: -0.64}
-    up: {x: -0, y: 0.64, z: -0.76}
-    ellipse: {x: 0.045, y: 0.04}
+    axis: {x: -0, y: -0.49828, z: -0.86701}
+    up: {x: -0, y: 0.86701, z: -0.49828}
+    ellipse: {x: 0.036, y: 0.032}
   skinCell: 0.042
   skinBlend: 0.05
   skinFur: 0
@@ -2154,7 +2154,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 925336096467845678
+    - rid: 925336096604160000
       type: {class: LimbStrikeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 8
@@ -2164,7 +2164,7 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.45
         cooldown: 1.1
-    - rid: 925336096467845679
+    - rid: 925336096604160001
       type: {class: KickData, ns: , asm: Chimera.Runtime}
       data:
         damage: 4
@@ -2172,7 +2172,7 @@ MonoBehaviour:
         reach: 1.8
         radius: 1.6
         cooldown: 1
-    - rid: 925336096467845680
+    - rid: 925336096604160002
       type: {class: ScreamData, ns: , asm: Chimera.Runtime}
       data:
         cooldown: 12
