@@ -698,9 +698,11 @@ if SHVY:
                 continue
             seenf.add(f); comp.append(f)
             st.extend(g for e in f.edges for g in e.link_faces if g is not f)
+        # объём — от центра самого куска: у незамкнутого лоскута (лицо, ухо) объём от начала координат знака не держит
+        cen_ = sum((f.calc_center_median() for f in comp), Vector()) / len(comp)
         vol = 0.0
         for f in comp:
-            vs_ = [l.vert.co for l in f.loops]
+            vs_ = [l.vert.co - cen_ for l in f.loops]
             for k_ in range(1, len(vs_) - 1):
                 vol += vs_[0].dot(vs_[k_].cross(vs_[k_ + 1]))
         if vol < 0:

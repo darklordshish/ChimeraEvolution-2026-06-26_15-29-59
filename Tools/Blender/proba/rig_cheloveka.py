@@ -14,7 +14,7 @@
      нет) — только числом в отчёте и паспорте.
   4. НАРЕЗКА: грань идёт в слот, чьи кости весят в ней больше; зубцы и островки приглаживаются.
 
-  blender -b --factory-startup -P rig_cheloveka.py -- меш.obj скелет.json граф.json выход.fbx [--blend файл] [--shots префикс]
+  blender -b --factory-startup -P rig_cheloveka.py -- меш.obj скелет.json граф.json выход.fbx [--organy 1 — лицо и уши кусками] [--pasporta папка] [--blend файл] [--shots префикс]
 """
 import sys, math, json, os
 import bpy, bmesh
@@ -215,13 +215,172 @@ while st:
         continue
     seen.add(u); u[VP] = 1; st.extend(e.other_vert(u) for e in u.link_edges)
 bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+bnd_neck = sum(1 for e in bm.edges if e.is_boundary)
+
+# ---------- ОТВЕТНЫЕ КУСКИ ГОЛОВЫ (`--organy 1`; нарезка 13.10 — как у волка, `rig_volka.py --shvy 2`) ----------
+#   лицо ниже переносицы (нос, рот, подбородок) — снимаемый кусок Пасти: шов «основание морды», кольцо 12 — сюда встаёт
+#     чужая морда; кольцо на сплошной коже тут не годится: человеческие нос и рот торчали бы сквозь неё;
+#   уши — снимаемые куски Чутья: шов «основание уха», кольцо 8; под ухом череп закрыт кожей, кольцо — посадочное место.
+PIECE_SEAMS = {}
+if int(float(opt.get('organy', 0))):
+    def region(seed_face, ok):
+        reg_, st_ = set(), [seed_face]
+        while st_:
+            f = st_.pop()
+            if f in reg_ or not ok(f):
+                continue
+            reg_.add(f); st_.extend(g for e in f.edges for g in e.link_faces if g is not f)
+        for _ in range(4):
+            for f in bm.faces:
+                nbs = [g for e in f.edges for g in e.link_faces if g is not f]
+                inn = sum(1 for g in nbs if g in reg_)
+                if f in reg_ and inn <= 1: reg_.discard(f)
+                elif f not in reg_ and inn >= 2 and ok(f): reg_.add(f)
+        return reg_
+
+    def cut_loop(reg_, what):
+        E_ = [e for e in bm.edges if len(e.link_faces) == 2 and (e.link_faces[0] in reg_) != (e.link_faces[1] in reg_)]
+        deg_ = {}
+        for e in E_:
+            for v in e.verts:
+                deg_[v] = deg_.get(v, 0) + 1
+        assert all(d == 2 for d in deg_.values()), '%s: граница не простая петля' % what
+        where_ = [v.co.copy() for v in deg_]
+        bmesh.ops.split_edges(bm, edges=E_)
+        res = []
+        for inside in (True, False):
+            es = [e for e in bm.edges if e.is_boundary and (e.link_faces[0] in reg_) == inside
+                  and all(any((v.co - q).length < 1e-7 for q in where_) for v in e.verts)]
+            adj_ = {}
+            for e in es:
+                for v in e.verts:
+                    adj_.setdefault(v, []).append(e)
+            v0 = next(iter(adj_)); loop, prev = [v0], None
+            while True:
+                e = [e for e in adj_[loop[-1]] if e is not prev][0]
+                nx = e.other_vert(loop[-1]); prev = e
+                if nx is v0:
+                    break
+                loop.append(nx)
+            assert len(loop) == len(adj_), '%s: петель больше одной' % what
+            res.append(loop)
+        return res
+
+    def ring_seam(Lp, Lb_, c, u, w, n, code, piece, cap, k=0.92):
+        """Новое кольцо из n точек эллипса чуть уже кромки и полоса «кромка → кольцо» у куска и у черепа; cap — закрыть череп."""
+        a2 = lambda co: math.atan2((co - c).dot(u), (co - c).dot(w)) % (2 * math.pi)
+        rx_ = k * max(abs((v.co - c).dot(u)) for v in Lp); rw_ = k * max(abs((v.co - c).dot(w)) for v in Lp)
+        for pc_, L in ((piece, Lp), (1, Lb_)):
+            a_ = [a2(v.co) for v in L]
+            k0 = min(range(len(L)), key=lambda k_: min(a_[k_], 2 * math.pi - a_[k_]))
+            L = L[k0:] + L[:k0]; a_ = a_[k0:] + a_[:k0]
+            if a_[0] > math.pi: a_[0] -= 2 * math.pi
+            q_ = max(2, len(a_) // 4)
+            if sum(1 for k_ in range(1, q_) if a_[k_] > math.pi) > q_ // 2:
+                L = [L[0]] + L[:0:-1]; a_ = [a_[0]] + a_[:0:-1]
+            aL = [a_[0]]
+            for x in a_[1:]:
+                aL.append(max(aL[-1], x))
+            r_ = []
+            for k_ in range(n):
+                th = 2 * math.pi * k_ / n
+                v = bm.verts.new(c + u * (rx_ * math.sin(th)) + w * (rw_ * math.cos(th))); v[RG] = code + k_; v[VP] = pc_; r_.append(v)
+            an = [2 * math.pi * k_ / n for k_ in range(n)]
+            m_, i_, j_ = len(L), 0, 0
+            aA = aL + [aL[0] + 2 * math.pi]; aB = an + [an[0] + 2 * math.pi]
+            while i_ < m_ or j_ < n:
+                if j_ >= n or (i_ < m_ and aA[i_ + 1] <= aB[j_ + 1]):
+                    tri = (L[i_], L[(i_ + 1) % m_], r_[j_ % n]); i_ += 1
+                else:
+                    tri = (L[i_ % m_], r_[(j_ + 1) % n], r_[j_ % n]); j_ += 1
+                if len(set(tri)) == 3:
+                    f_ = bm.faces.new(tri)
+                    if pc_ == 1: head_f.add(f_)
+            if cap and pc_ == 1:
+                cv = bm.verts.new(c); cv[VP] = 1; cv[RG] = code + 50
+                for k_ in range(n):
+                    head_f.add(bm.faces.new((cv, r_[k_], r_[(k_ + 1) % n])))
+        return rx_, rw_
+
+    bm.faces.ensure_lookup_table()
+    head_f = {f for f in bm.faces if all(v[VP] == 1 for v in f.verts)}
+    in_head = lambda f: f.is_valid and f in head_f
+    HB = Vector(BN['голова']['head'])
+    # --- уши ---
+    ear_seeds = []
+    for sgn, code in ((1, 201), (-1, 301)):
+        tip = max((f for f in bm.faces if in_head(f)), key=lambda f: f.calc_center_median().x * sgn)
+
+        def in_ear(f, sgn=sgn):
+            c_ = f.calc_center_median()
+            return in_head(f) and c_.x * sgn > float(opt.get('ex', 0.071)) and 1.65 < c_.z < 1.76
+        ear = region(tip, in_ear)
+        Le, Lh = cut_loop(ear, 'шов уха')
+        ce = sum((v.co for v in Le), Vector()) / len(Le)
+        axe = Vector((sgn, 0, 0))
+        we = Vector((0, -1, 0))                                   # «верх» кольца уха — вперёд, к лицу (как у волка)
+        ue = Vector((0, 0, 1))
+        rr = ring_seam(Le, Lh, ce, ue, we, 8, code, 4, True)
+        if sgn == 1:
+            PIECE_SEAMS['основание уха'] = dict(n=8, bone='голова', c=ce, ax=axe, up=we, u=ue, r=rr, at=(ce - HB).length)
+        head_f.difference_update(ear)
+        ear_seeds.append(tip.verts[0])
+    # --- лицо (Пасть) ---
+    yf = min(v.co.y for v in bm.verts if v[VP] == 1)
+    FT, FB = Vector((0, yf + float(opt.get('ft', 0.030)), 1.722)), Vector((0, yf + float(opt.get('fb', 0.107)), 1.612))     # переносица → под подбородком
+    FN = Vector((0, (FT - FB).z, -(FT - FB).y)).normalized(); FN = FN if FN.y > 0 else -FN
+    nose_f = min((f for f in bm.faces if in_head(f)), key=lambda f: f.calc_center_median().y)
+    # снизу лицо не доходит до кольца шеи: иначе граница области упирается в открытый край и не замыкается
+    face = region(nose_f, lambda f: in_head(f) and (f.calc_center_median() - FT).dot(FN) < 0 and f.calc_center_median().z > 1.635
+                  and all(not v[RG] for v in f.verts))
+    Lf, Ls_ = cut_loop(face, 'шов лица')
+    cf = sum((v.co for v in Lf), Vector()) / len(Lf); cf = Vector((0, cf.y, cf.z)); cf = cf - FN * (cf - FT).dot(FN)
+    wf = Vector((0, FN.z, -FN.y)); wf = wf if wf.z > 0 else -wf
+    rr = ring_seam(Lf, Ls_, cf, XU, wf, 12, 401, 3, False)
+    PIECE_SEAMS['основание морды'] = dict(n=12, bone='голова', c=cf, ax=-FN, up=wf, u=XU, r=rr, at=(cf - HB).length)
+    head_f.difference_update(face)
+    # куски — по связности
+    bm.verts.ensure_lookup_table()
+    for piece, seed in [(3, nose_f.verts[0])] + [(4, s_) for s_ in ear_seeds]:
+        seen, st = set(), [seed]
+        while st:
+            u_ = st.pop()
+            if u_ in seen:
+                continue
+            seen.add(u_); u_[VP] = piece; st.extend(e.other_vert(u_) for e in u_.link_edges)
+    # ориентация — по знаку объёма куска
+    seenf = set()
+    for f0 in bm.faces:
+        if f0 in seenf:
+            continue
+        comp, st = [], [f0]
+        while st:
+            f = st.pop()
+            if f in seenf:
+                continue
+            seenf.add(f); comp.append(f); st.extend(g for e in f.edges for g in e.link_faces if g is not f)
+        # объём — от центра самого куска: у незамкнутого лоскута (лицо, ухо) объём от начала координат знака не держит
+        cen_ = sum((f.calc_center_median() for f in comp), Vector()) / len(comp)
+        vol = 0.0
+        for f in comp:
+            vs_ = [l.vert.co - cen_ for l in f.loops]
+            for k_ in range(1, len(vs_) - 1):
+                vol += vs_[0].dot(vs_[k_].cross(vs_[k_ + 1]))
+        if vol < 0:
+            bmesh.ops.reverse_faces(bm, faces=comp)
+
 bnd_n = sum(1 for e in bm.edges if e.is_boundary); nonman = sum(1 for e in bm.edges if not e.is_manifold and not e.is_boundary)
 bm.to_mesh(me); bm.free()
 for p_ in me.polygons:
     p_.use_smooth = False
 REP.append('шов «основание черепа»: кольцо 12 на конце кости `шея` (%.3f м от её начала); центр (%.3f %.3f %.3f), ось наружу (%.2f %.2f %.2f), '
-           '«верх» (%.2f %.2f %.2f), полуоси вбок %.3f × по «верху» %.3f м; кромка до кольца %d вершин; открытых рёбер %d (ждём 24), неманифолд %d'
-           % ((CR - nh).length, *cc, *AX, *WN, rx, rw, n_edge, bnd_n, nonman))
+           '«верх» (%.2f %.2f %.2f), полуоси вбок %.3f × по «верху» %.3f м; кромка до кольца %d вершин; открытых рёбер у шеи %d (ждём 24), неманифолд %d'
+           % ((CR - nh).length, *cc, *AX, *WN, rx, rw, n_edge, bnd_neck, nonman))
+for nm_, d_ in PIECE_SEAMS.items():
+    REP.append('шов «%s»: кольцо %d на кости `голова`, %.3f м от её начала; центр (%.3f %.3f %.3f), ось наружу (%.2f %.2f %.2f), «верх» (%.2f %.2f %.2f), '
+               'полуоси %.3f × %.3f м' % (nm_, d_['n'], d_['at'], *d_['c'], *d_['ax'], *d_['up'], *d_['r']))
+if PIECE_SEAMS:
+    REP.append('открытых рёбер всего %d (ждём %d: шея 24, лицо 24, уши 16 — у черепа закрыты)' % (bnd_n, 64))
 # посадочное кольцо хвоста — на сплошной коже крестца: точка кожи на средней линии сзади на высоте начала кости `таз`
 zt = BN['таз']['head'][2] + 0.03
 back = max((v.co for v in me.vertices if abs(v.co.x) < 0.03 and abs(v.co.z - zt) < 0.03), key=lambda c: c.y)
@@ -310,7 +469,8 @@ for v in me.vertices:
             if wrong in w:
                 w[right] = w.get(right, 0) + w.pop(wrong)
     r_ = rgv[v.index]
-    if r_: w = {'шея': 1.0}
+    if 0 < r_ < 100: w = {'шея': 1.0}
+    elif r_ >= 100 or vpv[v.index] in (3, 4): w = {'голова': 1.0}       # лицо и уши — жёстко на черепе, как и их кольца
     elif vpv[v.index] == 1: w = {k_: x for k_, x in w.items() if k_ in ('голова', 'шея')} or {'голова': 1.0}
     elif 'голова' in w: w['шея'] = w.get('шея', 0) + w.pop('голова')
     w = {k_: x for k_, x in w.items() if x > 0}
@@ -321,6 +481,7 @@ def swap(w):
     return {(k_[:-2] if k_.endswith('.L') else (k_ + '.L' if k_ in LIMB else k_)): x for k_, x in w.items()}
 
 
+RCL = lambda r_: 0 if r_ == 0 else 1 + (r_ > 100) + (r_ > 400)
 kdm = kdtree.KDTree(len(me.vertices))
 for v in me.vertices:
     kdm.insert(v.co, v.index)
@@ -328,7 +489,7 @@ kdm.balance()
 asym = 0
 for v in me.vertices:
     if v.co.x > 1e-5:
-        hit = [j for _, j, d in kdm.find_n((-v.co.x, v.co.y, v.co.z), 4) if d < 1e-4 and vpv[j] == vpv[v.index] and bool(rgv[j]) == bool(rgv[v.index])]
+        hit = [j for _, j, d in kdm.find_n((-v.co.x, v.co.y, v.co.z), 4) if d < 1e-4 and vpv[j] == vpv[v.index] and RCL(rgv[j]) == RCL(rgv[v.index])]
         if hit: W[hit[0]] = swap(W[v.index])
         else: asym += 1
     elif abs(v.co.x) <= 1e-5:
@@ -342,7 +503,7 @@ for k_, w in enumerate(W):
 bpy.data.objects.remove(skin, do_unlink=True)
 
 # ---------- 4. НАРЕЗКА ----------
-ORDER = ['голова', 'шея', 'хребет', 'Сердце', 'Руки', 'Ноги']
+ORDER = ['голова', 'шея', 'хребет', 'Сердце', 'Руки', 'Ноги'] + (['Пасть', 'Чутьё'] if PIECE_SEAMS else [])
 slot_of = lambda nm: SOCKET[nm[:-2] if nm.endswith('.L') else nm]
 F = [tuple(p.vertices) for p in me.polygons]
 fslot, fixed = [], []
@@ -351,9 +512,9 @@ for f in F:
     for vi in f:
         for nm, x in W[vi].items():
             sc[slot_of(nm)] = sc.get(slot_of(nm), 0) + x
-    pc = vpv[f[0]] == 1
+    pc = {1: 'голова', 3: 'Пасть', 4: 'Чутьё'}.get(vpv[f[0]])
     sc.pop('голова', None)
-    fslot.append('голова' if pc else max(sc, key=sc.get)); fixed.append(pc)
+    fslot.append(pc or max(sc, key=sc.get)); fixed.append(bool(pc))
 edge_f = {}
 for k_, f in enumerate(F):
     for x, y in ((f[0], f[1]), (f[1], f[2]), (f[2], f[0])):
@@ -448,7 +609,21 @@ if 'pasporta' in opt:
                 seam={'type': 'корень хвоста', 'ring': list(range(8)), 'ring_m': [U(q) for q in tail_pts], 'center_m': U(SEAM['tail_c']),
                       'ellipse_m': list(TR), 'axis_out': U(SEAM['tail_ax']), 'up': U(SEAM['tail_up']), 'bone': 'таз', 'note': note})
     os.makedirs(os.path.join(os.path.abspath(opt['pasporta']), '..', 'cherty'), exist_ok=True)
-    for fname, pas in (('../cherty/chelovek-golova-kusok.json', head), ('../chelovek-koren-hvosta.json', tail)):     # посадочное место — не деталь: рядом с графом, не в parts/
+    extra_p = []
+    for fname, seam_name, obj, mirror in (('chelovek-lico.json', 'основание морды', 'Пасть', False), ('chelovek-ushi.json', 'основание уха', 'Чутьё', True)):
+        if seam_name not in PIECE_SEAMS:
+            continue
+        d_ = PIECE_SEAMS[seam_name]
+        pts = [d_['c'] + d_['u'] * (d_['r'][0] * math.sin(2 * math.pi * k_ / d_['n'])) + d_['up'] * (d_['r'][1] * math.cos(2 * math.pi * k_ / d_['n'])) for k_ in range(d_['n'])]
+        extra_p.append((fname, dict(common, slot=obj, objects={'main': obj}, bones=['голова'], mirror=mirror,
+                                    tris=len(parts[obj][0].data.polygons), tris_main=len(parts[obj][0].data.polygons),
+                                    seam={'type': seam_name, 'ring': list(range(d_['n'])), 'ring_m': [U(q) for q in pts], 'center_m': U(d_['c']),
+                                          'ellipse_m': [round(d_['r'][0], 4), round(d_['r'][1], 4)], 'axis_out': U(d_['ax']), 'up': U(d_['up']),
+                                          'side': U(d_['u']), 'bone': 'голова', 'on_bone_m': round(d_['at'], 4), 'overhang_m': 0.0,
+                                          'note': note + ('; кольцо дано для стороны −X Unity (+X Blender), вторая — зеркалом по X' if mirror else '')})))
+    if PIECE_SEAMS:
+        head['also'] = ['Пасть', 'Чутьё']
+    for fname, pas in [('../cherty/chelovek-golova-kusok.json', head), ('../chelovek-koren-hvosta.json', tail)] + extra_p:     # посадочное место — не деталь: рядом с графом, не в parts/
         with open(os.path.join(os.path.abspath(opt['pasporta']), fname), 'w', encoding='utf-8') as fh:
             json.dump(pas, fh, ensure_ascii=False, indent=2)
         REP.append('паспорт: ' + fname)
@@ -497,7 +672,7 @@ if 'shots' in opt:
             pb.matrix = Matrix.Translation(h) @ Matrix.Rotation(math.radians(dg), 4, ax_) @ Matrix.Translation(-h) @ pb.matrix
             bpy.context.view_layer.update()
 
-    COL = {'голова': (0.85, 0.3, 0.3, 1), 'шея': (0.9, 0.75, 0.3, 1), 'хребет': (0.4, 0.7, 0.4, 1), 'Сердце': (0.9, 0.5, 0.2, 1),
+    COL = {'Пасть': (0.95, 0.55, 0.75, 1), 'Чутьё': (1.0, 0.95, 0.3, 1), 'голова': (0.85, 0.3, 0.3, 1), 'шея': (0.9, 0.75, 0.3, 1), 'хребет': (0.4, 0.7, 0.4, 1), 'Сердце': (0.9, 0.5, 0.2, 1),
            'Руки': (0.3, 0.55, 0.9, 1), 'Ноги': (0.65, 0.4, 0.85, 1)}
     for sl in ORDER:
         parts[sl][0].color = COL[sl]
