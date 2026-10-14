@@ -7,7 +7,7 @@
 Остальные кости и гнёзда едут той же пластиной. `--masshtab` — общий масштаб меша и скелета от земли (размер вида в игре,
 решение геймдизайнера; 1 — длина нос→хвост как у прежнего скелета).
 
-  blender -b --factory-startup -P skelet_po_meshu.py -- меш.obj старый_скелет.json новый_скелет.json [--masshtab 1] [--kadr префикс]
+  blender -b --factory-startup -P skelet_po_meshu.py -- меш.obj старый_скелет.json новый_скелет.json [--masshtab 1] [--kadr префикс] [--mesta раскладка.json --mesta_v выход.json]
 """
 import sys, json
 import bpy
@@ -83,6 +83,31 @@ sk['note'] = ('скелет переставлен внутрь меша по л
               'масштаб ×%g от длины прежнего скелета' % S)
 json.dump(sk, open(new_p, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 print('СКЕЛЕТ: пар %d, костей %d, гнёзд %d, масштаб ×%g → %s' % (n, len(sk['bones']), len(sk['sockets']), S, new_p))
+
+# ---------- места вида (`--mesta вход.json --mesta_v выход.json`): раскладка мест в метрах тела (оси Unity) — та же пластина ----------
+# pos — точка, dir — направление (переносится разностью двух точек), surface z0/z1 — вдоль тела по средней линии.
+# `unit` (калибр хозяина) не трогается: его единицы — у механик
+if 'mesta' in opt:
+    src_m, dst_m = opt['mesta'], opt['mesta_v']
+    L = json.load(open(src_m, encoding='utf-8'))
+    UB = lambda u: [-u[0], -u[2], u[1]]; BU = lambda b: [-b[0], b[2], -b[1]]
+    moved = []
+    for p in L['places']:
+        if 'pos' in p:
+            b0 = np.array(UB(p['pos'])); q0 = tps([b0])[0]
+            p['pos'] = r(BU(q0))
+            if 'dir' in p:
+                b1 = b0 + 0.05 * np.array(UB(p['dir'])); d = tps([b1])[0] - q0; d = d / max(np.linalg.norm(d), 1e-9)
+                p['dir'] = [round(float(c), 4) for c in BU(d)]
+            moved.append(p['name'])
+        if 'surface' in p:
+            for k in ('z0', 'z1'):
+                y_b = -p['surface'][k]; q = tps([[0, y_b, 2.0]])[0]; p['surface'][k] = round(float(-q[1]), 4)
+            moved.append(p['name'])
+    L['note'] = ('места переставлены под меш по листу той же пластиной, что скелет (skelet_po_meshu.py --mesta, 14.10), '
+                 'масштаб ×%g; `unit` прежние' % S)
+    json.dump(L, open(dst_m, 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
+    print('МЕСТА: переставлено %d → %s' % (len(moved), dst_m))
 
 # ---------- кадр: меш на просвет и кости ----------
 if 'kadr' in opt:
