@@ -99,7 +99,17 @@ namespace Chimera.Tests.EditMode
             float k = Mathf.Max(neck.ellipse.x / head.ellipse.x, neck.ellipse.y / head.ellipse.y);
             Assert.That(k, Is.InRange(0.3f, 1f), "шея человека тоньше волчьей — масштаб обязан быть меньше единицы");
             var skull = pieces.First(p => p.name == "голова").GetComponent<SkinnedMeshRenderer>();
-            var donorVerts = head.mesh.vertices.Select(v => head.toBody.MultiplyPoint3x4(v)).ToArray();
+            // меш донора — тем же путём, что посадка: с формой-ключом плана носителя (у черепа волка ключ «двуногий» опускает
+            // дно юбки под точку посадки — форма законно другая, масштаб тот же)
+            var raw = head.mesh.vertices;
+            int key = head.mesh.GetBlendShapeIndex(human.Plan);
+            if (key >= 0 && head.plan != human.Plan)
+            {
+                var dv = new Vector3[raw.Length];
+                head.mesh.GetBlendShapeFrameVertices(key, head.mesh.GetBlendShapeFrameCount(key) - 1, dv, null, null);
+                for (int i = 0; i < raw.Length; i++) raw[i] += dv[i];
+            }
+            var donorVerts = raw.Select(v => head.toBody.MultiplyPoint3x4(v)).ToArray();
             Assert.AreEqual(Span(donorVerts) * k, Span(skull.sharedMesh.vertices), Span(donorVerts) * 0.01f, "голова растянута не одним масштабом шва");
             // морда (объект `Пасть` целой головы) лежит впереди шеи, а не над ней: самая дальняя точка черепа — кончик уха
             var muzzle = Posed(pieces.First(p => p.name == BodySlots.Maw).GetComponent<SkinnedMeshRenderer>(), root);
