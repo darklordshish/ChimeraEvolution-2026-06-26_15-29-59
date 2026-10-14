@@ -14,7 +14,7 @@ Hunyuan) переносится на ТОПОЛОГИЮ меша шасси (ч�
   5. СУСТАВЫ ЦЕЛИ — те же суставы шасси, перенесённые пластиной, — файлом рядом (формат `*-skelet.json`).
 
   blender -b --factory-startup -P kluch_vida.py -- шасси.blend цель.obj ориентиры.json выход.fbx скелет_шасси.json суставы_цели.json
-      [--imya Волк] [--iter 4] [--smooth 6] [--maxd 0.08] [--maxd_obj голова:0.025,шея:0.025 [--zatylok y]] [--bez Чутьё] [--lam 1e-4] [--gladit N [--voxel 0.012]]
+      [--imya Волк] [--iter 4] [--smooth 6] [--maxd 0.08] [--maxd_obj голова:0.025,шея:0.025 [--zatylok y]] [--bez Чутьё] [--lam 1e-4] [--gladit N [--voxel 0.012]] [--rasput 60] [--polosa Ноги:0.40:0.80:20]
   blender -b --factory-startup -P kluch_vida.py -- шасси.blend - - - скелет_шасси.json - --istochnik ориентиры_шасси.json
 """
 import sys, json, math
@@ -143,6 +143,46 @@ for it in range(int(opt['iter'])):
         D = np.array([0.5 * D[k_] + 0.5 * (np.mean([D[j] for j in nb[k_]], axis=0) if nb[k_] else D[k_]) if free[k_] else D[k_] for k_ in range(len(D))])
     X = X + D
     print('КЛЮЧ: проход %d, средний сдвиг %.4f м, наибольший %.4f' % (it + 1, np.linalg.norm(D, axis=1).mean(), np.linalg.norm(D, axis=1).max()))
+# ПОЛОСА СГЛАЖИВАНИЯ (`--polosa объект:z0:z1:N`, через «;»): у цели над коленом мышца нависает над тонкой голенью, и ряд
+# вершин шасси ложится туда почти горизонтальным карнизом — в игре тёмная полоса поперёк ноги. В полосе форма ключа
+# сглаживается N проходами: карниз становится скатом
+X0 = tps(U0)
+for spec in [s_ for s_ in opt.get('polosa', '').split(';') if s_]:
+    on, z0_, z1_, nn = spec.split(':'); z0_, z1_, nn = float(z0_), float(z1_), int(nn)
+    zone = [k_ for k_ in range(len(X)) if on in owner[k_] and z0_ <= U0[k_][2] <= z1_ and free[k_]]
+    # сглаживается САМА ФОРМА (положения), а не сдвиг: ступень сидит в сетке шасси (едва заметная на базе кромка над
+    # коленом), сдвиг её только раздувает — сглаживание сдвига полосу не трогало
+    for _ in range(nn):
+        Xn = X.copy()
+        for k_ in zone:
+            Xn[k_] = 0.6 * X[k_] + 0.4 * np.mean([X[j] for j in nb[k_]], axis=0)
+        X = Xn
+    print('КЛЮЧ: полоса %s z %.2f–%.2f: вершин %d, проходов %d' % (on, z0_, z1_, len(zone), nn))
+# РАСПУТЫВАНИЕ (14.10, проход 3): где цель резко сужается (бедро нависает над голенью, пальцы), притяжка перехлёстывает
+# соседние ряды вершин — грань в ключе разворачивается против своей нормали в базе, в игре это тёмный залом поперёк ноги
+# уже на весе 0.35. Такие грани находятся по знаку (нормаль ключа · нормаль базы) и их вершины расслабляются к среднему
+# соседей, пока перевёрнутых не останется (`--rasput N` проходов, 0 — выкл.)
+FACES = [tuple(vmap[(o.name, vi)] for vi in p.vertices) for o in OBJ for p in o.data.polygons]
+def flipped(Xk):
+    out = set()
+    for f_ in FACES:
+        a0, a1, a2 = U0[f_[0]], U0[f_[1]], U0[f_[2]]; b0, b1, b2 = Xk[f_[0]], Xk[f_[1]], Xk[f_[2]]
+        nb_ = np.cross(a1 - a0, a2 - a0); nk = np.cross(b1 - b0, b2 - b0)
+        if np.dot(nb_, nk) < 0.2 * np.linalg.norm(nb_) * np.linalg.norm(nk):
+            out.update(f_)
+    return out
+n_flip0 = len(flipped(X))
+for it in range(int(opt.get('rasput', '60'))):
+    bad = flipped(X)
+    if not bad:
+        break
+    ring = set(bad) | {j for k_ in bad for j in nb[k_]}          # с соседями: одна вершина не распутывает складку
+    Xn = X.copy()
+    for k_ in ring:
+        if nb[k_] and free[k_]:
+            Xn[k_] = 0.5 * X[k_] + 0.5 * np.mean([X[j] for j in nb[k_]], axis=0)
+    X = Xn
+print('КЛЮЧ: распутывание — вершин у развёрнутых граней %d → %d' % (n_flip0, len(flipped(X))))
 res = [bvh.find_nearest(Vector(X[k_]))[3] for k_ in range(len(X)) if free[k_]]
 print('КЛЮЧ: до поверхности цели — средн. %.4f м, 95%% %.4f, макс %.4f; ориентиров %d, нет у цели: %s' % (
     float(np.mean(res)), float(np.percentile(res, 95)), float(np.max(res)), n, ', '.join(miss) or '—'))
