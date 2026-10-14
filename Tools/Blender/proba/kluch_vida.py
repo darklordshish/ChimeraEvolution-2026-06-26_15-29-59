@@ -14,7 +14,7 @@ Hunyuan) переносится на ТОПОЛОГИЮ меша шасси (ч�
   5. СУСТАВЫ ЦЕЛИ — те же суставы шасси, перенесённые пластиной, — файлом рядом (формат `*-skelet.json`).
 
   blender -b --factory-startup -P kluch_vida.py -- шасси.blend цель.obj ориентиры.json выход.fbx скелет_шасси.json суставы_цели.json
-      [--imya Волк] [--iter 4] [--smooth 6] [--maxd 0.08] [--maxd_obj голова:0.025,шея:0.025 [--zatylok y]] [--bez Чутьё] [--lam 1e-4] [--gladit N [--voxel 0.012]] [--rasput 60] [--polosa Ноги:0.40:0.80:20] [--skuly k:yc:zc:r] [--kupol f:zb:yb]
+      [--imya Волк] [--iter 4] [--smooth 6] [--maxd 0.08] [--maxd_obj голова:0.025,шея:0.025 [--zatylok y]] [--bez Чутьё] [--lam 1e-4] [--gladit N [--voxel 0.012]] [--rasput 60] [--polosa Ноги:0.40:0.80:20] [--skuly k:yc:zc:r] [--bez_zony Ноги:0.14] [--kupol f:zb:yb]
   blender -b --factory-startup -P kluch_vida.py -- шасси.blend - - - скелет_шасси.json - --istochnik ориентиры_шасси.json
 """
 import sys, json, math
@@ -62,6 +62,14 @@ def landmarks():
         foot = [p for p in side if p.z < 0.12]
         L['носок' + s] = min(foot, key=lambda p: p.y)
         L['пятка' + s] = max(foot, key=lambda p: p.y)
+        # ЛАПА (14.10, «стопа плохо переделана»): ширина по головкам плюсны и свод — хищник ступает на пальцы и головки
+        # плюсны, пятка поднята, плюсна удлинена (источник — «Пластическая анатомия», задняя конечность)
+        yb = L['носок' + s].y + 0.25 * (L['пятка' + s].y - L['носок' + s].y)
+        ball = [p for p in foot if abs(p.y - yb) < 0.02 and p.z < 0.04]
+        L['плюсна_вн' + s] = min(ball, key=lambda p: abs(p.x)); L['плюсна_нар' + s] = max(ball, key=lambda p: abs(p.x))
+        ym = L['носок' + s].y + 0.55 * (L['пятка' + s].y - L['носок' + s].y)
+        arch = [p for p in foot if abs(p.y - ym) < 0.02 and p.z < 0.03]
+        L['свод' + s] = Vector((sum(p.x for p in arch) / len(arch), ym, min(p.z for p in arch)))
     return L
 
 
@@ -107,6 +115,13 @@ for o in OBJ:
         x, y = vmap[(o.name, e.vertices[0])], vmap[(o.name, e.vertices[1])]
         nb[x].add(y); nb[y].add(x)
 free = np.array([not (own & BEZ) for own in owner])       # вершины ушей (и их кольца) — только пластиной
+# `--bez_zony объект:zmax` — вершины объекта ниже zmax (в шасси) едут только пластиной: у лапы форму задают ориентиры,
+# а не цель (у цели Hunyuan подошва лежит на земле до пятки — стопоходящая, вопреки анатомии хищника)
+for spec in [s_ for s_ in opt.get('bez_zony', '').split(',') if s_]:
+    on, zm = spec.split(':'); zm = float(zm)
+    for k_ in range(len(U0)):
+        if on in owner[k_] and U0[k_][2] < zm:
+            free[k_] = False
 # ПРЕДЕЛ ПРИТЯЖКИ ПО ОБЪЕКТАМ (`--maxd_obj голова:0.025,шея:0.025`): у цели вокруг головы и шеи — грива (кусок-черта, из
 # кожи её не тянут); с общим пределом затылок шасси прилипал к гриве и вытягивался гребнем. Вершина на стыке объектов
 # берёт меньший предел
