@@ -14,7 +14,7 @@ Hunyuan) переносится на ТОПОЛОГИЮ меша шасси (ч�
   5. СУСТАВЫ ЦЕЛИ — те же суставы шасси, перенесённые пластиной, — файлом рядом (формат `*-skelet.json`).
 
   blender -b --factory-startup -P kluch_vida.py -- шасси.blend цель.obj ориентиры.json выход.fbx скелет_шасси.json суставы_цели.json
-      [--imya Волк] [--iter 4] [--smooth 6] [--maxd 0.08] [--bez Чутьё] [--lam 1e-4]
+      [--imya Волк] [--iter 4] [--smooth 6] [--maxd 0.08] [--maxd_obj голова:0.025,шея:0.025 [--zatylok y]] [--bez Чутьё] [--lam 1e-4]
   blender -b --factory-startup -P kluch_vida.py -- шасси.blend - - - скелет_шасси.json - --istochnik ориентиры_шасси.json
 """
 import sys, json, math
@@ -58,7 +58,7 @@ def landmarks():
     L['затылок'] = max((p for p in hd if 1.62 < p.z < 1.75 and abs(p.x) < 0.03), key=lambda p: p.y)
     for sg, s in ((-1, ''), (1, '.L')):          # без суффикса — сторона −X Blender
         side = [p for p in V if p.x * sg > 0.05]
-        L['пальцы' + s] = min((p for p in side if p.z > 0.4 and abs(p.x) > 0.2), key=lambda p: p.z)
+        L['пальцы' + s] = min((p for p in side if p.z > 0.4 and abs(p.x) > 0.26), key=lambda p: p.z)     # кисть — дальше 0.26 от оси: ближе стоит бедро
         foot = [p for p in side if p.z < 0.12]
         L['носок' + s] = min(foot, key=lambda p: p.y)
         L['пятка' + s] = max(foot, key=lambda p: p.y)
@@ -107,6 +107,10 @@ for o in OBJ:
         x, y = vmap[(o.name, e.vertices[0])], vmap[(o.name, e.vertices[1])]
         nb[x].add(y); nb[y].add(x)
 free = np.array([not (own & BEZ) for own in owner])       # вершины ушей (и их кольца) — только пластиной
+# ПРЕДЕЛ ПРИТЯЖКИ ПО ОБЪЕКТАМ (`--maxd_obj голова:0.025,шея:0.025`): у цели вокруг головы и шеи — грива (кусок-черта, из
+# кожи её не тянут); с общим пределом затылок шасси прилипал к гриве и вытягивался гребнем. Вершина на стыке объектов
+# берёт меньший предел
+MAXD_OBJ = {kv.split(':')[0]: float(kv.split(':')[1]) for kv in opt.get('maxd_obj', '').split(',') if ':' in kv}
 
 X = tps(U0)
 # ---------- 3. к поверхности цели ----------
@@ -115,13 +119,16 @@ tg = [o for o in bpy.context.selected_objects if o.type == 'MESH'][0]
 bm = bmesh.new(); bm.from_mesh(tg.data); bm.transform(tg.matrix_world)
 bvh = BVHTree.FromBMesh(bm)
 maxd = float(opt['maxd'])
+# предел объекта действует только за плоскостью `--zatylok` (y шасси, Blender: морда в −Y) — лицо тянется к цели полностью
+YZ = float(opt.get('zatylok', '-9'))
+vmax = np.array([min([MAXD_OBJ.get(nm, maxd) if U0[k_][1] > YZ else maxd for nm in own]) for k_, own in enumerate(owner)])
 for it in range(int(opt['iter'])):
     D = np.zeros_like(X)
     for k_ in range(len(X)):
         if not free[k_]:
             continue
         hit = bvh.find_nearest(Vector(X[k_]))
-        if hit[0] is not None and hit[3] < maxd:
+        if hit[0] is not None and hit[3] < vmax[k_]:
             D[k_] = np.array(hit[0]) - X[k_]
     for _ in range(int(opt['smooth'])):
         D = np.array([0.5 * D[k_] + 0.5 * (np.mean([D[j] for j in nb[k_]], axis=0) if nb[k_] else D[k_]) if free[k_] else D[k_] for k_ in range(len(D))])
