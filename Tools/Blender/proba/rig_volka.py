@@ -1046,6 +1046,30 @@ if SHVY and 'pasporta' in opt:
              ['голова', 'шея', 'челюсть'], 'ring', False, {}),
             ('volk-hvost-kusok.json', 'корень хвоста', 'Хвост', dict(main='Хвост'), ['хвост', 'хвост_кисть'], None, False, {}),
         )
+    # МЕСТА НА КУСКЕ-ЧЕРТЕ (14.10, к развилке «места под аугменты переезжают при смене идентичности»): целая голова
+    # приносит с собой места ушей, морды и мочки — те же швы, что в паспортах кусков органов, но как места ГОЛОВЫ.
+    # Кроме метров тела (`center_m`, …) место дано в кадре кости `голова` (`local_m`: вдоль кости от её начала, по её
+    # «верху» — сагиттально к спине, вбок к −X Unity), чтобы ехать за костью, а не за метрами вида
+    def head_places():
+        bh, bt = Vector(BN['голова']['head']), Vector(BN['голова']['tail'])
+        by = (bt - bh).normalized(); bz = (Vector((0, 0, 1)) - by * by.z).normalized()
+        out_ = []
+        for nm_, kind_, sides in (('основание морды', 'кольцо снимаемой детали (Пасть)', (1,)),
+                                  ('основание уха', 'кольцо снимаемой детали (Чутьё)', (1, -1)), ('мочка', 'место детали (Чутьё.мочка)', (1,))):
+            d_ = SEAMS[nm_]
+            for sg_ in sides:
+                M = lambda p: Vector((p.x * sg_, p.y, p.z))
+                c_, ax_, up_, u_ = M(d_['c']), M(d_['ax']), M(d_['up']), M(d_.get('u', Vector((1, 0, 0))))
+                pts_ = [c_ + u_ * (d_['r'][0] * math.sin(2 * math.pi * k_ / d_['n'])) + up_ * (d_['r'][1] * math.cos(2 * math.pi * k_ / d_['n'])) for k_ in range(d_['n'])]
+                rel = c_ - bh
+                out_.append({'type': nm_, 'kind': kind_, 'side': ('−X Unity' if sg_ > 0 else '+X Unity') if len(sides) > 1 else 'ось',
+                             'ring': list(range(d_['n'])), 'ring_m': [U(q) for q in pts_], 'center_m': U(c_),
+                             'ellipse_m': [round(d_['r'][0], 4), round(d_['r'][1], 4)], 'axis_out': U(ax_), 'up': U(up_), 'side_axis': U(u_),
+                             'bone': 'голова', 'local_m': [round(rel.dot(by), 4), round(rel.dot(bz), 4), round(rel.x, 4)]})
+        return {'bone': 'голова', 'bone_head_m': U(bh), 'bone_tail_m': U(bt),
+                'local_note': 'local_m = (вдоль кости от её начала; по «верху» кости — перпендикуляр к ней в сагиттальной плоскости, к спине; вбок — к −X Unity), метры волка',
+                'list': out_}
+
     for fname, seam_name, slot, objs, bones_, fit, mirror, extra_f in PIECES:
         d = SEAMS[seam_name]
         uu = d.get('u', Vector((1, 0, 0)))
@@ -1068,6 +1092,8 @@ if SHVY and 'pasporta' in opt:
         if fit:
             pas['fit'] = fit
         pas.update(extra_f)                                   # в том числе `keys` — формы-ключи адаптации к плану тела
+        if SHVY >= 2 and fname == 'volk-golova-kusok.json':
+            pas['places'] = head_places()
         if mirror:
             pas['seam']['note'] += '; кольцо дано для стороны −X Unity (+X Blender), вторая сторона — зеркалом по X'
         sub = 'parts' if slot else 'cherty'           # черта шасси — не деталь органа: читатель деталей её не берёт
