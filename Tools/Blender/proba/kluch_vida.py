@@ -14,7 +14,7 @@ Hunyuan) переносится на ТОПОЛОГИЮ меша шасси (ч�
   5. СУСТАВЫ ЦЕЛИ — те же суставы шасси, перенесённые пластиной, — файлом рядом (формат `*-skelet.json`).
 
   blender -b --factory-startup -P kluch_vida.py -- шасси.blend цель.obj ориентиры.json выход.fbx скелет_шасси.json суставы_цели.json
-      [--imya Волк] [--iter 4] [--smooth 6] [--maxd 0.08] [--maxd_obj голова:0.025,шея:0.025 [--zatylok y]] [--bez Чутьё] [--lam 1e-4] [--gladit N [--voxel 0.012]] [--rasput 60] [--polosa Ноги:0.40:0.80:20]
+      [--imya Волк] [--iter 4] [--smooth 6] [--maxd 0.08] [--maxd_obj голова:0.025,шея:0.025 [--zatylok y]] [--bez Чутьё] [--lam 1e-4] [--gladit N [--voxel 0.012]] [--rasput 60] [--polosa Ноги:0.40:0.80:20] [--skuly k:yc:zc:r] [--kupol f:zb:yb]
   blender -b --factory-startup -P kluch_vida.py -- шасси.blend - - - скелет_шасси.json - --istochnik ориентиры_шасси.json
 """
 import sys, json, math
@@ -183,6 +183,27 @@ for it in range(int(opt.get('rasput', '60'))):
             Xn[k_] = 0.5 * X[k_] + 0.5 * np.mean([X[j] for j in nb[k_]], axis=0)
     X = Xn
 print('КЛЮЧ: распутывание — вершин у развёрнутых граней %d → %d' % (n_flip0, len(flipped(X))))
+# ПОПРАВКИ ПО АНАТОМИИ (14.10, вердикт геймдизайнера «направление верное, числа подправить»; источник — «Пластическая
+# анатомия», млекопитающие в сравнении с человеком, выжимка в `Референсы/КАТАЛОГ.md`). Работают по форме ключа, в метрах
+# тела, плавной колоколообразной весовой функцией — без ступеней:
+#   --skuly k:yc:zc:r — ширина головы хищника — скуловые дуги и жевательные/височные мышцы: X раздвигается в k раз у
+#     центра (yc, zc) и затухает к радиусу r (по y и z; объекты головы, шеи и ушей — кольца швов едут вместе);
+#   --kupol f:zb:yb — мозговой купол у зверя ниже, лицевой отдел преобладает: всё, что выше zb и позади yb, сжимается по
+#     высоте к zb в f раз (переход позади yb на  м, 0.08 по умолчанию)
+sm_ = lambda u: 0.0 if u <= 0 else (1.0 if u >= 1 else u * u * (3 - 2 * u))
+HEADS = ('голова', 'шея', 'Чутьё')
+if 'skuly' in opt:
+    k_s, yc, zc, rr = map(float, opt['skuly'].split(':'))
+    for k_ in range(len(X)):
+        if owner[k_] & set(HEADS):
+            d2 = ((X[k_][1] - yc) ** 2 + (X[k_][2] - zc) ** 2) / rr ** 2
+            X[k_][0] *= 1 + (k_s - 1) * max(0.0, 1 - d2) ** 2
+if 'kupol' in opt:
+    f_k, zb, yb = map(float, opt['kupol'].split(':'))
+    for k_ in range(len(X)):
+        if owner[k_] & set(HEADS) and X[k_][2] > zb:
+            w_ = sm_((X[k_][1] - yb) / float(opt.get('kupol_shag', '0.08')))
+            X[k_][2] = zb + (X[k_][2] - zb) * (1 - (1 - f_k) * w_)
 res = [bvh.find_nearest(Vector(X[k_]))[3] for k_ in range(len(X)) if free[k_]]
 print('КЛЮЧ: до поверхности цели — средн. %.4f м, 95%% %.4f, макс %.4f; ориентиров %d, нет у цели: %s' % (
     float(np.mean(res)), float(np.percentile(res, 95)), float(np.max(res)), n, ', '.join(miss) or '—'))
