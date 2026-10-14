@@ -8,10 +8,11 @@
      что лежит в плане дальше `--okolo` от «колонны» копыта (вершин чуть выше пластины), дыры закрываются;
   3. МАСШТАБ ПО СКЕЛЕТУ ЛОСЯ (`Docs/models/rig/los-skelet.json`): длина от кончика носа до конца хвоста — как у скелета
      (место `нос` y −2.459, конец кости `хвост` y 1.520 + `--hvost` на кожу), холка печатается для сверки;
-  4. СИММЕТРИЯ по X (`--half` +1/−1 — какая половина остаётся): веса рига зеркалятся по паре вершин;
+  4. СИММЕТРИЯ по X (`--half` +1/−1 — какая половина остаётся): веса рига зеркалятся по паре вершин; затем пересборка
+     вокселями `--voxel` — замкнутая сетка для автовесов;
   5. ПЛОТНОСТЬ: равномерно до `--budget` треугольников, плоское затенение.
 
-  blender -b --factory-startup -P mesh_losya.py -- вход.glb выход.obj [--budget 7000] [--half 1] [--plast 0.035] [--okolo 0.012]
+  blender -b --factory-startup -P mesh_losya.py -- вход.glb выход.obj [--budget 7000] [--half 1] [--voxel 0.01] [--plast 0.035] [--okolo 0.012]
 Оси OBJ на выходе — как у остальных проб (вперёд −Z, вверх Y).
 """
 import sys, math
@@ -20,7 +21,7 @@ from mathutils import Vector, Matrix, kdtree
 
 a = sys.argv[sys.argv.index('--') + 1:]
 src, out = a[0], a[1]
-opt = dict(budget=7000.0, half=1.0, plast=0.035, okolo=0.012, nos=-2.4585, hvost=0.06, tail_end=1.5199)
+opt = dict(voxel=0.01, budget=7000.0, half=1.0, plast=0.035, okolo=0.012, nos=-2.4585, hvost=0.06, tail_end=1.5199)
 i = 2
 while i < len(a):
     opt[a[i].lstrip('-')] = float(a[i + 1]); i += 2
@@ -97,11 +98,35 @@ bpy.ops.mesh.symmetrize(direction='POSITIVE_X' if opt['half'] > 0 else 'NEGATIVE
 bpy.ops.mesh.remove_doubles(threshold=0.0005)
 bpy.ops.object.mode_set(mode='OBJECT')
 
+# 4а. ВОКСЕЛИ `--voxel` м: после симметрии и заплат у образца остаются неманифолдные рёбра (шов симметрии, заплата
+# под копытом) — автовеса рига на них спотыкаются. Пересборка вокселями даёт замкнутую сетку; тонкие отростки рогов
+# толще 3 см — шаг 1 см их держит
+if opt['voxel'] > 0:
+    m = ob.modifiers.new('vox', 'REMESH'); m.mode = 'VOXEL'; m.voxel_size = opt['voxel']; m.use_smooth_shade = False
+    bpy.ops.object.modifier_apply(modifier=m.name)
+
 # 5. плотность
-n0 = len(me.polygons)
-m = ob.modifiers.new('dec', 'DECIMATE'); m.ratio = opt['budget'] / max(1, n0); m.use_symmetry = True; m.symmetry_axis = 'X'
+n0 = sum(len(p.vertices) - 2 for p in me.polygons)     # в треугольниках: вокселями приходят четырёхугольники
+m = ob.modifiers.new('dec', 'DECIMATE'); m.ratio = opt['budget'] / max(1, n0)
 bpy.ops.object.modifier_apply(modifier=m.name)
+# симметрия ещё раз — ПОСЛЕ прореживания (прореживание «с симметрией» оставляет неманифолд на средней линии)
+bpy.ops.object.mode_set(mode='EDIT')
+bpy.ops.mesh.select_all(action='SELECT')
+bpy.ops.mesh.symmetrize(direction='POSITIVE_X' if opt['half'] > 0 else 'NEGATIVE_X', threshold=0.004)
+bpy.ops.mesh.remove_doubles(threshold=0.001)
+bpy.ops.object.mode_set(mode='OBJECT')
 bm = bmesh.new(); bm.from_mesh(me); bmesh.ops.triangulate(bm, faces=bm.faces[:])
+# стяжки прореживания оставляют редкие неманифолдные рёбра — снять их грани и закрыть дыры
+for _ in range(3):
+    bad_ = [e for e in bm.edges if not e.is_manifold and not e.is_boundary]
+    if bad_:
+        bmesh.ops.delete(bm, geom=list({f for e in bad_ for f in e.link_faces}), context='FACES')
+        bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context='VERTS')
+    bnd_ = [e for e in bm.edges if e.is_boundary]
+    if not bad_ and not bnd_:
+        break
+    bmesh.ops.holes_fill(bm, edges=bnd_, sides=0); bmesh.ops.triangulate(bm, faces=[f for f in bm.faces if len(f.verts) > 3])
+bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
 nonman = sum(1 for e in bm.edges if not e.is_manifold); bnd = sum(1 for e in bm.edges if e.is_boundary)
 bm.to_mesh(me); bm.free()
 for p in me.polygons:
