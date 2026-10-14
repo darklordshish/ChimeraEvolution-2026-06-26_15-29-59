@@ -18,6 +18,7 @@ namespace Chimera.Tests.EditMode
         public void TearDown()
         {
             BodyMesh.Enabled = true;
+            BodyMesh.ForceKey = null;
             foreach (var o in new Object[] { go, model, so }) if (o != null) Object.DestroyImmediate(o);
         }
 
@@ -85,6 +86,9 @@ namespace Chimera.Tests.EditMode
             mesh.triangles = new[] { 0, 1, 2 };
             mesh.boneWeights = Enumerable.Range(0, 3).Select(i => new BoneWeight { boneIndex0 = i, weight0 = 1f }).ToArray();
             mesh.bindposes = bones.Select(b => b.worldToLocalMatrix * obj.transform.localToWorldMatrix).ToArray();
+            // ФОРМА-КЛЮЧ «Волк»: вершина головы уезжает на 0.1 м вперёд в теле (дельта — в системе объекта)
+            var delta = new Vector3[3]; delta[1] = w2o.MultiplyVector(KeyShift);
+            mesh.AddBlendShapeFrame("Волк", 100f, delta, null, null);
             var smr = obj.AddComponent<SkinnedMeshRenderer>();
             smr.sharedMesh = mesh;
             smr.bones = bones;
@@ -162,6 +166,20 @@ namespace Chimera.Tests.EditMode
             Assert.AreEqual("голова", smr.name, "кусок со своим цветом носит имя слота — иначе его не спрячет первое лицо");
             Assert.IsTrue(smr.TryGetComponent<PartMark>(out var mark) && mark.HasOwn, "свой цвет объекта не дошёл до паспорта детали");
             Assert.Less(Mathf.Abs(mark.own.r - 0.9f), 1e-3f);
+        }
+
+        static readonly Vector3 KeyShift = new(0f, 0f, 0.1f);
+
+        /// <summary>ИДЕНТИЧНОСТЬ КЛЮЧОМ (опыт 14.10): вес формы-ключа вида-цели ставится на меш шасси — тело течёт к виду.</summary>
+        [Test]
+        public void SpeciesKey_WeightMovesTheBody()
+        {
+            Species().bodyMesh = Model();
+            BodyMesh.ForceKey = "Волк"; BodyMesh.ForceWeight = 0.5f;
+            Build(so.organs.ToList());
+            var v = Baked(go.GetComponentsInChildren<SkinnedMeshRenderer>(true).Single());
+            Near(OnHead + KeyShift * 0.5f, v[1], "вершина головы при весе ключа 0.5");
+            Near(OnSpine, v[0], "ключ сдвинул то, чего не двигает");
         }
 
         [Test]

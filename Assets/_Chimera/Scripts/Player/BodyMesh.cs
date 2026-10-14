@@ -57,7 +57,25 @@ public static class BodyMesh
 
     /// <summary>Поставить объекты модели на скелет: рендерер на объект, имя рендерера = имя объекта (слот).
     /// Возвращает число поставленных рендереров.</summary>
-    public static int Place(Transform container, Transform skeleton, GameObject model, Material mat, ICollection<string> skipSlots = null)
+    /// <summary>ИДЕНТИЧНОСТЬ — ФОРМАМИ-КЛЮЧАМИ НА МЕШЕ ШАССИ (опыт 14.10, консилиум формы 01.10, В3/В6): у меша шасси есть
+    /// ключ на каждый вид-цель (имя ключа = имя вида, цель натянута на топологию шасси по ориентирам), и тело ТЕЧЁТ к виду
+    /// весом ключа, а не надевает его куски («костюм на утренник» — вердикт геймдизайнера кускам на ступени 2). Ключ на
+    /// пару «шасси → вид», а не меш на химеру. Вес — ступень идентичности (`GlobalLayer.G`): 0, 0.35, 0.7.</summary>
+    public static Dictionary<string, float> KeysFor(SpeciesSO chassis, IReadOnlyList<Organ> worn)
+    {
+        var keys = new Dictionary<string, float>();
+        if (ForceKey != null) { keys[ForceKey] = ForceWeight; return keys; }
+        var (target, step) = GlobalLayer.Step(chassis, worn);
+        if (target != null && step > 0) keys[target.speciesName] = GlobalLayer.G(step);
+        return keys;
+    }
+
+    /// <summary>Ключ и вес вручную — для ряда кадром (вес 0…1).</summary>
+    public static string ForceKey;
+    public static float ForceWeight;
+
+    public static int Place(Transform container, Transform skeleton, GameObject model, Material mat, ICollection<string> skipSlots = null,
+                            IReadOnlyDictionary<string, float> keys = null)
     {
         var bones = new Dictionary<string, Transform>();
         foreach (var t in skeleton.GetComponentsInChildren<Transform>(true))
@@ -116,6 +134,12 @@ public static class BodyMesh
             smr.sharedMesh = skinned;
             smr.bones = ours;
             smr.rootBone = skeleton;
+            if (keys != null)
+                foreach (var kv in keys)
+                {
+                    int shape = skinned.GetBlendShapeIndex(kv.Key);
+                    if (shape >= 0) smr.SetBlendShapeWeight(shape, Mathf.Clamp01(kv.Value) * 100f);
+                }
             if (Application.isPlaying)
             {
                 // границы — в системе скелета, а меш живёт в своей (у FBX из Blender бывает ×100 и поворот)
