@@ -19,6 +19,33 @@ cd "$root" || exit 1
 say() { printf '[гейт main] %s\n' "$*" >&2; }
 fail() { say "СТОП: $*"; exit 1; }
 
+# ОЧЕРЕДЬ НА ГЕЙТ (14.10). Все линии работают на одной машине и толкаются за main: гейт идёт минуты, за это время main
+# уходил вперёд, публикация отвергалась, и тесты приходилось гонять заново (лесная линия дважды проиграла гонку).
+# Замок — общий для всех рабочих копий (в общем .git); кто держит его, тот публикует, остальные ждут. Сразу после
+# замка — сверка с main: если он ушёл вперёд, гейт останавливается ДО тестов, а не после.
+common=$(git rev-parse --git-common-dir)
+case "$common" in /*|[A-Za-z]:*) ;; *) common="$root/$common" ;; esac
+lock="$common/chimera-gate.lock"
+released="$common/chimera-gate.released"
+waited=0
+until mkdir "$lock" 2>/dev/null; do
+  # замок старше 20 минут — гейт, который упал или был прерван, не освободив его
+  age=$(( $(date +%s) - $(stat -c %Y "$lock" 2>/dev/null || date +%s) ))
+  if [ "$age" -gt 1200 ]; then say "замок завис ($age с) — снимаю"; rm -rf "$lock"; continue; fi
+  [ "$waited" -eq 0 ] && say "гейт занят другой линией — жду своей очереди…"
+  waited=$((waited + 5)); sleep 5
+done
+trap 'rm -rf "$lock"; date +%s > "$released"' EXIT
+# прошлый гейт отпустил замок — дать его публикации долететь до GitHub
+if [ -f "$released" ]; then
+  since=$(( $(date +%s) - $(cat "$released" 2>/dev/null || echo 0) ))
+  [ "$since" -lt 20 ] && sleep $((20 - since))
+fi
+git fetch -q "$remote" main 2>/dev/null || say "не смог обновить $remote/main — сверяю с последним известным"
+if ! git merge-base --is-ancestor "refs/remotes/$remote/main" "$sha"; then
+  fail "main ушёл вперёд — сделай «git pull --rebase» и публикуй снова (тесты не гонял, время не потеряно)"
+fi
+
 # проверяется ровно то, что уходит: публикуется HEAD, а рабочее дерево чистое
 [ "$(git rev-parse HEAD)" = "$sha" ] || fail "публикуется не HEAD ($sha) — переключись на коммит, который отправляешь"
 dirty=$(git status --porcelain -- Assets Packages ProjectSettings Docs Tools/Agent Референсы)
