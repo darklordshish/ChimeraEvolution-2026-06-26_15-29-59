@@ -7,7 +7,7 @@
 Точки кожи головы (нос, подбородок, макушка) едут с головой поворотом звена «голова»; носок и пятка — сдвигом с
 голеностопом (стопа остаётся на земле); кончики пальцев — поворотом предплечья.
 
-  blender -b --factory-startup -P vypryamit_cel.py -- цель.obj ориентиры_цели.json ориентиры_шасси.json цель_выпрямленная.obj ориентиры_выпрямленные.json [--korpus 1|0] [--vzglyad градусы] [--kadr префикс]
+  blender -b --factory-startup -P vypryamit_cel.py -- цель.obj ориентиры_цели.json ориентиры_шасси.json цель_выпрямленная.obj ориентиры_выпрямленные.json [--korpus 1|0] [--dolya 0..1] [--vzglyad градусы] [--kadr префикс]
 Ориентиры цели (оси Blender, метры тела) — файл; имена как у `kluch_vida.py --istochnik`.
 """
 import sys, json, math
@@ -22,7 +22,8 @@ i = 5
 while i < len(a):
     opt[a[i].lstrip('-')] = a[i + 1]; i += 2
 T = {k: Vector(v) for k, v in json.load(open(lm_t, encoding='utf-8')).items()}
-KORPUS = opt.get('korpus', '1') == '1'   # 1 — выпрямляется только корпус и шея («не сутулить»), 0 — и конечности
+KORPUS = opt.get('korpus', '1') == '1'
+DOLYA = float(opt.get('dolya', '1'))   # доля выпрямления корпуса и шеи: 1 — как у шасси, 0 — как у цели   # 1 — выпрямляется только корпус и шея («не сутулить»), 0 — и конечности
 S = {k: Vector(v) for k, v in json.load(open(lm_s, encoding='utf-8')).items()}
 
 # цепи (родитель → ребёнок)
@@ -38,6 +39,8 @@ for p, c in CH:
     dt = T[c] - T[p]; ds = S[c] - S[p]
     if KORPUS and c.split(':')[0].rstrip('.L') not in ('хребет', 'шея', 'голова'):
         ds = dt                                           # конечности — в позе цели (излом пальцеходящей ноги — черта вида)
+    elif DOLYA < 1:                                       # корпус — частью: полное выпрямление при длинах цели откидывало тело назад
+        ds = dt.normalized().slerp(ds.normalized(), DOLYA) * ds.length
     X[c] = X[p] + ds.normalized() * dt.length
     ROT[c] = dt.normalized().rotation_difference(ds.normalized())
 # точки кожи

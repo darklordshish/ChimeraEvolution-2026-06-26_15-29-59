@@ -14,7 +14,7 @@ Hunyuan) переносится на ТОПОЛОГИЮ меша шасси (ч�
   5. СУСТАВЫ ЦЕЛИ — те же суставы шасси, перенесённые пластиной, — файлом рядом (формат `*-skelet.json`).
 
   blender -b --factory-startup -P kluch_vida.py -- шасси.blend цель.obj ориентиры.json выход.fbx скелет_шасси.json суставы_цели.json
-      [--imya Волк] [--iter 4] [--smooth 6] [--maxd 0.08] [--maxd_obj голова:0.025,шея:0.025 [--zatylok y]] [--bez Чутьё] [--lam 1e-4]
+      [--imya Волк] [--iter 4] [--smooth 6] [--maxd 0.08] [--maxd_obj голова:0.025,шея:0.025 [--zatylok y]] [--bez Чутьё] [--lam 1e-4] [--gladit N [--voxel 0.012]]
   blender -b --factory-startup -P kluch_vida.py -- шасси.blend - - - скелет_шасси.json - --istochnik ориентиры_шасси.json
 """
 import sys, json, math
@@ -116,6 +116,15 @@ X = tps(U0)
 # ---------- 3. к поверхности цели ----------
 bpy.ops.wm.obj_import(filepath=tgt_obj, forward_axis='NEGATIVE_Z', up_axis='Y')
 tg = [o for o in bpy.context.selected_objects if o.type == 'MESH'][0]
+# ЦЕЛЬ СГЛАЖЕННАЯ (`--gladit N`, 14.10): притяжка к сырой цели ловила её мелочь — шипы гривы на груди, складки колена и
+# стопы, пальцы — и выворачивала треугольники шасси (изломы до 179°, в игре — тёмные полосы на коленях и под ключицами).
+# Ключу лоуполи-тела нужна форма масс, а не рельеф: цель пересобирается вокселями и сглаживается N проходами
+if int(opt.get('gladit', '0')):
+    bpy.context.view_layer.objects.active = tg
+    m_ = tg.modifiers.new('vox', 'REMESH'); m_.mode = 'VOXEL'; m_.voxel_size = float(opt.get('voxel', '0.012'))
+    bpy.ops.object.modifier_apply(modifier=m_.name)
+    m_ = tg.modifiers.new('gl', 'SMOOTH'); m_.factor = 1.0; m_.iterations = int(opt['gladit'])
+    bpy.ops.object.modifier_apply(modifier=m_.name)
 bm = bmesh.new(); bm.from_mesh(tg.data); bm.transform(tg.matrix_world)
 bvh = BVHTree.FromBMesh(bm)
 maxd = float(opt['maxd'])
