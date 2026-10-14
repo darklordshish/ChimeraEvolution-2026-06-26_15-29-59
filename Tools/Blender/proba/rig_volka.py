@@ -495,6 +495,7 @@ if SHVY:
         rA, a12 = ring(CA, WN, 0.12, 0.14, 12, 51, piece)
         rR, _ = ring(CR, WN, 0.085, 0.10, 12, 1, piece)
         if piece == 1: HEAD_RING = rR
+        else: BODY_RING = rR
         new_f += bridge(L, aL, rA, a12, fc) + bridge(rA, a12, rR, a12, fc)
     over = max((CR - v.co).dot(AX) for v in Ls)
     SEAMS['основание черепа'] = dict(n=12, bone='шея', c=CR, ax=AX, up=WN, r=(0.085, 0.10), at=(CR - nh).length, edge=len(Ls), over=over)
@@ -632,6 +633,18 @@ if SHVY:
         new_f += bridge(Lco, aCo, HEAD_RING, a12, 7)                         # передняя изнанка воротника — к его же кольцу
         SEAMS['грива'] = dict(n=12, bone='шея', c=CR, ax=AX, up=WN, r=(0.085, 0.10), at=(CR - nh).length, edge=len(Lco),
                               over=SEAMS['основание черепа']['over'])
+        # ШЕЯ ЗАКРЫТА С ОБЕИХ СТОРОН (13.10, слияние: кусок встаёт жёстко, стык решает форма). У ТЕЛА — культя: кольцо шеи
+        # под крышкой. У ЧЕРЕПА — юбка за шов с дном: кольцо продолжено к телу на OVER, сужено до 0.85 — уходит в шею
+        # носителя. На двуногом голову сажают выше кольца (`center_biped_m`), туда юбку дотягивает форма-ключ «двуногий»
+        OVER = float(opt.get('over', 0.06))
+        rK, _ = ring(CR - AX * OVER, WN, 0.085 * 0.85, 0.10 * 0.85, 12, 61, 1)
+        new_f += bridge(rS, a12, rK, a12, 6)
+        for R_, c_, pc_, code_, fc_ in ((rK, CR - AX * OVER, 1, 90, 6), (BODY_RING, CR, 0, 91, 3)):
+            cv = bm.verts.new(c_); cv[VP] = pc_; cv[RG] = code_
+            for k_ in range(12):
+                f_ = bm.faces.new((cv, R_[k_], R_[(k_ + 1) % 12])); f_[FC] = fc_; new_f.append(f_)
+        SKIRT = [CR - AX * OVER + XU * (0.085 * 0.85 * math.sin(math.pi / 6 * k_)) + WN * (0.10 * 0.85 * math.cos(math.pi / 6 * k_)) for k_ in range(12)] + [CR - AX * OVER]
+        SEAMS['основание черепа'] = dict(SEAMS['основание черепа'], over=OVER)
 
         # --- мочка носа: у образца её нет (критик 10.10) — островок на конце морды ---
         tipv = min((v for v in bm.verts if v.link_faces and abs(v.co.x) < 0.02), key=lambda v: v.co.y).co.copy()
@@ -942,6 +955,25 @@ if SHVY >= 2 and 'Шкура' in parts:
         kb.data[v.index].co = cK + RK @ Vector((x_ * (1 + 0.20 * sm(-t_ / 0.25)), h_ * (1 - 0.40 * vent), t_ * (1 + 0.9 * dors - 0.45 * vent)))
     REP.append('форма-ключ «двуногий» у объекта `Шкура`: вершин %d' % len(go.data.vertices))
 
+# ФОРМА-КЛЮЧ «двуногий» У ЧЕРЕПА: на двуногом центр шва донора — `center_biped_m` (голова сидит выше кольца, на
+# человеке ~10 см), и юбка в 0.06 до культи шеи не достаёт. Ключ опускает ДНО юбки под эту точку: кольцо дна встаёт
+# поперёк вертикальной шеи двуногого (ось и «верх» — как у шва шеи человека), на OVB ниже точки посадки, 0.85 кольца.
+# Юбка становится видимой шеей между головой и культёй носителя. Кольцо шва и череп ключ не трогает
+BIPED_C = Vector((0, yn + 0.37, 1.12)); OVB = 0.055
+if SHVY >= 2 and 'голова' in parts:
+    go = parts['голова'][0]
+    AH, UH = Vector((0, -0.164, 0.986)).normalized(), Vector((0, 0.986, 0.164)).normalized()
+    TGT = [BIPED_C - AH * OVB + XU * (0.085 * 0.85 * math.sin(math.pi / 6 * k_)) + UH * (0.092 * 0.85 * math.cos(math.pi / 6 * k_)) for k_ in range(12)] + [BIPED_C - AH * OVB]
+    go.shape_key_add(name='Basis')
+    kb = go.shape_key_add(name='двуногий')
+    moved = 0
+    for v in go.data.vertices:
+        for p_, q_ in zip(SKIRT, TGT):
+            if (v.co - p_).length < 1e-5:
+                kb.data[v.index].co = q_; moved += 1
+    assert moved == 13, 'ключ «двуногий» у черепа: найдено %d вершин юбки из 13' % moved
+    REP.append('форма-ключ «двуногий» у объекта `голова`: дно юбки (13 вершин) под точку посадки двуногого, %.3f м ниже неё' % OVB)
+
 # ---------- отчёт ----------
 allv = [x for x in V]
 tip_ear = max(allv, key=lambda p: p.z)
@@ -1003,8 +1035,8 @@ if SHVY and 'pasporta' in opt:
             ('volk-ushi.json', 'основание уха', 'Чутьё', dict(main='Чутьё'), ['голова'], 'ring', True, {}),
             ('volk-mochka.json', 'мочка', 'Чутьё', dict(main='Чутьё.мочка'), ['голова'], None, False, dict(seat='нос')),
             ('volk-golova-kusok.json', 'основание черепа', None, dict(main='голова', morda='Пасть', polost='Пасть.полость', zuby='Пасть.зубы'),
-             ['голова', 'шея', 'челюсть'], 'ring', False, dict(trait='голова', step=2, also=['Пасть', 'Пасть.полость', 'Пасть.зубы'],
-                                                              center_biped_m=U(Vector((0, yn + 0.37, 1.12))))),
+             ['голова', 'шея', 'челюсть'], 'ring', False, dict(trait='голова', step=2, also=['Пасть', 'Пасть.полость', 'Пасть.зубы'], keys=['двуногий'],
+                                                              center_biped_m=U(BIPED_C), overhang_biped_m=OVB)),
             ('volk-griva.json', 'грива', None, dict(main='Шкура'), ['голова', 'шея'], 'ring', False, dict(trait='грива', step=1, keys=['двуногий'])),
             ('volk-hvost-kusok.json', 'корень хвоста', None, dict(main='Хвост'), ['хвост', 'хвост_кисть'], None, False, dict(trait='хвост', step=1)),
         )

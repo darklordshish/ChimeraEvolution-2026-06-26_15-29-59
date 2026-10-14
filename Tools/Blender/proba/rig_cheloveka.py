@@ -216,6 +216,27 @@ while st:
     seen.add(u); u[VP] = 1; st.extend(e.other_vert(u) for e in u.link_edges)
 bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
 bnd_neck = sum(1 for e in bm.edges if e.is_boundary)
+# ШЕЯ ЗАКРЫТА С ОБЕИХ СТОРОН (13.10, слияние: кусок встаёт жёстко, стык решает форма). У НОСИТЕЛЯ — культя: кольцо шеи
+# закрыто крышкой, под чужой головой сплошная кожа. У КУСКА ГОЛОВЫ — юбка за шов с дном: кольцо продолжено к телу на
+# OVER и сужено до 0.85 — уходит внутрь шеи носителя, закрывает просвет, когда чужая шея уже или стоит под углом.
+# Кольцо шва остаётся на месте (12 вершин, `ring_m` прежний); вершины юбки и крышки в кольцо не входят, вес — жёстко `шея`
+OVER = float(opt.get('over', 0.04))
+bm.verts.ensure_lookup_table()
+for pc_ in (0, 1):
+    R_ = sorted((v for v in bm.verts if v[VP] == pc_ and 1 <= v[RG] <= 12), key=lambda v: v[RG])
+    assert len(R_) == 12, 'кольцо шеи стороны %d: %d вершин из 12' % (pc_, len(R_))
+    if pc_ == 1:
+        K_ = []
+        for k_ in range(12):
+            th = math.pi / 6 * k_
+            v = bm.verts.new(cc - AX * OVER + XU * (0.85 * rx * math.sin(th)) + WN * (0.85 * rw * math.cos(th))); v[RG] = 61 + k_; v[VP] = 1; K_.append(v)
+        for k_ in range(12):
+            bm.faces.new((R_[k_], R_[(k_ + 1) % 12], K_[(k_ + 1) % 12])); bm.faces.new((R_[k_], K_[(k_ + 1) % 12], K_[k_]))
+        R_ = K_
+    cv = bm.verts.new(cc - AX * (OVER if pc_ else 0.0)); cv[VP] = pc_; cv[RG] = 90
+    for k_ in range(12):
+        bm.faces.new((cv, R_[k_], R_[(k_ + 1) % 12]))
+bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
 
 # ---------- ОТВЕТНЫЕ КУСКИ ГОЛОВЫ (`--organy 1`; нарезка 13.10 — как у волка, `rig_volka.py --shvy 2`) ----------
 #   лицо ниже переносицы (нос, рот, подбородок) — снимаемый кусок Пасти: шов «основание морды», кольцо 12 — сюда встаёт
@@ -385,13 +406,13 @@ bm.to_mesh(me); bm.free()
 for p_ in me.polygons:
     p_.use_smooth = False
 REP.append('шов «основание черепа»: кольцо 12 на конце кости `шея` (%.3f м от её начала); центр (%.3f %.3f %.3f), ось наружу (%.2f %.2f %.2f), '
-           '«верх» (%.2f %.2f %.2f), полуоси вбок %.3f × по «верху» %.3f м; кромка до кольца %d вершин; открытых рёбер у шеи %d (ждём 24), неманифолд %d'
+           '«верх» (%.2f %.2f %.2f), полуоси вбок %.3f × по «верху» %.3f м; кромка до кольца %d вершин; открытых рёбер у шеи до крышек %d (ждём 24), неманифолд %d'
            % ((CR - nh).length, *cc, *AX, *WN, rx, rw, n_edge, bnd_neck, nonman))
 for nm_, d_ in PIECE_SEAMS.items():
     REP.append('шов «%s»: кольцо %d на кости `голова`, %.3f м от её начала; центр (%.3f %.3f %.3f), ось наружу (%.2f %.2f %.2f), «верх» (%.2f %.2f %.2f), '
                'полуоси %.3f × %.3f м' % (nm_, d_['n'], d_['at'], *d_['c'], *d_['ax'], *d_['up'], *d_['r']))
 if PIECE_SEAMS:
-    REP.append('открытых рёбер всего %d (ждём %d: шея 24, уши 16 — у черепа закрыты%s)' % (bnd_n, 64 if 'основание морды' in PIECE_SEAMS else 40, '; лицо 24' if 'основание морды' in PIECE_SEAMS else '; лицо сплошное'))
+    REP.append('открытых рёбер всего %d (ждём %d: шея закрыта крышкой и юбкой, уши 16 — у черепа закрыты%s)' % (bnd_n, 40 if 'основание морды' in PIECE_SEAMS else 16, '; лицо 24' if 'основание морды' in PIECE_SEAMS else '; лицо сплошное'))
     REP.append('посадочное место «основание морды» (сплошная кожа): центр (%.3f %.3f %.3f), полуоси %.3f × %.3f м' % (*FACE_PLACE['c'], *FACE_PLACE['r']))
 # посадочное кольцо хвоста — на сплошной коже крестца: точка кожи на средней линии сзади на высоте начала кости `таз`
 zt = BN['таз']['head'][2] + 0.03
@@ -616,7 +637,8 @@ if 'pasporta' in opt:
                 tris=len(parts['голова'][0].data.polygons), tris_main=len(parts['голова'][0].data.polygons),
                 seam={'type': 'основание черепа', 'ring': list(range(12)), 'ring_m': [U(q) for q in ring_pts], 'center_m': U(SEAM['c']),
                       'ellipse_m': [round(SEAM['r'][0], 4), round(SEAM['r'][1], 4)], 'axis_out': U(SEAM['ax']), 'up': U(SEAM['up']),
-                      'bone': 'шея', 'on_bone_m': round(SEAM['at'], 4), 'overhang_m': 0.0, 'note': note})
+                      'bone': 'шея', 'on_bone_m': round(SEAM['at'], 4), 'overhang_m': OVER,
+                      'note': note + '; overhang_m — юбка куска за шов вдоль оси к телу носителя (сужена до 0.85, с дном)'})
     # посадочное кольцо хвоста — на СПЛОШНОЙ коже: не край куска, а место (центр, ось, эллипс, порядок вершин)
     tail = dict(common, kind='посадочное место на сплошной коже', bones=['таз'],
                 seam={'type': 'корень хвоста', 'ring': list(range(8)), 'ring_m': [U(q) for q in tail_pts], 'center_m': U(SEAM['tail_c']),

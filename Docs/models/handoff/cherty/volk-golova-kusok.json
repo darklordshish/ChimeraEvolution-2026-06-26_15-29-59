@@ -105,7 +105,7 @@
     ],
     "bone": "шея",
     "on_bone_m": 0.445,
-    "overhang_m": 0.3305,
+    "overhang_m": 0.06,
     "note": "метры тела волка, оси Unity; кольцо плоское; вершина 0 — на «верху», дальше в сторону `side` (у осевых швов — к −X Unity); ellipse_m — вбок × по «верху»; overhang_m — на сколько кусок свисает за шов вдоль оси к телу носителя"
   },
   "objects": {
@@ -122,9 +122,11 @@
     "челюсть"
   ],
   "armature": "все узлы графа волка + челюсть",
-  "keys": [],
-  "tris": 1040,
-  "tris_main": 430,
+  "keys": [
+    "двуногий"
+  ],
+  "tris": 1076,
+  "tris_main": 466,
   "generator": "Tools/Blender/proba/rig_volka.py --muzzle 4.5 --shvy 2 --pasporta …",
   "source": "Референсы/работа/модельная/2026-10-09-proba-b/volk_b9.obj",
   "fit": "ring",
@@ -139,5 +141,6 @@
     -0.0,
     1.12,
     0.77306
-  ]
+  ],
+  "overhang_biped_m": 0.055
 }

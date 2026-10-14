@@ -10,7 +10,7 @@
 `--kluch 1` применяет к воротнику пробную форму-ключ «двуногий» (см. `kluch_dvunogij`).
 
   blender -b -P oboroten_predprosmotr.py -- человек.blend волк.blend папка_handoff префикс_кадров [--stupen 0|1|2] [--kluch 1] [--ushi 1]
-      [--organy 1 — волчьи морда и уши графтом] [--kmax 1] [--sliyanie 1 — морда поверх лица] [--glub м] [--vverh м — вдоль «верха» шва] [--golova 1 — крупный план головы]
+      [--organy 1 — волчьи морда и уши графтом] [--kmax 1] [--sliyanie 1 — морда поверх лица] [--bezgrivy 1 — без воротника: виден стык шеи] [--glub м] [--vverh м — вдоль «верха» шва] [--golova 1 — крупный план головы]
 """
 import sys, os, json, math
 import bpy
@@ -18,7 +18,7 @@ from mathutils import Vector, Matrix
 
 a = sys.argv[sys.argv.index('--') + 1:]
 chel, volk, hand, pre = a[0], a[1], a[2], os.path.abspath(a[3])
-opt = dict(stupen=2.0, kluch=0.0, ushi=0.0, organy=0.0, kmax=0.0, golova=0.0, sliyanie=0.0, glub=0.0, vverh=0.0)
+opt = dict(stupen=2.0, kluch=0.0, ushi=0.0, organy=0.0, kmax=0.0, golova=0.0, sliyanie=0.0, glub=0.0, vverh=0.0, bezgrivy=0.0)
 i = 4
 while i < len(a):
     opt[a[i].lstrip('-')] = float(a[i + 1]); i += 2
@@ -61,15 +61,23 @@ def kluch_dvunogij(co, c, R):
     return c + R @ Vector((x2, h2, t2))
 
 
+KEYS = True
+
+
 def put(names, c_d, R_d, c_n, R_n, k, world, key=False):
     for nm in names:
         if nm not in WOLF:
             continue
-        me = WOLF[nm].copy()
-        for v in me.vertices:
-            p = kluch_dvunogij(v.co, c_d, R_d) if key else v.co
+        src = WOLF[nm]
+        # форма-ключ плана носителя («двуногий») — из самого меша, если он там есть (воротник гривы, юбка черепа);
+        # `key` без ключа в меше — прежняя пробная формула воротника
+        kb = src.shape_keys.key_blocks.get('двуногий') if src.shape_keys and KEYS else None
+        co = []
+        for v in src.vertices:
+            p = kb.data[v.index].co if kb else (kluch_dvunogij(v.co, c_d, R_d) if key else v.co)
             d = p - c_d
-            v.co = c_n + (d if world else R_n @ (R_d.transposed() @ d)) * k
+            co.append(c_n + (d if world else R_n @ (R_d.transposed() @ d)) * k)
+        me = bpy.data.meshes.new('к:' + nm); me.from_pydata(co, [], [tuple(p_.vertices) for p_ in src.polygons]); me.update()
         o = bpy.data.objects.new('волк:' + nm, me); bpy.context.scene.collection.objects.link(o)
         o.color = (0.55, 0.42, 0.30, 1) if nm == 'Шкура' else (0.80, 0.78, 0.74, 1)
         for p_ in me.polygons:
@@ -81,7 +89,8 @@ v_head = pas('cherty/volk-golova-kusok.json'); v_mane = pas('cherty/volk-griva.j
 cn, Rn = frame(ch_neck)
 k = (ch_neck['ellipse_m'][0] / v_mane['ellipse_m'][0] + ch_neck['ellipse_m'][1] / v_mane['ellipse_m'][1]) / 2
 cm, Rm = frame(v_mane)
-if opt['stupen'] >= 1:
+kh = max(ch_neck['ellipse_m'][0] / v_mane['ellipse_m'][0], ch_neck['ellipse_m'][1] / v_mane['ellipse_m'][1])   # кусок, забравший место, — по большему отношению
+if opt['stupen'] >= 1 and opt['bezgrivy'] <= 0:
     put(['Шкура'], cm, Rm, cn, Rn, k, False, key=opt['kluch'] > 0)
 ct, Rt = frame(v_tail); cht, Rht = frame(ch_tail)
 kt = (ch_tail['ellipse_m'][0] / v_tail['ellipse_m'][0] + ch_tail['ellipse_m'][1] / v_tail['ellipse_m'][1]) / 2
@@ -90,7 +99,7 @@ if opt['stupen'] >= 1:
 hide = []
 if opt['stupen'] >= 2:
     cb = B(v_head['center_biped_m'])
-    put(['голова', 'Пасть', 'Пасть.полость', 'Пасть.зубы'] + (['Чутьё', 'Чутьё.мочка'] if opt['ushi'] > 0 else []), cb, None, cn, None, k, True)
+    put(['голова', 'Пасть', 'Пасть.полость', 'Пасть.зубы'] + (['Чутьё', 'Чутьё.мочка'] if opt['ushi'] > 0 else []), cb, None, cn, None, kh, True)
     hide = ['голова', 'Пасть', 'Чутьё']
 # ХИМЕРА ПО ОРГАНАМ (`--organy 1`): волчья морда (Пасть) на шов «основание морды» человека и волчьи уши (Чутьё) на его
 # «основания ушей»; куски со швом на голове держат мировой поворот донора. `--kmax 1` — масштаб по БОЛЬШЕМУ из отношений
@@ -134,8 +143,8 @@ cam = bpy.data.objects.new('cam', bpy.data.cameras.new('cam')); sc.collection.ob
 cam.data.type = 'ORTHO'; cam.data.clip_end = 100; cam.data.ortho_scale = 2.3
 s35, c35 = math.sin(math.radians(35)), math.cos(math.radians(35))
 for nm, d in (('front', (0, -1, 0)), ('34f', (-s35, -c35, 0.1)), ('side', (-1, 0, 0)), ('34b', (-s35, c35, 0.15)), ('back', (0, 1, 0))):
-    e = Vector(d).normalized(); c = Vector((0, -0.03, 1.70)) if opt['golova'] > 0 else Vector((0, 0, 0.98))
-    cam.data.ortho_scale = 0.62 if opt['golova'] > 0 else 2.3
+    e = Vector(d).normalized(); c = Vector((0, -0.03, 1.76 if opt['stupen'] >= 2 else 1.70)) if opt['golova'] > 0 else Vector((0, 0, 0.98))
+    cam.data.ortho_scale = (0.85 if opt['stupen'] >= 2 else 0.62) if opt['golova'] > 0 else 2.3
     cam.location = c + e * 10
     cam.rotation_euler = (c - cam.location).to_track_quat('-Z', 'Y').to_euler()
     sc.render.filepath = '%s_%s.png' % (pre, nm)
