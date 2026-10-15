@@ -14,7 +14,7 @@ Hunyuan) переносится на ТОПОЛОГИЮ меша шасси (ч�
   5. СУСТАВЫ ЦЕЛИ — те же суставы шасси, перенесённые пластиной, — файлом рядом (формат `*-skelet.json`).
 
   blender -b --factory-startup -P kluch_vida.py -- шасси.blend цель.obj ориентиры.json выход.fbx скелет_шасси.json суставы_цели.json
-      [--imya Волк] [--iter 4] [--smooth 6] [--maxd 0.08] [--maxd_obj голова:0.025,шея:0.025 [--zatylok y]] [--bez Чутьё] [--lam 1e-4] [--gladit N [--voxel 0.012]] [--rasput 60] [--polosa Ноги:0.40:0.80:20] [--skuly k:yc:zc:r] [--bez_zony Ноги:0.14] [--plechi k] [--grud kd] [--taz kt] [--kupol f:zb:yb]
+      [--imya Волк] [--iter 4] [--smooth 6] [--maxd 0.08] [--maxd_obj голова:0.025,шея:0.025 [--zatylok y]] [--bez Чутьё] [--lam 1e-4] [--gladit N [--voxel 0.012]] [--rasput 60] [--polosa Ноги:0.40:0.80:20] [--skuly k:yc:zc:r] [--bez_zony Ноги:0.14] [--plechi k] [--grud kd] [--taz kt] [--golova_zhestko 1] [--mesta паспорт.json,…] [--kupol f:zb:yb]
   blender -b --factory-startup -P kluch_vida.py -- шасси.blend - - - скелет_шасси.json - --istochnik ориентиры_шасси.json
 """
 import sys, json, math
@@ -250,10 +250,64 @@ if any(k in opt for k in ('plechi', 'grud', 'taz')):
                 X[k_][1] = yc + (X[k_][1] - yc) * (1 + (kd - 1) * wp)
             wt = band(z, 0.85, 1.02, 0.65, 1.15)
             X[k_][0] *= 1 + (kt - 1) * wt
+# ГОЛОВА ЖЁСТКО (`--golova_zhestko 1`, 15.10, геймдизайнер: «голова обезьяны-инопланетянина, а не волка» — на лице К2 мало
+# вершин под волчью морду): голову даёт кусок волчьего меша (черта «голова» по шву «основание черепа»), а ключ ведёт шею и
+# ниже. Голова и уши шасси в ключе только ПЕРЕЕЗЖАЮТ целиком — сдвигом кольца шеи (среднее по его 12 вершинам); кольцо
+# держит форму, поэтому шов куска на ключевом теле — то же кольцо со сдвигом. Шея к кольцу переходит плавно (8 см)
+RING_SHIFT = None
+if opt.get('golova_zhestko', '0') == '1':
+    ring_ = [k_ for k_ in range(len(X)) if 'голова' in owner[k_] and 'шея' in owner[k_]]
+    RING_SHIFT = np.mean([X[k_] - U0[k_] for k_ in ring_], axis=0)
+    RING_SHIFT[0] = 0.0                                   # тело симметрично: боковой сдвиг — шум притяжки
+    zr = float(np.mean([U0[k_][2] for k_ in ring_]))
+    for k_ in range(len(X)):
+        if owner[k_] & {'голова', 'Чутьё'}:
+            X[k_] = U0[k_] + RING_SHIFT
+        elif 'шея' in owner[k_]:
+            w_ = sm_((U0[k_][2] - (zr - 0.08)) / 0.08)
+            X[k_] = (1 - w_) * X[k_] + w_ * (U0[k_] + RING_SHIFT)
+    print('КЛЮЧ: голова жёстко — сдвиг кольца шеи на весе 1: (%.4f %.4f %.4f) м, вершин кольца %d' % (*RING_SHIFT, len(ring_)))
 res = [bvh.find_nearest(Vector(X[k_]))[3] for k_ in range(len(X)) if free[k_]]
 print('КЛЮЧ: до поверхности цели — средн. %.4f м, 95%% %.4f, макс %.4f; ориентиров %d, нет у цели: %s' % (
     float(np.mean(res)), float(np.percentile(res, 95)), float(np.max(res)), n, ', '.join(miss) or '—'))
 bpy.data.objects.remove(tg, do_unlink=True)
+
+# ---------- места под ключом (`--mesta паспорт.json,паспорт.json`) ----------
+# В паспорт шва (`seam`) пишется `pod_klyuchom: [{klyuch: ИМЯ, ...}]` — центр, ось, «верх», `ring_m` и эллипс на весе 1, оси Unity.
+# Точка едет сдвигом кожи: среднее сдвигов 8 ближайших вершин шасси с весом 1/расстояние (место может лежать под кожей).
+# Игра смешивает базу и вес 1 линейно (ось и «верх» — slerp)
+if opt.get('mesta'):
+    from mathutils import kdtree as _kd
+    KD = _kd.KDTree(len(U0))
+    for k_, p in enumerate(U0):
+        KD.insert(Vector(p), k_)
+    KD.balance()
+    Dsp = X - U0
+    def moved(pb):
+        hits = KD.find_n(Vector(pb), 8)
+        w_ = np.array([1 / max(d_, 1e-4) for _, _, d_ in hits]); w_ /= w_.sum()
+        return np.array(pb) + sum(w__ * Dsp[i_] for w__, (_, i_, _) in zip(w_, hits))
+    UB = lambda u: np.array([-u[0], -u[2], u[1]]); BU = lambda b: [round(float(-b[0]), 5), round(float(b[2]), 5), round(float(-b[1]), 5)]
+    for pth in opt['mesta'].split(','):
+        P_ = json.load(open(pth, encoding='utf-8')); s_ = P_['seam']
+        c0 = UB(s_['center_m']); c1 = moved(c0)
+        ax1 = moved(c0 + 0.05 * UB(s_['axis_out'])) - c1; ax1 /= np.linalg.norm(ax1)
+        up1 = moved(c0 + 0.05 * UB(s_['up'])) - c1; up1 = up1 - ax1 * up1.dot(ax1); up1 /= np.linalg.norm(up1)
+        ring1 = [moved(UB(q)) for q in s_['ring_m']] if 'ring_m' in s_ else None
+        if ring1:
+            side1 = np.cross(up1, ax1)
+            el = [round(float(max(abs((q - c1).dot(side1)) for q in ring1)), 4), round(float(max(abs((q - c1).dot(up1)) for q in ring1)), 4)]
+        else:
+            el = s_['ellipse_m']
+        rec = {'center_m': BU(c1), 'axis_out': [round(v, 5) for v in BU(ax1)], 'up': [round(v, 5) for v in BU(up1)], 'ellipse_m': el,
+               'note': 'шов под ключом «%s» на весе 1 (kluch_vida.py --mesta); между базой и весом 1 — линейно, ось и «верх» — slerp' % NAME}
+        if ring1:
+            rec['ring_m'] = [BU(q) for q in ring1]
+        rec = dict({'klyuch': NAME}, **rec)              # JsonUtility не читает словари — массив записей с полем `klyuch`
+        lst = [r_ for r_ in (s_.get('pod_klyuchom') or []) if isinstance(r_, dict) and r_.get('klyuch') != NAME]
+        s_['pod_klyuchom'] = lst + [rec]
+        json.dump(P_, open(pth, 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
+        print('КЛЮЧ: место «%s» под ключом: центр %s → %s, эллипс %s → %s' % (s_['type'], s_['center_m'], rec['center_m'], s_['ellipse_m'], el))
 
 # ---------- ключи ----------
 for o in OBJ:
@@ -269,6 +323,8 @@ for o in OBJ:
 out = dict(sk); bones = []
 for b in sk['bones']:
     h, t = tps([b['head'], b['tail']])
+    if RING_SHIFT is not None and b['name'].split('.')[0] in ('голова', 'челюсть', 'морда', 'надбровье'):
+        h, t = np.array(b['head']) + RING_SHIFT, np.array(b['tail']) + RING_SHIFT     # голова жёсткая — её кости тоже
     bones.append(dict(b, head=[round(float(c), 5) for c in h], tail=[round(float(c), 5) for c in t]))
 out['bones'] = bones
 out['note'] = 'суставы цели «%s» на шасси: суставы шасси, перенесённые тонкой пластиной по ориентирам (kluch_vida.py); оси как у скелета шасси' % NAME
