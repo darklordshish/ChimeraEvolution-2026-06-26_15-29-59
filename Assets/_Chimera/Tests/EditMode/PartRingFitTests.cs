@@ -121,8 +121,14 @@ namespace Chimera.Tests.EditMode
             Assert.IsTrue(PartAssembly.Seam(human, "корень хвоста", out var seat), "у человека нет посадочного места хвоста");
             var tail = Posed(pieces.First(p => p.name == "Хвост").GetComponent<SkinnedMeshRenderer>(), root);
             Assert.Less(tail.Min(p => (p - seat.center).magnitude), 0.08f, "хвост не у посадочного кольца");
+            // «наружу» мерится НАЧАЛОМ хвоста, а не кончиком: хвост на двуногом висит дугой вниз-назад (ключ «двуногий», лист
+            // ступеней; геймдизайнер 15.10), и кончик законно опущен почти поперёк оси шва. Начало — ближняя треть по удалению
+            var reach = tail.Max(p => (p - seat.center).magnitude);
+            var near = tail.Where(p => (p - seat.center).magnitude < reach / 3f).ToArray();
+            var start = near.Aggregate(Vector3.zero, (a, b) => a + b) / near.Length - seat.center;
+            Assert.Greater(Vector3.Dot(start.normalized, seat.axis.normalized), 0.3f, "хвост начинается не наружу от крестца");
             var tip = tail.OrderByDescending(p => (p - seat.center).magnitude).First() - seat.center;
-            Assert.Greater(Vector3.Dot(tip.normalized, seat.axis.normalized), 0.3f, "хвост направлен не наружу от крестца");
+            Assert.Less(tip.z, 0f, "кончик хвоста ушёл вперёд — хвост обязан висеть позади крупа");
         }
 
         [Test]
