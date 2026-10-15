@@ -95,6 +95,9 @@ public class SpeciesSO : ScriptableObject
     public BodyPart[] traits;
     /// <summary>ПОСАДОЧНЫЕ МЕСТА — швы на сплошной коже под кусок, которого у вида нет (корень хвоста у человека).</summary>
     public BodySeat[] seats;
+    /// <summary>СУСТАВЫ ПОД КЛЮЧОМ (`handoff/klyuchi/<вид>-<цель>-sustavy.json`): кости скелета на полном весе формы-ключа
+    /// вида-цели. Кости сдвигаются к ним на вес ключа до привязки меша (`KeySkeleton`) — тело гнётся суставами цели.</summary>
+    public KeyJoint[] keyJoints;
 
     /// <summary>СОСТАВНОЕ ТЕЛО (`ChainSwap`): кости, которые поле НЕ рисует, потому что их часть рисует деталь, и сами
     /// поставленные детали. Только у копии в памяти.</summary>
@@ -433,4 +436,12 @@ public class BodyPart
 
     /// <summary>Видна ли культя на теле этого плана: да, когда работает адаптация плана (план носителя другой).</summary>
     public bool StumpShown(string carrierPlan) => stump != null && !string.IsNullOrEmpty(plan) && plan != carrierPlan;
+}
+
+/// <summary>Кость под формой-ключом при весе 1: начало, направление вдоль кости (+Y кости) и «вперёд» (+Z), в метрах тела.</summary>
+[System.Serializable]
+public class KeyJoint
+{
+    public string key, bone;
+    public Vector3 head, along, forward;
 }

@@ -65,7 +65,9 @@ public static class MorphBuilder
         if (bodyMesh)
         {
             var bodySkeleton = BoneMesher.Build(container.transform, chassis, PrimitiveMaterial(), field: false);
-            if (BodyMesh.Place(container.transform, bodySkeleton, chassis.bodyMesh, PrimitiveMaterial(), null, BodyMesh.KeysFor(chassis, wornOrgans)) > 0) return;
+            var bodyKeys = BodyMesh.KeysFor(chassis, wornOrgans);
+            KeySkeleton.Apply(container.transform, bodySkeleton, chassis, bodyKeys);   // кости — к суставам цели до привязки
+            if (BodyMesh.Place(container.transform, bodySkeleton, chassis.bodyMesh, PrimitiveMaterial(), null, bodyKeys) > 0) return;
             // в модели ни одного годного объекта — строим полем, как если бы её не было (ошибка уже в консоли)
             bodySkeleton.name = "Skeleton~dead"; bodySkeleton.gameObject.SetActive(false); Kill(bodySkeleton.gameObject);
             chassis = ChainSwap.Compose(chassis, wornOrgans);
@@ -84,7 +86,9 @@ public static class MorphBuilder
                 if (!string.IsNullOrEmpty(part.objectSlot) && !PartAssembly.Over(chassis, part, donor)) given.Add(part.objectSlot);
                 if (place != null) given.Add(place);
             }
-            BodyMesh.Place(container.transform, chimeraSkeleton, pureChassis.bodyMesh, PrimitiveMaterial(), given, BodyMesh.KeysFor(pureChassis, wornOrgans));
+            var chimeraKeys = BodyMesh.KeysFor(pureChassis, wornOrgans);
+            KeySkeleton.Apply(container.transform, chimeraSkeleton, pureChassis, chimeraKeys);
+            BodyMesh.Place(container.transform, chimeraSkeleton, pureChassis.bodyMesh, PrimitiveMaterial(), given, chimeraKeys);
             foreach (var (part, donor) in chassis.placedParts)
             {
                 var piece = PartAssembly.Place(container.transform, chassis, part, donor, PrimitiveMaterial());

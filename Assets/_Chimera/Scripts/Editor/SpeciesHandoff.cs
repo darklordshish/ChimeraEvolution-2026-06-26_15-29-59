@@ -94,6 +94,7 @@ public static class SpeciesHandoff
         species.traits = ReadTraits(species, out var traitProblems);
         foreach (var p in traitProblems) Debug.LogError($"[черты] {species.speciesName}: {p}");
         species.seats = ReadSeats(species);
+        species.keyJoints = ReadKeyJoints(species);
         if (species.traits.Length > 0 || species.seats.Length > 0)
             Debug.Log($"[черты] {species.speciesName}: кусков-черт {species.traits.Length}, посадочных мест {species.seats.Length}");
         return graph;
@@ -211,6 +212,44 @@ public static class SpeciesHandoff
 
     /// <summary>ПОСАДОЧНЫЕ МЕСТА (`handoff/<вид>-*.json` с `kind: "посадочное место…"`): шов на сплошной коже под кусок,
     /// которого у вида нет. Лежат рядом с графом: это место тела, а не деталь.</summary>
+    /// <summary>СУСТАВЫ ПОД КЛЮЧОМ — `klyuchi/<вид>-<цель>-sustavy.json` (формат `<вид>-skelet.json` модельной линии: head, tail,
+    /// z_axis в метрах тела, оси Blender). Цель — вид, чьё имя транслитом стоит в имени файла; имя ключа = имя вида.
+    /// Разбор регулярками, как в `GraphFromSkeleton`: JsonUtility на этом формате молча отдаёт пустое.</summary>
+    public static KeyJoint[] ReadKeyJoints(SpeciesSO species)
+    {
+        var list = new List<KeyJoint>();
+        var dir = Dir + "klyuchi/";
+        if (!System.IO.Directory.Exists(dir)) return list.ToArray();
+        var names = AssetDatabase.FindAssets("t:SpeciesSO").Select(g => AssetDatabase.LoadAssetAtPath<SpeciesSO>(AssetDatabase.GUIDToAssetPath(g)))
+                                 .Where(x => x != null).Select(x => x.speciesName).Distinct().ToList();
+        string stem = Translit(species.speciesName) + "-";
+        foreach (var file in System.IO.Directory.GetFiles(dir, stem + "*-sustavy.json"))
+        {
+            var mid = System.IO.Path.GetFileName(file).Substring(stem.Length).Replace("-sustavy.json", "");
+            var key = names.FirstOrDefault(n => Translit(n) == mid);
+            if (key == null) { Debug.LogError($"[суставы] «{file}»: вид-цель «{mid}» не найден — не принято"); continue; }
+            var text = System.IO.File.ReadAllText(file);
+            int b = text.IndexOf("\"bones\""); if (b < 0) continue;
+            var part = text.Substring(b); int so = part.IndexOf("\"sockets\""); if (so > 0) part = part.Substring(0, so);
+            foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(part, @"\{[^{}]*\}"))
+            {
+                var obj = m.Value;
+                string Str(string k) { var r = System.Text.RegularExpressions.Regex.Match(obj, "\"" + k + @"""\s*:\s*""([^""]*)"""); return r.Success ? r.Groups[1].Value : null; }
+                float[] Arr(string k)
+                {
+                    var r = System.Text.RegularExpressions.Regex.Match(obj, "\"" + k + @"""\s*:\s*\[([^\]]*)\]");
+                    return r.Success ? r.Groups[1].Value.Split(',').Select(x => float.Parse(x.Trim(), System.Globalization.CultureInfo.InvariantCulture)).ToArray() : null;
+                }
+                string name = Str("name"); float[] h = Arr("head"), t = Arr("tail"), z = Arr("z_axis");
+                if (string.IsNullOrEmpty(name) || h is not { Length: 3 } || t is not { Length: 3 } || z is not { Length: 3 }) continue;
+                Vector3 U(float[] a) => new(-a[0], a[2], -a[1]);   // Blender → Unity
+                Vector3 head = U(h), along = (U(t) - head).normalized;
+                list.Add(new KeyJoint { key = key, bone = name, head = head, along = along, forward = Vector3.ProjectOnPlane(U(z), along).normalized });
+            }
+        }
+        return list.ToArray();
+    }
+
     public static BodySeat[] ReadSeats(SpeciesSO species)
     {
         var list = new List<BodySeat>();
