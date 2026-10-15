@@ -293,6 +293,8 @@ if opt.get('mesta'):
         c0 = UB(s_['center_m']); c1 = moved(c0)
         ax1 = moved(c0 + 0.05 * UB(s_['axis_out'])) - c1; ax1 /= np.linalg.norm(ax1)
         up1 = moved(c0 + 0.05 * UB(s_['up'])) - c1; up1 = up1 - ax1 * up1.dot(ax1); up1 /= np.linalg.norm(up1)
+        if abs(c0[0]) < 1e-3:                             # шов на средней линии — симметричен: боковой снос — шум притяжки
+            c1[0] = 0.0; ax1[0] = 0.0; ax1 /= np.linalg.norm(ax1); up1[0] = 0.0; up1 = up1 - ax1 * up1.dot(ax1); up1 /= np.linalg.norm(up1)
         ring1 = [moved(UB(q)) for q in s_['ring_m']] if 'ring_m' in s_ else None
         if ring1:
             side1 = np.cross(up1, ax1)
