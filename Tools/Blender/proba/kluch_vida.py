@@ -233,11 +233,14 @@ if any(k in opt for k in ('plechi', 'grud', 'taz')):
     seam_ = [k_ for k_ in range(len(X)) if 'Руки' in owner[k_] and owner[k_] & set(TORSO)]
     XS = float(np.mean([abs(X[k_][0]) for k_ in seam_])) if seam_ else 0.2
     WS = float(np.mean([band(U0[k_][2], 1.25, 1.60, 1.10, 1.75) for k_ in seam_])) if seam_ else 1.0
+    XA = abs(float(tps([BN['плечо.L']['head']])[0][0]))      # плечевой сустав в ключе
     yc = np.mean([X[k_][1] for k_ in range(len(X)) if owner[k_] & set(TORSO) and abs(X[k_][2] - 1.35) < 0.05])
     for k_ in range(len(X)):
         z = U0[k_][2]
         if 'Руки' in owner[k_] and not owner[k_] & set(TORSO):
-            X[k_][0] -= np.sign(X[k_][0]) * (1 - kp) * XS * WS
+            # рука: внутренняя часть (у шва) сжимается как корпус, всё дальше плечевого сустава XA — сдвигом на ту же величину,
+            # что сустав: силуэт плеч задаёт дельта, она на объекте рук
+            X[k_][0] -= np.sign(X[k_][0]) * (1 - kp) * min(abs(X[k_][0]), XA)
         elif owner[k_] & set(TORSO + ('Ноги',)) and not owner[k_] & set(HEADS[:1]):
             wp = band(z, 1.25, 1.60, 1.10, 1.75)
             if 'шея' in owner[k_]:                        # к кольцу головы (z шасси 1.616) сжатие гаснет до нуля
