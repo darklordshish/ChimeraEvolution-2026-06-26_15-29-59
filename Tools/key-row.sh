@@ -16,7 +16,9 @@ asset="Assets/_Chimera/Data/$species.asset"
 tmp="Assets/~КлючРяд"; out="Docs/Диаграммы/Кадры/Ключ-$key"; mkdir -p "$out"
 u() { unity command "$@" >/dev/null; }
 
-unity command eval --code "UnityEditor.AssetDatabase.Refresh(); return 1;" >/dev/null
+# Refresh один раз не переимпортировал подменённый FBX (15.10, Модельный: три варианта корпуса вышли одинаковыми) —
+# модель шасси переимпортируется принудительно
+unity command eval --code "UnityEditor.AssetDatabase.Refresh(); var sp = UnityEditor.AssetDatabase.LoadAssetAtPath<SpeciesSO>(\"$asset\"); var m = sp != null && sp.bodyMesh != null ? UnityEditor.AssetDatabase.GetAssetPath(sp.bodyMesh) : null; if (m != null) UnityEditor.AssetDatabase.ImportAsset(m, UnityEditor.ImportAssetOptions.ForceUpdate); return m;" >/dev/null
 for w in $weights; do
   u run_script --file Tools/Agent/KeyShot.cs --entry KeyShot.On --args "[\"$key\",$w]"
   for v in profile front; do
