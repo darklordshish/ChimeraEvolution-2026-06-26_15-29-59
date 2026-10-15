@@ -60,15 +60,23 @@ public static class BodyMesh
     /// <summary>ИДЕНТИЧНОСТЬ — ФОРМАМИ-КЛЮЧАМИ НА МЕШЕ ШАССИ (опыт 14.10, консилиум формы 01.10, В3/В6): у меша шасси есть
     /// ключ на каждый вид-цель (имя ключа = имя вида, цель натянута на топологию шасси по ориентирам), и тело ТЕЧЁТ к виду
     /// весом ключа, а не надевает его куски («костюм на утренник» — вердикт геймдизайнера кускам на ступени 2). Ключ на
-    /// пару «шасси → вид», а не меш на химеру. Вес — ступень идентичности (`GlobalLayer.G`): 0, 0.35, 0.7.</summary>
+    /// пару «шасси → вид», а не меш на химеру. Вес — ступень идентичности (`KeyWeight`): ступень 2 — полный ключ.
+    ///     ПРАВАЯ КОЛОНКА ЛИСТА СТУПЕНЕЙ — СТУПЕНЬ 2, А НЕ «ЧИСТЫЙ ВИД» (геймдизайнер 15.10: «самые правые — 2 степень
+    /// идентичности, ведь 3 достижима на родном шасси только»). Цель ключа снята с правой колонки, значит на чужом
+    /// шасси вес 1 = ступень 2; ступень 3 (чистый вид) у ключа не бывает — это родной меш вида.</summary>
     public static Dictionary<string, float> KeysFor(SpeciesSO chassis, IReadOnlyList<Organ> worn)
     {
         var keys = new Dictionary<string, float>();
         if (ForceKey != null) { keys[ForceKey] = ForceWeight; return keys; }
         var (target, step) = GlobalLayer.Step(chassis, worn);
-        if (target != null && step > 0) keys[target.speciesName] = GlobalLayer.G(step);
+        if (target != null && step > 0) keys[target.speciesName] = KeyWeight(step);
         return keys;
     }
+
+    /// <summary>Вес ключа по ступени: 1 — ручка (лист: колонка 2 из «база · ст.1 · · ст.2»), 2 — полный ключ.
+    /// Не `GlobalLayer.G`: тот смешивает пропорции поля с ЧИСТЫМ видом (вес 1 — родное шасси), а цель ключа — ступень 2.</summary>
+    public static float KeyStep1 = 0.5f;
+    public static float KeyWeight(int step) => step >= 2 ? 1f : step == 1 ? KeyStep1 : 0f;
 
     /// <summary>Ключ и вес вручную — для ряда кадром (вес 0…1).</summary>
     public static string ForceKey;

@@ -202,5 +202,19 @@ namespace Chimera.Tests.EditMode
             Assert.IsNull(go.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == "челюсть"), "при выключенном меше вида его кости не создаются");
             Assert.IsFalse(go.GetComponentsInChildren<SkinnedMeshRenderer>(true).Any(r => r.sharedMesh.vertexCount == 3));
         }
+        /// <summary>ПРАВАЯ КОЛОНКА ЛИСТА — СТУПЕНЬ 2 (геймдизайнер 15.10): на чужом шасси ступень 3 недостижима, поэтому цель
+        /// ключа, снятая с правой колонки, — это полный вес на ступени 2. Человек со всеми волчьими органами — ключ «Волк» = 1.</summary>
+        [Test]
+        public void SpeciesKey_FullWeightAtStepTwo()
+        {
+            var human = UnityEditor.AssetDatabase.LoadAssetAtPath<SpeciesSO>("Assets/_Chimera/Data/Человек.asset");
+            var wolf = UnityEditor.AssetDatabase.LoadAssetAtPath<SpeciesSO>("Assets/_Chimera/Data/Волк.asset");
+            var worn = human.organs.Where(o => o != null).Select(o => o.chassisOnly ? o : wolf.organs.FirstOrDefault(w => w != null && w.slot == o.slot) ?? o).ToList();
+            var (target, step) = GlobalLayer.Step(human, worn);
+            if (step != 2 || target != wolf) Assert.Inconclusive($"набор не дал ступень 2 волка (ступень {step})");
+            var keys = BodyMesh.KeysFor(human, worn);
+            Assert.AreEqual(1f, keys["Волк"], 1e-6f, "на ступени 2 ключ вида — полный: цель ключа снята с правой колонки листа");
+            Assert.AreEqual(BodyMesh.KeyStep1, BodyMesh.KeyWeight(1), 1e-6f);
+        }
     }
 }
