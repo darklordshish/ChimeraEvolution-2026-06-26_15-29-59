@@ -371,6 +371,18 @@ public class BodySeat
     public Vector3 center, axis, up;
     public Vector2 ellipse;  // полуоси: вбок × по «верху»
     [System.NonSerialized] public bool skin;   // место на сплошной коже (из `seats`): кусок садится поверх, а не заменяет
+    public KeyedSeat[] keyed;  // то же место на теле под формой-ключом при весе 1 (центр, оси, эллипс); вес между — смешением
+}
+
+/// <summary>ПОСАДОЧНОЕ МЕСТО ПОД КЛЮЧОМ (15.10): ключ вида двигает кожу, и место морды или корня хвоста на весе 0.7 уже не
+/// там, где у базы. Вершин кольца у места нет (это числа паспорта), поэтому модельная линия считает его на весе 1 тем же
+/// переносом, что ключ, а между базой и весом 1 место смешивается по весу ключа.</summary>
+[System.Serializable]
+public class KeyedSeat
+{
+    public string key;       // имя формы-ключа (= имя вида-цели)
+    public Vector3 center, axis, up;
+    public Vector2 ellipse;
 }
 
 [System.Serializable]

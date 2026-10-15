@@ -21,6 +21,7 @@ namespace Chimera.Tests.EditMode
         public void TearDown()
         {
             PartAssembly.MeshPieces = false; PartAssembly.ForceTraits = null; PartAssembly.ForceStep = 2;
+            BodyMesh.ForceKey = null; BodyMesh.ForceWeight = 0f; BodyMesh.ResetCache();
             foreach (var o in trash) if (o != null) Object.DestroyImmediate(o);
             trash.Clear();
             ChainSwap.ResetCache();
@@ -153,6 +154,29 @@ namespace Chimera.Tests.EditMode
             Assert.IsFalse(PartAssembly.Seam(snake, muzzle.seam, out _), "у змеи появился шов морды — правило пора пересмотреть");
             CollectionAssert.IsEmpty(Pieces(Build(snake, With(snake, wolf, BodySlots.Maw))).Where(p => p.GetComponent<SkinnedMeshRenderer>().sharedMesh.name.Contains("кусок")),
                                      "кусок встал на тело без шва");
+        }
+
+        /// <summary>КЛЮЧ = ИДЕНТИЧНОСТЬ, КУСОК = ОРГАН (15.10): ключ вида двигает кожу носителя, и кусок органа обязан сесть по
+        /// шву, который ключ уже сдвинул, — иначе на весе 0.7 волчьи уши висят там, где были уши человека. Кольцо ушей
+        /// человека — вершины его меша, сдвиг читается из самой формы-ключа.</summary>
+        [Test]
+        public void OrganPiece_OnKeyedBody_FollowsTheSeam()
+        {
+            var wolf = Load("Волк"); var human = Load("Человек");
+            if (human.bodyMesh == null) Assert.Inconclusive("у человека нет меша вида — `Models/chelovek_mesh.fbx` не принят");
+            Vector3 Ears(float w)
+            {
+                BodyMesh.ForceKey = "Волк"; BodyMesh.ForceWeight = w; BodyMesh.ResetCache(); ChainSwap.ResetCache();
+                var go = Build(human, With(human, wolf, BodySlots.Sense));
+                var ears = Pieces(go).FirstOrDefault(p => p.GetComponent<SkinnedMeshRenderer>().sharedMesh.name.Contains("кусок") && p.name == BodySlots.Sense);
+                if (ears == null) Assert.Inconclusive("уши волка кусками на человеке не встали — паспорт ушей или кольцо уха человека не приняты");
+                var v = Posed(ears.GetComponent<SkinnedMeshRenderer>(), go.transform);
+                return v.Aggregate(Vector3.zero, (a, b) => a + b) / v.Length;
+            }
+            var bodyKeyed = human.bodyMesh.GetComponentsInChildren<SkinnedMeshRenderer>(true).Any(r => r.sharedMesh != null && r.sharedMesh.GetBlendShapeIndex("Волк") >= 0);
+            if (!bodyKeyed) Assert.Inconclusive("у меша человека нет формы-ключа «Волк»");
+            float moved = (Ears(1f) - Ears(0f)).magnitude;
+            Assert.Greater(moved, 0.01f, $"на полном весе ключа уши волка сдвинулись на {moved * 100f:0.0} см — сидят на шве базы, а не на шве под ключом");
         }
 
         [Test]

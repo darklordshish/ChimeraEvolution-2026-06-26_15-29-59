@@ -165,7 +165,7 @@ public static partial class PartAssembly
         var seat = sp.seats?.FirstOrDefault(s => s != null && s.seam == seam);
         if (seat != null)
         {
-            found = new BodySeat { seam = seat.seam, bone = seat.bone, center = seat.center, axis = seat.axis, up = seat.up, ellipse = seat.ellipse, skin = true };
+            found = new BodySeat { seam = seat.seam, bone = seat.bone, center = seat.center, axis = seat.axis, up = seat.up, ellipse = seat.ellipse, skin = true, keyed = seat.keyed };
             return true;
         }
         var own = (sp.parts ?? new BodyPart[0]).Concat(sp.traits ?? new BodyPart[0])
@@ -223,6 +223,68 @@ public static partial class PartAssembly
         return Claimed(part, donor) != null || donor.bones.FirstOrDefault(b => b.name == part.seamBone)?.limb == "голова";
     }
 
+    /// <summary>ФОРМА-КЛЮЧ НА ТЕЛЕ НОСИТЕЛЯ И ШОВ (15.10, «ключ = идентичность, кусок = орган»): ключ двигает кожу, и шов,
+    /// снятый с базы, на весе 0.7 висит в воздухе или тонет. Вес ключа берётся с самих рендереров тела — что нарисовано,
+    /// по тому и садимся. Посадочное место смешивается между базой и своей записью под ключом (вес 1); кольцо снимаемой
+    /// детали (уши) — вершины меша, их сдвиг ключом читается прямо из формы-ключа: центр едет на средний сдвиг кольца,
+    /// эллипс — на отношение средних радиусов.</summary>
+    static BodySeat UnderKey(Transform container, BodySeat c, BodyPart carrierRing)
+    {
+        var active = new List<(SkinnedMeshRenderer smr, int shape, float w)>();
+        foreach (var smr in container.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+        {
+            if (smr.GetComponent<BodyPartView>() != null || smr.sharedMesh == null) continue;
+            for (int i = 0; i < smr.sharedMesh.blendShapeCount; i++)
+            {
+                float w = smr.GetBlendShapeWeight(i) / 100f;
+                if (w > 1e-4f) active.Add((smr, i, w));
+            }
+        }
+        if (active.Count == 0) return c;
+        var r = new BodySeat { seam = c.seam, bone = c.bone, center = c.center, axis = c.axis, up = c.up, ellipse = c.ellipse, skin = c.skin, keyed = c.keyed };
+        if (carrierRing == null && c.keyed != null)
+        {
+            foreach (var (smr, shape, w) in active)
+            {
+                var k = c.keyed.FirstOrDefault(x => x != null && x.key == smr.sharedMesh.GetBlendShapeName(shape));
+                if (k == null) continue;
+                r.center = Vector3.Lerp(c.center, k.center, w);
+                r.axis = Vector3.Slerp(c.axis.normalized, k.axis.normalized, w);
+                r.up = Vector3.Slerp(c.up.normalized, k.up.normalized, w);
+                r.ellipse = Vector2.Lerp(c.ellipse, k.ellipse, w);
+                return r;
+            }
+            return r;
+        }
+        if (carrierRing?.ringM == null || carrierRing.ringM.Length < 3) return r;
+        var ring = carrierRing.ringM;
+        var shift = new Vector3[ring.Length]; var found = new bool[ring.Length];
+        foreach (var (smr, shape, w) in active)
+        {
+            var mesh = smr.sharedMesh;
+            if (!mesh.isReadable || smr.bones.Length == 0) continue;
+            var toBody = container.worldToLocalMatrix * smr.bones[0].localToWorldMatrix * mesh.bindposes[0];
+            var v = mesh.vertices; var dv = new Vector3[v.Length];
+            mesh.GetBlendShapeFrameVertices(shape, mesh.GetBlendShapeFrameCount(shape) - 1, dv, null, null);
+            for (int i = 0; i < ring.Length; i++)
+            {
+                if (found[i]) continue;
+                for (int j = 0; j < v.Length; j++)
+                    if ((toBody.MultiplyPoint3x4(v[j]) - ring[i]).sqrMagnitude < 4e-6f)
+                    { shift[i] = toBody.MultiplyVector(dv[j]) * w; found[i] = true; break; }
+            }
+        }
+        int n = found.Count(f => f);
+        if (n < 3) return r;
+        Vector3 c0 = Vector3.zero, c1 = Vector3.zero;
+        for (int i = 0; i < ring.Length; i++) if (found[i]) { c0 += ring[i] / n; c1 += (ring[i] + shift[i]) / n; }
+        float r0 = 0f, r1 = 0f;
+        for (int i = 0; i < ring.Length; i++) if (found[i]) { r0 += (ring[i] - c0).magnitude; r1 += (ring[i] + shift[i] - c1).magnitude; }
+        r.center = c.center + (c1 - c0);
+        if (r0 > 1e-6f) r.ellipse = c.ellipse * (r1 / r0);
+        return r;
+    }
+
     static bool CanPlaceRing(SpeciesSO body, BodyPart part, SpeciesSO donor) =>
         Seam(body, part.seam, out var seat) && (part.seamFrame || Seam(donor, part.seam, out _))
         && (!string.IsNullOrEmpty(seat.bone) || Weighted(part).Any(n => SkinBone(body, donor, part, n) != null));
@@ -237,6 +299,7 @@ public static partial class PartAssembly
         var carrierRing = mode == Fit.Over ? null : CarrierRing(body, part.seam);
         if (carrierRing != null)
             c = new BodySeat { seam = part.seam, bone = carrierRing.seamBone ?? c.bone, center = carrierRing.seamCenter, axis = carrierRing.seamAxis, up = carrierRing.seamUp, ellipse = c.ellipse };
+        c = UnderKey(container, c, carrierRing);
         BodySeat d;
         if (part.seamFrame) d = new BodySeat { center = part.seamCenter, axis = part.seamAxis, up = part.seamUp, ellipse = part.ellipse };
         else if (!Seam(donor, part.seam, out d)) return null;

@@ -172,7 +172,9 @@ public static class SpeciesHandoff
     // нет, — в ассете лежал нулевой эллипс (аудит Codex 04.10). `ellipse` без суффикса читается как прежде, для старых паспортов.
     // `ring_m` — массив массивов, JsonUtility такое не берёт: разбирается отдельно (`ReadRingM`)
     // КАДР ШВА (поставка 13.10): `center_m`, `axis_out` (от тела к куску), `up` — метры тела, оси Unity; `bone` — кость шва
-    [System.Serializable] class SeamDto { public string type, bone; public int[] ring; public float[] ellipse, ellipse_m, center_m, axis_out, up; }
+    [System.Serializable] class SeamDto { public string type, bone; public int[] ring; public float[] ellipse, ellipse_m, center_m, axis_out, up; public KeyedDto[] pod_klyuchom; }
+    // место под формой-ключом на весе 1 (`seam.pod_klyuchom`): ключ двигает кожу, вершин у места нет — числа считает модельная линия
+    [System.Serializable] class KeyedDto { public string klyuch; public float[] center_m, axis_out, up, ellipse_m; }
     // кусок бывает из нескольких объектов модели: к основному — морда (у целой головы), полость и зубы со своим цветом
     [System.Serializable] class ObjectsDto { public string main, stump, morda, polost, zuby; }
     [System.Serializable] class SeatDto { public string species, kind; public SeamDto seam; }
@@ -224,6 +226,11 @@ public static class SpeciesHandoff
                 seam = d.seam.type, bone = d.seam.bone, center = V(d.seam.center_m, Vector3.zero),
                 axis = V(d.seam.axis_out, Vector3.up), up = V(d.seam.up, Vector3.forward),
                 ellipse = new Vector2(d.seam.ellipse_m[0], d.seam.ellipse_m[1]),
+                keyed = (d.seam.pod_klyuchom ?? new KeyedDto[0])
+                    .Where(k => !string.IsNullOrEmpty(k?.klyuch) && k.center_m is { Length: >= 3 } && k.ellipse_m is { Length: >= 2 })
+                    .Select(k => new KeyedSeat { key = k.klyuch, center = V(k.center_m, Vector3.zero), axis = V(k.axis_out, V(d.seam.axis_out, Vector3.up)),
+                                                 up = V(k.up, V(d.seam.up, Vector3.forward)), ellipse = new Vector2(k.ellipse_m[0], k.ellipse_m[1]) })
+                    .ToArray(),
             });
         }
         return list.ToArray();
