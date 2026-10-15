@@ -6,7 +6,7 @@ using UnityEngine;
 /// временно сняты). Показывает, где гнётся нога. Снимать: `capture_game_view --camera ПрофильCam`.</summary>
 public static class BendShot
 {
-    public static string Run(string speciesAsset, float w, bool skeleton, float knee)
+    public static string Run(string speciesAsset, float w, bool skeleton, float knee, float hock = 0f)
     {
         foreach (var o in Object.FindObjectsByType<GameObject>(FindObjectsInactive.Include).Where(g => g != null && g.name == "~СГИБ")) Object.DestroyImmediate(o);
         var sp = AssetDatabase.LoadAssetAtPath<SpeciesSO>(speciesAsset);
@@ -23,6 +23,8 @@ public static class BendShot
         finally { sp.keyJoints = saved; BodyMesh.ForceKey = null; BodyMesh.ForceWeight = 0f; }
         foreach (var t in root.GetComponentsInChildren<Transform>(true).Where(t => t.name == "голень" || t.name == "голень.L"))
             t.Rotate(Vector3.right * knee, Space.World);   // сгиб колена вокруг оси «влево-вправо»
+        foreach (var t in root.GetComponentsInChildren<Transform>(true).Where(t => t.name == "стопа" || t.name == "стопа.L"))
+            t.Rotate(Vector3.right * hock, Space.World);   // сгиб скакательного (голеностопа)
         var cam = new GameObject("ПрофильCam").AddComponent<Camera>(); cam.transform.SetParent(root.transform, false);
         cam.transform.position = new Vector3(5f, 0.9f, 0f); cam.transform.rotation = Quaternion.LookRotation(Vector3.left, Vector3.up);
         cam.orthographic = true; cam.orthographicSize = 1.15f; cam.clearFlags = CameraClearFlags.SolidColor;

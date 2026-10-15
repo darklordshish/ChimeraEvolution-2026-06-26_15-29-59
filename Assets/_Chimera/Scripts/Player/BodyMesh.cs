@@ -83,7 +83,7 @@ public static class BodyMesh
     public static float ForceWeight;
 
     public static int Place(Transform container, Transform skeleton, GameObject model, Material mat, ICollection<string> skipSlots = null,
-                            IReadOnlyDictionary<string, float> keys = null)
+                            IReadOnlyDictionary<string, float> keys = null, SpeciesSO jointsOf = null)
     {
         var bones = new Dictionary<string, Transform>();
         foreach (var t in skeleton.GetComponentsInChildren<Transform>(true))
@@ -93,6 +93,17 @@ public static class BodyMesh
         var renderers = model.GetComponentsInChildren<SkinnedMeshRenderer>(true);
         foreach (var r in renderers)
             foreach (var b in r.bones) if (b != null) srcBones.Add(b);
+
+        // СКЕЛЕТ ПО ВЕСУ КЛЮЧА — ПОСЛЕ ДОСТРОЙКИ КОСТЕЙ МОДЕЛИ, ДО ПРИВЯЗКИ. Модель несёт кости, которых нет в графе
+        // (`стопа` человека, 15.10: граф строит и полевое тело, узел там сдвинул бы химеры), — сначала они достраиваются
+        // от своих костей-родителей, потом весь скелет едет к суставам цели, и только тогда снимается привязка
+        if (jointsOf != null)
+        {
+            foreach (var src in renderers)
+                foreach (var b in src.bones)
+                    if (b != null) Resolve(b, bones, srcBones, model.transform, container, skeleton);
+            KeySkeleton.Apply(container, skeleton, jointsOf, keys);
+        }
 
         int placed = 0;
         foreach (var src in renderers)

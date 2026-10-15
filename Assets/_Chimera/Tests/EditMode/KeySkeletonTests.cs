@@ -49,6 +49,20 @@ namespace Chimera.Tests.EditMode
             Assert.Less((half - Vector3.Lerp(base0, j.head, 0.5f)).magnitude, 0.002f, "на весе 0.5 голень не посередине");
         }
 
+        /// <summary>Кость модели, которой нет в графе (`стопа` — плюсна, 15.10), тоже едет к суставу цели: скакательному
+        /// суставу лапы есть чем гнуться.</summary>
+        [Test]
+        public void ModelOnlyBone_Foot_FollowsTheHock()
+        {
+            var h = Human;
+            var j = h?.keyJoints?.FirstOrDefault(x => x.key == "Волк" && x.bone == "стопа");
+            if (h?.bodyMesh == null || j == null) Assert.Inconclusive("у человека нет кости `стопа` под ключом «Волк»");
+            var morph = Build(1f);
+            var foot = Bone(morph, "стопа");
+            Assert.IsNotNull(foot, "кость стопы из модели не достроена");
+            Assert.Less((morph.InverseTransformPoint(foot.position) - j.head).magnitude, 0.002f, "на весе 1 стопа не у скакательного сустава цели");
+        }
+
         [Test]
         public void RestShape_IsTheKeyShape_NotDistortedBySkeleton()
         {
