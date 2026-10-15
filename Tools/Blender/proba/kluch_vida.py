@@ -14,7 +14,7 @@ Hunyuan) переносится на ТОПОЛОГИЮ меша шасси (ч�
   5. СУСТАВЫ ЦЕЛИ — те же суставы шасси, перенесённые пластиной, — файлом рядом (формат `*-skelet.json`).
 
   blender -b --factory-startup -P kluch_vida.py -- шасси.blend цель.obj ориентиры.json выход.fbx скелет_шасси.json суставы_цели.json
-      [--imya Волк] [--iter 4] [--smooth 6] [--maxd 0.08] [--maxd_obj голова:0.025,шея:0.025 [--zatylok y]] [--bez Чутьё] [--lam 1e-4] [--gladit N [--voxel 0.012]] [--rasput 60] [--polosa Ноги:0.40:0.80:20] [--skuly k:yc:zc:r] [--bez_zony Ноги:0.14] [--plechi k] [--grud kd] [--taz kt] [--golova_zhestko 1] [--mesta паспорт.json,…] [--kupol f:zb:yb]
+      [--imya Волк] [--iter 4] [--smooth 6] [--maxd 0.08] [--maxd_obj голова:0.025,шея:0.025 [--zatylok y]] [--bez Чутьё] [--lam 1e-4] [--gladit N [--voxel 0.012]] [--rasput 60] [--polosa Ноги:0.40:0.80:20] [--skuly k:yc:zc:r] [--bez_zony Ноги:0.14] [--plechi k] [--grud kd] [--taz kt] [--golova_zhestko 1 [--golova_vverh r]] [--mesta паспорт.json,…] [--kupol f:zb:yb]
   blender -b --factory-startup -P kluch_vida.py -- шасси.blend - - - скелет_шасси.json - --istochnik ориентиры_шасси.json
 """
 import sys, json, math
@@ -259,12 +259,16 @@ if opt.get('golova_zhestko', '0') == '1':
     ring_ = [k_ for k_ in range(len(X)) if 'голова' in owner[k_] and 'шея' in owner[k_]]
     RING_SHIFT = np.mean([X[k_] - U0[k_] for k_ in ring_], axis=0)
     RING_SHIFT[0] = 0.0                                   # тело симметрично: боковой сдвиг — шум притяжки
+    # `--golova_vverh r` — шея длиннее на r м: кольцо и голова поднимаются, шея тянется (переход 8 см ниже кольца растёт
+    # до 20 см, чтобы не было ступени). Ряд «высота посадки головы» 15.10: кусок головы садится на кольцо из меша
+    RING_SHIFT[2] += float(opt.get('golova_vverh', '0'))
     zr = float(np.mean([U0[k_][2] for k_ in ring_]))
     for k_ in range(len(X)):
         if owner[k_] & {'голова', 'Чутьё'}:
             X[k_] = U0[k_] + RING_SHIFT
         elif 'шея' in owner[k_]:
-            w_ = sm_((U0[k_][2] - (zr - 0.08)) / 0.08)
+            zb_ = 0.08 + 1.5 * float(opt.get('golova_vverh', '0'))
+            w_ = sm_((U0[k_][2] - (zr - zb_)) / zb_)
             X[k_] = (1 - w_) * X[k_] + w_ * (U0[k_] + RING_SHIFT)
     print('КЛЮЧ: голова жёстко — сдвиг кольца шеи на весе 1: (%.4f %.4f %.4f) м, вершин кольца %d' % (*RING_SHIFT, len(ring_)))
 res = [bvh.find_nearest(Vector(X[k_]))[3] for k_ in range(len(X)) if free[k_]]
