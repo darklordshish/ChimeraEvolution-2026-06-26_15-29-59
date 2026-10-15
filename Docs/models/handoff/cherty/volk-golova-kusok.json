@@ -142,7 +142,7 @@
     1.12,
     0.77306
   ],
-  "overhang_biped_m": 0.055,
+  "overhang_biped_m": 0.16,
   "places": {
     "bone": "голова",
     "bone_head_m": [

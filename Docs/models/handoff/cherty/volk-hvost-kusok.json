@@ -94,7 +94,9 @@
     "хвост_кисть"
   ],
   "armature": "все узлы графа волка + челюсть",
-  "keys": [],
+  "keys": [
+    "двуногий"
+  ],
   "tris": 414,
   "tris_main": 414,
   "generator": "Tools/Blender/proba/rig_volka.py --muzzle 4.5 --shvy 2 --pasporta …",
