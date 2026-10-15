@@ -92,7 +92,7 @@ for b in sk['bones']:
         arm.edit_bones[b['name']].parent = arm.edit_bones[b['parent']]
 bpy.ops.object.mode_set(mode='OBJECT')
 MAIN = ['хребет', 'таз', 'живот', 'грудная клетка', 'шея', 'голова']
-LIMB = ['лопатка', 'плечо', 'предплечье', 'бедро', 'голень']
+LIMB = ['лопатка', 'плечо', 'предплечье', 'бедро', 'голень', 'стопа']
 DEF = MAIN + LIMB + [n + '.L' for n in LIMB]
 for b in arm.bones:
     b.use_deform = b.name in DEF
@@ -481,7 +481,13 @@ for v in me.vertices:
             w = {(('плечо' if co.z > 1.16 else 'предплечье') + sfx if arm_side else 'таз' if co.z > 0.95 else 'бедро' + sfx if co.z > 0.5 else 'голень' + sfx): 1.0}
         s_ = sum(w.values()); w = {k_: x / s_ for k_, x in w.items()}
     if co.z < 0.10:
-        t = sm((0.10 - co.z) / 0.03); w = {k_: x * (1 - t) for k_, x in w.items()}; w['голень' + sfx] = w.get('голень' + sfx, 0) + t
+        # СТОПА (15.10, кость `стопа` — голеностоп → головки плюсны; нужна пальцехождению ключа «Волк»: скакательному
+        # суставу лапы гнуться нечем, пока плюсна висит на голени): передняя часть стопы — на `стопа`, пятка — на `голень`
+        t = sm((0.10 - co.z) / 0.03); ank = Vector(BN['голень' + sfx]['tail'])
+        sf = sm((ank.y - 0.01 - co.y) / 0.05) if 'стопа' + sfx in BN else 0.0
+        w = {k_: x * (1 - t) for k_, x in w.items()}
+        w['голень' + sfx] = w.get('голень' + sfx, 0) + t * (1 - sf)
+        if sf > 0: w['стопа' + sfx] = w.get('стопа' + sfx, 0) + t * sf
     # у средней линии таза и корпуса конечности не тянут
     f = max(sm((abs(co.x) - 0.02) / 0.05), sm((0.86 - co.z) / 0.05)) if co.z < 1.2 else sm((abs(co.x) - 0.04) / 0.08)
     if f < 1:
@@ -538,7 +544,7 @@ bpy.data.objects.remove(skin, do_unlink=True)
 
 # ---------- 4. НАРЕЗКА ----------
 ORDER = ['голова', 'шея', 'хребет', 'Сердце', 'Руки', 'Ноги'] + (['Пасть'] if 'основание морды' in PIECE_SEAMS else []) + (['Чутьё'] if PIECE_SEAMS else [])
-slot_of = lambda nm: SOCKET[nm[:-2] if nm.endswith('.L') else nm]
+slot_of = lambda nm: SOCKET.get(nm[:-2] if nm.endswith('.L') else nm) or ('Ноги' if nm.startswith('стопа') else SOCKET[nm])   # кость сверх графа — к месту родителя
 F = [tuple(p.vertices) for p in me.polygons]
 fslot, fixed = [], []
 for f in F:
