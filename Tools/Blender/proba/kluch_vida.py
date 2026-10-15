@@ -14,7 +14,7 @@ Hunyuan) переносится на ТОПОЛОГИЮ меша шасси (ч�
   5. СУСТАВЫ ЦЕЛИ — те же суставы шасси, перенесённые пластиной, — файлом рядом (формат `*-skelet.json`).
 
   blender -b --factory-startup -P kluch_vida.py -- шасси.blend цель.obj ориентиры.json выход.fbx скелет_шасси.json суставы_цели.json
-      [--imya Волк] [--iter 4] [--smooth 6] [--maxd 0.08] [--maxd_obj голова:0.025,шея:0.025 [--zatylok y]] [--bez Чутьё] [--lam 1e-4] [--gladit N [--voxel 0.012]] [--rasput 60] [--polosa Ноги:0.40:0.80:20] [--skuly k:yc:zc:r] [--bez_zony Ноги:0.14] [--kupol f:zb:yb]
+      [--imya Волк] [--iter 4] [--smooth 6] [--maxd 0.08] [--maxd_obj голова:0.025,шея:0.025 [--zatylok y]] [--bez Чутьё] [--lam 1e-4] [--gladit N [--voxel 0.012]] [--rasput 60] [--polosa Ноги:0.40:0.80:20] [--skuly k:yc:zc:r] [--bez_zony Ноги:0.14] [--plechi k] [--grud kd] [--taz kt] [--kupol f:zb:yb]
   blender -b --factory-startup -P kluch_vida.py -- шасси.blend - - - скелет_шасси.json - --istochnik ориентиры_шасси.json
 """
 import sys, json, math
@@ -219,6 +219,34 @@ if 'kupol' in opt:
         if owner[k_] & set(HEADS) and X[k_][2] > zb:
             w_ = sm_((X[k_][1] - yb) / float(opt.get('kupol_shag', '0.08')))
             X[k_][2] = zb + (X[k_][2] - zb) * (1 - (1 - f_k) * w_)
+# КОРПУС (15.10, ряд «лист / середина / анатомия» для геймдизайнера; источник: у хищника ключиц нет, лопатки на боках
+# клетки — плечи у́же, клетка у́же и глубже, таз у́же). Работают по форме ключа, плавно по высоте:
+#   --plechi k — ширина плеч и груди (полоса z 1.15–1.60), руки сдвигаются к оси целиком на тот же сдвиг, что плечо;
+#   --grud kd  — глубина груди (та же полоса, у Сердца и хребта) от средней линии корпуса;
+#   --taz kt   — ширина таза и верха бёдер (полоса z 0.80–1.08, к 0.65 затухает)
+def band(z, z0, z1, w0, w1):
+    return sm_((z - w0) / (z0 - w0)) * sm_((w1 - z) / (w1 - z1)) if w0 < z0 else 0.0
+TORSO = ('хребет', 'Сердце', 'шея')   # шея — с затуханием к кольцу головы (общие вершины с головой не двигаются)
+if any(k in opt for k in ('plechi', 'grud', 'taz')):
+    kp, kd, kt = float(opt.get('plechi', 1)), float(opt.get('grud', 1)), float(opt.get('taz', 1))
+    # сдвиг руки = сдвиг корпуса НА ШВЕ «рука — корпус» (общие вершины), иначе шов плеча разъезжается складками трапеции
+    seam_ = [k_ for k_ in range(len(X)) if 'Руки' in owner[k_] and owner[k_] & set(TORSO)]
+    XS = float(np.mean([abs(X[k_][0]) for k_ in seam_])) if seam_ else 0.2
+    WS = float(np.mean([band(U0[k_][2], 1.25, 1.60, 1.10, 1.75) for k_ in seam_])) if seam_ else 1.0
+    yc = np.mean([X[k_][1] for k_ in range(len(X)) if owner[k_] & set(TORSO) and abs(X[k_][2] - 1.35) < 0.05])
+    for k_ in range(len(X)):
+        z = U0[k_][2]
+        if 'Руки' in owner[k_] and not owner[k_] & set(TORSO):
+            X[k_][0] -= np.sign(X[k_][0]) * (1 - kp) * XS * WS
+        elif owner[k_] & set(TORSO + ('Ноги',)) and not owner[k_] & set(HEADS[:1]):
+            wp = band(z, 1.25, 1.60, 1.10, 1.75)
+            if 'шея' in owner[k_]:                        # к кольцу головы (z шасси 1.616) сжатие гаснет до нуля
+                wp *= sm_((1.60 - z) / 0.16)
+            X[k_][0] *= 1 + (kp - 1) * wp
+            if owner[k_] & set(TORSO):
+                X[k_][1] = yc + (X[k_][1] - yc) * (1 + (kd - 1) * wp)
+            wt = band(z, 0.85, 1.02, 0.65, 1.15)
+            X[k_][0] *= 1 + (kt - 1) * wt
 res = [bvh.find_nearest(Vector(X[k_]))[3] for k_ in range(len(X)) if free[k_]]
 print('КЛЮЧ: до поверхности цели — средн. %.4f м, 95%% %.4f, макс %.4f; ориентиров %d, нет у цели: %s' % (
     float(np.mean(res)), float(np.percentile(res, 95)), float(np.max(res)), n, ', '.join(miss) or '—'))
