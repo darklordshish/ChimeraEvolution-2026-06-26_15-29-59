@@ -253,6 +253,7 @@ public static partial class PartAssembly
                 r.axis = Vector3.Slerp(c.axis.normalized, k.axis.normalized, w);
                 r.up = Vector3.Slerp(c.up.normalized, k.up.normalized, w);
                 r.ellipse = Vector2.Lerp(c.ellipse, k.ellipse, w);
+                r.center += k.posadka * w;
                 return r;
             }
             return r;
@@ -283,7 +284,34 @@ public static partial class PartAssembly
         for (int i = 0; i < ring.Length; i++) if (found[i]) { r0 += (ring[i] - c0).magnitude; r1 += (ring[i] + shift[i] - c1).magnitude; }
         r.center = c.center + (c1 - c0);
         if (r0 > 1e-6f) r.ellipse = c.ellipse * (r1 / r0);
+        // ДОБАВОЧНАЯ ПОСАДКА (19.10, модельная линия): кольцо шеи едет за ключом линейно, а голова по листу на ст.2 сидит
+        // ниже и впереди кольца — сдвиг на весе 1 записан в `pod_klyuchom` шва этого куска, на промежуточных весах ×вес
+        foreach (var (smr, shape, w) in active)
+        {
+            var k = carrierRing.keyed?.FirstOrDefault(x => x != null && x.key == smr.sharedMesh.GetBlendShapeName(shape));
+            if (k != null) { r.center += k.posadka * w; break; }
+        }
         return r;
+    }
+
+    /// <summary>КУСОК, ЗАБРАВШИЙ МЕСТО ЦЕЛИКОМ (голова) — ЕГО ПОСАДКА: органы, чьи швы лежат на этом месте (уши, морда, мочка),
+    /// садятся на места САМОГО КУСКА (`BodyPart.places`, метры донора), перенесённые той же посадкой, а не на швы носителя
+    /// (19.10, модельная линия: волчьи уши садились на шов уха человека — на бок черепа, низко, «рогами»; на листе ст.2 уши
+    /// торчком на макушке). Тот же донор — тот же перенос, ухо встаёт ровно туда, где оно у волка.</summary>
+    struct HeadFrame { public Transform container; public BodyPart part; public Vector3 dC, cC; public Quaternion rot; public float k; public string bone; }
+    static HeadFrame headFrame;
+
+    static BodySeat OnClaimedPiece(Transform container, BodyPart part, Vector3 donorCenter)
+    {
+        if (headFrame.container != container || headFrame.part?.places == null || part == headFrame.part) return null;
+        var cand = headFrame.part.places.Where(p => p != null && p.seam == part.seam).ToList();
+        if (cand.Count == 0) return null;
+        var pl = cand.OrderBy(p => (p.center - donorCenter).sqrMagnitude).First();
+        return new BodySeat
+        {
+            seam = part.seam, bone = headFrame.bone, center = headFrame.cC + headFrame.rot * (pl.center - headFrame.dC) * headFrame.k,
+            axis = headFrame.rot * pl.axis, up = headFrame.rot * pl.up, ellipse = pl.ellipse * headFrame.k,
+        };
     }
 
     static bool CanPlaceRing(SpeciesSO body, BodyPart part, SpeciesSO donor) =>
@@ -304,11 +332,16 @@ public static partial class PartAssembly
         BodySeat d;
         if (part.seamFrame) d = new BodySeat { center = part.seamCenter, axis = part.seamAxis, up = part.seamUp, ellipse = part.ellipse };
         else if (!Seam(donor, part.seam, out d)) return null;
+        // орган на месте, которое забрал чужой кусок целиком, — на месте самого куска
+        bool claimed = Claimed(part, donor) != null;
+        var onHead = claimed ? null : OnClaimedPiece(container, part, d.center);
+        if (onHead != null) { c = onHead; carrierRing = null; mode = Fit.Replace; }
 
         var xf = new Dictionary<string, Transform>();
         foreach (var t in skeleton.GetComponentsInChildren<Transform>(true)) if (!xf.ContainsKey(t.name)) xf[t.name] = t;
 
-        float k = RingScale(body, donor, part);
+        float k = onHead != null && part.ellipse.x > 0f && part.ellipse.y > 0f
+            ? Mathf.Sqrt(onHead.ellipse.x / part.ellipse.x * (onHead.ellipse.y / part.ellipse.y)) : RingScale(body, donor, part);
         bool gaze = Gaze(part, donor);
         var toBody = part.toBody == default ? Matrix4x4.identity : part.toBody;
         // ФОРМА-КЛЮЧ ПЛАНА НОСИТЕЛЯ (спека конструктора §4, как у деталей конечностей): воротник гривы сделан под шею
@@ -341,6 +374,13 @@ public static partial class PartAssembly
 
         static Vector3 MirrorX(Vector3 v) => new(-v.x, v.y, v.z);
         static Quaternion Frame(Vector3 axis, Vector3 up) => Quaternion.LookRotation(axis.normalized, up.normalized);
+        // кадр пишет только основной объект куска — у морды, полости и зубов того же куска мест нет
+        if (claimed && part.places != null && part.places.Length > 0)
+        {
+            var dC0 = part.seamBiped && body.Plan == "двуногий" && part.plan != body.Plan ? part.seamCenterBiped : d.center;
+            headFrame = new HeadFrame { container = container, part = part, dC = dC0, cC = c.center, k = k, bone = c.bone,
+                                        rot = gaze ? Quaternion.identity : Frame(c.axis, c.up) * Quaternion.Inverse(Frame(d.axis, d.up)) };
+        }
         for (int side = +1, s = 0; s < sides; s++, side = -1)
         {
             Vector3 dC = d.center, dA = d.axis, dU = d.up, cC = c.center, cA = c.axis, cU = c.up;

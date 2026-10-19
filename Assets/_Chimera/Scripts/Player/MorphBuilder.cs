@@ -88,7 +88,8 @@ public static class MorphBuilder
             }
             var chimeraKeys = BodyMesh.KeysFor(pureChassis, wornOrgans);
             BodyMesh.Place(container.transform, chimeraSkeleton, pureChassis.bodyMesh, PrimitiveMaterial(), given, chimeraKeys, pureChassis);
-            foreach (var (part, donor) in chassis.placedParts ?? new (BodyPart, SpeciesSO)[0])
+            // куски, забравшие место целиком (голова), — первыми: органы на этом месте садятся на места самого куска
+            foreach (var (part, donor) in (chassis.placedParts ?? new (BodyPart, SpeciesSO)[0]).OrderBy(p => PartAssembly.Claimed(p.part, p.donor) == null))
             {
                 var piece = PartAssembly.Place(container.transform, chassis, part, donor, PrimitiveMaterial());
                 if (piece == null) continue;

@@ -386,6 +386,7 @@ public class KeyedSeat
     public string key;       // имя формы-ключа (= имя вида-цели)
     public Vector3 center, axis, up;
     public Vector2 ellipse;
+    public Vector3 posadka;  // добавочный сдвиг посадки куска на весе 1 (голова ниже и впереди кольца шеи, лист ст.2), ×вес
 }
 
 [System.Serializable]
@@ -432,6 +433,8 @@ public class BodyPart
     public Vector3 seamCenterBiped;
     public string mainSlot;       // слот ОСНОВНОГО объекта куска: морда и зубы целой головы встают вместе с черепом
     public int step;              // черта: ступень идентичности, с которой она проступает (0 читается как 1)
+    public BodySeat[] places;     // места органов НА САМОМ КУСКЕ (целая голова: основания уха, морды, мочки) — метры донора
+    public KeyedSeat[] keyed;     // шов этого куска под формой-ключом носителя (`seam.pod_klyuchom`): посадка на весе 1
     public string[] keys;    // формы-ключи (например, `двуногий`)
 
     /// <summary>Видна ли культя на теле этого плана: да, когда работает адаптация плана (план носителя другой).</summary>

@@ -185,6 +185,27 @@ namespace Chimera.Tests.EditMode
             Assert.Greater(moved, 0.01f, $"на полном весе ключа уши волка сдвинулись на {moved * 100f:0.0} см — сидят на шве базы, а не на шве под ключом");
         }
 
+        /// <summary>ОРГАН НА ЗАБРАННОМ МЕСТЕ — НА МЕСТАХ САМОГО КУСКА (19.10): волчьи уши графтом при волчьей голове-черте садятся на
+        /// основания уха волчьего черепа (`places` куска), а не на шов уха человека сбоку черепа. Тот же донор — тот же перенос:
+        /// ухо выше центра черепа, как у волка.</summary>
+        [Test]
+        public void OrganOnClaimedHead_SitsOnHeadPlaces()
+        {
+            var wolf = Load("Волк"); var human = Load("Человек");
+            var head = Trait(wolf, "голова");
+            if (head.places == null || head.places.Length == 0) Assert.Inconclusive("у волчьей головы нет мест органов (`places`)");
+            PartAssembly.ForceTraits = wolf; PartAssembly.ForceStep = 2;
+            var go = Build(human, With(human, wolf, BodySlots.Sense));
+            var root = go.transform.Find("Morph");
+            var pieces = Pieces(go);
+            var ears = pieces.FirstOrDefault(p => p.name == BodySlots.Sense && p.GetComponent<SkinnedMeshRenderer>().sharedMesh.name.Contains("кусок"));
+            var skull = pieces.FirstOrDefault(p => p.name == "голова");
+            if (ears == null || skull == null) Assert.Inconclusive("уши или голова волка кусками не встали");
+            Vector3 C(BodyPartView v) { var a = Posed(v.GetComponent<SkinnedMeshRenderer>(), root); return a.Aggregate(Vector3.zero, (x, y) => x + y) / a.Length; }
+            var e = C(ears); var h = C(skull);
+            Assert.Greater(e.y, h.y, $"уши ниже центра волчьего черепа на {(h.y - e.y) * 100f:0.0} см — сели на шов уха человека, а не на места куска");
+        }
+
         /// <summary>ВАРИАНТ Б (19.10): в игре куски включены, и химера на шасси с мешем вида рисуется мешем, даже если у
         /// чужого органа ещё нет куска (до 19.10 такая химера уходила на поле — 3 химеры из 78 на меше).</summary>
         [Test]
