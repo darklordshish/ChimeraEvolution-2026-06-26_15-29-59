@@ -26,34 +26,33 @@ namespace Chimera.Tests.EditMode
             finally { Object.DestroyImmediate(sp); }
         }
 
+        /// <summary>Каждая ступень ключа «Волк» у человека рисует СВОЮ черту и только её: на ст.1 — объект ст.1, на ст.2 — объект
+        /// ст.2 (объект ст.1 под ним снят, если он в `skryvaet`); черты цели из `zamenyaet_cherty` кусками не ставятся.</summary>
         [Test]
-        public void HumanWerewolf_Stage2_DrawsKeyObject_InsteadOfWolfTraits()
+        public void HumanWerewolf_EachStage_DrawsItsKeyObject()
         {
             var human = AssetDatabase.LoadAssetAtPath<SpeciesSO>("Assets/_Chimera/Data/Человек.asset");
             var wolf = AssetDatabase.LoadAssetAtPath<SpeciesSO>("Assets/_Chimera/Data/Волк.asset");
-            var stage = human?.keyStages?.FirstOrDefault(s => s != null && s.key == "Волк");
-            if (stage == null) Assert.Inconclusive("у человека нет черты ключа «Волк» (`handoff/klyuchi/chelovek-volk-st2.json`)");
-            GameObject Build(float w)
+            var stages = human?.keyStages?.Where(s => s != null && s.key == "Волк").ToList();
+            if (stages == null || stages.Count == 0) Assert.Inconclusive("у человека нет черт ключа «Волк» (`handoff/klyuchi/chelovek-volk-st*.json`)");
+            foreach (var stage in stages)
             {
-                BodyMesh.ForceKey = "Волк"; BodyMesh.ForceWeight = w; BodyMesh.ResetCache(); ChainSwap.ResetCache();
-                PartAssembly.ForceTraits = wolf; PartAssembly.ForceStep = w >= 1f ? 2 : 1;
+                BodyMesh.ForceKey = "Волк"; BodyMesh.ForceWeight = BodyMesh.KeyWeight(stage.step); BodyMesh.ResetCache(); ChainSwap.ResetCache();
+                PartAssembly.ForceTraits = wolf; PartAssembly.ForceStep = stage.step;
                 var go = new GameObject("~ступень"); var cc = go.AddComponent<CharacterController>(); cc.height = 2f; cc.center = Vector3.up;
-                MorphBuilder.Build(go.transform, human, human.organs.Where(o => o != null).ToList(), null);
-                return go;
+                try
+                {
+                    MorphBuilder.Build(go.transform, human, human.organs.Where(o => o != null).ToList(), null);
+                    var names = go.GetComponentsInChildren<SkinnedMeshRenderer>(true).Select(r => r.name).ToList();
+                    CollectionAssert.Contains(names, stage.objectName, $"на ступени {stage.step} её черта ключа не нарисована");
+                    foreach (var other in stages.Where(o => o.step > stage.step))
+                        CollectionAssert.DoesNotContain(names, other.objectName, $"на ступени {stage.step} нарисована черта ступени {other.step}");
+                    foreach (var h in stage.hides ?? new string[0]) CollectionAssert.DoesNotContain(names, h, $"ступень {stage.step}: «{h}» под чертой ключа остался");
+                    var pieces = go.GetComponentsInChildren<BodyPartView>(true).Select(v => v.name).ToList();
+                    foreach (var t in stage.replacesTraits ?? new string[0]) CollectionAssert.DoesNotContain(pieces, t, $"ступень {stage.step}: черта волка «{t}» куском встала поверх черты ключа");
+                }
+                finally { Object.DestroyImmediate(go); }
             }
-            var st2 = Build(1f);
-            try
-            {
-                var names = st2.GetComponentsInChildren<SkinnedMeshRenderer>(true).Select(r => r.name).ToList();
-                CollectionAssert.Contains(names, stage.objectName, "на ступени 2 черта ключа не нарисована");
-                foreach (var h in stage.hides ?? new string[0]) CollectionAssert.DoesNotContain(names, h, $"объект шасси «{h}» под чертой ключа остался");
-                var pieces = st2.GetComponentsInChildren<BodyPartView>(true).Select(v => v.name).ToList();
-                foreach (var t in stage.replacesTraits ?? new string[0]) CollectionAssert.DoesNotContain(pieces, t, $"черта волка «{t}» куском встала поверх черты ключа");
-            }
-            finally { Object.DestroyImmediate(st2); }
-            var st1 = Build(BodyMesh.KeyStep1);
-            try { CollectionAssert.DoesNotContain(st1.GetComponentsInChildren<SkinnedMeshRenderer>(true).Select(r => r.name).ToList(), stage.objectName, "на ступени 1 нарисована черта ступени 2"); }
-            finally { Object.DestroyImmediate(st1); }
         }
     }
 }
