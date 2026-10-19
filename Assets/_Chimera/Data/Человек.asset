@@ -106,7 +106,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925336233996190490
+    - rid: 925336235971969701
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -166,7 +166,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925336233996190491
+    - rid: 925336235971969702
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -344,7 +344,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925336233996190492
+    - rid: 925336235971969703
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -2567,11 +2567,19 @@ MonoBehaviour:
     forward: {x: -0.24643025, y: 0.62000155, z: 0.7448961}
   keyStages:
   - key: "\u0412\u043E\u043B\u043A"
+    objectName: "@\u0412\u043E\u043B\u043A1"
+    step: 1
+    hides: []
+    replacesTraits:
+    - "\u0428\u043A\u0443\u0440\u0430"
+    - "\u0425\u0432\u043E\u0441\u0442"
+  - key: "\u0412\u043E\u043B\u043A"
     objectName: "@\u0412\u043E\u043B\u043A"
     step: 2
     hides:
     - "\u0433\u043E\u043B\u043E\u0432\u0430"
     - "\u0427\u0443\u0442\u044C\u0451"
+    - "@\u0412\u043E\u043B\u043A1"
     replacesTraits:
     - "\u0433\u043E\u043B\u043E\u0432\u0430"
     - "\u041F\u0430\u0441\u0442\u044C"
@@ -2586,7 +2594,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 925336233996190490
+    - rid: 925336235971969701
       type: {class: LimbStrikeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 8
@@ -2596,7 +2604,7 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.45
         cooldown: 1.1
-    - rid: 925336233996190491
+    - rid: 925336235971969702
       type: {class: KickData, ns: , asm: Chimera.Runtime}
       data:
         damage: 4
@@ -2604,7 +2612,7 @@ MonoBehaviour:
         reach: 1.8
         radius: 1.6
         cooldown: 1
-    - rid: 925336233996190492
+    - rid: 925336235971969703
       type: {class: ScreamData, ns: , asm: Chimera.Runtime}
       data:
         cooldown: 12
