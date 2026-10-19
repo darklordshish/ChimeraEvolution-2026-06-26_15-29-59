@@ -106,7 +106,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925336230556074800
+    - rid: 925336233996190490
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -166,7 +166,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925336230556074801
+    - rid: 925336233996190491
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -344,7 +344,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925336230556074802
+    - rid: 925336233996190492
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -2565,6 +2565,20 @@ MonoBehaviour:
     head: {x: -0.27997, y: 0.27009, z: -0.14007}
     along: {x: -0.19473237, y: -0.78460056, z: 0.58862656}
     forward: {x: -0.24643025, y: 0.62000155, z: 0.7448961}
+  keyStages:
+  - key: "\u0412\u043E\u043B\u043A"
+    objectName: "@\u0412\u043E\u043B\u043A"
+    step: 2
+    hides:
+    - "\u0433\u043E\u043B\u043E\u0432\u0430"
+    - "\u0427\u0443\u0442\u044C\u0451"
+    replacesTraits:
+    - "\u0433\u043E\u043B\u043E\u0432\u0430"
+    - "\u041F\u0430\u0441\u0442\u044C"
+    - "\u041F\u0430\u0441\u0442\u044C.\u043F\u043E\u043B\u043E\u0441\u0442\u044C"
+    - "\u041F\u0430\u0441\u0442\u044C.\u0437\u0443\u0431\u044B"
+    - "\u0428\u043A\u0443\u0440\u0430"
+    - "\u0425\u0432\u043E\u0441\u0442"
   skinCell: 0.042
   skinBlend: 0.05
   skinFur: 0
@@ -2572,7 +2586,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 925336230556074800
+    - rid: 925336233996190490
       type: {class: LimbStrikeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 8
@@ -2582,7 +2596,7 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.45
         cooldown: 1.1
-    - rid: 925336230556074801
+    - rid: 925336233996190491
       type: {class: KickData, ns: , asm: Chimera.Runtime}
       data:
         damage: 4
@@ -2590,7 +2604,7 @@ MonoBehaviour:
         reach: 1.8
         radius: 1.6
         cooldown: 1
-    - rid: 925336230556074802
+    - rid: 925336233996190492
       type: {class: ScreamData, ns: , asm: Chimera.Runtime}
       data:
         cooldown: 12
