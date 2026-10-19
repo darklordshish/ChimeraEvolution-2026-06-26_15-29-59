@@ -86,6 +86,8 @@ public static class MorphBuilder
                 if (!string.IsNullOrEmpty(part.objectSlot) && !PartAssembly.Over(chassis, part, donor)) given.Add(part.objectSlot);
                 if (place != null) given.Add(place);
             }
+            var ownOnClaimed = PartAssembly.OwnOnClaimed(pureChassis, wornOrgans, chassis.placedParts);
+            foreach (var own in ownOnClaimed) if (!string.IsNullOrEmpty(own.objectSlot)) given.Add(own.objectSlot);
             var chimeraKeys = BodyMesh.KeysFor(pureChassis, wornOrgans);
             BodyMesh.Place(container.transform, chimeraSkeleton, pureChassis.bodyMesh, PrimitiveMaterial(), given, chimeraKeys, pureChassis);
             // куски, забравшие место целиком (голова), — первыми: органы на этом месте садятся на места самого куска
@@ -95,6 +97,7 @@ public static class MorphBuilder
                 if (piece == null) continue;
                 piece.GetComponent<BodyPartView>().whole = PartAssembly.Claimed(part, donor);
             }
+            foreach (var own in ownOnClaimed) PartAssembly.Place(container.transform, chassis, own, pureChassis, PrimitiveMaterial());
             PartAssembly.ApplyWelds(container.transform);   // проёмы тела — к общим кольцам сваренных кусков
             return;
         }

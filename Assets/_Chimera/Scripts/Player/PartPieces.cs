@@ -308,8 +308,28 @@ public static partial class PartAssembly
     /// садятся на места САМОГО КУСКА (`BodyPart.places`, метры донора), перенесённые той же посадкой, а не на швы носителя
     /// (19.10, модельная линия: волчьи уши садились на шов уха человека — на бок черепа, низко, «рогами»; на листе ст.2 уши
     /// торчком на макушке). Тот же донор — тот же перенос, ухо встаёт ровно туда, где оно у волка.</summary>
-    struct HeadFrame { public Transform container; public BodyPart part; public Vector3 dC, cC; public Quaternion rot; public float k; public string bone; public bool biped; }
+    struct HeadFrame { public Transform container; public BodyPart part; public SpeciesSO donor; public Vector3 dC, cC; public Quaternion rot; public float k; public string bone; public bool biped; }
     static HeadFrame headFrame;
+
+    /// <summary>РОДНЫЕ ОРГАНЫ НА МЕСТЕ, ЗАБРАННОМ ЧУЖИМ КУСКОМ (геймдизайнер 19.10, q-ushi-st2 «давай А»): на ст.2 волчья голова
+    /// забирает место головы, а Чутьё у тела своё — его уши (кусок самого шасси, `parts`) встают на места ушей волчьей
+    /// головы, а объект ушей в меше шасси снимается. Признак чувства принадлежит органу: волчьи уши — только графтом Чутья.</summary>
+    public static List<BodyPart> OwnOnClaimed(SpeciesSO chassis, IReadOnlyList<Organ> worn, (BodyPart part, SpeciesSO donor)[] placed)
+    {
+        var res = new List<BodyPart>();
+        if (!MeshPieces || chassis?.parts == null || placed == null || worn == null) return res;
+        var spots = placed.Where(p => Claimed(p.part, p.donor) != null && p.part.places != null).SelectMany(p => p.part.places.Concat(p.part.placesBiped ?? new BodySeat[0]))
+                          .Select(x => x.seam).ToHashSet();
+        if (spots.Count == 0) return res;
+        foreach (var organ in worn)
+        {
+            if (organ == null || chassis.organs == null || System.Array.IndexOf(chassis.organs, organ) < 0) continue;
+            if (placed.Any(p => p.part.slot == organ.slot && p.donor != chassis)) continue;   // орган привит — его кусок уже стоит
+            foreach (var part in chassis.parts.Where(p => p != null && p.piece && p.slot == organ.slot && spots.Contains(p.seam) && p.mesh != null))
+                if (!res.Contains(part)) res.Add(part);
+        }
+        return res;
+    }
 
     static BodySeat OnClaimedPiece(Transform container, BodyPart part, Vector3 donorCenter)
     {
@@ -352,8 +372,14 @@ public static partial class PartAssembly
         var xf = new Dictionary<string, Transform>();
         foreach (var t in skeleton.GetComponentsInChildren<Transform>(true)) if (!xf.ContainsKey(t.name)) xf[t.name] = t;
 
-        float k = onHead != null && part.ellipse.x > 0f && part.ellipse.y > 0f
-            ? Mathf.Sqrt(onHead.ellipse.x / part.ellipse.x * (onHead.ellipse.y / part.ellipse.y)) : RingScale(body, donor, part, c.ellipse);
+        // на месте куска того же донора — его же перенос (масштаб куска-головы); орган ДРУГОГО вида (ухо человека на волчьей
+        // голове) уже в размере своего тела: отношение эллипсов места и шва чужих ушей раздувало его в иглу (кадр 19.10)
+        float k = onHead == null ? RingScale(body, donor, part, c.ellipse)
+            : donor != headFrame.donor ? 1f
+            : part.ellipse.x > 0f && part.ellipse.y > 0f ? Mathf.Sqrt(onHead.ellipse.x / part.ellipse.x * (onHead.ellipse.y / part.ellipse.y)) : headFrame.k;
+        // орган чужого вида на месте куска (уши человека на волчьей голове, q-ushi-st2) держит взгляд СВОЕГО донора, а не кадр
+        // места: ухо человека — пластина вдоль боковой оси, и «ось к оси» с местом волчьего уха (ось вверх) клало его плашмя
+        // крышкой на макушку (кадр 19.10); без доворота оно стоит пластиной, как на своей голове
         bool gaze = Gaze(part, donor);
         var toBody = part.toBody == default ? Matrix4x4.identity : part.toBody;
         // ФОРМА-КЛЮЧ ПЛАНА НОСИТЕЛЯ (спека конструктора §4, как у деталей конечностей): воротник гривы сделан под шею
@@ -392,7 +418,7 @@ public static partial class PartAssembly
         if (claimed && part.places != null && part.places.Length > 0)
         {
             var dC0 = part.seamBiped && body.Plan == "двуногий" && part.plan != body.Plan ? part.seamCenterBiped : d.center;
-            headFrame = new HeadFrame { container = container, part = part, dC = dC0, cC = c.center, k = k, bone = c.bone,
+            headFrame = new HeadFrame { container = container, part = part, donor = donor, dC = dC0, cC = c.center, k = k, bone = c.bone,
                                         biped = UsePlanKey && part.plan != body.Plan && part.keys != null && System.Array.IndexOf(part.keys, body.Plan) >= 0,
                                         rot = gaze ? Quaternion.identity : Frame(c.axis, c.up) * Quaternion.Inverse(Frame(d.axis, d.up)) };
         }

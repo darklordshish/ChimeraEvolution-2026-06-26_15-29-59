@@ -257,6 +257,26 @@ namespace Chimera.Tests.EditMode
             Assert.Greater(e.y, h.y, $"уши ниже центра волчьего черепа на {(h.y - e.y) * 100f:0.0} см — сели на шов уха человека, а не на места куска");
         }
 
+        /// <summary>РОДНЫЕ УШИ НА ЧУЖОЙ ГОЛОВЕ (q-ushi-st2 «давай А», 19.10): на ст.2 без графта Чутья волчья голова забирает
+        /// место головы, а уши человека — кусок его Чутья — встают на места ушей волчьей головы; объект ушей в меше человека снят.</summary>
+        [Test]
+        public void NativeEars_OnForeignHead_AtHeadPlaces()
+        {
+            var wolf = Load("Волк"); var human = Load("Человек");
+            var head = Trait(wolf, "голова");
+            if (head.places == null || head.places.Length == 0) Assert.Inconclusive("у волчьей головы нет мест органов");
+            if (human.parts == null || !human.parts.Any(p => p != null && p.piece && p.slot == BodySlots.Sense)) Assert.Inconclusive("у человека нет куска ушей");
+            PartAssembly.ForceTraits = wolf; PartAssembly.ForceStep = 2;
+            var go = Build(human, Native(human));
+            var root = go.transform.Find("Morph");
+            var smrs = go.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            var ears = smrs.Where(r => r.name == BodySlots.Sense).ToList();
+            Assert.AreEqual(1, ears.Count, "уши человека: объект меша и кусок разом (или ни одного)");
+            Assert.IsTrue(ears[0].sharedMesh.name.Contains("кусок"), "уши человека нарисованы объектом меша, а не куском на местах головы");
+            Vector3 C(SkinnedMeshRenderer r) { var a = Posed(r, root); return a.Aggregate(Vector3.zero, (x, y) => x + y) / a.Length; }
+            Assert.Greater(C(ears[0]).y, C(smrs.First(r => r.name == "голова")).y, "уши ниже центра волчьего черепа");
+        }
+
         /// <summary>ВАРИАНТ Б (19.10): в игре куски включены, и химера на шасси с мешем вида рисуется мешем, даже если у
         /// чужого органа ещё нет куска (до 19.10 такая химера уходила на поле — 3 химеры из 78 на меше).</summary>
         [Test]
