@@ -197,10 +197,14 @@ public static partial class PartAssembly
 
     /// <summary>Масштаб куска: площадь шва носителя к площади шва донора, корнем. Форма кольца не правится — кусок не
     /// сшивается, стык закрывает юбка или перекрытие.</summary>
-    public static float RingScale(SpeciesSO body, SpeciesSO donor, BodyPart part)
+    public static float RingScale(SpeciesSO body, SpeciesSO donor, BodyPart part) => RingScale(body, donor, part, SeamEllipse(body, part.seam));
+
+    /// <summary>Масштаб куска по ЗАДАННОМУ эллипсу шва носителя — по шву ПОСЛЕ ключа (`UnderKey`): черты растут вместе с телом
+    /// (19.10, критик модельной линии: «по гриве ступени читаются наоборот — у ст.1 гривы больше, чем у ст.2» — масштаб брался с
+    /// базы, и на ст.2 грива тонула в выросших трапециях).</summary>
+    public static float RingScale(SpeciesSO body, SpeciesSO donor, BodyPart part, Vector2 c)
     {
         if (string.IsNullOrEmpty(part.seam) || part.ellipse.x <= 0f || part.ellipse.y <= 0f) return 1f;
-        var c = SeamEllipse(body, part.seam);
         if (c.x <= 0f || c.y <= 0f) return 1f;
         // кусок обязан НАКРЫТЬ то, на что сел (супремум): посадочное место на сплошной коже — или культю носителя, если он
         // забрал место целиком (голова на закрытой шее: кольца видов разной формы, по площади одна ось даёт недобор и
@@ -289,7 +293,13 @@ public static partial class PartAssembly
         foreach (var (smr, shape, w) in active)
         {
             var k = carrierRing.keyed?.FirstOrDefault(x => x != null && x.key == smr.sharedMesh.GetBlendShapeName(shape));
-            if (k != null) { r.center += k.posadka * w; break; }
+            if (k != null)
+            {
+                r.center += k.posadka * w;
+                // эллипс шва под ключом записан линией — он и задаёт рост куска (голова и грива на ст.2 крупнее вместе с телом)
+                if (k.ellipse.x > 0f && k.ellipse.y > 0f) r.ellipse = Vector2.Lerp(c.ellipse, k.ellipse, w);
+                break;
+            }
         }
         return r;
     }
@@ -343,7 +353,7 @@ public static partial class PartAssembly
         foreach (var t in skeleton.GetComponentsInChildren<Transform>(true)) if (!xf.ContainsKey(t.name)) xf[t.name] = t;
 
         float k = onHead != null && part.ellipse.x > 0f && part.ellipse.y > 0f
-            ? Mathf.Sqrt(onHead.ellipse.x / part.ellipse.x * (onHead.ellipse.y / part.ellipse.y)) : RingScale(body, donor, part);
+            ? Mathf.Sqrt(onHead.ellipse.x / part.ellipse.x * (onHead.ellipse.y / part.ellipse.y)) : RingScale(body, donor, part, c.ellipse);
         bool gaze = Gaze(part, donor);
         var toBody = part.toBody == default ? Matrix4x4.identity : part.toBody;
         // ФОРМА-КЛЮЧ ПЛАНА НОСИТЕЛЯ (спека конструктора §4, как у деталей конечностей): воротник гривы сделан под шею

@@ -185,6 +185,32 @@ namespace Chimera.Tests.EditMode
             Assert.Greater(moved, 0.01f, $"на полном весе ключа уши волка сдвинулись на {moved * 100f:0.0} см — сидят на шве базы, а не на шве под ключом");
         }
 
+        /// <summary>ЧЕРТЫ РАСТУТ С ТЕЛОМ (19.10): масштаб куска берётся с шва ПОСЛЕ ключа. Голова волка на человеке при весе 1
+        /// больше, чем при весе 0, ровно во столько, во сколько эллипс шеи под ключом больше базового (масштаб «накрыть» —
+        /// по большему из отношений полуосей).</summary>
+        [Test]
+        public void PieceScale_FollowsSeamUnderKey()
+        {
+            var wolf = Load("Волк"); var human = Load("Человек");
+            var head = Trait(wolf, "голова");
+            var ring = (human.traits ?? new BodyPart[0]).Concat(human.parts ?? new BodyPart[0]).FirstOrDefault(p => p != null && p.seam == head.seam && p.keyed != null && p.keyed.Any(k => k.key == "Волк"));
+            if (ring == null || human.bodyMesh == null) Assert.Inconclusive("у шва головы человека нет записи под ключом «Волк»");
+            Assert.IsTrue(PartAssembly.Seam(human, head.seam, out var neck));
+            var keyed = ring.keyed.First(k => k.key == "Волк").ellipse;
+            float K(Vector2 e) => Mathf.Max(e.x / head.ellipse.x, e.y / head.ellipse.y);
+            float expected = K(keyed) / K(neck.ellipse);
+            float Size(float w)
+            {
+                BodyMesh.ForceKey = "Волк"; BodyMesh.ForceWeight = w; BodyMesh.ResetCache(); ChainSwap.ResetCache();
+                PartAssembly.ForceTraits = wolf; PartAssembly.ForceStep = 2;
+                var go = Build(human, Native(human));
+                var skull = Pieces(go).First(p => p.name == "голова");
+                return Span(skull.GetComponent<SkinnedMeshRenderer>().sharedMesh.vertices);
+            }
+            float got = Size(1f) / Size(0f);
+            Assert.AreEqual(expected, got, 0.01f, "голова на весе 1 не выросла вместе со швом под ключом");
+        }
+
         /// <summary>КЛЮЧ ПЛАНА — ТОЛЬКО ПО СПИСКУ ПАСПОРТА (19.10): графт волчьей Пасти на двуногом встаёт без формы-ключа «двуногий»
         /// (в паспорте морды `keys: []`), даже если сам меш ключ несёт — тот же объект у черты-головы его использует.</summary>
         [Test]
