@@ -15,7 +15,7 @@
 
   blender -b --factory-startup -P kusok_celi.py -- ключ.blend цель.obj выход.fbx паспорт.json
       [--imya Волк] [--zazor 0.012] [--zazor_hvost 0.05] [--golova_z 1.50] [--griva_z 1.15] [--griva_x 0.42] [--hvost_z 1.0] [--hvost_y 0.12]
-      [--ostrov 400] [--dolya 0.08] [--shots префикс]
+      [--ostrov 400] [--lapy_z 0.32] [--stupen 2|1 [--st1_y -0.02] [--st1_z 1.62] [--st1_zatylok 0.06] [--st1_verh 1.70] [--st1_hvost 0.65] [--st1_niz 1.30] [--ves1 0.5]] [--prizhim_d 0.06 --prizhim_k 0.35] [--dvustor 1] [--dolya 0.08] [--shots префикс]
 Вход `ключ.blend` — сохранённый `kluch_vida.py --blend` (меш шасси с ключом и арматурой). Печатает «КУСОК: …».
 """
 import sys, json, os
@@ -26,16 +26,18 @@ from mathutils.bvhtree import BVHTree
 a = sys.argv[sys.argv.index('--') + 1:]
 kblend, cel, out_fbx, pas_out = a[:4]
 opt = dict(imya='Волк', zazor='0.012', zazor_hvost='0.05', golova_z='1.50', griva_z='1.15', griva_x='0.42', hvost_z='1.0', hvost_y='0.12',
-           ostrov='400', dolya='0.08')
+           ostrov='400', dolya='0.035', lapy_z='0.26', st1_y='-0.02', st1_z='1.62', st1_zatylok='0.06', st1_verh='1.70', st1_hvost='0.65', st1_niz='1.30', prizhim_d='0.06', prizhim_k='0.35')
 i = 4
 while i < len(a):
     opt[a[i].lstrip('-')] = a[i + 1]; i += 2
-NAME = opt['imya']; OBJ_NAME = '@' + NAME
-HIDE = ['голова', 'Чутьё']                                  # объекты шасси, которые кусок снимает (голова и уши человека)
+NAME = opt['imya']; STEP = int(opt.get('stupen', '2'))
+OBJ_NAME = '@' + NAME + ('' if STEP >= 2 else str(STEP))
+W_STEP = 1.0 if STEP >= 2 else float(opt.get('ves1', '0.5'))     # вес ключа на ступени (BodyMesh.KeyStep1 = 0.5)
+HIDE = ['голова', 'Чутьё'] if STEP >= 2 else []             # объекты шасси, которые кусок снимает (голова и уши человека — только ст.2)
 
 bpy.ops.wm.open_mainfile(filepath=kblend)
 arm = [o for o in bpy.data.objects if o.type == 'ARMATURE'][0]
-body = [o for o in bpy.data.objects if o.type == 'MESH']
+body = [o for o in bpy.data.objects if o.type == 'MESH' and not o.name.startswith('@')]   # черты ключа других ступеней — не тело
 for o in body:
     if o.data.shape_keys and NAME in o.data.shape_keys.key_blocks:
         o.data.shape_keys.key_blocks[NAME].value = 1.0
@@ -58,7 +60,7 @@ for o in body:
     c = o.copy(); c.data = o.data.copy(); bpy.context.scene.collection.objects.link(c)
     if c.data.shape_keys:
         for kb in c.data.shape_keys.key_blocks:
-            kb.value = 1.0 if kb.name == NAME else 0.0
+            kb.value = W_STEP if kb.name == NAME else 0.0     # источник весов — тело на весе ступени
         c.shape_key_add(name='mix', from_mix=True)
         mix = [v.co.copy() for v in c.data.shape_keys.key_blocks['mix'].data]
         c.shape_key_clear()
@@ -71,7 +73,7 @@ bpy.ops.wm.obj_import(filepath=cel, forward_axis='NEGATIVE_Z', up_axis='Y')
 t = [o for o in bpy.context.selected_objects if o.type == 'MESH'][0]
 bpy.context.view_layer.objects.active = t
 bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
-gap, gz, mz, mx, hz, hy, gt = (float(opt[k]) for k in ('zazor', 'golova_z', 'griva_z', 'griva_x', 'hvost_z', 'hvost_y', 'zazor_hvost'))
+gap, gz, mz, mx, hz, hy, gt, pz = (float(opt[k]) for k in ('zazor', 'golova_z', 'griva_z', 'griva_x', 'hvost_z', 'hvost_y', 'zazor_hvost', 'lapy_z'))
 bm = bmesh.new(); bm.from_mesh(t.data); bm.faces.ensure_lookup_table()
 n_all = len(bm.faces)
 kill = []
@@ -81,7 +83,13 @@ for f in bm.faces:
     head = c.z > gz and abs(c.x) < 0.25
     mane = c.z > mz and abs(c.x) < mx and d > gap
     tail = c.z < hz and c.y > hy and d > (gap if c.z > 0.75 else gt)     # ниже ягодиц — дальше от тела: мех икр цели в хвост не идёт
-    if not (head or mane or tail):
+    paw = c.z < pz and abs(c.x) > 0.12          # лапы цели ниже скакательного: накрывают стопу шасси «на носке» (у цели лапа длинная, с пальцами)
+    if STEP < 2:
+        # ст.1 (лист, колонка 2): голова человеческая, стопа ещё не лапа; грива — за головой и по спине, спереди лицо открыто
+        head = paw = False
+        mane = mane and c.z > float(opt['st1_niz'])     # ст.1: грива кончается на середине лопатки рваным краем, а не плитой до поясницы
+        mane = mane and c.y > float(opt['st1_y']) and (c.z < float(opt['st1_z']) or c.y > float(opt['st1_zatylok']))     # выше — только за черепом: иначе капюшон над головой
+    if not (head or mane or tail or paw):
         kill.append(f)
 bmesh.ops.delete(bm, geom=kill, context='FACES')
 
@@ -112,6 +120,58 @@ md = t.modifiers.new('прореж', 'DECIMATE'); md.ratio = float(opt['dolya'])
 bpy.ops.object.modifier_apply(modifier='прореж')
 for p in t.data.polygons:
     p.use_smooth = False
+if W_STEP < 1.0:
+    # кусок цели лежит на теле с весом 1; на ступени 1 тело на весе W — переносим каждую вершину на (1 − W) сдвига ключа
+    # ближайшей вершины тела (сдвиг = позиция на весе 1 − база), иначе кусок висит в воздухе над телом ст.1
+    from mathutils import kdtree
+    pts, dsp = [], []
+    for o in body:
+        if not (o.data.shape_keys and NAME in o.data.shape_keys.key_blocks): continue
+        kb_ = o.data.shape_keys.key_blocks[NAME]; base = o.data.shape_keys.key_blocks[0]
+        for v0, v1 in zip(base.data, kb_.data):
+            pts.append(o.matrix_world @ v1.co); dsp.append(o.matrix_world.to_3x3() @ (v1.co - v0.co))
+    kd = kdtree.KDTree(len(pts))
+    for i_, p_ in enumerate(pts): kd.insert(p_, i_)
+    kd.balance()
+    for v in t.data.vertices:
+        hits = kd.find_n(v.co, 6); ws = [1.0 / max(1e-4, d_) for _, _, d_ in hits]; sw = sum(ws)
+        v.co = v.co - (1.0 - W_STEP) * sum((dsp[i_] * w_ for (_, i_, _), w_ in zip(hits, ws)), Vector()) / sw
+    # верх гривы ст.1 — не выше затылка человека (в метрах ступени): мех цели над её головой вставал капюшоном
+    bm2 = bmesh.new(); bm2.from_mesh(t.data)
+    bmesh.ops.delete(bm2, geom=[f for f in bm2.faces if f.calc_center_median().z > float(opt['st1_verh'])], context='FACES')
+    bmesh.ops.delete(bm2, geom=[v for v in bm2.verts if not v.link_faces], context='VERTS')
+    bm2.to_mesh(t.data); bm2.free()
+# ПРИЖАТЬ К ТЕЛУ (критик a1efd88, r6: грива ст.1 висела «котомкой» с изнанкой, низ гривы ст.2 отходил от лопаток на 12–15 см):
+# вершина гривы (выше `--hvost_z`) дальше `--prizhim_d` от тела ступени подтягивается к нему — остаток сверх порога
+# ×`--prizhim_k`; хвост не трогается
+_bv, _bf = [], []
+for s in srcs:
+    n0 = len(_bv); _bv += [s.matrix_world @ v.co for v in s.data.vertices]; _bf += [[n0 + k for k in p.vertices] for p in s.data.polygons]
+_bvh = BVHTree.FromPolygons(_bv, _bf)
+PD, PK = float(opt['prizhim_d']), float(opt['prizhim_k'])
+moved_ = 0
+for v in t.data.vertices:
+    if v.co.z < hz or (STEP >= 2 and v.co.z > 1.45): continue     # ст.2: голова цели не прижимается к голове человека
+    loc, nrm, fi, d = _bvh.find_nearest(v.co)
+    if loc is None or d <= PD: continue
+    # сжатие нарастает книзу плавно (r7: ровное ×0.35 срезало низ гривы ножом — рваный край пропал): у затылка ×1, к низу ×PK
+    k_ = PK + (1.0 - PK) * min(1.0, max(0.0, (v.co.z - 1.25) / 0.35))
+    v.co = loc + (v.co - loc).normalized() * (PD + (d - PD) * k_); moved_ += 1
+print('КУСОК: прижато к телу ступени %d вершин (порог %.2f м, остаток ×%.2f)' % (moved_, PD, PK))
+if STEP < 2 and float(opt['st1_hvost']) != 1.0:
+    # хвост ст.1 меньше (лист, колонка 2: кончик у икры) — масштаб от корня, корень — верхняя точка хвоста
+    tv = [v for v in t.data.vertices if v.co.z < hz - 0.05 and v.co.y > hy]
+    root = max(tv, key=lambda v: v.co.z).co.copy() if tv else None
+    for v in t.data.vertices:
+        if root is not None and v.co.z < hz and v.co.y > hy - 0.04:
+            v.co = root + (v.co - root) * float(opt['st1_hvost'])
+if opt.get('dvustor', '0') == '1':
+    # ОБОРОТНАЯ СТОРОНА: кусок меха — открытая оболочка, изнутри (из-за головы, из-под пряди) видна пустота и тёмная дыра
+    # отсечённых граней; копия граней с обратной нормалью закрывает её (материал односторонний)
+    bm2 = bmesh.new(); bm2.from_mesh(t.data)
+    dup = bmesh.ops.duplicate(bm2, geom=list(bm2.faces))
+    bmesh.ops.reverse_faces(bm2, faces=[g for g in dup['geom'] if isinstance(g, bmesh.types.BMFace)])
+    bm2.to_mesh(t.data); bm2.free()
 t.name = OBJ_NAME; t.data.name = OBJ_NAME
 
 # 5. веса — с тела ключа на весе 1
@@ -162,7 +222,9 @@ bpy.context.view_layer.objects.active = arm
 bpy.ops.export_scene.fbx(filepath=os.path.abspath(out_fbx), use_selection=True, apply_scale_options='FBX_SCALE_ALL', axis_forward='-Z',
                          axis_up='Y', object_types={'ARMATURE', 'MESH'}, add_leaf_bones=False, bake_anim=False,
                          mesh_smooth_type='FACE', use_armature_deform_only=False)
-pas = {'kluch': NAME, 'object': OBJ_NAME, 'step': 2, 'skryvaet': HIDE, 'zamenyaet_cherty': ['голова', 'Пасть', 'Пасть.полость', 'Пасть.зубы', 'Шкура', 'Хвост'],
+pas = {'kluch': NAME, 'object': OBJ_NAME, 'step': STEP,
+       'skryvaet': HIDE + (['@' + NAME + '1'] if STEP >= 2 else []),     # ст.2 снимает и черту ст.1
+       'zamenyaet_cherty': (['голова', 'Пасть', 'Пасть.полость', 'Пасть.зубы'] if STEP >= 2 else []) + ['Шкура', 'Хвост'],
        'tris': len(t.data.polygons),
        'note': 'черта ключа «%s» на ступени 2 — кусок самой цели (голова, воротник-грива, загривок, хвост) в метрах шасси на весе 1, '
                'скиннится к костям шасси; skryvaet — объекты меша шасси, снимаемые при куске; zamenyaet_cherty — объекты черт '
