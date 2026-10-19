@@ -185,7 +185,7 @@ public static class SpeciesHandoff
     public const string TraitsDir = Dir + "cherty/";
     // `fbx` — КУСОК МЕША ВИДА (пилот Б, 10.10): меш берётся не из `Models/Parts/<паспорт>.fbx`, а объектом `objects.main` из
     // названной модели (модель вида режется по швам, отдельного файла у куска нет). `fit: "ring"` — посадка кольцом
-    [System.Serializable] class DetailDto { public string species, slot, plan, fbx, fit, trait; public int step; public float[] center_biped_m; public SeamDto seam; public bool mirror = true; public string[] keys; public ObjectsDto objects; public PlacesDto places; }
+    [System.Serializable] class DetailDto { public string species, slot, plan, fbx, fit, trait; public int step; public float[] center_biped_m; public SeamDto seam; public bool mirror = true; public string[] keys; public ObjectsDto objects; public PlacesDto places, places_biped; }
     public const string PartsDir = Dir + "parts/";
 
     /// <summary>Точки кольца шва `seam.ring_m` — [[x,y,z], …] в метрах тела донора. Индексы `ring` после импорта врут: Unity
@@ -252,6 +252,11 @@ public static class SpeciesHandoff
         }
         return list.ToArray();
     }
+
+    static BodySeat[] Spots(PlacesDto p) => (p?.list ?? new PieceSpotDto[0])
+        .Where(x => x != null && !string.IsNullOrEmpty(x.type) && x.center_m is { Length: >= 3 } && x.ellipse_m is { Length: >= 2 })
+        .Select(x => new BodySeat { seam = x.type, bone = p.bone, center = V(x.center_m, Vector3.zero), axis = V(x.axis_out, Vector3.up),
+                                    up = V(x.up, Vector3.forward), ellipse = new Vector2(x.ellipse_m[0], x.ellipse_m[1]) }).ToArray();
 
     static KeyedSeat[] Keyed(SeamDto seam) => (seam?.pod_klyuchom ?? new KeyedDto[0])
         .Where(k => !string.IsNullOrEmpty(k?.klyuch) && k.center_m is { Length: >= 3 } && k.ellipse_m is { Length: >= 2 })
@@ -351,9 +356,7 @@ public static class SpeciesHandoff
                 seamBiped = d.center_biped_m is { Length: >= 3 }, seamCenterBiped = V(d.center_biped_m, Vector3.zero),
                 // ступень черты: из паспорта, а пока её там нет — целая голова с поздней ступени (общая форма вида), прочее с первой
                 step = d.step > 0 ? d.step : d.trait == "голова" ? 2 : 1,
-                places = (d.places?.list ?? new PieceSpotDto[0]).Where(x => x != null && !string.IsNullOrEmpty(x.type) && x.center_m is { Length: >= 3 } && x.ellipse_m is { Length: >= 2 })
-                    .Select(x => new BodySeat { seam = x.type, bone = d.places.bone, center = V(x.center_m, Vector3.zero), axis = V(x.axis_out, Vector3.up),
-                                                up = V(x.up, Vector3.forward), ellipse = new Vector2(x.ellipse_m[0], x.ellipse_m[1]) }).ToArray(),
+                places = Spots(d.places), placesBiped = Spots(d.places_biped),
                 keyed = Keyed(d.seam),
             });
             // ОСТАЛЬНЫЕ ОБЪЕКТЫ КУСКА — отдельными записями с тем же швом: у каждого свой меш, свои кости и свой цвет
@@ -370,7 +373,7 @@ public static class SpeciesHandoff
                         toBody = es.transform.localToWorldMatrix, seam = main.seam, ellipse = main.ellipse, ringFit = true, piece = true,
                         objectSlot = SlotOf(es.name), passport = stem, own = OwnColor(es), seamFrame = main.seamFrame,
                         seamCenter = main.seamCenter, seamAxis = main.seamAxis, seamUp = main.seamUp, seamBone = main.seamBone, step = main.step,
-                        mainSlot = main.mainSlot, seamBiped = main.seamBiped, seamCenterBiped = main.seamCenterBiped,
+                        mainSlot = main.mainSlot, seamBiped = main.seamBiped, seamCenterBiped = main.seamCenterBiped, keys = main.keys,
                     });
                 }
         }

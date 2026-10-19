@@ -298,13 +298,15 @@ public static partial class PartAssembly
     /// садятся на места САМОГО КУСКА (`BodyPart.places`, метры донора), перенесённые той же посадкой, а не на швы носителя
     /// (19.10, модельная линия: волчьи уши садились на шов уха человека — на бок черепа, низко, «рогами»; на листе ст.2 уши
     /// торчком на макушке). Тот же донор — тот же перенос, ухо встаёт ровно туда, где оно у волка.</summary>
-    struct HeadFrame { public Transform container; public BodyPart part; public Vector3 dC, cC; public Quaternion rot; public float k; public string bone; }
+    struct HeadFrame { public Transform container; public BodyPart part; public Vector3 dC, cC; public Quaternion rot; public float k; public string bone; public bool biped; }
     static HeadFrame headFrame;
 
     static BodySeat OnClaimedPiece(Transform container, BodyPart part, Vector3 donorCenter)
     {
         if (headFrame.container != container || headFrame.part?.places == null || part == headFrame.part) return null;
-        var cand = headFrame.part.places.Where(p => p != null && p.seam == part.seam).ToList();
+        // кусок встал с ключом плана (голова на двуногом) — места органов берутся снятыми ПОСЛЕ ключа, если линия их дала
+        var spots = headFrame.biped && headFrame.part.placesBiped != null && headFrame.part.placesBiped.Length > 0 ? headFrame.part.placesBiped : headFrame.part.places;
+        var cand = spots.Where(p => p != null && p.seam == part.seam).ToList();
         if (cand.Count == 0) return null;
         var pl = cand.OrderBy(p => (p.center - donorCenter).sqrMagnitude).First();
         return new BodySeat
@@ -348,7 +350,9 @@ public static partial class PartAssembly
         // четвероногого — масса внизу, под шеей; на двуногом это борода-нагрудник. Ключ «двуногий» перекладывает её на
         // плечи и спину (поставка модельной линии 13.10). Ключ — форма, прибавляется ДО посадки; нет ключа — меш как есть
         var raw = part.mesh.vertices;
-        if (UsePlanKey && !string.IsNullOrEmpty(part.plan) && part.plan != body.Plan)
+        // ключ плана — только если паспорт его перечисляет (`keys`): тот же объект бывает и чертой-головой (ей ключ «двуногий»
+        // нужен), и графтом Пасти (ему — нет, иначе морда графта на двуногом съезжает на 10+ см; модельная линия 19.10)
+        if (UsePlanKey && !string.IsNullOrEmpty(part.plan) && part.plan != body.Plan && part.keys != null && System.Array.IndexOf(part.keys, body.Plan) >= 0)
         {
             int key = part.mesh.GetBlendShapeIndex(body.Plan);
             if (key >= 0)
@@ -379,6 +383,7 @@ public static partial class PartAssembly
         {
             var dC0 = part.seamBiped && body.Plan == "двуногий" && part.plan != body.Plan ? part.seamCenterBiped : d.center;
             headFrame = new HeadFrame { container = container, part = part, dC = dC0, cC = c.center, k = k, bone = c.bone,
+                                        biped = UsePlanKey && part.plan != body.Plan && part.keys != null && System.Array.IndexOf(part.keys, body.Plan) >= 0,
                                         rot = gaze ? Quaternion.identity : Frame(c.axis, c.up) * Quaternion.Inverse(Frame(d.axis, d.up)) };
         }
         for (int side = +1, s = 0; s < sides; s++, side = -1)

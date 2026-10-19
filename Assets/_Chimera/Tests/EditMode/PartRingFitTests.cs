@@ -185,6 +185,31 @@ namespace Chimera.Tests.EditMode
             Assert.Greater(moved, 0.01f, $"на полном весе ключа уши волка сдвинулись на {moved * 100f:0.0} см — сидят на шве базы, а не на шве под ключом");
         }
 
+        /// <summary>КЛЮЧ ПЛАНА — ТОЛЬКО ПО СПИСКУ ПАСПОРТА (19.10): графт волчьей Пасти на двуногом встаёт без формы-ключа «двуногий»
+        /// (в паспорте морды `keys: []`), даже если сам меш ключ несёт — тот же объект у черты-головы его использует.</summary>
+        [Test]
+        public void GraftMuzzle_OnBiped_NotShiftedByPlanKey()
+        {
+            var wolf = Load("Волк"); var human = Load("Человек");
+            var muzzle = wolf.parts?.FirstOrDefault(p => p != null && p.piece && p.slot == BodySlots.Maw);
+            if (muzzle == null) Assert.Inconclusive("у волка нет куска морды");
+            if (muzzle.keys != null && System.Array.IndexOf(muzzle.keys, human.Plan) >= 0) Assert.Inconclusive("паспорт морды перечисляет ключ «двуногий» — проверять нечего");
+            Vector3 Center(bool planKey)
+            {
+                bool was = PartAssembly.UsePlanKey; PartAssembly.UsePlanKey = planKey;
+                try
+                {
+                    ChainSwap.ResetCache();
+                    var go = Build(human, With(human, wolf, BodySlots.Maw));
+                    var p = Pieces(go).First(x => x.name == BodySlots.Maw && x.GetComponent<SkinnedMeshRenderer>().sharedMesh.name.Contains("кусок"));
+                    var v = Posed(p.GetComponent<SkinnedMeshRenderer>(), go.transform.Find("Morph"));
+                    return v.Aggregate(Vector3.zero, (a, b) => a + b) / v.Length;
+                }
+                finally { PartAssembly.UsePlanKey = was; }
+            }
+            Assert.Less((Center(true) - Center(false)).magnitude, 0.001f, "графт Пасти сдвинут ключом плана, которого нет в его паспорте");
+        }
+
         /// <summary>ОРГАН НА ЗАБРАННОМ МЕСТЕ — НА МЕСТАХ САМОГО КУСКА (19.10): волчьи уши графтом при волчьей голове-черте садятся на
         /// основания уха волчьего черепа (`places` куска), а не на шов уха человека сбоку черепа. Тот же донор — тот же перенос:
         /// ухо выше центра черепа, как у волка.</summary>

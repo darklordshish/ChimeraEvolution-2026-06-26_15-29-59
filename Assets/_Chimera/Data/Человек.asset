@@ -106,7 +106,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925336230764478764
+    - rid: 925336231205667435
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -166,7 +166,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925336230764478765
+    - rid: 925336231205667436
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -344,7 +344,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925336230764478766
+    - rid: 925336231205667437
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -2140,6 +2140,7 @@ MonoBehaviour:
     mainSlot: "\u0427\u0443\u0442\u044C\u0451"
     step: 1
     places: []
+    placesBiped: []
     keyed:
     - key: "\u0412\u043E\u043B\u043A"
       center: {x: -0.07246, y: 1.71678, z: 0.14915}
@@ -2272,6 +2273,7 @@ MonoBehaviour:
     mainSlot: "\u0433\u043E\u043B\u043E\u0432\u0430"
     step: 2
     places: []
+    placesBiped: []
     keyed:
     - key: "\u0412\u043E\u043B\u043A"
       center: {x: -0, y: 1.61293, z: 0.13518}
@@ -2570,7 +2572,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 925336230764478764
+    - rid: 925336231205667435
       type: {class: LimbStrikeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 8
@@ -2580,7 +2582,7 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.45
         cooldown: 1.1
-    - rid: 925336230764478765
+    - rid: 925336231205667436
       type: {class: KickData, ns: , asm: Chimera.Runtime}
       data:
         damage: 4
@@ -2588,7 +2590,7 @@ MonoBehaviour:
         reach: 1.8
         radius: 1.6
         cooldown: 1
-    - rid: 925336230764478766
+    - rid: 925336231205667437
       type: {class: ScreamData, ns: , asm: Chimera.Runtime}
       data:
         cooldown: 12
