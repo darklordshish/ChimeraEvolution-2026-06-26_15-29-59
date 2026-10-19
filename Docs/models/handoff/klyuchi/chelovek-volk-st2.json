@@ -1,0 +1,20 @@
+{
+  "kluch": "Волк",
+  "object": "@Волк",
+  "step": 2,
+  "skryvaet": [
+    "голова",
+    "Чутьё"
+  ],
+  "zamenyaet_cherty": [
+    "голова",
+    "Пасть",
+    "Пасть.полость",
+    "Пасть.зубы",
+    "Шкура",
+    "Хвост"
+  ],
+  "tris": 3330,
+  "note": "черта ключа «Волк» на ступени 2 — кусок самой цели (голова, воротник-грива, загривок, хвост) в метрах шасси на весе 1, скиннится к костям шасси; skryvaet — объекты меша шасси, снимаемые при куске; zamenyaet_cherty — объекты черт вида-ключа, которые на ступени 2 не ставятся",
+  "generator": "Tools/Blender/proba/kusok_celi.py --blend C:/Temp/claude/C--Users-semion-Documents-Chimera-game-ChimeraEvolution-modeli/53623ae4-97d2-450f-a7bb-396e65699af4/scratchpad/kc/k.blend --dolya 0.08 --golova_z 1.50 --griva_x 0.42 --griva_z 1.15 --hvost_y 0.12 --hvost_z 1.0 --imya Волк --ostrov 400 --zazor 0.012 --zazor_hvost 0.05"
+}
