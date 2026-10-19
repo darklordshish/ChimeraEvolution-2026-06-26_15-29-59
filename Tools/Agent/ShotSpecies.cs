@@ -141,7 +141,8 @@ public static class ShotSpecies
         foreach (var r in rends) b.Encapsulate(r.bounds);
 
         // АНФАС — КАМЕРА ПЕРЕД МОРДОЙ: звери смотрят в +Z. До 17.09 здесь стоял Vector3.back, и «анфас» был видом сзади
-        Vector3 dir = view == "front" ? Vector3.forward : view == "top" ? Vector3.up : Vector3.right;
+        // 3/4 — камера спереди-сбоку под 45°, как третий ряд листов ступеней витрины
+        Vector3 dir = view == "front" ? Vector3.forward : view == "top" ? Vector3.up : view == "34" ? new Vector3(1f, 0f, 1f).normalized : Vector3.right;
         float span = Mathf.Max(b.size.x, Mathf.Max(b.size.y, b.size.z));
 
         var cam = new GameObject("ПрофильCam").AddComponent<Camera>();
