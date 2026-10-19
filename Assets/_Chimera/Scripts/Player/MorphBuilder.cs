@@ -79,7 +79,7 @@ public static class MorphBuilder
         {
             var chimeraSkeleton = BoneMesher.Build(container.transform, chassis, PrimitiveMaterial(), field: false);
             var given = new HashSet<string>();
-            foreach (var (part, donor) in chassis.placedParts)
+            foreach (var (part, donor) in chassis.placedParts ?? new (BodyPart, SpeciesSO)[0])
             {
                 string place = PartAssembly.Claimed(part, donor);
                 // свой объект того же слота — под куском: снимается, если кусок его заменяет; при слиянии остаётся
@@ -88,7 +88,7 @@ public static class MorphBuilder
             }
             var chimeraKeys = BodyMesh.KeysFor(pureChassis, wornOrgans);
             BodyMesh.Place(container.transform, chimeraSkeleton, pureChassis.bodyMesh, PrimitiveMaterial(), given, chimeraKeys, pureChassis);
-            foreach (var (part, donor) in chassis.placedParts)
+            foreach (var (part, donor) in chassis.placedParts ?? new (BodyPart, SpeciesSO)[0])
             {
                 var piece = PartAssembly.Place(container.transform, chassis, part, donor, PrimitiveMaterial());
                 if (piece == null) continue;
@@ -139,7 +139,7 @@ public static class MorphBuilder
         // места, висящие на её месте, не рисуются — иначе человеческие уши торчали бы из волчьего черепа
         var whole = new HashSet<string>();
         if (chassis.placedParts != null && skeleton != null)
-            foreach (var (part, donor) in chassis.placedParts)
+            foreach (var (part, donor) in chassis.placedParts ?? new (BodyPart, SpeciesSO)[0])
             {
                 var placedPart = PartAssembly.Place(container.transform, chassis, part, donor, PrimitiveMaterial());
                 if (placedPart == null) continue;

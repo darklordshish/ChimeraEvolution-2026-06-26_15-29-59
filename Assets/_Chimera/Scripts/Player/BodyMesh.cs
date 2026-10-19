@@ -175,23 +175,16 @@ public static class BodyMesh
 
     static string SlotOf(string objectName) { int dot = objectName.IndexOf('.'); return dot > 0 ? objectName.Substring(0, dot) : objectName; }
 
-    /// <summary>ХИМЕРА НА МЕШЕ ВИДА (пилот Б): тело — объекты меша шасси, а место, которое несёт чужой кусок целиком, отдано
-    /// куску. Годится, когда КАЖДЫЙ чужой орган приехал таким куском и общий слой тело не двигал: меш привязан к позе
-    /// покоя своего вида, сдвинутые пропорции он пока не повторит. Иначе тело собирается полем, как прежде.</summary>
+    /// <summary>ХИМЕРА НА МЕШЕ ВИДА: тело — объекты меша шасси, место, которое несёт чужой кусок целиком, отдано куску.
+    ///     ВАРИАНТ Б (решение геймдизайнера 19.10): шасси с мешем вида рисуется мешем ПРИ ЛЮБОЙ ПРИВИВКЕ. Орган без куска
+    /// пока не виден на силуэте (механика его работает) и проступит, когда модельная линия нарежет кусок; ступень
+    /// идентичности показывает форма-ключ вида (`KeysFor`). Прежде химера уходила на поле, если хоть один чужой орган
+    /// был без куска или идентичность дошла до ступени, — так мешем рисовались 3 химеры из 78 (`MeshSweep`, 19.10), а
+    /// поле признано тупиком (13.10).</summary>
     public static bool FitsChimera(SpeciesSO chassis, SpeciesSO body, IReadOnlyList<Organ> worn, BodySocket[] plan)
     {
-        // план мест (смешение пропорций по идентичности) здесь не помеха: он двигает места деталей, а детали у меша не рисуются
         if (!Enabled || !PartAssembly.MeshPieces || chassis == null || chassis.bodyMesh == null || worn == null) return false;
-        if (body == chassis || body.placedParts == null || body.placedParts.Length == 0 || chassis.organs == null) return false;
-        var (_, step) = GlobalLayer.Step(chassis, worn);
-        if (step > 0 && GlobalLayer.HasGroups(chassis)) return false;
-        foreach (var o in worn)
-        {
-            if (o == null || System.Array.IndexOf(chassis.organs, o) >= 0) continue;
-            var owner = ChainSwap.OwnerOf(o);
-            if (!body.placedParts.Any(p => p.part.piece && p.part.slot == o.slot && p.donor == owner)) return false;
-        }
-        return true;
+        return chassis.bones != null && chassis.bones.Length > 0 && chassis.organs != null;
     }
 
     /// <summary>Наша кость для кости модели: по имени; нет такой — создаём под родителем там, где она стоит в модели.</summary>

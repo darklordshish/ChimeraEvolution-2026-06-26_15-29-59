@@ -20,7 +20,7 @@ namespace Chimera.Tests.EditMode
         [TearDown]
         public void TearDown()
         {
-            PartAssembly.MeshPieces = false; PartAssembly.ForceTraits = null; PartAssembly.ForceStep = 2;
+            PartAssembly.MeshPieces = true; PartAssembly.ForceTraits = null; PartAssembly.ForceStep = 2;
             BodyMesh.ForceKey = null; BodyMesh.ForceWeight = 0f; BodyMesh.ResetCache();
             foreach (var o in trash) if (o != null) Object.DestroyImmediate(o);
             trash.Clear();
@@ -185,15 +185,18 @@ namespace Chimera.Tests.EditMode
             Assert.Greater(moved, 0.01f, $"на полном весе ключа уши волка сдвинулись на {moved * 100f:0.0} см — сидят на шве базы, а не на шве под ключом");
         }
 
+        /// <summary>ВАРИАНТ Б (19.10): в игре куски включены, и химера на шасси с мешем вида рисуется мешем, даже если у
+        /// чужого органа ещё нет куска (до 19.10 такая химера уходила на поле — 3 химеры из 78 на меше).</summary>
         [Test]
-        public void InGame_PiecesAreOff()
+        public void InGame_ChimeraStaysOnMesh_EvenWithoutPiece()
         {
-            PartAssembly.MeshPieces = false;
+            PartAssembly.MeshPieces = true;
             ChainSwap.ResetCache();
-            var wolf = Load("Волк"); var human = Load("Человек");
-            PartAssembly.ForceTraits = wolf;
-            var go = Build(human, With(human, wolf, BodySlots.Maw));
-            CollectionAssert.IsEmpty(Pieces(go).Where(p => p.GetComponent<SkinnedMeshRenderer>().sharedMesh.name.Contains("кусок")), "куски меша вида в игре выключены");
+            var human = Load("Человек"); var elk = Load("Лось");
+            if (human.bodyMesh == null) Assert.Inconclusive("у человека нет меша вида");
+            var go = Build(human, With(human, elk, BodySlots.Legs));
+            CollectionAssert.IsEmpty(go.GetComponentsInChildren<MeshRenderer>(true), "химера ушла на поле: у поля детали-блоки, у меша их нет");
+            CollectionAssert.IsNotEmpty(go.GetComponentsInChildren<SkinnedMeshRenderer>(true), "тело не нарисовано");
         }
     }
 }

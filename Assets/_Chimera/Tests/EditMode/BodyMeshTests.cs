@@ -182,15 +182,26 @@ namespace Chimera.Tests.EditMode
             Near(OnSpine, v[0], "ключ сдвинул то, чего не двигает");
         }
 
+        /// <summary>ВАРИАНТ Б (геймдизайнер 19.10): с чужим органом тело ОСТАЁТСЯ мешем вида — орган без куска пока не виден.
+        /// До 19.10 этот сторож требовал обратного («графт возвращает тело на поле»); с куском выключенным — по-прежнему поле.</summary>
         [Test]
-        public void Graft_ReturnsBodyToField()
+        public void Graft_KeepsSpeciesMesh_FieldOnlyWhenPiecesOff()
         {
             Species().bodyMesh = Model();
             Build(new[] { so.organs[0], graft });
-
             var smrs = go.GetComponentsInChildren<SkinnedMeshRenderer>(true);
-            Assert.IsFalse(smrs.Any(r => r.sharedMesh != null && r.sharedMesh.vertexCount == 3), "с чужим органом тело рисует поле, а не меш вида");
-            Assert.IsNotEmpty(smrs, "поле не построено");
+            Assert.IsTrue(smrs.Any(r => r.sharedMesh != null && r.sharedMesh.vertexCount == 3), "с чужим органом тело ушло с меша вида");
+
+            bool was = PartAssembly.MeshPieces;
+            PartAssembly.MeshPieces = false;
+            try
+            {
+                Build(new[] { so.organs[0], graft });
+                smrs = go.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+                Assert.IsFalse(smrs.Any(r => r.sharedMesh != null && r.sharedMesh.vertexCount == 3), "куски выключены, а химера на меше вида");
+                Assert.IsNotEmpty(smrs, "поле не построено");
+            }
+            finally { PartAssembly.MeshPieces = was; }
         }
 
         [Test]
