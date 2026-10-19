@@ -14,13 +14,13 @@ Hunyuan) переносится на ТОПОЛОГИЮ меша шасси (ч�
   5. СУСТАВЫ ЦЕЛИ — те же суставы шасси, перенесённые пластиной, — файлом рядом (формат `*-skelet.json`).
 
   blender -b --factory-startup -P kluch_vida.py -- шасси.blend цель.obj ориентиры.json выход.fbx скелет_шасси.json суставы_цели.json
-      [--imya Волк] [--iter 4] [--smooth 6] [--maxd 0.08] [--maxd_obj голова:0.025,шея:0.025 [--zatylok y]] [--bez Чутьё] [--lam 1e-4] [--gladit N [--voxel 0.012]] [--rasput 60] [--polosa Ноги:0.40:0.80:20] [--skuly k:yc:zc:r] [--bez_zony Ноги:0.14] [--plechi k] [--grud kd] [--taz kt] [--golova_zhestko 1 [--golova_vverh r]] [--mesta паспорт.json,…] [--kupol f:zb:yb]
+      [--imya Волк] [--iter 4] [--smooth 6] [--maxd 0.08] [--maxd_obj голова:0.025,шея:0.025 [--zatylok y]] [--bez Чутьё] [--lam 1e-4] [--gladit N [--voxel 0.012]] [--rasput 60] [--polosa Ноги:0.40:0.80:20] [--skuly k:yc:zc:r] [--bez_zony Ноги:0.14] [--plechi k] [--grud kd] [--taz kt] [--golova_zhestko 1 [--golova_vverh r] [--golova_vpered d]] [--mesta паспорт.json,… [--posadka тип:вперёд:вверх[:масштаб[:наклон]],…]] [--kupol f:zb:yb]
   blender -b --factory-startup -P kluch_vida.py -- шасси.blend - - - скелет_шасси.json - --istochnik ориентиры_шасси.json
 """
 import sys, json, math
 import bpy, bmesh
 import numpy as np
-from mathutils import Vector
+from mathutils import Vector, Matrix
 from mathutils.bvhtree import BVHTree
 
 a = sys.argv[sys.argv.index('--') + 1:]
@@ -262,15 +262,21 @@ if opt.get('golova_zhestko', '0') == '1':
     # `--golova_vverh r` — шея длиннее на r м: кольцо и голова поднимаются, шея тянется (переход 8 см ниже кольца растёт
     # до 20 см, чтобы не было ступени). Ряд «высота посадки головы» 15.10: кусок головы садится на кольцо из меша
     RING_SHIFT[2] += float(opt.get('golova_vverh', '0'))
+    # `--golova_vpered d` (19.10, лист ступеней оборотня: на ст.2 голова низко и далеко впереди, между плеч под гривой) —
+    # кольцо и голова уходят вперёд на d м (вниз — отрицательным `--golova_vverh`); шея наклоняется сдвигом от своего
+    # низа к кольцу, вершины на шве с корпусом не двигаются
+    RING_SHIFT[1] -= float(opt.get('golova_vpered', '0'))
     zr = float(np.mean([U0[k_][2] for k_ in ring_]))
+    zn = min(U0[k_][2] for k_ in range(len(X)) if owner[k_] == {'шея'})
+    zb_ = 0.08 + 1.5 * abs(float(opt.get('golova_vverh', '0'))) + 0.6 * float(opt.get('golova_vpered', '0'))
+    zb_ = min(zb_, zr - zn)
     for k_ in range(len(X)):
         if owner[k_] & {'голова', 'Чутьё'}:
             X[k_] = U0[k_] + RING_SHIFT
         elif 'шея' in owner[k_]:
-            zb_ = 0.08 + 1.5 * float(opt.get('golova_vverh', '0'))
             w_ = sm_((U0[k_][2] - (zr - zb_)) / zb_)
             X[k_] = (1 - w_) * X[k_] + w_ * (U0[k_] + RING_SHIFT)
-    print('КЛЮЧ: голова жёстко — сдвиг кольца шеи на весе 1: (%.4f %.4f %.4f) м, вершин кольца %d' % (*RING_SHIFT, len(ring_)))
+    print('КЛЮЧ: голова жёстко — сдвиг кольца шеи на весе 1: (%.4f %.4f %.4f) м, вершин кольца %d; шея наклоняется с %.3f м ниже кольца' % (*RING_SHIFT, len(ring_), zb_))
 res = [bvh.find_nearest(Vector(X[k_]))[3] for k_ in range(len(X)) if free[k_]]
 print('КЛЮЧ: до поверхности цели — средн. %.4f м, 95%% %.4f, макс %.4f; ориентиров %d, нет у цели: %s' % (
     float(np.mean(res)), float(np.percentile(res, 95)), float(np.max(res)), n, ', '.join(miss) or '—'))
@@ -309,6 +315,22 @@ if opt.get('mesta'):
                'note': 'шов под ключом «%s» на весе 1 (kluch_vida.py --mesta); между базой и весом 1 — линейно, ось и «верх» — slerp' % NAME}
         if ring1:
             rec['ring_m'] = [BU(q) for q in ring1]
+        # `--posadka тип:вперёд:вверх[:масштаб]` (19.10, лист ступеней оборотня): кусок, забравший место (голова), встаёт дальше вперёд и
+        # ниже, чем ушла кожа: на ст.2 голова низко и впереди между плеч, а шея ключа линейна по весу — сдвинь её, и на ст.1
+        # уедет и голова человека. Пишется отдельно от сдвига кожи — `posadka_m`, метры Unity на весе 1 (игра — ×вес)
+        for pk in (opt.get('posadka') or '').split(','):
+            if pk and pk.split(':')[0].replace('_', ' ') == s_['type']:     # пробел в типе — «_»
+                f_, u_, m_, a_ = (pk.split(':') + ['1', '0'])[1:5]
+                if float(a_):
+                    # наклон оси места вперёд на a° (кусок «Over» встаёт кадром шва: грива на ст.2 ложится на горб спины, когда
+                    # шея ключа ушла вперёд; голова держит взгляд донора и наклона не видит). Игра смешивает ось slerp'ом по весу
+                    Rx = np.array(Matrix.Rotation(math.radians(float(a_)), 3, 'X'))     # +угол — «вверх» оси к −Y Blender (вперёд)
+                    ax2, up2 = Rx @ UB(rec['axis_out']), Rx @ UB(rec['up'])
+                    rec['axis_out'] = [round(v, 5) for v in BU(ax2)]; rec['up'] = [round(v, 5) for v in BU(up2)]
+                if float(f_) or float(u_): rec['posadka_m'] = [0.0, float(u_), float(f_)]
+                # масштаб куска на весе 1 (19.10, критик: черты не росли с телом — грива ст.2 тонула в трапециях ключа):
+                # эллипс шва под ключом ×m, игра берёт масштаб куска по нему (ГеймБосс, PieceScale_FollowsSeamUnderKey)
+                rec['ellipse_m'] = [round(e_ * float(m_), 4) for e_ in rec['ellipse_m']]
         rec = dict({'klyuch': NAME}, **rec)              # JsonUtility не читает словари — массив записей с полем `klyuch`
         lst = [r_ for r_ in (s_.get('pod_klyuchom') or []) if isinstance(r_, dict) and r_.get('klyuch') != NAME]
         s_['pod_klyuchom'] = lst + [rec]
