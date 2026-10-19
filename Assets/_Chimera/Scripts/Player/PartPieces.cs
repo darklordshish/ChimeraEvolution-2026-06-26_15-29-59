@@ -140,8 +140,10 @@ public static partial class PartAssembly
         var (target, step) = GlobalLayer.Step(chassis, worn);
         if (ForceTraits != null && ForceTraits != chassis) { target = ForceTraits; step = ForceStep; }
         if (target?.traits == null || step <= 0) return res;
+        // черту цели заменяет черта ключа на ступени — объект меша самого шасси (`SpeciesSO.keyStages`)
+        var replaced = new HashSet<string>(BodyMesh.ActiveStages(chassis, BodyMesh.KeysFor(chassis, worn)).SelectMany(st => st.replacesTraits ?? new string[0]));
         foreach (var t in target.traits)
-            if (t != null && t.mesh != null && t.bones != null && t.bones.Length > 0 && Mathf.Max(1, t.step) <= step) res.Add((t, target));
+            if (t != null && t.mesh != null && t.bones != null && t.bones.Length > 0 && Mathf.Max(1, t.step) <= step && !replaced.Contains(t.objectSlot)) res.Add((t, target));
         return res;
     }
 

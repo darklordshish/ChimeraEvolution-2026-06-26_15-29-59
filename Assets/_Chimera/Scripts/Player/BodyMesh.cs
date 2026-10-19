@@ -105,11 +105,17 @@ public static class BodyMesh
             KeySkeleton.Apply(container, skeleton, jointsOf, keys);
         }
 
+        // ЧЕРТА КЛЮЧА НА СТУПЕНИ: объект `@<ключ>` рисуется только на её ступени и снимает объекты шасси под собой
+        var stages = ActiveStages(jointsOf, keys);
+        var stageHides = new HashSet<string>(stages.SelectMany(st => st.hides ?? new string[0]));
+
         int placed = 0;
         foreach (var src in renderers)
         {
             var mesh = src.sharedMesh;
             if (mesh == null || src.bones.Length == 0) continue;
+            if (src.name.StartsWith("@") && !stages.Any(st => st.objectName == src.name)) continue;
+            if (stageHides.Contains(SlotOf(src.name))) continue;
             // место несёт чужой кусок (химера на меше вида): свой объект этого слота со всеми `слот.что` не ставится
             if (skipSlots != null && skipSlots.Contains(SlotOf(src.name))) continue;
             var srcBind = mesh.bindposes;
@@ -171,6 +177,16 @@ public static class BodyMesh
             placed++;
         }
         return placed;
+    }
+
+    /// <summary>Черты ключа, чья ступень достигнута: вес ключа полный (ступень 2 = вес 1, `KeyWeight`).</summary>
+    public static List<KeyStage> ActiveStages(SpeciesSO chassis, IReadOnlyDictionary<string, float> keys)
+    {
+        var res = new List<KeyStage>();
+        if (chassis?.keyStages == null || keys == null) return res;
+        foreach (var st in chassis.keyStages)
+            if (st != null && keys.TryGetValue(st.key, out var w) && w >= KeyWeight(st.step) - 1e-3f && w > 0f) res.Add(st);
+        return res;
     }
 
     static string SlotOf(string objectName) { int dot = objectName.IndexOf('.'); return dot > 0 ? objectName.Substring(0, dot) : objectName; }

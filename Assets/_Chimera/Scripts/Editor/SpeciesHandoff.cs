@@ -95,6 +95,7 @@ public static class SpeciesHandoff
         foreach (var p in traitProblems) Debug.LogError($"[черты] {species.speciesName}: {p}");
         species.seats = ReadSeats(species);
         species.keyJoints = ReadKeyJoints(species);
+        species.keyStages = ReadKeyStages(species);
         if (species.traits.Length > 0 || species.seats.Length > 0)
             Debug.Log($"[черты] {species.speciesName}: кусков-черт {species.traits.Length}, посадочных мест {species.seats.Length}");
         return graph;
@@ -264,6 +265,28 @@ public static class SpeciesHandoff
                                      up = V(k.up, V(seam.up, Vector3.forward)), ellipse = new Vector2(k.ellipse_m[0], k.ellipse_m[1]),
                                      posadka = V(k.posadka_m, Vector3.zero) })
         .ToArray();
+
+    [System.Serializable] class KeyStageDto { public string kluch, @object; public int step; public string[] skryvaet, zamenyaet_cherty; }
+
+    /// <summary>ЧЕРТЫ КЛЮЧА НА СТУПЕНИ — `klyuchi/<вид>-*-st<N>.json`: `kluch`, `object` (объект меша шасси, `@<ключ>`), `step`,
+    /// `skryvaet` (объекты шасси под ним), `zamenyaet_cherty` (объекты черт цели, которые он заменяет). Объекта нет в меше —
+    /// запись не принимается, с ошибкой в консоль.</summary>
+    public static KeyStage[] ReadKeyStages(SpeciesSO species)
+    {
+        var list = new List<KeyStage>();
+        var dir = Dir + "klyuchi/";
+        if (!System.IO.Directory.Exists(dir)) return list.ToArray();
+        var objects = species.bodyMesh != null ? species.bodyMesh.GetComponentsInChildren<SkinnedMeshRenderer>(true).Select(r => r.name).ToHashSet() : new HashSet<string>();
+        foreach (var file in System.IO.Directory.GetFiles(dir, Translit(species.speciesName) + "-*-st*.json"))
+        {
+            KeyStageDto d;
+            try { d = JsonUtility.FromJson<KeyStageDto>(System.IO.File.ReadAllText(file)); } catch { continue; }
+            if (d == null || string.IsNullOrEmpty(d.kluch) || string.IsNullOrEmpty(d.@object)) continue;
+            if (!objects.Contains(d.@object)) { Debug.LogError($"[черта ключа] {species.speciesName}: «{file}» — объекта «{d.@object}» нет в меше вида, не принято"); continue; }
+            list.Add(new KeyStage { key = d.kluch, objectName = d.@object, step = d.step > 0 ? d.step : 2, hides = d.skryvaet ?? new string[0], replacesTraits = d.zamenyaet_cherty ?? new string[0] });
+        }
+        return list.ToArray();
+    }
 
     public static BodySeat[] ReadSeats(SpeciesSO species)
     {

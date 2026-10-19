@@ -98,6 +98,10 @@ public class SpeciesSO : ScriptableObject
     /// <summary>СУСТАВЫ ПОД КЛЮЧОМ (`handoff/klyuchi/<вид>-<цель>-sustavy.json`): кости скелета на полном весе формы-ключа
     /// вида-цели. Кости сдвигаются к ним на вес ключа до привязки меша (`KeySkeleton`) — тело гнётся суставами цели.</summary>
     public KeyJoint[] keyJoints;
+    /// <summary>ЧЕРТА КЛЮЧА НА СТУПЕНИ (`handoff/klyuchi/<вид>-<цель>-st<N>.json`, 19.10): объект меша шасси `@<ключ>` — голова,
+    /// воротник-грива, загривок и хвост одной массой, вырезанные из самой цели ключа (та же поверхность, к которой ключ тянет
+    /// кожу), в метрах шасси на полном весе. На ступени он ЗАМЕНЯЕТ черты вида-цели кусками и снимает свои объекты под ним.</summary>
+    public KeyStage[] keyStages;
 
     /// <summary>СОСТАВНОЕ ТЕЛО (`ChainSwap`): кости, которые поле НЕ рисует, потому что их часть рисует деталь, и сами
     /// поставленные детали. Только у копии в памяти.</summary>
@@ -448,4 +452,13 @@ public class KeyJoint
 {
     public string key, bone;
     public Vector3 head, along, forward;
+}
+
+/// <summary>Черта ключа на ступени: какой объект меша шасси рисуется, что он снимает и какие черты цели заменяет.</summary>
+[System.Serializable]
+public class KeyStage
+{
+    public string key, objectName;
+    public int step = 2;
+    public string[] hides, replacesTraits;
 }
