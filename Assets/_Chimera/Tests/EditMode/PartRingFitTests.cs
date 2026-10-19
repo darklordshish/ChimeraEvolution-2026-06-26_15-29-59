@@ -51,6 +51,16 @@ namespace Chimera.Tests.EditMode
             return go;
         }
 
+        /// <summary>Механика кусков под ключом мерится без черты ключа на ступени: на полном весе она заменяет черты цели целиком
+        /// (объект `@<ключ>`, 19.10), и мерить было бы нечего.</summary>
+        static System.IDisposable NoStages(SpeciesSO sp) => new StagesOff(sp);
+        sealed class StagesOff : System.IDisposable
+        {
+            readonly SpeciesSO sp; readonly KeyStage[] was;
+            public StagesOff(SpeciesSO s) { sp = s; was = s.keyStages; s.keyStages = new KeyStage[0]; ChainSwap.ResetCache(); BodyMesh.ResetCache(); }
+            public void Dispose() { sp.keyStages = was; ChainSwap.ResetCache(); BodyMesh.ResetCache(); }
+        }
+
         static List<BodyPartView> Pieces(GameObject go) => go.GetComponentsInChildren<BodyPartView>(true).ToList();
 
         // наибольшее расстояние от центра вершин — мера размера, не зависящая от поворота куска
@@ -181,6 +191,7 @@ namespace Chimera.Tests.EditMode
             }
             var bodyKeyed = human.bodyMesh.GetComponentsInChildren<SkinnedMeshRenderer>(true).Any(r => r.sharedMesh != null && r.sharedMesh.GetBlendShapeIndex("Волк") >= 0);
             if (!bodyKeyed) Assert.Inconclusive("у меша человека нет формы-ключа «Волк»");
+            using var _ = NoStages(human);
             float moved = (Ears(1f) - Ears(0f)).magnitude;
             Assert.Greater(moved, 0.01f, $"на полном весе ключа уши волка сдвинулись на {moved * 100f:0.0} см — сидят на шве базы, а не на шве под ключом");
         }
@@ -207,6 +218,7 @@ namespace Chimera.Tests.EditMode
                 var skull = Pieces(go).First(p => p.name == "голова");
                 return Span(skull.GetComponent<SkinnedMeshRenderer>().sharedMesh.vertices);
             }
+            using var _ = NoStages(human);
             float got = Size(1f) / Size(0f);
             Assert.AreEqual(expected, got, 0.01f, "голова на весе 1 не выросла вместе со швом под ключом");
         }

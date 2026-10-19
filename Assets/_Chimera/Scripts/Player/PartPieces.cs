@@ -141,7 +141,9 @@ public static partial class PartAssembly
         if (ForceTraits != null && ForceTraits != chassis) { target = ForceTraits; step = ForceStep; }
         if (target?.traits == null || step <= 0) return res;
         // черту цели заменяет черта ключа на ступени — объект меша самого шасси (`SpeciesSO.keyStages`)
-        var replaced = new HashSet<string>(BodyMesh.ActiveStages(chassis, BodyMesh.KeysFor(chassis, worn)).SelectMany(st => st.replacesTraits ?? new string[0]));
+        // только когда черта ключа и правда будет нарисована — мешем шасси; поле (детекторы через `FieldOnly`) её не рисует
+        var replaced = new HashSet<string>(BodyMesh.Enabled && chassis.bodyMesh != null
+            ? BodyMesh.ActiveStages(chassis, BodyMesh.KeysFor(chassis, worn)).SelectMany(st => st.replacesTraits ?? new string[0]) : new string[0]);
         foreach (var t in target.traits)
             if (t != null && t.mesh != null && t.bones != null && t.bones.Length > 0 && Mathf.Max(1, t.step) <= step && !replaced.Contains(t.objectSlot)) res.Add((t, target));
         return res;
