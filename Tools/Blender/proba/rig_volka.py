@@ -14,6 +14,8 @@
      шва у соседних объектов совпадают по месту и весам; затенение плоское — нормаль у грани своя, ступени на шве нет.
 
   blender -b --factory-startup -P rig_volka.py -- меш.obj скелет.json выход.fbx [--muzzle градусы — как в доводке] [--shvy 1 — швы кусков, 2 — и голова по органам] [--pasporta папка] [--blend файл.blend] [--shots префикс]
+  ручки ключей «двуногий» (19.10, умолчания — принятые по листу ступеней оборотня и критику a1efd88): грива --griva_r/h0/h1/t/lech/vynos/boka/boka_dl/nazad/zatylok/vverh,
+  хвост --hvost_l/b/u/a0/a1/vbok, череп --golova_s/kiv/vniz/vpered
 Печатает отчёт «РИГ: …»: посадка, расхождения меша со скелетом, треугольники по объектам, вершины по костям.
 """
 import sys, math, json, os
@@ -943,6 +945,11 @@ for b in arm.bones:
 # (x вбок, h — дорсальная сторона, t вдоль оси, t < 0 — к телу): вентральная сторона короче на 45 % и ближе к оси на
 # 40 %, дорсальная длиннее на 90 %, к низу воротник шире на 20 % — грива ложится на плечи и спину. Чистому волку ключ
 # не нужен (вес 0); на двуногом носителе его включает посадка
+GR0, GT = float(opt.get('griva_r', 1.3)), float(opt.get('griva_t', 1.0))
+GH0, GH1 = float(opt.get('griva_h0', 1.4)), float(opt.get('griva_h1', 1.9))
+GL, GM, GX = float(opt.get('griva_lech', 0.6)), float(opt.get('griva_vynos', 0.8)), float(opt.get('griva_boka', 0.4))
+GU, GS, GN = float(opt.get('griva_vverh', 0.0)), float(opt.get('griva_boka_dl', 0.6)), float(opt.get('griva_nazad', 0.25))
+GV = float(opt.get('griva_zatylok', 0.3))
 if SHVY >= 2 and 'Шкура' in parts:
     go = parts['Шкура'][0]
     cK, upK, axK = SEAMS['грива']['c'], SEAMS['грива']['up'], SEAMS['грива']['ax']
@@ -957,31 +964,89 @@ if SHVY >= 2 and 'Шкура' in parts:
         # боковые пряди отводятся назад-вверх к загривку (сдвиг по «верху» до 0.6 их бокового выноса)
         lat = sm(abs(x_) / 0.10) * sm(-h_ / 0.04 + 1.0)
         h2 = h_ * (1 - 0.85 * vent) + 0.6 * abs(x_) * lat * vent
-        kb.data[v.index].co = cK + RK @ Vector((x_ * (1 + 0.20 * sm(-t_ / 0.25)) * (1 - 0.25 * vent), h2, t_ * (1 + 0.9 * dors - 0.70 * vent)))
+        # 19.10 (сверка с листом ступеней и критик a1efd88: на ключевом теле грива тонула в трапециях; раздутая во все стороны —
+        # «воротник Дракулы» спереди и лезвия, торчащие из спины поперёк; по листу — ГРЕБЕНЬ: сплошной клин от затылка вниз по
+        # спине, пряди лежат черепицей кончиками вниз-назад под ~30° к спине, спереди на ст.1 из-за трапеций едва видна).
+        # Спинная половина: вбок ×GR, наружу ×GH0 у кольца … ×GH1 к низу, вниз по спине длиннее на GT (середина, не бока);
+        # затем пряди ЛОЖАТСЯ: чем дальше кончик от кожи, тем ниже он сдвигается по спине (GL) и тем меньше торчит (GM).
+        # Бока и перёд прижимаются к шее (×(1 − GX)) — вперёд от плоскости ушей ничего не торчит
+        r_ = sm(-t_ / 0.30)
+        rh = GH0 + (GH1 - GH0) * r_
+        dw = sm(h2 / 0.06 + 0.5)                             # 0 на брюшной стороне, 1 на спинной
+        x2 = x_ * (1 + 0.20 * sm(-t_ / 0.25)) * (1 - 0.25 * vent)
+        # над кольцом (t > 0, по затылку) воротник уже и ниже на GV: в анфас ст.1 он вставал раковиной выше бровей
+        cap = 1 - GV * sm(t_ / 0.10)
+        x3 = x2 * (1 + (GR0 - 1) * dw) * (1 - GX * (1 - dw)) * cap
+        h3 = h2 * (1 + (rh - 1) * dw) * cap
+        t3 = t_ * (1 + (0.9 + GT * sm(1 - abs(x_) / 0.22)) * dors - 0.70 * vent) * (1 - GX * (1 - dw))     # бока и короче: свисая с кольца, ложились жилетом на грудь
+        # бока воротника (у волка — пряди по сторонам шеи, h ≈ 0) короче на GS: на ст.2 кольцо уходит вперёд с головой, и
+        # они свисали жилетом на грудь и дельты (кадр v18)
+        side = sm(abs(x_) / 0.12) * sm(1 - h_ / 0.10)
+        t3 *= 1 - GS * side
+        vyn = max(0.0, h3 - 0.05) * dw
+        lay = sm(-t_ / 0.20)                                 # у затылка пряди стоят (заполняют загривок за черепом), ниже ложатся
+        # верх гребня подтягивается к затылку на GU (на ст.2 голова-кусок крупнее и впереди кольца — между черепом и гребнем
+        # был просвет на загривке)
+        t3 += GU * dw * dw * sm(1 - abs(x_) / 0.16) * (1 - sm(-t_ / 0.15))      # только середина спины: бока, поднятые к ушам, обнимали лицо стоячим воротником
+        # низ воротника уходит к спине на GN·(−t): шея ключа наклонена вперёд, и отвесно свисающая с кольца грива ложилась
+        # жилетом перед плечами и на грудь (кадр v19, ст.2)
+        h4 = h3 - vyn * (1 - GM) * lay + GN * max(0.0, -t3)
+        kb.data[v.index].co = cK + RK @ Vector((x3, h4, t3 - GL * vyn * lay))
     REP.append('форма-ключ «двуногий» у объекта `Шкура`: вершин %d' % len(go.data.vertices))
 
 # ФОРМА-КЛЮЧ «двуногий» У ХВОСТА (15.10, лист ступеней оборотня: хвост на всех ступенях висит ДУГОЙ вниз-назад; волк в покое
-# держит хвост опущенным — учебник, мышцы хвоста; «хвост-дубина» прямым куском читалась палкой). Дуга в кадре шва: точка на
-# расстоянии t от кольца вдоль оси поворачивается вокруг боковой оси шва к брюшной стороне на угол, растущий к кончику
-# (отход назад у корня, падение дальше — см. ниже). Кольцо (t = 0) не двигается. Чистому волку ключ не нужен (вес 0)
+# держит хвост опущенным — учебник, мышцы хвоста; «хвост-дубина» прямым куском читалась палкой). Чистому волку ключ не нужен
+# (вес 0). 19.10 — ПО ОСЕВОЙ ЛИНИИ ХВОСТА (сверка с листом: прежний ключ поворачивал точки на угол по их проекции на ось
+# шва, а хвост волка за корнем уходит от этой оси вниз на 50°, — точки одного сечения получали разные углы, и хвост
+# раскрывался веером-плавником, а в анфас между ног торчал узкий кончик). Теперь: осевая — кости `хвост` → `хвост_кисть`
+# (продлена до кончика меша); у вершины берутся длина дуги s до её проекции на осевую и смещение от осевой (вбок и в
+# плоскости); новая осевая — дуга в сагиттальной плоскости шва длиной ×HL: у корня под углом HA0 к оси шва (минус — к
+# спине), к кончику HA1 (к брюху); смещения кладутся в кадр новой осевой, к середине вбок ×(1+HB), в плоскости ×(1+HU)
+HL, HB, HU = float(opt.get('hvost_l', 1.8)), float(opt.get('hvost_b', 0.6)), float(opt.get('hvost_u', 0.1))
+HA0, HA1 = float(opt.get('hvost_a0', 15)), float(opt.get('hvost_a1', 78))
+HX = float(opt.get('hvost_vbok', 0.14))
 if SHVY >= 2 and 'Хвост' in parts:
     to = parts['Хвост'][0]
     cT, axT, upT = SEAMS['корень хвоста']['c'], SEAMS['корень хвоста']['ax'].normalized(), SEAMS['корень хвоста']['up'].normalized()
     sdT = axT.cross(upT).normalized()
+    PV = [v.co.copy() for v in to.data.vertices]
+    tipv = max(PV, key=lambda p: (p - cT).length)
+    Q = [cT, Vector(BN['хвост']['tail']), Vector(BN['хвост_кисть']['tail'])]
+    Q[2] = Q[1] + (Q[2] - Q[1]).normalized() * max((Q[2] - Q[1]).length, (tipv - Q[1]).dot((Q[2] - Q[1]).normalized()) + 0.02)
+    segL = [(Q[i + 1] - Q[i]).length for i in range(2)]; LT = sum(segL)
+    def proj(p):
+        best = None; s0 = 0.0
+        for i in range(2):
+            a_, b_ = Q[i], Q[i + 1]; T_ = (b_ - a_).normalized(); u_ = max(0.0, min(segL[i], (p - a_).dot(T_)))
+            f_ = a_ + T_ * u_; dd = (p - f_).length
+            if best is None or dd < best[0]: best = (dd, s0 + u_, f_, T_)
+            s0 += segL[i]
+        return best[1:]
+    # новая осевая: шаги по дуге, направление — ось шва, повёрнутая вокруг боковой оси на угол φ(s)
+    NS = 200; LN = LT * HL; Cn = [cT.copy()]; Tn = []
+    def phi(u): return math.radians(HA0 + (HA1 - HA0) * sm(u))
+    for k_ in range(NS + 1):
+        Tk = Matrix.Rotation(-phi(k_ / NS), 3, sdT) @ axT       # «−»: поворот вокруг ax×up на +угол ведёт к спине; +φ — к брюху
+        Tn.append(Tk.normalized())
+        if k_ < NS: Cn.append(Cn[-1] + Tk * (LN / NS))
     to.shape_key_add(name='Basis')
     kt = to.shape_key_add(name='двуногий')
     for v in to.data.vertices:
-        d_ = v.co - cT; tt = max(0.0, d_.dot(axT))
-        # у корня хвост ОТХОДИТ назад-вверх (до +40° на первых 15 см), дальше падает дугой (до −70° к 0.53 м): по листу
-        # хвост отходит от крупа с зазором от ног и падает за икрами (55° без отхода подворачивали его под таз)
-        ang = -math.radians(40) * min(1.0, tt / 0.15) + math.radians(70) * max(0.0, min(1.0, (tt - 0.18) / 0.35)) ** 1.6
-        kt.data[v.index].co = cT + Matrix.Rotation(-ang, 3, sdT) @ d_      # «−»: поворот вокруг ax×up на +угол ведёт к спине
-    REP.append('форма-ключ «двуногий» у объекта `Хвост`: отход назад и дуга вниз, вершин %d' % len(to.data.vertices))
+        s_, f_, T_ = proj(v.co)
+        N_ = sdT.cross(T_).normalized(); off = v.co - f_
+        lat, nrm, ext = off.dot(sdT), off.dot(N_), off.dot(T_)
+        u = min(1.0, s_ / LT); bell = math.sin(math.pi * u ** 1.36) ** 0.8          # толще всего на 0.6 длины — кисть висит низко, в анфас видна между ног
+        k_ = min(NS, int(round(u * NS))); Tk = Tn[k_]; Nk = sdT.cross(Tk).normalized()
+        # HX — снос к кончику вбок (к −X Unity): прямо за осью ног ортокамера в анфас видит хвост узкой гранью-«фартуком»,
+        # а волк держит опущенный хвост чуть набок (критик a1efd88, проход 2)
+        kt.data[v.index].co = Cn[k_] + Tk * (ext * HL) + sdT * (lat * (1 + HB * bell) + HX * sm(u)) + Nk * (nrm * (1 + HU * bell))
+    REP.append('форма-ключ «двуногий» у объекта `Хвост`: по осевой (%.2f м → %.2f), угол к оси шва %.0f° → %.0f°, вершин %d' % (LT, LN, HA0, HA1, len(to.data.vertices)))
 
 # ФОРМА-КЛЮЧ «двуногий» У ЧЕРЕПА: на двуногом центр шва донора — `center_biped_m` (голова сидит выше кольца, на
 # человеке ~10 см), и юбка в 0.06 до культи шеи не достаёт. Ключ опускает ДНО юбки под эту точку: кольцо дна встаёт
 # поперёк вертикальной шеи двуногого (ось и «верх» — как у шва шеи человека), на OVB ниже точки посадки, 0.85 кольца.
 # Юбка становится видимой шеей между головой и культёй носителя. Кольцо шва и череп ключ не трогает
+HEAD_XF = None
 BIPED_C = Vector((0, yn + 0.37, 1.12)); OVB = 0.16     # 15.10: 0.055 → 0.16 — запас под подъём головы на ключевом теле (до +8 см); лишнее уходит в шею
 if SHVY >= 2 and 'голова' in parts:
     go = parts['голова'][0]
@@ -989,13 +1054,34 @@ if SHVY >= 2 and 'голова' in parts:
     TGT = [BIPED_C - AH * OVB + XU * (0.085 * 0.85 * math.sin(math.pi / 6 * k_)) + UH * (0.092 * 0.85 * math.cos(math.pi / 6 * k_)) for k_ in range(12)] + [BIPED_C - AH * OVB]
     go.shape_key_add(name='Basis')
     kb = go.shape_key_add(name='двуногий')
+    # 19.10 (сверка с листом и критик a1efd88: на ключевом теле голова мала — нос–затылок 17 % роста против 26 % листа — и
+    # стоит над плечами на открытой шее; по листу она крупнее, ниже, впереди и смотрит вперёд-вниз): череп (всё, кроме дна
+    # юбки) масштабируется от точки посадки в HS раз, кивает мордой вниз на HK°, уходит вниз на HD и вперёд на HF м (метры
+    # волка). Дно юбки остаётся у культи шеи носителя — юбка тянется шеей, наклонённой вперёд. Тот же ключ получают морда,
+    # полость и зубы: они садятся за головой отдельными объектами
+    HS, HK = float(opt.get('golova_s', 1.0)), float(opt.get('golova_kiv', 6))
+    HD, HF = float(opt.get('golova_vniz', 0.04)), float(opt.get('golova_vpered', 0.0))
+    RH = Matrix.Rotation(math.radians(HK), 3, 'X')            # +угол — нос (−Y Blender) вниз
+    def head_xf(p): return BIPED_C + Vector((0, -HF, -HD)) + RH @ ((p - BIPED_C) * HS)
+    HEAD_XF, HEAD_RH, HEAD_S = head_xf, RH, HS
     moved = 0
     for v in go.data.vertices:
+        hit = None
         for p_, q_ in zip(SKIRT, TGT):
             if (v.co - p_).length < 1e-5:
-                kb.data[v.index].co = q_; moved += 1
+                hit = q_
+        if hit is not None:
+            kb.data[v.index].co = hit; moved += 1
+        else:
+            kb.data[v.index].co = head_xf(v.co)
     assert moved == 13, 'ключ «двуногий» у черепа: найдено %d вершин юбки из 13' % moved
-    REP.append('форма-ключ «двуногий» у объекта `голова`: дно юбки (13 вершин) под точку посадки двуногого, %.3f м ниже неё' % OVB)
+    for nm_ in ('Пасть', 'Пасть.полость', 'Пасть.зубы'):
+        o_ = bpy.data.objects.get(nm_)
+        if o_ is None or (HS == 1.0 and HK == 0.0 and HD == 0.0 and HF == 0.0): continue
+        if o_.data.shape_keys is None: o_.shape_key_add(name='Basis')
+        kk = o_.shape_key_add(name='двуногий')
+        for v in o_.data.vertices: kk.data[v.index].co = head_xf(v.co)
+    REP.append('форма-ключ «двуногий» у объекта `голова`: дно юбки (13 вершин) под точку посадки двуногого, %.3f м ниже неё; череп ×%.2f, кивок %.0f°, вниз %.3f, вперёд %.3f м' % (OVB, HS, HK, HD, HF))
 
 # ---------- отчёт ----------
 allv = [x for x in V]
@@ -1073,8 +1159,10 @@ if SHVY and 'pasporta' in opt:
     # приносит с собой места ушей, морды и мочки — те же швы, что в паспортах кусков органов, но как места ГОЛОВЫ.
     # Кроме метров тела (`center_m`, …) место дано в кадре кости `голова` (`local_m`: вдоль кости от её начала, по её
     # «верху» — сагиттально к спине, вбок к −X Unity), чтобы ехать за костью, а не за метрами вида
-    def head_places():
-        bh, bt = Vector(BN['голова']['head']), Vector(BN['голова']['tail'])
+    def head_places(xf=None, rot=None, s=1.0):
+        # xf — преобразование черепа ключом «двуногий» (`places_biped`, 19.10): места морды, ушей и мочки едут с черепом
+        P_ = xf or (lambda p: p); D_ = (lambda d: (rot @ d).normalized()) if rot is not None else (lambda d: d)
+        bh, bt = P_(Vector(BN['голова']['head'])), P_(Vector(BN['голова']['tail']))
         by = (bt - bh).normalized(); bz = (Vector((0, 0, 1)) - by * by.z).normalized()
         out_ = []
         for nm_, kind_, sides in (('основание морды', 'кольцо снимаемой детали (Пасть)', (1,)),
@@ -1083,11 +1171,12 @@ if SHVY and 'pasporta' in opt:
             for sg_ in sides:
                 M = lambda p: Vector((p.x * sg_, p.y, p.z))
                 c_, ax_, up_, u_ = M(d_['c']), M(d_['ax']), M(d_['up']), M(d_.get('u', Vector((1, 0, 0))))
-                pts_ = [c_ + u_ * (d_['r'][0] * math.sin(2 * math.pi * k_ / d_['n'])) + up_ * (d_['r'][1] * math.cos(2 * math.pi * k_ / d_['n'])) for k_ in range(d_['n'])]
+                pts_ = [P_(c_ + u_ * (d_['r'][0] * math.sin(2 * math.pi * k_ / d_['n'])) + up_ * (d_['r'][1] * math.cos(2 * math.pi * k_ / d_['n']))) for k_ in range(d_['n'])]
+                c_, ax_, up_, u_ = P_(c_), D_(ax_), D_(up_), D_(u_)
                 rel = c_ - bh
                 out_.append({'type': nm_, 'kind': kind_, 'side': ('−X Unity' if sg_ > 0 else '+X Unity') if len(sides) > 1 else 'ось',
                              'ring': list(range(d_['n'])), 'ring_m': [U(q) for q in pts_], 'center_m': U(c_),
-                             'ellipse_m': [round(d_['r'][0], 4), round(d_['r'][1], 4)], 'axis_out': U(ax_), 'up': U(up_), 'side_axis': U(u_),
+                             'ellipse_m': [round(d_['r'][0] * s, 4), round(d_['r'][1] * s, 4)], 'axis_out': U(ax_), 'up': U(up_), 'side_axis': U(u_),
                              'bone': 'голова', 'local_m': [round(rel.dot(by), 4), round(rel.dot(bz), 4), round(rel.x, 4)]})
         return {'bone': 'голова', 'bone_head_m': U(bh), 'bone_tail_m': U(bt),
                 'local_note': 'local_m = (вдоль кости от её начала; по «верху» кости — перпендикуляр к ней в сагиттальной плоскости, к спине; вбок — к −X Unity), метры волка',
@@ -1117,6 +1206,8 @@ if SHVY and 'pasporta' in opt:
         pas.update(extra_f)                                   # в том числе `keys` — формы-ключи адаптации к плану тела
         if SHVY >= 2 and fname == 'volk-golova-kusok.json':
             pas['places'] = head_places()
+            if HEAD_XF is not None:
+                pas['places_biped'] = head_places(HEAD_XF, HEAD_RH, HEAD_S)       # места после ключа «двуногий» (череп масштабирован и кивает)
         if mirror:
             pas['seam']['note'] += '; кольцо дано для стороны −X Unity (+X Blender), вторая сторона — зеркалом по X'
         sub = 'parts' if slot else 'cherty'           # черта шасси — не деталь органа: читатель деталей её не берёт
