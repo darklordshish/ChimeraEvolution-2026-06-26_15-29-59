@@ -21,7 +21,7 @@ public static class SpeciesBootstrap
         //    чистый человек = 12/16 → свободно 4 = стартовый бюджет химеризации ──
         var human = GetOrCreate("Человек");
         human.speciesName = "Человек";
-        human.mass = 80f;   // масса — для роста химеры, решение 20.10 (спека `2026-10-20-rost-i-gabarity-vidov.md`)
+        human.mass = 80f;   // масса — для роста химеры (спека `2026-10-20-shkala-morfov.md`)
         human.tint = new Color(0.9f, 0.72f, 0.62f); // телесный — база палитры (все органы человечьи → этот цвет)
         human.mutagenPool = 16;
         human.baseHp = 75;  // БАЗА ТЕЛА (см. CreatureBody: итог = база × (1 + бонусы × экспрессия)).
@@ -150,7 +150,7 @@ public static class SpeciesBootstrap
         // ── Волк: донор органов (абсолютные значения = человек + прежняя дельта) ──
         var wolf = GetOrCreate("Волк");
         wolf.speciesName = "Волк";
-        wolf.mass = 90f;   // масса — для роста химеры, решение 20.10 (спека `2026-10-20-rost-i-gabarity-vidov.md`)
+        wolf.mass = 90f;   // масса — для роста химеры (спека `2026-10-20-shkala-morfov.md`)
         wolf.tint = new Color(0.5f, 0.5f, 0.52f);   // серый — по-волчьи и отличимо от бурого лося
         wolf.mutagenPool = 16;
         wolf.baseHp = 38;   // тело волка вдвое легче человеческого (~40 кг против ~75) — зато сердце зверское
@@ -318,7 +318,7 @@ public static class SpeciesBootstrap
         const int snakeNeckLinks = 4, snakeSpineLinks = 7;
         const float snakeNeckAttach = 1f - (float)snakeNeckLinks / snakeSpineLinks;
         snake.speciesName = "Змея";
-        snake.mass = 60f;   // масса — для роста химеры, решение 20.10 (спека `2026-10-20-rost-i-gabarity-vidov.md`)
+        snake.mass = 66f;   // масса — для роста химеры (спека `2026-10-20-shkala-morfov.md`)
         snake.tint = new Color(0.35f, 0.5f, 0.3f);
         snake.mutagenPool = 20;
         snake.baseHp = 60;  // длинное тело, но лёгкое
@@ -449,7 +449,7 @@ public static class SpeciesBootstrap
         // ── Лось: массивный травоядный-таран (NPC-шасси; экспрессия 0.5). Рёв/рога — срезы A2/D ──
         var moose = GetOrCreate("Лось");
         moose.speciesName = "Лось";
-        moose.mass = 400f;   // масса — для роста химеры, решение 20.10 (спека `2026-10-20-rost-i-gabarity-vidov.md`)
+        moose.mass = 440f;   // масса — для роста химеры (спека `2026-10-20-shkala-morfov.md`)
         moose.tint = new Color(0.42f, 0.32f, 0.22f); // тёмно-бурый
         moose.mutagenPool = 24;
         moose.eatsMeat = false; // ТРАВОЯДНЫЙ: волков не ест, добычей не восстанавливается (его еда — кормёжка по карте, будущий слайс)
@@ -571,7 +571,7 @@ public static class SpeciesBootstrap
         //    мутант — крупнее и агрессивнее природного, лор-ковер оправдывает фантазию ──
         var hog = GetOrCreate("Ёж");
         hog.speciesName = "Ёж";
-        hog.mass = 45f;   // масса — для роста химеры, решение 20.10 (спека `2026-10-20-rost-i-gabarity-vidov.md`)
+        hog.mass = 12f;   // масса — для роста химеры (спека `2026-10-20-shkala-morfov.md`)
         hog.tint = new Color(0.58f, 0.33f, 0.28f);  // ржаво-кирпичный: тёмный и красный, не спутать с телесным
                                                     // человеком (был песочный — сливались) и бурым лосём
         hog.mutagenPool = 18;

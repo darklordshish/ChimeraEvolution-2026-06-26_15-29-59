@@ -6,8 +6,8 @@ using UnityEngine;
 
 namespace Chimera.Tests.EditMode
 {
-    /// <summary>РОСТ ХИМЕРЫ ПО МАССЕ (спека `2026-10-20-rost-i-gabarity-vidov.md`, решения геймдизайнера 20.10): на человеке
-    /// со всеми органами вида оборотень ≈ 1.9 м, человек-лось ≈ 3 м, человек-Хеджхалк меньше человека. Сторож чисел из
+    /// <summary>РОСТ ХИМЕРЫ ПО МАССЕ (спека `2026-10-20-shkala-morfov.md`, шкала морфов принята геймдизайнером 20.10): на
+    /// человеке со всеми органами вида тело до макушки — оборотень 1.92 м, человек-лось 3.10, человек-Хеджхалк 1.05. Сторож чисел из
     /// данных видов: правишь массу или ручку `GrowthP` — этот тест говорит, куда уехал рост.</summary>
     public class GrowthTests
     {
@@ -54,9 +54,10 @@ namespace Chimera.Tests.EditMode
             return HumanHeight * GlobalLayer.Growth(human, worn);
         }
 
-        [TestCase("Волк", 1.85f, 1.95f)]     // «волк примерно с человека», принято 1.9
-        [TestCase("Лось", 2.9f, 3.2f)]       // «человека-лося средние 3 м»
-        [TestCase("Ёж", 1.45f, 1.7f)]        // «ёж меньше»
+        [TestCase("Волк", 1.88f, 1.96f)]     // шкала морфов: 1.92
+        [TestCase("Лось", 3.0f, 3.2f)]       // шкала морфов: 3.10
+        [TestCase("Ёж", 1.0f, 1.1f)]         // шкала морфов: 1.05 (Хеджхалк ×2/3 по решению 20.10)
+        [TestCase("Змея", 1.7f, 1.8f)]       // условная цель 1.75 (ст.2 к змее на человеке недостижима)
         public void Morph_OnHuman_HasDecidedHeight(string species, float lo, float hi)
         {
             float h = HeightOnHuman(species);
