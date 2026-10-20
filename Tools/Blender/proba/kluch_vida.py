@@ -14,7 +14,7 @@ Hunyuan) переносится на ТОПОЛОГИЮ меша шасси (ч�
   5. СУСТАВЫ ЦЕЛИ — те же суставы шасси, перенесённые пластиной, — файлом рядом (формат `*-skelet.json`).
 
   blender -b --factory-startup -P kluch_vida.py -- шасси.blend цель.obj ориентиры.json выход.fbx скелет_шасси.json суставы_цели.json
-      [--imya Волк] [--iter 4] [--smooth 6] [--maxd 0.08] [--maxd_obj голова:0.025,шея:0.025 [--zatylok y]] [--bez Чутьё] [--lam 1e-4] [--gladit N [--voxel 0.012]] [--rasput 60] [--polosa Ноги:0.40:0.80:20] [--skuly k:yc:zc:r] [--bez_zony Ноги:0.14] [--plechi k] [--grud kd] [--taz kt] [--golova_zhestko 1 [--golova_vverh r] [--golova_vpered d]] [--mesta паспорт.json,… [--posadka тип:вперёд:вверх[:масштаб[:наклон]],…]] [--kupol f:zb:yb]
+      [--imya Волк] [--iter 4] [--smooth 6] [--maxd 0.08] [--maxd_obj голова:0.025,шея:0.025 [--zatylok y]] [--bez Чутьё] [--lam 1e-4] [--gladit N [--voxel 0.012]] [--rasput 60] [--polosa Ноги:0.40:0.80:20] [--skuly k:yc:zc:r] [--bez_zony Ноги:0.14] [--plechi k] [--grud kd] [--taz kt] [--golova_zhestko 1 [--golova_vverh r] [--golova_vpered d]] [--korpus 1] [--mesta паспорт.json,… [--posadka тип:вперёд:вверх[:масштаб[:наклон]],…]] [--kupol f:zb:yb]
   blender -b --factory-startup -P kluch_vida.py -- шасси.blend - - - скелет_шасси.json - --istochnik ориентиры_шасси.json
 """
 import sys, json, math
@@ -80,6 +80,41 @@ if 'istochnik' in opt:
     sys.exit(0)
 
 LT = {k: Vector(v) for k, v in json.load(open(lm_path, encoding='utf-8')).items()}
+
+
+# ОРИЕНТИРЫ КОРПУСА (`--korpus 1`, 20.10, ключ «Лось», критик: «человек с кубиками вместо бочки»): у цели корпус на 20+ см
+# глубже, а ориентиры были только суставами — тонкая пластина переносила кости, массу между ними тянула «ближайшая точка
+# цели», и у лося ближайшими к бокам и груди шасси оказывались висящие впереди руки цели. Точки снимаются ОДНИМ правилом у
+# шасси и у цели: самая передняя и самая задняя точка средней линии (|x| < 4 см) на долях 0.2/0.45/0.6 от таза до шеи
+# (выше — подгрудок и голова лося), и перед/зад середины бедра каждой стороны
+def korpus(V, L):
+    out = {}
+    z0, z1 = L['таз:head'].z, L['шея:head'].z
+    for f_ in (0.2, 0.45, 0.6):
+        z_ = z0 + (z1 - z0) * f_
+        S_ = [p for p in V if abs(p.z - z_) < 0.015 and abs(p.x) < 0.04]
+        if S_:
+            out['корпус_перед_%d' % int(f_ * 100)] = min(S_, key=lambda p: p.y).copy()
+            out['корпус_спина_%d' % int(f_ * 100)] = max(S_, key=lambda p: p.y).copy()
+    for s_ in ('', '.L'):
+        hb, kb_ = L.get('бедро%s:head' % s_), L.get('голень%s:head' % s_)
+        if hb is None or kb_ is None: continue
+        zt, xc = (hb.z + kb_.z) / 2, (hb.x + kb_.x) / 2
+        S_ = [p for p in V if abs(p.z - zt) < 0.015 and abs(p.x - xc) < 0.09]
+        if S_:
+            out['бедро_перед%s' % s_] = min(S_, key=lambda p: p.y).copy()
+            out['бедро_зад%s' % s_] = max(S_, key=lambda p: p.y).copy()
+    return out
+if opt.get('korpus', '0') == '1':
+    Vs = [p for o in OBJ if o.name not in ('голова', 'Чутьё', 'Руки') for p in world(o)]
+    LS.update(korpus(Vs, LS))
+    bpy.ops.wm.obj_import(filepath=tgt_obj, forward_axis='NEGATIVE_Z', up_axis='Y')
+    _t = [o for o in bpy.context.selected_objects if o.type == 'MESH'][0]
+    Vt = [_t.matrix_world @ v.co for v in _t.data.vertices]
+    # у цели руки висят рядом с корпусом — их точки в средней линии не попадают (|x| < 4 см), бедро — в полосе 9 см у оси ноги
+    LT.update(korpus(Vt, LT))
+    bpy.data.objects.remove(_t, do_unlink=True)
+    print('КЛЮЧ: ориентиры корпуса — ' + ', '.join('%s %.2f→%.2f' % (k, LS[k].y, LT[k].y) for k in sorted(LS) if k.startswith(('корпус', 'бедро_')) and k in LT))
 names = [k for k in LS if k in LT]
 miss = [k for k in LS if k not in LT]
 P = np.array([LS[k] for k in names]); Q = np.array([LT[k] for k in names])

@@ -15,7 +15,7 @@
 
   blender -b --factory-startup -P kusok_celi.py -- ключ.blend цель.obj выход.fbx паспорт.json
       [--imya Волк] [--zazor 0.012] [--zazor_hvost 0.05] [--golova_z 1.50] [--golova_x 0.25] [--griva_z 1.15] [--griva_x 0.42] [--hvost_z 1.0] [--hvost_y 0.12]
-      [--ostrov 400] [--lapy_z 0.32] [--stupen 2|1 [--st1_y -0.02] [--st1_z 1.62] [--st1_zatylok 0.06] [--st1_verh 1.70] [--st1_hvost 0.65] [--st1_niz 1.30] [--ves1 0.5]] [--prizhim_d 0.06 --prizhim_k 0.35] [--dvustor 1] [--dolya 0.08] [--shots префикс]
+      [--ostrov 400] [--lapy_z 0.32] [--stupen 2|1 [--st1_y -0.02] [--st1_z 1.62] [--st1_zatylok 0.06] [--st1_verh 1.70] [--st1_hvost 0.65] [--st1_niz 1.30] [--ves1 0.5]] [--prizhim_d 0.06 --prizhim_k 0.35] [--dvustor 1] [--tselikom 1] [--dolya 0.08] [--shots префикс]
 Вход `ключ.blend` — сохранённый `kluch_vida.py --blend` (меш шасси с ключом и арматурой). Печатает «КУСОК: …».
 """
 import sys, json, os
@@ -33,11 +33,18 @@ while i < len(a):
 NAME = opt['imya']; STEP = int(opt.get('stupen', '2'))
 OBJ_NAME = '@' + NAME + ('' if STEP >= 2 else str(STEP))
 W_STEP = 1.0 if STEP >= 2 else float(opt.get('ves1', '0.5'))     # вес ключа на ступени (BodyMesh.KeyStep1 = 0.5)
+TSELIKOM = opt.get('tselikom', '0') == '1'
 HIDE = ['голова', 'Чутьё'] if STEP >= 2 else []             # объекты шасси, которые кусок снимает (голова и уши человека — только ст.2)
 
 bpy.ops.wm.open_mainfile(filepath=kblend)
 arm = [o for o in bpy.data.objects if o.type == 'ARMATURE'][0]
 body = [o for o in bpy.data.objects if o.type == 'MESH' and not o.name.startswith('@')]   # черты ключа других ступеней — не тело
+# ЦЕЛИКОМ (`--tselikom 1`, 20.10, ключ «Лось»): поза цели слишком далека от позы шасси, и ключ по ориентирам не доводит
+# корпус, холку, бочку и ноги (критик: «человек с кубиками вместо бочки», «накидка с подолом»). Тогда на ступени
+# рисуется ВСЯ цель одним объектом, а объекты тела шасси снимаются; ключ работает на ступенях ниже. Веса — так же, с тела
+# ключа на весе ступени (скелет по ключу ведёт его к суставам цели)
+if TSELIKOM:
+    HIDE = [o.name for o in body]
 for o in body:
     if o.data.shape_keys and NAME in o.data.shape_keys.key_blocks:
         o.data.shape_keys.key_blocks[NAME].value = 1.0
@@ -89,6 +96,8 @@ for f in bm.faces:
         head = paw = False
         mane = mane and c.z > float(opt['st1_niz'])     # ст.1: грива кончается на середине лопатки рваным краем, а не плитой до поясницы
         mane = mane and c.y > float(opt['st1_y']) and (c.z < float(opt['st1_z']) or c.y > float(opt['st1_zatylok']))     # выше — только за черепом: иначе капюшон над головой
+    if TSELIKOM:
+        continue
     if not (head or mane or tail or paw):
         kill.append(f)
 bmesh.ops.delete(bm, geom=kill, context='FACES')
