@@ -12,10 +12,17 @@ import sys
 from datetime import datetime, timezone
 
 LINES = {'geimboss': 'main', 'modelnyj': 'line/modeli', 'lesnik': 'line/les', 'codex': 'line/codex'}
+# ветки линий пересобираются поверх main — в их истории чужие коммиты; линию узнаём по папкам её предмета (ЗОНЫ)
+PATHS = {
+    'geimboss': ['Assets/_Chimera/Scripts', 'Assets/_Chimera/Tests', 'Tools/Agent', 'Tools/git-hooks', 'Docs/tools', 'Docs/ЗОНЫ.md', 'Docs/CONSTRUCTOR_GUIDE.md', 'CLAUDE.md'],
+    'modelnyj': ['Assets/_Chimera/Models', 'Docs/models', 'Tools/Blender', 'Референсы/работа/модельная', 'Anatomy'],
+    'lesnik': ['Assets/_Chimera/Scripts/Forest', 'Docs/les', 'Assets/_Chimera/Tests/EditMode/Forest', 'Assets/_Chimera/Tests/PlayMode/Forest'],
+    'codex': ['Референсы/работа/дизайн', 'Docs/design', 'Docs/доска'],
+}
 
 
-def commits(ref, n=4):
-    out = subprocess.run(['git', 'log', ref, f'-{n}', '--format=%h%x1f%cI%x1f%s'], capture_output=True, text=True, encoding='utf-8')
+def commits(ref, paths, n=4):
+    out = subprocess.run(['git', 'log', ref, f'-{n}', '--format=%h%x1f%cI%x1f%s', '--'] + paths, capture_output=True, text=True, encoding='utf-8')
     rows = []
     for line in out.stdout.splitlines():
         h, d, s = line.split('\x1f', 2)
@@ -44,7 +51,7 @@ def main(out):
     os.makedirs(out, exist_ok=True)
     now = datetime.now(timezone.utc).isoformat()
     for line, ref in LINES.items():
-        json.dump({'branch': ref, 'commits': commits(ref), 'at': now}, open(os.path.join(out, f'auto-{line}.json'), 'w', encoding='utf-8'), ensure_ascii=False)
+        json.dump({'branch': ref, 'commits': commits(ref, PATHS[line]), 'at': now}, open(os.path.join(out, f'auto-{line}.json'), 'w', encoding='utf-8'), ensure_ascii=False)
     lim = codex_limits()
     if lim:
         json.dump(lim, open(os.path.join(out, 'limits-codex.json'), 'w', encoding='utf-8'), ensure_ascii=False)
