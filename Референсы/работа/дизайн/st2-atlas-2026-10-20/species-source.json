@@ -1,0 +1,917 @@
+{
+  "Человек": {
+    "organs": [
+      {
+        "organName": "Хребет",
+        "slot": "хребет",
+        "hotkey": 1,
+        "chassisOnly": 1,
+        "visible_parts": 2,
+        "ability_data": []
+      },
+      {
+        "organName": "Кисть",
+        "slot": "Руки",
+        "hotkey": 1,
+        "cost": 3,
+        "nativeOnly": 1,
+        "abilities": [
+          {
+            "rid": 925336252252422610
+          }
+        ],
+        "visible_parts": 2,
+        "ability_data": [
+          {
+            "rid": 925336252252422610,
+            "type": {
+              "class": "LimbStrikeData",
+              "ns": null,
+              "asm": "Chimera.Runtime"
+            },
+            "data": {
+              "damage": 8,
+              "knockForce": 0,
+              "bleedStacks": 0,
+              "range": 1.6,
+              "halfAngle": 60,
+              "windupTime": 0.45,
+              "cooldown": 1.1
+            }
+          }
+        ]
+      },
+      {
+        "organName": "Ноги",
+        "slot": "Ноги",
+        "hotkey": 2,
+        "cost": 3,
+        "moveSpeed": 4.5,
+        "dashSpeed": 15,
+        "abilities": [
+          {
+            "rid": 925336252252422611
+          }
+        ],
+        "visible_parts": 2,
+        "ability_data": [
+          {
+            "rid": 925336252252422611,
+            "type": {
+              "class": "KickData",
+              "ns": null,
+              "asm": "Chimera.Runtime"
+            },
+            "data": {
+              "damage": 4,
+              "knockForce": 12,
+              "reach": 1.8,
+              "radius": 1.6,
+              "cooldown": 1
+            }
+          }
+        ]
+      },
+      {
+        "organName": "Сердце",
+        "slot": "Сердце",
+        "hotkey": 3,
+        "cost": 6,
+        "staminaBonus": 0.5,
+        "staminaRegenBonus": 0.5,
+        "hpBonus": 0.5,
+        "atkCooldown": 0.45,
+        "regenOOC": 0.75,
+        "visible_parts": 1,
+        "ability_data": []
+      },
+      {
+        "organName": "Чутьё",
+        "slot": "Чутьё",
+        "hotkey": 4,
+        "cost": 3,
+        "dashCooldown": 0.7,
+        "insight": 1,
+        "visible_parts": 3,
+        "ability_data": []
+      },
+      {
+        "organName": "Рот",
+        "slot": "Пасть",
+        "hotkey": 5,
+        "cost": 3,
+        "abilities": [
+          {
+            "rid": 925336252252422612
+          }
+        ],
+        "visible_parts": 1,
+        "ability_data": [
+          {
+            "rid": 925336252252422612,
+            "type": {
+              "class": "ScreamData",
+              "ns": null,
+              "asm": "Chimera.Runtime"
+            },
+            "data": {
+              "cooldown": 12,
+              "boostPerStack": 0.12,
+              "maxBoost": 2
+            }
+          }
+        ]
+      },
+      {
+        "organName": "Кожа",
+        "slot": "Шкура",
+        "hotkey": 6,
+        "cost": 3,
+        "visible_parts": 0,
+        "ability_data": []
+      }
+    ]
+  },
+  "Волк": {
+    "organs": [
+      {
+        "organName": "Хребет",
+        "slot": "хребет",
+        "hotkey": 1,
+        "chassisOnly": 1,
+        "visible_parts": 6,
+        "ability_data": []
+      },
+      {
+        "organName": "Коготь",
+        "slot": "Руки",
+        "hotkey": 1,
+        "cost": 4,
+        "abilities": [
+          {
+            "rid": 925336252252422625
+          }
+        ],
+        "visible_parts": 3,
+        "ability_data": [
+          {
+            "rid": 925336252252422625,
+            "type": {
+              "class": "LimbStrikeData",
+              "ns": null,
+              "asm": "Chimera.Runtime"
+            },
+            "data": {
+              "damage": 18,
+              "knockForce": 0,
+              "bleedStacks": 0,
+              "range": 1.5,
+              "halfAngle": 60,
+              "windupTime": 0.45,
+              "cooldown": 1.1
+            }
+          }
+        ]
+      },
+      {
+        "organName": "Волчьи ноги",
+        "slot": "Ноги",
+        "hotkey": 2,
+        "cost": 4,
+        "moveSpeed": 9,
+        "dashSpeed": 30,
+        "abilities": [
+          {
+            "rid": 925336252252422626
+          }
+        ],
+        "visible_parts": 3,
+        "ability_data": [
+          {
+            "rid": 925336252252422626,
+            "type": {
+              "class": "LeapData",
+              "ns": null,
+              "asm": "Chimera.Runtime"
+            },
+            "data": {
+              "damage": 12,
+              "minRange": 5,
+              "maxRange": 6.5,
+              "speed": 13,
+              "up": 5,
+              "duration": 0.5,
+              "hitRadius": 1.3,
+              "windupTime": 0.5,
+              "staminaCost": 30
+            }
+          }
+        ]
+      },
+      {
+        "organName": "Волчье сердце",
+        "slot": "Сердце",
+        "hotkey": 3,
+        "cost": 6,
+        "staminaBonus": 0.5,
+        "staminaRegenBonus": 0.25,
+        "hpBonus": 1.75,
+        "atkCooldown": 0.3,
+        "regen": 3,
+        "visible_parts": 2,
+        "ability_data": []
+      },
+      {
+        "organName": "Нюх",
+        "slot": "Чутьё",
+        "hotkey": 4,
+        "cost": 3,
+        "dashCooldown": 0.45,
+        "enablesScent": 1,
+        "visible_parts": 3,
+        "ability_data": []
+      },
+      {
+        "organName": "Пасть",
+        "slot": "Пасть",
+        "hotkey": 5,
+        "cost": 5,
+        "nativeChassis": "Волк",
+        "abilities": [
+          {
+            "rid": 925336252252422627
+          },
+          {
+            "rid": 925336252252422628
+          },
+          {
+            "rid": 925336252252422629
+          }
+        ],
+        "visible_parts": 3,
+        "ability_data": [
+          {
+            "rid": 925336252252422627,
+            "type": {
+              "class": "BiteData",
+              "ns": null,
+              "asm": "Chimera.Runtime"
+            },
+            "data": {
+              "damage": 14,
+              "bleedStacks": 2,
+              "venomStacks": 0,
+              "regenDebuff": 0.5,
+              "regenDebuffTime": 3,
+              "range": 2,
+              "halfAngle": 55,
+              "windupTime": 0.45,
+              "cooldown": 0.7
+            }
+          },
+          {
+            "rid": 925336252252422628,
+            "type": {
+              "class": "HowlData",
+              "ns": null,
+              "asm": "Chimera.Runtime"
+            },
+            "data": {
+              "radius": 14,
+              "stunAt": 2,
+              "stunDuration": 1,
+              "fearMoraleHit": 2,
+              "cooldown": 10,
+              "cueTime": 0.4
+            }
+          },
+          {
+            "rid": 925336252252422629,
+            "type": {
+              "class": "ConstrictData",
+              "ns": null,
+              "asm": "Chimera.Runtime"
+            },
+            "data": {
+              "maxStage": 1,
+              "foreignMaxStage": 2,
+              "tightenRate": 1,
+              "stage2At": 1.5,
+              "stage3At": 3.5,
+              "loosenPerDamage": 0.12,
+              "chokeDamage": 4,
+              "chokeInterval": 0.5,
+              "grabSlow1": 0.35,
+              "grabSlow2": 0.15,
+              "grabSlow3": 0,
+              "npcLoosenPerDamage": 0.04,
+              "npcChokeDamage": 6,
+              "npcChokeInterval": 0.6,
+              "escapeMin": 2.6,
+              "escapeMax": 4,
+              "breakRawThreshold": 10,
+              "grabBleedStacks": 1,
+              "holdDrain": 3,
+              "wearInterval": 1.5,
+              "grabRange": 2.2,
+              "holdRange": 3.2,
+              "cooldown": 2.5,
+              "windupTime": 0.35,
+              "ripSelfKnock": 6,
+              "biteInterval": 1.2,
+              "selfSlow1": 0.8,
+              "selfSlow2": 0.6,
+              "escapeKnock": 6,
+              "dragOffset": 1.1
+            }
+          }
+        ]
+      },
+      {
+        "organName": "Шкура",
+        "slot": "Шкура",
+        "hotkey": 6,
+        "cost": 4,
+        "damageReduction": 0.3,
+        "visible_parts": 0,
+        "ability_data": []
+      }
+    ]
+  },
+  "Лось": {
+    "organs": [
+      {
+        "organName": "Хребет",
+        "slot": "хребет",
+        "hotkey": 1,
+        "chassisOnly": 1,
+        "visible_parts": 5,
+        "ability_data": []
+      },
+      {
+        "organName": "Копыто",
+        "slot": "Руки",
+        "hotkey": 1,
+        "cost": 5,
+        "abilities": [
+          {
+            "rid": 925336252252422616
+          }
+        ],
+        "visible_parts": 3,
+        "ability_data": [
+          {
+            "rid": 925336252252422616,
+            "type": {
+              "class": "LimbStrikeData",
+              "ns": null,
+              "asm": "Chimera.Runtime"
+            },
+            "data": {
+              "damage": 22,
+              "knockForce": 4,
+              "bleedStacks": 0,
+              "range": 1.8,
+              "halfAngle": 60,
+              "windupTime": 0.45,
+              "cooldown": 1.1
+            }
+          }
+        ]
+      },
+      {
+        "organName": "Лосиные ноги",
+        "slot": "Ноги",
+        "hotkey": 2,
+        "cost": 5,
+        "moveSpeed": 5,
+        "dashSpeed": 35,
+        "dashDuration": 0.38,
+        "abilities": [
+          {
+            "rid": 925336252252422617
+          }
+        ],
+        "visible_parts": 4,
+        "ability_data": [
+          {
+            "rid": 925336252252422617,
+            "type": {
+              "class": "ChargeData",
+              "ns": null,
+              "asm": "Chimera.Runtime"
+            },
+            "data": {
+              "damage": 22,
+              "damagePerMeter": 1,
+              "knockForce": 12,
+              "lightChargeMult": 0.25,
+              "staggerTime": 0.5,
+              "hitRadius": 1.8,
+              "minRange": 4,
+              "maxRange": 18,
+              "chargeSpeed": 35,
+              "duration": 0.73,
+              "windupTime": 0.5,
+              "staminaCost": 70,
+              "stompRadius": 4,
+              "stompStagger": 0.4,
+              "stompForce": 13,
+              "plowForce": 6,
+              "plowRadius": 1.6
+            }
+          }
+        ]
+      },
+      {
+        "organName": "Глотка",
+        "slot": "Пасть",
+        "hotkey": 5,
+        "cost": 4,
+        "abilities": [
+          {
+            "rid": 925336252252422618
+          }
+        ],
+        "visible_parts": 1,
+        "ability_data": [
+          {
+            "rid": 925336252252422618,
+            "type": {
+              "class": "BellowData",
+              "ns": null,
+              "asm": "Chimera.Runtime"
+            },
+            "data": {
+              "fearRadius": 10,
+              "rallyRadius": 40,
+              "fearMoraleHit": 2,
+              "cooldown": 10,
+              "cueTime": 1.2
+            }
+          }
+        ]
+      },
+      {
+        "organName": "Слух",
+        "slot": "Чутьё",
+        "hotkey": 4,
+        "cost": 3,
+        "dashCooldown": 0.7,
+        "keenHearing": 1,
+        "hearingMult": 2,
+        "visible_parts": 3,
+        "ability_data": []
+      },
+      {
+        "organName": "Лосиное сердце",
+        "slot": "Сердце",
+        "hotkey": 3,
+        "cost": 6,
+        "staminaBonus": 0.6,
+        "hpBonus": 2,
+        "atkCooldown": 0.5,
+        "regen": 1,
+        "bleedResist": 1,
+        "visible_parts": 1,
+        "ability_data": []
+      },
+      {
+        "organName": "Толстая шкура",
+        "slot": "Шкура",
+        "hotkey": 6,
+        "cost": 5,
+        "damageReduction": 0.35,
+        "visible_parts": 0,
+        "ability_data": []
+      },
+      {
+        "organName": "Рога",
+        "slot": "Рога",
+        "hotkey": 8,
+        "cost": 5,
+        "abilities": [
+          {
+            "rid": 925336252252422619
+          }
+        ],
+        "visible_parts": 10,
+        "ability_data": [
+          {
+            "rid": 925336252252422619,
+            "type": {
+              "class": "AntlerData",
+              "ns": null,
+              "asm": "Chimera.Runtime"
+            },
+            "data": {
+              "damage": 12,
+              "knockForce": 9,
+              "bleedStacks": 2,
+              "range": 2.5,
+              "halfAngle": 50,
+              "windupTime": 0.35,
+              "cooldown": 2.5
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "Ёж": {
+    "organs": [
+      {
+        "organName": "Хребет",
+        "slot": "хребет",
+        "hotkey": 1,
+        "chassisOnly": 1,
+        "visible_parts": 8,
+        "ability_data": []
+      },
+      {
+        "organName": "Игломёт",
+        "slot": "Игломёт",
+        "hotkey": 8,
+        "cost": 4,
+        "abilities": [
+          {
+            "rid": 925336252252422620
+          }
+        ],
+        "visible_parts": 18,
+        "ability_data": [
+          {
+            "rid": 925336252252422620,
+            "type": {
+              "class": "VolleyData",
+              "ns": null,
+              "asm": "Chimera.Runtime"
+            },
+            "data": {
+              "damagePerQuill": 4,
+              "bleedPerQuill": 1,
+              "slowPerQuill": 1,
+              "quills": 6,
+              "spreadAngle": 9,
+              "speed": 22,
+              "hitRadius": 0.35,
+              "minRange": 6,
+              "maxRange": 15,
+              "windupTime": 0.5,
+              "cooldown": 2.5,
+              "blindAimError": 1.6
+            }
+          }
+        ]
+      },
+      {
+        "organName": "Иглы",
+        "slot": "Шкура",
+        "hotkey": 6,
+        "cost": 5,
+        "damageReduction": 0.2,
+        "thorns": 1,
+        "visible_parts": 224,
+        "ability_data": []
+      },
+      {
+        "organName": "Ежиные лапы",
+        "slot": "Руки",
+        "hotkey": 1,
+        "cost": 2,
+        "visible_parts": 6,
+        "ability_data": []
+      },
+      {
+        "organName": "Ежиные ноги",
+        "slot": "Ноги",
+        "hotkey": 2,
+        "cost": 4,
+        "moveSpeed": 6,
+        "dashSpeed": 18,
+        "dashCooldown": 0.35,
+        "dashDuration": 0.14,
+        "nativeChassis": "Ёж",
+        "abilities": [
+          {
+            "rid": 925336252252422621
+          },
+          {
+            "rid": 925336252252422622
+          }
+        ],
+        "visible_parts": 6,
+        "ability_data": [
+          {
+            "rid": 925336252252422621,
+            "type": {
+              "class": "RollData",
+              "ns": null,
+              "asm": "Chimera.Runtime"
+            },
+            "data": {
+              "damage": 10,
+              "bleedStacks": 1,
+              "knockForce": 8,
+              "radius": 1.2
+            }
+          },
+          {
+            "rid": 925336252252422622,
+            "type": {
+              "class": "CurlData",
+              "ns": null,
+              "asm": "Chimera.Runtime"
+            },
+            "data": {
+              "curlArmor": 0.6,
+              "staminaDrain": 30,
+              "rollSpeed": 9,
+              "rollDrain": 40,
+              "rollTurnSpeed": 90,
+              "rollGravity": 20
+            }
+          }
+        ]
+      },
+      {
+        "organName": "Цепкая пасть",
+        "slot": "Пасть",
+        "hotkey": 5,
+        "cost": 4,
+        "nativeChassis": "Ёж",
+        "abilities": [
+          {
+            "rid": 925336252252422623
+          },
+          {
+            "rid": 925336252252422624
+          }
+        ],
+        "visible_parts": 20,
+        "ability_data": [
+          {
+            "rid": 925336252252422623,
+            "type": {
+              "class": "BiteData",
+              "ns": null,
+              "asm": "Chimera.Runtime"
+            },
+            "data": {
+              "damage": 22,
+              "bleedStacks": 0,
+              "venomStacks": 0,
+              "regenDebuff": 0.5,
+              "regenDebuffTime": 3,
+              "range": 1.7,
+              "halfAngle": 60,
+              "windupTime": 0.4,
+              "cooldown": 0.7
+            }
+          },
+          {
+            "rid": 925336252252422624,
+            "type": {
+              "class": "ConstrictData",
+              "ns": null,
+              "asm": "Chimera.Runtime"
+            },
+            "data": {
+              "maxStage": 1,
+              "foreignMaxStage": 2,
+              "tightenRate": 1,
+              "stage2At": 1.5,
+              "stage3At": 3.5,
+              "loosenPerDamage": 0.12,
+              "chokeDamage": 4,
+              "chokeInterval": 0.5,
+              "grabSlow1": 0.35,
+              "grabSlow2": 0.15,
+              "grabSlow3": 0,
+              "npcLoosenPerDamage": 0.04,
+              "npcChokeDamage": 6,
+              "npcChokeInterval": 0.6,
+              "escapeMin": 3.5,
+              "escapeMax": 5.5,
+              "breakRawThreshold": 7,
+              "grabBleedStacks": 0,
+              "holdDrain": 3,
+              "wearInterval": 1.5,
+              "grabRange": 2.2,
+              "holdRange": 3.2,
+              "cooldown": 3,
+              "windupTime": 0,
+              "ripSelfKnock": 5,
+              "biteInterval": 1.2,
+              "selfSlow1": 0.8,
+              "selfSlow2": 0.6,
+              "escapeKnock": 6,
+              "dragOffset": 1.1
+            }
+          }
+        ]
+      },
+      {
+        "organName": "Ядоупорное сердце",
+        "slot": "Сердце",
+        "hotkey": 3,
+        "cost": 6,
+        "staminaBonus": 0.4,
+        "staminaRegenBonus": 0.3,
+        "hpBonus": 1.2,
+        "atkCooldown": 0.5,
+        "regen": 0.5,
+        "venomResist": 1,
+        "visible_parts": 0,
+        "ability_data": []
+      },
+      {
+        "organName": "Пятак",
+        "slot": "Чутьё",
+        "hotkey": 4,
+        "cost": 3,
+        "dashCooldown": 0.5,
+        "enablesScent": 1,
+        "keenHearing": 1,
+        "hearingMult": 1.6,
+        "visible_parts": 3,
+        "ability_data": []
+      }
+    ]
+  },
+  "Змея": {
+    "organs": [
+      {
+        "organName": "Ядовитые клыки",
+        "slot": "Пасть",
+        "hotkey": 5,
+        "cost": 5,
+        "abilities": [
+          {
+            "rid": 925336252252422613
+          }
+        ],
+        "visible_parts": 1,
+        "ability_data": [
+          {
+            "rid": 925336252252422613,
+            "type": {
+              "class": "BiteData",
+              "ns": null,
+              "asm": "Chimera.Runtime"
+            },
+            "data": {
+              "damage": 24,
+              "bleedStacks": 0,
+              "venomStacks": 1,
+              "regenDebuff": 0.5,
+              "regenDebuffTime": 3,
+              "range": 2,
+              "halfAngle": 55,
+              "windupTime": 0.4,
+              "cooldown": 0.7
+            }
+          }
+        ]
+      },
+      {
+        "organName": "Хладнокровное сердце",
+        "slot": "Сердце",
+        "hotkey": 3,
+        "cost": 5,
+        "staminaBonus": 0.3,
+        "staminaRegenBonus": 0.2,
+        "hpBonus": 1.35,
+        "atkCooldown": 0.5,
+        "regenOOC": 2,
+        "coldBlooded": 1,
+        "visible_parts": 0,
+        "ability_data": []
+      },
+      {
+        "organName": "Тело-хвост",
+        "slot": "Ноги",
+        "hotkey": 7,
+        "cost": 5,
+        "moveSpeed": 10,
+        "dashSpeed": 20,
+        "chassisOnly": 1,
+        "digestion": 1,
+        "abilities": [
+          {
+            "rid": 925336252252422614
+          }
+        ],
+        "visible_parts": 0,
+        "ability_data": [
+          {
+            "rid": 925336252252422614,
+            "type": {
+              "class": "LeapData",
+              "ns": null,
+              "asm": "Chimera.Runtime"
+            },
+            "data": {
+              "damage": 8,
+              "minRange": 4,
+              "maxRange": 9,
+              "speed": 20,
+              "up": 2.5,
+              "duration": 0.35,
+              "hitRadius": 1.5,
+              "windupTime": 0.35,
+              "staminaCost": 20
+            }
+          }
+        ]
+      },
+      {
+        "organName": "Чешуя",
+        "slot": "Шкура",
+        "hotkey": 6,
+        "cost": 4,
+        "damageReduction": 0.25,
+        "camo": 1,
+        "visible_parts": 0,
+        "ability_data": []
+      },
+      {
+        "organName": "Пит-орган",
+        "slot": "Чутьё",
+        "hotkey": 4,
+        "cost": 3,
+        "dashCooldown": 0.7,
+        "thermalRange": 14,
+        "enablesThermal": 1,
+        "visible_parts": 2,
+        "ability_data": []
+      },
+      {
+        "organName": "Погремушка",
+        "slot": "Наконечник",
+        "hotkey": 9,
+        "cost": 2,
+        "chassisOnly": 1,
+        "visible_parts": 7,
+        "ability_data": []
+      },
+      {
+        "organName": "Хвост",
+        "slot": "Хвост",
+        "hotkey": 8,
+        "cost": 5,
+        "nativeChassis": "Змея",
+        "abilities": [
+          {
+            "rid": 925336252252422615
+          }
+        ],
+        "visualSegments": 3,
+        "visualTaper": 0.82,
+        "visible_parts": 1,
+        "ability_data": [
+          {
+            "rid": 925336252252422615,
+            "type": {
+              "class": "ConstrictData",
+              "ns": null,
+              "asm": "Chimera.Runtime"
+            },
+            "data": {
+              "maxStage": 3,
+              "foreignMaxStage": 2,
+              "tightenRate": 1,
+              "stage2At": 1.5,
+              "stage3At": 3.5,
+              "loosenPerDamage": 0.12,
+              "chokeDamage": 4,
+              "chokeInterval": 0.5,
+              "grabSlow1": 0.35,
+              "grabSlow2": 0.15,
+              "grabSlow3": 0,
+              "npcLoosenPerDamage": 0.04,
+              "npcChokeDamage": 6,
+              "npcChokeInterval": 0.6,
+              "escapeMin": 2.6,
+              "escapeMax": 4,
+              "breakRawThreshold": 5,
+              "grabBleedStacks": 0,
+              "holdDrain": 3,
+              "wearInterval": 1.5,
+              "grabRange": 2.2,
+              "holdRange": 3.2,
+              "cooldown": 2.5,
+              "windupTime": 0.35,
+              "ripSelfKnock": 5,
+              "biteInterval": 1.2,
+              "selfSlow1": 0.8,
+              "selfSlow2": 0.6,
+              "escapeKnock": 6,
+              "dragOffset": 1.1
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
