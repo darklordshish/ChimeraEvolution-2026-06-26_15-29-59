@@ -13,7 +13,8 @@ public static class GameSizes
         var all = AssetDatabase.FindAssets("t:SpeciesSO", new[] { "Assets/_Chimera/Data" })
                                .Select(g => AssetDatabase.LoadAssetAtPath<SpeciesSO>(AssetDatabase.GUIDToAssetPath(g))).Where(s => s != null && s.organs != null).ToList();
         var human = all.First(s => s.speciesName == "Человек");
-        var sb = new StringBuilder("тело\tступень\tпуть\tвысота м\tширина м\tдлина м\n");
+        var sb = new StringBuilder("тело\tступень\tпуть\tвысота м\tширина м\tдлина м\tрост по массе ×\tдолжно быть м\n");
+        var own = new System.Collections.Generic.Dictionary<SpeciesSO, float>();   // рост чистого шасси — база для «должно быть»
         void Row(string name, string st, SpeciesSO chassis, System.Collections.Generic.List<Organ> worn)
         {
             var go = new GameObject("~размер");
@@ -30,7 +31,10 @@ public static class GameSizes
                 var b = new Bounds(pts[0], Vector3.zero); foreach (var v in pts) b.Encapsulate(v);
                 bool mesh = go.GetComponentsInChildren<MeshRenderer>(true).Length == 0;
                 var (target, step) = GlobalLayer.Step(chassis, worn);
-                sb.Append($"{name}\t{st} (по составу: {step})\t{(mesh ? "меш" : "поле")}\t{b.size.y:0.00}\t{b.size.x:0.00}\t{b.size.z:0.00}\n");
+                // рост по массе (спека `2026-10-20-rost-i-gabarity-vidov.md`) в сборку ещё не включён: колонка — цель, к которой тело придёт
+                float g = GlobalLayer.Growth(chassis, worn);
+                if (!own.ContainsKey(chassis)) own[chassis] = b.size.y;
+                sb.Append($"{name}\t{st} (по составу: {step})\t{(mesh ? "меш" : "поле")}\t{b.size.y:0.00}\t{b.size.x:0.00}\t{b.size.z:0.00}\t{g:0.000}\t{own[chassis] * g:0.00}\n");
             }
             finally { Object.DestroyImmediate(go); }
         }

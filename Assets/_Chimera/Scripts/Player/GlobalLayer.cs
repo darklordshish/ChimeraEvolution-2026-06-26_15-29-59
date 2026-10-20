@@ -53,6 +53,28 @@ public static class GlobalLayer
 
     public static float G(int step) => step == 1 ? G1 : step == 2 ? G2 : 0f;
 
+    public static float GrowthP = 2f;   // ручка роста §6.2: 0 — геометрическое среднее, 2 — тяга к тяжёлому (пример спеки)
+
+    /// <summary>РОСТ ХИМЕРЫ (спека двух слоёв §6.2, числа — `2026-10-20-rost-i-gabarity-vidov.md`): масса — степенное среднее
+    /// масс видов с весами-долями состава, `M = (Σ wᵢ Mᵢ^p)^(1/p)`; длины ∝ M^(1/3). Возвращает множитель роста к шасси:
+    /// на чистом виде 1, тяжелее самого тяжёлого вида не растёт. Вид без массы весит как шасси — рост не двигает.</summary>
+    public static float Growth(SpeciesSO chassis, IReadOnlyDictionary<SpeciesSO, float> identity)
+    {
+        if (chassis == null || chassis.mass <= 0f || identity == null) return 1f;
+        double sum = 0, w = 0;
+        foreach (var kv in identity)
+        {
+            if (kv.Key == null || kv.Value <= 0f) continue;
+            double m = kv.Key.mass > 0f ? kv.Key.mass : chassis.mass;
+            sum += kv.Value * (GrowthP == 0f ? System.Math.Log(m) : System.Math.Pow(m, GrowthP)); w += kv.Value;
+        }
+        if (w <= 0) return 1f;
+        double mix = GrowthP == 0f ? System.Math.Exp(sum / w) : System.Math.Pow(sum / w, 1.0 / GrowthP);
+        return (float)System.Math.Pow(mix / chassis.mass, 1.0 / 3.0);
+    }
+
+    public static float Growth(SpeciesSO chassis, IReadOnlyList<Organ> worn) => Growth(chassis, Identity(chassis, worn));
+
     /// <summary>Есть ли у тела массы шаблона — без них глобальному слою нечего смешивать (пока виды не переведены).</summary>
     public static bool HasGroups(SpeciesSO sp) => sp?.bones != null && sp.bones.Any(b => !string.IsNullOrEmpty(b.group) && b.rel != null && b.rel.On);
 
