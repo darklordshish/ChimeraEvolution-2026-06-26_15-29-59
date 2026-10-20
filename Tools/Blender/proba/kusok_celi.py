@@ -14,7 +14,7 @@
      на ступени 2 вида-ключа, снимает `skryvaet`, черты `zamenyaet_cherty` не ставит).
 
   blender -b --factory-startup -P kusok_celi.py -- ключ.blend цель.obj выход.fbx паспорт.json
-      [--imya Волк] [--zazor 0.012] [--zazor_hvost 0.05] [--golova_z 1.50] [--griva_z 1.15] [--griva_x 0.42] [--hvost_z 1.0] [--hvost_y 0.12]
+      [--imya Волк] [--zazor 0.012] [--zazor_hvost 0.05] [--golova_z 1.50] [--golova_x 0.25] [--griva_z 1.15] [--griva_x 0.42] [--hvost_z 1.0] [--hvost_y 0.12]
       [--ostrov 400] [--lapy_z 0.32] [--stupen 2|1 [--st1_y -0.02] [--st1_z 1.62] [--st1_zatylok 0.06] [--st1_verh 1.70] [--st1_hvost 0.65] [--st1_niz 1.30] [--ves1 0.5]] [--prizhim_d 0.06 --prizhim_k 0.35] [--dvustor 1] [--dolya 0.08] [--shots префикс]
 Вход `ключ.blend` — сохранённый `kluch_vida.py --blend` (меш шасси с ключом и арматурой). Печатает «КУСОК: …».
 """
@@ -26,7 +26,7 @@ from mathutils.bvhtree import BVHTree
 a = sys.argv[sys.argv.index('--') + 1:]
 kblend, cel, out_fbx, pas_out = a[:4]
 opt = dict(imya='Волк', zazor='0.012', zazor_hvost='0.05', golova_z='1.50', griva_z='1.15', griva_x='0.42', hvost_z='1.0', hvost_y='0.12',
-           ostrov='400', dolya='0.035', lapy_z='0.26', st1_y='-0.02', st1_z='1.62', st1_zatylok='0.06', st1_verh='1.70', st1_hvost='0.65', st1_niz='1.30', prizhim_d='0.06', prizhim_k='0.35')
+           ostrov='400', golova_x='0.25', dolya='0.035', lapy_z='0.26', st1_y='-0.02', st1_z='1.62', st1_zatylok='0.06', st1_verh='1.70', st1_hvost='0.65', st1_niz='1.30', prizhim_d='0.06', prizhim_k='0.35')
 i = 4
 while i < len(a):
     opt[a[i].lstrip('-')] = a[i + 1]; i += 2
@@ -80,7 +80,7 @@ kill = []
 for f in bm.faces:
     c = f.calc_center_median()
     d = bvh.find_nearest(c)[3]
-    head = c.z > gz and abs(c.x) < 0.25
+    head = c.z > gz and abs(c.x) < float(opt['golova_x'])     # у лося рога — до 0.6 м от средней линии
     mane = c.z > mz and abs(c.x) < mx and d > gap
     tail = c.z < hz and c.y > hy and d > (gap if c.z > 0.75 else gt)     # ниже ягодиц — дальше от тела: мех икр цели в хвост не идёт
     paw = c.z < pz and abs(c.x) > 0.12          # лапы цели ниже скакательного: накрывают стопу шасси «на носке» (у цели лапа длинная, с пальцами)
