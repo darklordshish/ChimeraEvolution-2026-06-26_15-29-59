@@ -27,6 +27,8 @@ public class CameraFollow : MonoBehaviour
     float shakeTimer, shakeDuration, shakeMag, pitch;
     float yaw; // угол камеры вокруг цели (0 = исходный офсет); догоняет направление ДВИЖЕНИЯ игрока
     PlayerController player;
+    BodySize sizeOf;   // размер тела цели: вешает тело при сборке, позже камеры — берём лениво
+    BodySize size => sizeOf != null ? sizeOf : (target != null ? sizeOf = target.GetComponent<BodySize>() : null);
 
     void Awake()
     {
@@ -66,7 +68,9 @@ public class CameraFollow : MonoBehaviour
             if (gp != null) dy -= gp.rightStick.ReadValue().y * 100f * Time.deltaTime;
             pitch = Mathf.Clamp(pitch + dy, minPitch, maxPitch);
 
-            Vector3 head = target.position + Vector3.up * headHeight + target.forward * headForward;
+            // глаза — с ростом тела (`BodySize`): человек-лось 3 м смотрит сверху, Хеджхалк — от земли
+            float s = size != null ? size.Scale : 1f;
+            Vector3 head = target.position + Vector3.up * (size != null ? size.FromGround(headHeight) : headHeight) + target.forward * headForward * s;
             transform.position = head + shake;
             transform.rotation = Quaternion.Euler(pitch, target.eulerAngles.y, 0f);
             return;
@@ -80,8 +84,9 @@ public class CameraFollow : MonoBehaviour
                            : Mathf.MoveTowardsAngle(yaw, target.eulerAngles.y, yawFollowSpeed * Time.deltaTime);
 
         followPos = Vector3.Lerp(followPos, target.position, followLerp * Time.deltaTime);
-        transform.position = followPos + Quaternion.Euler(0f, yaw, 0f) * offset + shake;
-        transform.LookAt(target.position + Vector3.up * lookHeight);
+        float k = size != null ? size.Scale : 1f;   // камера за плечом отходит вместе с ростом
+        transform.position = followPos + Quaternion.Euler(0f, yaw, 0f) * offset * k + shake;
+        transform.LookAt(target.position + Vector3.up * (size != null ? size.FromGround(lookHeight) : lookHeight));
     }
 
     Vector3 ShakeOffset()

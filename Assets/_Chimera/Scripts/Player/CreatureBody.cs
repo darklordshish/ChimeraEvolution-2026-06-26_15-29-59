@@ -197,6 +197,8 @@ public partial class CreatureBody : MonoBehaviour
         var worn = WornInDrawOrder();
         var blendedPlan = GetBlendedPlan(); // Ф6: смешение по Identity с локальностью (Пасть→голова, Руки/Ноги→хребет исключён); null = тождественность
         MorphBuilder.Build(transform, chassis, worn, blendedPlan); // ИГРОК СТРОИТСЯ ТАК ЖЕ: его тело — такая же химера, без исключений
+        // РАЗМЕР — после сборки и до тех, кто меряет части (цепь змеи считает шаг звеньев по их мировым позициям)
+        (GetComponent<BodySize>() ?? gameObject.AddComponent<BodySize>()).Apply(BodySize.Of(chassis, worn));
         // ЧАСТИ НОВЫЕ — ВСЕ, КТО ДЕРЖИТ НА НИХ ССЫЛКИ, ПЕРЕ-СОБИРАЮТСЯ. Ссылка, снятая в Awake, к этому
         // моменту мертва: на этом уже сгорели телеграф (замах не красился) и камуфляж (змея перестала
         // исчезать — прятались префабные меши, которых нет)

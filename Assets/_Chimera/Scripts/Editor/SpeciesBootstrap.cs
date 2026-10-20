@@ -22,6 +22,7 @@ public static class SpeciesBootstrap
         var human = GetOrCreate("Человек");
         human.speciesName = "Человек";
         human.mass = 80f;   // масса — для роста химеры (спека `2026-10-20-shkala-morfov.md`)
+        human.formScale = 1f;
         human.tint = new Color(0.9f, 0.72f, 0.62f); // телесный — база палитры (все органы человечьи → этот цвет)
         human.mutagenPool = 16;
         human.baseHp = 75;  // БАЗА ТЕЛА (см. CreatureBody: итог = база × (1 + бонусы × экспрессия)).
@@ -151,6 +152,7 @@ public static class SpeciesBootstrap
         var wolf = GetOrCreate("Волк");
         wolf.speciesName = "Волк";
         wolf.mass = 90f;   // масса — для роста химеры (спека `2026-10-20-shkala-morfov.md`)
+        wolf.formScale = 1f;
         wolf.tint = new Color(0.5f, 0.5f, 0.52f);   // серый — по-волчьи и отличимо от бурого лося
         wolf.mutagenPool = 16;
         wolf.baseHp = 38;   // тело волка вдвое легче человеческого (~40 кг против ~75) — зато сердце зверское
@@ -319,6 +321,7 @@ public static class SpeciesBootstrap
         const float snakeNeckAttach = 1f - (float)snakeNeckLinks / snakeSpineLinks;
         snake.speciesName = "Змея";
         snake.mass = 66f;   // масса — для роста химеры (спека `2026-10-20-shkala-morfov.md`)
+        snake.formScale = 1f;
         snake.tint = new Color(0.35f, 0.5f, 0.3f);
         snake.mutagenPool = 20;
         snake.baseHp = 60;  // длинное тело, но лёгкое
@@ -450,6 +453,7 @@ public static class SpeciesBootstrap
         var moose = GetOrCreate("Лось");
         moose.speciesName = "Лось";
         moose.mass = 440f;   // масса — для роста химеры (спека `2026-10-20-shkala-morfov.md`)
+        moose.formScale = 1f;
         moose.tint = new Color(0.42f, 0.32f, 0.22f); // тёмно-бурый
         moose.mutagenPool = 24;
         moose.eatsMeat = false; // ТРАВОЯДНЫЙ: волков не ест, добычей не восстанавливается (его еда — кормёжка по карте, будущий слайс)
@@ -572,6 +576,7 @@ public static class SpeciesBootstrap
         var hog = GetOrCreate("Ёж");
         hog.speciesName = "Ёж";
         hog.mass = 12f;   // масса — для роста химеры (спека `2026-10-20-shkala-morfov.md`)
+        hog.formScale = 0.55f;   // маленький мутант ≈0.7 м по верху игл (спека `2026-10-20-razmer-hedzhhalka.md`): тело целиком, поставка как есть
         hog.tint = new Color(0.58f, 0.33f, 0.28f);  // ржаво-кирпичный: тёмный и красный, не спутать с телесным
                                                     // человеком (был песочный — сливались) и бурым лосём
         hog.mutagenPool = 18;
