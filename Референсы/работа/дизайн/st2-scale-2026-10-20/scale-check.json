@@ -1,0 +1,72 @@
+[
+  {
+    "figure": "hedge",
+    "height_m": 1.0533333333333335,
+    "full_silhouette_m": 1.5933671742808797,
+    "full_top_y": 771.6582064297801,
+    "full_left_x": 214.22165820642977,
+    "full_right_x": 565.7783417935702,
+    "px_per_m": 250,
+    "crown_y": 906.6666666666666,
+    "ground_y": 1170,
+    "drawing_scale": 1.3367174280879865,
+    "source_crown": 778,
+    "source_foot": 975
+  },
+  {
+    "figure": "wolf",
+    "height_m": 1.92,
+    "full_silhouette_m": 2.0730434782608698,
+    "full_top_y": 651.7391304347825,
+    "full_left_x": 686.086956521739,
+    "full_right_x": 1073.9130434782608,
+    "px_per_m": 250,
+    "crown_y": 690.0,
+    "ground_y": 1170,
+    "drawing_scale": 1.7391304347826086,
+    "source_crown": 706,
+    "source_foot": 982
+  },
+  {
+    "figure": "human",
+    "height_m": 1.85,
+    "full_silhouette_m": 1.85,
+    "full_top_y": 707.5,
+    "full_left_x": 1176.7030201342282,
+    "full_right_x": 1403.2969798657718,
+    "px_per_m": 250,
+    "crown_y": 707.5,
+    "ground_y": 1170,
+    "drawing_scale": 1.5520134228187918,
+    "source_crown": 684,
+    "source_foot": 982
+  },
+  {
+    "figure": "moose",
+    "height_m": 3.1,
+    "full_silhouette_m": 3.3788927335640135,
+    "full_top_y": 325.27681660899657,
+    "full_left_x": 1545.242214532872,
+    "full_right_x": 2054.757785467128,
+    "px_per_m": 250,
+    "crown_y": 395.0,
+    "ground_y": 1170,
+    "drawing_scale": 2.6816608996539792,
+    "source_crown": 760,
+    "source_foot": 1049
+  },
+  {
+    "figure": "snake",
+    "height_m": 1.75,
+    "full_silhouette_m": 1.7499999999999996,
+    "full_top_y": 732.5000000000001,
+    "full_left_x": 2146.6768292682927,
+    "full_right_x": 2593.3231707317073,
+    "px_per_m": 250,
+    "crown_y": 732.5,
+    "ground_y": 1170,
+    "drawing_scale": 1.524390243902439,
+    "source_crown": 669,
+    "source_foot": 956
+  }
+]
