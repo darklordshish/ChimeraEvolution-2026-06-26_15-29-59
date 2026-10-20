@@ -14,7 +14,7 @@ Hunyuan) переносится на ТОПОЛОГИЮ меша шасси (ч�
   5. СУСТАВЫ ЦЕЛИ — те же суставы шасси, перенесённые пластиной, — файлом рядом (формат `*-skelet.json`).
 
   blender -b --factory-startup -P kluch_vida.py -- шасси.blend цель.obj ориентиры.json выход.fbx скелет_шасси.json суставы_цели.json
-      [--imya Волк] [--iter 4] [--smooth 6] [--maxd 0.08] [--maxd_obj голова:0.025,шея:0.025 [--zatylok y]] [--bez Чутьё] [--lam 1e-4] [--gladit N [--voxel 0.012]] [--rasput 60] [--polosa Ноги:0.40:0.80:20] [--skuly k:yc:zc:r] [--bez_zony Ноги:0.14] [--plechi k] [--grud kd] [--taz kt] [--golova_zhestko 1 [--golova_vverh r] [--golova_vpered d]] [--korpus 1] [--mesta паспорт.json,… [--posadka тип:вперёд:вверх[:масштаб[:наклон]],…]] [--kupol f:zb:yb]
+      [--imya Волк] [--iter 4] [--smooth 6] [--maxd 0.08] [--maxd_obj голова:0.025,шея:0.025 [--zatylok y]] [--bez Чутьё] [--lam 1e-4] [--gladit N [--voxel 0.012]] [--rasput 60] [--polosa Ноги:0.40:0.80:20] [--skuly k:yc:zc:r] [--bez_zony Ноги:0.14] [--plechi k] [--grud kd] [--taz kt] [--golova_zhestko 1 [--golova_vverh r] [--golova_vpered d]] [--korpus 1] [--chasti 1] [--mesta паспорт.json,… [--posadka тип:вперёд:вверх[:масштаб[:наклон]],…]] [--kupol f:zb:yb]
   blender -b --factory-startup -P kluch_vida.py -- шасси.blend - - - скелет_шасси.json - --istochnik ориентиры_шасси.json
 """
 import sys, json, math
@@ -176,7 +176,47 @@ if int(opt.get('gladit', '0')):
     m_ = tg.modifiers.new('gl', 'SMOOTH'); m_.factor = 1.0; m_.iterations = int(opt['gladit'])
     bpy.ops.object.modifier_apply(modifier=m_.name)
 bm = bmesh.new(); bm.from_mesh(tg.data); bm.transform(tg.matrix_world)
+bm.verts.ensure_lookup_table()
 bvh = BVHTree.FromBMesh(bm)
+# ПРИТЯЖКА ПО ЧАСТЯМ (`--chasti 1`, 20.10, консилиум формы, направление Б): ближайшая точка по ВСЕЙ цели не знает, какая это
+# часть тела — шея уезжала на гриву, бока на руки, бедро на хвост («плита плеч, горб, коробка»). Части — группы костей
+# шасси; вершина шасси берёт часть по наибольшему весу, грань цели — по ближайшему отрезку кости ЦЕЛИ (кости шасси,
+# перенесённые пластиной по ориентирам). Вершина тянется только к своей части
+PART = {'голова': 'голова', 'шея': 'шея', 'хребет': 'корпус', 'грудная клетка': 'корпус', 'живот': 'корпус', 'таз': 'корпус',
+        'лопатка': 'корпус', 'лопатка.L': 'корпус', 'плечо': 'плечо', 'плечо.L': 'плечо.L', 'предплечье': 'предплечье',
+        'предплечье.L': 'предплечье.L', 'бедро': 'бедро', 'бедро.L': 'бедро.L', 'голень': 'голень', 'голень.L': 'голень.L',
+        'стопа': 'голень', 'стопа.L': 'голень.L'}
+CHASTI = opt.get('chasti', '0') == '1'
+if CHASTI:
+    vpart = [None] * len(U0)
+    for o in OBJ:
+        gn = {g.index: g.name for g in o.vertex_groups}
+        for vi, v in enumerate(o.data.vertices):
+            best = max(((gn.get(ge.group), ge.weight) for ge in v.groups if PART.get(gn.get(ge.group))), key=lambda x: x[1], default=None)
+            if best: vpart[vmap[(o.name, vi)]] = PART[best[0]]
+    segs = []
+    for bn, b_ in BN.items():
+        if bn in PART:
+            h_, t_ = tps([b_['head'], b_['tail']]); segs.append((PART[bn], Vector(h_), Vector(t_)))
+    def seg_d(p, a_, b_):
+        ab = b_ - a_; u = max(0.0, min(1.0, (p - a_).dot(ab) / max(ab.length_squared, 1e-9))); return (p - (a_ + ab * u)).length
+    bm.faces.ensure_lookup_table()
+    fpart = {}
+    for f_ in bm.faces:
+        c_ = f_.calc_center_median(); fpart.setdefault(min(segs, key=lambda s_: seg_d(c_, s_[1], s_[2]))[0], []).append(f_)
+    BVH_P = {}
+    for pn, fl in fpart.items():
+        vs = {}; polys = []
+        for f_ in fl:
+            ids = []
+            for v_ in f_.verts:
+                if v_.index not in vs: vs[v_.index] = len(vs)
+                ids.append(vs[v_.index])
+            polys.append(ids)
+        co = [None] * len(vs)
+        for vi_, j in vs.items(): co[j] = bm.verts[vi_].co.copy()
+        BVH_P[pn] = BVHTree.FromPolygons(co, polys)
+    print('КЛЮЧ: части цели — ' + ', '.join('%s %d' % (pn, len(fl)) for pn, fl in sorted(fpart.items())))
 maxd = float(opt['maxd'])
 # предел объекта действует только за плоскостью `--zatylok` (y шасси, Blender: морда в −Y) — лицо тянется к цели полностью
 YZ = float(opt.get('zatylok', '-9'))
@@ -186,7 +226,8 @@ for it in range(int(opt['iter'])):
     for k_ in range(len(X)):
         if not free[k_]:
             continue
-        hit = bvh.find_nearest(Vector(X[k_]))
+        tree = BVH_P.get(vpart[k_], bvh) if CHASTI and vpart[k_] else bvh
+        hit = tree.find_nearest(Vector(X[k_]))
         if hit[0] is not None and hit[3] < vmax[k_]:
             D[k_] = np.array(hit[0]) - X[k_]
     for _ in range(int(opt['smooth'])):
