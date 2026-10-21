@@ -237,6 +237,32 @@ public static partial class PartAssembly
     /// по тому и садимся. Посадочное место смешивается между базой и своей записью под ключом (вес 1); кольцо снимаемой
     /// детали (уши) — вершины меша, их сдвиг ключом читается прямо из формы-ключа: центр едет на средний сдвиг кольца,
     /// эллипс — на отношение средних радиусов.</summary>
+    /// <summary>МЕСТО ПОД КЛЮЧОМ ИЗ САМОЙ КОЖИ (22.10): записи `pod_klyuchom` для ключа нет — центр места едет на средний сдвиг
+    /// ключом вершин тела вокруг него (в пределах эллипса места). Записи, снятые под прежний ключ, врали: морда на ст.1 висела
+    /// перед головой нового ключа. Что можно вычислить из меша — не хранится.</summary>
+    static BodySeat FromSkin(Transform container, BodySeat c, BodySeat r, List<(SkinnedMeshRenderer smr, int shape, float w)> active)
+    {
+        float rad = Mathf.Max(0.02f, Mathf.Max(c.ellipse.x, c.ellipse.y));
+        Vector3 sum = Vector3.zero; float wsum = 0f;
+        foreach (var (smr, shape, w) in active)
+        {
+            var mesh = smr.sharedMesh;
+            if (!mesh.isReadable || smr.bones.Length == 0) continue;
+            var toBody = container.worldToLocalMatrix * smr.bones[0].localToWorldMatrix * mesh.bindposes[0];
+            var v = mesh.vertices; var dv = new Vector3[v.Length];
+            mesh.GetBlendShapeFrameVertices(shape, mesh.GetBlendShapeFrameCount(shape) - 1, dv, null, null);
+            for (int j = 0; j < v.Length; j++)
+            {
+                float d = (toBody.MultiplyPoint3x4(v[j]) - c.center).magnitude;
+                if (d > rad) continue;
+                float k = 1f - d / rad;                       // ближние вершины весят больше
+                sum += toBody.MultiplyVector(dv[j]) * w * k; wsum += k;
+            }
+        }
+        if (wsum > 1e-6f) r.center = c.center + sum / wsum;
+        return r;
+    }
+
     static BodySeat UnderKey(Transform container, BodySeat c, BodyPart carrierRing)
     {
         var active = new List<(SkinnedMeshRenderer smr, int shape, float w)>();
@@ -264,8 +290,9 @@ public static partial class PartAssembly
                 r.center += k.posadka * w;
                 return r;
             }
-            return r;
+            return FromSkin(container, c, r, active);
         }
+        if (carrierRing == null) return FromSkin(container, c, r, active);
         if (carrierRing?.ringM == null || carrierRing.ringM.Length < 3) return r;
         var ring = carrierRing.ringM;
         var shift = new Vector3[ring.Length]; var found = new bool[ring.Length];
