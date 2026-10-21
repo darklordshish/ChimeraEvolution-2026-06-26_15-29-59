@@ -14,7 +14,7 @@
      на ступени 2 вида-ключа, снимает `skryvaet`, черты `zamenyaet_cherty` не ставит).
 
   blender -b --factory-startup -P kusok_celi.py -- ключ.blend цель.obj выход.fbx паспорт.json
-      [--imya Волк] [--zazor 0.012] [--zazor_hvost 0.05] [--golova_z 1.50] [--golova_x 0.25] [--griva_z 1.15] [--griva_x 0.42] [--hvost_z 1.0] [--hvost_y 0.12] [--hvost_x 9] [--bez_kostej плечо,предплечье] [--kisti_z 0.9] [--hvost_naklon 20] [--ushi 1.80:0.06:1.4] [--golova_po_vesam 1 [--golova_sheya_z 1.5]]
+      [--imya Волк] [--zazor 0.012] [--zazor_hvost 0.05] [--golova_z 1.50] [--golova_x 0.25] [--griva_z 1.15] [--griva_x 0.42] [--hvost_z 1.0] [--hvost_y 0.12] [--hvost_x 9] [--bez_kostej плечо,предплечье] [--kisti_z 0.9] [--hvost_naklon 20] [--ushi 1.80:0.06:1.4] [--golova_po_vesam 1 [--golova_sheya_z 1.5]] [--zakryt 200]
       [--ostrov 400] [--lapy_z 0.32] [--stupen 2|1 [--st1_y -0.02] [--st1_z 1.62] [--st1_zatylok 0.06] [--st1_verh 1.70] [--st1_hvost 0.65] [--st1_niz 1.30] [--ves1 0.5]] [--prizhim_d 0.06 --prizhim_k 0.35 [--prizhim_verh 1.45]] [--dvustor 1] [--tselikom 1] [--dolya 0.08] [--shots префикс]
 Вход `ключ.blend` — сохранённый `kluch_vida.py --blend` (меш шасси с ключом и арматурой). Печатает «КУСОК: …».
 """
@@ -246,6 +246,14 @@ if HN:
             d_ = v.co - root; cy, cz = math.cos(a_), math.sin(a_)
             v.co = root + Vector((d_.x, d_.y * cy - d_.z * cz, d_.y * cz + d_.z * cy))
         print('КУСОК: хвост отведён назад на %g° (%d вершин)' % (HN, len(tv)))
+# ЗАКРЫТЬ КРАЯ (`--zakryt N`, 21.10, критики r9–r12: «туннель за затылком»): у 3D-цели грива и шея — один объём, и кусок гривы —
+# капюшон без внутренней стенки; между ним и шеей шасси светился фон. Граничные петли не длиннее N рёбер заливаются гранями
+if int(opt.get('zakryt', '0')):
+    bm3 = bmesh.new(); bm3.from_mesh(t.data)
+    r_ = bmesh.ops.holes_fill(bm3, edges=[e for e in bm3.edges if e.is_boundary], sides=int(opt['zakryt']))
+    bmesh.ops.triangulate(bm3, faces=r_['faces'])
+    bm3.to_mesh(t.data); bm3.free()
+    print('КУСОК: закрыто краёв — %d граней заплаток' % len(r_['faces']))
 if opt.get('dvustor', '0') == '1':
     # ОБОРОТНАЯ СТОРОНА: кусок меха — открытая оболочка, изнутри (из-за головы, из-под пряди) видна пустота и тёмная дыра
     # отсечённых граней; копия граней с обратной нормалью закрывает её (материал односторонний)
