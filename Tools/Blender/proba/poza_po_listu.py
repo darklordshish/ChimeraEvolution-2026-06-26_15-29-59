@@ -1,81 +1,91 @@
-"""ПОЗА СТУПЕНИ ПО ЛИСТУ (21.10). Файл позы `podgonka_v_poze.py --poza` снят с цели Hunyuan, а цель сгорблена сильнее листа
-(оборотень ст.2: хребет цели 46° от вертикали, на профиле листа ~31°, голова цели клюёт, у листа морда горизонтально).
-Ключ — форма в покое, поза — отдельным файлом (вариант Б), поэтому позу можно править отдельно от формы: кость
-поворачивается вокруг оси X мира (сагиттальная плоскость) через свою голову до заданного наклона, дети едут за ней.
+"""ПОЗА СТУПЕНИ ПО ЛИСТУ (21.10). Файл позы `podgonka_v_poze.py --poza` снят с 3D-цели, а цель стоит не совсем как лист
+(оборотень ст.2: корпус «таз → плечевой сустав» 33° от вертикали против ~27° у профиля листа, колено 77° против ~92°).
+Ключ — форма в покое, поза — отдельным файлом (вариант Б), поэтому позу правят отдельно от формы.
 
-  blender -b --factory-startup -P poza_po_listu.py -- шасси.blend поза.json выход.json --naklon хребет:31,шея:50,голова:20 [--derzhat таз]
-`--derzhat` — кости, которые остаются на месте в мире, когда поворачивается родитель (таз с ногами: хребет — корень, и
-без этого наклон спины опрокидывал бы ноги).
-Наклон — градусы вперёд от вертикали (вперёд = −Y Blender), как в листе на профиле. Печатает «ПОЗА: …».
+Работает на цепи игры, без Blender: D кости = рамка позы · рамка покоя К2⁻¹; правка — поворот вокруг оси X мира через
+сустав, добавленный к D кости, дети едут за ней (кроме `--derzhat`: их ориентация в мире остаётся); суставы покоя
+(`sustavy`) НЕ меняются — длины цели те же; корень после правки сдвигается по высоте так, чтобы нижний хвост «стопы»
+остался там, где был (на земле).
+
+  python poza_po_listu.py скелет_К2.json поза.json суставы.json выход.json --povorot хребет:-6,голень:15,голень.L:15,стопа:-15,стопа.L:-15 [--derzhat таз]
+Поворот — градусы: «+» кладёт кость вперёд (ось Z кости → −Y), «−» — назад. Печатает наклон корпуса и угол колена до и после.
 """
 import sys, json, math
-import bpy
-from mathutils import Vector, Matrix
+import numpy as np
 
-a = sys.argv[sys.argv.index('--') + 1:]
-src, p_in, p_out = a[:3]
+a = sys.argv[1:]
+sk_p, pz_p, sj_p, out_p = a[:4]
 opt = {}
-i = 3
+i = 4
 while i < len(a):
     opt[a[i].lstrip('-')] = a[i + 1]; i += 2
-DERZHAT = [x for x in opt.get('derzhat', 'таз').split(',') if x]
-NAKLON = {kv.split(':')[0]: float(kv.split(':')[1]) for kv in opt.get('naklon', '').split(',') if kv}
+POV = {kv.split(':')[0]: float(kv.split(':')[1]) for kv in opt.get('povorot', '').split(',') if kv}
+DERZ = set(x for x in opt.get('derzhat', 'таз').split(',') if x)
 
-bpy.ops.wm.open_mainfile(filepath=src)
-pz = json.load(open(p_in, encoding='utf-8'))
-PZ = {b['name']: b for b in pz['bones']}
-arm = [o for o in bpy.data.objects if o.type == 'ARMATURE'][0]; AW = arm.matrix_world
-bpy.context.view_layer.objects.active = arm; bpy.ops.object.mode_set(mode='POSE')
+sk, pz, sj = (json.load(open(p, encoding='utf-8')) for p in (sk_p, pz_p, sj_p))
+K = {b['name']: b for b in sk['bones']}; P = {b['name']: b for b in pz['bones']}; S = {b['name']: b for b in sj['bones']}
+
+
+def frame(b):
+    h, t, z = (np.array(b[k], float) for k in ('head', 'tail', 'z_axis'))
+    y = (t - h) / np.linalg.norm(t - h); x = np.cross(y, z); x /= np.linalg.norm(x); z2 = np.cross(x, y)
+    return np.stack([x, y, z2], 1)
+
+
+def rx(deg):
+    c, s = math.cos(math.radians(deg)), math.sin(math.radians(deg))
+    return np.array([[1, 0, 0], [0, c, -s], [0, s, c]])
+
+
+D = {n: frame(P[n]) @ frame(K[n]).T for n in P}
+par = {n: (S[n].get('parent') or '') for n in S}
 order = []
-def walk(b):
-    order.append(b.name)
-    for c in b.children: walk(c)
-for b in arm.data.bones:
-    if b.parent is None: walk(b)
+def walk(n):
+    order.append(n)
+    for c in S:
+        if par[c] == n: walk(c)
+for n in S:
+    if not par[n]: walk(n)
 
 
-def put(pb, h, t, z):
-    y = (t - h).normalized(); x = y.cross(z).normalized(); z2 = x.cross(y)
-    pb.matrix = AW.inverted() @ (Matrix.Translation(h) @ Matrix((x, y, z2)).transposed().to_4x4())
+def fk(Dm, root_h):
+    PH, PT = {}, {}
+    for n in order:
+        p = par[n]
+        PH[n] = root_h.copy() if not p else PH[p] + Dm[p] @ (np.array(S[n]['head']) - np.array(S[p]['head']))
+        PT[n] = PH[n] + Dm[n] @ (np.array(S[n]['tail']) - np.array(S[n]['head']))
+    return PH, PT
 
 
-# 1. поза из файла
-for bn in order:
-    if bn in PZ:
-        put(arm.pose.bones[bn], Vector(PZ[bn]['head']), Vector(PZ[bn]['tail']), Vector(PZ[bn]['z_axis']))
-        bpy.context.view_layer.update()
+def mery(PH, PT):
+    v = PH['плечо'] - PH['бедро']; lean = math.degrees(math.atan2(-v[1], v[2]))
+    a_ = PH['бедро'] - PH['голень']; b_ = PT['голень'] - PH['голень']
+    knee = math.degrees(math.acos(np.dot(a_, b_) / np.linalg.norm(a_) / np.linalg.norm(b_)))
+    return lean, knee, min(PT['стопа'][2], PT['стопа.L'][2])
 
 
-def naklon(pb):
-    d = (AW @ pb.tail) - (AW @ pb.head)
-    return math.degrees(math.atan2(-d.y, d.z))
-
-
-# 2. правка наклонов — по иерархии, дети едут за родителем, кроме `--derzhat`
-bpy.context.view_layer.update()
-HOLD = {bn: AW @ arm.pose.bones[bn].matrix for bn in DERZHAT if bn in arm.pose.bones}
-for bn in order:
-    if bn not in NAKLON: continue
-    pb = arm.pose.bones[bn]; bpy.context.view_layer.update()
-    was = naklon(pb); dlt = math.radians(NAKLON[bn] - was)
-    hw = AW @ pb.head
-    # поворот вокруг +X на +θ кладёт ось Z вперёд, в −Y
-    R = Matrix.Translation(hw) @ Matrix.Rotation(dlt, 4, 'X') @ Matrix.Translation(-hw)
-    pb.matrix = AW.inverted() @ (R @ (AW @ pb.matrix))
-    bpy.context.view_layer.update()
-    for hb, Mh in HOLD.items():
-        arm.pose.bones[hb].matrix = AW.inverted() @ Mh; bpy.context.view_layer.update()
-    print('ПОЗА: %s %.0f° → %.0f°' % (bn, was, naklon(pb)))
-
-# 3. запись в том же формате
+root = [n for n in order if not par[n]][0]
+R0 = np.array(P[root]['head'], float)
+PH0, PT0 = fk(D, R0)
+l0, k0, z0 = mery(PH0, PT0)
+# правка: накопленный поворот A — у ребёнка от родителя, кроме удерживаемых
+A, D2 = {}, {}
+for n in order:
+    p = par[n]
+    base = np.eye(3) if (not p or n in DERZ) else A[p]
+    A[n] = base @ rx(POV.get(n, 0.0)) if n in POV else base
+    D2[n] = A[n] @ D[n]
+PH, PT = fk(D2, R0)
+dz = z0 - min(PT['стопа'][2], PT['стопа.L'][2])
+PH, PT = fk(D2, R0 + np.array([0, 0, dz]))
+l1, k1, z1 = mery(PH, PT)
+print('ПОЗА: корпус таз→плечо %.0f° → %.0f°, колено %.0f° → %.0f°, низ стопы %.3f → %.3f м, корень по высоте %+.3f м' % (l0, l1, k0, k1, z0, z1, dz))
 out = []
 for b in pz['bones']:
-    pb = arm.pose.bones.get(b['name'])
-    if pb is None: continue
-    M = AW @ pb.matrix
-    z = (M.to_3x3() @ Vector((0, 0, 1))).normalized()
-    out.append(dict(b, head=[round(c, 5) for c in AW @ pb.head], tail=[round(c, 5) for c in AW @ pb.tail], z_axis=[round(c, 5) for c in z]))
+    n = b['name']
+    F = D2[n] @ frame(K[n])
+    out.append(dict(b, head=[round(c, 5) for c in PH[n]], tail=[round(c, 5) for c in PT[n]], z_axis=[round(c, 5) for c in F[:, 2]]))
 pz['bones'] = out
-pz['note'] = pz.get('note', '') + '; наклоны по листу: ' + ', '.join('%s %g°' % kv for kv in NAKLON.items()) + ' (poza_po_listu.py)'
-json.dump(pz, open(p_out, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
-print('ПОЗА: готово →', p_out)
+pz['note'] = pz.get('note', '') + '; правка по листу: ' + ', '.join('%s %+g°' % kv for kv in POV.items()) + ' (poza_po_listu.py)'
+json.dump(pz, open(out_p, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+print('ПОЗА: готово →', out_p)
