@@ -1,0 +1,31 @@
+{
+  "threshold": "max RGB < 210",
+  "width": 1774,
+  "height": 887,
+  "views": [
+    {
+      "name": "front",
+      "x0": 81,
+      "y0": 34,
+      "x1": 573,
+      "y1": 825,
+      "height": 792
+    },
+    {
+      "name": "left",
+      "x0": 599,
+      "y0": 28,
+      "x1": 1054,
+      "y1": 828,
+      "height": 801
+    },
+    {
+      "name": "three-quarter",
+      "x0": 1138,
+      "y0": 34,
+      "x1": 1612,
+      "y1": 829,
+      "height": 796
+    }
+  ]
+}
