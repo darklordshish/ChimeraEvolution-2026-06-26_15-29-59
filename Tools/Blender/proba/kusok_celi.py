@@ -14,7 +14,7 @@
      на ступени 2 вида-ключа, снимает `skryvaet`, черты `zamenyaet_cherty` не ставит).
 
   blender -b --factory-startup -P kusok_celi.py -- ключ.blend цель.obj выход.fbx паспорт.json
-      [--imya Волк] [--zazor 0.012] [--zazor_hvost 0.05] [--golova_z 1.50] [--golova_x 0.25] [--griva_z 1.15] [--griva_x 0.42] [--hvost_z 1.0] [--hvost_y 0.12] [--hvost_x 9] [--bez_kostej плечо,предплечье] [--kisti_z 0.9] [--hvost_naklon 20]
+      [--imya Волк] [--zazor 0.012] [--zazor_hvost 0.05] [--golova_z 1.50] [--golova_x 0.25] [--griva_z 1.15] [--griva_x 0.42] [--hvost_z 1.0] [--hvost_y 0.12] [--hvost_x 9] [--bez_kostej плечо,предплечье] [--kisti_z 0.9] [--hvost_naklon 20] [--ushi 1.80:0.06:1.5]
       [--ostrov 400] [--lapy_z 0.32] [--stupen 2|1 [--st1_y -0.02] [--st1_z 1.62] [--st1_zatylok 0.06] [--st1_verh 1.70] [--st1_hvost 0.65] [--st1_niz 1.30] [--ves1 0.5]] [--prizhim_d 0.06 --prizhim_k 0.35 [--prizhim_verh 1.45]] [--dvustor 1] [--tselikom 1] [--dolya 0.08] [--shots префикс]
 Вход `ключ.blend` — сохранённый `kluch_vida.py --blend` (меш шасси с ключом и арматурой). Печатает «КУСОК: …».
 """
@@ -211,6 +211,19 @@ if STEP < 2 and float(opt['st1_hvost']) != 1.0:
 # ДУГА ХВОСТА (`--hvost_naklon 20`, 21.10, q-hvost-duga: хвост висел отвесно, у колонки ~45° назад): вершины хвоста (ниже
 # `--hvost_z`, позади `--hvost_y`) поворачиваются вокруг корня (верхняя точка хвоста) по оси X — «+» отводит назад; доля
 # поворота растёт от корня к кончику, хвост гнётся дугой, а не ломается у основания
+# УШИ (`--ushi z:x:k`, 21.10, критик r9: уши 6–8 % роста против 10–11 % у листа): вершины выше `z` и дальше `x` от средней
+# линии растут в `k` раз от центра основания уха своей стороны (полоса 2 см над `z`); к черепу (|x| от x до x+3 см) — плавно
+if opt.get('ushi'):
+    uz, ux, uk = (float(v) for v in opt['ushi'].split(':'))
+    for sg in (-1, 1):
+        side = [v for v in t.data.vertices if v.co.z > uz and v.co.x * sg > ux]
+        base = [v.co for v in side if v.co.z < uz + 0.02]
+        if not base: continue
+        piv = sum(base, Vector()) / len(base)
+        for v in side:
+            w = min(1.0, (v.co.x * sg - ux) / 0.03)
+            v.co = v.co + (v.co - piv) * ((uk - 1.0) * w)
+        print('КУСОК: уши ×%g, сторона %+d: %d вершин' % (uk, sg, len(side)))
 HN = float(opt.get('hvost_naklon', '0'))
 if HN:
     import math
