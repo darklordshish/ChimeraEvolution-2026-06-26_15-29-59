@@ -14,7 +14,7 @@
      на ступени 2 вида-ключа, снимает `skryvaet`, черты `zamenyaet_cherty` не ставит).
 
   blender -b --factory-startup -P kusok_celi.py -- ключ.blend цель.obj выход.fbx паспорт.json
-      [--imya Волк] [--zazor 0.012] [--zazor_hvost 0.05] [--golova_z 1.50] [--golova_x 0.25] [--griva_z 1.15] [--griva_x 0.42] [--hvost_z 1.0] [--hvost_y 0.12] [--hvost_x 9] [--bez_kostej плечо,предплечье] [--kisti_z 0.9] [--hvost_naklon 20] [--ushi 1.80:0.06:1.5]
+      [--imya Волк] [--zazor 0.012] [--zazor_hvost 0.05] [--golova_z 1.50] [--golova_x 0.25] [--griva_z 1.15] [--griva_x 0.42] [--hvost_z 1.0] [--hvost_y 0.12] [--hvost_x 9] [--bez_kostej плечо,предплечье] [--kisti_z 0.9] [--hvost_naklon 20] [--ushi 1.80:0.06:1.4] [--golova_po_vesam 1 [--golova_sheya_z 1.5]]
       [--ostrov 400] [--lapy_z 0.32] [--stupen 2|1 [--st1_y -0.02] [--st1_z 1.62] [--st1_zatylok 0.06] [--st1_verh 1.70] [--st1_hvost 0.65] [--st1_niz 1.30] [--ves1 0.5]] [--prizhim_d 0.06 --prizhim_k 0.35 [--prizhim_verh 1.45]] [--dvustor 1] [--tselikom 1] [--dolya 0.08] [--shots префикс]
 Вход `ключ.blend` — сохранённый `kluch_vida.py --blend` (меш шасси с ключом и арматурой). Печатает «КУСОК: …».
 """
@@ -73,7 +73,7 @@ for o in body:
         c.shape_key_clear()
         for v, p in zip(c.data.vertices, mix): v.co = p
     c.modifiers.clear(); c.parent = None; c.matrix_world = o.matrix_world.copy()
-    srcs.append(c)
+    srcs.append(c); c['iskhod'] = o.name
 
 # 2. цель и отбор граней
 bpy.ops.wm.obj_import(filepath=cel, forward_axis='NEGATIVE_Z', up_axis='Y')
@@ -95,6 +95,7 @@ bm = bmesh.new(); bm.from_mesh(t.data); bm.faces.ensure_lookup_table()
 n_all = len(bm.faces)
 kill = []
 KISTI = float(opt.get('kisti_z', '0'))
+GPV = opt.get('golova_po_vesam', '0') == '1'
 for f in bm.faces:
     c = f.calc_center_median()
     d = bvh.find_nearest(c)[3]
@@ -106,11 +107,17 @@ for f in bm.faces:
     paw = c.z < pz and abs(c.x) > 0.12          # лапы цели ниже скакательного: накрывают стопу шасси «на носке» (у цели лапа длинная, с пальцами)
     # КИСТИ (`--kisti_z 0.9`, 21.10, ГеймБосс по листу r8: «кисти — кулаки без когтей»): грани, у которых главная кость по
     # весам `--vesa` — предплечье, ниже запястья покоя К2 (0.90 м) — кисть цели с когтями целиком
-    if KISTI and VESA:
+    if (KISTI or GPV) and VESA:
         sc_ = {}
         for v in f.verts:
             for nm, x in VESA[v.index].items(): sc_[nm] = sc_.get(nm, 0.0) + x
-        paw = paw or (bool(sc_) and max(sc_, key=sc_.get).startswith('предплечье') and c.z < KISTI)
+        gl_ = max(sc_, key=sc_.get) if sc_ else ''
+        if KISTI: paw = paw or (gl_.startswith('предплечье') and c.z < KISTI)
+        # ГОЛОВА ПО ВЕСАМ (`--golova_po_vesam 1`, 21.10, критик r10): срез по высоте не закрывал затылок — голова человека под
+        # куском снята, и сквозь шов шеи светился фон. Голова — всё, у чего главная кость «голова», с затылком
+        # `--golova_sheya_z`: и грани с главной костью «шея» выше этой высоты покоя — затылок цели взвешен на шею, а шов шеи К2
+        # с головой (край 1.55–1.59 м) ниже затылка цели: без них между швом и куском светился фон
+        if GPV: head = gl_ == 'голова' or (gl_ == 'шея' and c.z > float(opt.get('golova_sheya_z', '9')))
     if STEP < 2:
         # ст.1 (лист, колонка 2): голова человеческая, стопа ещё не лапа; грива — за головой и по спине, спереди лицо открыто
         head = paw = False
@@ -186,7 +193,9 @@ if W_STEP < 1.0:
 # вершина гривы (выше `--hvost_z`) дальше `--prizhim_d` от тела ступени подтягивается к нему — остаток сверх порога
 # ×`--prizhim_k`; хвост не трогается
 _bv, _bf = [], []
-for s in srcs:
+# прижимать — к ВИДИМОМУ телу ступени: голова человека на ст.2 снята, и грива, прижатая к ней, оставляла туннель к холке
+# (критики r7–r10: «серп за затылком» сквозь силуэт)
+for s in [s_ for s_ in srcs if s_.get('iskhod') not in HIDE]:
     n0 = len(_bv); _bv += [s.matrix_world @ v.co for v in s.data.vertices]; _bf += [[n0 + k for k in p.vertices] for p in s.data.polygons]
 _bvh = BVHTree.FromPolygons(_bv, _bf)
 PD, PK = float(opt['prizhim_d']), float(opt['prizhim_k'])
@@ -220,9 +229,12 @@ if opt.get('ushi'):
         base = [v.co for v in side if v.co.z < uz + 0.02]
         if not base: continue
         piv = sum(base, Vector()) / len(base)
+        # тянуть ВДОЛЬ оси уха (основание → кончик), ширину не трогать (критик r10: ×1.5 от центра ушло в ширину и толщину)
+        ax_ = (max(side, key=lambda v: v.co.z).co - piv).normalized()
         for v in side:
             w = min(1.0, (v.co.x * sg - ux) / 0.03)
-            v.co = v.co + (v.co - piv) * ((uk - 1.0) * w)
+            d_ = v.co - piv
+            v.co = v.co + ax_ * (d_.dot(ax_) * (uk - 1.0) * w)
         print('КУСОК: уши ×%g, сторона %+d: %d вершин' % (uk, sg, len(side)))
 HN = float(opt.get('hvost_naklon', '0'))
 if HN:
