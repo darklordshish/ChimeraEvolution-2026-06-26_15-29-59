@@ -14,7 +14,7 @@
   4. обратно в покой: вершина умножается на обратную матрицу своего скина; результат — форма-ключ `--imya`.
 
   blender -b --factory-startup -P podgonka_v_poze.py -- шасси.blend цель.obj ориентиры_цели.json скелет_шасси.json выход.blend
-      [--imya Волк] [--zhestkost 30,15,8,4] [--normal 0.5] [--maxd 0.25] [--dal 0.12] [--bez голова,Чутьё] [--poza_obj файл.obj] [--poza файл.json] [--sustavy файл.json] [--cel_pokoj файл.obj] [--vstrechnye 1 [--vstr_maxd 0.05|0.25,предплечье:0.05]]
+      [--imya Волк] [--zhestkost 30,15,8,4] [--normal 0.5] [--maxd 0.25] [--dal 0.12] [--bez голова,Чутьё] [--poza_obj файл.obj] [--poza файл.json] [--sustavy файл.json] [--cel_pokoj файл.obj] [--dop_cel f.obj --dop_lm f.json --dop_pokoj f.obj] [--vstrechnye 1 [--vstr_maxd 0.05|0.25,предплечье:0.05]]
 Ориентиры цели — имена как у `kluch_vida.py` (сустав:head/tail, носок, плюсна_вн/нар…), оси Blender, метры тела.
 """
 import sys, json
@@ -338,7 +338,7 @@ for k in range(N):
 # поверх тела с ключом на весе 1, то есть в ПОКОЕ. Вершина цели снимается из позы обратной матрицей скина ближайшей
 # вершины подогнанного тела; у головы цели (ближайшая кость цели — «голова») — матрицей одной кости «голова», иначе на
 # стыке шеи весы смешивания мнут морду и рога
-if opt.get('cel_pokoj'):
+if opt.get('cel_pokoj') or opt.get('dop_pokoj'):
     KDX = kdtree.KDTree(N)
     for k in range(N): KDX.insert(Vector(X[k]), k)
     KDX.balance()
@@ -355,9 +355,10 @@ if opt.get('cel_pokoj'):
     # ВЕСА ЦЕЛИ — тем же правилом, что и матрица снятия (файл `<cel_pokoj>.vesa.json`, вершина за вершиной): кусок,
     # вырезанный `kusok_celi.py --vesa`, в позе ступени встаёт ровно туда, где был у цели. С весами, перенесёнными с тела
     # в покое, хвост и пряди рвались — другое правило давало другую матрицу
-    cache, VES = {}, []
-    with open(opt['cel_pokoj'], 'w') as fo:
-        for v_ in bm.verts:
+    def snyat(bm_, out_p):
+      cache, VES = {}, []
+      with open(out_p, 'w') as fo:
+        for v_ in bm_.verts:
             p = v_.co
             if min(segs, key=lambda s_: seg_d(p, s_[1], s_[2]))[0] == 'голова':
                 ws = {'голова': 1.0}
@@ -371,9 +372,30 @@ if opt.get('cel_pokoj'):
             q = cache[key_] @ p
             VES.append({g: round(w, 4) for g, w in ws.items()})
             fo.write('v %.5f %.5f %.5f' % (q.x, q.z, -q.y) + chr(10))
-        for f_ in bm.faces: fo.write('f ' + ' '.join(str(v_.index + 1) for v_ in f_.verts) + chr(10))
-    json.dump(VES, open(opt['cel_pokoj'] + '.vesa.json', 'w', encoding='utf-8'), ensure_ascii=False)
-    print('ФАЙЛ: цель в покое →', opt['cel_pokoj'], '(+ .vesa.json)')
+        for f_ in bm_.faces: fo.write('f ' + ' '.join(str(v_.index + 1) for v_ in f_.verts) + chr(10))
+      json.dump(VES, open(out_p + '.vesa.json', 'w', encoding='utf-8'), ensure_ascii=False)
+      print('ФАЙЛ: цель в покое →', out_p, '(+ .vesa.json)')
+    if opt.get('cel_pokoj'): snyat(bm, opt['cel_pokoj'])
+    # ВТОРАЯ ЦЕЛЬ (`--dop_cel файл.obj --dop_lm ориентиры.json --dop_pokoj выход.obj`, 21.10): тело подгоняется к голой цели
+    # (витрина/оборотень/тело.png), а грива и хвост есть только у цели колонки ст.2 — в своей позе. Она переводится в позу
+    # голой цели тонкой пластиной по общим ориентирам и снимается в покой тем же правилом: `kusok_celi.py` вырезает из неё то,
+    # что дальше зазора от нового тела
+    if opt.get('dop_pokoj'):
+        LD = {k: Vector(v) for k, v in json.load(open(opt['dop_lm'], encoding='utf-8')).items()}
+        ks = [k for k in LD if k in LT]
+        S2, D2_ = np.array([list(LD[k]) for k in ks]), np.array([list(LT[k]) for k in ks])
+        n2 = len(ks); K2_ = np.linalg.norm(S2[:, None] - S2[None], axis=2) + 1e-4 * np.eye(n2)
+        P2 = np.hstack([np.ones((n2, 1)), S2]); A2 = np.zeros((n2 + 4, n2 + 4)); A2[:n2, :n2] = K2_; A2[:n2, n2:] = P2; A2[n2:, :n2] = P2.T
+        B2 = np.zeros((n2 + 4, 3)); B2[:n2] = D2_; W2 = np.linalg.solve(A2, B2)
+        bpy.ops.wm.obj_import(filepath=opt['dop_cel'], forward_axis='NEGATIVE_Z', up_axis='Y')
+        tg2 = [o for o in bpy.context.selected_objects if o.type == 'MESH'][0]
+        bm2 = bmesh.new(); bm2.from_mesh(tg2.data); bm2.transform(tg2.matrix_world); bm2.verts.ensure_lookup_table()
+        Q = np.array([list(v_.co) for v_ in bm2.verts])
+        Q = np.linalg.norm(Q[:, None] - S2[None], axis=2) @ W2[:n2] + np.hstack([np.ones((len(Q), 1)), Q]) @ W2[n2:]
+        for v_, q_ in zip(bm2.verts, Q): v_.co = Vector(q_)
+        print('ВТОРАЯ ЦЕЛЬ: %d вершин переведены в позу цели по %d общим ориентирам' % (len(Q), n2))
+        snyat(bm2, opt['dop_pokoj'])
+        bpy.data.objects.remove(tg2, do_unlink=True)
 # ФАЙЛЫ ДЛЯ ИГРЫ (решение ГеймБосса 21.10, вариант Б: ключ — форма в покое, позу ступени даёт слой кода):
 #  `--poza файл` — кости шасси В ПОЗЕ ЦЕЛИ (head/tail/z_axis, оси Blender, длины свои — только повороты), игра выводит поворот
 #  кости разностью рамок покоя и позы и ставит его по весу ключа сферически, после привязки скина;
