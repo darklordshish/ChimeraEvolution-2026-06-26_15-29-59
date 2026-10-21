@@ -14,7 +14,7 @@
   4. обратно в покой: вершина умножается на обратную матрицу своего скина; результат — форма-ключ `--imya`.
 
   blender -b --factory-startup -P podgonka_v_poze.py -- шасси.blend цель.obj ориентиры_цели.json скелет_шасси.json выход.blend
-      [--imya Волк] [--zhestkost 30,15,8,4] [--normal 0.5] [--maxd 0.25] [--dal 0.12] [--bez голова,Чутьё] [--poza_obj файл.obj]
+      [--imya Волк] [--zhestkost 30,15,8,4] [--normal 0.5] [--maxd 0.25] [--dal 0.12] [--bez голова,Чутьё] [--poza_obj файл.obj] [--poza файл.json] [--sustavy файл.json]
 Ориентиры цели — имена как у `kluch_vida.py` (сустав:head/tail, носок, плюсна_вн/нар…), оси Blender, метры тела.
 """
 import sys, json
@@ -256,6 +256,43 @@ for k in range(N):
     if tot <= 0: REST[k] = X[k]; continue
     M = sum((skin[g] * (w / tot) for g, w in ws.items() if g in skin), Matrix.Diagonal((0, 0, 0, 0)))
     REST[k] = np.array(M.inverted() @ Vector(X[k]))
+# ФАЙЛЫ ДЛЯ ИГРЫ (решение ГеймБосса 21.10, вариант Б: ключ — форма в покое, позу ступени даёт слой кода):
+#  `--poza файл` — кости шасси В ПОЗЕ ЦЕЛИ (head/tail/z_axis, оси Blender, длины свои — только повороты), игра выводит поворот
+#  кости разностью рамок покоя и позы и ставит его по весу ключа сферически, после привязки скина;
+#  `--sustavy файл` — суставы цели В ПОКОЕ под новую форму: голова и хвост кости — в её рамке позы, переведённые обратно в
+#  покой обратной матрицей той же кости (пропорции цели без позы)
+def frames(src_bones):
+    out_ = []
+    for b in SK.values():
+        pb = arm.pose.bones.get(b['name'])
+        if pb is None: continue
+        M = AW @ pb.matrix
+        out_.append(src_bones(b, pb, M))
+    return out_
+if opt.get('poza'):
+    def posed(b, pb, M):
+        z = (M.to_3x3() @ Vector((0, 0, 1))).normalized()
+        return dict(name=b['name'], parent=b.get('parent', ''), head=[round(c, 5) for c in AW @ pb.head], tail=[round(c, 5) for c in AW @ pb.tail],
+                    z_axis=[round(c, 5) for c in z])
+    sk0 = json.load(open(sk_p, encoding='utf-8'))
+    pz = dict(species=sk0.get('species', 'Человек'), kluch=NAME, axes=sk0.get('axes', ''), bones=frames(posed),
+              note='кости шасси в позе цели «%s» на ступени 2 (вес 1): только повороты, длины шасси; podgonka_v_poze.py' % NAME)
+    json.dump(pz, open(opt['poza'], 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    print('ФАЙЛ: поза →', opt['poza'])
+if opt.get('sustavy'):
+    # суставы цели в позе листа — из ориентиров (как пластина остатка); у костей без ориентиров — свои в позе
+    def rest_j(b, pb, M):
+        td = tgt_dir(b['name'])
+        h, t_ = (td if td else (AW @ pb.head, AW @ pb.tail))
+        Bm_ = AW @ pb.matrix @ pb.bone.matrix_local.inverted() @ AW.inverted()     # покой → поза для этой кости
+        inv = Bm_.inverted()
+        return dict(name=b['name'], parent=b.get('parent', ''), head=[round(c, 5) for c in inv @ Vector(h)], tail=[round(c, 5) for c in inv @ Vector(t_)],
+                    z_axis=b.get('z_axis', [0, 0, 1]))
+    sk0 = json.load(open(sk_p, encoding='utf-8'))
+    sj = dict(sk0); sj['bones'] = frames(rest_j)
+    sj['note'] = 'суставы цели «%s» в ПОКОЕ шасси (поза — отдельным файлом *-poza.json): podgonka_v_poze.py' % NAME
+    json.dump(sj, open(opt['sustavy'], 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
+    print('ФАЙЛ: суставы покоя →', opt['sustavy'])
 # поза сбрасывается, форма-ключ
 bpy.context.view_layer.objects.active = arm; bpy.ops.object.mode_set(mode='POSE')
 for pb in arm.pose.bones:
