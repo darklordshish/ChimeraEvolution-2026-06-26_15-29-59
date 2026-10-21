@@ -14,7 +14,7 @@
      на ступени 2 вида-ключа, снимает `skryvaet`, черты `zamenyaet_cherty` не ставит).
 
   blender -b --factory-startup -P kusok_celi.py -- ключ.blend цель.obj выход.fbx паспорт.json
-      [--imya Волк] [--zazor 0.012] [--zazor_hvost 0.05] [--golova_z 1.50] [--golova_x 0.25] [--griva_z 1.15] [--griva_x 0.42] [--hvost_z 1.0] [--hvost_y 0.12] [--hvost_x 9]
+      [--imya Волк] [--zazor 0.012] [--zazor_hvost 0.05] [--golova_z 1.50] [--golova_x 0.25] [--griva_z 1.15] [--griva_x 0.42] [--hvost_z 1.0] [--hvost_y 0.12] [--hvost_x 9] [--bez_kostej плечо,предплечье]
       [--ostrov 400] [--lapy_z 0.32] [--stupen 2|1 [--st1_y -0.02] [--st1_z 1.62] [--st1_zatylok 0.06] [--st1_verh 1.70] [--st1_hvost 0.65] [--st1_niz 1.30] [--ves1 0.5]] [--prizhim_d 0.06 --prizhim_k 0.35] [--dvustor 1] [--tselikom 1] [--dolya 0.08] [--shots префикс]
 Вход `ключ.blend` — сохранённый `kluch_vida.py --blend` (меш шасси с ключом и арматурой). Печатает «КУСОК: …».
 """
@@ -112,6 +112,18 @@ for f in bm.faces:
         continue
     if not (head or mane or tail or paw):
         kill.append(f)
+# БЕЗ КОСТЕЙ (`--bez_kostej плечо,предплечье,…`, 21.10, критик r5): цель колонки переведена в позу голого тела, но её руки
+# вынесены вперёд — «колонка минус тело» оставляла их обрезки, в позе они висели у колен. Грань, у которой главная кость
+# (по весам `--vesa`) из списка, выбрасывается
+BEZK = set(x for x in opt.get('bez_kostej', '').split(',') if x)
+if BEZK and VESA:
+    kill_s = set(kill)
+    for f in bm.faces:
+        if f in kill_s: continue
+        sc_ = {}
+        for v in f.verts:
+            for nm, x in VESA[v.index].items(): sc_[nm] = sc_.get(nm, 0.0) + x
+        if sc_ and max(sc_, key=sc_.get).split('.')[0] in BEZK: kill.append(f)
 bmesh.ops.delete(bm, geom=kill, context='FACES')
 
 # 3. островки
