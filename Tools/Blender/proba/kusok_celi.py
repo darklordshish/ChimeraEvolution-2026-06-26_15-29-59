@@ -14,7 +14,7 @@
      на ступени 2 вида-ключа, снимает `skryvaet`, черты `zamenyaet_cherty` не ставит).
 
   blender -b --factory-startup -P kusok_celi.py -- ключ.blend цель.obj выход.fbx паспорт.json
-      [--imya Волк] [--zazor 0.012] [--zazor_hvost 0.05] [--golova_z 1.50] [--golova_x 0.25] [--griva_z 1.15] [--griva_x 0.42] [--hvost_z 1.0] [--hvost_y 0.12] [--hvost_x 9] [--bez_kostej плечо,предплечье]
+      [--imya Волк] [--zazor 0.012] [--zazor_hvost 0.05] [--golova_z 1.50] [--golova_x 0.25] [--griva_z 1.15] [--griva_x 0.42] [--hvost_z 1.0] [--hvost_y 0.12] [--hvost_x 9] [--bez_kostej плечо,предплечье] [--kisti_z 0.9] [--hvost_naklon 20]
       [--ostrov 400] [--lapy_z 0.32] [--stupen 2|1 [--st1_y -0.02] [--st1_z 1.62] [--st1_zatylok 0.06] [--st1_verh 1.70] [--st1_hvost 0.65] [--st1_niz 1.30] [--ves1 0.5]] [--prizhim_d 0.06 --prizhim_k 0.35 [--prizhim_verh 1.45]] [--dvustor 1] [--tselikom 1] [--dolya 0.08] [--shots префикс]
 Вход `ключ.blend` — сохранённый `kluch_vida.py --blend` (меш шасси с ключом и арматурой). Печатает «КУСОК: …».
 """
@@ -94,6 +94,7 @@ gap, gz, mz, mx, hz, hy, gt, pz = (float(opt[k]) for k in ('zazor', 'golova_z', 
 bm = bmesh.new(); bm.from_mesh(t.data); bm.faces.ensure_lookup_table()
 n_all = len(bm.faces)
 kill = []
+KISTI = float(opt.get('kisti_z', '0'))
 for f in bm.faces:
     c = f.calc_center_median()
     d = bvh.find_nearest(c)[3]
@@ -103,6 +104,13 @@ for f in bm.faces:
     # `--hvost_x` (21.10, критик r1: хвост начинался на талии и шириной 45 см закрывал ягодицы фартуком) — только у средней линии
     tail = tail and abs(c.x) < float(opt.get('hvost_x', '9'))
     paw = c.z < pz and abs(c.x) > 0.12          # лапы цели ниже скакательного: накрывают стопу шасси «на носке» (у цели лапа длинная, с пальцами)
+    # КИСТИ (`--kisti_z 0.9`, 21.10, ГеймБосс по листу r8: «кисти — кулаки без когтей»): грани, у которых главная кость по
+    # весам `--vesa` — предплечье, ниже запястья покоя К2 (0.90 м) — кисть цели с когтями целиком
+    if KISTI and VESA:
+        sc_ = {}
+        for v in f.verts:
+            for nm, x in VESA[v.index].items(): sc_[nm] = sc_.get(nm, 0.0) + x
+        paw = paw or (bool(sc_) and max(sc_, key=sc_.get).startswith('предплечье') and c.z < KISTI)
     if STEP < 2:
         # ст.1 (лист, колонка 2): голова человеческая, стопа ещё не лапа; грива — за головой и по спине, спереди лицо открыто
         head = paw = False
@@ -200,6 +208,20 @@ if STEP < 2 and float(opt['st1_hvost']) != 1.0:
     for v in t.data.vertices:
         if root is not None and v.co.z < hz and v.co.y > hy - 0.04:
             v.co = root + (v.co - root) * float(opt['st1_hvost'])
+# ДУГА ХВОСТА (`--hvost_naklon 20`, 21.10, q-hvost-duga: хвост висел отвесно, у колонки ~45° назад): вершины хвоста (ниже
+# `--hvost_z`, позади `--hvost_y`) поворачиваются вокруг корня (верхняя точка хвоста) по оси X — «+» отводит назад; доля
+# поворота растёт от корня к кончику, хвост гнётся дугой, а не ломается у основания
+HN = float(opt.get('hvost_naklon', '0'))
+if HN:
+    import math
+    tv = [v for v in t.data.vertices if v.co.z < hz and v.co.y > hy - 0.04 and abs(v.co.x) < 0.2]
+    if tv:
+        root = max(tv, key=lambda v: v.co.z).co.copy(); dl = max(1e-3, root.z - min(v.co.z for v in tv))
+        for v in tv:
+            u = min(1.0, max(0.0, (root.z - v.co.z) / dl)); a_ = math.radians(HN) * (0.4 + 0.6 * u)
+            d_ = v.co - root; cy, cz = math.cos(a_), math.sin(a_)
+            v.co = root + Vector((d_.x, d_.y * cy - d_.z * cz, d_.y * cz + d_.z * cy))
+        print('КУСОК: хвост отведён назад на %g° (%d вершин)' % (HN, len(tv)))
 if opt.get('dvustor', '0') == '1':
     # ОБОРОТНАЯ СТОРОНА: кусок меха — открытая оболочка, изнутри (из-за головы, из-под пряди) видна пустота и тёмная дыра
     # отсечённых граней; копия граней с обратной нормалью закрывает её (материал односторонний)
