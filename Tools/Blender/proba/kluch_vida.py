@@ -14,7 +14,7 @@ Hunyuan) переносится на ТОПОЛОГИЮ меша шасси (ч�
   5. СУСТАВЫ ЦЕЛИ — те же суставы шасси, перенесённые пластиной, — файлом рядом (формат `*-skelet.json`).
 
   blender -b --factory-startup -P kluch_vida.py -- шасси.blend цель.obj ориентиры.json выход.fbx скелет_шасси.json суставы_цели.json
-      [--imya Волк] [--iter 4] [--smooth 6] [--maxd 0.08] [--maxd_obj голова:0.025,шея:0.025 [--zatylok y]] [--bez Чутьё] [--lam 1e-4] [--gladit N [--voxel 0.012]] [--rasput 60] [--polosa Ноги:0.40:0.80:20] [--skuly k:yc:zc:r] [--bez_zony Ноги:0.14] [--plechi k] [--grud kd] [--taz kt] [--golova_zhestko 1 [--golova_vverh r] [--golova_vpered d]] [--korpus 1] [--chasti 1] [--mesta паспорт.json,… [--posadka тип:вперёд:вверх[:масштаб[:наклон]],…]] [--kupol f:zb:yb]
+      [--imya Волк] [--iter 4] [--smooth 6] [--maxd 0.08] [--maxd_obj голова:0.025,шея:0.025 [--zatylok y]] [--bez Чутьё] [--lam 1e-4] [--gladit N [--voxel 0.012]] [--rasput 60] [--polosa Ноги:0.40:0.80:20] [--skuly k:yc:zc:r] [--bez_zony Ноги:0.14] [--plechi k] [--grud kd] [--taz kt] [--golova_zhestko 1 [--golova_vverh r] [--golova_vpered d]] [--korpus 1] [--chasti 1 [--chasti_dal м]] [--mesta паспорт.json,… [--posadka тип:вперёд:вверх[:масштаб[:наклон]],…]] [--kupol f:zb:yb]
   blender -b --factory-startup -P kluch_vida.py -- шасси.blend - - - скелет_шасси.json - --istochnik ориентиры_шасси.json
 """
 import sys, json, math
@@ -203,7 +203,10 @@ if CHASTI:
     bm.faces.ensure_lookup_table()
     fpart = {}
     for f_ in bm.faces:
-        c_ = f_.calc_center_median(); fpart.setdefault(min(segs, key=lambda s_: seg_d(c_, s_[1], s_[2]))[0], []).append(f_)
+        c_ = f_.calc_center_median(); best_ = min(segs, key=lambda s_: seg_d(c_, s_[1], s_[2]))
+        # грани цели дальше `--chasti_dal` от всех костей (хвост, отлетающие пряди гривы) — ни к какой части: тело к ним не тянется
+        if seg_d(c_, best_[1], best_[2]) > float(opt.get('chasti_dal', '9')): continue
+        fpart.setdefault(best_[0], []).append(f_)
     BVH_P = {}
     for pn, fl in fpart.items():
         vs = {}; polys = []
