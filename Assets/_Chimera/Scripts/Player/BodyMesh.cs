@@ -85,6 +85,7 @@ public static class BodyMesh
     public static int Place(Transform container, Transform skeleton, GameObject model, Material mat, ICollection<string> skipSlots = null,
                             IReadOnlyDictionary<string, float> keys = null, SpeciesSO jointsOf = null)
     {
+        Dictionary<string, (Vector3 pos, Quaternion rot)> chassisRest = null;
         var bones = new Dictionary<string, Transform>();
         foreach (var t in skeleton.GetComponentsInChildren<Transform>(true))
             if (t != skeleton && !bones.ContainsKey(t.name)) bones[t.name] = t;
@@ -102,6 +103,7 @@ public static class BodyMesh
             foreach (var src in renderers)
                 foreach (var b in src.bones)
                     if (b != null) Resolve(b, bones, srcBones, model.transform, container, skeleton);
+            chassisRest = KeyPose.Rest(container, skeleton);   // покой шасси — от него считается поза ступени
             KeySkeleton.Apply(container, skeleton, jointsOf, keys);
         }
 
@@ -176,6 +178,8 @@ public static class BodyMesh
             if (mat != null) smr.sharedMaterial = mat;
             placed++;
         }
+        // ПОЗА СТУПЕНИ — ПОСЛЕ ПРИВЯЗКИ: кости поворачиваются, и кожа гнётся за ними (до привязки поза запеклась бы в покой)
+        if (placed > 0) KeyPose.Apply(container, skeleton, jointsOf, keys, chassisRest);
         return placed;
     }
 

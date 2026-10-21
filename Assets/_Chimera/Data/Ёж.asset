@@ -166,7 +166,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 925336263537459601
+    - rid: 925336263560266510
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -2764,8 +2764,8 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: "\u0401\u0436"
     abilities:
-    - rid: 925336263537459602
-    - rid: 925336263537459603
+    - rid: 925336263560266511
+    - rid: 925336263560266512
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -2865,8 +2865,8 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: "\u0401\u0436"
     abilities:
-    - rid: 925336263537459604
-    - rid: 925336263537459605
+    - rid: 925336263560266513
+    - rid: 925336263560266514
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -4180,6 +4180,7 @@ MonoBehaviour:
   traits: []
   seats: []
   keyJoints: []
+  keyPose: []
   keyStages: []
   skinCell: 0.042
   skinBlend: 0.05
@@ -4188,7 +4189,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 925336263537459601
+    - rid: 925336263560266510
       type: {class: VolleyData, ns: , asm: Chimera.Runtime}
       data:
         damagePerQuill: 4
@@ -4203,14 +4204,14 @@ MonoBehaviour:
         windupTime: 0.5
         cooldown: 2.5
         blindAimError: 1.6
-    - rid: 925336263537459602
+    - rid: 925336263560266511
       type: {class: RollData, ns: , asm: Chimera.Runtime}
       data:
         damage: 10
         bleedStacks: 1
         knockForce: 8
         radius: 1.2
-    - rid: 925336263537459603
+    - rid: 925336263560266512
       type: {class: CurlData, ns: , asm: Chimera.Runtime}
       data:
         curlArmor: 0.6
@@ -4219,7 +4220,7 @@ MonoBehaviour:
         rollDrain: 40
         rollTurnSpeed: 90
         rollGravity: 20
-    - rid: 925336263537459604
+    - rid: 925336263560266513
       type: {class: BiteData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
@@ -4231,7 +4232,7 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.4
         cooldown: 0.7
-    - rid: 925336263537459605
+    - rid: 925336263560266514
       type: {class: ConstrictData, ns: , asm: Chimera.Runtime}
       data:
         maxStage: 1
