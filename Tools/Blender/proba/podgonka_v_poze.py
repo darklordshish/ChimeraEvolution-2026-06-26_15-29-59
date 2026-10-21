@@ -14,7 +14,7 @@
   4. обратно в покой: вершина умножается на обратную матрицу своего скина; результат — форма-ключ `--imya`.
 
   blender -b --factory-startup -P podgonka_v_poze.py -- шасси.blend цель.obj ориентиры_цели.json скелет_шасси.json выход.blend
-      [--imya Волк] [--zhestkost 30,15,8,4] [--normal 0.5] [--maxd 0.25] [--dal 0.12] [--bez голова,Чутьё] [--poza_obj файл.obj] [--poza файл.json] [--sustavy файл.json] [--cel_pokoj файл.obj] [--vstrechnye 1]
+      [--imya Волк] [--zhestkost 30,15,8,4] [--normal 0.5] [--maxd 0.25] [--dal 0.12] [--bez голова,Чутьё] [--poza_obj файл.obj] [--poza файл.json] [--sustavy файл.json] [--cel_pokoj файл.obj] [--vstrechnye 1 [--vstr_maxd 0.05|0.25,предплечье:0.05]]
 Ориентиры цели — имена как у `kluch_vida.py` (сустав:head/tail, носок, плюсна_вн/нар…), оси Blender, метры тела.
 """
 import sys, json
@@ -220,6 +220,12 @@ COSN = float(opt.get('normal', '0.5'))
 # на переднюю стенку, а бугор скакательного и копыто не доставались никому. Точка цели (центр грани своей части) тянет к
 # себе ближайшую вершину той же части; цель вершины — среднее всех её пар (как двусторонний NICP)
 VSTR = opt.get('vstrechnye', '0') == '1'
+# `--vstr_maxd` — свой предел встречной пары (критики r3/r2: когти цели вытягивали из кулаков шипы 15–20 см, низ головы — лоскуты на шее)
+# число — для всех частей, `часть:число` — своё (волку шерсть дальше 10 см от тела на ногах, а когти — только у кистей)
+VMAXD, VMAXP = float(opt['maxd']), {}
+for x_ in opt.get('vstr_maxd', opt['maxd']).split(','):
+    if ':' in x_: VMAXP[x_.split(':')[0]] = float(x_.split(':')[1])
+    else: VMAXD = float(x_)
 TS = {}
 if VSTR:
     for pn, fl in fpart.items():
@@ -246,7 +252,7 @@ for s_ in [float(v) for v in opt.get('zhestkost', '30,15,8,4').split(',')]:
                 for c_, n_ in zip(cs, ns):
                     co_, j, d_ = kd_.find(Vector(c_))
                     k = ids[j]
-                    if d_ > MAXD or np.dot(NX[k], n_) < COSN: continue
+                    if d_ > VMAXP.get(pn, VMAXD) or np.dot(NX[k], n_) < COSN: continue
                     acc[k] += c_; cnt[k] += 1
             has = cnt > 0
             C[has] = acc[has] / cnt[has][:, None]; M[has] = 1.0
