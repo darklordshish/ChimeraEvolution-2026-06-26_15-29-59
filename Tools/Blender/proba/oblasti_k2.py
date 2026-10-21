@@ -12,7 +12,7 @@
   «Чутьё.область»  голова (основания ушей и череп).
 Имена — `<орган>.область`: по слоту органа, как куски (`Organ.slot`).
 
-  blender -b --factory-startup -P oblasti_k2.py -- вход.blend выход.blend [--polosa 0.04] [--kadr префикс]
+  blender -b --factory-startup -P oblasti_k2.py -- вход.blend выход.blend [--polosa 0.04] [--kadr префикс] [--klyuchi Волк,Лось]
 """
 import sys
 import bpy
@@ -71,6 +71,36 @@ for o in body:
         for k in np.nonzero(w > 1e-3)[0]: g.add([int(k)], float(w[k]), 'REPLACE')
         itog[nm] = itog.get(nm, 0) + int(inside.sum())
 print('ОБЛАСТИ: ' + ', '.join('%s %d' % kv for kv in sorted(itog.items())))
+
+# КЛЮЧИ ОБЛАСТЕЙ (`--klyuchi Волк,Лось`, ГеймБосс 22.10: Unity не импортирует группы вершин, поэтому ключ области запекается
+# формой-ключом меша): «<ключ>·<слот>» = база + маска области × (ключ вида − база). Вес в игре — доля вида-донора органа
+# слота, с глобальным ключом — супремум (код ГеймБосса)
+if opt.get('klyuchi'):
+    n_k = 0
+    for o in body:
+        ks = o.data.shape_keys
+        if ks is None: continue
+        base = ks.key_blocks[0]
+        for kl in opt['klyuchi'].split(','):
+            if kl not in ks.key_blocks: continue
+            src_ = ks.key_blocks[kl]
+            for org in ('Руки', 'Сердце', 'Ноги', 'Шкура', 'Пасть', 'Чутьё'):
+                g = o.vertex_groups.get(org + '.область')
+                if g is None: continue
+                w = {}
+                for v in o.data.vertices:
+                    for ge in v.groups:
+                        if ge.group == g.index: w[v.index] = ge.weight
+                if not w: continue
+                nm = kl + '·' + org
+                if nm in ks.key_blocks: o.shape_key_remove(ks.key_blocks[nm])
+                kb = o.shape_key_add(name=nm, from_mix=False)
+                for vi in range(len(o.data.vertices)):
+                    b0 = base.data[vi].co; d = src_.data[vi].co - b0
+                    kb.data[vi].co = b0 + d * w.get(vi, 0.0)
+                n_k += 1
+    print('КЛЮЧИ ОБЛАСТЕЙ: %d форм-ключей (%s)' % (n_k, opt['klyuchi']))
+    bpy.ops.wm.save_as_mainfile(filepath=out)
 bpy.ops.wm.save_as_mainfile(filepath=out)
 
 if opt.get('kadr'):
