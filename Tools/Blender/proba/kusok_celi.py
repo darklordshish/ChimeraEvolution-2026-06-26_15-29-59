@@ -229,12 +229,11 @@ if opt.get('ushi'):
         base = [v.co for v in side if v.co.z < uz + 0.02]
         if not base: continue
         piv = sum(base, Vector()) / len(base)
-        # тянуть ВДОЛЬ оси уха (основание → кончик), ширину не трогать (критик r10: ×1.5 от центра ушло в ширину и толщину)
-        ax_ = (max(side, key=lambda v: v.co.z).co - piv).normalized()
+        # тянуть ВВЕРХ от основания (ось головы в покое вертикальна), ширину не трогать: ×k от центра ушло в ширину и толщину
+        # (критик r10), а «ось основание → верхняя вершина» сузила ухо (критик r11)
         for v in side:
             w = min(1.0, (v.co.x * sg - ux) / 0.03)
-            d_ = v.co - piv
-            v.co = v.co + ax_ * (d_.dot(ax_) * (uk - 1.0) * w)
+            v.co.z = v.co.z + (v.co.z - piv.z) * (uk - 1.0) * w
         print('КУСОК: уши ×%g, сторона %+d: %d вершин' % (uk, sg, len(side)))
 HN = float(opt.get('hvost_naklon', '0'))
 if HN:
