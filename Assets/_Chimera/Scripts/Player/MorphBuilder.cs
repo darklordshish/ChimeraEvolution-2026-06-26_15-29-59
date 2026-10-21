@@ -67,7 +67,11 @@ public static class MorphBuilder
             var bodySkeleton = BoneMesher.Build(container.transform, chassis, PrimitiveMaterial(), field: false);
             var bodyKeys = BodyMesh.KeysFor(chassis, wornOrgans);
             // кости — к суставам цели до привязки (внутри `Place`: после достройки костей модели)
-            if (BodyMesh.Place(container.transform, bodySkeleton, chassis.bodyMesh, PrimitiveMaterial(), null, bodyKeys, chassis) > 0) return;
+            if (BodyMesh.Place(container.transform, bodySkeleton, chassis.bodyMesh, PrimitiveMaterial(), null, bodyKeys, chassis) > 0)
+            {
+                KeyPose.Apply(container.transform, bodySkeleton, chassis, bodyKeys);   // поза — последней, после всей привязки
+                return;
+            }
             // в модели ни одного годного объекта — строим полем, как если бы её не было (ошибка уже в консоли)
             bodySkeleton.name = "Skeleton~dead"; bodySkeleton.gameObject.SetActive(false); Kill(bodySkeleton.gameObject);
             chassis = ChainSwap.Compose(chassis, wornOrgans);
@@ -99,6 +103,8 @@ public static class MorphBuilder
             }
             foreach (var own in ownOnClaimed) PartAssembly.Place(container.transform, chassis, own, pureChassis, PrimitiveMaterial());
             PartAssembly.ApplyWelds(container.transform);   // проёмы тела — к общим кольцам сваренных кусков
+            // ПОЗА СТУПЕНИ — ПОСЛЕДНЕЙ: и меш тела, и куски органов привязаны к скелету в покое, поворот костей гнёт всех разом
+            KeyPose.Apply(container.transform, chimeraSkeleton, pureChassis, chimeraKeys);
             return;
         }
 

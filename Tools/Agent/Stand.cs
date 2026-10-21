@@ -287,6 +287,17 @@ public static class Stand
 
     // ── внутреннее ──────────────────────────────────────────────────────────────────────
 
+    static Bounds VertexBounds(GameObject go)
+    {
+        bool any = false; var b = new Bounds();
+        void Add(Vector3 p) { if (!any) { b = new Bounds(p, Vector3.zero); any = true; } else b.Encapsulate(p); }
+        foreach (var r in go.GetComponentsInChildren<SkinnedMeshRenderer>())
+        { var m = new Mesh(); r.BakeMesh(m, true); foreach (var v in m.vertices) Add(r.transform.TransformPoint(v)); Object.DestroyImmediate(m); }
+        foreach (var f in go.GetComponentsInChildren<MeshFilter>())
+            if (f.sharedMesh != null && f.GetComponent<Renderer>() is Renderer rr && rr.enabled) foreach (var v in f.sharedMesh.vertices) Add(f.transform.TransformPoint(v));
+        return b;
+    }
+
     static List<Organ> Native(SpeciesSO species)
     {
         var worn = new List<Organ>();
@@ -337,8 +348,8 @@ public static class Stand
 
             var rends = body.GetComponentsInChildren<Renderer>();
             if (rends.Length == 0) { Object.DestroyImmediate(body); report.Add(label + ": пусто"); continue; }
-            var b = rends[0].bounds;
-            foreach (var r in rends) b.Encapsulate(r.bounds);
+            // ГАБАРИТ ПО ВЕРШИНАМ, а не по рамкам рендереров: рамка скин-меша в редакторе с запасом (голый человек выходил 2.22 м)
+            var b = VertexBounds(body);
 
             float width = front ? b.size.x : b.size.z;
             // ставим так, чтобы ЛЕВЫЙ край фигуры пришёлся на курсор: ряд идёт встык с просветом

@@ -38,6 +38,10 @@ namespace Chimera.Tests.EditMode
         static Transform Bone(GameObject go) => go.GetComponentsInChildren<Transform>(true).First(t => t.name == Spine);
         static Quaternion InBody(GameObject go, Transform t) => Quaternion.Inverse(go.transform.Find("Morph").rotation) * t.rotation;
 
+        static List<Matrix4x4[]> Binds(GameObject go) =>
+            go.GetComponentsInChildren<SkinnedMeshRenderer>(true).Where(r => r.sharedMesh != null)
+              .OrderBy(r => r.name).ThenBy(r => r.sharedMesh.vertexCount).Select(r => r.sharedMesh.bindposes).ToList();
+
         static IEnumerable<Vector3> Skin(GameObject go)
         {
             foreach (var r in go.GetComponentsInChildren<SkinnedMeshRenderer>(true))
@@ -77,6 +81,15 @@ namespace Chimera.Tests.EditMode
                 Assert.Less(Quaternion.Angle(InBody(withPose, Bone(withPose)), posed), 0.5f, "вес 1 — кость ровно в рамке позы");
                 var halfExpected = Quaternion.Slerp(InBody(halfNoPose, Bone(halfNoPose)), posed, BodyMesh.KeyStep1);
                 Assert.Less(Quaternion.Angle(InBody(halfPose, Bone(halfPose)), halfExpected), 0.5f, "ступень 1 — от покоя к позе по сфере на вес ступени");
+
+                // ПРИВЯЗКА — В ПОКОЕ У ВСЕХ: меш тела и куски органов привязаны до позы, поэтому их bindposes с позой и без
+                // одинаковы (22.10: поза стояла внутри меша тела, куски Рук привязывались к повёрнутым костям и висели в покое)
+                var bindA = Binds(halfNoPose); var bindB = Binds(halfPose);
+                Assert.AreEqual(bindA.Count, bindB.Count, "те же рендереры");
+                for (int i = 0; i < bindA.Count; i++)
+                    for (int k = 0; k < bindA[i].Length; k++)
+                        for (int e = 0; e < 16; e++)
+                            Assert.AreEqual(bindA[i][k][e], bindB[i][k][e], 1e-4f, $"привязка рендерера №{i} кости №{k} снята не в покое");
 
                 float moved = Skin(noPose).Zip(Skin(withPose), (a, b) => (a - b).magnitude).Max();
                 Assert.Greater(moved, 0.05f, "кожа гнётся за костью — поза после привязки, а не запечена в покой");
