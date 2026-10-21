@@ -4,46 +4,34 @@ using UnityEngine;
 
 /// <summary>ПОЗА СТУПЕНИ (решение 21.10, развилка модельной линии «Б»; спека двух слоёв: поза — глобальный слой; консилиум
 /// формы: «длины и поза — в костях, в ключе только масса»). Форма-ключ несёт тело цели В ПОКОЕ шасси, а сутулость, вынос
-/// головы и согнутые колени цели — это поворот костей. Поэтому после привязки меша кости поворачиваются от покоя шасси к позе
+/// головы и согнутые колени цели — это поворот костей. Поэтому после привязки меша кости поворачиваются от покоя к позе
 /// цели (`SpeciesSO.keyPose`, поставка `klyuchi/<вид>-<цель>-poza.json`) на вес ключа — сферически, и кожа гнётся за ними.
-///     Поворот кости — её мировой сдвиг от покоя ШАССИ (рамки до суставов цели) к позе: D = поза · покой⁻¹. На вес w кость
-/// встаёт в slerp(1, D, w) · (её покой после суставов цели) — длины остаются от суставов, поза — от файла. Сверху вниз:
-/// дети едут за родителем, свою рамку ставят сами. Корень ещё и сдвигается (таз цели ниже и сзади) — лерп тем же весом.
-/// При весе 0 тело ровно в покое — сторож `KeyPoseTests`.</summary>
+///     Рамка кости — slerp(покой, поза, w): покой — после суставов цели (`KeySkeleton`), поза — рамка из файла. Сверху вниз:
+/// поворот родителя тянет детей (их головы встают туда, куда их ведёт цепь), свою рамку ребёнок ставит сам. Корень ещё и
+/// сдвигается (таз цели ниже и сзади): лерп от покоя к head позы. Суставы цели в покое (`sustavy`) модельная линия выводит
+/// этой же цепью, поэтому при весе 1 все суставы встают ровно в позу файла.
+///     Прежде поворот считался разностью «поза · покой шасси⁻¹» и ставился поверх покоя суставов. Это требует, чтобы рамки
+/// покоя шасси в графе и в риге модельной линии совпадали. У бедра и шеи они расходились на 17–18°, и стопа уезжала на
+/// 26 см (21.10). Рамка позы напрямую от рамок покоя шасси не зависит. Сторож — `KeyPoseTests`.</summary>
 public static class KeyPose
 {
-    /// <summary>Рамки костей в системе тела — снимать ДО суставов цели: от них считается поворот позы.</summary>
-    public static Dictionary<string, (Vector3 pos, Quaternion rot)> Rest(Transform container, Transform skeleton)
+    public static int Apply(Transform container, Transform skeleton, SpeciesSO species, IReadOnlyDictionary<string, float> keys)
     {
-        var res = new Dictionary<string, (Vector3, Quaternion)>();
-        if (skeleton == null) return res;
-        foreach (var t in skeleton.GetComponentsInChildren<Transform>(true))
-            if (t != skeleton && !res.ContainsKey(t.name))
-                res[t.name] = (container.InverseTransformPoint(t.position), Quaternion.Inverse(container.rotation) * t.rotation);
-        return res;
-    }
-
-    public static int Apply(Transform container, Transform skeleton, SpeciesSO species, IReadOnlyDictionary<string, float> keys,
-                            Dictionary<string, (Vector3 pos, Quaternion rot)> chassisRest)
-    {
-        if (skeleton == null || species?.keyPose == null || species.keyPose.Length == 0 || keys == null || chassisRest == null) return 0;
+        if (skeleton == null || species?.keyPose == null || species.keyPose.Length == 0 || keys == null) return 0;
         var (key, w) = keys.Where(kv => kv.Value > 1e-4f).Select(kv => (kv.Key, Mathf.Clamp01(kv.Value))).FirstOrDefault();
         if (key == null) return 0;
         var pose = species.keyPose.Where(j => j != null && j.key == key).GroupBy(j => j.bone).ToDictionary(g => g.Key, g => g.First());
         if (pose.Count == 0) return 0;
 
-        var bones = skeleton.GetComponentsInChildren<Transform>(true)
-                            .Where(t => t != skeleton && pose.ContainsKey(t.name) && chassisRest.ContainsKey(t.name)).ToList();
-        // покой ПОСЛЕ суставов цели — снимается до поворотов: родитель повернётся и потянет детей
+        var bones = skeleton.GetComponentsInChildren<Transform>(true).Where(t => t != skeleton && pose.ContainsKey(t.name)).ToList();
+        // покой (после суставов цели) — снимается до поворотов: родитель повернётся и потянет детей
         var now = bones.ToDictionary(t => t, t => (pos: container.InverseTransformPoint(t.position), rot: Quaternion.Inverse(container.rotation) * t.rotation));
         int moved = 0;
         foreach (var t in bones.OrderBy(Depth))
         {
             var j = pose[t.name];
-            var (k2Pos, k2Rot) = chassisRest[t.name];
-            var d = Quaternion.LookRotation(j.forward, j.along) * Quaternion.Inverse(k2Rot);
-            t.rotation = container.rotation * Quaternion.Slerp(Quaternion.identity, d, w) * now[t].rot;
-            if (IsRoot(t)) t.position = container.TransformPoint(now[t].pos + (j.head - k2Pos) * w);
+            t.rotation = container.rotation * Quaternion.Slerp(now[t].rot, Quaternion.LookRotation(j.forward, j.along), w);
+            if (IsRoot(t)) t.position = container.TransformPoint(Vector3.Lerp(now[t].pos, j.head, w));   // в полной позе корень — точка позы
             moved++;
         }
         return moved;

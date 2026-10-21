@@ -7,7 +7,8 @@ using UnityEngine;
 namespace Chimera.Tests.EditMode
 {
     /// <summary>ПОЗА СТУПЕНИ (`KeyPose`, решение 21.10): кости поворачиваются от покоя шасси к позе цели на вес ключа —
-    /// сферически и после привязки, так что кожа гнётся за ними. Позу подаём руками: хребет наклонён на 20°.</summary>
+    /// сферически и после привязки, так что кожа гнётся за ними. Позу подаём руками: хребет наклонён на 20° от покоя человека.
+    /// Поставку модельной линии сверяет `Pose_FromHandoff_JointsLandOnPoseHeads` (молчит, пока файла позы в handoff нет).</summary>
     public class KeyPoseTests
     {
         const string Spine = "хребет";
@@ -73,9 +74,9 @@ namespace Chimera.Tests.EditMode
                 var withPose = Build(human, full); made.Add(withPose);
                 var halfPose = Build(human, half); made.Add(halfPose);
 
-                Assert.Less(Quaternion.Angle(InBody(withPose, Bone(withPose)), Tilt * InBody(noPose, Bone(noPose))), 0.5f, "вес 1 — поворот позы целиком");
-                var halfTilt = Quaternion.Slerp(Quaternion.identity, Tilt, BodyMesh.KeyStep1);
-                Assert.Less(Quaternion.Angle(InBody(halfPose, Bone(halfPose)), halfTilt * InBody(halfNoPose, Bone(halfNoPose))), 0.5f, "ступень 1 — по сфере на вес ступени");
+                Assert.Less(Quaternion.Angle(InBody(withPose, Bone(withPose)), posed), 0.5f, "вес 1 — кость ровно в рамке позы");
+                var halfExpected = Quaternion.Slerp(InBody(halfNoPose, Bone(halfNoPose)), posed, BodyMesh.KeyStep1);
+                Assert.Less(Quaternion.Angle(InBody(halfPose, Bone(halfPose)), halfExpected), 0.5f, "ступень 1 — от покоя к позе по сфере на вес ступени");
 
                 float moved = Skin(noPose).Zip(Skin(withPose), (a, b) => (a - b).magnitude).Max();
                 Assert.Greater(moved, 0.05f, "кожа гнётся за костью — поза после привязки, а не запечена в покой");
@@ -85,6 +86,26 @@ namespace Chimera.Tests.EditMode
                 human.keyPose = saved;
                 foreach (var g in made) Object.DestroyImmediate(g);
             }
+        }
+
+        /// <summary>Поставка позы: при весе 1 головы всех костей из файла встают в его head — цепь кода и цепь, которой модельная
+        /// линия выводит суставы покоя, одна и та же (21.10 разошлись: стопа уезжала на 26 см).</summary>
+        [Test]
+        public void Pose_FromHandoff_JointsLandOnPoseHeads()
+        {
+            var human = Load("Человек"); var wolf = Load("Волк");
+            var pose = human.keyPose?.Where(j => j != null && j.key == "Волк").ToList();
+            if (pose == null || pose.Count == 0) Assert.Ignore("файла позы «Волк» в handoff нет");
+            var go = Build(human, WolfOn(human, wolf, 99));
+            try
+            {
+                var c = go.transform.Find("Morph");
+                var all = c.GetComponentsInChildren<Transform>(true);
+                var worst = pose.Select(j => (j.bone, d: all.Where(t => t.name == j.bone).Select(t => (c.InverseTransformPoint(t.position) - j.head).magnitude).DefaultIfEmpty(0f).Min()))
+                                .OrderByDescending(x => x.d).First();
+                Assert.Less(worst.d, 0.01f, $"сустав «{worst.bone}» мимо позы на {worst.d:0.000} м");
+            }
+            finally { Object.DestroyImmediate(go); }
         }
 
         [Test]
