@@ -14,7 +14,7 @@
   4. обратно в покой: вершина умножается на обратную матрицу своего скина; результат — форма-ключ `--imya`.
 
   blender -b --factory-startup -P podgonka_v_poze.py -- шасси.blend цель.obj ориентиры_цели.json скелет_шасси.json выход.blend
-      [--imya Волк] [--zhestkost 30,15,8,4] [--normal 0.5] [--maxd 0.25] [--dal 0.12] [--bez голова,Чутьё] [--poza_obj файл.obj] [--poza файл.json] [--sustavy файл.json] [--cel_pokoj файл.obj]
+      [--imya Волк] [--zhestkost 30,15,8,4] [--normal 0.5] [--maxd 0.25] [--dal 0.12] [--bez голова,Чутьё] [--poza_obj файл.obj] [--poza файл.json] [--sustavy файл.json] [--cel_pokoj файл.obj] [--vstrechnye 1]
 Ориентиры цели — имена как у `kluch_vida.py` (сустав:head/tail, носок, плюсна_вн/нар…), оси Blender, метры тела.
 """
 import sys, json
@@ -215,6 +215,15 @@ def normals(Y):
 X0 = X.copy(); D0 = lap(X0)
 FREE = np.array(free)
 COSN = float(opt.get('normal', '0.5'))
+# ВСТРЕЧНЫЕ ПАРЫ (`--vstrechnye 1`, 21.10, критик лося: «голень — труба без скакательного сустава» при среднем расстоянии
+# тела до цели 0.45 см): пара «вершина → ближайшая точка цели» не требует, чтобы цель была ПОКРЫТА — вершины голени ложились
+# на переднюю стенку, а бугор скакательного и копыто не доставались никому. Точка цели (центр грани своей части) тянет к
+# себе ближайшую вершину той же части; цель вершины — среднее всех её пар (как двусторонний NICP)
+VSTR = opt.get('vstrechnye', '0') == '1'
+TS = {}
+if VSTR:
+    for pn, fl in fpart.items():
+        TS[pn] = (np.array([list(f_.calc_center_median()) for f_ in fl]), np.array([list(f_.normal) for f_ in fl]))
 for s_ in [float(v) for v in opt.get('zhestkost', '30,15,8,4').split(',')]:
     for _ in range(2):
         NX = normals(X)
@@ -225,6 +234,22 @@ for s_ in [float(v) for v in opt.get('zhestkost', '30,15,8,4').split(',')]:
             if hit[0] is None or hit[3] > MAXD: continue
             if np.dot(NX[k], np.array(hit[1])) < COSN: continue
             C[k] = np.array(hit[0]); M[k] = 1.0
+        if VSTR:
+            acc = np.zeros_like(X); cnt = np.zeros(N)
+            acc[M == 1] = C[M == 1]; cnt[M == 1] = 1
+            for pn, (cs, ns) in TS.items():
+                ids = [k for k in range(N) if FREE[k] and vpart[k] == pn]
+                if not ids: continue
+                kd_ = kdtree.KDTree(len(ids))
+                for j, k in enumerate(ids): kd_.insert(Vector(X[k]), j)
+                kd_.balance()
+                for c_, n_ in zip(cs, ns):
+                    co_, j, d_ = kd_.find(Vector(c_))
+                    k = ids[j]
+                    if d_ > MAXD or np.dot(NX[k], n_) < COSN: continue
+                    acc[k] += c_; cnt[k] += 1
+            has = cnt > 0
+            C[has] = acc[has] / cnt[has][:, None]; M[has] = 1.0
         # несвободные (голова) держатся на месте жёстко
         M[~FREE] = 10.0; C[~FREE] = X0[~FREE]
         A = lambda Y: s_ * lapT(lap(Y)) + M[:, None] * Y
@@ -239,6 +264,19 @@ for s_ in [float(v) for v in opt.get('zhestkost', '30,15,8,4').split(',')]:
     print('ПОДГОНКА: жёсткость %.1f, пар %d из %d' % (s_, int((M == 1).sum()), int(FREE.sum())))
 res = [BVH[vpart[k]].find_nearest(Vector(X[k]))[3] for k in range(N) if free[k] and vpart[k] in BVH]
 print('ПОДГОНКА: до своей части цели — средн. %.4f м, 95%% %.4f' % (float(np.mean(res)), float(np.percentile(res, 95))))
+# обратная мера — ПОКРЫТИЕ: от точки цели (центр грани своей части) до ближайшей вершины тела той же части; пара «тело → цель»
+# мала и тогда, когда тело легло на одну стенку цели
+cov = {}
+for pn, fl in fpart.items():
+    ids = [k for k in range(N) if vpart[k] == pn]
+    if not ids: continue
+    kd_ = kdtree.KDTree(len(ids))
+    for j, k in enumerate(ids): kd_.insert(Vector(X[k]), j)
+    kd_.balance()
+    cov[pn] = [kd_.find(f_.calc_center_median())[2] for f_ in fl]
+allc = np.concatenate([np.array(v) for v in cov.values()])
+print('ПОКРЫТИЕ: от цели до тела — средн. %.4f м, 95%% %.4f; по частям 95%%: %s' % (float(allc.mean()), float(np.percentile(allc, 95)),
+      ', '.join('%s %.3f' % (pn, float(np.percentile(v, 95))) for pn, v in sorted(cov.items()))))
 
 if opt.get('poza_obj'):
     # тело в позе цели (до возврата в покой) — для кадра «подгонка против цели»; `--poza_obj файл.obj` (оси Blender)
