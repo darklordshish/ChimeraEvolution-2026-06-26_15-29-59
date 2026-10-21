@@ -14,7 +14,7 @@
   4. обратно в покой: вершина умножается на обратную матрицу своего скина; результат — форма-ключ `--imya`.
 
   blender -b --factory-startup -P podgonka_v_poze.py -- шасси.blend цель.obj ориентиры_цели.json скелет_шасси.json выход.blend
-      [--imya Волк] [--zhestkost 20,10,5,2,1] [--normal 0.3] [--maxd 0.25] [--dal 0.12] [--bez голова,Чутьё] [--poza_obj файл.obj]
+      [--imya Волк] [--zhestkost 30,15,8,4] [--normal 0.5] [--maxd 0.25] [--dal 0.12] [--bez голова,Чутьё] [--poza_obj файл.obj]
 Ориентиры цели — имена как у `kluch_vida.py` (сустав:head/tail, носок, плюсна_вн/нар…), оси Blender, метры тела.
 """
 import sys, json
@@ -214,8 +214,8 @@ def normals(Y):
     l = np.linalg.norm(nrm, axis=1); l[l == 0] = 1; return nrm / l[:, None]
 X0 = X.copy(); D0 = lap(X0)
 FREE = np.array(free)
-COSN = float(opt.get('normal', '0.3'))
-for s_ in [float(v) for v in opt.get('zhestkost', '20,10,5,2,1').split(',')]:
+COSN = float(opt.get('normal', '0.5'))
+for s_ in [float(v) for v in opt.get('zhestkost', '30,15,8,4').split(',')]:
     for _ in range(2):
         NX = normals(X)
         C = X.copy(); M = np.zeros(N)
