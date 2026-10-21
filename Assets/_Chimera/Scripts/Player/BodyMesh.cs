@@ -127,6 +127,15 @@ public static class BodyMesh
             }
             // вершины → система модели: (кость в модели) × (её привязка) одна и та же для любой кости, пока модель в позе привязки
             Matrix4x4 toBody = InModel(src.bones[k], model.transform) * srcBind[k];
+            // СТОРОЖ ЭТОГО ДОПУЩЕНИЯ (22.10): объект, привязанный в FBX к скелету в другом покое, чем тело, переносится по одной
+            // кости верно, а вершины на остальных костях уезжают на разницу покоев (у @Волк голова ушла на 0.2 м под гриву)
+            for (int i = 0; i < src.bones.Length; i++)
+            {
+                if (src.bones[i] == null) continue;
+                var other = InModel(src.bones[i], model.transform) * srcBind[i];
+                float off = (other.GetColumn(3) - toBody.GetColumn(3)).magnitude;
+                if (off > 0.01f) { Debug.LogError($"[меш вида] {model.name}/{src.name}: привязка кости «{src.bones[i].name}» не в покое модели (расхождение {off:0.000} м) — объект привязан к другому скелету, перевыгрузить с общей арматурой"); break; }
+            }
 
             var ours = new Transform[src.bones.Length];
             var bind = new Matrix4x4[src.bones.Length];
