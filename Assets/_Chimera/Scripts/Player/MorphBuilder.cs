@@ -69,7 +69,7 @@ public static class MorphBuilder
             // кости — к суставам цели до привязки (внутри `Place`: после достройки костей модели)
             if (BodyMesh.Place(container.transform, bodySkeleton, chassis.bodyMesh, PrimitiveMaterial(), null, bodyKeys, chassis) > 0)
             {
-                KeyPose.Apply(container.transform, bodySkeleton, chassis, bodyKeys);   // поза — последней, после всей привязки
+                KeyPose.ApplyAfterBind(container.transform, bodySkeleton, chassis, bodyKeys);   // суставы и поза — последними, после всей привязки
                 return;
             }
             // в модели ни одного годного объекта — строим полем, как если бы её не было (ошибка уже в консоли)
@@ -99,7 +99,8 @@ public static class MorphBuilder
             }
             var ownOnClaimed = PartAssembly.OwnOnClaimed(pureChassis, wornOrgans, onBody).Where(o => !ByStage(o)).ToList();
             foreach (var own in ownOnClaimed) if (!string.IsNullOrEmpty(own.objectSlot)) given.Add(own.objectSlot);
-            BodyMesh.Place(container.transform, chimeraSkeleton, pureChassis.bodyMesh, PrimitiveMaterial(), given, chimeraKeys, pureChassis);
+            BodyMesh.Place(container.transform, chimeraSkeleton, pureChassis.bodyMesh, PrimitiveMaterial(), given, chimeraKeys, pureChassis,
+                           BodyMesh.RegionKeysFor(pureChassis, wornOrgans));   // органы прорастают формой своей области
             // куски, забравшие место целиком (голова), — первыми: органы на этом месте садятся на места самого куска
             foreach (var (part, donor) in onBody.OrderBy(p => PartAssembly.Claimed(p.part, p.donor) == null))
             {
@@ -110,7 +111,7 @@ public static class MorphBuilder
             foreach (var own in ownOnClaimed) PartAssembly.Place(container.transform, chassis, own, pureChassis, PrimitiveMaterial());
             PartAssembly.ApplyWelds(container.transform);   // проёмы тела — к общим кольцам сваренных кусков
             // ПОЗА СТУПЕНИ — ПОСЛЕДНЕЙ: и меш тела, и куски органов привязаны к скелету в покое, поворот костей гнёт всех разом
-            KeyPose.Apply(container.transform, chimeraSkeleton, pureChassis, chimeraKeys);
+            KeyPose.ApplyAfterBind(container.transform, chimeraSkeleton, pureChassis, chimeraKeys);
             return;
         }
 

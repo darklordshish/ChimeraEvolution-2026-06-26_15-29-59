@@ -82,9 +82,14 @@ namespace Chimera.Tests.EditMode
                 var halfExpected = Quaternion.Slerp(InBody(halfNoPose, Bone(halfNoPose)), posed, BodyMesh.KeyStep1);
                 Assert.Less(Quaternion.Angle(InBody(halfPose, Bone(halfPose)), halfExpected), 0.5f, "ступень 1 — от покоя к позе по сфере на вес ступени");
 
-                // ПРИВЯЗКА — В ПОКОЕ У ВСЕХ: меш тела и куски органов привязаны до позы, поэтому их bindposes с позой и без
-                // одинаковы (22.10: поза стояла внутри меша тела, куски Рук привязывались к повёрнутым костям и висели в покое)
-                var bindA = Binds(halfNoPose); var bindB = Binds(halfPose);
+                // ПРИВЯЗКА — В ПОКОЕ ШАССИ У ВСЕХ: меш тела и куски органов привязаны до суставов цели и позы, поэтому их bindposes
+                // от позы не зависят (22.10: куски Рук привязывались к повёрнутым костям и висели в покое; голова @Волк оседала
+                // от переноса суставов до привязки). Две разные позы — одна и та же привязка
+                var tilt2 = Quaternion.AngleAxis(35f, Vector3.right) * restRot;
+                human.keyPose = new[] { new KeyJoint { key = "Волк", bone = Spine, head = restPos, along = tilt2 * Vector3.up, forward = tilt2 * Vector3.forward } };
+                var halfPose2 = Build(human, half); made.Add(halfPose2);
+                human.keyPose = new[] { new KeyJoint { key = "Волк", bone = Spine, head = restPos, along = posed * Vector3.up, forward = posed * Vector3.forward } };
+                var bindA = Binds(halfPose2); var bindB = Binds(halfPose);
                 Assert.AreEqual(bindA.Count, bindB.Count, "те же рендереры");
                 for (int i = 0; i < bindA.Count; i++)
                     for (int k = 0; k < bindA[i].Length; k++)

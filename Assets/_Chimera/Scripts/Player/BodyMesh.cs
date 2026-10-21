@@ -73,6 +73,30 @@ public static class BodyMesh
         return keys;
     }
 
+    /// <summary>КЛЮЧИ ОБЛАСТЕЙ (спека `2026-10-21-organ-prorastaet-klyuch-oblasti.md`): орган слота прорастает формой своей области
+    /// вида-донора — форма-ключ меша шасси «&lt;вид&gt;·&lt;слот&gt;» (маска области × ключ вида, запекает модельная линия). Вес — доля
+    /// вида-донора в составе к порогу ступени 2 (на 85% область уже как у ступени 2). С глобальным ключом того же вида — СУПРЕМУМ:
+    /// формы-ключи складываются, поэтому область получает только недостающее, max(0, доля − вес глобального).
+    /// Свои органы шасси (родной вид) областей не дают.</summary>
+    public static Dictionary<string, float> RegionKeysFor(SpeciesSO chassis, IReadOnlyList<Organ> worn)
+    {
+        var res = new Dictionary<string, float>();
+        if (chassis == null || worn == null || ForceKey != null) return res;
+        var id = GlobalLayer.Identity(chassis, worn);
+        var global = KeysFor(chassis, worn);
+        foreach (var o in worn)
+        {
+            if (o == null || o.chassisOnly || string.IsNullOrEmpty(o.slot)) continue;
+            if (chassis.organs != null && System.Array.IndexOf(chassis.organs, o) >= 0) continue;
+            var owner = ChainSwap.OwnerOf(o);
+            if (owner == null || owner == chassis || !id.TryGetValue(owner, out var share)) continue;
+            float r = Mathf.Clamp01(share / GlobalLayer.MediumAt);
+            float g = global.TryGetValue(owner.speciesName, out var gw) ? gw : 0f;
+            res[owner.speciesName + "·" + o.slot] = Mathf.Max(0f, r - g);
+        }
+        return res;
+    }
+
     /// <summary>Вес ключа по ступени: 1 — ручка (лист: колонка 2 из «база · ст.1 · · ст.2»), 2 — полный ключ.
     /// Не `GlobalLayer.G`: тот смешивает пропорции поля с ЧИСТЫМ видом (вес 1 — родное шасси), а цель ключа — ступень 2.</summary>
     public static float KeyStep1 = 0.5f;
@@ -83,7 +107,7 @@ public static class BodyMesh
     public static float ForceWeight;
 
     public static int Place(Transform container, Transform skeleton, GameObject model, Material mat, ICollection<string> skipSlots = null,
-                            IReadOnlyDictionary<string, float> keys = null, SpeciesSO jointsOf = null)
+                            IReadOnlyDictionary<string, float> keys = null, SpeciesSO jointsOf = null, IReadOnlyDictionary<string, float> regionKeys = null)
     {
         var bones = new Dictionary<string, Transform>();
         foreach (var t in skeleton.GetComponentsInChildren<Transform>(true))
@@ -102,7 +126,10 @@ public static class BodyMesh
             foreach (var src in renderers)
                 foreach (var b in src.bones)
                     if (b != null) Resolve(b, bones, srcBones, model.transform, container, skeleton);
-            KeySkeleton.Apply(container, skeleton, jointsOf, keys);
+            // С ПОЗОЙ СТУПЕНИ суставы цели — тоже деформация, а не перенос костей до привязки: модельная линия снимает форму в покой
+            // цепью «покой К2 → поза» и привязывает в покое К2 (22.10: при переносе суставов до привязки голова @Волк в позе
+            // оседала на 16 см — голова цели в покое на 0.2 м выше головы К2). Суставы и позу ставит `MorphBuilder` последними
+            if (!KeyPose.HasPose(jointsOf, keys)) KeySkeleton.Apply(container, skeleton, jointsOf, keys);
         }
 
         // ЧЕРТА КЛЮЧА НА СТУПЕНИ: объект `@<ключ>` рисуется только на её ступени и снимает объекты шасси под собой
@@ -170,6 +197,12 @@ public static class BodyMesh
             smr.rootBone = skeleton;
             if (keys != null)
                 foreach (var kv in keys)
+                {
+                    int shape = skinned.GetBlendShapeIndex(kv.Key);
+                    if (shape >= 0) smr.SetBlendShapeWeight(shape, Mathf.Clamp01(kv.Value) * 100f);
+                }
+            if (regionKeys != null)
+                foreach (var kv in regionKeys)
                 {
                     int shape = skinned.GetBlendShapeIndex(kv.Key);
                     if (shape >= 0) smr.SetBlendShapeWeight(shape, Mathf.Clamp01(kv.Value) * 100f);

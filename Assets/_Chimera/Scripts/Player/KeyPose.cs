@@ -15,6 +15,23 @@ using UnityEngine;
 /// 26 см (21.10). Рамка позы напрямую от рамок покоя шасси не зависит. Сторож — `KeyPoseTests`.</summary>
 public static class KeyPose
 {
+    /// <summary>Есть ли поза ступени у активного ключа — тогда суставы цели ставятся деформацией после привязки, вместе с позой.</summary>
+    public static bool HasPose(SpeciesSO species, IReadOnlyDictionary<string, float> keys)
+    {
+        if (species?.keyPose == null || species.keyPose.Length == 0 || keys == null) return false;
+        var key = keys.Where(kv => kv.Value > 1e-4f).Select(kv => kv.Key).FirstOrDefault();
+        return key != null && species.keyPose.Any(j => j != null && j.key == key);
+    }
+
+    /// <summary>Суставы цели и поза — последними, после привязки всех мешей: оба деформируют кожу (цепь «покой шасси → поза»).
+    /// Без позы суставы ставятся до привязки (`BodyMesh.Place`), и здесь ничего не происходит.</summary>
+    public static void ApplyAfterBind(Transform container, Transform skeleton, SpeciesSO species, IReadOnlyDictionary<string, float> keys)
+    {
+        if (!HasPose(species, keys)) return;
+        KeySkeleton.Apply(container, skeleton, species, keys);
+        Apply(container, skeleton, species, keys);
+    }
+
     public static int Apply(Transform container, Transform skeleton, SpeciesSO species, IReadOnlyDictionary<string, float> keys)
     {
         if (skeleton == null || species?.keyPose == null || species.keyPose.Length == 0 || keys == null) return 0;
