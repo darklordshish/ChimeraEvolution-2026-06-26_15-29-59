@@ -249,7 +249,41 @@ if opt.get('poza_obj'):
 # ---------- 4. обратно в покой ----------
 if opt.get('proverka', '0') == '1':
     X = Pa.copy()
-skin = {pb.name: (AW @ pb.matrix @ pb.bone.matrix_local.inverted() @ AW.inverted()) for pb in arm.pose.bones}
+# ЦЕПЬ НА ДЛИНАХ ЦЕЛИ (ГеймБосс 21.10: поза, посчитанная на длинах К2, роняла оборотня вперёд, стопа висела в 0.27–0.39 м над
+# землёй). Игра ставит кость поворотом D = рамка позы · покой К2⁻¹ (по весу ключа сферически), а смещения берёт из суставов
+# покоя: голова ребёнка = голова родителя + D_родителя·(покой ребёнка − покой родителя), хвост = голова + D·(покой хвоста −
+# покой головы). Суставы покоя выводятся так, чтобы эта цепь давала РОВНО суставы цели: смещение цели, повёрнутое назад
+# поворотом родителя. Кость без ориентиров жёстко едет с родителем: смещение К2 от его головы или хвоста (что ближе).
+# Корень: покой — К2, поза — таз цели; стопа ложится на землю цели (плюсна z ≈ 0)
+bpy.context.view_layer.update()
+D, RH, RT, PH, PT = {}, {}, {}, {}, {}
+for bn in order:
+    pb = arm.pose.bones[bn]; par = pb.parent
+    D[bn] = (AW @ pb.matrix).to_3x3() @ (AW @ pb.bone.matrix_local).to_3x3().inverted()
+    h0, t0 = AW @ pb.bone.head_local, AW @ pb.bone.tail_local
+    td = tgt_dir(bn)
+    if par is None:
+        RH[bn] = h0; PH[bn] = Vector(td[0]) if td else AW @ pb.head
+    else:
+        pn = par.name
+        if td:
+            RH[bn] = RH[pn] + D[pn].inverted() @ (Vector(td[0]) - PH[pn])
+        else:
+            # без ориентиров — жёстко к родителю: смещение К2 от его головы или хвоста (что ближе в покое К2)
+            ph0, pt0 = AW @ par.bone.head_local, AW @ par.bone.tail_local
+            RH[bn] = (RT[pn] + (h0 - pt0)) if (h0 - pt0).length < (h0 - ph0).length else (RH[pn] + (h0 - ph0))
+        PH[bn] = PH[pn] + D[pn] @ (RH[bn] - RH[pn])
+    RT[bn] = RH[bn] + (D[bn].inverted() @ (Vector(td[1]) - Vector(td[0])) if td else (t0 - h0))
+    PT[bn] = PH[bn] + D[bn] @ (RT[bn] - RH[bn])
+TGT = {bn: (Vector(tgt_dir(bn)[0]), Vector(tgt_dir(bn)[1])) for bn in order if tgt_dir(bn)}
+err = max(max((PH[bn] - TGT[bn][0]).length, (PT[bn] - TGT[bn][1]).length) for bn in TGT)
+niz = min(min(PH[bn].z, PT[bn].z) for bn in order if bn.startswith('стопа'))
+print('ЦЕПЬ: длины цели, прямая кинематика игры до цели — макс %.4f м; низ стопы z %.3f м' % (err, niz))
+# скин — как в игре: кость в позе = голова цепи цели PH, поворот D, привязка — покой К2 (без этого форма в покое снималась
+# цепью на длинах К2 и в игре съезжала бы на разницу длин)
+skin = {bn: (Matrix.Translation(PH[bn]) @ D[bn].to_4x4() @ Matrix.Translation(-(AW @ arm.pose.bones[bn].bone.head_local))) for bn in order}
+if opt.get('proverka', '0') == '1':     # проверка туда-обратно — на той же цепи К2, которой тело ставилось в позу
+    skin = {pb.name: (AW @ pb.matrix @ pb.bone.matrix_local.inverted() @ AW.inverted()) for pb in arm.pose.bones}
 REST = np.zeros_like(X)
 for k in range(N):
     ws = W[k]; tot = sum(w for g, w in ws.items() if g in skin)
@@ -312,25 +346,22 @@ def frames(src_bones):
 if opt.get('poza'):
     def posed(b, pb, M):
         z = (M.to_3x3() @ Vector((0, 0, 1))).normalized()
-        return dict(name=b['name'], parent=b.get('parent', ''), head=[round(c, 5) for c in AW @ pb.head], tail=[round(c, 5) for c in AW @ pb.tail],
+        return dict(name=b['name'], parent=b.get('parent', ''), head=[round(c, 5) for c in PH[b['name']]], tail=[round(c, 5) for c in PT[b['name']]],
                     z_axis=[round(c, 5) for c in z])
     sk0 = json.load(open(sk_p, encoding='utf-8'))
     pz = dict(species=sk0.get('species', 'Человек'), kluch=NAME, axes=sk0.get('axes', ''), bones=frames(posed),
-              note='кости шасси в позе цели «%s» на ступени 2 (вес 1): только повороты, длины шасси; podgonka_v_poze.py' % NAME)
+              note='кости в позе цели «%s» на ступени 2 (вес 1): рамка (z_axis, направление) — поворот; head/tail — суставы цели '
+                   '(цепь на длинах суставов покоя *-sustavy.json); podgonka_v_poze.py' % NAME)
     json.dump(pz, open(opt['poza'], 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     print('ФАЙЛ: поза →', opt['poza'])
 if opt.get('sustavy'):
-    # суставы цели в позе листа — из ориентиров (как пластина остатка); у костей без ориентиров — свои в позе
     def rest_j(b, pb, M):
-        td = tgt_dir(b['name'])
-        h, t_ = (td if td else (AW @ pb.head, AW @ pb.tail))
-        Bm_ = AW @ pb.matrix @ pb.bone.matrix_local.inverted() @ AW.inverted()     # покой → поза для этой кости
-        inv = Bm_.inverted()
-        return dict(name=b['name'], parent=b.get('parent', ''), head=[round(c, 5) for c in inv @ Vector(h)], tail=[round(c, 5) for c in inv @ Vector(t_)],
+        return dict(name=b['name'], parent=b.get('parent', ''), head=[round(c, 5) for c in RH[b['name']]], tail=[round(c, 5) for c in RT[b['name']]],
                     z_axis=b.get('z_axis', [0, 0, 1]))
     sk0 = json.load(open(sk_p, encoding='utf-8'))
     sj = dict(sk0); sj['bones'] = frames(rest_j)
-    sj['note'] = 'суставы цели «%s» в ПОКОЕ шасси (поза — отдельным файлом *-poza.json): podgonka_v_poze.py' % NAME
+    sj['note'] = ('суставы цели «%s» в ПОКОЕ шасси: смещения цели, повёрнутые назад поворотом родителя из *-poza.json — прямая '
+                  'кинематика игры (D·смещение покоя) даёт суставы цели; podgonka_v_poze.py' % NAME)
     json.dump(sj, open(opt['sustavy'], 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
     print('ФАЙЛ: суставы покоя →', opt['sustavy'])
 # поза сбрасывается, форма-ключ
