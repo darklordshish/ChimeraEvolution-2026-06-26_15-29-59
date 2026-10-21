@@ -116,6 +116,40 @@ public static class Stand
         return Row(items, view, aspect);
     }
 
+    /// <summary>РЯД КОМБИНАЦИЙ (геймдизайнер 21.10: «поставить разные аугументы и посмотреть, как тело меняется по стадиям с
+    /// разными комбинациями»): шасси с разными наборами органов донора, как в игре — ступень, вес ключа и куски считает сам
+    /// билдер по составу, размер — `BodySize`. Наборы через «;», слоты набора через «,», пустой набор — чистое шасси.
+    /// Подпись: доля донора · ступень · вес ключа · масштаб тела.</summary>
+    public static string Combos(string chassisAsset, string donorAsset, string sets, string view, float aspect)
+    {
+        var chassis = AssetDatabase.LoadAssetAtPath<SpeciesSO>(chassisAsset);
+        var donor = AssetDatabase.LoadAssetAtPath<SpeciesSO>(donorAsset);
+        if (chassis == null || donor == null) return "вид не найден";
+        var items = new List<(SpeciesSO, List<Organ>, string, BodySocket[])>();
+        foreach (var set in sets.Split(';'))
+        {
+            var slots = new HashSet<string>();
+            foreach (var x in set.Split(',')) if (x.Trim().Length > 0) slots.Add(x.Trim());
+            var worn = new List<Organ>();
+            foreach (var o in Native(chassis))
+            {
+                Organ d = null;
+                if (!o.chassisOnly && slots.Contains(o.slot) && donor.organs != null)
+                    foreach (var w in donor.organs) if (w != null && w.slot == o.slot && !w.chassisOnly && !w.nativeOnly) { d = w; break; }
+                worn.Add(d ?? o);
+            }
+            var id = GlobalLayer.Identity(chassis, worn);
+            float share = id.TryGetValue(donor, out var v) ? v : 0f;
+            var (_, step) = GlobalLayer.Step(chassis, worn);
+            var keys = BodyMesh.KeysFor(chassis, worn);
+            float kw = keys.TryGetValue(donor.speciesName, out var k) ? k : 0f;
+            string label = (slots.Count == 0 ? chassis.speciesName : "+" + string.Join("+", slots))
+                         + string.Format("  {0:0}% · ст.{1} · ключ {2:0.##} · ×{3:0.00}", share * 100f, step, kw, BodySize.Of(chassis, worn));
+            items.Add((chassis, worn, label, null));
+        }
+        return Row(items, view, aspect, gameSize: true);
+    }
+
     /// <summary>ПОЛОСКА ПО ОСИ: одно и то же тело при `min · канон · max` одного параметра, в ряд.
     ///
     /// Зачем: пока ось проверяется только на готовом звере, поздно и дорого. Полоска ловит три вещи —
@@ -276,7 +310,7 @@ public static class Stand
         return n;
     }
 
-    static string Row(List<(SpeciesSO chassis, List<Organ> worn, string label, BodySocket[] plan)> items, string view, float aspect)
+    static string Row(List<(SpeciesSO chassis, List<Organ> worn, string label, BodySocket[] plan)> items, string view, float aspect, bool gameSize = false)
     {
         Wipe();
         if (aspect <= 0f) aspect = 1.6f;
@@ -299,6 +333,7 @@ public static class Stand
             cc.center = new Vector3(0f, 1f, 0f);
 
             MorphBuilder.Build(body.transform, chassis, worn, plan);
+            if (gameSize) body.AddComponent<BodySize>().Apply(BodySize.Of(chassis, worn));   // рост по массе — как в игре
 
             var rends = body.GetComponentsInChildren<Renderer>();
             if (rends.Length == 0) { Object.DestroyImmediate(body); report.Add(label + ": пусто"); continue; }
