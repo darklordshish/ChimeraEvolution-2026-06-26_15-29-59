@@ -80,6 +80,16 @@ bpy.ops.wm.obj_import(filepath=cel, forward_axis='NEGATIVE_Z', up_axis='Y')
 t = [o for o in bpy.context.selected_objects if o.type == 'MESH'][0]
 bpy.context.view_layer.objects.active = t
 bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+# ВЕСА ЦЕЛИ ГОТОВЫЕ (`--vesa файл.json`, 21.10): цель снята в покой `podgonka_v_poze.py --cel_pokoj`, и её веса — те, по
+# которым она снималась; они едут через отбор и прорежение группами вершин, переноса с тела нет
+VESA = json.load(open(opt['vesa'], encoding='utf-8')) if opt.get('vesa') else None
+if VESA:
+    assert len(VESA) == len(t.data.vertices), 'веса не той цели: %d против %d вершин' % (len(VESA), len(t.data.vertices))
+    vg_ = {}
+    for vi, ws in enumerate(VESA):
+        for nm, x in ws.items():
+            if nm not in vg_: vg_[nm] = t.vertex_groups.new(name=nm)
+            vg_[nm].add([vi], x, 'REPLACE')
 gap, gz, mz, mx, hz, hy, gt, pz = (float(opt[k]) for k in ('zazor', 'golova_z', 'griva_z', 'griva_x', 'hvost_z', 'hvost_y', 'zazor_hvost', 'lapy_z'))
 bm = bmesh.new(); bm.from_mesh(t.data); bm.faces.ensure_lookup_table()
 n_all = len(bm.faces)
@@ -191,6 +201,11 @@ for s in srcs:
     src_bvh.append((s, BVHTree.FromPolygons([s.matrix_world @ v.co for v in me.vertices], [list(p.vertices) for p in me.polygons])))
 W = [dict() for _ in t.data.vertices]
 for v in t.data.vertices:
+    if VESA:
+        ws = {t.vertex_groups[ge.group].name: ge.weight for ge in v.groups}
+        top = sorted(ws.items(), key=lambda kv: -kv[1])[:4]; sm = sum(x for _, x in top) or 1.0
+        W[v.index] = {nm: x / sm for nm, x in top if x > 1e-4}
+        continue
     best = None
     for s, b in src_bvh:
         hit = b.find_nearest(v.co)
