@@ -82,20 +82,26 @@ public static class MorphBuilder
         if (meshChimera)
         {
             var chimeraSkeleton = BoneMesher.Build(container.transform, chassis, PrimitiveMaterial(), field: false);
+            var chimeraKeys = BodyMesh.KeysFor(pureChassis, wornOrgans);
+            // ЧЕРТА КЛЮЧА НА СТУПЕНИ ЗАБИРАЕТ И КУСКИ ОРГАНОВ своих мест: объект `@<ключ>` несёт голову, уши, морду, кисти —
+            // куски Пасти, Чутья и Рук донора поверх него рисовались вторым слоем («третий глаз», пластины у кистей, 22.10)
+            var stageSlots = new HashSet<string>(BodyMesh.ActiveStages(pureChassis, chimeraKeys)
+                .SelectMany(st => (st.hides ?? new string[0]).Concat(st.replacesTraits ?? new string[0])));
+            bool ByStage(BodyPart p) => p != null && (stageSlots.Contains(p.slot ?? "") || stageSlots.Contains(p.objectSlot ?? "") || stageSlots.Contains(p.mainSlot ?? ""));
+            var onBody = (chassis.placedParts ?? new (BodyPart, SpeciesSO)[0]).Where(pd => !ByStage(pd.part)).ToArray();
             var given = new HashSet<string>();
-            foreach (var (part, donor) in chassis.placedParts ?? new (BodyPart, SpeciesSO)[0])
+            foreach (var (part, donor) in onBody)
             {
                 string place = PartAssembly.Claimed(part, donor);
                 // свой объект того же слота — под куском: снимается, если кусок его заменяет; при слиянии остаётся
                 if (!string.IsNullOrEmpty(part.objectSlot) && !PartAssembly.Over(chassis, part, donor)) given.Add(part.objectSlot);
                 if (place != null) given.Add(place);
             }
-            var ownOnClaimed = PartAssembly.OwnOnClaimed(pureChassis, wornOrgans, chassis.placedParts);
+            var ownOnClaimed = PartAssembly.OwnOnClaimed(pureChassis, wornOrgans, onBody).Where(o => !ByStage(o)).ToList();
             foreach (var own in ownOnClaimed) if (!string.IsNullOrEmpty(own.objectSlot)) given.Add(own.objectSlot);
-            var chimeraKeys = BodyMesh.KeysFor(pureChassis, wornOrgans);
             BodyMesh.Place(container.transform, chimeraSkeleton, pureChassis.bodyMesh, PrimitiveMaterial(), given, chimeraKeys, pureChassis);
             // куски, забравшие место целиком (голова), — первыми: органы на этом месте садятся на места самого куска
-            foreach (var (part, donor) in (chassis.placedParts ?? new (BodyPart, SpeciesSO)[0]).OrderBy(p => PartAssembly.Claimed(p.part, p.donor) == null))
+            foreach (var (part, donor) in onBody.OrderBy(p => PartAssembly.Claimed(p.part, p.donor) == null))
             {
                 var piece = PartAssembly.Place(container.transform, chassis, part, donor, PrimitiveMaterial());
                 if (piece == null) continue;

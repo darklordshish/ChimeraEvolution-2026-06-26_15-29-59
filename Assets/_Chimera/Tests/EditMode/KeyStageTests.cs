@@ -54,5 +54,28 @@ namespace Chimera.Tests.EditMode
                 finally { Object.DestroyImmediate(go); }
             }
         }
+    
+        /// <summary>НА СТУПЕНИ КУСКИ ОРГАНОВ ДОНОРА МЕСТО ЧЕРТЫ НЕ ЗАНИМАЮТ: человек со всеми волчьими органами (ст.2 по составу) —
+        /// объект `@Волк` несёт голову, уши, морду, кисти; куски Пасти, Чутья и Рук на этих местах не рисуются вторым слоем
+        /// (22.10: «третий глаз» и пластины с когтями у кистей поверх объекта ступени).</summary>
+        [Test]
+        public void Stage_RemovesDonorOrganPieces_OnItsPlaces()
+        {
+            var human = AssetDatabase.LoadAssetAtPath<SpeciesSO>("Assets/_Chimera/Data/Человек.asset");
+            var wolf = AssetDatabase.LoadAssetAtPath<SpeciesSO>("Assets/_Chimera/Data/Волк.asset");
+            var worn = human.organs.Where(o => o != null)
+                            .Select(o => o.chassisOnly ? o : wolf.organs.FirstOrDefault(w => w != null && w.slot == o.slot && !w.chassisOnly && !w.nativeOnly) ?? o).ToList();
+            var stages = BodyMesh.ActiveStages(human, BodyMesh.KeysFor(human, worn));
+            if (stages.Count == 0) Assert.Inconclusive("на ступени 2 у человека нет черты ключа «Волк»");
+            var slots = new HashSet<string>(stages.SelectMany(st => (st.hides ?? new string[0]).Concat(st.replacesTraits ?? new string[0])));
+            var go = new GameObject("~ступень-органы"); var cc = go.AddComponent<CharacterController>(); cc.height = 2f; cc.center = Vector3.up;
+            try
+            {
+                MorphBuilder.Build(go.transform, human, worn, null);
+                foreach (var v in go.GetComponentsInChildren<BodyPartView>(true))
+                    Assert.IsFalse(slots.Contains(v.name), $"кусок органа «{v.name}» нарисован поверх черты ключа");
+            }
+            finally { Object.DestroyImmediate(go); }
+        }
     }
 }
