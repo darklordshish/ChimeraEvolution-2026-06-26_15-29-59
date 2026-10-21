@@ -4,8 +4,7 @@
   "step": 2,
   "skryvaet": [
     "голова",
-    "Чутьё",
-    "@Волк1"
+    "Чутьё"
   ],
   "zamenyaet_cherty": [
     "голова",
@@ -15,7 +14,7 @@
     "Шкура",
     "Хвост"
   ],
-  "tris": 2265,
-  "note": "черта ключа «Волк» на ступени 2 — кусок самой цели (голова, воротник-грива, загривок, хвост) в метрах шасси на весе 1, скиннится к костям шасси; skryvaet — объекты меша шасси, снимаемые при куске; zamenyaet_cherty — объекты черт вида-ключа, которые на ступени 2 не ставятся",
-  "generator": "Tools/Blender/proba/kusok_celi.py --blend C:/Temp/claude/C--Users-semion-Documents-Chimera-game-ChimeraEvolution-modeli/53623ae4-97d2-450f-a7bb-396e65699af4/scratchpad/kc/k2.blend --dolya 0.05 --golova_z 1.50 --griva_x 0.42 --griva_z 1.15 --hvost_y 0.12 --hvost_z 1.0 --imya Волк --lapy_z 0.26 --ostrov 400 --prizhim_d 0.06 --prizhim_k 0.35 --st1_hvost 0.65 --st1_niz 1.30 --st1_verh 1.70 --st1_y -0.02 --st1_z 1.62 --st1_zatylok 0.06 --zazor 0.012 --zazor_hvost 0.05"
+  "tris": 9822,
+  "note": "черта ключа «Волк» на ступени 2 — куски самих целей: голова, воротник-грива, хвост — из цели колонки ст.2, переведённой в позу голого тела; кисти и лапы с когтями — из цели голого тела (витрина/оборотень/тело.png); в метрах шасси на весе 1, скиннится к костям шасси (podgonka_v_poze.py --cel_pokoj/--dop_cel → kusok_celi.py --vesa → slit_kuski.py)",
+  "generator": "Tools/Blender/proba/kusok_celi.py --bez_kostej предплечье,голень,стопа --blend C:/Temp/claude/C--Users-semion-Documents-Chimera-game-ChimeraEvolution-modeli/53623ae4-97d2-450f-a7bb-396e65699af4/scratchpad/pt/kk_m_z400.blend --dolya 0.1 --dvustor 1 --golova_x 0.25 --golova_z 9 --griva_x 0.28 --griva_z 1.15 --hvost_naklon 12 --hvost_x 0.15 --hvost_y 0.12 --hvost_z 0.95 --imya Волк --lapy_z -1 --ostrov 800 --prizhim_d 0.005 --prizhim_k 0.05 --prizhim_verh 9 --st1_hvost 0.65 --st1_niz 1.30 --st1_verh 1.70 --st1_y -0.02 --st1_z 1.62 --st1_zatylok 0.06 --ushi 1.90:0.06:1.6 --vesa C:/Temp/claude/C--Users-semion-Documents-Chimera-game-ChimeraEvolution-modeli/53623ae4-97d2-450f-a7bb-396e65699af4/scratchpad/pt/kol_pokoj.obj.vesa.json --zakryt 400 --zazor 0.012 --zazor_hvost 0.05"
 }
