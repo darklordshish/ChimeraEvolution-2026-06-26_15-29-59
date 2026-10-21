@@ -355,12 +355,12 @@ if opt.get('cel_pokoj') or opt.get('dop_pokoj'):
     # ВЕСА ЦЕЛИ — тем же правилом, что и матрица снятия (файл `<cel_pokoj>.vesa.json`, вершина за вершиной): кусок,
     # вырезанный `kusok_celi.py --vesa`, в позе ступени встаёт ровно туда, где был у цели. С весами, перенесёнными с тела
     # в покое, хвост и пряди рвались — другое правило давало другую матрицу
-    def snyat(bm_, out_p):
+    def snyat(bm_, out_p, golova=True):
       cache, VES = {}, []
       with open(out_p, 'w') as fo:
         for v_ in bm_.verts:
             p = v_.co
-            if min(segs, key=lambda s_: seg_d(p, s_[1], s_[2]))[0] == 'голова':
+            if golova and min(segs, key=lambda s_: seg_d(p, s_[1], s_[2]))[0] == 'голова':
                 ws = {'голова': 1.0}
             else:
                 _, k_, d_ = KDX.find(p)
@@ -394,7 +394,9 @@ if opt.get('cel_pokoj') or opt.get('dop_pokoj'):
         Q = np.linalg.norm(Q[:, None] - S2[None], axis=2) @ W2[:n2] + np.hstack([np.ones((len(Q), 1)), Q]) @ W2[n2:]
         for v_, q_ in zip(bm2.verts, Q): v_.co = Vector(q_)
         print('ВТОРАЯ ЦЕЛЬ: %d вершин переведены в позу цели по %d общим ориентирам' % (len(Q), n2))
-        snyat(bm2, opt['dop_pokoj'])
+        # у второй цели правило «у головы — одна кость головы» не берётся (критик r6): с колонки режутся грива и хвост, и
+        # грива на затылке, привязанная к голове, поднималась с ней при правке позы головы — просветы к холке
+        snyat(bm2, opt['dop_pokoj'], golova=False)
         bpy.data.objects.remove(tg2, do_unlink=True)
 # ФАЙЛЫ ДЛЯ ИГРЫ (решение ГеймБосса 21.10, вариант Б: ключ — форма в покое, позу ступени даёт слой кода):
 #  `--poza файл` — кости шасси В ПОЗЕ ЦЕЛИ (head/tail/z_axis, оси Blender, длины свои — только повороты), игра выводит поворот
