@@ -15,7 +15,7 @@
 
   blender -b --factory-startup -P kusok_celi.py -- ключ.blend цель.obj выход.fbx паспорт.json
       [--imya Волк] [--zazor 0.012] [--zazor_hvost 0.05] [--golova_z 1.50] [--golova_x 0.25] [--griva_z 1.15] [--griva_x 0.42] [--hvost_z 1.0] [--hvost_y 0.12] [--hvost_x 9] [--bez_kostej плечо,предплечье]
-      [--ostrov 400] [--lapy_z 0.32] [--stupen 2|1 [--st1_y -0.02] [--st1_z 1.62] [--st1_zatylok 0.06] [--st1_verh 1.70] [--st1_hvost 0.65] [--st1_niz 1.30] [--ves1 0.5]] [--prizhim_d 0.06 --prizhim_k 0.35] [--dvustor 1] [--tselikom 1] [--dolya 0.08] [--shots префикс]
+      [--ostrov 400] [--lapy_z 0.32] [--stupen 2|1 [--st1_y -0.02] [--st1_z 1.62] [--st1_zatylok 0.06] [--st1_verh 1.70] [--st1_hvost 0.65] [--st1_niz 1.30] [--ves1 0.5]] [--prizhim_d 0.06 --prizhim_k 0.35 [--prizhim_verh 1.45]] [--dvustor 1] [--tselikom 1] [--dolya 0.08] [--shots префикс]
 Вход `ключ.blend` — сохранённый `kluch_vida.py --blend` (меш шасси с ключом и арматурой). Печатает «КУСОК: …».
 """
 import sys, json, os
@@ -184,7 +184,9 @@ _bvh = BVHTree.FromPolygons(_bv, _bf)
 PD, PK = float(opt['prizhim_d']), float(opt['prizhim_k'])
 moved_ = 0
 for v in t.data.vertices:
-    if v.co.z < hz or (STEP >= 2 and v.co.z > 1.45): continue     # ст.2: голова цели не прижимается к голове человека
+    # ст.2: голова цели не прижимается к голове человека; `--prizhim_verh` — выше какой высоты не прижимать (9 — везде: кусок без
+    # головы, 21.10 критик r7: грива колонки на новом теле отходила от спины на 2–3 см)
+    if v.co.z < hz or (STEP >= 2 and v.co.z > float(opt.get('prizhim_verh', '1.45'))): continue
     loc, nrm, fi, d = _bvh.find_nearest(v.co)
     if loc is None or d <= PD: continue
     # сжатие нарастает книзу плавно (r7: ровное ×0.35 срезало низ гривы ножом — рваный край пропал): у затылка ×1, к низу ×PK
