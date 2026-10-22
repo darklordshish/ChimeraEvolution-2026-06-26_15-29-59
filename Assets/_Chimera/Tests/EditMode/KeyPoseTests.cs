@@ -115,16 +115,24 @@ namespace Chimera.Tests.EditMode
             var human = Load("Человек"); var wolf = Load("Волк");
             var pose = human.keyPose?.Where(j => j != null && j.key == "Волк").ToList();
             if (pose == null || pose.Count == 0) Assert.Ignore("файла позы «Волк» в handoff нет");
-            var go = Build(human, WolfOn(human, wolf, 99));
-            try
+            // ст.2 — поза ключа (step 0); ст.1 — своя поза, если она есть (`-poza-st1.json`, 22.10)
+            Check(99, 0);
+            if (pose.Any(j => j.step == 1)) Check(5, 1);
+
+            void Check(int organs, int step)
             {
-                var c = go.transform.Find("Morph");
-                var all = c.GetComponentsInChildren<Transform>(true);
-                var worst = pose.Select(j => (j.bone, d: all.Where(t => t.name == j.bone).Select(t => (c.InverseTransformPoint(t.position) - j.head).magnitude).DefaultIfEmpty(0f).Min()))
-                                .OrderByDescending(x => x.d).First();
-                Assert.Less(worst.d, 0.01f, $"сустав «{worst.bone}» мимо позы на {worst.d:0.000} м");
+                var go = Build(human, WolfOn(human, wolf, organs));
+                try
+                {
+                    var c = go.transform.Find("Morph");
+                    var all = c.GetComponentsInChildren<Transform>(true);
+                    var worst = pose.Where(j => j.step == step)
+                                    .Select(j => (j.bone, d: all.Where(t => t.name == j.bone).Select(t => (c.InverseTransformPoint(t.position) - j.head).magnitude).DefaultIfEmpty(0f).Min()))
+                                    .OrderByDescending(x => x.d).First();
+                    Assert.Less(worst.d, 0.01f, $"поза ступени {(step == 0 ? 2 : step)}: сустав «{worst.bone}» мимо позы на {worst.d:0.000} м");
+                }
+                finally { Object.DestroyImmediate(go); }
             }
-            finally { Object.DestroyImmediate(go); }
         }
 
         /// <summary>ПОКОЙ РИГА В ДРУГОМ СОГЛАШЕНИИ (22.10): рамки рига модельной линии повёрнуты относительно рамок графа (у хребта

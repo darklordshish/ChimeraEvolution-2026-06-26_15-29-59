@@ -18,11 +18,17 @@ namespace Chimera.Tests.EditMode
         {
             BodyMesh.ForceKey = null; BodyMesh.ForceWeight = 0f; BodyMesh.ResetCache();
             if (go != null) Object.DestroyImmediate(go);
+            if (savedPose != null) { Human.keyPose = savedPose; savedPose = null; }
         }
 
+        KeyJoint[] savedPose;
+
+        /// <summary>Суставы цели ставятся, только пока у ключа нет позы (при позе её ставит `KeyPose`, суставы не применяются —
+        /// 22.10). Сторож мерит путь суставов, поэтому позу на время сборки снимает.</summary>
         Transform Build(float w)
         {
             if (go != null) Object.DestroyImmediate(go);
+            if (savedPose == null) { savedPose = Human.keyPose ?? new KeyJoint[0]; Human.keyPose = new KeyJoint[0]; }
             BodyMesh.ForceKey = "Волк"; BodyMesh.ForceWeight = w; BodyMesh.ResetCache();
             go = new GameObject("~скелет-ключ");
             var cc = go.AddComponent<CharacterController>(); cc.height = 2f; cc.center = Vector3.up;

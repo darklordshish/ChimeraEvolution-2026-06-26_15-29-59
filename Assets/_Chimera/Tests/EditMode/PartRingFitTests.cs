@@ -54,6 +54,31 @@ namespace Chimera.Tests.EditMode
         /// <summary>Механика кусков под ключом мерится без черты ключа на ступени: на полном весе она заменяет черты цели целиком
         /// (объект `@<ключ>`, 19.10), и мерить было бы нечего.</summary>
         static System.IDisposable NoStages(SpeciesSO sp) => new StagesOff(sp);
+
+        /// <summary>Рост кольца шва формой-ключом на весе 1: средний радиус кольца после сдвига к среднему до (вершины меша тела,
+        /// совпавшие с точками кольца).</summary>
+        static float RingGrowth(SpeciesSO sp, Vector3[] ring, string key)
+        {
+            var shift = new Vector3[ring.Length]; var found = new bool[ring.Length];
+            foreach (var smr in sp.bodyMesh.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            {
+                var mesh = smr.sharedMesh; int shape = mesh != null ? mesh.GetBlendShapeIndex(key) : -1;
+                if (shape < 0 || !mesh.isReadable || smr.bones.Length == 0) continue;
+                var toBody = sp.bodyMesh.transform.worldToLocalMatrix * smr.bones[0].localToWorldMatrix * mesh.bindposes[0];
+                var v = mesh.vertices; var dv = new Vector3[v.Length];
+                mesh.GetBlendShapeFrameVertices(shape, mesh.GetBlendShapeFrameCount(shape) - 1, dv, null, null);
+                for (int i = 0; i < ring.Length; i++)
+                    for (int j = 0; j < v.Length && !found[i]; j++)
+                        if ((toBody.MultiplyPoint3x4(v[j]) - ring[i]).sqrMagnitude < 4e-6f) { shift[i] = toBody.MultiplyVector(dv[j]); found[i] = true; }
+            }
+            int n = found.Count(f => f);
+            if (n < 3) Assert.Inconclusive("кольцо шва не нашлось среди вершин меша тела");
+            Vector3 c0 = Vector3.zero, c1 = Vector3.zero;
+            for (int i = 0; i < ring.Length; i++) if (found[i]) { c0 += ring[i] / n; c1 += (ring[i] + shift[i]) / n; }
+            float r0 = 0f, r1 = 0f;
+            for (int i = 0; i < ring.Length; i++) if (found[i]) { r0 += (ring[i] - c0).magnitude; r1 += (ring[i] + shift[i] - c1).magnitude; }
+            return r1 / r0;
+        }
         sealed class StagesOff : System.IDisposable
         {
             readonly SpeciesSO sp; readonly KeyStage[] was;
@@ -204,12 +229,14 @@ namespace Chimera.Tests.EditMode
         {
             var wolf = Load("Волк"); var human = Load("Человек");
             var head = Trait(wolf, "голова");
-            var ring = (human.traits ?? new BodyPart[0]).Concat(human.parts ?? new BodyPart[0]).FirstOrDefault(p => p != null && p.seam == head.seam && p.keyed != null && p.keyed.Any(k => k.key == "Волк"));
-            if (ring == null || human.bodyMesh == null) Assert.Inconclusive("у шва головы человека нет записи под ключом «Волк»");
+            // 22.10: записи `pod_klyuchom` сняты — эллипс шва под ключом считается из самой кожи: отношение средних радиусов
+            // кольца шва после и до сдвига формой-ключом. Запись есть — эллипс берётся из неё
+            var ring = (human.traits ?? new BodyPart[0]).Concat(human.parts ?? new BodyPart[0]).FirstOrDefault(p => p != null && p.seam == head.seam && p.ringM != null && p.ringM.Length >= 3);
+            if (ring == null || human.bodyMesh == null) Assert.Inconclusive("у шва головы человека нет кольца");
             Assert.IsTrue(PartAssembly.Seam(human, head.seam, out var neck));
-            var keyed = ring.keyed.First(k => k.key == "Волк").ellipse;
             float K(Vector2 e) => Mathf.Max(e.x / head.ellipse.x, e.y / head.ellipse.y);
-            float expected = K(keyed) / K(neck.ellipse);
+            var rec = ring.keyed?.FirstOrDefault(k => k != null && k.key == "Волк" && k.ellipse.x > 0f && k.ellipse.y > 0f);
+            float expected = rec != null ? K(rec.ellipse) / K(neck.ellipse) : RingGrowth(human, ring.ringM, "Волк");
             float Size(float w)
             {
                 BodyMesh.ForceKey = "Волк"; BodyMesh.ForceWeight = w; BodyMesh.ResetCache(); ChainSwap.ResetCache();
