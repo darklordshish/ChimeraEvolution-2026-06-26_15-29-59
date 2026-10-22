@@ -79,7 +79,8 @@ namespace Chimera.Tests.EditMode
                 var halfPose = Build(human, half); made.Add(halfPose);
 
                 Assert.Less(Quaternion.Angle(InBody(withPose, Bone(withPose)), posed), 0.5f, "вес 1 — кость ровно в рамке позы");
-                var halfExpected = Quaternion.Slerp(InBody(halfNoPose, Bone(halfNoPose)), posed, BodyMesh.KeyStep1);
+                // с позой суставы цели не ставятся: кость идёт от покоя шасси (чистый человек) к рамке позы по сфере
+                var halfExpected = Quaternion.Slerp(restRot, posed, BodyMesh.KeyStep1);
                 Assert.Less(Quaternion.Angle(InBody(halfPose, Bone(halfPose)), halfExpected), 0.5f, "ступень 1 — от покоя к позе по сфере на вес ступени");
 
                 // ПРИВЯЗКА — В ПОКОЕ ШАССИ У ВСЕХ: меш тела и куски органов привязаны до суставов цели и позы, поэтому их bindposes

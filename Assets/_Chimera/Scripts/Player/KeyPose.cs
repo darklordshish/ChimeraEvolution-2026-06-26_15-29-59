@@ -6,10 +6,10 @@ using UnityEngine;
 /// формы: «длины и поза — в костях, в ключе только масса»). Форма-ключ несёт тело цели В ПОКОЕ шасси, а сутулость, вынос
 /// головы и согнутые колени цели — это поворот костей. Поэтому после привязки меша кости поворачиваются от покоя к позе
 /// цели (`SpeciesSO.keyPose`, поставка `klyuchi/<вид>-<цель>-poza.json`) на вес ключа — сферически, и кожа гнётся за ними.
-///     Рамка кости — slerp(покой, поза, w): покой — после суставов цели (`KeySkeleton`), поза — рамка из файла. Сверху вниз:
-/// поворот родителя тянет детей (их головы встают туда, куда их ведёт цепь), свою рамку ребёнок ставит сам. Корень ещё и
-/// сдвигается (таз цели ниже и сзади): лерп от покоя к head позы. Суставы цели в покое (`sustavy`) модельная линия выводит
-/// этой же цепью, поэтому при весе 1 все суставы встают ровно в позу файла.
+///     Как в Blender у модельной линии: меш привязан в покое шасси, каждая кость из файла встаёт рамкой позы целиком —
+/// положение head (лерп) и поворот (slerp) от покоя шасси на вес ключа. Сверху вниз: кости без записи едут за родителем.
+/// Суставы цели в покое (`sustavy`) при позе не применяются — поза их уже содержит (22.10: суставы поверх позы
+/// запрокидывали голову и разводили гриву веером).
 ///     Прежде поворот считался разностью «поза · покой шасси⁻¹» и ставился поверх покоя суставов. Это требует, чтобы рамки
 /// покоя шасси в графе и в риге модельной линии совпадали. У бедра и шеи они расходились на 17–18°, и стопа уезжала на
 /// 26 см (21.10). Рамка позы напрямую от рамок покоя шасси не зависит. Сторож — `KeyPoseTests`.</summary>
@@ -23,12 +23,13 @@ public static class KeyPose
         return key != null && species.keyPose.Any(j => j != null && j.key == key);
     }
 
-    /// <summary>Суставы цели и поза — последними, после привязки всех мешей: оба деформируют кожу (цепь «покой шасси → поза»).
+    /// <summary>Поза — последней, после привязки всех мешей в покое шасси: каждая кость из файла встаёт РАМКОЙ позы целиком —
+    /// положение head и направление (как модельная линия ставит её в Blender). Суставы цели в покое (`sustavy`) при позе не
+    /// нужны: поза уже несёт суставы цели (22.10: суставы поверх позы ставили голову запрокинутой, грива веером).
     /// Без позы суставы ставятся до привязки (`BodyMesh.Place`), и здесь ничего не происходит.</summary>
     public static void ApplyAfterBind(Transform container, Transform skeleton, SpeciesSO species, IReadOnlyDictionary<string, float> keys)
     {
         if (!HasPose(species, keys)) return;
-        KeySkeleton.Apply(container, skeleton, species, keys);
         Apply(container, skeleton, species, keys);
     }
 
@@ -48,12 +49,11 @@ public static class KeyPose
         {
             var j = pose[t.name];
             t.rotation = container.rotation * Quaternion.Slerp(now[t].rot, Quaternion.LookRotation(j.forward, j.along), w);
-            if (IsRoot(t)) t.position = container.TransformPoint(Vector3.Lerp(now[t].pos, j.head, w));   // в полной позе корень — точка позы
+            t.position = container.TransformPoint(Vector3.Lerp(now[t].pos, j.head, w));   // рамка позы целиком: и положение сустава
             moved++;
         }
         return moved;
 
         int Depth(Transform t) { int n = 0; for (var p = t; p != null && p != skeleton; p = p.parent) n++; return n; }
-        bool IsRoot(Transform t) { for (var p = t.parent; p != null && p != skeleton; p = p.parent) if (pose.ContainsKey(p.name)) return false; return true; }
     }
 }
