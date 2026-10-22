@@ -96,6 +96,7 @@ public static class SpeciesHandoff
         species.seats = ReadSeats(species);
         species.keyJoints = ReadKeyJoints(species);
         species.keyPose = ReadKeyPose(species);   // нет файла — пусто, и записывается явно (бутстрап не обнуляет)
+        species.keyRigRest = ReadRigRest(species);
         species.keyStages = ReadKeyStages(species);
         if (species.traits.Length > 0 || species.seats.Length > 0)
             Debug.Log($"[черты] {species.speciesName}: кусков-черт {species.traits.Length}, посадочных мест {species.seats.Length}");
@@ -226,6 +227,16 @@ public static class SpeciesHandoff
     /// (длины шасси; поворот на кость выводит `KeyPose`). Нет файла — поза покоя.</summary>
     public static KeyJoint[] ReadKeyPose(SpeciesSO species) => ReadKeyFrames(species, "-poza.json", "поза");
 
+    /// <summary>ПОКОЙ РИГА ШАССИ — `klyuchi/<вид>-pokoj.json`: тот же формат, кости рига модельной линии в покое (без цели).
+    /// Нужен позе: рамки графа в Unity и рамки рига в Blender у части костей расходятся (хребет 35°, шея и бедро 17–18°),
+    /// поэтому поворот позы считается в соглашении рига: D = поза · покой⁻¹, и уже он прикладывается к кости графа.</summary>
+    public static KeyJoint[] ReadRigRest(SpeciesSO species)
+    {
+        var file = Dir + "klyuchi/" + Translit(species.speciesName) + "-pokoj.json";
+        if (!System.IO.File.Exists(file)) return new KeyJoint[0];
+        return ParseFrames(System.IO.File.ReadAllText(file), "").ToArray();
+    }
+
     static KeyJoint[] ReadKeyFrames(SpeciesSO species, string suffix, string tag)
     {
         var list = new List<KeyJoint>();
@@ -239,26 +250,33 @@ public static class SpeciesHandoff
             var mid = System.IO.Path.GetFileName(file).Substring(stem.Length).Replace(suffix, "");
             var key = names.FirstOrDefault(n => Translit(n) == mid);
             if (key == null) { Debug.LogError($"[{tag}] «{file}»: вид-цель «{mid}» не найден — не принято"); continue; }
-            var text = System.IO.File.ReadAllText(file);
-            int b = text.IndexOf("\"bones\""); if (b < 0) continue;
-            var part = text.Substring(b); int so = part.IndexOf("\"sockets\""); if (so > 0) part = part.Substring(0, so);
-            foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(part, @"\{[^{}]*\}"))
-            {
-                var obj = m.Value;
-                string Str(string k) { var r = System.Text.RegularExpressions.Regex.Match(obj, "\"" + k + @"""\s*:\s*""([^""]*)"""); return r.Success ? r.Groups[1].Value : null; }
-                float[] Arr(string k)
-                {
-                    var r = System.Text.RegularExpressions.Regex.Match(obj, "\"" + k + @"""\s*:\s*\[([^\]]*)\]");
-                    return r.Success ? r.Groups[1].Value.Split(',').Select(x => float.Parse(x.Trim(), System.Globalization.CultureInfo.InvariantCulture)).ToArray() : null;
-                }
-                string name = Str("name"); float[] h = Arr("head"), t = Arr("tail"), z = Arr("z_axis");
-                if (string.IsNullOrEmpty(name) || h is not { Length: 3 } || t is not { Length: 3 } || z is not { Length: 3 }) continue;
-                Vector3 U(float[] a) => new(-a[0], a[2], -a[1]);   // Blender → Unity
-                Vector3 head = U(h), along = (U(t) - head).normalized;
-                list.Add(new KeyJoint { key = key, bone = name, head = head, along = along, forward = Vector3.ProjectOnPlane(U(z), along).normalized });
-            }
+            list.AddRange(ParseFrames(System.IO.File.ReadAllText(file), key));
         }
         return list.ToArray();
+    }
+
+    /// <summary>Кости из блока `bones` (до `sockets`): name, head, tail, z_axis в осях Blender → рамки в системе тела Unity.</summary>
+    static List<KeyJoint> ParseFrames(string text, string key)
+    {
+        var list = new List<KeyJoint>();
+        int b = text.IndexOf("\"bones\""); if (b < 0) return list;
+        var part = text.Substring(b); int so = part.IndexOf("\"sockets\""); if (so > 0) part = part.Substring(0, so);
+        foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(part, @"\{[^{}]*\}"))
+        {
+            var obj = m.Value;
+            string Str(string k) { var r = System.Text.RegularExpressions.Regex.Match(obj, "\"" + k + @"""\s*:\s*""([^""]*)"""); return r.Success ? r.Groups[1].Value : null; }
+            float[] Arr(string k)
+            {
+                var r = System.Text.RegularExpressions.Regex.Match(obj, "\"" + k + @"""\s*:\s*\[([^\]]*)\]");
+                return r.Success ? r.Groups[1].Value.Split(',').Select(x => float.Parse(x.Trim(), System.Globalization.CultureInfo.InvariantCulture)).ToArray() : null;
+            }
+            string name = Str("name"); float[] h = Arr("head"), t = Arr("tail"), z = Arr("z_axis");
+            if (string.IsNullOrEmpty(name) || h is not { Length: 3 } || t is not { Length: 3 } || z is not { Length: 3 }) continue;
+            Vector3 U(float[] a) => new(-a[0], a[2], -a[1]);   // Blender → Unity
+            Vector3 head = U(h), along = (U(t) - head).normalized;
+            list.Add(new KeyJoint { key = key, bone = name, head = head, along = along, forward = Vector3.ProjectOnPlane(U(z), along).normalized });
+        }
+        return list;
     }
 
     static BodySeat[] Spots(PlacesDto p) => (p?.list ?? new PieceSpotDto[0])

@@ -41,6 +41,10 @@ public static class KeyPose
         var pose = species.keyPose.Where(j => j != null && j.key == key).GroupBy(j => j.bone).ToDictionary(g => g.Key, g => g.First());
         if (pose.Count == 0) return 0;
 
+        // ПОКОЙ РИГА (22.10): рамки графа и рига модельной линии у части костей расходятся (хребет 35°, шея, бедро 17–18°).
+        // Есть покой рига — поворот позы считается в его соглашении, D = поза · покой⁻¹, и прикладывается к кости графа;
+        // без него кость ставится в рамку позы напрямую (верно, только если соглашения совпадают — иначе корпус гнёт назад)
+        var rest = (species.keyRigRest ?? new KeyJoint[0]).Where(j => j != null).GroupBy(j => j.bone).ToDictionary(g => g.Key, g => g.First());
         var bones = skeleton.GetComponentsInChildren<Transform>(true).Where(t => t != skeleton && pose.ContainsKey(t.name)).ToList();
         // покой (после суставов цели) — снимается до поворотов: родитель повернётся и потянет детей
         var now = bones.ToDictionary(t => t, t => (pos: container.InverseTransformPoint(t.position), rot: Quaternion.Inverse(container.rotation) * t.rotation));
@@ -48,7 +52,10 @@ public static class KeyPose
         foreach (var t in bones.OrderBy(Depth))
         {
             var j = pose[t.name];
-            t.rotation = container.rotation * Quaternion.Slerp(now[t].rot, Quaternion.LookRotation(j.forward, j.along), w);
+            var frame = Quaternion.LookRotation(j.forward, j.along);
+            t.rotation = container.rotation * (rest.TryGetValue(t.name, out var r)
+                ? Quaternion.Slerp(Quaternion.identity, frame * Quaternion.Inverse(Quaternion.LookRotation(r.forward, r.along)), w) * now[t].rot
+                : Quaternion.Slerp(now[t].rot, frame, w));
             t.position = container.TransformPoint(Vector3.Lerp(now[t].pos, j.head, w));   // рамка позы целиком: и положение сустава
             moved++;
         }

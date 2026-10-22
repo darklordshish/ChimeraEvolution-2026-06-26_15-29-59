@@ -127,6 +127,35 @@ namespace Chimera.Tests.EditMode
             finally { Object.DestroyImmediate(go); }
         }
 
+        /// <summary>ПОКОЙ РИГА В ДРУГОМ СОГЛАШЕНИИ (22.10): рамки рига модельной линии повёрнуты относительно рамок графа (у хребта
+        /// на 35°). Поза — разность «поза · покой рига⁻¹», приложенная к кости графа: результат не зависит от соглашения рига.</summary>
+        [Test]
+        public void Pose_RelativeToRigRest_IgnoresRigConvention()
+        {
+            var human = Load("Человек"); var wolf = Load("Волк");
+            var savedPose = human.keyPose; var savedRest = human.keyRigRest;
+            var made = new List<GameObject>();
+            try
+            {
+                human.keyPose = new KeyJoint[0]; human.keyRigRest = new KeyJoint[0];
+                var pure = Build(human, human.organs.Where(o => o != null).ToList()); made.Add(pure);
+                var graphRest = InBody(pure, Bone(pure));
+                var restPos = pure.transform.Find("Morph").InverseTransformPoint(Bone(pure).position);
+                var rigOffset = Quaternion.AngleAxis(35f, Vector3.right);              // соглашение рига: повёрнуто на 35°
+                var rigRest = graphRest * rigOffset;
+                var rigPose = Tilt * rigRest;                                           // поза в соглашении рига: тот же наклон 20°
+                human.keyRigRest = new[] { new KeyJoint { key = "", bone = Spine, head = restPos, along = rigRest * Vector3.up, forward = rigRest * Vector3.forward } };
+                human.keyPose = new[] { new KeyJoint { key = "Волк", bone = Spine, head = restPos, along = rigPose * Vector3.up, forward = rigPose * Vector3.forward } };
+                var full = Build(human, WolfOn(human, wolf, 99)); made.Add(full);
+                Assert.Less(Quaternion.Angle(InBody(full, Bone(full)), Tilt * graphRest), 0.5f, "наклон позы приложен к кости графа, соглашение рига сокращается");
+            }
+            finally
+            {
+                human.keyPose = savedPose; human.keyRigRest = savedRest;
+                foreach (var g in made) Object.DestroyImmediate(g);
+            }
+        }
+
         [Test]
         public void NoPoseFile_BodyStaysInRest()
         {
