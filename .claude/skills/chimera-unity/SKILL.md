@@ -38,7 +38,8 @@ unity command set_autotick --enable true     # без autotick Unity душит 
 
 ```bash
 unity command set_autotick --enable false
-unity command quit                           # закрыть свой headless; чужой (другой линии) не трогать
+unity command run_script --file Tools/Agent/Quit.cs --entry Quit.Run   # закрыть свой headless; чужой не трогать
+# `unity command quit` в режиме редактора падает с 400 (DontDestroyOnLoad) — не им
 ```
 
 Перед ожиданием (ждёшь другую линию, дизайнера, ответ пользователя) — тоже закрыть. Поднять снова дёшево (минута), а
