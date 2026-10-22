@@ -36,6 +36,22 @@ namespace Chimera.Tests.EditMode
             Assert.AreEqual(expect, BodyMesh.RegionKeysFor(h, five)["Волк·Руки"], 1e-4f, "ступень 1: область добирает до своей доли");
         }
 
+        /// <summary>ОРГАН НА ШАБЛОНЕ (22.10): объект `<слот>@<вид>` растёт по доле вида-донора до первой ступени и дальше стоит
+        /// полным — без скачка между долей и ступенью.</summary>
+        [Test]
+        public void OrganObject_Grows_ToStepOne()
+        {
+            var h = Load("Человек"); var w = Load("Волк");
+            var one = WolfOn(h, w, "Руки");
+            float share = GlobalLayer.Identity(h, one)[w];
+            var o = BodyMesh.OrganObjectsFor(h, one);
+            Assert.AreEqual(new[] { "Руки@Волк" }, o.Keys.ToArray());
+            Assert.AreEqual(share / GlobalLayer.WeakAt, o["Руки@Волк"], 1e-4f);
+            var five = WolfOn(h, w, "Руки", "Ноги", "Сердце", "Чутьё", "Пасть");
+            Assert.That(BodyMesh.OrganObjectsFor(h, five).Values, Has.All.EqualTo(1f).Within(1e-4f), "на ступени 1 органы на шаблоне полные");
+            Assert.IsEmpty(BodyMesh.OrganObjectsFor(h, h.organs.Where(x => x != null).ToList()), "свои органы — без объектов органа");
+        }
+
         [Test]
         public void OwnOrgans_GiveNoAreas()
         {

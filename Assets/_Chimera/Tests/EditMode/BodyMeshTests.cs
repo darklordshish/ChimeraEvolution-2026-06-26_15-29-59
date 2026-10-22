@@ -168,6 +168,37 @@ namespace Chimera.Tests.EditMode
             Assert.Less(Mathf.Abs(mark.own.r - 0.9f), 1e-3f);
         }
 
+        /// <summary>ОРГАН НА ШАБЛОНЕ (22.10): объект `<слот>@<вид>` рисуется, только пока привит орган этого вида, носит имя слота,
+        /// снимает свой объект шасси того же слота и растёт формой-ключом `рост` на вес из `OrganObjectsFor`.</summary>
+        [Test]
+        public void OrganObject_ShownOnlyWithItsGraft_ReplacesOwnSlot_AndGrows()
+        {
+            Species().bodyMesh = Model();
+            var own = model.GetComponentInChildren<SkinnedMeshRenderer>();
+            var organ = Object.Instantiate(own.gameObject, own.transform.parent);
+            organ.name = BodyMesh.OrganObject("голова", "Волк");
+            var mesh = Object.Instantiate(own.sharedMesh);
+            mesh.AddBlendShapeFrame(BodyMesh.GrowthShape, 100f, new[] { Vector3.zero, Vector3.one, Vector3.zero }, null, null);
+            organ.GetComponent<SkinnedMeshRenderer>().sharedMesh = mesh;
+
+            Build(so.organs.ToList());
+            var smrs = go.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            Assert.AreEqual(1, smrs.Length, "без прививки орган на шаблоне не рисуется");
+            Assert.Less(smrs[0].sharedMesh.GetBlendShapeIndex(BodyMesh.GrowthShape), 0, "нарисован объект органа, а не свой");
+
+            var container = smrs[0].transform.parent;
+            var skeleton = go.GetComponentsInChildren<Transform>(true).First(t => t.name == "Skeleton");
+            foreach (var r in smrs) Object.DestroyImmediate(r.gameObject);
+            BodyMesh.Place(container, skeleton, model, null, organObjects: new System.Collections.Generic.Dictionary<string, float> { [organ.name] = 0.4f });
+            smrs = container.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            Assert.AreEqual(1, smrs.Length, "орган на шаблоне снимает свой объект шасси того же слота");
+            Assert.AreEqual("голова", smrs[0].name, "имя органа на шаблоне — слот (контракт имён частей)");
+            int shape = smrs[0].sharedMesh.GetBlendShapeIndex(BodyMesh.GrowthShape);
+            Assert.GreaterOrEqual(shape, 0, "это не объект органа");
+            Assert.AreEqual(40f, smrs[0].GetBlendShapeWeight(shape), 1e-3f, "рост — на вес доли");
+            Object.DestroyImmediate(mesh);
+        }
+
         static readonly Vector3 KeyShift = new(0f, 0f, 0.1f);
 
         /// <summary>ИДЕНТИЧНОСТЬ КЛЮЧОМ (опыт 14.10): вес формы-ключа вида-цели ставится на меш шасси — тело течёт к виду.</summary>

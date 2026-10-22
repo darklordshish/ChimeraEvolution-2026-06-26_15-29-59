@@ -88,7 +88,11 @@ public static class MorphBuilder
             var stageSlots = new HashSet<string>(BodyMesh.ActiveStages(pureChassis, chimeraKeys)
                 .SelectMany(st => (st.hides ?? new string[0]).Concat(st.replacesTraits ?? new string[0])));
             bool ByStage(BodyPart p) => p != null && (stageSlots.Contains(p.slot ?? "") || stageSlots.Contains(p.objectSlot ?? "") || stageSlots.Contains(p.mainSlot ?? ""));
-            var onBody = (chassis.placedParts ?? new (BodyPart, SpeciesSO)[0]).Where(pd => !ByStage(pd.part)).ToArray();
+            // ОРГАН НА ШАБЛОНЕ (`<слот>@<вид>` в меше шасси) заменяет куски органа донора на швах этого слота
+            var meshObjects = new HashSet<string>(pureChassis.bodyMesh.GetComponentsInChildren<SkinnedMeshRenderer>(true).Select(r => r.name));
+            var organObjects = BodyMesh.OrganObjectsFor(pureChassis, wornOrgans).Where(kv => meshObjects.Contains(kv.Key)).ToDictionary(kv => kv.Key, kv => kv.Value);
+            bool ByOrganObject((BodyPart part, SpeciesSO donor) pd) => pd.part != null && pd.donor != null && organObjects.ContainsKey(BodyMesh.OrganObject(pd.part.slot ?? "", pd.donor.speciesName));
+            var onBody = (chassis.placedParts ?? new (BodyPart, SpeciesSO)[0]).Where(pd => !ByStage(pd.part) && !ByOrganObject(pd)).ToArray();
             var given = new HashSet<string>();
             foreach (var (part, donor) in onBody)
             {
@@ -100,7 +104,7 @@ public static class MorphBuilder
             var ownOnClaimed = PartAssembly.OwnOnClaimed(pureChassis, wornOrgans, onBody).Where(o => !ByStage(o)).ToList();
             foreach (var own in ownOnClaimed) if (!string.IsNullOrEmpty(own.objectSlot)) given.Add(own.objectSlot);
             BodyMesh.Place(container.transform, chimeraSkeleton, pureChassis.bodyMesh, PrimitiveMaterial(), given, chimeraKeys, pureChassis,
-                           BodyMesh.RegionKeysFor(pureChassis, wornOrgans));   // органы прорастают формой своей области
+                           BodyMesh.RegionKeysFor(pureChassis, wornOrgans), organObjects);   // органы прорастают формой своей области
             // куски, забравшие место целиком (голова), — первыми: органы на этом месте садятся на места самого куска
             foreach (var (part, donor) in onBody.OrderBy(p => PartAssembly.Claimed(p.part, p.donor) == null))
             {

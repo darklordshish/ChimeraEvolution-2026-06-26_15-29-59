@@ -97,6 +97,32 @@ public static class BodyMesh
         return res;
     }
 
+    /// <summary>ОРГАН НА ШАБЛОНЕ (22.10, спека «орган прорастает» §2.1: роговой кусок по одному на орган × тип тела). Объект
+    /// `<слот>@<вид>` в меше шасси — орган вида-донора, нарисованный прямо на шаблоне (уши Чутья на голове, когти Рук на пальцах):
+    /// он уже привязан к костям шаблона, сажать его не нужно. Виден, только пока привит орган этого вида на этот слот; снимает
+    /// собственные объекты шасси того же слота; кусок органа донора на шве при нём не ставится. Растёт формой-ключом
+    /// `рост` по доле вида-донора от нуля до первой ступени (критик модельной линии 22.10: «одна форма растёт от 15 % до ст.1,
+    /// без скачка»). Ключ: имя объекта, значение — вес роста.</summary>
+    public static Dictionary<string, float> OrganObjectsFor(SpeciesSO chassis, IReadOnlyList<Organ> worn)
+    {
+        var res = new Dictionary<string, float>();
+        if (chassis == null || worn == null) return res;
+        var id = GlobalLayer.Identity(chassis, worn);
+        foreach (var o in worn)
+        {
+            if (o == null || o.chassisOnly || string.IsNullOrEmpty(o.slot)) continue;
+            if (chassis.organs != null && System.Array.IndexOf(chassis.organs, o) >= 0) continue;
+            var owner = ChainSwap.OwnerOf(o);
+            if (owner == null || owner == chassis || !id.TryGetValue(owner, out var share)) continue;
+            res[OrganObject(o.slot, owner.speciesName)] = Mathf.Clamp01(share / GlobalLayer.WeakAt);
+        }
+        return res;
+    }
+
+    public static string OrganObject(string slot, string species) => slot + "@" + species;
+    public const string GrowthShape = "рост";
+    static bool IsOrganObject(string name) => name.IndexOf('@') > 0;
+
     /// <summary>Вес ключа по ступени: 1 — ручка (лист: колонка 2 из «база · ст.1 · · ст.2»), 2 — полный ключ.
     /// Не `GlobalLayer.G`: тот смешивает пропорции поля с ЧИСТЫМ видом (вес 1 — родное шасси), а цель ключа — ступень 2.</summary>
     public static float KeyStep1 = 0.5f;
@@ -107,7 +133,8 @@ public static class BodyMesh
     public static float ForceWeight;
 
     public static int Place(Transform container, Transform skeleton, GameObject model, Material mat, ICollection<string> skipSlots = null,
-                            IReadOnlyDictionary<string, float> keys = null, SpeciesSO jointsOf = null, IReadOnlyDictionary<string, float> regionKeys = null)
+                            IReadOnlyDictionary<string, float> keys = null, SpeciesSO jointsOf = null, IReadOnlyDictionary<string, float> regionKeys = null,
+                            IReadOnlyDictionary<string, float> organObjects = null)
     {
         var bones = new Dictionary<string, Transform>();
         foreach (var t in skeleton.GetComponentsInChildren<Transform>(true))
@@ -135,6 +162,9 @@ public static class BodyMesh
         // ЧЕРТА КЛЮЧА НА СТУПЕНИ: объект `@<ключ>` рисуется только на её ступени и снимает объекты шасси под собой
         var stages = ActiveStages(jointsOf, keys);
         var stageHides = new HashSet<string>(stages.SelectMany(st => st.hides ?? new string[0]));
+        // орган на шаблоне снимает собственные объекты шасси своего слота
+        var organSlots = new HashSet<string>(renderers.Where(r => IsOrganObject(r.name) && organObjects != null && organObjects.ContainsKey(r.name))
+                                                      .Select(r => SlotOf(r.name)));
 
         int placed = 0;
         foreach (var src in renderers)
@@ -142,9 +172,12 @@ public static class BodyMesh
             var mesh = src.sharedMesh;
             if (mesh == null || src.bones.Length == 0) continue;
             if (src.name.StartsWith("@") && !stages.Any(st => st.objectName == src.name)) continue;
+            bool organ = IsOrganObject(src.name);
+            if (organ && (organObjects == null || !organObjects.ContainsKey(src.name))) continue;
             if (stageHides.Contains(SlotOf(src.name))) continue;
+            if (!organ && organSlots.Contains(SlotOf(src.name))) continue;
             // место несёт чужой кусок (химера на меше вида): свой объект этого слота со всеми `слот.что` не ставится
-            if (skipSlots != null && skipSlots.Contains(SlotOf(src.name))) continue;
+            if (!organ && skipSlots != null && skipSlots.Contains(SlotOf(src.name))) continue;
             var srcBind = mesh.bindposes;
             int k = System.Array.FindIndex(src.bones, b => b != null);
             if (k < 0 || srcBind.Length != src.bones.Length)
@@ -184,7 +217,7 @@ public static class BodyMesh
             }
 
             int dot = src.name.IndexOf('.');
-            var go = new GameObject(dot > 0 ? src.name.Substring(0, dot) : src.name);   // ИМЯ = СЛОТ: контракт имён частей
+            var go = new GameObject(organ || dot > 0 ? SlotOf(src.name) : src.name);   // ИМЯ = СЛОТ: контракт имён частей
             if (dot > 0 && src.sharedMaterial != null && src.sharedMaterial.HasProperty("_BaseColor"))
             {
                 var own = src.sharedMaterial.GetColor("_BaseColor"); own.a = 1f;
@@ -207,6 +240,11 @@ public static class BodyMesh
                     int shape = skinned.GetBlendShapeIndex(kv.Key);
                     if (shape >= 0) smr.SetBlendShapeWeight(shape, Mathf.Clamp01(kv.Value) * 100f);
                 }
+            if (organ)
+            {
+                int shape = skinned.GetBlendShapeIndex(GrowthShape);
+                if (shape >= 0) smr.SetBlendShapeWeight(shape, Mathf.Clamp01(organObjects[src.name]) * 100f);
+            }
             if (Application.isPlaying)
             {
                 // границы — в системе скелета, а меш живёт в своей (у FBX из Blender бывает ×100 и поворот)
@@ -248,7 +286,11 @@ public static class BodyMesh
         return res;
     }
 
-    static string SlotOf(string objectName) { int dot = objectName.IndexOf('.'); return dot > 0 ? objectName.Substring(0, dot) : objectName; }
+    static string SlotOf(string objectName)
+    {
+        int at = objectName.IndexOf('@'); if (at > 0) return objectName.Substring(0, at);   // орган на шаблоне `<слот>@<вид>`
+        int dot = objectName.IndexOf('.'); return dot > 0 ? objectName.Substring(0, dot) : objectName;
+    }
 
     /// <summary>ХИМЕРА НА МЕШЕ ВИДА: тело — объекты меша шасси, место, которое несёт чужой кусок целиком, отдано куску.
     ///     ВАРИАНТ Б (решение геймдизайнера 19.10): шасси с мешем вида рисуется мешем ПРИ ЛЮБОЙ ПРИВИВКЕ. Орган без куска
