@@ -98,6 +98,7 @@ public static class SpeciesHandoff
         species.keyPose = ReadKeyPose(species);   // нет файла — пусто, и записывается явно (бутстрап не обнуляет)
         species.keyRigRest = ReadRigRest(species);
         species.keyStages = ReadKeyStages(species);
+        species.organObjectRules = ReadOrganObjectRules(species);
         if (species.traits.Length > 0 || species.seats.Length > 0)
             Debug.Log($"[черты] {species.speciesName}: кусков-черт {species.traits.Length}, посадочных мест {species.seats.Length}");
         return graph;
@@ -298,6 +299,28 @@ public static class SpeciesHandoff
                                      up = V(k.up, V(seam.up, Vector3.forward)), ellipse = new Vector2(k.ellipse_m[0], k.ellipse_m[1]),
                                      posadka = V(k.posadka_m, Vector3.zero) })
         .ToArray();
+
+    [System.Serializable] class OrganRuleDto { public string @object; public string[] skryvaet; }
+    [System.Serializable] class OrganRulesDto { public OrganRuleDto[] organy; }
+
+    /// <summary>ОРГАНЫ НА ШАБЛОНЕ, СНИМАЮЩИЕ СВОИ ОБЪЕКТЫ — `organy/<вид>.json`: `{"organy": [{"object": "Чутьё@Волк",
+    /// "skryvaet": ["Чутьё"]}]}`. Орган без записи садится поверх своих объектов. Объекта нет в меше — запись не принимается.</summary>
+    public static OrganObjectRule[] ReadOrganObjectRules(SpeciesSO species)
+    {
+        var file = Dir + "organy/" + Translit(species.speciesName) + ".json";
+        if (!System.IO.File.Exists(file)) return new OrganObjectRule[0];
+        var objects = species.bodyMesh != null ? species.bodyMesh.GetComponentsInChildren<SkinnedMeshRenderer>(true).Select(r => r.name).ToHashSet() : new HashSet<string>();
+        OrganRulesDto d;
+        try { d = JsonUtility.FromJson<OrganRulesDto>(System.IO.File.ReadAllText(file)); } catch { Debug.LogError($"[органы на шаблоне] «{file}» не читается"); return new OrganObjectRule[0]; }
+        var list = new List<OrganObjectRule>();
+        foreach (var r in d?.organy ?? new OrganRuleDto[0])
+        {
+            if (string.IsNullOrEmpty(r?.@object)) continue;
+            if (!objects.Contains(r.@object)) { Debug.LogError($"[органы на шаблоне] {species.speciesName}: объекта «{r.@object}» нет в меше вида, не принято"); continue; }
+            list.Add(new OrganObjectRule { objectName = r.@object, hides = r.skryvaet ?? new string[0] });
+        }
+        return list.ToArray();
+    }
 
     [System.Serializable] class KeyStageDto { public string kluch, @object; public int step; public string[] skryvaet, zamenyaet_cherty; }
 

@@ -15,8 +15,9 @@ namespace Chimera.Tests.EditMode
         static SpeciesSO Load(string n) => AssetDatabase.LoadAssetAtPath<SpeciesSO>($"Assets/_Chimera/Data/{n}.asset");
         readonly List<Object> trash = new();
 
-        [SetUp] public void SetUp() => ChainSwap.ResetCache();
-        [TearDown] public void TearDown() { foreach (var o in trash) if (o != null) Object.DestroyImmediate(o); trash.Clear(); ChainSwap.ResetCache(); }
+        // сторожа мерят посадку кусков органов на швах; орган на шаблоне (`<слот>@<вид>`, 22.10) её заменяет — на время выключен
+        [SetUp] public void SetUp() { ChainSwap.ResetCache(); BodyMesh.OrganObjectsOn = false; }
+        [TearDown] public void TearDown() { foreach (var o in trash) if (o != null) Object.DestroyImmediate(o); trash.Clear(); ChainSwap.ResetCache(); BodyMesh.OrganObjectsOn = true; }
 
         static Vector3 Mid(SpeciesSO sp, string bone)
         {

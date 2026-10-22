@@ -16,11 +16,11 @@ namespace Chimera.Tests.EditMode
         static SpeciesSO Load(string n) => AssetDatabase.LoadAssetAtPath<SpeciesSO>($"Assets/_Chimera/Data/{n}.asset");
         readonly List<Object> trash = new();
 
-        [SetUp] public void SetUp() { PartAssembly.MeshPieces = true; PartAssembly.ForceTraits = null; ChainSwap.ResetCache(); }
+        [SetUp] public void SetUp() { PartAssembly.MeshPieces = true; PartAssembly.ForceTraits = null; ChainSwap.ResetCache(); BodyMesh.OrganObjectsOn = false; }   // мерим куски на швах, не органы на шаблоне
         [TearDown]
         public void TearDown()
         {
-            PartAssembly.MeshPieces = true; PartAssembly.ForceTraits = null; PartAssembly.ForceStep = 2;
+            PartAssembly.MeshPieces = true; PartAssembly.ForceTraits = null; PartAssembly.ForceStep = 2; BodyMesh.OrganObjectsOn = true;
             BodyMesh.ForceKey = null; BodyMesh.ForceWeight = 0f; BodyMesh.ResetCache();
             foreach (var o in trash) if (o != null) Object.DestroyImmediate(o);
             trash.Clear();

@@ -189,9 +189,17 @@ namespace Chimera.Tests.EditMode
             var container = smrs[0].transform.parent;
             var skeleton = go.GetComponentsInChildren<Transform>(true).First(t => t.name == "Skeleton");
             foreach (var r in smrs) Object.DestroyImmediate(r.gameObject);
-            BodyMesh.Place(container, skeleton, model, null, organObjects: new System.Collections.Generic.Dictionary<string, float> { [organ.name] = 0.4f });
+            var grown = new System.Collections.Generic.Dictionary<string, float> { [organ.name] = 0.4f };
+            // без записи — поверх своего (роговой кусок на своей кисти)
+            BodyMesh.Place(container, skeleton, model, null, jointsOf: so, organObjects: grown);
             smrs = container.GetComponentsInChildren<SkinnedMeshRenderer>(true);
-            Assert.AreEqual(1, smrs.Length, "орган на шаблоне снимает свой объект шасси того же слота");
+            Assert.AreEqual(2, smrs.Length, "без записи орган на шаблоне садится поверх своего объекта");
+            foreach (var r in smrs) Object.DestroyImmediate(r.gameObject);
+            // по записи — снимает свой объект слота (уши Чутья вместо ушей носителя)
+            so.organObjectRules = new[] { new OrganObjectRule { objectName = organ.name, hides = new[] { "голова" } } };
+            BodyMesh.Place(container, skeleton, model, null, jointsOf: so, organObjects: grown);
+            smrs = container.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            Assert.AreEqual(1, smrs.Length, "по записи орган на шаблоне снимает свой объект шасси");
             Assert.AreEqual("голова", smrs[0].name, "имя органа на шаблоне — слот (контракт имён частей)");
             int shape = smrs[0].sharedMesh.GetBlendShapeIndex(BodyMesh.GrowthShape);
             Assert.GreaterOrEqual(shape, 0, "это не объект органа");

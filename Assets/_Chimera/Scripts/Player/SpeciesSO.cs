@@ -110,6 +110,7 @@ public class SpeciesSO : ScriptableObject
     /// воротник-грива, загривок и хвост одной массой, вырезанные из самой цели ключа (та же поверхность, к которой ключ тянет
     /// кожу), в метрах шасси на полном весе. На ступени он ЗАМЕНЯЕТ черты вида-цели кусками и снимает свои объекты под ним.</summary>
     public KeyStage[] keyStages;
+    public OrganObjectRule[] organObjectRules;   // органы на шаблоне, снимающие свои объекты (`handoff/organy/<вид>.json`)
 
     /// <summary>СОСТАВНОЕ ТЕЛО (`ChainSwap`): кости, которые поле НЕ рисует, потому что их часть рисует деталь, и сами
     /// поставленные детали. Только у копии в памяти.</summary>
@@ -461,6 +462,15 @@ public class KeyJoint
     public string key, bone;
     public Vector3 head, along, forward;
     public int step;   // поза своей ступени (`-poza-st<N>.json`): ставится на ней целиком; 0 — поза ключа, на ступенях ниже — на вес ступени
+}
+
+/// <summary>Орган на шаблоне `<слот>@<вид>`: какие свои объекты шасси он снимает (по слоту объекта). Нет записи — садится
+/// поверх своих: роговой кусок прорастает на своей кисти (22.10).</summary>
+[System.Serializable]
+public class OrganObjectRule
+{
+    public string objectName;
+    public string[] hides;
 }
 
 /// <summary>Черта ключа на ступени: какой объект меша шасси рисуется, что он снимает и какие черты цели заменяет.</summary>

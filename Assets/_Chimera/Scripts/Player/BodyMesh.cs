@@ -99,8 +99,9 @@ public static class BodyMesh
 
     /// <summary>ОРГАН НА ШАБЛОНЕ (22.10, спека «орган прорастает» §2.1: роговой кусок по одному на орган × тип тела). Объект
     /// `<слот>@<вид>` в меше шасси — орган вида-донора, нарисованный прямо на шаблоне (уши Чутья на голове, когти Рук на пальцах):
-    /// он уже привязан к костям шаблона, сажать его не нужно. Виден, только пока привит орган этого вида на этот слот; снимает
-    /// собственные объекты шасси того же слота; кусок органа донора на шве при нём не ставится. Растёт формой-ключом
+    /// он уже привязан к костям шаблона, сажать его не нужно. Виден, только пока привит орган этого вида на этот слот; садится
+    /// поверх своих объектов шасси, снимает их только по записи (`SpeciesSO.organObjectRules`); кусок органа донора на шве при
+    /// нём не ставится. Растёт формой-ключом
     /// `рост` по доле вида-донора от нуля до первой ступени (критик модельной линии 22.10: «одна форма растёт от 15 % до ст.1,
     /// без скачка»). Ключ: имя объекта, значение — вес роста.</summary>
     public static Dictionary<string, float> OrganObjectsFor(SpeciesSO chassis, IReadOnlyList<Organ> worn)
@@ -120,6 +121,8 @@ public static class BodyMesh
     }
 
     public static string OrganObject(string slot, string species) => slot + "@" + species;
+    /// <summary>Ручка сторожей посадки кусков на швах: с органом на шаблоне кусок органа донора не ставится, мерить нечего.</summary>
+    public static bool OrganObjectsOn = true;
     public const string GrowthShape = "рост";
     static bool IsOrganObject(string name) => name.IndexOf('@') > 0;
 
@@ -162,9 +165,11 @@ public static class BodyMesh
         // ЧЕРТА КЛЮЧА НА СТУПЕНИ: объект `@<ключ>` рисуется только на её ступени и снимает объекты шасси под собой
         var stages = ActiveStages(jointsOf, keys);
         var stageHides = new HashSet<string>(stages.SelectMany(st => st.hides ?? new string[0]));
-        // орган на шаблоне снимает собственные объекты шасси своего слота
-        var organSlots = new HashSet<string>(renderers.Where(r => IsOrganObject(r.name) && organObjects != null && organObjects.ContainsKey(r.name))
-                                                      .Select(r => SlotOf(r.name)));
+        // орган на шаблоне снимает свои объекты шасси, только если это записано (`organObjectRules`): уши Чутья заменяют уши
+        // человека, а когти Рук садятся поверх своей кисти — объект «Руки» шасси это вся рука с плечом (22.10)
+        var organSlots = new HashSet<string>((jointsOf?.organObjectRules ?? new OrganObjectRule[0])
+            .Where(r => r != null && organObjects != null && organObjects.ContainsKey(r.objectName ?? ""))
+            .SelectMany(r => r.hides ?? new string[0]));
 
         int placed = 0;
         foreach (var src in renderers)
