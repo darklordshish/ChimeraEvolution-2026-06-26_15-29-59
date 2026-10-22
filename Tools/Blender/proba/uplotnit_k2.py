@@ -18,12 +18,13 @@ opt = {}
 i = 2
 while i < len(a):
     opt[a[i].lstrip('-')] = a[i + 1]; i += 2
-ZONY = [(z.split(':')[0], float(z.split(':')[1]), float(z.split(':')[2]))
+ZONY = [(z.split(':')[0], float(z.split(':')[1]), float(z.split(':')[2]), float(z.split(':')[3]) if len(z.split(':')) > 3 else 9.0)
         for z in opt.get('zony', 'хребет:0:9,Сердце:0:9,шея:0:9,Руки:1.15:9,Ноги:0:0.62').split(',')]
+# четвёртое поле зоны — предел по y (Blender: −Y вперёд): «хребет:0.95:1.30:0.06» — только перед и бока (22.10, живот под клин груди)
 RAZ = int(opt.get('raz', '1'))
 
 bpy.ops.wm.open_mainfile(filepath=src)
-for name, z0, z1 in ZONY:
+for name, z0, z1, ymax in ZONY:
     o = bpy.data.objects.get(name)
     if o is None:
         print('УПЛОТН: нет объекта', name); continue
@@ -31,7 +32,7 @@ for name, z0, z1 in ZONY:
     for _ in range(RAZ):
         bm = bmesh.new(); bm.from_mesh(o.data)
         mw = o.matrix_world
-        edges = [e for e in bm.edges if not e.is_boundary and all(z0 <= (mw @ v.co).z <= z1 for v in e.verts)]
+        edges = [e for e in bm.edges if not e.is_boundary and all(z0 <= (mw @ v.co).z <= z1 and (mw @ v.co).y <= ymax for v in e.verts)]
         bmesh.ops.subdivide_edges(bm, edges=edges, cuts=1, use_grid_fill=False)
         bmesh.ops.triangulate(bm, faces=[f for f in bm.faces if len(f.verts) > 3])
         bm.to_mesh(o.data); bm.free(); o.data.update()
