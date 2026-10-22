@@ -12,7 +12,7 @@
 Оси — суставы покоя цепи цели (`--sustavy`, файл `podgonka_v_poze.py`), в них лежит форма-ключ.
 
   blender -b --factory-startup -P formovka.py -- вход.blend выход.blend --sustavy f.json [--imya Волк] [--golen 0.75] [--koleno 6]
-      [--talia 0.88] [--talia_z 0.98:1.10:1.22] [--grud 1.04:1.24:12]
+      [--talia 0.88] [--talia_z 0.98:1.10:1.22] [--grud 1.04:1.24:12] [--raspravit 40]
 """
 import sys, json
 import bpy
@@ -101,13 +101,38 @@ if opt.get('grud'):
     wg = np.zeros(len(P))
     for v in range(len(P)):
         x_, y_, z_ = B[v]
-        if g0 < z_ < g1 and y_ < 0.02 and vbone[v].split('.')[0] in ('хребет', 'живот', 'грудная клетка', 'таз'):
+        if g0 < z_ < g1 and y_ < float(opt.get('grud_y', '0.02')) and abs(x_) < float(opt.get('grud_x', '0.4')) and vbone[v].split('.')[0] in ('хребет', 'живот', 'грудная клетка', 'таз', 'лопатка', 'плечо'):
             t_ = (z_ - g0) / (g1 - g0); wg[v] = np.sin(np.pi * t_) ** 2
+    # `--grud_lap 1`: простой лапласиан (с усадкой) — Таубин сохраняет форму вместе с кантом, а кант и надо снять
+    LAMS = (0.5,) if opt.get('grud_lap', '0') == '1' else (0.5, -0.53)
     for _ in range(gn):
-        for lam in (0.5, -0.53):
+        for lam in LAMS:
             L = np.array([P[nb[v]].mean(0) - P[v] if nb[v] else np.zeros(3) for v in range(len(P))])
             P = P + (lam * wg)[:, None] * L
     print('ФОРМОВКА: грудь → живот — %d вершин в полосе z %.2f–%.2f, %d шагов' % (int((wg > 0).sum()), g0, g1, gn))
+# 4. РАСПРАВИТЬ СКЛАДКИ (`--raspravit 40`, 22.10, критик ряда: «тёмный пояс» ст.2 и «яма на груди» ст.1): подгонка заворачивает часть
+# граней — нормаль ключа смотрит против базовой (Сердце 89, хребет 91, Руки 321 грань); в игре это тёмные провалы. Вершины
+# перевёрнутых граней и их соседи сглаживаются к среднему соседей, пока складок не останется (или `--raspravit` шагов)
+if opt.get('raspravit'):
+    Fb = []
+    for o in body:
+        for pl in o.data.polygons: Fb.append([vmap[(o.name, vi)] for vi in pl.vertices])
+    def perevernuty(Pk):
+        out_ = []
+        for f in Fb:
+            nb_ = np.cross(B[f[1]] - B[f[0]], B[f[2]] - B[f[0]]); nk_ = np.cross(Pk[f[1]] - Pk[f[0]], Pk[f[2]] - Pk[f[0]])
+            lb, lk = np.linalg.norm(nb_), np.linalg.norm(nk_)
+            if lb > 0 and lk > 0 and np.dot(nb_, nk_) / (lb * lk) < 0.0: out_.append(f)
+        return out_
+    n0_ = len(perevernuty(P))
+    for it in range(int(opt['raspravit'])):
+        bad = perevernuty(P)
+        if not bad: break
+        vs = set(v for f in bad for v in f)
+        vs |= set(u for v in list(vs) for u in nb[v])
+        for v in vs:
+            if nb[v]: P[v] = 0.5 * P[v] + 0.5 * P[nb[v]].mean(0)
+    print('ФОРМОВКА: складки — перевёрнутых граней %d → %d' % (n0_, len(perevernuty(P))))
 dv = np.linalg.norm(P - P0, axis=1)
 for o in body:
     kb = o.data.shape_keys.key_blocks[NAME]; inv = o.matrix_world.inverted()
