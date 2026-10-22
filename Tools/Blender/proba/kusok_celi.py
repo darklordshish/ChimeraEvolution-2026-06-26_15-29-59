@@ -14,8 +14,8 @@
      на ступени 2 вида-ключа, снимает `skryvaet`, черты `zamenyaet_cherty` не ставит).
 
   blender -b --factory-startup -P kusok_celi.py -- ключ.blend цель.obj выход.fbx паспорт.json
-      [--imya Волк] [--zazor 0.012] [--zazor_hvost 0.05] [--golova_z 1.50] [--golova_x 0.25] [--griva_z 1.15] [--griva_x 0.42] [--griva_pered_z 1.40] [--hvost_z 1.0] [--hvost_y 0.12] [--hvost_x 9] [--bez_kostej плечо,предплечье] [--kisti_z 0.9] [--hvost_naklon 20] [--hvost_k_osi 0.2] [--ushi 1.80:0.06:1.4] [--golova_po_vesam 1 [--golova_sheya_z 1.5]] [--zakryt 200]
-      [--ostrov 400] [--lapy_z 0.32] [--stupen 2|1 [--st1_y -0.02] [--st1_z 1.62] [--st1_zatylok 0.06] [--st1_verh 1.70] [--st1_hvost 0.65] [--st1_niz 1.30] [--ves1 0.5] [--st1_ushi 1.66:0.06]] [--prizhim_d 0.06 --prizhim_k 0.35 [--prizhim_verh 1.45]] [--dvustor 1] [--normali 1] [--tselikom 1] [--dolya 0.08] [--shots префикс]
+      [--imya Волк] [--zazor 0.012] [--zazor_hvost 0.05] [--golova_z 1.50] [--golova_x 0.25] [--griva_z 1.15] [--griva_x 0.42] [--griva_pered_z 1.40] [--hvost_z 1.0] [--hvost_y 0.12] [--hvost_x 9] [--bez_kostej плечо,предплечье] [--kisti_z 0.9 [--kisti_zazor 0.012]] [--hvost_naklon 20] [--hvost_k_osi 0.2] [--ushi 1.80:0.06:1.4] [--golova_po_vesam 1 [--golova_sheya_z 1.5]] [--zakryt 200]
+      [--ostrov 400] [--lapy_z 0.32] [--stupen 2|1 [--st1_y -0.02] [--st1_z 1.62] [--st1_zatylok 0.06] [--st1_verh 1.70] [--st1_hvost 0.65] [--st1_niz 1.30] [--ves1 0.5] [--st1_ushi 1.66:0.06[:-0.04]]] [--prizhim_d 0.06 --prizhim_k 0.35 [--prizhim_verh 1.45]] [--dvustor 1] [--normali 1] [--tselikom 1] [--dolya 0.08] [--shots префикс]
 Вход `ключ.blend` — сохранённый `kluch_vida.py --blend` (меш шасси с ключом и арматурой). Печатает «КУСОК: …».
 """
 import sys, json, os
@@ -115,7 +115,8 @@ for f in bm.faces:
         for v in f.verts:
             for nm, x in VESA[v.index].items(): sc_[nm] = sc_.get(nm, 0.0) + x
         gl_ = max(sc_, key=sc_.get) if sc_ else ''
-        if KISTI: paw = paw or (gl_.startswith('предплечье') and c.z < KISTI)
+        # `--kisti_zazor`: из кисти — только то, что отстоит от тела дальше зазора (когти цели; пальцы лежат на подогнанной кисти)
+        if KISTI: paw = paw or (gl_.startswith('предплечье') and c.z < KISTI and d > float(opt.get('kisti_zazor', '0')))
         # ГОЛОВА ПО ВЕСАМ (`--golova_po_vesam 1`, 21.10, критик r10): срез по высоте не закрывал затылок — голова человека под
         # куском снята, и сквозь шов шеи светился фон. Голова — всё, у чего главная кость «голова», с затылком
         # `--golova_sheya_z`: и грани с главной костью «шея» выше этой высоты покоя — затылок цели взвешен на шею, а шов шеи К2
@@ -123,12 +124,13 @@ for f in bm.faces:
         if GPV: head = gl_ == 'голова' or (gl_ == 'шея' and c.z > float(opt.get('golova_sheya_z', '9')))
     if STEP < 2:
         # ст.1 (лист, колонка 2): голова человеческая, стопа ещё не лапа; грива — за головой и по спине, спереди лицо открыто
-        head = paw = False
+        head = False; paw = paw if KISTI else False     # когти кисти (`--kisti_z`) — и на ступени 1 (органы на шаблоне)
         # `--st1_ushi z:x` (22.10, ст.1 по своей колонке листа: человеческая голова с ОСТРЫМИ УШАМИ): грани выше z и дальше x от
         # средней линии, отстоящие от тела — уши цели ст.1
         if opt.get('st1_ushi'):
-            uz_, ux_ = (float(v) for v in opt['st1_ushi'].split(':'))
-            head = c.z > uz_ and abs(c.x) > ux_ and d > gap
+            pr_ = [float(v) for v in opt['st1_ushi'].split(':')]; uz_, ux_ = pr_[:2]; uy_ = pr_[2] if len(pr_) > 2 else -9
+            # третье поле — не впереди y (лицо цели ст.1 отличается от лица шасси и иначе шло в уши «маской»)
+            head = c.z > uz_ and abs(c.x) > ux_ and c.y > uy_ and d > gap
         mane = mane and c.z > float(opt['st1_niz'])     # ст.1: грива кончается на середине лопатки рваным краем, а не плитой до поясницы
         mane = mane and c.y > float(opt['st1_y']) and (c.z < float(opt['st1_z']) or c.y > float(opt['st1_zatylok']))     # выше — только за черепом: иначе капюшон над головой
     if TSELIKOM:
