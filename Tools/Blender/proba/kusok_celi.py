@@ -14,7 +14,7 @@
      на ступени 2 вида-ключа, снимает `skryvaet`, черты `zamenyaet_cherty` не ставит).
 
   blender -b --factory-startup -P kusok_celi.py -- ключ.blend цель.obj выход.fbx паспорт.json
-      [--imya Волк] [--zazor 0.012] [--zazor_hvost 0.05] [--golova_z 1.50] [--golova_x 0.25] [--griva_z 1.15] [--griva_x 0.42] [--griva_pered_z 1.40] [--hvost_z 1.0] [--hvost_y 0.12] [--hvost_x 9] [--bez_kostej плечо,предплечье] [--kisti_z 0.9] [--hvost_naklon 20] [--ushi 1.80:0.06:1.4] [--golova_po_vesam 1 [--golova_sheya_z 1.5]] [--zakryt 200]
+      [--imya Волк] [--zazor 0.012] [--zazor_hvost 0.05] [--golova_z 1.50] [--golova_x 0.25] [--griva_z 1.15] [--griva_x 0.42] [--griva_pered_z 1.40] [--hvost_z 1.0] [--hvost_y 0.12] [--hvost_x 9] [--bez_kostej плечо,предплечье] [--kisti_z 0.9] [--hvost_naklon 20] [--hvost_k_osi 0.2] [--ushi 1.80:0.06:1.4] [--golova_po_vesam 1 [--golova_sheya_z 1.5]] [--zakryt 200]
       [--ostrov 400] [--lapy_z 0.32] [--stupen 2|1 [--st1_y -0.02] [--st1_z 1.62] [--st1_zatylok 0.06] [--st1_verh 1.70] [--st1_hvost 0.65] [--st1_niz 1.30] [--ves1 0.5] [--st1_ushi 1.66:0.06]] [--prizhim_d 0.06 --prizhim_k 0.35 [--prizhim_verh 1.45]] [--dvustor 1] [--normali 1] [--tselikom 1] [--dolya 0.08] [--shots префикс]
 Вход `ключ.blend` — сохранённый `kluch_vida.py --blend` (меш шасси с ключом и арматурой). Печатает «КУСОК: …».
 """
@@ -243,6 +243,17 @@ if opt.get('ushi'):
             w = min(1.0, (v.co.x * sg - ux) / 0.03)
             v.co.z = v.co.z + (v.co.z - piv.z) * (uk - 1.0) * w
         print('КУСОК: уши ×%g, сторона %+d: %d вершин' % (uk, sg, len(side)))
+# ХВОСТ К СРЕДНЕЙ ЛИНИИ (`--hvost_k_osi 0.2`, 22.10, ст.1: у цели Hunyuan хвост висит наискосок вбок — на листе назад-вниз):
+# боковое отклонение вершин хвоста от корня ×k, нарастает от корня к кончику
+if opt.get('hvost_k_osi'):
+    kx = float(opt['hvost_k_osi'])
+    tv0 = [v for v in t.data.vertices if v.co.z < hz and v.co.y > hy - 0.04]
+    if tv0:
+        r0 = max(tv0, key=lambda v: v.co.z).co.copy(); dl0 = max(1e-3, r0.z - min(v.co.z for v in tv0))
+        for v in tv0:
+            u = min(1.0, max(0.0, (r0.z - v.co.z) / dl0)); f = 1.0 + (kx - 1.0) * u
+            v.co.x = r0.x + (v.co.x - r0.x) * f
+        print('КУСОК: хвост к средней линии ×%g (%d вершин)' % (kx, len(tv0)))
 HN = float(opt.get('hvost_naklon', '0'))
 if HN:
     import math
