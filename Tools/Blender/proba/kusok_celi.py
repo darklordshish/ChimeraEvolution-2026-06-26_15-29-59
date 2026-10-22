@@ -14,8 +14,8 @@
      на ступени 2 вида-ключа, снимает `skryvaet`, черты `zamenyaet_cherty` не ставит).
 
   blender -b --factory-startup -P kusok_celi.py -- ключ.blend цель.obj выход.fbx паспорт.json
-      [--imya Волк] [--zazor 0.012] [--zazor_hvost 0.05] [--golova_z 1.50] [--golova_x 0.25] [--griva_z 1.15] [--griva_x 0.42] [--hvost_z 1.0] [--hvost_y 0.12] [--hvost_x 9] [--bez_kostej плечо,предплечье] [--kisti_z 0.9] [--hvost_naklon 20] [--ushi 1.80:0.06:1.4] [--golova_po_vesam 1 [--golova_sheya_z 1.5]] [--zakryt 200]
-      [--ostrov 400] [--lapy_z 0.32] [--stupen 2|1 [--st1_y -0.02] [--st1_z 1.62] [--st1_zatylok 0.06] [--st1_verh 1.70] [--st1_hvost 0.65] [--st1_niz 1.30] [--ves1 0.5]] [--prizhim_d 0.06 --prizhim_k 0.35 [--prizhim_verh 1.45]] [--dvustor 1] [--tselikom 1] [--dolya 0.08] [--shots префикс]
+      [--imya Волк] [--zazor 0.012] [--zazor_hvost 0.05] [--golova_z 1.50] [--golova_x 0.25] [--griva_z 1.15] [--griva_x 0.42] [--griva_pered_z 1.40] [--hvost_z 1.0] [--hvost_y 0.12] [--hvost_x 9] [--bez_kostej плечо,предплечье] [--kisti_z 0.9] [--hvost_naklon 20] [--ushi 1.80:0.06:1.4] [--golova_po_vesam 1 [--golova_sheya_z 1.5]] [--zakryt 200]
+      [--ostrov 400] [--lapy_z 0.32] [--stupen 2|1 [--st1_y -0.02] [--st1_z 1.62] [--st1_zatylok 0.06] [--st1_verh 1.70] [--st1_hvost 0.65] [--st1_niz 1.30] [--ves1 0.5]] [--prizhim_d 0.06 --prizhim_k 0.35 [--prizhim_verh 1.45]] [--dvustor 1] [--normali 1] [--tselikom 1] [--dolya 0.08] [--shots префикс]
 Вход `ключ.blend` — сохранённый `kluch_vida.py --blend` (меш шасси с ключом и арматурой). Печатает «КУСОК: …».
 """
 import sys, json, os
@@ -101,6 +101,9 @@ for f in bm.faces:
     d = bvh.find_nearest(c)[3]
     head = c.z > gz and abs(c.x) < float(opt['golova_x'])     # у лося рога — до 0.6 м от средней линии
     mane = c.z > mz and abs(c.x) < mx and d > gap
+    # `--griva_pered_z`: спереди (впереди тела, y < −0.03) грива — только выше этой высоты покоя (критик ряда: «нагрудник» шерсти
+    # до пояса закрывал грудь; у r13 воротник кончается на ключицах)
+    if mane and c.y < -0.03 and c.z < float(opt.get('griva_pered_z', '0')): mane = False
     tail = c.z < hz and c.y > hy and d > (gap if c.z > 0.75 else gt)     # ниже ягодиц — дальше от тела: мех икр цели в хвост не идёт
     # `--hvost_x` (21.10, критик r1: хвост начинался на талии и шириной 45 см закрывал ягодицы фартуком) — только у средней линии
     tail = tail and abs(c.x) < float(opt.get('hvost_x', '9'))
@@ -254,6 +257,13 @@ if int(opt.get('zakryt', '0')):
     bmesh.ops.triangulate(bm3, faces=r_['faces'])
     bm3.to_mesh(t.data); bm3.free()
     print('КУСОК: закрыто краёв — %d граней заплаток' % len(r_['faces']))
+# НОРМАЛИ НАРУЖУ (`--normali 1`, 22.10: черты «@» в игре рисуются двусторонним материалом — копии граней `--dvustor` больше не нужны;
+# нормали цели Hunyuan у открытой оболочки гривы смотрят вразнобой — выравниваются согласованно наружу)
+if opt.get('normali', '0') == '1':
+    bm4 = bmesh.new(); bm4.from_mesh(t.data)
+    bmesh.ops.recalc_face_normals(bm4, faces=list(bm4.faces))
+    bm4.to_mesh(t.data); bm4.free()
+    print('КУСОК: нормали выровнены наружу')
 if opt.get('dvustor', '0') == '1':
     # ОБОРОТНАЯ СТОРОНА: кусок меха — открытая оболочка, изнутри (из-за головы, из-под пряди) видна пустота и тёмная дыра
     # отсечённых граней; копия граней с обратной нормалью закрывает её (материал односторонний)
