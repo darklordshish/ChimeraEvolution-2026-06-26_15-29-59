@@ -384,7 +384,9 @@ public static class Stand
         lamp.transform.SetParent(root.transform, false);
         lamp.type = LightType.Directional;
         lamp.intensity = 1.1f;
-        lamp.transform.rotation = Quaternion.Euler(35f, front ? 200f : 140f, 0f);
+        // свет — со стороны камеры, чуть сбоку: в профиль камера смотрит в −X, и прежние 140° светили с обратной стороны —
+        // фигуры выходили тёмно-синими силуэтами (22.10)
+        lamp.transform.rotation = Quaternion.Euler(35f, front ? 200f : 250f, 0f);
 
         return string.Join(" · ", report) + string.Format("  [ряд {0:0.00} м, верх {1:0.00} м]", span, top);
     }
