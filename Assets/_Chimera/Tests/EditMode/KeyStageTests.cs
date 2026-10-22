@@ -77,5 +77,21 @@ namespace Chimera.Tests.EditMode
             }
             finally { Object.DestroyImmediate(go); }
         }
+    
+        /// <summary>Черта ступени `@<ключ>` (грива, хвост, мех — открытая оболочка) рисуется двусторонним материалом, тело шасси —
+        /// односторонним (22.10: изнанка гривы на одностороннем материале давала «щит» на груди).</summary>
+        [Test]
+        public void StageTrait_IsTwoSided_BodyIsNot()
+        {
+            var mat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            try
+            {
+                var two = BodyMesh.TwoSided(mat);
+                Assert.AreEqual(0f, two.GetFloat("_Cull"), "черта ступени — без отсечения граней");
+                Assert.AreNotEqual(0f, mat.GetFloat("_Cull"), "материал тела не тронут");
+                Assert.AreSame(two, BodyMesh.TwoSided(mat), "копия одна на материал");
+            }
+            finally { Object.DestroyImmediate(mat); }
+        }
     }
 }

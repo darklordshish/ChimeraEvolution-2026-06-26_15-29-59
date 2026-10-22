@@ -215,7 +215,7 @@ public static class BodyMesh
                 smr.localBounds = b;
             }
             else smr.updateWhenOffscreen = true;
-            if (mat != null) smr.sharedMaterial = mat;
+            if (mat != null) smr.sharedMaterial = src.name.StartsWith("@") ? TwoSided(mat) : mat;
             placed++;
         }
         // ПОЗУ СТУПЕНИ ЗДЕСЬ НЕ СТАВИМ: после меша тела на тот же скелет привязываются куски органов, и их привязка обязана
@@ -223,6 +223,20 @@ public static class BodyMesh
         // покое снаружи кисти, которая ушла по позе)
         return placed;
     }
+
+    /// <summary>ДВУСТОРОННИЙ МАТЕРИАЛ ДЛЯ ЧЕРТ СТУПЕНИ (22.10, решение по разбору модельной линии): грива, хвост, мех `@<ключ>` —
+    /// открытые оболочки, как волосы и мех в играх. С отсечением задних граней дальняя сторона гривы показывала изнанку, грудь
+    /// выглядела «щитом»; двусторонность граней копиями давала изнанку, прижатую к груди. Тело шасси остаётся односторонним.</summary>
+    public static Material TwoSided(Material mat)
+    {
+        if (mat == null) return null;
+        if (twoSided.TryGetValue(mat, out var m) && m != null) return m;
+        m = new Material(mat) { name = mat.name + " · двусторонний", hideFlags = HideFlags.HideAndDontSave };
+        if (m.HasProperty("_Cull")) m.SetFloat("_Cull", 0f);   // URP Lit: 0 = Off
+        twoSided[mat] = m;
+        return m;
+    }
+    static readonly Dictionary<Material, Material> twoSided = new();
 
     /// <summary>Черты ключа, чья ступень достигнута: вес ключа полный (ступень 2 = вес 1, `KeyWeight`).</summary>
     public static List<KeyStage> ActiveStages(SpeciesSO chassis, IReadOnlyDictionary<string, float> keys)
