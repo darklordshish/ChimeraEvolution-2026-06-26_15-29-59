@@ -224,8 +224,16 @@ public static class SpeciesHandoff
     public static KeyJoint[] ReadKeyJoints(SpeciesSO species) => ReadKeyFrames(species, "-sustavy.json", "суставы");
 
     /// <summary>ПОЗА СТУПЕНИ — `klyuchi/<вид>-<цель>-poza.json`: тот же формат, что суставы, кости шасси в позе цели
-    /// (длины шасси; поворот на кость выводит `KeyPose`). Нет файла — поза покоя.</summary>
-    public static KeyJoint[] ReadKeyPose(SpeciesSO species) => ReadKeyFrames(species, "-poza.json", "поза");
+    /// (длины шасси; поворот на кость выводит `KeyPose`). Нет файла — поза покоя.
+    /// Поза своей ступени — `klyuchi/<вид>-<цель>-poza-st<N>.json` (22.10, модельная линия: ст.1 на листе почти прямая, а половина
+    /// позы ст.2 её сутулит и уводит хвост, снятый в позе цели ст.1).</summary>
+    public static KeyJoint[] ReadKeyPose(SpeciesSO species)
+    {
+        var list = ReadKeyFrames(species, "-poza.json", "поза").ToList();
+        for (int n = 1; n <= 3; n++)
+            list.AddRange(ReadKeyFrames(species, $"-poza-st{n}.json", "поза").Select(j => { j.step = n; return j; }));
+        return list.ToArray();
+    }
 
     /// <summary>ПОКОЙ РИГА ШАССИ — `klyuchi/<вид>-pokoj.json`: тот же формат, кости рига модельной линии в покое (без цели).
     /// Нужен позе: рамки графа в Unity и рамки рига в Blender у части костей расходятся (хребет 35°, шея и бедро 17–18°),

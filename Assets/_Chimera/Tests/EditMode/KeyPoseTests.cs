@@ -156,6 +156,39 @@ namespace Chimera.Tests.EditMode
             }
         }
 
+        /// <summary>ПОЗА СВОЕЙ СТУПЕНИ (22.10): на ступени 1 стоит её собственная поза целиком, а не половина позы ступени 2;
+        /// на ступени 2 — поза ключа, как прежде.</summary>
+        [Test]
+        public void Stage1_OwnPose_ReplacesHalfOfStage2()
+        {
+            var human = Load("Человек"); var wolf = Load("Волк");
+            var savedPose = human.keyPose; var savedRest = human.keyRigRest;
+            var made = new List<GameObject>();
+            try
+            {
+                human.keyPose = new KeyJoint[0]; human.keyRigRest = new KeyJoint[0];
+                var pure = Build(human, human.organs.Where(o => o != null).ToList()); made.Add(pure);
+                var restRot = InBody(pure, Bone(pure));
+                var restPos = pure.transform.Find("Morph").InverseTransformPoint(Bone(pure).position);
+                var p2 = Tilt * restRot;
+                var p1 = Quaternion.AngleAxis(-10f, Vector3.right) * restRot;
+                human.keyPose = new[]
+                {
+                    new KeyJoint { key = "Волк", bone = Spine, head = restPos, along = p2 * Vector3.up, forward = p2 * Vector3.forward },
+                    new KeyJoint { key = "Волк", bone = Spine, head = restPos, along = p1 * Vector3.up, forward = p1 * Vector3.forward, step = 1 },
+                };
+                var half = Build(human, WolfOn(human, wolf, 5)); made.Add(half);
+                var full = Build(human, WolfOn(human, wolf, 99)); made.Add(full);
+                Assert.Less(Quaternion.Angle(InBody(half, Bone(half)), p1), 0.5f, "ступень 1 — своя поза целиком");
+                Assert.Less(Quaternion.Angle(InBody(full, Bone(full)), p2), 0.5f, "ступень 2 — поза ключа");
+            }
+            finally
+            {
+                human.keyPose = savedPose; human.keyRigRest = savedRest;
+                foreach (var g in made) Object.DestroyImmediate(g);
+            }
+        }
+
         [Test]
         public void NoPoseFile_BodyStaysInRest()
         {

@@ -18,9 +18,21 @@ public static class KeyPose
     /// <summary>Есть ли поза ступени у активного ключа — тогда суставы цели ставятся деформацией после привязки, вместе с позой.</summary>
     public static bool HasPose(SpeciesSO species, IReadOnlyDictionary<string, float> keys)
     {
-        if (species?.keyPose == null || species.keyPose.Length == 0 || keys == null) return false;
-        var key = keys.Where(kv => kv.Value > 1e-4f).Select(kv => kv.Key).FirstOrDefault();
-        return key != null && species.keyPose.Any(j => j != null && j.key == key);
+        return Select(species, keys).pose.Count > 0;
+    }
+
+    /// <summary>ПОЗА СВОЕЙ СТУПЕНИ (22.10): есть поза ступени, на которой стоит ключ, — она ставится целиком (вес 1); нет — поза
+    /// ключа (`step` 0) на вес ступени, как прежде. Ступень читается по весу ключа: вес 1 — ступень 2, меньше — ступень 1.</summary>
+    static (Dictionary<string, KeyJoint> pose, float w) Select(SpeciesSO species, IReadOnlyDictionary<string, float> keys)
+    {
+        var none = (new Dictionary<string, KeyJoint>(), 0f);
+        if (species?.keyPose == null || species.keyPose.Length == 0 || keys == null) return none;
+        var (key, w) = keys.Where(kv => kv.Value > 1e-4f).Select(kv => (kv.Key, Mathf.Clamp01(kv.Value))).FirstOrDefault();
+        if (key == null) return none;
+        int step = w >= 1f - 1e-4f ? 2 : 1;
+        var own = species.keyPose.Where(j => j != null && j.key == key && j.step == step).ToList();
+        var src = own.Count > 0 ? own : species.keyPose.Where(j => j != null && j.key == key && j.step == 0).ToList();
+        return (src.GroupBy(j => j.bone).ToDictionary(g => g.Key, g => g.First()), own.Count > 0 ? 1f : w);
     }
 
     /// <summary>Поза — последней, после привязки всех мешей в покое шасси: каждая кость из файла встаёт РАМКОЙ позы целиком —
@@ -35,10 +47,8 @@ public static class KeyPose
 
     public static int Apply(Transform container, Transform skeleton, SpeciesSO species, IReadOnlyDictionary<string, float> keys)
     {
-        if (skeleton == null || species?.keyPose == null || species.keyPose.Length == 0 || keys == null) return 0;
-        var (key, w) = keys.Where(kv => kv.Value > 1e-4f).Select(kv => (kv.Key, Mathf.Clamp01(kv.Value))).FirstOrDefault();
-        if (key == null) return 0;
-        var pose = species.keyPose.Where(j => j != null && j.key == key).GroupBy(j => j.bone).ToDictionary(g => g.Key, g => g.First());
+        if (skeleton == null) return 0;
+        var (pose, w) = Select(species, keys);
         if (pose.Count == 0) return 0;
 
         // ПОКОЙ РИГА (22.10): рамки графа и рига модельной линии у части костей расходятся (хребет 35°, шея, бедро 17–18°).

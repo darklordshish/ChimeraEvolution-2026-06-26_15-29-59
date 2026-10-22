@@ -460,6 +460,7 @@ public class KeyJoint
 {
     public string key, bone;
     public Vector3 head, along, forward;
+    public int step;   // поза своей ступени (`-poza-st<N>.json`): ставится на ней целиком; 0 — поза ключа, на ступенях ниже — на вес ступени
 }
 
 /// <summary>Черта ключа на ступени: какой объект меша шасси рисуется, что он снимает и какие черты цели заменяет.</summary>
