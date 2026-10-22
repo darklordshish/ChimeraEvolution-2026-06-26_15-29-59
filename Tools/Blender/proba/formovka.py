@@ -12,7 +12,7 @@
 Оси — суставы покоя цепи цели (`--sustavy`, файл `podgonka_v_poze.py`), в них лежит форма-ключ.
 
   blender -b --factory-startup -P formovka.py -- вход.blend выход.blend --sustavy f.json [--imya Волк] [--golen 0.75] [--koleno 6]
-      [--talia 0.88] [--talia_z 0.98:1.10:1.22]
+      [--talia 0.88] [--talia_z 0.98:1.10:1.22] [--grud 1.04:1.24:12]
 """
 import sys, json
 import bpy
@@ -92,6 +92,22 @@ for v, bn in enumerate(vbone):
     ax = t - h; u = np.clip((P[v] - h) @ ax / max(ax @ ax, 1e-9), -1, 2); c = h + ax * u
     d = P[v] - c; d[2] = 0.0
     P[v] = P[v] - d * (1.0 - k); n_t += 1
+# 3. ГРУДЬ → ЖИВОТ КЛИНОМ (`--grud z0:z1:итераций`, дизайн-линия 22.10, FEEDBACK-2026-10-22-codex-grud-st2): поворот поверхности под
+# грудью был сжат в тёмную полосу 0.05–0.08 H с нависающим кантом («нагрудник»); переход растягивается на 0.15–0.20 H —
+# сглаживание Таубина (без усадки) на передней и боковой поверхности торса в полосе базовых высот z0..z1, вес — колокол
+# по высоте (на краях полосы 0: объём груди выше и живот ниже не трогаются); ширину талии не менять
+if opt.get('grud'):
+    g0, g1, gn = opt['grud'].split(':'); g0, g1, gn = float(g0), float(g1), int(gn)
+    wg = np.zeros(len(P))
+    for v in range(len(P)):
+        x_, y_, z_ = B[v]
+        if g0 < z_ < g1 and y_ < 0.02 and vbone[v].split('.')[0] in ('хребет', 'живот', 'грудная клетка', 'таз'):
+            t_ = (z_ - g0) / (g1 - g0); wg[v] = np.sin(np.pi * t_) ** 2
+    for _ in range(gn):
+        for lam in (0.5, -0.53):
+            L = np.array([P[nb[v]].mean(0) - P[v] if nb[v] else np.zeros(3) for v in range(len(P))])
+            P = P + (lam * wg)[:, None] * L
+    print('ФОРМОВКА: грудь → живот — %d вершин в полосе z %.2f–%.2f, %d шагов' % (int((wg > 0).sum()), g0, g1, gn))
 dv = np.linalg.norm(P - P0, axis=1)
 for o in body:
     kb = o.data.shape_keys.key_blocks[NAME]; inv = o.matrix_world.inverted()

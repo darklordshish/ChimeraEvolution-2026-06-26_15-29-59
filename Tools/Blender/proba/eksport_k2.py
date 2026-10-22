@@ -7,6 +7,10 @@ arm = [o for o in bpy.data.objects if o.type == 'ARMATURE'][0]
 # ВЕСА — НЕ БОЛЬШЕ 4 КОСТЕЙ с нормализацией (ГеймБосс 22.10: импорт Unity режет до 4, у «Сердце» урезалось 54 % вершин, у @Волк 934 —
 # игра гнула их не как Blender: «нагрудник», дыра в гриве, тёмный пояс). Группы областей «*.область» — служебные (ключи областей
 # уже запечены), в выгрузку не идут
+# все формы-ключи — на 0 (svesti_klyuchi оставлял «Лось» включённым на 1: в Blender-кадрах тело раздувалось «капюшоном»;
+# вес ставит игра, в FBX веса по умолчанию — нули)
+for o in [x for x in bpy.data.objects if x.type == 'MESH' and x.data.shape_keys]:
+    for kb in o.data.shape_keys.key_blocks: kb.value = 0.0
 bones_ = {b.name for b in arm.data.bones}
 for o in [x for x in bpy.data.objects if x.type == 'MESH']:
     for g in [g for g in o.vertex_groups if g.name.endswith('.область')]: o.vertex_groups.remove(g)
