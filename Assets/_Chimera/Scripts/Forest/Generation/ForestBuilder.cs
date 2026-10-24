@@ -351,10 +351,19 @@ public class ForestBuilder : MonoBehaviour
     /// </summary>
     public void Clear()
     {
-        // Логова и спавнер — ДО world.Clear: сайты живут под корнем мира и уходят вместе с ним,
-        // а реестр и спавнер наши (на этом объекте) и переживут снос. Сначала выключаем тик,
-        // иначе следующий Update дёрнет Tick по снесённым сайтам.
-        if (spawner != null) spawner.autoTick = false;
+        // Порядок важен: тик → живые → адреса → мир.
+        // 1) autoTick off: следующий Update не должен Tick-нуть по снесённым сайтам.
+        // 2) ClearSpawned: рождённые звери НЕ дети корня мира (префаб/фабрика кладут их
+        //    в корень сцены), поэтому world.Clear их не снимет — снимаем сами, и снимаем
+        //    ПОКА ИХ `home` ЖИВ: снести сначала сайты значило бы оставить живого зверя
+        //    с `home` на снесённый LairSite (долг среза C — ровно это).
+        // 3) реестр и список логов — адреса уходят раньше самих сайтов (сайты снесёт world).
+        // 4) world.Clear — сам мир.
+        if (spawner != null)
+        {
+            spawner.autoTick = false;
+            spawner.ClearSpawned();
+        }
         if (lairRegistry != null) lairRegistry.Clear();
         lairs.Clear();
 

@@ -33,6 +33,17 @@ public class ForestSpawner : MonoBehaviour
 
     int spawnCounter;
 
+    /// <summary>
+    /// ВСЕ живые тела, рождённые этим спавнером. Нужен для уборки при пересборке мира:
+    /// звери — не дети корня мира (префаб/фабрика кладут их в корень сцены), поэтому
+    /// `DomeWorld.Clear` их не снимает, и без списка они переживают `ForestBuilder.Clear`
+    /// с `home` на уже снесённый `LairSite`. Чужие тела сюда не попадают.
+    /// </summary>
+    readonly List<CreatureBody> spawned = new List<CreatureBody>();
+
+    /// <summary>Сколько тел спавнер родил и ещё не убрал (наблюдателям и тестам).</summary>
+    public int SpawnedCount => spawned.Count;
+
     /// <summary>Последний рождённый (для тестов и наблюдателей; прошлого не храним).</summary>
     public CreatureBody lastSpawn { get; private set; }
 
@@ -89,12 +100,41 @@ public class ForestSpawner : MonoBehaviour
                 null);
         }
         if (body == null) return false;
+        spawned.Add(body); // свой живой зверь — уборщику на пересборке мира
         lastSpawn = body;
         body.home = site; // s6: точка возврата — свой дом с рождения
         site.ConsumeSpawn();
         Health health = body.GetComponent<Health>();
         if (health != null) health.onDeath.AddListener(() => OnSpawnedDeath(site, body));
         return true;
+    }
+
+    /// <summary>
+    /// Снести всех рождённых этим спавнером и забыть их. Зовётся из `ForestBuilder.Clear`
+    /// ДО `world.Clear`: звери не под корнем мира, мир их не снимет, и, если снести сначала
+    /// сайты, живые тела останутся с `home` на снесённый `LairSite` (и начнут к нему ходить).
+    /// <para>
+    /// Только свои: игрок и чужие тела в списке не значатся. Идемпотентно — повторный вызов
+    /// на пустом списке ничего не делает; уже снесённые записи пропускаются (Unity-null).
+    /// </para>
+    /// </summary>
+    public void ClearSpawned()
+    {
+        // Список чистим ДО сноса: если OnDestroy тела заглянет сюда, он увидит пустоту,
+        // а не половину списка. lastSpawn тоже отдаём раньше — на снесённое не смотрим.
+        var doomed = new List<CreatureBody>(spawned);
+        spawned.Clear();
+        lastSpawn = null;
+
+        foreach (var body in doomed)
+        {
+            if (body == null) continue;              // уже снесён кем-то (смерть, чужой Clear)
+            GameObject go = body.gameObject;
+            if (go == null) continue;                // ...или ушёл вместе с родителем
+            go.SetActive(false);                     // гоча: гасим сразу — с этого кадра тело не тикает
+            if (Application.isPlaying) UnityEngine.Object.Destroy(go);
+            else UnityEngine.Object.DestroyImmediate(go);
+        }
     }
 
     void OnSpawnedDeath(LairSite home, CreatureBody body)

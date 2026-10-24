@@ -333,6 +333,71 @@ namespace Chimera.Tests.PlayMode
             yield return null; // дать Destroy в TearDown сработать в следующем кадре
         }
 
+        /// <summary>
+        /// C.1: рождённый логовом зверь — жилец МИРА, а не сцены. `Clear` сносит мир вместе
+        /// с сайтами, и зверь обязан уйти вместе с ним: иначе он висит с `home` на снесённом
+        /// сайте — некуда возвращаться, а кап и крыша логова считаются по мёртвому адресу.
+        /// <para>
+        /// Чужие логова мира сняты с реестра сразу после Build: у нас ОДИН Tick, а autoTick уже
+        /// включён — иначе рожали бы настоящие устья и `lastSpawn` зависел бы от сида.
+        /// </para>
+        /// <para>
+        /// `born == null` сравнивается оператором Unity (объект снесён), а не ссылкой: после
+        /// Destroy не-нулевая ссылка ведёт себя как null. Поэтому ниже есть и поиск по сцене.
+        /// </para>
+        /// </summary>
+        [UnityTest]
+        public IEnumerator Clear_DestroysSpawnedFromLair()
+        {
+            var b = SmallWorld();
+            yield return null;
+
+            // Пул ДО Build: ForestBuilder передаёт его спавнеру при сборке мира.
+            b.speciesPool.Add(MakeSpecies("Змея"));
+
+            b.Build();
+            Assert.IsNotNull(b.Spawner, "спавнер мира собран");
+            var registry = b.Registry;
+            Assert.IsNotNull(registry, "реестр мира заведён");
+            registry.Clear(); // синхронно, без кадра: настоящие устья рожать не должны
+
+            var lairGo = new GameObject("~SnakeLairProbe");
+            lairGo.transform.position = Vector3.zero;
+            trash.Add(lairGo);
+            var site = lairGo.AddComponent<LairSite>();
+            site.speciesName = "Змея";
+            site.capacity = 1;
+            site.spawnEnabled = true;
+            site.respawnSeconds = 0.01f;
+            site.spawnRadius = 2f;
+            registry.Register(site);
+
+            b.Spawner.Tick(1f); // DrainOnce синхронный: после Tick зверь уже в сцене
+
+            var born = b.Spawner.lastSpawn;
+            Assert.IsNotNull(born, "спавнер родил из очереди логова");
+            // Страховка на случай красного: тест обязан оставить после себя пустую сцену.
+            spawned.Add(born.gameObject);
+            Assert.AreSame(site, born.home,
+                "новорождённый держит home на сайте — оттого снос мира и оставляет сироту");
+            Assert.AreEqual(1, b.Spawner.SpawnedCount,
+                "спавнер помнит СВОЕГО зверя: без списка уборщику некого снимать");
+
+            b.Clear();
+            yield return null; // Object.Destroy отложен до конца кадра — читаем кадром позже
+
+            Assert.IsTrue(born == null,
+                "Clear снёс рождённого вместе с миром: иначе змея живёт с home на снесённом сайте");
+            Assert.IsTrue(b.Spawner.lastSpawn == null,
+                "спавнер не держит ссылку на снесённого (null по оператору Unity — уничтожен или обнулён)");
+            Assert.AreEqual(0, b.Spawner.SpawnedCount,
+                "список рождённых пуст: иначе пересборка снова и снова снимала бы мёртвые записи");
+            Assert.AreEqual(0, b.Lairs.Count, "Clear чистит список логов");
+            Assert.AreEqual(0, registry.Count, "Clear чистит реестр");
+            Assert.AreEqual(0, Object.FindObjectsByType<CreatureBody>().Length,
+                "в сцене не осталось тел от логовищ: проверка поиском, а не по ссылке");
+        }
+
         [UnityTest]
         public IEnumerator PlayerProbe_MovesToSpawn()
         {
