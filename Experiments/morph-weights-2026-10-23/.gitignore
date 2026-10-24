@@ -1,0 +1,7 @@
+inputs/
+*.blend
+*.blend1
+*.obj
+*.log
+__pycache__/
+renders/

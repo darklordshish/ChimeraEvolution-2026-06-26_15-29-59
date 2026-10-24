@@ -1,0 +1,34 @@
+{
+  "chelovek_mesh.fbx": {
+    "source": "C:\\Users\\semion\\Documents\\Chimera_game\\ChimeraEvolution-modeli\\Assets\\_Chimera\\Models\\chelovek_mesh.fbx",
+    "sha256": "0a9e2fe7144f24c4fff1f0aad19646f780515862b6c56b2a14c419f78e9912f6"
+  },
+  "chelovek-skelet.json": {
+    "source": "C:\\Users\\semion\\Documents\\Chimera_game\\ChimeraEvolution-modeli\\Docs\\models\\rig\\chelovek-skelet.json",
+    "sha256": "20501439ccab99965764cf8258fc433af95bcc2f96e7561daaec42f22bf5653b"
+  },
+  "chelovek-volk-poza.json": {
+    "source": "C:\\Users\\semion\\Documents\\Chimera_game\\ChimeraEvolution-modeli\\Docs\\models\\handoff\\klyuchi\\chelovek-volk-poza.json",
+    "sha256": "4e5f13be2a32c235b256c7ced628b31fc888048a1767838a3243698aac174421"
+  },
+  "chelovek-volk-sustavy.json": {
+    "source": "C:\\Users\\semion\\Documents\\Chimera_game\\ChimeraEvolution-modeli\\Docs\\models\\handoff\\klyuchi\\chelovek-volk-sustavy.json",
+    "sha256": "280093ec2289fcc8122acf48e0dbedfafdae2f87e4f04ce5b3a9eee16e3621c7"
+  },
+  "podgonka_v_poze.py": {
+    "source": "C:\\Users\\semion\\Documents\\Chimera_game\\ChimeraEvolution-modeli\\Tools\\Blender\\proba\\podgonka_v_poze.py",
+    "sha256": "060b14823a5272622cd4d9b695e0c104bfbf7638a6b4e9b07a38816f33773506"
+  },
+  "vesa_gladit.py": {
+    "source": "C:\\Users\\semion\\Documents\\Chimera_game\\ChimeraEvolution-modeli\\Tools\\Blender\\proba\\vesa_gladit.py",
+    "sha256": "c18320d9a2412abb67de8a03c663bef1cd1b2468f86a5ce96f3d1689630a1e0f"
+  },
+  "cel_A_norm.obj": {
+    "source": "C:\\Users\\semion\\Documents\\Chimera_game\\_refs-local\\эксперименты\\oboroten-telo-st2-2026-10-21\\cel_A_norm.obj",
+    "sha256": "e53d98bcb2f658db83ab10012b13a33623e6d5cc54f50e14f9fec1c733a41161"
+  },
+  "orientiry-celi.json": {
+    "source": "C:\\Users\\semion\\Documents\\Chimera_game\\_refs-local\\эксперименты\\oboroten-telo-st2-2026-10-21\\orientiry-celi.json",
+    "sha256": "f135c99c43ebfdd96d304e035dc0cf7966650e60f67220e310161733d1697ddd"
+  }
+}
