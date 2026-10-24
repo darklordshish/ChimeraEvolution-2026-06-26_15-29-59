@@ -274,7 +274,8 @@ public static class ForestScenicTool
     }
 
     /// <summary>
-    /// Кадр ясеня (s10g-2): камера перед исполином, в кадре ствол + крона + гнездо.
+    /// Кадр ясеня (s10g-2, числа 14.10): камера перед исполином 85 м / 140 м,
+    /// в кадре ствол + крона + присада-гнездо.
     /// </summary>
     public static void FrameAsh()
     {
@@ -284,10 +285,10 @@ public static class ForestScenicTool
         RenderSettings.fog = false;
         SetupCameras("35");
         var sandbox = GameObject.Find("SandboxCam");
-        sandbox.transform.position = new Vector3(a.pos.x - 45f, 18f, a.pos.y - 55f);
-        sandbox.transform.LookAt(new Vector3(a.pos.x, a.groundY + 22f, a.pos.y));
+        sandbox.transform.position = new Vector3(a.pos.x - 160f, 48f, a.pos.y - 190f);
+        sandbox.transform.LookAt(new Vector3(a.pos.x, a.groundY + 42f, a.pos.y));
         sandbox.GetComponent<Camera>().farClipPlane = 6000f;
-        Debug.Log("[Forest] кадр ясеня настроен (туман выкл)");
+        Debug.Log("[Forest] кадр ясеня настроен (85 м, туман выкл)");
     }
 
     /// <summary>
