@@ -640,6 +640,15 @@ MonoBehaviour:
   buildOnAwake: 1
   config: {fileID: 0}
   playerSpawn: {fileID: 0}
+  speciesPool:
+  - {fileID: 11400000, guid: dab52963bf459da4b934b85751aeac96, type: 2}
+  snakePrefab: {fileID: 6641276580433421429, guid: 8bd5a3162d1968f4d8f4fc47643aea72, type: 3}
+  snakeCapacity: 3
+  snakeTier: 2
+  snakeHomeRadius: 12
+  snakeSpawnRadius: 3
+  snakeFearRadius: 18
+  snakeRespawnSeconds: 30
 --- !u!114 &1532378594
 MonoBehaviour:
   m_ObjectHideFlags: 0

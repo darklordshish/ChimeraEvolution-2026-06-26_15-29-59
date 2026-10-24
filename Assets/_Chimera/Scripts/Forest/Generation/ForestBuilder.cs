@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Unity.AI.Navigation;
 using UnityEngine;
 
@@ -8,7 +9,9 @@ using UnityEngine;
 /// размер — поле mapDiameter (аналог arenaSide). Срез A: полная сборка мира в Awake
 /// через DomeWorld (чанки, вода, кольцо, устья/гнездо, ясень, корпуса, флора, свод),
 /// NavMesh тайлами и постановка игрока во дворе лаборатории.
-/// Лес, срез A (24.10).
+/// Срез C: точки купола становятся настоящими LairSite — устья и гнёзда змей в реестре,
+/// совиное гнездо в реестре без спавна, ForestSpawner с землёй под зверя.
+/// Лес, срез A (24.10) + C.
 /// </summary>
 [RequireComponent(typeof(NavMeshSurface))]
 public class ForestBuilder : MonoBehaviour
@@ -32,6 +35,30 @@ public class ForestBuilder : MonoBehaviour
     [Header("Игрок (необязательно: иначе двор лаборатории)")]
     public Transform playerSpawn;
 
+    [Header("Логова и спавнер (пусто — логова копят очередь, но не рожают)")]
+    public List<SpeciesSO> speciesPool = new List<SpeciesSO>();
+
+    [Header("Змея: префаб с цепью тела (фабрика цепь не вешает)")]
+    public GameObject snakePrefab;
+
+    [Header("Змеиные логовища: устья и гнёзда (числа тюнинга)")]
+    public int snakeCapacity = DefaultSnakeCapacity;
+    public int snakeTier = DefaultSnakeTier;
+    public float snakeHomeRadius = DefaultSnakeHomeRadius;
+    public float snakeSpawnRadius = DefaultSnakeSpawnRadius;
+    public float snakeFearRadius = DefaultSnakeFearRadius;
+    public float snakeRespawnSeconds = DefaultSnakeRespawn;
+
+    // Дефолты среза C — ОДНИМ местом: поля в сцене уже лежат, а новое сериализованное
+    // поле у такого компонента приходит НУЛЁМ (гоча проекта). Ноль читаем как
+    // «не настроено» и подставляем дефолт, иначе логова молча получат capacity 0.
+    const int DefaultSnakeCapacity = 3;
+    const int DefaultSnakeTier = 2;
+    const float DefaultSnakeHomeRadius = 12f;
+    const float DefaultSnakeSpawnRadius = 3f;
+    const float DefaultSnakeFearRadius = 18f;
+    const float DefaultSnakeRespawn = 30f;
+
     public int ResolvedSeed { get; private set; }
     public GameObject BuiltRoot { get; private set; }
     public DomeHydro.State Hydro => world != null ? world.Hydro : null;
@@ -43,9 +70,18 @@ public class ForestBuilder : MonoBehaviour
     public Vector3 SpawnPoint { get; private set; }
     public float SampleGround(float x, float z) => world != null ? world.SampleGround(x, z) : 0f;
 
+    /// <summary>Логова этого мира в порядке постановки: змеиные, затем совиное — ровно то, что в реестре.</summary>
+    public IReadOnlyList<LairSite> Lairs => lairs;
+    /// <summary>Спавнер логовищ (живёт на этом же объекте, появляется вместе с миром).</summary>
+    public ForestSpawner Spawner => spawner;
+    /// <summary>Реестр логовищ (живёт на этом же объекте).</summary>
+    public LairRegistry Registry => lairRegistry;
+
     DomeWorld world;
     DomeGenConfigSO ownedConfig;
     LairRegistry lairRegistry;
+    ForestSpawner spawner;
+    readonly List<LairSite> lairs = new List<LairSite>();
     bool building;
 
     void Awake()
@@ -142,9 +178,7 @@ public class ForestBuilder : MonoBehaviour
 
         SpawnPlayer();
 
-        lairRegistry = GetComponent<LairRegistry>();
-        if (lairRegistry == null) lairRegistry = gameObject.AddComponent<LairRegistry>();
-        if (world.NestSite != null) lairRegistry.Register(world.NestSite);
+        BuildLairs();
 
         int parts = world.Facility != null ? world.Facility.parts.Count : 0;
         Debug.Log($"[Forest] мир {chosen}: чанков {world.Chunks}, деревьев {world.Trees}, " +
@@ -183,13 +217,146 @@ public class ForestBuilder : MonoBehaviour
     }
 
     /// <summary>
+    /// Срез C: точки купола → настоящие логова. Устье — логово змей (Den), гнездо у устья —
+    /// тоже змеиное (Nest). Ни мешей, ни коллайдеров тут нет: LairSite — АДРЕС популяции,
+    /// страха и возврата домой, поэтому NavMesh он не задевает (бейк был выше).
+    /// Совиное гнездо уже стоит в кроне ясеня (DomeWorld), ему остаётся регистрация без спавна.
+    /// </summary>
+    void BuildLairs()
+    {
+        if (world == null) return;
+
+        lairRegistry = GetComponent<LairRegistry>();
+        if (lairRegistry == null) lairRegistry = gameObject.AddComponent<LairRegistry>();
+
+        int mouths = 0;
+        foreach (var m in world.Mouths)
+        {
+            // Логово — не в скале портала, а на ровной земле перед ним. DomeSlope ищет
+            // площадку в 5 м, но у кольца она ещё под скалой: змея рождается в камне и
+            // её не видно. BowlPad отодвигает адрес в чашу, пока кольцо не перестанет
+            // быть выше поля. Вход остаётся точкой самого устья.
+            Vector2 down = new Vector2(Mathf.Cos(m.facing), Mathf.Sin(m.facing));
+            Vector2 pad = BowlPad(m.pos + down * 5f);
+            float y = Mathf.Max(DomeSlope.RingField(ownedConfig, pad.x, pad.y),
+                                world.SampleGround(pad.x, pad.y));
+            var site = MakeSnakeLair($"Логово_устье_{mouths}", FieldToWorld(pad.x, y, pad.y),
+                LairSite.LairAreaType.Den);
+            float yMouth = DomeSlope.RingField(ownedConfig, m.pos.x, m.pos.y);
+            site.entrances.Add(FieldToWorld(m.pos.x, yMouth, m.pos.y));
+            mouths++;
+        }
+
+        int nests = 0;
+        foreach (var n in world.Nests)
+        {
+            // Гнёзда тоже могут стоять на кромке кольца. Тот же BowlPad: адрес — в чаше,
+            // каирн остаётся на месте. Высота — верхняя из скалы и поля, чтобы не под водой.
+            Vector2 pad = BowlPad(n.pos);
+            float y = Mathf.Max(DomeSlope.RingField(ownedConfig, pad.x, pad.y),
+                                world.SampleGround(pad.x, pad.y));
+            MakeSnakeLair($"Логово_гнездо_{nests}", FieldToWorld(pad.x, y, pad.y),
+                LairSite.LairAreaType.Nest);
+            nests++;
+        }
+
+        if (world.NestSite != null)
+        {
+            // Сова в реестре есть, а спавна нет: тела филина в игре ещё не существует,
+            // и рожать «Сову» из пула было бы пустым телом. Страх при этом живёт и тает.
+            world.NestSite.spawnEnabled = false;
+            lairRegistry.Register(world.NestSite);
+            lairs.Add(world.NestSite); // Lairs и Registry держат ОДНО и то же множество
+        }
+
+        spawner = GetComponent<ForestSpawner>();
+        if (spawner == null) spawner = gameObject.AddComponent<ForestSpawner>();
+        spawner.snakePrefab = snakePrefab;
+        spawner.Configure(lairRegistry, speciesPool, GroundAtWorld);
+        spawner.autoTick = true;
+
+        if (speciesPool == null || speciesPool.Count == 0)
+            Debug.LogWarning("[Forest] пул видов пуст: логова стоят и копят очередь, но рожать некому — " +
+                             "впиши виды в speciesPool у ForestBuilder");
+
+        Debug.Log($"[Forest] логова: змеиных {mouths + nests} (устий {mouths}, гнёзд {nests}), " +
+                  $"совиное {(world.NestSite != null ? "есть (без спавна)" : "нет")}, " +
+                  $"в реестре {lairRegistry.Count}, пул {(speciesPool != null ? speciesPool.Count : 0)}, " +
+                  $"autoTick {spawner.autoTick}");
+    }
+
+    LairSite MakeSnakeLair(string name, Vector3 worldPos, LairSite.LairAreaType areaType)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(world.Root.transform, false);
+        go.transform.position = worldPos; // FieldToWorld уже перевёл в мировые
+        var site = go.AddComponent<LairSite>();
+        site.speciesName = "Змея";
+        site.areaType = areaType;
+        // Ноль = «не настроено» (новое поле у компонента из сцены приходит нулём).
+        site.capacity = snakeCapacity > 0 ? snakeCapacity : DefaultSnakeCapacity;
+        site.tier = snakeTier > 0 ? snakeTier : DefaultSnakeTier;
+        site.homeRadius = snakeHomeRadius > 0f ? snakeHomeRadius : DefaultSnakeHomeRadius;
+        site.spawnRadius = snakeSpawnRadius > 0f ? snakeSpawnRadius : DefaultSnakeSpawnRadius;
+        site.fearRadius = snakeFearRadius > 0f ? snakeFearRadius : DefaultSnakeFearRadius;
+        site.respawnSeconds = snakeRespawnSeconds > 0f ? snakeRespawnSeconds : DefaultSnakeRespawn;
+        lairRegistry.Register(site);
+        lairs.Add(site);
+        return site;
+    }
+
+    /// <summary>
+    /// Отодвинуть адрес логова от скального кольца в чашу. Кольцо считается «выше поля»,
+    /// пока RingField больше SampleGround: тогда точка ещё в камне, и змея рождается под ним.
+    /// Шагаем к центру по 5 м, пока кольцо не перестанет доминировать.
+    /// </summary>
+    Vector2 BowlPad(Vector2 start)
+    {
+        Vector2 p = start;
+        for (int i = 0; i < 12; i++)
+        {
+            float ring = DomeSlope.RingField(ownedConfig, p.x, p.y);
+            float field = world.SampleGround(p.x, p.y);
+            if (ring <= field + 0.5f) return p;
+            if (p.sqrMagnitude < 1f) break;
+            p += -p.normalized * 5f;
+        }
+        return p;
+    }
+
+    /// <summary>Координаты поля → мировые. Корень мира может стоять не в нуле; в нуле — тождество.</summary>
+    Vector3 FieldToWorld(float x, float y, float z)
+    {
+        return world.Root.transform.TransformPoint(new Vector3(x, y, z));
+    }
+
+    /// <summary>
+    /// Земля для спавнера. Приходит МИРОВАЯ точка (сайт живёт в мировых, как игрок),
+    /// а поле мира считает в координатах корня — потому переводим туда и обратно.
+    /// Высота — верхняя из скалы кольца и поля (см. гнёзда): не ниже видимой поверхности.
+    /// </summary>
+    float GroundAtWorld(float x, float z)
+    {
+        if (world == null || world.Root == null || ownedConfig == null) return 0f;
+        var root = world.Root.transform;
+        Vector3 local = root.InverseTransformPoint(new Vector3(x, 0f, z));
+        float y = Mathf.Max(DomeSlope.RingField(ownedConfig, local.x, local.z),
+                            world.SampleGround(local.x, local.z));
+        return root.TransformPoint(new Vector3(local.x, y, local.z)).y;
+    }
+
+    /// <summary>
     /// Снести мир и всё, что он создал. Сериализованные поля (сид, диаметр, конфиг)
     /// не трогаются — иначе повторный Build соберёт не тот мир.
     /// </summary>
     public void Clear()
     {
-        var nest = world != null ? world.NestSite : null;
-        if (lairRegistry != null && nest != null) lairRegistry.Unregister(nest);
+        // Логова и спавнер — ДО world.Clear: сайты живут под корнем мира и уходят вместе с ним,
+        // а реестр и спавнер наши (на этом объекте) и переживут снос. Сначала выключаем тик,
+        // иначе следующий Update дёрнет Tick по снесённым сайтам.
+        if (spawner != null) spawner.autoTick = false;
+        if (lairRegistry != null) lairRegistry.Clear();
+        lairs.Clear();
 
         if (world != null)
         {

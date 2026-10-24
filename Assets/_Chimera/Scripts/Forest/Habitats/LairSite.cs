@@ -27,6 +27,13 @@ public class LairSite : MonoBehaviour
     public float fearRadius = 18f;
     public List<Vector3> entrances = new List<Vector3>();
 
+    /// <summary>
+    /// Рожать ли из этого места. Выключенное место живёт: страх тает, события идут,
+    /// но очередь НЕ капает (сова без тела, закрытое логово не копит толпу к включению).
+    /// </summary>
+    [Header("Спавн")]
+    public bool spawnEnabled = true;
+
     [Header("Мощность логова")]
     public int tier = 2;
     public int capacity = 4;
@@ -106,6 +113,9 @@ public class LairSite : MonoBehaviour
         bool was = IsExhausted;
         fear = LairRules.DecayFear(fear, dt, fearDecayPerSecond);
         if (was && !IsExhausted) Recovered?.Invoke();
+        // Место без спавна всё равно живёт: страх тает и события идут. А очередь не растёт —
+        // иначе в кадр включения из логова вылезла бы накопленная толпа.
+        if (!spawnEnabled) return;
         if (IsFull || IsExhausted) return;
         timer -= dt;
         if (timer <= 0f)

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using NUnit.Framework;
 using Unity.AI.Navigation;
 using UnityEngine;
@@ -29,16 +30,41 @@ namespace Chimera.Tests.PlayMode
         GameObject host;
         ForestBuilder builder;
         GameObject probe;
+        readonly List<Object> trash = new List<Object>();
+        readonly List<GameObject> spawned = new List<GameObject>();
 
         [TearDown]
         public void TearDown()
         {
             if (builder != null) builder.Clear();
+            foreach (var go in spawned) if (go != null) Object.Destroy(go);
+            spawned.Clear();
+            foreach (var o in trash) if (o != null) Object.Destroy(o);
+            trash.Clear();
             if (host != null) Object.Destroy(host);
             if (probe != null) Object.Destroy(probe);
             builder = null;
             host = null;
             probe = null;
+        }
+
+        /// <summary>
+        /// Синтетический вид для спавнера (как `SpawnerHookTests.MakeSpecies`): настоящих
+        /// ассетов не трогаем. Имя — контракт: спавнер ищет вид по `speciesName` логова.
+        /// </summary>
+        SpeciesSO MakeSpecies(string name)
+        {
+            var so = ScriptableObject.CreateInstance<SpeciesSO>();
+            so.speciesName = name;
+            so.tint = Color.gray;
+            so.mutagenPool = 100;
+            so.baseHp = 60;
+            so.baseStamina = 100;
+            so.baseStaminaRegen = 10f;
+            so.sockets = new BodySocket[0];
+            so.organs = new[] { new Organ { organName = name + "-shard", slot = "Руки", cost = 2 } };
+            trash.Add(so);
+            return so;
         }
 
         /// <summary>
@@ -74,6 +100,15 @@ namespace Chimera.Tests.PlayMode
             Assert.IsNotNull(b.Facility, "корпуса лаборатории есть");
             Assert.IsNotNull(b.NestSite, "гнездо совы есть");
 
+            // Срез C: точки купола стали логовами, мир принёс живой спавнер.
+            // autoTick — то, чем логова живут в игре; без него очередь не капает (гоча).
+            Assert.IsNotNull(b.Spawner, "спавнер логовищ появился вместе с миром");
+            Assert.IsTrue(b.Spawner.autoTick, "в мире autoTick включён: логова тикают сами");
+            Assert.IsNotNull(b.Registry, "реестр логовищ заведён на builder");
+            Assert.AreEqual(b.Lairs.Count, b.Registry.Count,
+                "Lairs и Registry держат ОДНО множество: разошлись — часть логов потеряна");
+            Assert.Greater(b.Lairs.Count, 0, "в мире есть хотя бы совиное гнездо");
+
             NavMeshHit hit;
             bool onNav = NavMesh.SamplePosition(b.SpawnPoint, out hit, 20f, NavMesh.AllAreas);
             Assert.IsTrue(onNav, $"NavMesh есть у точки спавна {b.SpawnPoint}");
@@ -94,7 +129,10 @@ namespace Chimera.Tests.PlayMode
             Assert.IsNotNull(surface.navMeshData, "NavMesh запёкся");
             var registry = host.GetComponent<LairRegistry>();
             Assert.IsNotNull(registry, "реестр логовищ появился вместе с миром");
-            Assert.AreEqual(1, registry.Count, "гнездо совы в реестре");
+            Assert.AreEqual(b.Lairs.Count, registry.Count,
+                "до Clear реестр и список логов совпадают");
+            Assert.Greater(registry.Count, 0, "в мире есть логова (хотя бы совиное)");
+            Assert.IsTrue(b.Spawner.autoTick, "до Clear спавнер тикает");
 
             b.Clear();
             yield return null;
@@ -103,12 +141,18 @@ namespace Chimera.Tests.PlayMode
             Assert.IsNull(b.Hydro, "Clear снимает воду");
             Assert.IsNull(surface.navMeshData, "Clear снимает данные NavMesh");
             Assert.AreEqual(0, registry.Count, "Clear снимает гнездо с реестра, а не бросает его снесённым");
+            Assert.AreEqual(0, b.Lairs.Count, "Clear чистит и список логов");
+            Assert.IsFalse(b.Spawner.autoTick,
+                "Clear выключает тик: иначе следующий Update дёрнул бы Tick по снесённым сайтам");
 
             b.Build();
             yield return null;
 
             Assert.IsNotNull(b.BuiltRoot, "мир собирается заново после Clear");
             Assert.AreNotSame(firstRoot, b.BuiltRoot, "новый корень, а не прежний");
+            Assert.IsTrue(b.Spawner.autoTick, "после пересборки тик снова включён");
+            Assert.AreEqual(b.Lairs.Count, registry.Count,
+                "после пересборки реестр снова совпадает со списком логов");
         }
 
         [UnityTest]
@@ -176,7 +220,117 @@ namespace Chimera.Tests.PlayMode
 
             var registry = host.GetComponent<LairRegistry>();
             Assert.IsNotNull(registry, "реестр логовищ заведён на builder");
-            Assert.AreEqual(1, registry.Count, "гнездо совы зарегистрировано ровно одно");
+            Assert.AreEqual(b.Lairs.Count, registry.Count,
+                "реестр и список логов — одно множество");
+            Assert.IsFalse(nest.spawnEnabled,
+                "сова в реестре БЕЗ спавна: тела филина нет, рожать из пула пустое тело нельзя");
+            CollectionAssert.Contains(registry.Sites, nest,
+                "гнездо совы зарегистрировано (иначе страх и дом мимо реестра)");
+        }
+
+        /// <summary>
+        /// Срез C: устья и гнёзда склона — настоящие логова «Змея» в реестре; совиное
+        /// гнездо — тоже в реестре, но без спавна. Закрепляем ПРАВИЛА, а не числа мира:
+        /// на малом диаметре устьев может не найтись, и это нормально.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator Lairs_AreSnakeSitesAndRegistered()
+        {
+            var b = SmallWorld();
+            yield return null;
+            b.Build();
+            yield return null;
+
+            Assert.IsNotNull(b.Registry, "реестр логовищ заведён");
+            int owl = 0;
+            foreach (var site in b.Lairs)
+            {
+                Assert.IsNotNull(site, "в списке логов нет дыр");
+                if (site == b.NestSite)
+                {
+                    owl++;
+                    Assert.AreEqual("Сова", site.speciesName, "совиное гнездо — вид «Сова»");
+                    Assert.AreEqual(LairSite.LairAreaType.Nest, site.areaType,
+                        "совиное гнездо — тип Nest");
+                    Assert.IsFalse(site.spawnEnabled, "сова не рожает: тела филина нет");
+                }
+                else
+                {
+                    Assert.AreEqual("Змея", site.speciesName,
+                        "каждое срез-логово — змеиное (устье или гнездо склона)");
+                    Assert.IsTrue(site.areaType == LairSite.LairAreaType.Den
+                                  || site.areaType == LairSite.LairAreaType.Nest,
+                        "змеиное логово бывает только устьем (Den) или гнездом (Nest)");
+                    Assert.IsTrue(site.spawnEnabled, "змеиное логово рожает");
+
+                    // Ноль в сериализованном поле читается как «не настроено» (гоча):
+                    // сборка обязана подставить дефолты среза, а не оставить capacity 0.
+                    Assert.AreEqual(3, site.capacity, "кап змеиного логова — дефолт среза");
+                    Assert.AreEqual(2, site.tier, "tier змеиного логова");
+                    Assert.AreEqual(12f, site.homeRadius, 1e-4f, "радиус дома");
+                    Assert.AreEqual(3f, site.spawnRadius, 1e-4f, "радиус рождения");
+                    Assert.AreEqual(18f, site.fearRadius, 1e-4f, "радиус страха");
+                    Assert.AreEqual(30f, site.respawnSeconds, 1e-4f, "перезарядка логова");
+                }
+                CollectionAssert.Contains(b.Registry.Sites, site,
+                    $"логова «{site.name}» нет в реестре — спавнер его не увидит");
+            }
+
+            Assert.AreEqual(b.Lairs.Count, b.Registry.Count,
+                "Lairs и Registry держат одно и то же множество");
+            Assert.LessOrEqual(owl, 1, "совиное гнездо в мире одно");
+        }
+
+        /// <summary>
+        /// Спавнер мира рожает ИЗ ОЧЕРЕДИ ЛОГОВА и ставит зверя НА ЗЕМЛЮ, а не на Y логова.
+        /// Это то, чего старый `SpawnPos` не умел (гоча: на склоне зверь в воздухе/в скале).
+        /// <para>
+        /// Чужие логова мира на время теста сняты с реестра: у нас ОДИН тик, и если бы
+        /// тикали все, `lastSpawn` зависел бы от того, сколько устьев нашёл сид.
+        /// </para>
+        /// </summary>
+        [UnityTest]
+        public IEnumerator Spawner_SpawnsFromLair_OnGround()
+        {
+            var b = SmallWorld();
+            yield return null;
+
+            // Пул ДО Build: ForestBuilder передаёт его спавнеру при сборке мира.
+            b.speciesPool.Add(MakeSpecies("Змея"));
+
+            b.Build();
+            // Кадра НЕ ждём: autoTick уже включён, и первый же Update родил бы из настоящих
+            // устьев мира — их в этом тесте быть не должно. Реестр снимаем синхронно.
+            Assert.IsNotNull(b.Spawner, "спавнер мира собран");
+            b.Registry.Clear();
+
+            var lairGo = new GameObject("~SnakeLairProbe");
+            lairGo.transform.position = Vector3.zero;
+            trash.Add(lairGo);
+            var site = lairGo.AddComponent<LairSite>();
+            site.speciesName = "Змея";
+            site.capacity = 1;
+            site.spawnEnabled = true;
+            site.respawnSeconds = 0.01f;
+            site.spawnRadius = 2f;
+            b.Registry.Register(site);
+
+            b.Spawner.Tick(1f);
+
+            var born = b.Spawner.lastSpawn;
+            Assert.IsNotNull(born, "спавнер родил из очереди логова");
+            spawned.Add(born.gameObject);
+
+            Assert.IsNotNull(born.Chassis, "у рождённого есть шасси");
+            Assert.AreEqual("Змея", born.Chassis.speciesName, "родился вид логова, а не сосед");
+
+            float x = born.transform.position.x;
+            float z = born.transform.position.z;
+            Assert.AreEqual(b.SampleGround(x, z), born.transform.position.y, 0.2f,
+                $"зверь на земле, а не на Y логова: pos {born.transform.position}, " +
+                $"земля {b.SampleGround(x, z)}");
+
+            yield return null; // дать Destroy в TearDown сработать в следующем кадре
         }
 
         [UnityTest]

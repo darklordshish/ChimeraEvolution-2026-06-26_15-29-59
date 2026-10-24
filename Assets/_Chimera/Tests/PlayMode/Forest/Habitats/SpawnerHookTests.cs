@@ -65,6 +65,25 @@ namespace Chimera.Tests.PlayMode
             trash.Clear();
         }
 
+        /// <summary>
+        /// Дефолты среза C — контракт для старых вызовов: сам тик ВЫКЛ (иначе Update
+        /// дёргал бы очереди, которые тесты считают руками), новое поле `spawnEnabled`
+        /// включено (старые сцены не должны молча перестать рожать), Configure — 2 аргумента.
+        /// </summary>
+        [Test]
+        public void Defaults_AutoTickOff_SpawnEnabledOn_TwoArgConfigure()
+        {
+            var reg = Registry();
+            var site = Site("Волк", 1, Vector3.zero);
+            var spawner = Spawner(reg, new List<SpeciesSO>()); // Конфигур без земли — старый путь
+
+            Assert.IsFalse(spawner.autoTick,
+                "по умолчанию спавнер сам не тикает: тесты дёргают Tick явно");
+            Assert.IsTrue(site.spawnEnabled,
+                "новое поле приходит включённым — иначе старые логова молча замолчали бы");
+            Assert.AreSame(reg, spawner.registry, "Configure(reg, pool) по-прежнему вешает реестр");
+        }
+
         [UnityTest]
         public IEnumerator DrainOnce_DrainsQueue()
         {
