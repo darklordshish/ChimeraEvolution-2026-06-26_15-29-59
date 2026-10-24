@@ -636,10 +636,13 @@ MonoBehaviour:
   seed: 1337
   randomSeed: 0
   mapDiameter: 2000
+  chunkSize: 250
   terrainQuads: 16
   buildOnAwake: 1
   config: {fileID: 0}
   playerSpawn: {fileID: 0}
+  spawnAtEntry: 0
+  buildAsh: 1
   speciesPool:
   - {fileID: 11400000, guid: dab52963bf459da4b934b85751aeac96, type: 2}
   snakePrefab: {fileID: 6641276580433421429, guid: 8bd5a3162d1968f4d8f4fc47643aea72, type: 3}

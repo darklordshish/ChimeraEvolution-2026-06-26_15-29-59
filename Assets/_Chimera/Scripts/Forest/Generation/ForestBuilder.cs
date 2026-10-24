@@ -11,7 +11,9 @@ using UnityEngine;
 /// NavMesh тайлами и постановка игрока во дворе лаборатории.
 /// Срез C: точки купола становятся настоящими LairSite — устья и гнёзда змей в реестре,
 /// совиное гнездо в реестре без спавна, ForestSpawner с землёй под зверя.
-/// Лес, срез A (24.10) + C.
+/// Срез B (B0): чанк — поле (сетка обязана делить диаметр), вход у подножия кольца
+/// (игрок на world.Entry + каменный портал), ясень можно выключить (на Ø400 он в скале).
+/// Лес, срез A (24.10) + C + B0.
 /// </summary>
 [RequireComponent(typeof(NavMeshSurface))]
 public class ForestBuilder : MonoBehaviour
@@ -22,6 +24,13 @@ public class ForestBuilder : MonoBehaviour
 
     [Header("Размер (аналог arenaSide: один параметр масштабирует всё)")]
     public float mapDiameter = 2000f;
+
+    // Сетка чанков начинается в −D/2 и шагает на chunkSize, поэтому chunkSize ОБЯЗАН
+    // делить диаметр: при Ø400 и 250 внутри чаши остаётся дыра, а чанк торчит за кольцо.
+    // Ноль — «не настроено»: новое сериализованное поле у компонента из сцены приходит
+    // нулём (гоча), и тогда берём диаметр/8 (Ø2000 → 250, Ø400 → 50), а НЕ дефолт 250.
+    [Header("Чанк (м): 0 — диаметр/8, но не мельче 50")]
+    public float chunkSize = 250f;
 
     [Header("Рельеф: квадов на чанк (16 — превью-редколесье)")]
     public int terrainQuads = 16;
@@ -34,6 +43,12 @@ public class ForestBuilder : MonoBehaviour
 
     [Header("Игрок (необязательно: иначе двор лаборатории)")]
     public Transform playerSpawn;
+
+    [Header("Вход у подножия кольца (B): игрок на world.Entry + каменный портал")]
+    public bool spawnAtEntry = false;
+
+    [Header("Ясень и гнездо совы (B выключает: на Ø400 дерево встаёт в скалу)")]
+    public bool buildAsh = true;
 
     [Header("Логова и спавнер (пусто — логова копят очередь, но не рожают)")]
     public List<SpeciesSO> speciesPool = new List<SpeciesSO>();
@@ -68,6 +83,8 @@ public class ForestBuilder : MonoBehaviour
     public int Chunks => world != null ? world.Chunks : 0;
     public int Trees => world != null ? world.Trees : 0;
     public Vector3 SpawnPoint { get; private set; }
+    /// <summary>Вход мира (срез B): у подножия скального кольца, внутри чаши. До SpawnPlayer готов.</summary>
+    public Vector3 Entry => world != null ? world.Entry : default;
     public float SampleGround(float x, float z) => world != null ? world.SampleGround(x, z) : 0f;
 
     /// <summary>Логова этого мира в порядке постановки: змеиные, затем совиное — ровно то, что в реестре.</summary>
@@ -119,6 +136,7 @@ public class ForestBuilder : MonoBehaviour
         ownedConfig = config != null ? Instantiate(config) : ScriptableObject.CreateInstance<DomeGenConfigSO>();
         ownedConfig.randomSeed = false;
         ownedConfig.mapDiameter = mapDiameter;
+        ownedConfig.chunkSize = ResolveChunkSize(mapDiameter);
 
         var issues = DomeGenRules.CheckConfig(ownedConfig);
         if (issues.Count > 0)
@@ -171,7 +189,9 @@ public class ForestBuilder : MonoBehaviour
         BuiltRoot.transform.SetParent(transform, false);
 
         world = new DomeWorld();
-        world.Build(BuiltRoot, ownedConfig, terrainQuads, chosen);
+        // buildEntry — это «поставить вход-портал»: сцена, которая просит спавн у входа,
+        // хочет и сам вход видимым. Отдельного рубильника у портала нет намеренно.
+        world.Build(BuiltRoot, ownedConfig, terrainQuads, chosen, buildAsh, spawnAtEntry);
 
         var surface = GetComponent<NavMeshSurface>();
         world.BuildNavMesh(surface);
@@ -183,17 +203,43 @@ public class ForestBuilder : MonoBehaviour
         int parts = world.Facility != null ? world.Facility.parts.Count : 0;
         Debug.Log($"[Forest] мир {chosen}: чанков {world.Chunks}, деревьев {world.Trees}, " +
                   $"устий {world.Mouths.Count}, гнёзд {world.Nests.Count}, корпусов {parts}, " +
-                  $"гнездо совы {(world.NestSite != null ? "есть" : "нет")}");
+                  $"ясень {(world.HasAsh ? "есть" : "нет")}, " +
+                  $"гнездо совы {(world.NestSite != null ? "есть" : "нет")}, вход {world.Entry}");
     }
 
     /// <summary>
-    /// Игрок — в точку playerSpawn (если задан) или в центр двора лаборатории.
-    /// CharacterController гасим на время телепорта: иначе он вернёт позицию.
+    /// Чанк, делящий диаметр. Ноль в поле — «не настроено» (новое сериализованное поле
+    /// у компонента из сцены приходит нулём): диаметр/8 даёт 250 на Ø2000 — прежний мир A,
+    /// — а дефолт 250 на Ø400 оставил бы дыру в чаше. Нижняя граница 50 — правило DomeGenRules.
+    /// </summary>
+    float ResolveChunkSize(float diameter)
+    {
+        if (chunkSize > 0f) return chunkSize;
+        return Mathf.Max(50f, diameter / 8f);
+    }
+
+    /// <summary>
+    /// Игрок — в точку playerSpawn (если задан), в world.Entry (если сцена просит вход)
+    /// или в центр двора лаборатории. CharacterController гасим на время телепорта:
+    /// иначе он вернёт позицию.
     /// </summary>
     void SpawnPlayer()
     {
         if (world == null) return;
-        Vector3 basePos = playerSpawn != null ? playerSpawn.position : world.SpawnPoint;
+        Vector3 basePos = playerSpawn != null ? playerSpawn.position
+                        : spawnAtEntry ? world.Entry
+                        : world.SpawnPoint;
+        // Вход — это портал; стоять В нём нельзя (камера внутри косяка). Игрок
+        // появляется на 6 м в чашу от входа, лицом к лесу; портал остаётся за спиной.
+        if (spawnAtEntry && playerSpawn == null)
+        {
+            Vector2 inward = -new Vector2(basePos.x, basePos.z);
+            if (inward.sqrMagnitude > 1e-4f)
+            {
+                inward.Normalize();
+                basePos += new Vector3(inward.x, 0f, inward.y) * 6f;
+            }
+        }
         Vector3 target = new Vector3(basePos.x, world.SampleGround(basePos.x, basePos.z) + 1f, basePos.z);
         SpawnPoint = target;
 

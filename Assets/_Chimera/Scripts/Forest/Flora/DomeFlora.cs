@@ -123,7 +123,7 @@ public static class DomeFlora
     /// без него — вырезанное гидрологией поле превью. Возвращает число деревьев.
     /// </summary>
     public static int Build(GameObject root, DomeGenConfigSO cfg, DomeHydro.State hydro, long seed,
-        Func<float, float, float> groundOverride = null)
+        Func<float, float, float> groundOverride = null, Func<float, float, bool> exclude = null)
     {
         if (root == null) throw new ArgumentNullException(nameof(root));
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
@@ -135,6 +135,7 @@ public static class DomeFlora
         Func<float, float, (float, bool)> ground = (x, z) =>
         {
             float h = baseGround(x, z);
+            if (exclude != null && exclude(x, z)) return (h, false);
             if (h < lakeY) return (h, false);
             if (DomeSlope.SlopeAtS(cfg, x, z, baseGround) > cfg.maxSlopeDegrees) return (h, false);
             float dx = x - hydro.lakeCenter.x, dz = z - hydro.lakeCenter.y;

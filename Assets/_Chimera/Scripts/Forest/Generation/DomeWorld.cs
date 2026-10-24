@@ -7,11 +7,13 @@ using UnityEngine.AI;
 /// <summary>
 /// Рантайм-мир павильона: один экземпляр = один собранный мир под переданным корнем.
 /// Порядок — как в спеке среза A: гидрология → чанки с коллайдерами → скальное кольцо →
-/// вода → устья/гнёзда → ясень и гнездо → корпуса → флора → свод/звёзды/солнце.
+/// вода → устья/гнёзда → ясень и гнездо → корпуса → вход → флора → свод/звёзды/солнце.
 /// Никакой статики превью и никакого Find: корень и все ссылки — поля экземпляра.
 /// Чанки, флора, корпуса и спавн игрока сидят на SampleGround — ровной площадке
 /// лаборатории R25; вода, устья и ясень — на сыром поле.
-/// Лес, срез A.
+/// Срез B (B0): ясень можно не строить, а вход — точку у подножия кольца — строить
+/// с каменным порталом-маркером (без коллайдеров: NavMesh он не задевает).
+/// Лес, срез A + B0.
 /// </summary>
 public class DomeWorld
 {
@@ -19,6 +21,11 @@ public class DomeWorld
     public const float LabRadius = 25f;
     /// <summary>Плоско до R20 (двор и арена), дальше 5 м плавного блендинга к полю.</summary>
     public const float LabFlatRadius = 20f;
+    /// <summary>
+    /// Насколько вход отстоит внутрь от внутренней кромки кольца (м): Ø400 → r ≈ 100,
+    /// Ø2000 → r ≈ 900. Это точка у ПОДНОЖИЯ кольца, а не портал в нём.
+    /// </summary>
+    public const float EntryInset = 20f;
 
     public GameObject Root { get; private set; }
     public DomeHydro.State Hydro { get; private set; }
@@ -30,6 +37,12 @@ public class DomeWorld
     public LairSite NestSite { get; private set; }
     /// <summary>Точка постановки игрока: центр двора лаборатории, земля + 1 м.</summary>
     public Vector3 SpawnPoint { get; private set; }
+    /// <summary>
+    /// Вход мира (срез B): у подножия скального кольца внутри чаши, на земле. Готов
+    /// до постановки игрока, поэтому ForestBuilder со spawnAtEntry может на него встать.
+    /// Мир без корпусов входа не имеет — тогда это двор.
+    /// </summary>
+    public Vector3 Entry { get; private set; }
     public int Chunks { get; private set; }
     public int Trees { get; private set; }
     public float PlatformY => platformY;
@@ -44,8 +57,14 @@ public class DomeWorld
     /// <summary>
     /// Собрать мир под root. root должен быть свежим (ForestBuilder создаёт "<seed>_ForestWorld");
     /// cfg остаётся собственностью вызывающего и здесь не уничтожается.
+    /// <para>
+    /// buildAsh=false — не строить ясень и совиное гнездо (HasAsh=false, Ash=default,
+    /// NestSite=null): на Ø400 дерево встаёт в скальное кольцо, а срез B его ещё не проверяет.
+    /// buildEntry=true — вычислить Entry и поставить каменный портал-маркер у подножия кольца.
+    /// </para>
     /// </summary>
-    public void Build(GameObject root, DomeGenConfigSO cfg, int terrainQuads, long seed)
+    public void Build(GameObject root, DomeGenConfigSO cfg, int terrainQuads, long seed,
+        bool buildAsh = true, bool buildEntry = false)
     {
         if (root == null) throw new ArgumentNullException(nameof(root));
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
@@ -63,13 +82,27 @@ public class DomeWorld
         BuildRockRing();
         BuildWater();
         BuildMouthsAndNests(seed);
-        BuildAshAndNest(seed);
+        if (buildAsh) BuildAshAndNest(seed);
+        else
+        {
+            // Явно, а не «и так дефолт»: поле читается как факт мира снаружи.
+            HasAsh = false;
+            Ash = default;
+            NestSite = null;
+        }
         BuildFacility(seed);
-        Trees = DomeFlora.Build(Root, cfg, Hydro, seed, SampleGround);
-        BuildSky(seed);
 
+        // SpawnPoint нужен ДО Entry: у мира без корпусов вход — это он же.
         Vector2 lab = Facility != null ? Facility.labCenter : Vector2.zero;
         SpawnPoint = new Vector3(lab.x, SampleGround(lab.x, lab.y) + 1f, lab.y);
+        BuildEntry(buildEntry);
+
+        // Вход — не чаща: вокруг Entry оставляем поляну R12, иначе игрок рождается
+        // в стволе и не видит ни входа, ни леса. Двор лаборатории уже выровнен.
+        Func<float, float, bool> entryClearing = (x, z) =>
+            Vector2.Distance(new Vector2(x, z), new Vector2(Entry.x, Entry.z)) < 12f;
+        Trees = DomeFlora.Build(Root, cfg, Hydro, seed, SampleGround, entryClearing);
+        BuildSky(seed);
     }
 
     /// <summary>
@@ -157,6 +190,7 @@ public class DomeWorld
         Nests = new List<DomeSlope.NestSpot>();
         NestSite = null;
         SpawnPoint = default;
+        Entry = default;
         Chunks = 0;
         Trees = 0;
         platformY = 0f;
@@ -273,6 +307,72 @@ public class DomeWorld
         }
     }
 
+    /// <summary>
+    /// Вход мира (срез B): от ангара к центру, на EntryInset внутрь от внутренней кромки
+    /// кольца, высота — по земле мира. Ангар стоит ЗА кольцом (D/2 + 40), сквозь которое
+    /// хода нет, поэтому вход — у подножия кольца внутри чаши, а ангар остаётся кулисой.
+    /// Направление берём от ангара: он и задаёт, с какой стороны света вход.
+    /// </summary>
+    void BuildEntry(bool buildMarker)
+    {
+        if (Facility == null)
+        {
+            // Нечего ориентировать — у мира без корпусов вход и есть двор.
+            Entry = SpawnPoint;
+            return;
+        }
+
+        Vector2 dir = -Facility.hangarPos; // от ангара к центру
+        if (dir.sqrMagnitude < 1e-6f) dir = Vector2.down;
+        dir.Normalize();
+        float radius = Mathf.Max(0f, DomeRockRing.InnerRadius(cfg) - EntryInset);
+        Vector2 p = dir * radius;
+        Entry = new Vector3(p.x, SampleGround(p.x, p.y), p.y);
+
+        if (buildMarker) BuildEntryMarker(dir);
+    }
+
+    /// <summary>
+    /// Маркер входа: два косяка, перемычка и тёмная плита проёма — каменная «дверь»
+    /// у подножия кольца. Лицом к центру, чтобы её было видно с той стороны, откуда
+    /// приходит игрок. Коллайдеров НЕТ намеренно: это визуальный ориентир, а не стена —
+    /// иначе он вырезал бы дырку в NavMesh и запирал подход.
+    /// </summary>
+    void BuildEntryMarker(Vector2 inward)
+    {
+        var gate = new GameObject("EntryGate");
+        gate.transform.SetParent(Root.transform, false);
+        gate.transform.localPosition = Entry;
+        gate.transform.localRotation =
+            Quaternion.LookRotation(new Vector3(inward.x, 0f, inward.y), Vector3.up);
+
+        const float openingHalf = 3f;   // проём 6 м
+        const float jambHalf = 1.2f;    // толщина косяка по 2.4 м
+        const float depth = 1.1f;       // глубина по 2.2 м
+        const float height = 7f;
+
+        var rock = Flat(DomePalette.Rock);
+        var dark = Flat(DomePalette.Dark);
+
+        var jamb = FloraMeshKit.Slab(jambHalf, height, depth);
+        Track(jamb);
+        Part("EntryJambL", jamb, rock, gate.transform).transform.localPosition =
+            new Vector3(-(openingHalf + jambHalf), 0f, 0f);
+        Part("EntryJambR", jamb, rock, gate.transform).transform.localPosition =
+            new Vector3(openingHalf + jambHalf, 0f, 0f);
+
+        var lintel = FloraMeshKit.Slab(openingHalf + jambHalf * 2f, 1.2f, depth + 0.1f);
+        Track(lintel);
+        Part("EntryLintel", lintel, rock, gate.transform).transform.localPosition =
+            new Vector3(0f, height, 0f);
+
+        // Проём — тёмная плита ЗА плоскостью рамы (к кольцу): с чаши видна глубина.
+        var recess = FloraMeshKit.Slab(openingHalf, height * 0.92f, 0.15f);
+        Track(recess);
+        Part("EntryRecess", recess, dark, gate.transform).transform.localPosition =
+            new Vector3(0f, 0f, -0.6f);
+    }
+
     void BuildFacility(long seed)
     {
         Facility = DomeFacilityLayout.Build(cfg, seed, Vector2.zero);
@@ -334,8 +434,13 @@ public class DomeWorld
 
     GameObject Part(string name, Mesh mesh, Material mat)
     {
+        return Part(name, mesh, mat, Root.transform);
+    }
+
+    GameObject Part(string name, Mesh mesh, Material mat, Transform parent)
+    {
         var go = new GameObject(name);
-        go.transform.SetParent(Root.transform, false);
+        go.transform.SetParent(parent, false);
         go.AddComponent<MeshFilter>().sharedMesh = mesh;
         go.AddComponent<MeshRenderer>().sharedMaterial = mat;
         return go;
