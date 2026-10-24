@@ -1,0 +1,32 @@
+{
+  "front": {
+    "old": {
+      "iou": 0.9997093764112011,
+      "changed_pixels": 65
+    },
+    "planes": {
+      "iou": 0.9996468089862524,
+      "changed_pixels": 79
+    }
+  },
+  "side": {
+    "old": {
+      "iou": 0.9993436264637876,
+      "changed_pixels": 88
+    },
+    "planes": {
+      "iou": 0.9995674288868006,
+      "changed_pixels": 58
+    }
+  },
+  "34": {
+    "old": {
+      "iou": 0.9996090826313506,
+      "changed_pixels": 82
+    },
+    "planes": {
+      "iou": 0.999275421042345,
+      "changed_pixels": 152
+    }
+  }
+}

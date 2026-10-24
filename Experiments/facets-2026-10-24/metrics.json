@@ -1,0 +1,29 @@
+{
+  "input": {
+    "max_mm": 0.0,
+    "mean_active_mm": 0.0,
+    "moved_vertices": 0,
+    "fixed_max_mm": 0.0,
+    "initial_plane_mean_distance_mm": 10.968799316704509,
+    "reversed_relative_to_posed_input": 0
+  },
+  "old_local": {
+    "max_mm": 37.773215214108,
+    "mean_active_mm": 5.7834977381394825,
+    "moved_vertices": 551,
+    "fixed_max_mm": 0.0,
+    "initial_plane_mean_distance_mm": 11.664166984409253,
+    "reversed_relative_to_posed_input": 11
+  },
+  "bounded_planes": {
+    "max_mm": 8.000000000000087,
+    "mean_active_mm": 4.082748376005407,
+    "moved_vertices": 551,
+    "fixed_max_mm": 0.0,
+    "initial_plane_mean_distance_mm": 7.020086219183039,
+    "reversed_relative_to_posed_input": 0
+  },
+  "regions": 14,
+  "active_vertices": 742,
+  "movable_vertices": 551
+}
