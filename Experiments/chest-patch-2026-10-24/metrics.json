@@ -1,0 +1,10 @@
+{
+  "input_triangles": 11424,
+  "output_triangles": 12424,
+  "patch_triangles": 812,
+  "max_displacement_mm": 25.64682094911578,
+  "mean_displacement_mm": 4.267702189932184,
+  "max_border_displacement_mm": 0.0,
+  "control_planes": 24,
+  "note": "Static posed study; 25mm transition belt. Not a production retopology, no rig/keys transferred."
+}
