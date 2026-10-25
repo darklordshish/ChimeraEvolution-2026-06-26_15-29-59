@@ -175,17 +175,20 @@ public class DomeWorld
         // Вход — не чаща: вокруг Entry оставляем поляну R12, иначе игрок рождается
         // в стволе и не видит ни входа, ни леса. Пятно комплекса тоже не засаживаем:
         // дерево в стене или на крыше — не «густой лес», а дырка в бункере.
+        Func<float, float, bool> labPad = (x, z) => LabComplex != null && InsideLabPad(x, z, 0f);
         Func<float, float, bool> clearing = (x, z) =>
         {
             if (Vector2.Distance(new Vector2(x, z), new Vector2(Entry.x, Entry.z)) < 12f)
                 return true;
             if (LabComplex == null) return false;
-            if (InsideLabPad(x, z, 0f)) return true;
+            if (labPad(x, z)) return true;
             // Перед LabDoor — спокойный участок: дверь видна целиком, деревья
             // обрамляют сбоку, а не закрывают вход (правило дизайн-линии 25.10).
             return Vector2.Distance(new Vector2(x, z), new Vector2(LabDoor.x, LabDoor.z)) < 14f;
         };
-        Trees = DomeFlora.Build(Root, cfg, Hydro, seed, SampleGround, clearing);
+        // Вырубка гасит деревья; подлесок живёт в R12/R14 и пятнах, но не под плитой
+        // комплекса (12 см плиты — трава торчала бы в зале).
+        Trees = DomeFlora.Build(Root, cfg, Hydro, seed, SampleGround, clearing, labPad);
         BuildSky(seed);
     }
 

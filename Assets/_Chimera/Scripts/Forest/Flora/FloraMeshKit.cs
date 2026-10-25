@@ -46,6 +46,37 @@ public static class FloraMeshKit
         return Bake(v, n, t, "Trunk");
     }
 
+    /// <summary>
+    /// Сухостой со сломанной верхушкой: сужающийся брусок-ствол, верхнее кольцо
+    /// срезано косо (вершины на разной высоте). 20 тр. Объёмный, внешние нормали —
+    /// тот же обход, что у Trunk.
+    /// </summary>
+    public static Mesh Snag(float r0, float r1, float h, float breakDrop)
+    {
+        var v = new List<Vector3>(); var n = new List<Vector3>(); var t = new List<int>();
+        breakDrop = Mathf.Clamp(breakDrop, 0.01f, h * 0.5f);
+        Vector3[] lo =
+        {
+            new Vector3(-r0, 0, -r0), new Vector3(r0, 0, -r0),
+            new Vector3(r0, 0, r0), new Vector3(-r0, 0, r0)
+        };
+        float[] drop = { breakDrop, 0f, breakDrop * 0.55f, breakDrop * 0.85f };
+        Vector3[] hi =
+        {
+            new Vector3(-r1, h - drop[0], -r1), new Vector3(r1, h - drop[1], -r1),
+            new Vector3(r1, h - drop[2], r1), new Vector3(-r1, h - drop[3], r1)
+        };
+        for (int k = 0; k < 4; k++)
+        {
+            int n2 = (k + 1) % 4;
+            Tri(v, n, t, lo[k], hi[n2], lo[n2]);
+            Tri(v, n, t, lo[k], hi[k], hi[n2]);
+        }
+        Tri(v, n, t, hi[0], hi[2], hi[1]);
+        Tri(v, n, t, hi[0], hi[3], hi[2]);
+        return Bake(v, n, t, "Snag");
+    }
+
     // Вершины икосаэдра (t — золотое сечение), грани ниже — стандартным списком.
     static Vector3[] IcoVerts(float r)
     {
@@ -200,6 +231,51 @@ public static class FloraMeshKit
         return Bake(v, n, t, "AshRoots");
     }
 
+    /// <summary>
+    /// Широколистная крона (срез «деревья и подлесок» 25.10): 6 неровных долей —
+    /// центральная масса, верхняя доля и четыре боковых вразнобой. Не правильная
+    /// гроздь, как Crown: силуэт шире и рванее. height — вертикальный размер грозди
+    /// от низа до верха (верх ровно height), r — внешний радиус по X/Z.
+    /// Гроздь: outward только объёмом (как Crown), внутренние стороны смотрят друг
+    /// на друга законно.
+    /// </summary>
+    public static Mesh BroadleafCrown(float r, float height)
+    {
+        var v = new List<Vector3>(); var n = new List<Vector3>(); var t = new List<int>();
+        height = Mathf.Max(height, r * 0.8f);
+        // Центральная масса.
+        IcoEllipsoid(v, n, t, r * 0.62f, height * 0.34f, new Vector3(0f, height * 0.50f, 0f));
+        // Верхняя доля держит верх ровно на height: центр = h − ry·0.8507
+        // (0.8507 — верхняя вершина единичного икосаэдра).
+        IcoEllipsoid(v, n, t, r * 0.34f, height * 0.22f, new Vector3(0f, height * 0.8128f, 0f));
+        // Четыре боковых доли: углы и выносы несимметричны — крона не «зонтик-шар».
+        float[] ang = { 0.35f, 1.72f, 3.05f, 4.55f };
+        float[] reach = { 0.46f, 0.50f, 0.44f, 0.48f };
+        float[] up = { 0.44f, 0.56f, 0.40f, 0.52f };
+        float[] lobe = { 0.46f, 0.40f, 0.48f, 0.42f };
+        for (int k = 0; k < 4; k++)
+        {
+            float a = ang[k];
+            IcoEllipsoid(v, n, t, r * lobe[k], height * 0.26f,
+                new Vector3(Mathf.Cos(a) * r * reach[k], height * up[k], Mathf.Sin(a) * r * reach[k]));
+        }
+        return Bake(v, n, t, "BroadleafCrown");
+    }
+
+    /// <summary>
+    /// Берёзовая крона: узкая редкая гроздь из 3 долей — силуэт тонкого дерева.
+    /// Верх ровно height (вторая доля), низ ~0.13 height.
+    /// </summary>
+    public static Mesh BirchCrown(float r, float height)
+    {
+        var v = new List<Vector3>(); var n = new List<Vector3>(); var t = new List<int>();
+        IcoEllipsoid(v, n, t, r * 0.55f, height * 0.32f, new Vector3(0f, height * 0.45f, 0f));
+        // Верхняя доля: центр = h − ry·0.8507 — верх ровно height.
+        IcoEllipsoid(v, n, t, r * 0.42f, height * 0.28f, new Vector3(r * 0.28f, height * 0.7618f, r * 0.10f));
+        IcoEllipsoid(v, n, t, r * 0.36f, height * 0.24f, new Vector3(-r * 0.30f, height * 0.60f, -r * 0.12f));
+        return Bake(v, n, t, "BirchCrown");
+    }
+
     /// <summary>Плита: бокс sx·sy·sz. 12 тр.</summary>
     public static Mesh Slab(float sx, float sy, float sz)
     {
@@ -244,6 +320,25 @@ public static class FloraMeshKit
         return Bake(v, n, t, "Bush");
     }
 
+    /// <summary>
+    /// Куст-гнездо: 3–7 мелких икосаэдров, разнесённых по пятну (не гроздь в точке).
+    /// Один меш на гнездо — бюджет кустов (400 точек) не растёт, меняется только
+    /// силуэт: куст читается гнездом, а не одиночным шаром. Гроздь — объёмом.
+    /// </summary>
+    public static Mesh BushNest(float r, int lobes)
+    {
+        var v = new List<Vector3>(); var n = new List<Vector3>(); var t = new List<int>();
+        lobes = Mathf.Clamp(lobes, 3, 7);
+        for (int k = 0; k < lobes; k++)
+        {
+            float a = k / (float)lobes * Mathf.PI * 2f + 0.4f;
+            float reach = r * (0.55f + 0.45f * ((k * 37) % 7) / 6f);
+            float size = r * (0.50f + 0.20f * ((k * 53) % 5) / 4f);
+            Ico(v, n, t, size, new Vector3(Mathf.Cos(a) * reach, size * 0.68f, Mathf.Sin(a) * reach), 0.8f);
+        }
+        return Bake(v, n, t, "BushNest");
+    }
+
     static void ConeTier(List<Vector3> v, List<Vector3> n, List<int> t, float y0, float h, float r)
     {
         Vector3 tip = new Vector3(0, y0 + h, 0);
@@ -265,6 +360,24 @@ public static class FloraMeshKit
         ConeTier(v, n, t, h * 0.55f, h * 0.30f, r * 0.72f);
         ConeTier(v, n, t, h * 0.76f, h * 0.26f, r * 0.45f);
         return Bake(v, n, t, "SpruceCrown");
+    }
+
+    /// <summary>
+    /// Сосна — второй хвойный силуэт: 5 конусных ярусов (SpruceCrown — 3).
+    /// Узкая, ярусы перекрываются, верх ~0.98h. Низ открыт (как ель).
+    /// </summary>
+    public static Mesh PineCrown(float r, float h)
+    {
+        var v = new List<Vector3>(); var n = new List<Vector3>(); var t = new List<int>();
+        const int tiers = 5;
+        for (int k = 0; k < tiers; k++)
+        {
+            float y0 = h * (0.14f + 0.17f * k);
+            float th = h * (0.28f - 0.03f * k);
+            float tr = r * (1f - 0.18f * k);
+            ConeTier(v, n, t, y0, th, tr);
+        }
+        return Bake(v, n, t, "PineCrown");
     }
 
     static void FrondQuad(List<Vector3> v, List<Vector3> n, List<int> t,
@@ -302,5 +415,41 @@ public static class FloraMeshKit
         Tri(v, n, t, new Vector3(0, 0, -w), new Vector3(0, 0, w), new Vector3(0, h, w));
         Tri(v, n, t, new Vector3(0, 0, -w), new Vector3(0, h, w), new Vector3(0, h, -w));
         return Bake(v, n, t, "GrassBlade");
+    }
+
+    static void Blade(List<Vector3> v, List<Vector3> n, List<int> t,
+        Vector3 origin, Vector3 dir, Vector3 perp, float w, float h)
+    {
+        Vector3 a = origin - perp * w;
+        Vector3 b = origin + perp * w;
+        Vector3 c = origin + perp * w + Vector3.up * h;
+        Vector3 d = origin - perp * w + Vector3.up * h;
+        Tri(v, n, t, a, b, c);
+        Tri(v, n, t, a, c, d);
+        Vector3 a2 = origin - dir * w;
+        Vector3 b2 = origin + dir * w;
+        Vector3 c2 = origin + dir * w + Vector3.up * h;
+        Vector3 d2 = origin - dir * w + Vector3.up * h;
+        Tri(v, n, t, a2, b2, c2);
+        Tri(v, n, t, a2, c2, d2);
+    }
+
+    /// <summary>
+    /// Пучок из 3 травинок (срез «деревья и подлесок» 25.10): три кросс-квада
+    /// со сдвигом и разворотом на 120°. 12 тр. Бюджет травы (2000 точек) не растёт —
+    /// пучок один меш, а не три объекта.
+    /// </summary>
+    public static Mesh GrassTuft(float w, float h)
+    {
+        var v = new List<Vector3>(); var n = new List<Vector3>(); var t = new List<int>();
+        for (int k = 0; k < 3; k++)
+        {
+            float a = k * (Mathf.PI * 2f / 3f);
+            Vector3 dir = new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a));
+            Vector3 perp = new Vector3(-Mathf.Sin(a), 0f, Mathf.Cos(a));
+            Vector3 origin = dir * (w * 0.9f);
+            Blade(v, n, t, origin, dir, perp, w * 0.9f, h * (0.85f + 0.15f * k));
+        }
+        return Bake(v, n, t, "GrassTuft");
     }
 }
