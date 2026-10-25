@@ -6,14 +6,19 @@ using UnityEngine.AI;
 
 /// <summary>
 /// Рантайм-мир павильона: один экземпляр = один собранный мир под переданным корнем.
-/// Порядок — как в спеке среза A: гидрология → чанки с коллайдерами → скальное кольцо →
-/// вода → устья/гнёзда → ясень и гнездо → корпуса → вход → флора → свод/звёзды/солнце.
+/// Порядок — как в спеке среза A: гидрология → вход → место лаборатории → чанки с
+/// коллайдерами → скальное кольцо → вода → устья/гнёзда → ясень и гнездо → корпуса →
+/// флора → свод/звёзды/солнце.
 /// Никакой статики превью и никакого Find: корень и все ссылки — поля экземпляра.
 /// Чанки, флора, корпуса и спавн игрока сидят на SampleGround — ровной площадке
-/// лаборатории R25; вода, устья и ясень — на сыром поле.
+/// лаборатории; вода, устья и ясень — на сыром поле.
 /// Срез B (B0): ясень можно не строить, а вход — точку у подножия кольца — строить
 /// с каменным порталом-маркером (без коллайдеров: NavMesh он не задевает).
-/// Лес, срез A + B0.
+/// B0.1: лаборатория — ЕДИНЫЙ закрытый бункер (плита 46×36, четыре комнаты вокруг
+/// закрытого зала 14×14 с обходом) в случайном месте по сиду, не ближе 150 м к входу;
+/// площадка мира едет за комплексом, а старый лабиринт остаётся на флаге
+/// <c>buildLabComplex = false</c> (сцены A/C).
+/// Лес, срез A + C + B0 + B0.1.
 /// </summary>
 public class DomeWorld
 {
@@ -26,21 +31,38 @@ public class DomeWorld
     /// Ø2000 → r ≈ 900. Это точка у ПОДНОЖИЯ кольца, а не портал в нём.
     /// </summary>
     public const float EntryInset = 20f;
+    /// <summary>
+    /// Круг прежнего превью (R30). У комплекса B0.1 исключение флоры — ПРЯМОУГОЛЬНИК
+    /// площадки (<see cref="InsideLabPad"/>), а не круг: пятно 46×36 + запас 2 м.
+    /// </summary>
+    public const float LabClearingRadius = 30f;
+    /// <summary>Лаборатория не ближе стольких метров к входу (решение B0.1).</summary>
+    public const float DefaultMinLabDistance = 150f;
 
     public GameObject Root { get; private set; }
     public DomeHydro.State Hydro { get; private set; }
     public DomeAshSite.AshSpot Ash { get; private set; }
     public bool HasAsh { get; private set; }
     public DomeFacilityLayout.Facility Facility { get; private set; }
+    /// <summary>Комплекс B0.1 (null, когда стоит старый лабиринт A/C).</summary>
+    public DomeLabComplex.Result LabComplex { get; private set; }
+    /// <summary>Центр лаборатории в координатах поля: двор A/C или плита комплекса.</summary>
+    public Vector2 LabCenter { get; private set; }
+    /// <summary>Портал комплекса (координаты поля); default у старого лабиринта.</summary>
+    public Vector3 LabDoor { get; private set; }
+    /// <summary>Решённый стиль комплекса (Bastion или InSlope).</summary>
+    public LabStyle ResolvedLabStyle { get; private set; }
     public List<DomeSlope.MouthSpot> Mouths { get; private set; } = new List<DomeSlope.MouthSpot>();
     public List<DomeSlope.NestSpot> Nests { get; private set; } = new List<DomeSlope.NestSpot>();
     public LairSite NestSite { get; private set; }
-    /// <summary>Точка постановки игрока: центр двора лаборатории, земля + 1 м.</summary>
+    /// <summary>
+    /// Точка постановки игрока: центр двора/атриума лаборатории, земля + 1 м.
+    /// </summary>
     public Vector3 SpawnPoint { get; private set; }
     /// <summary>
     /// Вход мира (срез B): у подножия скального кольца внутри чаши, на земле. Готов
     /// до постановки игрока, поэтому ForestBuilder со spawnAtEntry может на него встать.
-    /// Мир без корпусов входа не имеет — тогда это двор.
+    /// Считается ДО лаборатории: направление ангара (сид) задаёт, с какой стороны вход.
     /// </summary>
     public Vector3 Entry { get; private set; }
     public int Chunks { get; private set; }
@@ -50,6 +72,10 @@ public class DomeWorld
 
     DomeGenConfigSO cfg;
     float platformY;
+    /// <summary>Кадр площадки под комплекс: поворот плиты (у старого лабиринта не работает).</summary>
+    float padYaw;
+    /// <summary>Площадка прямоугольная (комплекс) или круглая (старый лабиринт/двор A).</summary>
+    bool padRect;
     NavMeshSurface navSurface;
     readonly List<Material> mats = new List<Material>();
     readonly List<Mesh> meshes = new List<Mesh>();
@@ -62,9 +88,15 @@ public class DomeWorld
     /// NestSite=null): на Ø400 дерево встаёт в скальное кольцо, а срез B его ещё не проверяет.
     /// buildEntry=true — вычислить Entry и поставить каменный портал-маркер у подножия кольца.
     /// </para>
+    /// <para>
+    /// buildLabComplex=true — B0.1: лаборатория ищется по сиду (не ближе minLabDistance к входу)
+    /// и строится единым комплексом; false — прежний лабиринт из боксов в центре (A/C).
+    /// </para>
     /// </summary>
     public void Build(GameObject root, DomeGenConfigSO cfg, int terrainQuads, long seed,
-        bool buildAsh = true, bool buildEntry = false)
+        bool buildAsh = true, bool buildEntry = false,
+        LabStyle labStyle = LabStyle.Bastion, float minLabDistance = DefaultMinLabDistance,
+        bool buildLabComplex = false)
     {
         if (root == null) throw new ArgumentNullException(nameof(root));
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
@@ -73,10 +105,49 @@ public class DomeWorld
         Root = root;
         this.cfg = cfg;
         Hydro = DomeHydro.Build(cfg, 256);
-        // Цель площадки: не ниже уровня озера, иначе центр двора уйдёт под воду.
-        platformY = Mathf.Max(
-            DomeHydro.SampleHydro(cfg, Hydro, 0f, 0f),
-            Hydro.lakeLevel + 0.5f);
+
+        // 1) ВХОД — ДО лаборатории. Ангар (его угол задан сидом) показывает, с какой стороны
+        //    света вход; сама точка — у подножия кольца внутри чаши. Ни площадки, ни корпусов
+        //    для этого не нужно, поэтому лабораторию можно ставить «от входа», а не наоборот.
+        Vector2 entryXZ = EntryPointXZ(seed);
+
+        // 2) МЕСТО лаборатории: B0.1 — поиск по сиду; A/C — двор в центре мира.
+        float minDistance = minLabDistance > 0f ? minLabDistance : DefaultMinLabDistance;
+        var site = default(DomeLabSite.Spot);
+        if (buildLabComplex)
+        {
+            site = DomeLabSite.Find(cfg, seed, entryXZ, Hydro, labStyle, minDistance);
+            if (!site.found)
+            {
+                Debug.LogError($"[Forest] лаборатории нет места: {site.note} — остаётся старый лабиринт");
+                buildLabComplex = false;
+            }
+        }
+
+        if (buildLabComplex)
+        {
+            LabCenter = site.center;
+            ResolvedLabStyle = site.style;
+            padYaw = site.yawDeg;
+            padRect = true;
+            // Плита стоит на верхней точке пятна (поиск её и вернул): не висит и не режет склон.
+            platformY = Mathf.Max(site.groundY, Hydro.lakeLevel + 0.5f);
+            if (site.relaxed) Debug.LogWarning($"[Forest] лаборатория: {site.note}");
+            Debug.Log($"[Forest] лаборатория: {site.style} в {site.distanceToEntry:F0} м от входа, " +
+                      $"центр ({site.center.x:F0}; {site.center.y:F0}), перепад {site.relief:F1} м, " +
+                      $"площадка {platformY:F1} м");
+        }
+        else
+        {
+            LabCenter = Vector2.zero;
+            ResolvedLabStyle = LabStyle.Bastion;
+            padYaw = 0f;
+            padRect = false;
+            // Цель площадки: не ниже уровня озера, иначе центр двора уйдёт под воду.
+            platformY = Mathf.Max(
+                DomeHydro.SampleHydro(cfg, Hydro, 0f, 0f),
+                Hydro.lakeLevel + 0.5f);
+        }
 
         BuildChunks(terrainQuads);
         BuildRockRing();
@@ -90,23 +161,36 @@ public class DomeWorld
             Ash = default;
             NestSite = null;
         }
-        BuildFacility(seed);
+        BuildFacility(seed, buildLabComplex);
 
-        // SpawnPoint нужен ДО Entry: у мира без корпусов вход — это он же.
-        Vector2 lab = Facility != null ? Facility.labCenter : Vector2.zero;
-        SpawnPoint = new Vector3(lab.x, SampleGround(lab.x, lab.y) + 1f, lab.y);
-        BuildEntry(buildEntry);
+        // SpawnPoint — двор старого лабиринта или закрытый зал комплекса. У комплекса
+        // верх плиты на Plinth выше площадки: игрок встаёт на плиту, а не в её толщу.
+        float spawnGround = SampleGround(LabCenter.x, LabCenter.y);
+        if (LabComplex != null)
+            spawnGround = Mathf.Max(spawnGround, platformY + DomeLabComplex.Plinth);
+        SpawnPoint = new Vector3(LabCenter.x, spawnGround + 1f, LabCenter.y);
+
+        BuildEntry(buildEntry, entryXZ);
 
         // Вход — не чаща: вокруг Entry оставляем поляну R12, иначе игрок рождается
-        // в стволе и не видит ни входа, ни леса. Двор лаборатории уже выровнен.
-        Func<float, float, bool> entryClearing = (x, z) =>
-            Vector2.Distance(new Vector2(x, z), new Vector2(Entry.x, Entry.z)) < 12f;
-        Trees = DomeFlora.Build(Root, cfg, Hydro, seed, SampleGround, entryClearing);
+        // в стволе и не видит ни входа, ни леса. Пятно комплекса тоже не засаживаем:
+        // дерево в стене или на крыше — не «густой лес», а дырка в бункере.
+        Func<float, float, bool> clearing = (x, z) =>
+        {
+            if (Vector2.Distance(new Vector2(x, z), new Vector2(Entry.x, Entry.z)) < 12f)
+                return true;
+            if (LabComplex == null) return false;
+            if (InsideLabPad(x, z, 0f)) return true;
+            // Перед LabDoor — спокойный участок: дверь видна целиком, деревья
+            // обрамляют сбоку, а не закрывают вход (правило дизайн-линии 25.10).
+            return Vector2.Distance(new Vector2(x, z), new Vector2(LabDoor.x, LabDoor.z)) < 14f;
+        };
+        Trees = DomeFlora.Build(Root, cfg, Hydro, seed, SampleGround, clearing);
         BuildSky(seed);
     }
 
     /// <summary>
-    /// Пол мира: вырезанное гидрологией поле + плоская площадка лаборатории R25
+    /// Пол мира: вырезанное гидрологией поле + плоская площадка лаборатории
     /// (плоско до R20, плавный блендинг к сырому полю на краю). Вода, устья и ясень
     /// эту функцию НЕ используют.
     /// </summary>
@@ -114,12 +198,50 @@ public class DomeWorld
     {
         if (cfg == null || Hydro == null) return 0f;
         float raw = DomeHydro.SampleHydro(cfg, Hydro, x, z);
-        float d = Mathf.Sqrt(x * x + z * z);
-        if (d >= LabRadius) return raw;
-        if (d <= LabFlatRadius) return platformY;
-        float t = Mathf.InverseLerp(LabFlatRadius, LabRadius, d);
-        t = t * t * (3f - 2f * t);
+        float u = PadWeight(x, z);
+        if (u <= 0f) return platformY;
+        float t = u * u * (3f - 2f * u);
         return Mathf.Lerp(platformY, raw, t);
+    }
+
+    /// <summary>
+    /// 0 — внутри площадки (пол = platformY), 1 — сырое поле. Двор A/C — круг R20/R25
+    /// вокруг центра; у комплекса B0.1 к нему добавляется прямоугольник плиты с полем
+    /// <see cref="DomeLabComplex.PadBlend"/> — площадка там, где плоско ХОТЯ БЫ по одному
+    /// из двух (минимум веса). Так угол плиты не повисает над сырым склоном.
+    /// </summary>
+    float PadWeight(float x, float z)
+    {
+        float dx = x - LabCenter.x, dz = z - LabCenter.y;
+        float d = Mathf.Sqrt(dx * dx + dz * dz);
+        float u = Mathf.InverseLerp(LabFlatRadius, LabRadius, d);
+        if (!padRect) return u;
+
+        float yaw = padYaw * Mathf.Deg2Rad;
+        float c = Mathf.Cos(yaw), s = Mathf.Sin(yaw);
+        float lx = dx * c - dz * s; // поле → кадр плиты
+        float lz = dx * s + dz * c;
+        float q = Mathf.Max(Mathf.Abs(lx) - DomeLabComplex.PadHalfWidth,
+            Mathf.Abs(lz) - DomeLabComplex.PadHalfDepth);
+        float ur = Mathf.InverseLerp(0f, DomeLabComplex.PadBlend, q);
+        return Mathf.Min(u, ur);
+    }
+
+    /// <summary>
+    /// Точка внутри прямоугольной площадки комплекса (поле → кадр плиты). Для старого
+    /// лабиринта (круг) возвращает круг прежнего превью — но зовётся это только у комплекса.
+    /// </summary>
+    bool InsideLabPad(float x, float z, float margin)
+    {
+        if (!padRect)
+            return Vector2.Distance(new Vector2(x, z), LabCenter) < LabClearingRadius;
+        float dx = x - LabCenter.x, dz = z - LabCenter.y;
+        float yaw = padYaw * Mathf.Deg2Rad;
+        float c = Mathf.Cos(yaw), s = Mathf.Sin(yaw);
+        float lx = dx * c - dz * s; // поле → кадр плиты
+        float lz = dx * s + dz * c;
+        return Mathf.Abs(lx) <= DomeLabComplex.PadHalfWidth + margin &&
+               Mathf.Abs(lz) <= DomeLabComplex.PadHalfDepth + margin;
     }
 
     /// <summary>
@@ -179,6 +301,7 @@ public class DomeWorld
 
         DomeFlora.ReleaseCaches();
         DomeFacilityPlacer.ReleaseCaches();
+        DomeLabComplex.ReleaseCaches();
         DomeWeather.ResetWet();
         DomeSkyRig.Reset();
 
@@ -186,6 +309,12 @@ public class DomeWorld
         Ash = default;
         HasAsh = false;
         Facility = null;
+        LabComplex = null;
+        LabCenter = Vector2.zero;
+        LabDoor = default;
+        ResolvedLabStyle = LabStyle.Bastion;
+        padYaw = 0f;
+        padRect = false;
         Mouths = new List<DomeSlope.MouthSpot>();
         Nests = new List<DomeSlope.NestSpot>();
         NestSite = null;
@@ -261,6 +390,19 @@ public class DomeWorld
         Func<float, float, float> ringGround = (x, z) => DomeSlope.RingField(cfg, x, z);
         Mouths = DomeSlope.FindMouths(cfg, 3, 96, ringGround);
         Nests = DomeSlope.FindNests(cfg, seed, Mouths, 2, ringGround);
+        // Гнездо — каирн на земле. Оно не знает про пятно комплекса (DomeSlope про него
+        // не спрашивают), и на B0.1 каирн мог бы встать в атриуме. Убираем только те,
+        // что попали в пятно: остальные логова и их число не трогаем. A/C не задет —
+        // фильтр работает лишь когда комплекс есть.
+        if (padRect && Nests.Count > 0)
+        {
+            int before = Nests.Count;
+            // Пятно прямоугольное: круг R29 срезал бы углы 46×36, а гнездо в углу
+            // площадки — такое же гнездо в стене, как и под самой плитой.
+            Nests.RemoveAll(n => InsideLabPad(n.pos.x, n.pos.y, 4f));
+            if (Nests.Count != before)
+                Debug.Log($"[Forest] гнёзд снято с пятна лаборатории: {before - Nests.Count}");
+        }
         if (Mouths.Count == 0)
         {
             Debug.LogWarning("[Forest] устьев нет на этом рельефе (смени сид)");
@@ -269,14 +411,17 @@ public class DomeWorld
         var rock = Flat(DomePalette.Rock);
         var dark = Flat(DomePalette.Dark);
         var nest = Flat(DomePalette.Nest);
-        DomeMouthBuilder.Build(Root.transform, cfg, Mouths, Nests, ringGround, rock, dark, nest, meshes);
+        DomeMouthBuilder.Build(Root.transform, cfg, Mouths, Nests, ringGround, rock, dark, nest, meshes,
+            (x, z) => padRect && InsideLabPad(x, z, 4f));
     }
 
     void BuildAshAndNest(long seed)
     {
         try
         {
-            var spot = DomeAshSite.FindSpot(cfg, seed, Vector2.zero, Hydro, 96);
+            // Место ясеня считается ОТ лаборатории, а не от центра мира: в B0.1 двор уехал,
+            // и «100–400 м от лаборатории» — это расстояние до комплекса.
+            var spot = DomeAshSite.FindSpot(cfg, seed, LabCenter, Hydro, 96);
             float gy = DomeHydro.SampleHydro(cfg, Hydro, spot.pos.x, spot.pos.y);
             spot.groundY = gy;
             Ash = spot;
@@ -312,24 +457,31 @@ public class DomeWorld
     /// кольца, высота — по земле мира. Ангар стоит ЗА кольцом (D/2 + 40), сквозь которое
     /// хода нет, поэтому вход — у подножия кольца внутри чаши, а ангар остаётся кулисой.
     /// Направление берём от ангара: он и задаёт, с какой стороны света вход.
+    /// <para>
+    /// B0.1: точка СЧИТАЕТСЯ ДО лаборатории (<see cref="EntryPointXZ"/>) — вход и есть начало
+    /// координат замысла, лаборатория ставится «не ближе 150 м от него», а не наоборот.
+    /// </para>
     /// </summary>
-    void BuildEntry(bool buildMarker)
+    void BuildEntry(bool buildMarker, Vector2 p)
     {
-        if (Facility == null)
-        {
-            // Нечего ориентировать — у мира без корпусов вход и есть двор.
-            Entry = SpawnPoint;
-            return;
-        }
+        Entry = new Vector3(p.x, SampleGround(p.x, p.y), p.y);
+        if (!buildMarker) return;
+        Vector2 inward = p.sqrMagnitude > 1e-6f ? p.normalized : Vector2.down;
+        BuildEntryMarker(inward);
+    }
 
-        Vector2 dir = -Facility.hangarPos; // от ангара к центру
+    /// <summary>
+    /// Точка входа в координатах поля: направление от ангара (угол — из сида, один источник
+    /// <see cref="DomeFacilityLayout.HangarSpot"/>), расстояние — Rin − EntryInset.
+    /// Ни площадки, ни корпусов не требует: поэтому вход известен раньше лаборатории.
+    /// </summary>
+    Vector2 EntryPointXZ(long seed)
+    {
+        Vector2 dir = -DomeFacilityLayout.HangarSpot(cfg, seed); // от ангара к центру
         if (dir.sqrMagnitude < 1e-6f) dir = Vector2.down;
         dir.Normalize();
         float radius = Mathf.Max(0f, DomeRockRing.InnerRadius(cfg) - EntryInset);
-        Vector2 p = dir * radius;
-        Entry = new Vector3(p.x, SampleGround(p.x, p.y), p.y);
-
-        if (buildMarker) BuildEntryMarker(dir);
+        return dir * radius;
     }
 
     /// <summary>
@@ -373,9 +525,23 @@ public class DomeWorld
             new Vector3(0f, 0f, -0.6f);
     }
 
-    void BuildFacility(long seed)
+    /// <summary>
+    /// Корпуса. <paramref name="buildLabComplex"/> = false — прежняя раскладка A/C (двор с
+    /// ареной, клетками, хирургией и отдыхом отдельными боксами) в центре мира.
+    /// true — единый закрытый бункер B0.1 в найденном месте: плита, четыре комнаты вокруг
+    /// закрытого зала, сплошное перекрытие, искусственный свет; старый <c>Facility</c> тогда null.
+    /// </summary>
+    void BuildFacility(long seed, bool buildLabComplex)
     {
-        Facility = DomeFacilityLayout.Build(cfg, seed, Vector2.zero);
+        if (buildLabComplex)
+        {
+            LabComplex = DomeLabComplex.Build(Root, LabCenter, platformY, padYaw, ResolvedLabStyle);
+            LabDoor = LabComplex.door;
+            Facility = null;
+            return;
+        }
+
+        Facility = DomeFacilityLayout.Build(cfg, seed, LabCenter);
         Vector2 lab = Facility.labCenter;
         // Во дворе — только площадка лаборатории (RingField там даёт сырое поле и
         // поднимает пол над выровненной землёй). В кольце (ангар) — высшее из
@@ -387,6 +553,8 @@ public class DomeWorld
             return Mathf.Max(SampleGround(x, z), DomeSlope.RingField(cfg, x, z));
         };
         DomeFacilityPlacer.Build(Root, Facility, ground);
+        LabComplex = null;
+        LabDoor = default;
     }
 
     void BuildSky(long seed)

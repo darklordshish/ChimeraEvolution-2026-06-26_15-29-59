@@ -13,7 +13,11 @@ using UnityEngine;
 /// совиное гнездо в реестре без спавна, ForestSpawner с землёй под зверя.
 /// Срез B (B0): чанк — поле (сетка обязана делить диаметр), вход у подножия кольца
 /// (игрок на world.Entry + каменный портал), ясень можно выключить (на Ø400 он в скале).
-/// Лес, срез A (24.10) + C + B0.
+/// B0.1: лаборатория — единый ЗАКРЫТЫЙ бункер (LabStyle Bastion/InSlope, случайное место
+/// по сиду не ближе minLabDistance к входу, сплошное перекрытие, искусственный свет,
+/// ходибельный интерьер) за флагом buildLabComplex; при false стоит прежний лабиринт —
+/// сцены A и C не меняются.
+/// Лес, срез A (24.10) + C + B0 + B0.1.
 /// </summary>
 [RequireComponent(typeof(NavMeshSurface))]
 public class ForestBuilder : MonoBehaviour
@@ -50,6 +54,17 @@ public class ForestBuilder : MonoBehaviour
     [Header("Ясень и гнездо совы (B выключает: на Ø400 дерево встаёт в скалу)")]
     public bool buildAsh = true;
 
+    [Header("Лаборатория B0.1: единый закрытый бункер вместо старого лабиринта")]
+    public bool buildLabComplex = false;
+
+    [Header("Стиль оболочки: Bastion (наземный) / InSlope (в склоне) / Auto")]
+    public LabStyle labStyle = LabStyle.Bastion;
+
+    // Ноль = «не настроено»: новое сериализованное поле у компонента из сцены приходит
+    // нулём (гоча проекта), а порог 150 м — решение B0.1, не случайное число.
+    [Header("Комплекс не ближе стольких метров к входу (0 — 150)")]
+    public float minLabDistance = DefaultMinLabDistance;
+
     [Header("Логова и спавнер (пусто — логова копят очередь, но не рожают)")]
     public List<SpeciesSO> speciesPool = new List<SpeciesSO>();
 
@@ -73,6 +88,8 @@ public class ForestBuilder : MonoBehaviour
     const float DefaultSnakeSpawnRadius = 3f;
     const float DefaultSnakeFearRadius = 18f;
     const float DefaultSnakeRespawn = 30f;
+    /// <summary>Порог B0.1: лаборатория не ближе стольких метров к входу.</summary>
+    const float DefaultMinLabDistance = 150f;
 
     public int ResolvedSeed { get; private set; }
     public GameObject BuiltRoot { get; private set; }
@@ -85,6 +102,14 @@ public class ForestBuilder : MonoBehaviour
     public Vector3 SpawnPoint { get; private set; }
     /// <summary>Вход мира (срез B): у подножия скального кольца, внутри чаши. До SpawnPlayer готов.</summary>
     public Vector3 Entry => world != null ? world.Entry : default;
+    /// <summary>Центр лаборатории в координатах поля: двор A/C или плита комплекса B0.1.</summary>
+    public Vector2 LabCenter => world != null ? world.LabCenter : Vector2.zero;
+    /// <summary>Портал комплекса B0.1 в координатах поля (как Entry); default у старого лабиринта.</summary>
+    public Vector3 LabDoor => world != null ? world.LabDoor : default;
+    /// <summary>Какой стиль комплекс получил на самом деле (Auto разрешён в один из двух).</summary>
+    public LabStyle ResolvedLabStyle => world != null ? world.ResolvedLabStyle : labStyle;
+    /// <summary>Построенный комплекс (null при старом лабиринте A/C).</summary>
+    public DomeLabComplex.Result LabComplex => world != null ? world.LabComplex : null;
     public float SampleGround(float x, float z) => world != null ? world.SampleGround(x, z) : 0f;
 
     /// <summary>Логова этого мира в порядке постановки: змеиные, затем совиное — ровно то, что в реестре.</summary>
@@ -191,7 +216,10 @@ public class ForestBuilder : MonoBehaviour
         world = new DomeWorld();
         // buildEntry — это «поставить вход-портал»: сцена, которая просит спавн у входа,
         // хочет и сам вход видимым. Отдельного рубильника у портала нет намеренно.
-        world.Build(BuiltRoot, ownedConfig, terrainQuads, chosen, buildAsh, spawnAtEntry);
+        // B0.1: стиль и порог лаборатории идут в мир; 0 в пороге — «не настроено».
+        world.Build(BuiltRoot, ownedConfig, terrainQuads, chosen, buildAsh, spawnAtEntry,
+            labStyle, minLabDistance > 0f ? minLabDistance : DefaultMinLabDistance,
+            buildLabComplex);
 
         var surface = GetComponent<NavMeshSurface>();
         world.BuildNavMesh(surface);
@@ -200,9 +228,24 @@ public class ForestBuilder : MonoBehaviour
 
         BuildLairs();
 
-        int parts = world.Facility != null ? world.Facility.parts.Count : 0;
+        int parts = world.Facility != null ? world.Facility.parts.Count
+            : world.LabComplex != null ? world.LabComplex.parts : 0;
+        string lab;
+        if (world.LabComplex != null)
+        {
+            float labToEntry = Vector2.Distance(
+                world.LabCenter, new Vector2(world.Entry.x, world.Entry.z));
+            lab = $"комплекс {world.LabComplex.style} в {labToEntry:F0} м от входа, " +
+                  $"деталей {world.LabComplex.parts} " +
+                  $"(интерьер {world.LabComplex.interiorParts}, оболочка {world.LabComplex.exteriorParts}), " +
+                  $"ламп {world.LabComplex.lights}, портал {world.LabDoor}";
+        }
+        else
+        {
+            lab = $"старый лабиринт, деталей {parts}";
+        }
         Debug.Log($"[Forest] мир {chosen}: чанков {world.Chunks}, деревьев {world.Trees}, " +
-                  $"устий {world.Mouths.Count}, гнёзд {world.Nests.Count}, корпусов {parts}, " +
+                  $"устий {world.Mouths.Count}, гнёзд {world.Nests.Count}, {lab}, " +
                   $"ясень {(world.HasAsh ? "есть" : "нет")}, " +
                   $"гнездо совы {(world.NestSite != null ? "есть" : "нет")}, вход {world.Entry}");
     }

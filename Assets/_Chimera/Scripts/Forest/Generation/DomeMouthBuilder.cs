@@ -17,7 +17,7 @@ public static class DomeMouthBuilder
     public static void Build(Transform parent, DomeGenConfigSO cfg,
         List<DomeSlope.MouthSpot> mouths, List<DomeSlope.NestSpot> nests,
         Func<float, float, float> ground, Material rock, Material dark, Material nest,
-        ICollection<Mesh> track = null)
+        ICollection<Mesh> track = null, Func<float, float, bool> exclude = null)
     {
         if (parent == null) throw new ArgumentNullException(nameof(parent));
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
@@ -42,6 +42,7 @@ public static class DomeMouthBuilder
 
         foreach (var m in mouths)
         {
+            if (exclude != null && exclude(m.pos.x, m.pos.y)) continue;
             float gy = ground(m.pos.x, m.pos.y);
             float yaw = Mathf.Atan2(Mathf.Cos(m.facing), Mathf.Sin(m.facing)) * Mathf.Rad2Deg;
             var root = new GameObject("Mouth");
@@ -64,6 +65,7 @@ public static class DomeMouthBuilder
                 float dist = 5f + SeededHash.ToFloat01(SeededHash.Hash(cfg.seed, 801, ri)) * 13f;
                 float x = m.pos.x + Mathf.Cos(a) * dist;
                 float z = m.pos.y + Mathf.Sin(a) * dist;
+                if (exclude != null && exclude(x, z)) continue;
                 var mesh = (ri % 2 == 0) ? Slab(0.9f, 0.5f, 0.7f) : Spike(0.5f, 2.4f);
                 var go = Part(parent, "MouthRock", mesh, rock);
                 go.transform.localPosition = new Vector3(x, ground(x, z), z);
@@ -75,6 +77,7 @@ public static class DomeMouthBuilder
 
         foreach (var n in nests)
         {
+            if (exclude != null && exclude(n.pos.x, n.pos.y)) continue;
             float gy = ground(n.pos.x, n.pos.y);
             Cairn(parent, Slab(0.9f, 0.54f, 0.9f), nest, n.pos.x, gy, n.pos.y);
             Cairn(parent, Slab(0.6f, 0.36f, 0.6f), nest, n.pos.x, gy + 0.55f, n.pos.y);

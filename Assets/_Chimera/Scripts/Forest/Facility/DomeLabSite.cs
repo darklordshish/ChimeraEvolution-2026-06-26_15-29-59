@@ -1,0 +1,268 @@
+using System;
+using UnityEngine;
+
+/// <summary>
+/// Место лаборатории-полубункера (B0.1): детерминированный поиск по сиду, без UnityEngine.Random.
+/// <para>
+/// Порядок, из которого всё следует: <b>сначала вход, потом лаборатория</b>. Направление ангара
+/// задаётся сидом (один источник — <see cref="DomeFacilityLayout.HangarSpot"/>), вход стоит у
+/// подножия скального кольца на <c>Rin − 20</c>; лаборатория ищется уже от него, поэтому
+/// «≥150 м от входа» — свойство мира, а не подгонка числа.
+/// </para>
+/// <para>
+/// Кандидаты берутся хэшем сида в двух полосах: <b>InSlope</b> — у кольца на любой стороне
+/// (<c>rin − 15 … rin − 5</c>), <b>Bastion</b> — по всей чаше, но центр не ближе 30 м к кольцу.
+/// Годность — четыре условия сразу: сухо (выше озера), уклон меньше 10°, перепад по пятну
+/// не больше 2 м, река не под площадкой; у InSlope пятое — берма сзади не должна накрывать
+/// комнаты. Порядок обхода детерминирован, поэтому «тот же сид + та же version = тот же мир».
+/// </para>
+/// <para>
+/// Один честный компромисс: на малом диаметре <c>minLabDistance</c> может быть физически
+/// недостижим (Ø300: чаша r ≤ 70, вход на r ≈ 50, максимум 90 м). Тогда поиск повторяется без
+/// порога и берёт САМОЕ ДАЛЁКОЕ годное пятно — с флагом <see cref="Spot.relaxed"/> и предупреждением
+/// в лог. Молчаливого «подкрутили порог» здесь нет.
+/// </para>
+/// </summary>
+public static class DomeLabSite
+{
+    /// <summary>Найденное место. <c>found = false</c> — годного пятна нет вовсе (смени сид).</summary>
+    public struct Spot
+    {
+        public bool found;
+        /// <summary>Порог 150 м не достижим на этом диаметре — взято самое далёкое годное пятно.</summary>
+        public bool relaxed;
+        /// <summary>Центр плиты в координатах поля.</summary>
+        public Vector2 center;
+        /// <summary>Портал с фасада (на плите), в координатах поля.</summary>
+        public Vector3 door;
+        /// <summary>Решённый стиль — только Bastion или InSlope, никогда Auto.</summary>
+        public LabStyle style;
+        /// <summary>Поворот: локальная +Z смотрит от чаши (в кольцо), фасад −Z — к центру/входу.</summary>
+        public float yawDeg;
+        /// <summary>Верх пятна: на нём стоит плита (не ниже воды).</summary>
+        public float groundY;
+        public float distanceToEntry;
+        /// <summary>Перепад по пятну (м) — запас до порога 2 м, печатается в лог.</summary>
+        public float relief;
+        public string note;
+    }
+
+    /// <summary>Максимальный уклон в точках пятна (град). Бункер режет площадку, поэтому 20°.</summary>
+    public const float MaxSlopeDegrees = 20f;
+    /// <summary>Максимальный перепад высот по пятну (м): плита не висит и не режет склон.</summary>
+    public const float MaxRelief = 4f;
+    /// <summary>Сухо — выше уровня озера на столько (м).</summary>
+    public const float DryMargin = 0.5f;
+    /// <summary>Полоса InSlope от внутренней кромки кольца (м): rin − 15 … rin − 5.</summary>
+    public const float RingBandInner = 15f;
+    public const float RingBandOuter = 5f;
+    /// <summary>Bastion: центр не ближе стольких метров к внутренней кромке кольца.</summary>
+    public const float BastionInset = 30f;
+    /// <summary>Берма сзади не выше этого над полом (м), иначе кольцо накрывает комнаты.</summary>
+    public const float MaxRingAtBack = 3f;
+    /// <summary>Площадка не накрывает русло: клиренс от точек реки (м).</summary>
+    public const float RiverClearance = 25f;
+
+    /// <summary>Пятно площадки: центр, четыре угла и середины сторон (в кадре лаборатории).</summary>
+    static readonly Vector2[] PadSamples =
+    {
+        new Vector2(0f, 0f),
+        new Vector2(DomeLabComplex.HalfWidth, DomeLabComplex.HalfDepth),
+        new Vector2(-DomeLabComplex.HalfWidth, DomeLabComplex.HalfDepth),
+        new Vector2(-DomeLabComplex.HalfWidth, -DomeLabComplex.HalfDepth),
+        new Vector2(DomeLabComplex.HalfWidth, -DomeLabComplex.HalfDepth),
+        new Vector2(DomeLabComplex.HalfWidth, 0f),
+        new Vector2(-DomeLabComplex.HalfWidth, 0f),
+        new Vector2(0f, DomeLabComplex.HalfDepth),
+        new Vector2(0f, -DomeLabComplex.HalfDepth),
+    };
+
+    /// <summary>
+    /// Найти место. <paramref name="requested"/> = Auto пробует сначала полосу кольца (там комплекс
+    /// может быть только InSlope), затем открытый пол. Возвращает найденное или <c>found = false</c>.
+    /// </summary>
+    public static Spot Find(DomeGenConfigSO cfg, long seed, Vector2 entry, DomeHydro.State hydro,
+        LabStyle requested, float minDistance, int attempts = 512)
+    {
+        if (cfg == null) throw new ArgumentNullException(nameof(cfg));
+        if (hydro == null) throw new ArgumentNullException(nameof(hydro));
+        attempts = Mathf.Clamp(attempts, 32, 1024);
+        float rin = Mathf.Max(1f, DomeRockRing.InnerRadius(cfg));
+        if (minDistance < 0f) minDistance = 0f;
+        Func<float, float, float> ground = (x, z) => DomeHydro.SampleHydro(cfg, hydro, x, z);
+
+        // 1) честный порог в своей полосе; 2) без порога — самое далёкое годное пятно.
+        foreach (var style in Order(requested))
+        {
+            var exact = Search(cfg, seed, entry, hydro, ground, rin, style, minDistance, attempts, false);
+            if (exact.found) return exact;
+        }
+
+        Spot best = default;
+        float bestDist = float.NegativeInfinity;
+        foreach (var style in Order(requested))
+        {
+            var relaxed = Search(cfg, seed, entry, hydro, ground, rin, style, 0f, attempts, true);
+            if (!relaxed.found) continue;
+            if (relaxed.distanceToEntry > bestDist)
+            {
+                bestDist = relaxed.distanceToEntry;
+                best = relaxed;
+            }
+        }
+        if (best.found)
+        {
+            best.relaxed = true;
+            best.note = $"порог {minDistance:F0} м недостижим на Ø{cfg.mapDiameter:F0}: " +
+                        $"лаборатория в {best.distanceToEntry:F0} м от входа";
+            return best;
+        }
+
+        return new Spot
+        {
+            found = false,
+            note = $"годного пятна нет (сид {seed}, Ø{cfg.mapDiameter:F0}): сухо/уклон/перепад не сходятся",
+        };
+    }
+
+    /// <summary>Порядок стилей: Auto — полоса кольца, затем открытый пол. Bastion/InSlope — один.</summary>
+    static LabStyle[] Order(LabStyle requested)
+    {
+        switch (requested)
+        {
+            case LabStyle.InSlope: return new[] { LabStyle.InSlope };
+            case LabStyle.Bastion: return new[] { LabStyle.Bastion };
+            default: return new[] { LabStyle.InSlope, LabStyle.Bastion };
+        }
+    }
+
+    static Spot Search(DomeGenConfigSO cfg, long seed, Vector2 entry, DomeHydro.State hydro,
+        Func<float, float, float> ground, float rin, LabStyle style, float minDistance,
+        int attempts, bool keepFarthest)
+    {
+        Spot best = default;
+        float bestDist = float.NegativeInfinity;
+        for (int i = 0; i < attempts; i++)
+        {
+            if (!Candidate(cfg, seed, i, rin, style, out var p)) continue;
+            float dist = Vector2.Distance(p, entry);
+            if (dist < minDistance) continue;
+            if (!Accept(cfg, hydro, ground, p, entry, style, out float groundY, out float relief))
+                continue;
+            var spot = Make(p, entry, style, groundY, relief, dist);
+            if (!keepFarthest) return spot;
+            if (dist > bestDist)
+            {
+                bestDist = dist;
+                best = spot;
+            }
+        }
+        return best;
+    }
+
+    /// <summary>
+    /// Кандидат номер i. Угол и радиус — из хэша сида и стиля (своя соль на каждый стиль:
+    /// новый стиль не сдвигает старый мир). Bastion берёт радиус как sqrt — равномерно по площади.
+    /// </summary>
+    static bool Candidate(DomeGenConfigSO cfg, long seed, int i, float rin, LabStyle style,
+        out Vector2 p)
+    {
+        p = Vector2.zero;
+        int salt = style == LabStyle.InSlope ? 2000 : 2100;
+        float u = SeededHash.ToFloat01(SeededHash.Hash(seed + salt, i, 11));
+        float v = SeededHash.ToFloat01(SeededHash.Hash(seed + salt, i, 12));
+        float a = u * Mathf.PI * 2f;
+        float r;
+        if (style == LabStyle.InSlope)
+            r = Mathf.Lerp(rin - RingBandInner, rin - RingBandOuter, v);
+        else
+            r = Mathf.Sqrt(v) * Mathf.Max(0f, rin - BastionInset);
+        p = r <= 0f ? Vector2.zero : new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * r;
+        return true;
+    }
+
+    /// <summary>
+    /// Годно ли пятно: сухо, уклон &lt;10°, перепад ≤2 м по всей площадке, не на русле,
+    /// у InSlope — берма сзади не выше 3 м над полом.
+    /// </summary>
+    static bool Accept(DomeGenConfigSO cfg, DomeHydro.State hydro, Func<float, float, float> ground,
+        Vector2 p, Vector2 entry, LabStyle style, out float groundY, out float relief)
+    {
+        groundY = 0f;
+        relief = 0f;
+        float yaw = YawAwayFromEntry(p, entry);
+
+        // Русло под плитой: SampleHydro его вырезает, и «сухо» по уровню озера его не ловит.
+        for (int i = 0; i < hydro.riverPts.Count; i++)
+        {
+            float dx = hydro.riverPts[i].x - p.x;
+            float dz = hydro.riverPts[i].y - p.y;
+            if (dx * dx + dz * dz < RiverClearance * RiverClearance) return false;
+        }
+
+        float lake = hydro.lakeLevel;
+        float min = float.MaxValue, max = float.MinValue;
+        for (int k = 0; k < PadSamples.Length; k++)
+        {
+            // InSlope спиной стоит в скале: задняя половина пятна — не «пол»,
+            // её накрывает берма. Проверяем центр, фронт и бока.
+            if (style == LabStyle.InSlope && PadSamples[k].y > 0f) continue;
+            Vector2 q = PadPoint(p, yaw, PadSamples[k]);
+            float h = ground(q.x, q.y);
+            if (h < lake + DryMargin) return false;
+            if (DomeSlope.SlopeAtS(cfg, q.x, q.y, ground) >= MaxSlopeDegrees) return false;
+            if (h < min) min = h;
+            if (h > max) max = h;
+        }
+        relief = max - min;
+        if (relief > MaxRelief) return false;
+
+        // Плита стоит на ВЕРХНЕЙ точке пятна: иначе угол повиснет над землёй, а не наоборот.
+        groundY = max;
+
+        // InSlope сзади накрыт бермой/скалой — это его оболочка, а не «пол».
+        // Поэтому отдельного запрета «кольцо выше пола» здесь нет.
+        return true;
+    }
+
+    static Spot Make(Vector2 p, Vector2 entry, LabStyle style, float groundY, float relief, float dist)
+    {
+        float yaw = YawAwayFromEntry(p, entry);
+        return new Spot
+        {
+            found = true,
+            center = p,
+            // Одна формула двери на всех: её же считает сам комплекс.
+            door = DomeLabComplex.DoorPoint(p, groundY, yaw),
+            style = style,
+            yawDeg = yaw,
+            groundY = groundY,
+            relief = relief,
+            distanceToEntry = dist,
+        };
+    }
+
+    /// <summary>Локальная +Z смотрит ОТ входа (в кольцо), значит фасад (−Z) — к входу и чаше.</summary>
+    static float YawAwayFromEntry(Vector2 center, Vector2 entry)
+    {
+        Vector2 outward = Outward(center, entry);
+        return Mathf.Atan2(outward.x, outward.y) * Mathf.Rad2Deg;
+    }
+
+    static Vector2 Outward(Vector2 center, Vector2 entry)
+    {
+        Vector2 outward = center - entry;
+        if (outward.sqrMagnitude > 1e-6f) return outward.normalized;
+        // Вырожденный случай (вход в центре): направление всё равно обязано быть.
+        return center.sqrMagnitude > 1e-6f ? center.normalized : Vector2.up;
+    }
+
+    /// <summary>Точка кадра лаборатории → координаты поля (локальная +Z → от входа).</summary>
+    static Vector2 PadPoint(Vector2 center, float yawDeg, Vector2 local)
+    {
+        float yaw = yawDeg * Mathf.Deg2Rad;
+        float c = Mathf.Cos(yaw), s = Mathf.Sin(yaw);
+        return new Vector2(center.x + local.x * c + local.y * s,
+            center.y - local.x * s + local.y * c);
+    }
+}

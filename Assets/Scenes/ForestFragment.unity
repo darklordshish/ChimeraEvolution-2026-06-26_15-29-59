@@ -480,6 +480,11 @@ MonoBehaviour:
   rotateBehind: 1
   rigidYaw: 1
   yawFollowSpeed: 70
+  wallProbeRadius: 0
+  wallProbePadding: 0
+  wallProbeMask:
+    serializedVersion: 2
+    m_Bits: 0
   headHeight: 1.4
   headForward: 0.25
   pitchSensitivity: 0.1
@@ -643,6 +648,9 @@ MonoBehaviour:
   playerSpawn: {fileID: 0}
   spawnAtEntry: 1
   buildAsh: 0
+  buildLabComplex: 1
+  labStyle: 0
+  minLabDistance: 150
   speciesPool: []
   snakePrefab: {fileID: 0}
   snakeCapacity: 3

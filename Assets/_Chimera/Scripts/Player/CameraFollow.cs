@@ -16,6 +16,19 @@ public class CameraFollow : MonoBehaviour
     [SerializeField] bool rigidYaw = true;       // БЕЗЫНЕРЦИОННО: жёстко за телом, без запаздывания (удобно тестить/целиться)
     [SerializeField] float yawFollowSpeed = 240f; // град/с доворота при ВЫКЛЮЧЕННОМ rigidYaw (мягкое запаздывание)
 
+    [Header("Третье лицо: коллизия (0 = не настроено, берётся дефолт)")]
+    // Обёртки-свойства ниже читают 0 как «поле не настроено»: у компонентов, уже лежащих
+    // в старых сценах, новое [SerializeField] приходит нулём, а не инициализатором.
+    [Tooltip("Радиус сферы проверки стены/крыши. 0 = 0.28 м.")]
+    [SerializeField] float wallProbeRadius = 0f;
+    [Tooltip("Запас перед препятствием: камера встаёт на столько раньше контакта. 0 = 0.12 м.")]
+    [SerializeField] float wallProbePadding = 0f;
+    [Tooltip("Что считается препятствием. 0 = всё, кроме слоя Ignore Raycast.")]
+    [SerializeField] LayerMask wallProbeMask = 0;
+
+    const float DefaultWallProbeRadius = 0.28f;
+    const float DefaultWallProbePadding = 0.12f;
+
     [Header("Первое лицо")]
     [SerializeField] float headHeight = 1.4f;
     [SerializeField] float headForward = 0.25f;
@@ -28,7 +41,24 @@ public class CameraFollow : MonoBehaviour
     float yaw; // угол камеры вокруг цели (0 = исходный офсет); догоняет направление ДВИЖЕНИЯ игрока
     PlayerController player;
     BodySize sizeOf;   // размер тела цели: вешает тело при сборке, позже камеры — берём лениво
+    RaycastHit[] probeHits; // несериализуемое: после перекомпиляции на Play приходит null — заводим лениво
+    static int defaultProbeMask = int.MinValue;
     BodySize size => sizeOf != null ? sizeOf : (target != null ? sizeOf = target.GetComponent<BodySize>() : null);
+
+    float ProbeRadius => wallProbeRadius > 0f ? wallProbeRadius : DefaultWallProbeRadius;
+    float ProbePadding => wallProbePadding > 0f ? wallProbePadding : DefaultWallProbePadding;
+    int ProbeMask => wallProbeMask.value != 0 ? wallProbeMask.value : DefaultProbeMask;
+
+    /// <summary>Всё, кроме встроенного слоя Ignore Raycast (2). Считается один раз на домен.</summary>
+    static int DefaultProbeMask
+    {
+        get
+        {
+            if (defaultProbeMask == int.MinValue)
+                defaultProbeMask = ~LayerMask.GetMask("Ignore Raycast");
+            return defaultProbeMask;
+        }
+    }
 
     void Awake()
     {
@@ -85,8 +115,48 @@ public class CameraFollow : MonoBehaviour
 
         followPos = Vector3.Lerp(followPos, target.position, followLerp * Time.deltaTime);
         float k = size != null ? size.Scale : 1f;   // камера за плечом отходит вместе с ростом
-        transform.position = followPos + Quaternion.Euler(0f, yaw, 0f) * offset * k + shake;
-        transform.LookAt(target.position + Vector3.up * (size != null ? size.FromGround(lookHeight) : lookHeight));
+        Vector3 aim = target.position + Vector3.up * (size != null ? size.FromGround(lookHeight) : lookHeight);
+        Vector3 desired = followPos + Quaternion.Euler(0f, yaw, 0f) * offset * k;
+        // Стена/крыша: камера не заходит за препятствие, встаёт перед ним с запасом.
+        // Нет препятствия — позиция ровно прежняя (важно для A/C и старых сцен).
+        transform.position = ResolveWall(aim, desired) + shake;
+        transform.LookAt(aim);
+    }
+
+    /// <summary>
+    /// Третье лицо с коллизией: сфера летит от точки взгляда (голова/пояс — то же, куда смотрит
+    /// камера) к ЖЕЛАЕМОЙ позиции камеры. Свои коллайдеры (цель и игрок с детьми тела) не считаем:
+    /// CharacterController игрока всегда перекрывает начало луча.
+    /// </summary>
+    Vector3 ResolveWall(Vector3 aim, Vector3 desired)
+    {
+        Vector3 delta = desired - aim;
+        float distance = delta.magnitude;
+        if (distance < 1e-4f) return desired;
+
+        Vector3 dir = delta / distance;
+        if (probeHits == null) probeHits = new RaycastHit[8]; // перекомпиляция на Play обнуляет поле
+        int count = Physics.SphereCastNonAlloc(aim, ProbeRadius, dir, probeHits, distance,
+            ProbeMask, QueryTriggerInteraction.Ignore);
+
+        float nearest = distance;
+        for (int i = 0; i < count; i++)
+        {
+            var hit = probeHits[i];
+            if (hit.collider == null || IsOwnCollider(hit.collider)) continue;
+            if (hit.distance < nearest) nearest = hit.distance;
+        }
+
+        if (nearest >= distance) return desired;
+        return aim + dir * Mathf.Max(0f, nearest - ProbePadding);
+    }
+
+    bool IsOwnCollider(Collider c)
+    {
+        Transform t = c.transform;
+        if (target != null && (t == target || t.IsChildOf(target))) return true;
+        if (player != null && (t == player.transform || t.IsChildOf(player.transform))) return true;
+        return false;
     }
 
     Vector3 ShakeOffset()

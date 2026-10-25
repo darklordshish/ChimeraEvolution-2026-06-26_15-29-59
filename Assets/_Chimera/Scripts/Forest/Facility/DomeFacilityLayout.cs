@@ -69,6 +69,19 @@ public static class DomeFacilityLayout
         if (roof) Box(parts, FacMesh.Slab, w + 0.4f, 0.2f, d + 0.4f, cx, h + 0.1f, cz, FacMat.Dark, false);
     }
 
+    /// <summary>
+    /// Место ангара на этом сиде. ОДИН источник: из него берёт угол раскладка (ангар-кулиса)
+    /// и из него же считается направление входа мира — вход у подножия кольца стоит на
+    /// противоположной от ангара стороне, и ему не нужно строить корпуса, чтобы это узнать.
+    /// </summary>
+    public static Vector2 HangarSpot(DomeGenConfigSO cfg, long seed)
+    {
+        if (cfg == null) throw new ArgumentNullException(nameof(cfg));
+        float angle = SeededHash.ToFloat01(SeededHash.Hash(seed, 900, 1)) * Mathf.PI * 2f;
+        float r = cfg.mapDiameter * 0.5f + 40f;
+        return new Vector2(Mathf.Cos(angle) * r, Mathf.Sin(angle) * r);
+    }
+
     public static Facility Build(DomeGenConfigSO cfg, long seed, Vector2 labCenter)
     {
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
@@ -110,9 +123,7 @@ public static class DomeFacilityLayout
         f.pois.Add(new Poi { id = "Rest", pos = new Vector2(lx + 7f, lz - 12f), radius = 5f });
 
         // Ангар-Gateway в кольце: угол от сида, лицом в центр.
-        float angle = SeededHash.ToFloat01(SeededHash.Hash(seed, 900, 1)) * Mathf.PI * 2f;
-        float r = cfg.mapDiameter * 0.5f + 40f;
-        Vector2 hp = new Vector2(Mathf.Cos(angle) * r, Mathf.Sin(angle) * r);
+        Vector2 hp = HangarSpot(cfg, seed);
         f.hangarPos = hp;
         f.hangarYaw = Mathf.Atan2(-hp.x, -hp.y) * Mathf.Rad2Deg;
         float hx = hp.x, hz = hp.y;
