@@ -26,14 +26,14 @@ namespace Chimera.Tests.PlayMode
             host = null;
         }
 
-        ForestBuilder BuildLab(LabStyle style, bool complex = true)
+        ForestBuilder BuildLab(LabStyle style, bool complex = true, long seed = 4)
         {
             host = new GameObject("~ForestLabComplexProbe");
             host.SetActive(false);
             builder = host.AddComponent<ForestBuilder>();
             builder.buildOnAwake = false;
             builder.randomSeed = false;
-            builder.seed = 4;
+            builder.seed = seed;
             builder.mapDiameter = 400f;
             builder.chunkSize = 100f;
             builder.terrainQuads = 24;
@@ -114,6 +114,29 @@ namespace Chimera.Tests.PlayMode
                 new Vector3(b.LabCenter.x, ground + 2f, b.LabCenter.y),
                 new Vector3(6f, 0.8f, 6f));
             Assert.AreEqual(0, overlaps.Length, "в центре зала нет колонны");
+        }
+
+        [UnityTest]
+        public IEnumerator AnySeed_BuildsLab_DryOrWetDeck()
+        {
+            foreach (long seed in new long[] { 1, 4, 9 })
+            {
+                var b = BuildLab(LabStyle.InSlope, seed: seed);
+                yield return null;
+
+                Assert.IsNotNull(b.LabComplex, $"сид {seed}: комплекс обязан собраться");
+                Assert.AreNotEqual(Vector3.zero, b.LabDoor, $"сид {seed}: LabDoor есть");
+                Assert.AreEqual(12, b.Chunks, $"сид {seed}: чанки B0");
+                if (seed == 9)
+                    Assert.IsFalse(b.LabComplex.wetApproach, "сид 9: сухой подход без настила");
+                if (seed == 1)
+                    Assert.IsTrue(b.LabComplex.wetApproach, "сид 1: запасное место с настилом");
+
+                b.Clear();
+                Object.Destroy(host);
+                host = null;
+                builder = null;
+            }
         }
 
         [UnityTest]

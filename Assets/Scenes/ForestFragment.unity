@@ -638,7 +638,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 92608c9fae9051049957457fbb09bf7f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Chimera.Runtime::ForestBuilder
-  seed: 4
+  seed: 9
   randomSeed: 0
   mapDiameter: 400
   chunkSize: 100

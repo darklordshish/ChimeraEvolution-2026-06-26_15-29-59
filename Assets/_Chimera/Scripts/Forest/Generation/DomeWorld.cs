@@ -50,7 +50,9 @@ public class DomeWorld
     public Vector2 LabCenter { get; private set; }
     /// <summary>Портал комплекса (координаты поля); default у старого лабиринта.</summary>
     public Vector3 LabDoor { get; private set; }
-    /// <summary>Решённый стиль комплекса (Bastion или InSlope).</summary>
+    /// <summary>Подход к лаборатории мокрый: у комплекса построен настил.</summary>
+    public bool LabWetApproach { get; private set; }
+    /// <summary>Решённый облик комплекса (Bastion или InSlope).</summary>
     public LabStyle ResolvedLabStyle { get; private set; }
     public List<DomeSlope.MouthSpot> Mouths { get; private set; } = new List<DomeSlope.MouthSpot>();
     public List<DomeSlope.NestSpot> Nests { get; private set; } = new List<DomeSlope.NestSpot>();
@@ -128,19 +130,22 @@ public class DomeWorld
         {
             LabCenter = site.center;
             ResolvedLabStyle = site.style;
+            LabWetApproach = site.wetApproach;
             padYaw = site.yawDeg;
             padRect = true;
             // Плита стоит на верхней точке пятна (поиск её и вернул): не висит и не режет склон.
             platformY = Mathf.Max(site.groundY, Hydro.lakeLevel + 0.5f);
-            if (site.relaxed) Debug.LogWarning($"[Forest] лаборатория: {site.note}");
+            if (site.relaxed || site.wetApproach || site.fallback)
+                Debug.LogWarning($"[Forest] лаборатория: {site.note}");
             Debug.Log($"[Forest] лаборатория: {site.style} в {site.distanceToEntry:F0} м от входа, " +
                       $"центр ({site.center.x:F0}; {site.center.y:F0}), перепад {site.relief:F1} м, " +
-                      $"площадка {platformY:F1} м");
+                      $"площадка {platformY:F1} м, {(site.wetApproach ? "мокрый подход/настил" : "сухой подход")}");
         }
         else
         {
             LabCenter = Vector2.zero;
             ResolvedLabStyle = LabStyle.Bastion;
+            LabWetApproach = false;
             padYaw = 0f;
             padRect = false;
             // Цель площадки: не ниже уровня озера, иначе центр двора уйдёт под воду.
@@ -184,7 +189,9 @@ public class DomeWorld
             if (labPad(x, z)) return true;
             // Перед LabDoor — спокойный участок: дверь видна целиком, деревья
             // обрамляют сбоку, а не закрывают вход (правило дизайн-линии 25.10).
-            return Vector2.Distance(new Vector2(x, z), new Vector2(LabDoor.x, LabDoor.z)) < 14f;
+            // Мокрый подход длиннее — настил не должен прорастать стволами.
+            float approachClear = LabWetApproach ? 32f : 14f;
+            return Vector2.Distance(new Vector2(x, z), new Vector2(LabDoor.x, LabDoor.z)) < approachClear;
         };
         // Вырубка гасит деревья; подлесок живёт в R12/R14 и пятнах, но не под плитой
         // комплекса (12 см плиты — трава торчала бы в зале).
@@ -315,6 +322,7 @@ public class DomeWorld
         LabComplex = null;
         LabCenter = Vector2.zero;
         LabDoor = default;
+        LabWetApproach = false;
         ResolvedLabStyle = LabStyle.Bastion;
         padYaw = 0f;
         padRect = false;
@@ -538,7 +546,8 @@ public class DomeWorld
     {
         if (buildLabComplex)
         {
-            LabComplex = DomeLabComplex.Build(Root, LabCenter, platformY, padYaw, ResolvedLabStyle);
+            LabComplex = DomeLabComplex.Build(Root, LabCenter, platformY, padYaw,
+                ResolvedLabStyle, LabWetApproach);
             LabDoor = LabComplex.door;
             Facility = null;
             return;

@@ -68,6 +68,8 @@ public static class DomeLabComplex
         public int exteriorParts;
         public int lights;
         public bool berm;
+        /// <summary>Подход мокрый: построен настил от двери до сухого места.</summary>
+        public bool wetApproach;
         public GameObject root;
     }
 
@@ -119,7 +121,7 @@ public static class DomeLabComplex
     /// — верх площадки в координатах поля: плита встаёт на него, не пересчитывая землю.
     /// </summary>
     public static Result Build(GameObject parent, Vector2 center, float groundY, float yawDeg,
-        LabStyle style)
+        LabStyle style, bool wetApproach = false)
     {
         if (parent == null) throw new ArgumentNullException(nameof(parent));
         if (style == LabStyle.Auto) style = LabStyle.Bastion;
@@ -131,6 +133,7 @@ public static class DomeLabComplex
             style = style,
             door = DoorPoint(center, groundY, yawDeg),
             berm = style == LabStyle.InSlope,
+            wetApproach = wetApproach,
         };
 
         var root = new GameObject("LabComplex");
@@ -155,6 +158,7 @@ public static class DomeLabComplex
 
         // Всё, что выше, — ОДИН интерьер. Ниже — только внешняя оболочка стиля.
         result.interiorParts = b.parts;
+        if (wetApproach) BuildWetApproach(b);
         if (style == LabStyle.InSlope) BuildSlopeDressing(b);
         else BuildBastionDressing(b);
         result.exteriorParts = b.parts - result.interiorParts;
@@ -475,6 +479,21 @@ public static class DomeLabComplex
     // ------------------------------------------------------------------ обкладка стилей
 
     /// <summary>
+    /// Мокрый/низкий подход: бетонный настил от порога до сухого места. Верх на Plinth,
+    /// чтобы не было ступени; коллайдер — чтобы NavMesh вёл по настилу, а не по воде.
+    /// </summary>
+    static void BuildWetApproach(Builder b)
+    {
+        const float length = 26f;
+        float z = -HalfDepth - length * 0.5f;
+        b.Add("WetApproach", Kit.Floor, 6f, Plinth, length, 0f, 0f, z, true);
+        b.Add("WetApproachCurbW", Kit.Concrete, 0.3f, 0.3f, length,
+            -3f, Plinth, z, true);
+        b.Add("WetApproachCurbE", Kit.Concrete, 0.3f, 0.3f, length,
+            3f, Plinth, z, true);
+    }
+
+    /// <summary>
     /// Bastion: низкий наземный блокгауз. Одна плита, общий кровельный пояс/парапет,
     /// тяжёлая рама входа. Открытого двора нет — крыша сплошная.
     /// </summary>
@@ -516,7 +535,8 @@ public static class DomeLabComplex
         float roofTop = Plinth + RoomHeight + RoofThickness;
         float frontZ = -HalfDepth - 2.0f;
         float sideX = PortalWidth * 0.5f + 0.8f;
-        float faceW = HalfWidth + 2f - sideX;
+        // Не одна плоская стена: боковые щёки короче, дальше — рваные каменные массы.
+        float faceW = 12f;
         float faceX = sideX + faceW * 0.5f;
 
         // Задний массив и бока: комплекс читается врезанным в скалу.
@@ -532,6 +552,14 @@ public static class DomeLabComplex
         b.Add("CliffFaceE", Kit.Rock, faceW, 8f, 4.6f, faceX, 0f, frontZ, true);
         b.Add("CliffLintelRock", Kit.Rock, sideX * 2f + 1.2f, 4.2f, 4.6f,
             0f, 4.35f, frontZ, true);
+        // Рваные массы по краям: плоская стена читается сараем, а не скалой.
+        b.AddRock("CliffMassW1", 6.5f, -20f, sink, -19f);
+        b.AddRock("CliffMassW2", 4.2f, -14f, 0f, -19.5f);
+        b.AddRock("CliffMassE1", 6.8f, 21f, sink, -19f);
+        b.AddRock("CliffMassE2", 4.5f, 14f, 0f, -19.5f);
+        b.AddRock("CliffBrowW", 5.2f, -7.5f, 4.8f, -20.2f);
+        b.AddRock("CliffBrowE", 5.4f, 8.2f, 4.6f, -20.2f);
+        b.AddRock("CliffCrown", 6.8f, 0f, 7.0f, -21.0f);
 
         // Бетонная рама в толще: глубокие откосы, козырёк, без коллайдера поперёк.
         float jambX = PortalWidth * 0.5f + 0.35f;

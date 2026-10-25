@@ -31,6 +31,10 @@ public static class DomeLabSite
         public bool found;
         /// <summary>Порог 150 м не достижим на этом диаметре — взято самое далёкое годное пятно.</summary>
         public bool relaxed;
+        /// <summary>Подход перед дверью мокрый/низкий — нужен настил; место всё равно годно.</summary>
+        public bool wetApproach;
+        /// <summary>Строгих мест не нашлось; взята детерминированная запасная точка.</summary>
+        public bool fallback;
         /// <summary>Центр плиты в координатах поля.</summary>
         public Vector2 center;
         /// <summary>Портал с фасада (на плите), в координатах поля.</summary>
@@ -62,6 +66,10 @@ public static class DomeLabSite
     public const float MaxRingAtBack = 3f;
     /// <summary>Площадка не накрывает русло: клиренс от точек реки (м).</summary>
     public const float RiverClearance = 25f;
+    /// <summary>Сухой подход перед дверью: длина и полуширина проверяемой полосы (м).</summary>
+    public const float ApproachLength = 16f;
+    public const float ApproachHalfWidth = 4f;
+    public const float ApproachStep = 4f;
 
     /// <summary>Пятно площадки: центр, четыре угла и середины сторон (в кадре лаборатории).</summary>
     static readonly Vector2[] PadSamples =
@@ -91,10 +99,11 @@ public static class DomeLabSite
         if (minDistance < 0f) minDistance = 0f;
         Func<float, float, float> ground = (x, z) => DomeHydro.SampleHydro(cfg, hydro, x, z);
 
-        // 1) честный порог в своей полосе; 2) без порога — самое далёкое годное пятно.
+        // 1) честный порог в своей полосе; 2) без порога — самое далёкое сухое пятно.
         foreach (var style in Order(requested))
         {
-            var exact = Search(cfg, seed, entry, hydro, ground, rin, style, minDistance, attempts, false);
+            var exact = Search(cfg, seed, entry, hydro, ground, rin, style, minDistance, attempts,
+                keepFarthest: false, requireDryApproach: true, wetApproach: false);
             if (exact.found) return exact;
         }
 
@@ -102,7 +111,8 @@ public static class DomeLabSite
         float bestDist = float.NegativeInfinity;
         foreach (var style in Order(requested))
         {
-            var relaxed = Search(cfg, seed, entry, hydro, ground, rin, style, 0f, attempts, true);
+            var relaxed = Search(cfg, seed, entry, hydro, ground, rin, style, 0f, attempts,
+                keepFarthest: true, requireDryApproach: true, wetApproach: false);
             if (!relaxed.found) continue;
             if (relaxed.distanceToEntry > bestDist)
             {
@@ -118,11 +128,39 @@ public static class DomeLabSite
             return best;
         }
 
-        return new Spot
+        // 3) сухого подхода нет нигде — берём самое далёкое валидное пятно и строим настил.
+        best = default;
+        bestDist = float.NegativeInfinity;
+        foreach (var style in Order(requested))
         {
-            found = false,
-            note = $"годного пятна нет (сид {seed}, Ø{cfg.mapDiameter:F0}): сухо/уклон/перепад не сходятся",
-        };
+            var wet = Search(cfg, seed, entry, hydro, ground, rin, style, 0f, attempts,
+                keepFarthest: true, requireDryApproach: false, wetApproach: true);
+            if (!wet.found) continue;
+            if (wet.distanceToEntry > bestDist)
+            {
+                bestDist = wet.distanceToEntry;
+                best = wet;
+            }
+        }
+        if (best.found)
+        {
+            best.relaxed = true;
+            best.wetApproach = true;
+            best.note = $"сухой подход не найден (сид {seed}, Ø{cfg.mapDiameter:F0}): " +
+                        $"лаборатория в {best.distanceToEntry:F0} м, нужен настил";
+            return best;
+        }
+
+        // 4) даже валидного пятна нет — детерминированная запасная точка напротив входа.
+        Vector2 dir = entry.sqrMagnitude > 1e-6f ? -entry.normalized : Vector2.up;
+        Vector2 p = dir * Mathf.Max(1f, rin * 0.55f);
+        float gy = Mathf.Max(DomeHydro.SampleHydro(cfg, hydro, p.x, p.y),
+            hydro.lakeLevel + DryMargin);
+        float d = Vector2.Distance(p, entry);
+        var fb = Make(p, entry, Order(requested)[0], gy, 0f, d, wetApproach: true, fallback: true);
+        fb.relaxed = true;
+        fb.note = $"годного пятна нет (сид {seed}, Ø{cfg.mapDiameter:F0}): запасная точка, настил";
+        return fb;
     }
 
     /// <summary>Порядок стилей: Auto — полоса кольца, затем открытый пол. Bastion/InSlope — один.</summary>
@@ -138,7 +176,7 @@ public static class DomeLabSite
 
     static Spot Search(DomeGenConfigSO cfg, long seed, Vector2 entry, DomeHydro.State hydro,
         Func<float, float, float> ground, float rin, LabStyle style, float minDistance,
-        int attempts, bool keepFarthest)
+        int attempts, bool keepFarthest, bool requireDryApproach, bool wetApproach)
     {
         Spot best = default;
         float bestDist = float.NegativeInfinity;
@@ -147,9 +185,10 @@ public static class DomeLabSite
             if (!Candidate(cfg, seed, i, rin, style, out var p)) continue;
             float dist = Vector2.Distance(p, entry);
             if (dist < minDistance) continue;
-            if (!Accept(cfg, hydro, ground, p, entry, style, out float groundY, out float relief))
+            if (!Accept(cfg, hydro, ground, p, entry, style, requireDryApproach,
+                    out float groundY, out float relief))
                 continue;
-            var spot = Make(p, entry, style, groundY, relief, dist);
+            var spot = Make(p, entry, style, groundY, relief, dist, wetApproach, false);
             if (!keepFarthest) return spot;
             if (dist > bestDist)
             {
@@ -182,11 +221,12 @@ public static class DomeLabSite
     }
 
     /// <summary>
-    /// Годно ли пятно: сухо, уклон &lt;10°, перепад ≤2 м по всей площадке, не на русле,
-    /// у InSlope — берма сзади не выше 3 м над полом.
+    /// Годно ли пятно: сухо, уклон &lt;20°, перепад ≤4 м по пятну, не на русле,
+    /// и сухая полоса подхода перед дверью; у InSlope — берма сзади не выше 3 м.
     /// </summary>
     static bool Accept(DomeGenConfigSO cfg, DomeHydro.State hydro, Func<float, float, float> ground,
-        Vector2 p, Vector2 entry, LabStyle style, out float groundY, out float relief)
+        Vector2 p, Vector2 entry, LabStyle style, bool requireDryApproach,
+        out float groundY, out float relief)
     {
         groundY = 0f;
         relief = 0f;
@@ -217,6 +257,24 @@ public static class DomeLabSite
         relief = max - min;
         if (relief > MaxRelief) return false;
 
+        // Подход перед дверью — часть места: в B0.1 он оказался в воде, и «сухое пятно»
+        // этого не поймало. Полоса идёт от фасада (−Z кадра) наружу, центр и края.
+        // В запасном «мокром» проходе её пропускаем и строим настил.
+        if (requireDryApproach)
+        {
+            for (int d = 0; d <= (int)ApproachLength; d += (int)ApproachStep)
+            {
+                for (int side = -1; side <= 1; side++)
+                {
+                    Vector2 q = PadPoint(p, yaw, new Vector2(
+                        side * ApproachHalfWidth, -DomeLabComplex.HalfDepth - d));
+                    float h = ground(q.x, q.y);
+                    if (h < lake + DryMargin) return false;
+                    if (DomeSlope.SlopeAtS(cfg, q.x, q.y, ground) >= MaxSlopeDegrees) return false;
+                }
+            }
+        }
+
         // Плита стоит на ВЕРХНЕЙ точке пятна: иначе угол повиснет над землёй, а не наоборот.
         groundY = max;
 
@@ -225,12 +283,15 @@ public static class DomeLabSite
         return true;
     }
 
-    static Spot Make(Vector2 p, Vector2 entry, LabStyle style, float groundY, float relief, float dist)
+    static Spot Make(Vector2 p, Vector2 entry, LabStyle style, float groundY, float relief, float dist,
+        bool wetApproach, bool fallback)
     {
         float yaw = YawAwayFromEntry(p, entry);
         return new Spot
         {
             found = true,
+            wetApproach = wetApproach,
+            fallback = fallback,
             center = p,
             // Одна формула двери на всех: её же считает сам комплекс.
             door = DomeLabComplex.DoorPoint(p, groundY, yaw),
