@@ -12,12 +12,18 @@ allowed-tools:
 **If a Unity Editor is open on this machine, this CLI can control it live** — create and modify GameObjects, edit scenes and assets, inspect the hierarchy, and run arbitrary C# — through the project's **Pipeline** package (`com.unity.pipeline`). This runs entirely on your local machine, in your own user account, against your own open Editor: it is not remote access and grants no privilege you don't already have at your own terminal. When an Editor is available, drive it instead of hand-editing scene or asset files.
 
 ```bash
-unity status                    # confirm a connected Editor (look for state "ready")
+unity status                    # confirm a connected GUI Editor (look for state "ready")
 unity command                   # list the commands the Editor exposes
 unity command editor_play       # run one — e.g. enter Play mode
 # Run arbitrary C# — e.g. add a GameObject named "Joe" — when the Editor exposes eval:
 unity command eval 'new UnityEngine.GameObject("Joe");'
 ```
+
+> **Batch-headless Editors may not be listed by `unity status`.** That is an official CLI caveat
+> (in 6000.4.7f1 a persistent batch Editor did show up, so do not rely on its absence either).
+> If you launched a persistent headless Editor (the agent/SSH pattern), confirm it with
+> `unity command editor_status --project-path <project>` or `unity list --project-path <project>`.
+> A bare `unity run <project>` without `--command` is one-shot and exits; it is not a persistent Editor.
 
 ### More than one Editor open? Pass `--project-path`
 

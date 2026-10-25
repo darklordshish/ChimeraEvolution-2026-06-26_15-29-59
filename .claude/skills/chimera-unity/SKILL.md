@@ -12,17 +12,36 @@ description: Вести работу в Unity САМОСТОЯТЕЛЬНО че�
 
 ## 1. Поднять редактор
 
-```bash
-unity status                     # порт/PID, если редактор уже отвечает
+**Сначала выяснить, кто уже живёт.** `unity status` показывает GUI-редакторы; **batch-headless может в нём
+не появиться** — это официальная гоча Unity CLI (в 6000.4.7f1 после `Start-Process` он появился, но
+полагаться на это нельзя). Проверять так:
+
+```powershell
+unity status --format json
+unity pipeline list --format json
 ```
 
-Пусто — редактор закрыт. Поднять headless (**без `-quit`**, иначе он выйдет сразу):
+- **GUI пользователя уже открыт** — работаем в нём, второй редактор не поднимаем.
+- **Ничего не открыто** — поднимаем **фоновый persistent headless** (без `-quit`;
+  `unity run` без `--command` для этого НЕ годится — он завершается сам):
 
-```bash
-"/c/Program Files/Unity/Hub/Editor/6000.4.7f1/Editor/Unity.exe" -batchmode -projectPath . -logFile <лог> &
+```powershell
+$exe = (unity editors --installed --format json | ConvertFrom-Json).data |
+  Where-Object version -eq '6000.4.7f1' | Select-Object -First 1 -ExpandProperty location
+$log = Join-Path (Get-Location) 'Temp\agent-unity.log'
+$proc = Start-Process -FilePath $exe -ArgumentList @(
+  '-batchmode','-projectPath',(Get-Location).Path,'-logFile',$log
+) -WindowStyle Hidden -PassThru
+$proc.Id
 ```
 
-Готовность — `unity status` (строка `ready`) или любая команда. Дальше **всегда**:
+- **Готовность** — `unity command editor_status --project-path .` (повторять до `ready`)
+  или `unity list --project-path .`; **не** `unity status` для batch.
+- `unity open .` — GUI, остаётся жить; если терминал блокируется, запускать
+  `Start-Process unity -ArgumentList 'open','.'`.
+- `unity run . --command <name> -- ...` — **one-shot**: одна команда, редактор выходит;
+  для серии команд/кадров не подходит.
+- После готовности **всегда**:
 
 ```bash
 unity command set_autotick --enable true     # без autotick Unity душит тик неактивного окна
@@ -38,7 +57,9 @@ unity command set_autotick --enable true     # без autotick Unity душит 
 
 ```bash
 unity command set_autotick --enable false
-unity command run_script --file Tools/Agent/Quit.cs --entry Quit.Run   # закрыть свой headless; чужой не трогать
+unity close . --timeout 30          # свой headless; НЕ сохраняет — сначала save_all
+# запасной путь, если close недоступен:
+unity command run_script --file Tools/Agent/Quit.cs --entry Quit.Run
 # `unity command quit` в режиме редактора падает с 400 (DontDestroyOnLoad) — не им
 ```
 
@@ -227,6 +248,12 @@ unity command run_script --file Tools/Agent/Graph.cs --entry Graph.Clear --args 
 
 **Правки сцен и ассетов — командой или скриптом, не правкой YAML руками.**
 
+### CLI-пути без живого редактора
+
+- `unity test . --mode EditMode --output test-results.xml` — one-shot тесты без `unity command` и пайплайна.
+- `unity run . --command <name> -- <args>` — one-shot зарегистрированная команда; редактор выходит сам.
+- `unity open .` — GUI; `unity close .` — закрыть (не сохраняет; сначала `save_all`).
+
 ## 8. Гочи пайплайна
 
 - **`save_path` и пути ассетов confined в `Assets/`** — всё, что вне, отвергается с 400.
@@ -241,7 +268,9 @@ unity command run_script --file Tools/Agent/Graph.cs --entry Graph.Clear --args 
 - **Сверяй числа кадра с ассетом, а не с ожиданием.** 17.09 ряд на полигоне показал «чистые» габариты
   четырёх видов, а в ассетах лежали кости: оболочки просто пропали из мёртвого кэша. Число, совпавшее
   с желаемым, — ещё не проверка.
-- Батч-редактор не видит `unity status` мгновенно — дать ему секунд десять на старт.
+- **Batch-headless может не появиться в `unity status`** (официальная гоча CLI). Готовность проверять
+  `unity command editor_status --project-path .` или `unity list --project-path .`; `unity status`
+  не единственный признак живого batch-редактора.
 - **СВОЙ РЕДАКТОР ЗАКРЫТ — КОМАНДА УХОДИТ В ЧУЖОЙ** (поймано 07.10). `unity command` без `--project-path`, не найдя
   редактора своей папки, молча берёт единственный живой — например, редактор модельной линии в соседней папке. Признак:
   тесты «не видят» новых тестов, лог своего редактора стоит. Перед работой — `unity status` (колонка `Project`), а в

@@ -18,6 +18,16 @@ unity pipeline list               # confirm the editor instance + server are rea
 unity command editor_status       # confirm the editor server answers
 ```
 
+### Persistent vs one-shot (official CLI)
+
+`unity command` attaches to an **already-running** Editor; it does not start one. Three launch patterns:
+
+- **Persistent headless** — launch the Editor binary directly with `-batchmode -projectPath <project> -logFile <log>` and **no `-quit`**. This is the agent/SSH pattern. A batch Editor **may not be listed by `unity status`** (official caveat; 6000.4.7f1 did list it once); confirm readiness with `unity command editor_status --project-path <project>` or `unity list --project-path <project>`.
+- **GUI** — `unity open <project>`; stays resident and *is* listed by `unity status` as `ready`.
+- **One-shot** — `unity run <project> --command <name> -- <args>`; boots a batch Editor, runs one registered command, exits. Bare `unity run` without `--command` also exits on its own, so it is **not** a persistent Editor.
+
+Close a resident Editor without saving with `unity close <project> --timeout 30` (or `--force`); save first. A resident Editor holds a license seat until it exits.
+
 ## 2. Autonomous edit loop (Editor)
 
 This is the core agent workflow: keep the editor alive, change code, recompile, test.
