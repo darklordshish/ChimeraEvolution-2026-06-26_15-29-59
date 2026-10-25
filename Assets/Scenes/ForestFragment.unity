@@ -649,7 +649,7 @@ MonoBehaviour:
   spawnAtEntry: 1
   buildAsh: 0
   buildLabComplex: 1
-  labStyle: 0
+  labStyle: 1
   minLabDistance: 150
   speciesPool: []
   snakePrefab: {fileID: 0}

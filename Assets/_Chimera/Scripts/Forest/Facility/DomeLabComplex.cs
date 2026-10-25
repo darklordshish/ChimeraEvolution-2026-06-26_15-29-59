@@ -83,16 +83,16 @@ public static class DomeLabComplex
     /// вокселем 0.35, и стена тоньше вокселя местами перестаёт быть преградой.
     /// </summary>
     public const float Wall = 0.5f;
-    public const float RoomHeight = 3.6f;        // комнаты: перекрытие снизу
-    public const float HallHeight = 4.0f;        // зал: выбран в вилке 3.6–4.2
+    public const float RoomHeight = 4.4f;        // комнаты: перекрытие снизу (рост 3.55 + запас)
+    public const float HallHeight = 4.8f;        // зал: выше комнат, под рост 3.55 и балки
     /// <summary>
-    /// Внутренние двери 3.0 × 3.2: шире минимума 2 м и выше капсулы лося (2.7),
-    /// потому что в лабораторию может войти не только человек; комнаты 3.6 оставляют
-    /// над проёмом 0.4 м перемычки. Портал — 3.4 × 3.2.
+    /// Двери 4.0 × 4.0: крупнейшая химера 3.55 м + запас; 2 м — нижняя граница,
+    /// а не достаточный проём. Комнаты 4.4 оставляют над проёмом 0.4 м перемычки.
+    /// Портал — 4.2 × 4.0 в проёме, рама снаружи шире.
     /// </summary>
-    public const float DoorWidth = 3.0f;
-    public const float DoorHeight = 3.2f;
-    public const float PortalWidth = 3.4f;
+    public const float DoorWidth = 4.0f;
+    public const float DoorHeight = 4.0f;
+    public const float PortalWidth = 4.2f;
     public const float RoofThickness = 0.25f;
     /// <summary>Свес крыши за плиту (м): под ним стоит парапет/скала, щели нет.</summary>
     public const float RoofOverhang = 0.3f;
@@ -452,8 +452,8 @@ public static class DomeLabComplex
     /// </summary>
     static int BuildLights(Builder b)
     {
-        float yHall = Plinth + 3.6f;
-        float yRoom = Plinth + 3.1f;
+        float yHall = Plinth + HallHeight - 0.7f;
+        float yRoom = Plinth + RoomHeight - 0.7f;
         int n = 0;
         n += b.Light("LabLight_Hall", new Vector3(0f, yHall, 0f), 14f, 1.5f, DomePalette.LabCold);
         n += b.Light("LabLight_Arena", new Vector3(0f, yRoom, 13.5f), 12f, 1f, DomePalette.LabCold);
@@ -480,7 +480,7 @@ public static class DomeLabComplex
     /// </summary>
     static void BuildBastionDressing(Builder b)
     {
-        float roofTop = Plinth + RoomHeight + RoofThickness; // 3.97
+        float roofTop = Plinth + RoomHeight + RoofThickness;
         float px = HalfWidth + 0.1f;                          // 23.1
         float pz = HalfDepth + 0.1f;                          // 18.1
         b.AddNoNav("ParapetN", Kit.Concrete, HalfWidth * 2f + 0.4f, 0.55f, 0.4f,
@@ -495,10 +495,10 @@ public static class DomeLabComplex
         // Портал: пилоны стоят на земле СНАРУЖИ плиты (y = 0, не Plinth) и заходят на
         // стену на 20 см — щели между рамой и фасадом нет.
         float gz = -(HalfDepth + 0.4f);
-        float frameX = PortalWidth * 0.5f + 0.5f; // 2.2
-        b.Add("PortalL", Kit.Concrete, 1f, 4.2f, 1.2f, -frameX, 0f, gz, true);
-        b.Add("PortalR", Kit.Concrete, 1f, 4.2f, 1.2f, frameX, 0f, gz, true);
-        b.Add("PortalLintel", Kit.Dark, frameX * 2f + 1f, 0.9f, 1.4f, 0f, 3.6f, gz, true);
+        float frameX = PortalWidth * 0.5f + 0.5f;
+        b.Add("PortalL", Kit.Concrete, 1f, 4.8f, 1.2f, -frameX, 0f, gz, true);
+        b.Add("PortalR", Kit.Concrete, 1f, 4.8f, 1.2f, frameX, 0f, gz, true);
+        b.Add("PortalLintel", Kit.Dark, frameX * 2f + 1f, 0.8f, 1.4f, 0f, 4.0f, gz, true);
         b.Add("PortalBandL", Kit.Rust, 0.9f, 0.25f, 0.06f, -frameX, 1.2f, gz - 0.6f);
         b.Add("PortalBandR", Kit.Rust, 0.9f, 0.25f, 0.06f, frameX, 1.2f, gz - 0.6f);
     }
@@ -509,33 +509,53 @@ public static class DomeLabComplex
     /// </summary>
     static void BuildSlopeDressing(Builder b)
     {
-        // Снаружи плиты земля уходит в сырое поле, поэтому массы утоплены на 2 м вниз:
-        // верх остаётся расчётным, а щели под скалой нет.
+        // Скальный вход B0.2a: портал В ТОЛЩЕ, а не надстройка над крышей.
+        // Снаружи — крупные каменные массы по бокам и над рамой, спереди ровная
+        // площадка подхода; внутри — тот же закрытый интерьер.
         const float sink = -2f;
-        float roofTop = Plinth + RoomHeight + RoofThickness; // 3.97
+        float roofTop = Plinth + RoomHeight + RoofThickness;
+        float frontZ = -HalfDepth - 2.0f;
+        float sideX = PortalWidth * 0.5f + 0.8f;
+        float faceW = HalfWidth + 2f - sideX;
+        float faceX = sideX + faceW * 0.5f;
 
-        b.Add("BermBack", Kit.Rock, 56f, 7f, 12f, 0f, sink, 24f, true);
-        b.Add("BermBackHigh", Kit.Rock, 36f, 10f, 8f, -4f, sink, 29f, true);
-        b.Add("BermSideW", Kit.Rock, 7f, 6f, 32f, -26.5f, sink, 2f, true);
-        b.Add("BermSideE", Kit.Rock, 7f, 6f, 32f, 26.5f, sink, 2f, true);
-        // Скальная оболочка над северным крылом — НА крыше, не в комнате: внутри
-        // по-прежнему сплошное перекрытие, снаружи читается склон.
-        b.AddNoNav("BermRoof", Kit.Rock, 46f, 1.8f, 8f, 0f, roofTop, 14.2f, true);
+        // Задний массив и бока: комплекс читается врезанным в скалу.
+        b.Add("CliffHill", Kit.Rock, 60f, 9f, 14f, 0f, sink, 24f, true);
+        b.Add("CliffHillHigh", Kit.Rock, 40f, 12f, 10f, -4f, sink, 30f, true);
+        b.Add("CliffWingW", Kit.Rock, 8f, 7f, 32f, -26.5f, sink, 2f, true);
+        b.Add("CliffWingE", Kit.Rock, 8f, 7f, 32f, 26.5f, sink, 2f, true);
+        // Скала над северным крылом — НА крыше, не в комнате.
+        b.AddNoNav("CliffRoof", Kit.Rock, 46f, 2.2f, 12f, 0f, roofTop, 12f, true);
 
-        b.AddRock("BoulderA", 2.6f, -14f, sink, 21f);
-        b.AddRock("BoulderB", 3.2f, 12f, sink, 22f);
-        b.AddRock("BoulderC", 2f, -25f, sink, 17f);
-        b.AddRock("BoulderD", 2.4f, 25f, sink, 16f);
+        // Каменные щёки портала: проём между ними 4.2 м, над ним — скала.
+        b.Add("CliffFaceW", Kit.Rock, faceW, 8f, 4.6f, -faceX, 0f, frontZ, true);
+        b.Add("CliffFaceE", Kit.Rock, faceW, 8f, 4.6f, faceX, 0f, frontZ, true);
+        b.Add("CliffLintelRock", Kit.Rock, sideX * 2f + 1.2f, 4.2f, 4.6f,
+            0f, 4.35f, frontZ, true);
 
-        // Толща портала: прямой проход 3.4 × 4.6, глубина 3 м.
-        float gz = -(HalfDepth + 1.5f); // −19.5
-        float px = PortalWidth * 0.5f + 0.7f; // 2.4
-        b.Add("GateL", Kit.Rock, 1.4f, 5f, 3f, -px, 0f, gz, true);
-        b.Add("GateR", Kit.Rock, 1.4f, 5f, 3f, px, 0f, gz, true);
-        b.Add("GateLintel", Kit.Dark, px * 2f + 1.4f, 1.2f, 3.2f, 0f, 4.6f, gz, true);
-        b.Add("GateTrim", Kit.Rust, px * 2f + 1f, 0.18f, 0.1f, 0f, 4.55f, gz - 1.55f);
-        b.Add("GateFloorL", Kit.Concrete, 1f, 0.2f, 3f, -px, 0f, gz, true);
-        b.Add("GateFloorR", Kit.Concrete, 1f, 0.2f, 3f, px, 0f, gz, true);
+        // Бетонная рама в толще: глубокие откосы, козырёк, без коллайдера поперёк.
+        float jambX = PortalWidth * 0.5f + 0.35f;
+        b.Add("RockPortalW", Kit.Concrete, 0.7f, 4.8f, 1.5f,
+            -jambX, 0f, -HalfDepth - 0.25f, true);
+        b.Add("RockPortalE", Kit.Concrete, 0.7f, 4.8f, 1.5f,
+            jambX, 0f, -HalfDepth - 0.25f, true);
+        b.Add("RockPortalLintel", Kit.Dark, PortalWidth + 1.4f, 0.8f, 1.7f,
+            0f, 4.0f, -HalfDepth - 0.25f, true);
+        b.Add("RockCanopy", Kit.Concrete, 7.2f, 0.35f, 2.6f,
+            0f, 4.35f, -HalfDepth - 1.3f, true);
+        b.Add("RockThreshold", Kit.Concrete, PortalWidth + 0.6f, 0.12f, 1.2f,
+            0f, 0f, -HalfDepth - 0.7f, true);
+
+        // Площадка подхода: ровная, без ступени; верх на Plinth.
+        b.Add("RockApproach", Kit.Floor, 8f, Plinth, 10f,
+            0f, 0f, -HalfDepth - 5f);
+
+        // Обломки — у щёк, не в проходе; без коллайдеров.
+        b.AddRock("RockFallW", 1.8f, -4.2f, 0f, -21.2f);
+        b.AddRock("RockFallE", 1.4f, 4.5f, 0f, -20.6f);
+        b.AddRock("RockFallW2", 1.1f, -5.4f, 0f, -19.4f);
+        b.AddRock("BoulderW", 2.6f, -14f, sink, 21f);
+        b.AddRock("BoulderE", 3.2f, 12f, sink, 22f);
     }
 
     // ------------------------------------------------------------------ кэши и снос
