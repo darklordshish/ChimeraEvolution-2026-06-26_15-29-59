@@ -10,19 +10,20 @@ public static class DomeLabDamage
     static readonly float[] CellZ = { -6.3f, -2.1f, 2.1f, 6.3f };
     static readonly string[] LightNames = { "LabLight_Surgery", "LabLight_Cells", "LabLight_Rest" };
 
-    public static void Apply(DomeLabComplex.Result result, long seed, int version = 1)
+    public static void Apply(DomeLabComplex.Result result, long seed, int version = 1, LabPlan plan = null)
     {
         if (result == null || result.root == null) return;
         var root = result.root.transform;
+        int flip = plan != null && plan.Room("surgery").x > 0f ? -1 : 1;
 
         int cell = (int)(SeededHash.Hash(seed, 9101, version) % (ulong)CellZ.Length);
         if (cell < 0) cell += CellZ.Length;
         float z = CellZ[cell];
         HideCellGate(root, z);
-        BuildBentGate(root, z);
+        BuildBentGate(root, z, flip);
         int parts = 1;
 
-        BreakGlass(root);
+        BreakGlass(root, flip);
         parts++;
 
         Vector3 shift = TableShift(seed, version);
@@ -34,7 +35,7 @@ public static class DomeLabDamage
         KillLight(root, LightNames[light]);
         parts++;
 
-        int debris = AddDebris(root, seed, version, z);
+        int debris = AddDebris(root, seed, version, z, flip);
         parts += debris;
 
         result.damageSignature = $"gate={cell};glass=1;table={shift.x:F1},{shift.z:F1};" +
@@ -56,11 +57,11 @@ public static class DomeLabDamage
         }
     }
 
-    static void BuildBentGate(Transform root, float z)
+    static void BuildBentGate(Transform root, float z, int flip)
     {
         var gate = new GameObject("DamagedGate");
         gate.transform.SetParent(root, false);
-        gate.transform.localPosition = new Vector3(17.5f, 0f, z);
+        gate.transform.localPosition = new Vector3(flip * 17.5f, 0f, z);
         gate.transform.localRotation = Quaternion.Euler(0f, 22f, 0f);
         var metal = DomeLabComplex.MaterialOf(DomeLabComplex.Kit.Metal);
         for (int i = 0; i < 6; i++)
@@ -73,14 +74,14 @@ public static class DomeLabDamage
             new Vector3(0.14f, 0.12f, 3.8f), metal);
     }
 
-    static void BreakGlass(Transform root)
+    static void BreakGlass(Transform root, int flip)
     {
         SetActive(root, "SurgeryGlass", false);
         SetActive(root, "SurgeryGlassBarrier", false);
         var glass = DomeLabComplex.MaterialOf(DomeLabComplex.Kit.Glass);
         for (int i = 0; i < 7; i++)
         {
-            float x = -9.1f + (i % 3) * 0.35f;
+            float x = flip * (-9.1f + (i % 3) * 0.35f);
             float z = -3.2f + (i / 3) * 0.55f;
             Cube(root, "DamageGlassShard", new Vector3(x, 0.16f, z),
                 new Vector3(0.35f, 0.05f, 0.22f), glass,
@@ -111,7 +112,7 @@ public static class DomeLabDamage
         if (t != null) t.gameObject.SetActive(false);
     }
 
-    static int AddDebris(Transform root, long seed, int version, float gateZ)
+    static int AddDebris(Transform root, long seed, int version, float gateZ, int flip)
     {
         var dark = DomeLabComplex.MaterialOf(DomeLabComplex.Kit.ConcreteDark);
         var rust = DomeLabComplex.MaterialOf(DomeLabComplex.Kit.Rust);
@@ -133,7 +134,7 @@ public static class DomeLabDamage
         for (int i = 0; i < 4; i++)
         {
             Cube(root, "DamageDebrisGate",
-                new Vector3(15.8f + i * 0.4f, 0.1f, gateZ - 1.2f + i * 0.5f),
+                new Vector3(flip * (15.8f + i * 0.4f), 0.1f, gateZ - 1.2f + i * 0.5f),
                 new Vector3(0.3f, 0.12f, 0.25f), dark,
                 Quaternion.Euler(0f, i * 30f, 0f));
             n++;

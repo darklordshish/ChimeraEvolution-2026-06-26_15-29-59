@@ -28,7 +28,8 @@ namespace Chimera.Tests.PlayMode
         }
 
         ForestBuilder BuildLab(LabStyle style, bool complex = true, long seed = 4,
-            LabEntrance entrance = LabEntrance.Rock, bool ash = false, bool ravines = false)
+            LabEntrance entrance = LabEntrance.Rock, bool ash = false, bool ravines = false,
+            bool plan = false, int planVersion = 1)
         {
             host = new GameObject("~ForestLabComplexProbe");
             host.SetActive(false);
@@ -45,6 +46,8 @@ namespace Chimera.Tests.PlayMode
             builder.buildLabComplex = complex;
             builder.labStyle = style;
             builder.labEntrance = entrance;
+            builder.buildLabPlan = plan;
+            builder.labPlanVersion = planVersion;
             builder.minLabDistance = 150f;
             builder.speciesPool = new List<SpeciesSO>();
             host.SetActive(true);
@@ -202,6 +205,33 @@ namespace Chimera.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator MirrorPlan_SwapsSurgeryAndCells()
+        {
+            long mirrorSeed = 0;
+            for (long s = 1; s <= 32 && mirrorSeed == 0; s++)
+            {
+                var p = LabPlanGenerator.Generate(s, 1, LabEntrance.Rock, LabStyle.Bastion);
+                if (p.template == "mirror") mirrorSeed = s;
+            }
+            Assert.AreNotEqual(0, mirrorSeed, "генератор должен уметь mirror в первых 32 сидах");
+
+            var b = BuildLab(LabStyle.Bastion, seed: mirrorSeed, plan: true);
+            yield return null;
+
+            Assert.AreEqual("mirror", b.LabComplex.planTemplate, "план должен быть mirror");
+            var root = b.LabComplex.root.transform;
+            var table = Find(root, "SurgeryTableTop");
+            var bar = Find(root, "CellBar");
+            var gate = Find(root, "DamagedGate");
+            Assert.IsNotNull(table, "стол хирургии собран");
+            Assert.IsNotNull(bar, "решётка клеток собрана");
+            Assert.Greater(table.localPosition.x, 0f, "mirror: хирургия справа");
+            Assert.Less(bar.localPosition.x, 0f, "mirror: клетки слева");
+            if (gate != null)
+                Assert.Less(gate.localPosition.x, 0f, "mirror: повреждённая решётка на стороне клеток");
+        }
+
+        [UnityTest]
         public IEnumerator A_OldLab_WhenComplexOff()
         {
             var b = BuildLab(LabStyle.Bastion, complex: false);
@@ -211,6 +241,13 @@ namespace Chimera.Tests.PlayMode
             Assert.IsNotNull(b.Facility, "старый Facility на месте");
             Assert.AreEqual(Vector2.zero, b.LabCenter, "центр старой лаборатории — ноль");
             Assert.AreEqual(12, b.Chunks, "профиль B0 не изменился");
+        }
+
+        static Transform Find(Transform root, string name)
+        {
+            foreach (var t in root.GetComponentsInChildren<Transform>(true))
+                if (t.name == name) return t;
+            return null;
         }
     }
 }

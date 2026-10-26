@@ -173,18 +173,21 @@ public static class DomeLabComplex
         root.transform.localRotation = Quaternion.Euler(0f, yawDeg, 0f);
         result.root = root;
 
+        // Зеркальный план меняет стороны хирургии и клеток: fixed — surgery слева (x=-16),
+        // mirror — surgery справа (x=+16). flip = +1 для fixed, -1 для mirror.
+        int flip = plan.Room("surgery").x > 0f ? -1 : 1;
         var b = new Builder(root.transform);
         BuildPlate(b);
-        BuildShell(b);
+        BuildShell(b, flip);
         BuildRoofs(b);
-        BuildBeams(b);
+        BuildBeams(b, flip);
         BuildHall(b);
-        BuildSurgery(b);
-        BuildCells(b);
+        BuildSurgery(b, flip);
+        BuildCells(b, flip);
         BuildRest(b);
         BuildEntryLobby(b);
-        BuildCeilingFixtures(b);
-        result.lights = BuildLights(b);
+        BuildCeilingFixtures(b, flip);
+        result.lights = BuildLights(b, flip);
 
         // Всё, что выше, — ОДИН интерьер. Ниже — только внешняя оболочка стиля.
         result.interiorParts = b.parts;
@@ -220,7 +223,7 @@ public static class DomeLabComplex
             0f, Plinth - PlateThickness, 0f, true);
     }
 
-    static void BuildShell(Builder b)
+    static void BuildShell(Builder b, int flip)
     {
         float y0 = Plinth;
         float ox = HalfWidth - Wall * 0.5f;   // ось внешней стены 22.75
@@ -243,10 +246,10 @@ public static class DomeLabComplex
         b.WallRun(true, -HallHalf, HallHalf, HalfWidth, y0, RoomHeight, Kit.Wall, 0f, 0f);
 
         // Восточная стена зала: дверь в клетки.
-        b.WallRun(false, HallHalf, -HallHalf, HallHalf, y0, HallHeight, Kit.Wall, 0f, DoorWidth);
+        b.WallRun(false, -flip * HallHalf, -HallHalf, HallHalf, y0, HallHeight, Kit.Wall, 0f, DoorWidth);
 
         // Западная стена зала: дверь в хирургию + стеклянная перегородка.
-        BuildSurgeryWall(b);
+        BuildSurgeryWall(b, flip);
 
         // Южное крыло разделено на комнату отдыха (запад) и входную полосу (восток).
         b.WallRun(false, RestPartitionX, -HalfDepth, -HallHalf, y0, RoomHeight,
@@ -258,11 +261,11 @@ public static class DomeLabComplex
     /// Стекло вставлено в НАСТОЯЩИЙ проём стены: подоконник снизу, перемычка сверху, стекло
     /// с коллайдером — сквозь него не пройти, но работу видно из зала.
     /// </summary>
-    static void BuildSurgeryWall(Builder b)
+    static void BuildSurgeryWall(Builder b, int flip)
     {
         float y0 = Plinth;
         float h = HallHeight;
-        float x = -HallHalf;
+        float x = flip * -HallHalf;
         float glassA = SurgeryGlassZ - SurgeryGlassWidth * 0.5f; // −4.5
         float glassC = SurgeryGlassZ + SurgeryGlassWidth * 0.5f; // +0.5
         float doorA = SurgeryDoorZ - DoorWidth * 0.5f;           // +4.5
@@ -315,7 +318,7 @@ public static class DomeLabComplex
         b.AddNoNav(name, Kit.Concrete, sizeX, RoofThickness, sizeZ, x, y, z, true);
     }
 
-    static void BuildBeams(Builder b)
+    static void BuildBeams(Builder b, int flip)
     {
         float hallBeamY = Plinth + HallHeight - 0.35f;
         for (int i = -1; i <= 1; i++)
@@ -330,9 +333,9 @@ public static class DomeLabComplex
                 i * 15f, roomBeamY, arenaZ);
 
         b.Add("SurgeryBeam", Kit.ConcreteDark, 0.4f, 0.3f, 18.3f,
-            -16.5f, roomBeamY, 0f);
+            flip * -16.5f, roomBeamY, 0f);
         b.Add("CellsBeam", Kit.ConcreteDark, 0.4f, 0.3f, 18.3f,
-            13.5f, roomBeamY, 0f);
+            flip * 13.5f, roomBeamY, 0f);
         b.Add("RestBeam", Kit.ConcreteDark, 19f, 0.3f, 0.4f,
             -12.9f, roomBeamY, -13.5f);
         b.Add("LobbyBeam", Kit.ConcreteDark, 25f, 0.3f, 0.4f,
@@ -355,36 +358,38 @@ public static class DomeLabComplex
     }
 
     /// <summary>Хирургия: стол, тумба, шкаф, рабочая лампа; стекло и дверь — в стене зала.</summary>
-    static void BuildSurgery(Builder b)
+    static void BuildSurgery(Builder b, int flip)
     {
         float y = Plinth;
         const float cx = -16f, cz = 0f;
-        b.Add("SurgeryTableBase", Kit.Metal, 1.2f, 0.6f, 1.8f, cx, y, cz, true);
-        b.Add("SurgeryTableTop", Kit.Metal, 1.4f, 0.2f, 2.4f, cx, y + 0.6f, cz, true);
-        b.Add("SurgeryTray", Kit.Metal, 0.6f, 0.08f, 0.4f, cx - 0.2f, y + 0.8f, cz + 0.7f, true);
-        b.Add("SurgeryStool", Kit.Metal, 0.5f, 0.45f, 0.5f, cx + 1.8f, y, cz + 1.8f, true);
-        b.Add("SurgeryCabinet", Kit.Concrete, 0.7f, 1.8f, 1.4f, -22.1f, y, 5f, true);
-        b.Add("SurgeryLocker", Kit.Metal, 0.6f, 2f, 1.2f, -22.1f, y, -6f, true);
-        b.Add("SurgeryWorkLamp", Kit.PanelWarm, 1.2f, 0.15f, 0.8f, cx, y + 3f, cz);
+        float F(float v) => v * flip;
+        b.Add("SurgeryTableBase", Kit.Metal, 1.2f, 0.6f, 1.8f, F(cx), y, cz, true);
+        b.Add("SurgeryTableTop", Kit.Metal, 1.4f, 0.2f, 2.4f, F(cx), y + 0.6f, cz, true);
+        b.Add("SurgeryTray", Kit.Metal, 0.6f, 0.08f, 0.4f, F(cx - 0.2f), y + 0.8f, cz + 0.7f, true);
+        b.Add("SurgeryStool", Kit.Metal, 0.5f, 0.45f, 0.5f, F(cx + 1.8f), y, cz + 1.8f, true);
+        b.Add("SurgeryCabinet", Kit.Concrete, 0.7f, 1.8f, 1.4f, F(-22.1f), y, 5f, true);
+        b.Add("SurgeryLocker", Kit.Metal, 0.6f, 2f, 1.2f, F(-22.1f), y, -6f, true);
+        b.Add("SurgeryWorkLamp", Kit.PanelWarm, 1.2f, 0.15f, 0.8f, F(cx), y + 3f, cz);
     }
 
     /// <summary>
     /// Клетки: четыре глубоких отсека у восточной стены, бетонные разделители и решётки.
     /// Отсеки ПУСТЫЕ (ни раковин, ни поилок); проход перед решётками свободен.
     /// </summary>
-    static void BuildCells(Builder b)
+    static void BuildCells(Builder b, int flip)
     {
         float y = Plinth;
         const float barX = 17.5f;
         float backX = HalfWidth - Wall;          // 22.5
         float depth = backX - barX;              // 5.0
         float midX = (barX + backX) * 0.5f;      // 20.0
+        float F(float v) => v * flip;
         float[] centers = { -6.3f, -2.1f, 2.1f, 6.3f };
 
         for (int i = 0; i < 5; i++)
         {
             float dz = -8.4f + i * 4.2f;
-            b.Add("CellDivider", Kit.Concrete, depth, RoomHeight, 0.2f, midX, y, dz, true);
+            b.Add("CellDivider", Kit.Concrete, depth, RoomHeight, 0.2f, F(midX), y, dz, true);
         }
 
         foreach (float zc in centers)
@@ -394,19 +399,19 @@ public static class DomeLabComplex
             for (int k = 0; k < 8; k++)
             {
                 float bz = zc - 1.8f + k * (3.6f / 7f);
-                b.Add("CellBar", Kit.Metal, 0.08f, 3f, 0.08f, barX, y, bz);
+                b.Add("CellBar", Kit.Metal, 0.08f, 3f, 0.08f, F(barX), y, bz);
             }
-            b.Add("CellRailTop", Kit.Metal, 0.14f, 0.12f, 4f, barX, y + 3f, zc);
-            b.Add("CellRailBottom", Kit.Metal, 0.14f, 0.08f, 4f, barX, y, zc);
-            b.Add("CellHeader", Kit.Concrete, 0.3f, RoomHeight - 3f, 4f, barX, y + 3f, zc, true);
-            b.Add("CellTrim", Kit.Rust, 0.06f, 0.12f, 4f, barX - 0.18f, y + 2.95f, zc);
-            b.Barrier("CellBarrier", 0.5f, 3f, 4f, barX, y, zc);
-            b.Add("CellLamp", Kit.PanelWarm, 0.18f, 0.25f, 0.6f, barX - 0.28f, y + 2.85f, zc);
+            b.Add("CellRailTop", Kit.Metal, 0.14f, 0.12f, 4f, F(barX), y + 3f, zc);
+            b.Add("CellRailBottom", Kit.Metal, 0.14f, 0.08f, 4f, F(barX), y, zc);
+            b.Add("CellHeader", Kit.Concrete, 0.3f, RoomHeight - 3f, 4f, F(barX), y + 3f, zc, true);
+            b.Add("CellTrim", Kit.Rust, 0.06f, 0.12f, 4f, F(barX - 0.18f), y + 2.95f, zc);
+            b.Barrier("CellBarrier", 0.5f, 3f, 4f, F(barX), y, zc);
+            b.Add("CellLamp", Kit.PanelWarm, 0.18f, 0.25f, 0.6f, F(barX - 0.28f), y + 2.85f, zc);
         }
 
-        b.Add("CellsDesk", Kit.Metal, 0.7f, 0.75f, 2f, 11f, y, -6.5f, true);
-        b.Add("CellsStool", Kit.Olive, 0.45f, 0.45f, 0.45f, 11.9f, y, -6.5f, true);
-        b.Add("CellsLocker", Kit.Metal, 0.6f, 2f, 1.2f, 10.2f, y, 6.5f, true);
+        b.Add("CellsDesk", Kit.Metal, 0.7f, 0.75f, 2f, F(11f), y, -6.5f, true);
+        b.Add("CellsStool", Kit.Olive, 0.45f, 0.45f, 0.45f, F(11.9f), y, -6.5f, true);
+        b.Add("CellsLocker", Kit.Metal, 0.6f, 2f, 1.2f, F(10.2f), y, 6.5f, true);
     }
 
     /// <summary>
@@ -453,7 +458,7 @@ public static class DomeLabComplex
     /// Светильники: холодные полосы ПОД сплошным перекрытием (не дыры в крыше) и тёплые
     /// маркеры у дверей/рабочих мест. Корпуса — детали; фактические источники — BuildLights.
     /// </summary>
-    static void BuildCeilingFixtures(Builder b)
+    static void BuildCeilingFixtures(Builder b, int flip)
     {
         float roomY = Plinth + RoomHeight - 0.12f;
         float hallY = Plinth + HallHeight - 0.12f;
@@ -461,8 +466,8 @@ public static class DomeLabComplex
         b.Add("HallPanelA", Kit.PanelCold, 6f, 0.12f, 0.5f, 0f, hallY, -3f);
         b.Add("HallPanelB", Kit.PanelCold, 6f, 0.12f, 0.5f, 0f, hallY, 3f);
         b.Add("ArenaPanel", Kit.PanelCold, 6f, 0.12f, 0.5f, 7f, roomY, 13.5f);
-        b.Add("SurgeryPanel", Kit.PanelCold, 0.5f, 0.12f, 6f, -12.5f, roomY, 0f);
-        b.Add("CellsPanel", Kit.PanelCold, 0.5f, 0.12f, 6f, 11f, roomY, 0f);
+        b.Add("SurgeryPanel", Kit.PanelCold, 0.5f, 0.12f, 6f, flip * -12.5f, roomY, 0f);
+        b.Add("CellsPanel", Kit.PanelCold, 0.5f, 0.12f, 6f, flip * 11f, roomY, 0f);
         b.Add("RestPanel", Kit.PanelCold, 6f, 0.12f, 0.5f, -13f, roomY, -11f);
         b.Add("LobbyPanel", Kit.PanelCold, 6f, 0.12f, 0.5f, 10f, roomY, -11f);
 
@@ -472,9 +477,9 @@ public static class DomeLabComplex
         b.Add("DoorLampS", Kit.PanelWarm, 0.18f, 0.5f, 0.3f,
             2.4f, Plinth + 2.3f, -HallHalf + 0.2f);
         b.Add("DoorLampW", Kit.PanelWarm, 0.3f, 0.5f, 0.18f,
-            -HallHalf + 0.2f, Plinth + 2.3f, SurgeryDoorZ + 1.7f);
+            flip * (-HallHalf + 0.2f), Plinth + 2.3f, SurgeryDoorZ + 1.7f);
         b.Add("DoorLampE", Kit.PanelWarm, 0.3f, 0.5f, 0.18f,
-            HallHalf - 0.2f, Plinth + 2.3f, 2f);
+            -flip * (HallHalf - 0.2f), Plinth + 2.3f, 2f);
     }
 
     // ------------------------------------------------------------------ свет
@@ -485,24 +490,24 @@ public static class DomeLabComplex
     /// а не светится как улица. <c>DomeSkyRig</c> гасит только Directional, поэтому ночью
     /// лаборатория остаётся освещённой.
     /// </summary>
-    static int BuildLights(Builder b)
+    static int BuildLights(Builder b, int flip)
     {
         float yHall = Plinth + HallHeight - 0.7f;
         float yRoom = Plinth + RoomHeight - 0.7f;
         int n = 0;
         n += b.Light("LabLight_Hall", new Vector3(0f, yHall, 0f), 14f, 1.5f, DomePalette.LabCold);
         n += b.Light("LabLight_Arena", new Vector3(0f, yRoom, 13.5f), 12f, 1f, DomePalette.LabCold);
-        n += b.Light("LabLight_Surgery", new Vector3(-16f, yRoom, 0f), 8f, 0.9f, DomePalette.LabCold);
-        n += b.Light("LabLight_Cells", new Vector3(13f, yRoom, 0f), 10f, 0.9f, DomePalette.LabCold);
+        n += b.Light("LabLight_Surgery", new Vector3(flip * -16f, yRoom, 0f), 8f, 0.9f, DomePalette.LabCold);
+        n += b.Light("LabLight_Cells", new Vector3(flip * 13f, yRoom, 0f), 10f, 0.9f, DomePalette.LabCold);
         n += b.Light("LabLight_Rest", new Vector3(-13f, yRoom, -13.5f), 8f, 0.9f, DomePalette.LabCold);
         n += b.Light("LabLight_Lobby", new Vector3(10f, yRoom, -13.5f), 10f, 0.9f, DomePalette.LabCold);
-        n += b.Light("LabLight_SurgeryWork", new Vector3(-16f, Plinth + 2.8f, 0f),
+        n += b.Light("LabLight_SurgeryWork", new Vector3(flip * -16f, Plinth + 2.8f, 0f),
             3.5f, 1f, DomePalette.LabWarm);
         n += b.Light("LabLight_RestWarm", new Vector3(-13f, Plinth + 2.4f, -13.5f),
             4f, 0.8f, DomePalette.LabWarm);
         n += b.Light("LabLight_Entrance", new Vector3(0f, Plinth + 2.8f, -16.5f),
             5f, 1f, DomePalette.LabWarm);
-        n += b.Light("LabLight_CellsWarm", new Vector3(17f, Plinth + 2.7f, 0f),
+        n += b.Light("LabLight_CellsWarm", new Vector3(flip * 17f, Plinth + 2.7f, 0f),
             9f, 0.7f, DomePalette.LabWarm);
         return n;
     }

@@ -650,6 +650,8 @@ MonoBehaviour:
   buildAsh: 1
   buildRavines: 1
   buildLabComplex: 1
+  buildLabPlan: 1
+  labPlanVersion: 1
   labStyle: 1
   labEntrance: 1
   minLabDistance: 150
