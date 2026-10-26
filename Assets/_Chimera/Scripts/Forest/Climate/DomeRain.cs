@@ -9,7 +9,8 @@ using UnityEngine;
 public class DomeRain : MonoBehaviour
 {
     public static string CodeVersion() => "s10h-streak2";
-    public int drops = 600;
+    public int drops = 1200;
+    public bool followCamera = true;
     public float area = 160f;
     public float height = 30f;
     public float speed = 25f;
@@ -34,7 +35,7 @@ public class DomeRain : MonoBehaviour
         {
             // Тонкий бокс из кита (видно со всех сторон, без backface-дыр):
             // ручной quad-меш в этом пайплайне не рисуется (кадр s10h).
-            streakMesh = FloraMeshKit.Slab(0.06f, 2.5f, 0.06f);
+            streakMesh = FloraMeshKit.Slab(0.04f, 0.8f, 0.04f);
             streakMesh.name = "RainStreak";
         }
         if (streakMat == null)
@@ -61,6 +62,11 @@ public class DomeRain : MonoBehaviour
 
     void Update()
     {
+        if (followCamera && Camera.main != null)
+        {
+            Vector3 p = Camera.main.transform.position;
+            transform.position = new Vector3(p.x, transform.position.y, p.z);
+        }
         float dt = Time.deltaTime;
         foreach (var t in pool)
         {

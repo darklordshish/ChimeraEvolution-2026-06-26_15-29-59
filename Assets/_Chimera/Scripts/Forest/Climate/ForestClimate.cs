@@ -32,28 +32,36 @@ public class ForestClimate : MonoBehaviour
     public WeatherKind currentKind;
     public float WetAmount { get; private set; }
     public float FogAmount { get; private set; }
+    public int WeatherStep { get; private set; }
 
     public static WeatherState CurrentState;
     public static float CurrentTimeMinutes = 10f;
 
     float nextVisual;
-    float nextWeatherAt;
+    float weatherElapsed;
     WeatherKind fromKind, toKind;
     float blendStart;
     bool blending;
 
     void Update()
     {
-        timeMinutes += Time.deltaTime * timeScale;
-        if (timeMinutes >= DayNightCycle.DayLengthMinutes) timeMinutes -= DayNightCycle.DayLengthMinutes;
+        float dt = Time.deltaTime * timeScale;
+        timeMinutes = Mathf.Repeat(timeMinutes + dt, DayNightCycle.DayLengthMinutes);
         CurrentState = state;
         CurrentTimeMinutes = timeMinutes;
 
-        if (autoWeather && timeMinutes >= nextWeatherAt)
+        if (autoWeather)
         {
-            int step = Mathf.Max(0, Mathf.FloorToInt(timeMinutes / Mathf.Max(0.1f, weatherChangeMinutes)));
-            BeginWeather(PickWeather(weatherTable, weatherSeed, step));
-            nextWeatherAt = timeMinutes + Mathf.Max(0.1f, weatherChangeMinutes);
+            // Отдельный таймер: абсолютная минута после wrap (30 → 0) больше не нужна.
+            weatherElapsed += dt;
+            float change = Mathf.Max(0.1f, weatherChangeMinutes);
+            int guard = 0;
+            while (weatherElapsed >= change && guard++ < 64)
+            {
+                weatherElapsed -= change;
+                WeatherStep++;
+                BeginWeather(PickWeather(weatherTable, weatherSeed, WeatherStep));
+            }
         }
 
         if (skyRoot != null && Time.time >= nextVisual)
@@ -91,7 +99,8 @@ public class ForestClimate : MonoBehaviour
 
     public void StartWeatherClock()
     {
-        nextWeatherAt = timeMinutes + Mathf.Max(0.1f, weatherChangeMinutes);
+        weatherElapsed = 0f;
+        WeatherStep = 0;
     }
 
     void EnsureRain()
@@ -140,7 +149,7 @@ public class ForestClimate : MonoBehaviour
 
         // Туман павильона — не только кривая суток: погодный туман усиливает плотность.
         if (FogAmount > 0f)
-            RenderSettings.fogDensity = Mathf.Max(RenderSettings.fogDensity, 0.012f)
+            RenderSettings.fogDensity = Mathf.Max(RenderSettings.fogDensity, 0.004f)
                                         * (1f + 1.5f * FogAmount);
 
         if (rain != null)

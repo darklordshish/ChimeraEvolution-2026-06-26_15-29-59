@@ -84,7 +84,8 @@ public static class DomeRavines
     /// <summary>Р’С‹РµРјРєР° РѕРІСЂР°РіР° РІ СЃС‹СЂРѕРј РїРѕР»Рµ РІС‹СЃРѕС‚; РґРЅРѕ РЅРµ РѕРїСѓСЃРєР°РµС‚СЃСЏ РЅРёР¶Рµ РІРѕРґС‹.</summary>
     public static float Apply(float raw, IReadOnlyList<Ravine> ravines, float x, float z, float lakeLevel)
     {
-        if (ravines == null) return raw;
+        // Пустой список — тождество: A/C и B0.1 не должны получать кламп к воде.
+        if (ravines == null || ravines.Count == 0) return raw;
         float y = raw;
         for (int i = 0; i < ravines.Count; i++)
         {

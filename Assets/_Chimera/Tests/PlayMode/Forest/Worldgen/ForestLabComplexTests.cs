@@ -356,6 +356,28 @@ namespace Chimera.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator Climate_AutoWeather_SurvivesMidnight()
+        {
+            var b = BuildLab(LabStyle.Bastion, seed: 9, climate: true,
+                weather: WeatherKind.Clear, timeMinutes: 29.9f);
+            yield return null;
+            var c = b.GetComponent<ForestClimate>();
+            Assert.IsNotNull(c, "климат есть");
+            c.autoWeather = true;
+            c.weatherChangeMinutes = 0.01f;
+            c.timeScale = 100f;
+            c.weatherTable = new WeatherTable { fogWeight = 1f };
+            c.SetWeatherImmediate(WeatherKind.Clear);
+            c.StartWeatherClock();
+
+            yield return new WaitForSeconds(0.15f);
+
+            Assert.Greater(c.WeatherStep, 0, "после заворота суток погода продолжает меняться");
+            Assert.AreEqual(WeatherKind.Fog, ForestClimate.CurrentState.kind,
+                "таблица только с туманом даёт туман");
+        }
+
+        [UnityTest]
         public IEnumerator A_OldLab_WhenComplexOff()
         {
             var b = BuildLab(LabStyle.Bastion, complex: false);

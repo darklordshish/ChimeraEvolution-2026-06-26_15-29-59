@@ -7,6 +7,16 @@ namespace Chimera.Tests.EditMode
     public class DomeRavinesTests
     {
         [Test]
+        public void Apply_EmptyList_IsIdentity()
+        {
+            var empty = new List<DomeRavines.Ravine>();
+            Assert.AreEqual(10f, DomeRavines.Apply(10f, empty, 0f, 0f, 0f), 1e-4f,
+                "пустой список не меняет сушу");
+            Assert.AreEqual(-3f, DomeRavines.Apply(-3f, empty, 0f, 0f, 0f), 1e-4f,
+                "пустой список не поднимает дно озера к воде");
+        }
+
+        [Test]
         public void Apply_DeepensCenter_ClampsToWater_AndLeavesOutside()
         {
             var list = new List<DomeRavines.Ravine>
