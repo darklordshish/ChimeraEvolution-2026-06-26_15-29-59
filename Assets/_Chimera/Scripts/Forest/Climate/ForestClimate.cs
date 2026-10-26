@@ -22,10 +22,17 @@ public class ForestClimate : MonoBehaviour
     public DomeRain rain;
     public float visualInterval = 0.5f;
 
+    [Header("B1.2: смена погоды по таблице")]
+    public bool autoWeather = false;
+    public float weatherChangeMinutes = 8f;
+    public long weatherSeed = 1;
+    public WeatherTable weatherTable;
+
     public static WeatherState CurrentState;
     public static float CurrentTimeMinutes = 10f;
 
     float nextVisual;
+    float nextWeatherAt;
 
     void Update()
     {
@@ -34,11 +41,48 @@ public class ForestClimate : MonoBehaviour
         CurrentState = state;
         CurrentTimeMinutes = timeMinutes;
 
+        if (autoWeather && timeMinutes >= nextWeatherAt)
+        {
+            int step = Mathf.Max(0, Mathf.FloorToInt(timeMinutes / Mathf.Max(0.1f, weatherChangeMinutes)));
+            state = new WeatherState { kind = PickWeather(weatherTable, weatherSeed, step) };
+            nextWeatherAt = timeMinutes + Mathf.Max(0.1f, weatherChangeMinutes);
+            EnsureRain();
+            ApplyVisuals();
+        }
+
         if (skyRoot != null && Time.time >= nextVisual)
         {
             ApplyVisuals();
             nextVisual = Time.time + Mathf.Max(0.1f, visualInterval);
         }
+    }
+
+    public void StartWeatherClock()
+    {
+        nextWeatherAt = timeMinutes + Mathf.Max(0.1f, weatherChangeMinutes);
+    }
+
+    void EnsureRain()
+    {
+        if (state.kind != WeatherKind.Rain || rain != null || skyRoot == null) return;
+        rain = DomeRain.BuildPreview(skyRoot, 0f, 0f);
+    }
+
+    /// <summary>Детерминированный выбор погоды по таблице; пустая таблица — Clear.</summary>
+    public static WeatherKind PickWeather(WeatherTable table, long seed, int step)
+    {
+        float sum = table.clearWeight + table.rainWeight + table.fogWeight
+                    + table.snowWeight + table.windWeight;
+        if (sum <= 0f) return WeatherKind.Clear;
+        float roll = SeededHash.ToFloat01(SeededHash.Hash(seed, 9001, step));
+        float acc = 0f;
+        foreach (var kind in new[] { WeatherKind.Clear, WeatherKind.Rain, WeatherKind.Fog,
+                     WeatherKind.Snow, WeatherKind.Wind })
+        {
+            acc += WeatherTable.ChanceFor(table, kind);
+            if (roll <= acc) return kind;
+        }
+        return WeatherKind.Clear;
     }
 
     /// <summary>Применить текущую погоду/время к небу, материалам и дождю.</summary>

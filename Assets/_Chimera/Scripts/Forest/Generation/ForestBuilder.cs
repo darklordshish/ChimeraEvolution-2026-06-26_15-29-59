@@ -69,6 +69,8 @@ public class ForestBuilder : MonoBehaviour
     public WeatherKind climateWeather = WeatherKind.Clear;
     public float climateTimeMinutes = 10f;
     public float climateTimeScale = 1f / 60f;
+    public bool climateAutoWeather = false;
+    public float climateChangeMinutes = 8f;
     ForestClimate climate;
 
     [Header("Стиль оболочки: Bastion (наземный) / InSlope (в склоне) / Auto")]
@@ -537,6 +539,11 @@ public class ForestBuilder : MonoBehaviour
         climate.state = new WeatherState { kind = climateWeather };
         climate.timeMinutes = climateTimeMinutes;
         climate.timeScale = climateTimeScale;
+        climate.autoWeather = climateAutoWeather;
+        climate.weatherChangeMinutes = climateChangeMinutes;
+        climate.weatherSeed = ResolvedSeed;
+        climate.weatherTable = DomeWeather.PavilionTable();
+        climate.StartWeatherClock();
         climate.skyRoot = world.Root;
         climate.wetMaterials = world.Materials;
         if (climateWeather == WeatherKind.Rain && climate.rain == null)

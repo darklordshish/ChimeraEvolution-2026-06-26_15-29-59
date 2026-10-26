@@ -137,5 +137,19 @@ namespace Chimera.Tests.EditMode
             noPulse.pulseFreq = 0f;
             Assert.IsNotEmpty(TelegraphChannels.Validate(noPulse), "нулевой пульс обязан ловиться");
         }
+        [Test]
+        public void PickWeather_EmptyTable_IsClear()
+        {
+            Assert.AreEqual(WeatherKind.Clear, ForestClimate.PickWeather(default, 9, 0));
+        }
+
+        [Test]
+        public void PickWeather_AllRain_IsRain_AndDeterministic()
+        {
+            var rain = Table(0f, 1f, 0f, 0f, 0f);
+            Assert.AreEqual(WeatherKind.Rain, ForestClimate.PickWeather(rain, 9, 0));
+            Assert.AreEqual(ForestClimate.PickWeather(rain, 9, 3),
+                ForestClimate.PickWeather(rain, 9, 3), "тот же сид/шаг — тот же выбор");
+        }
     }
 }
