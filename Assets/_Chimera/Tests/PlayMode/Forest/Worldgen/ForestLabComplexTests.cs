@@ -258,6 +258,61 @@ namespace Chimera.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator Damage_DifferentTemplates_Differ()
+        {
+            long fixedSeed = FindPlanSeed("fixed");
+            long deepSeed = FindPlanSeed("deep-wings");
+            Assert.AreNotEqual(0, fixedSeed, "нужен сид с fixed");
+            Assert.AreNotEqual(0, deepSeed, "нужен сид с deep-wings");
+
+            var a = BuildLab(LabStyle.Bastion, seed: fixedSeed, plan: true);
+            yield return null;
+            string fixedSignature = a.LabComplex.damageSignature;
+            a.Clear();
+            Object.Destroy(host);
+            host = null;
+            builder = null;
+
+            var b = BuildLab(LabStyle.Bastion, seed: deepSeed, plan: true);
+            yield return null;
+            string deepSignature = b.LabComplex.damageSignature;
+
+            StringAssert.Contains("plan=fixed", fixedSignature);
+            StringAssert.Contains("plan=deep-wings", deepSignature);
+            Assert.AreNotEqual(fixedSignature, deepSignature, "шаблоны дают разные события повреждений");
+        }
+
+        [UnityTest]
+        public IEnumerator Damage_DoesNotBlockDoorRoute()
+        {
+            var b = BuildLab(LabStyle.Bastion, seed: 9, plan: true);
+            yield return null;
+
+            Assert.IsTrue(NavMesh.SamplePosition(b.LabDoor, out var doorHit, 20f, NavMesh.AllAreas),
+                "дверь на NavMesh после повреждений");
+            Assert.IsTrue(NavMesh.SamplePosition(new Vector3(b.LabCenter.x, b.LabDoor.y, b.LabCenter.y), out var hallHit, 20f, NavMesh.AllAreas),
+                "зал на NavMesh после повреждений");
+            var path = new NavMeshPath();
+            Assert.IsTrue(NavMesh.CalculatePath(doorHit.position, hallHit.position, NavMesh.AllAreas, path),
+                "путь дверь → зал существует");
+            Assert.AreEqual(NavMeshPathStatus.PathComplete, path.status,
+                "повреждения не рвут обязательный маршрут");
+        }
+
+        [UnityTest]
+        public IEnumerator Clear_RemovesGeneratedPlanAndDamage()
+        {
+            var b = BuildLab(LabStyle.Bastion, seed: 9, plan: true);
+            yield return null;
+            Assert.IsNotNull(b.LabPlan, "план есть до Clear");
+            Assert.IsFalse(string.IsNullOrEmpty(b.LabComplex.damageSignature), "повреждения есть до Clear");
+
+            b.Clear();
+            Assert.IsNull(b.LabPlan, "Clear обнуляет план");
+            Assert.IsNull(b.LabComplex, "Clear снимает комплекс");
+        }
+
+        [UnityTest]
         public IEnumerator A_OldLab_WhenComplexOff()
         {
             var b = BuildLab(LabStyle.Bastion, complex: false);
@@ -267,6 +322,16 @@ namespace Chimera.Tests.PlayMode
             Assert.IsNotNull(b.Facility, "старый Facility на месте");
             Assert.AreEqual(Vector2.zero, b.LabCenter, "центр старой лаборатории — ноль");
             Assert.AreEqual(12, b.Chunks, "профиль B0 не изменился");
+        }
+
+        static long FindPlanSeed(string template)
+        {
+            for (long s = 1; s <= 64; s++)
+            {
+                var p = LabPlanGenerator.Generate(s, 1, LabEntrance.Rock, LabStyle.Bastion);
+                if (p.template == template) return s;
+            }
+            return 0;
         }
 
         static Transform Find(Transform root, string name)
