@@ -151,5 +151,13 @@ namespace Chimera.Tests.EditMode
             Assert.AreEqual(ForestClimate.PickWeather(rain, 9, 3),
                 ForestClimate.PickWeather(rain, 9, 3), "тот же сид/шаг — тот же выбор");
         }
+        [Test]
+        public void WeatherBlend_Targets_AreExplicit()
+        {
+            Assert.AreEqual(1f, ForestClimate.WetFor(WeatherKind.Rain), "дождь мокрый");
+            Assert.AreEqual(0f, ForestClimate.WetFor(WeatherKind.Clear), "ясно сухо");
+            Assert.AreEqual(1f, ForestClimate.FogFor(WeatherKind.Fog), "туман плотный");
+            Assert.AreEqual(0f, ForestClimate.FogFor(WeatherKind.Rain), "дождь не туман");
+        }
     }
 }

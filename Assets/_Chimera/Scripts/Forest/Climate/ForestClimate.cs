@@ -25,14 +25,22 @@ public class ForestClimate : MonoBehaviour
     [Header("B1.2: смена погоды по таблице")]
     public bool autoWeather = false;
     public float weatherChangeMinutes = 8f;
+    public float weatherBlendSeconds = 20f;
     public long weatherSeed = 1;
     public WeatherTable weatherTable;
+
+    public WeatherKind currentKind;
+    public float WetAmount { get; private set; }
+    public float FogAmount { get; private set; }
 
     public static WeatherState CurrentState;
     public static float CurrentTimeMinutes = 10f;
 
     float nextVisual;
     float nextWeatherAt;
+    WeatherKind fromKind, toKind;
+    float blendStart;
+    bool blending;
 
     void Update()
     {
@@ -44,10 +52,8 @@ public class ForestClimate : MonoBehaviour
         if (autoWeather && timeMinutes >= nextWeatherAt)
         {
             int step = Mathf.Max(0, Mathf.FloorToInt(timeMinutes / Mathf.Max(0.1f, weatherChangeMinutes)));
-            state = new WeatherState { kind = PickWeather(weatherTable, weatherSeed, step) };
+            BeginWeather(PickWeather(weatherTable, weatherSeed, step));
             nextWeatherAt = timeMinutes + Mathf.Max(0.1f, weatherChangeMinutes);
-            EnsureRain();
-            ApplyVisuals();
         }
 
         if (skyRoot != null && Time.time >= nextVisual)
@@ -56,6 +62,32 @@ public class ForestClimate : MonoBehaviour
             nextVisual = Time.time + Mathf.Max(0.1f, visualInterval);
         }
     }
+
+    public void SetWeatherImmediate(WeatherKind kind)
+    {
+        currentKind = kind;
+        fromKind = toKind = kind;
+        state = new WeatherState { kind = kind };
+        blending = false;
+        WetAmount = WetFor(kind);
+        FogAmount = FogFor(kind);
+        EnsureRain();
+    }
+
+    public void BeginWeather(WeatherKind kind)
+    {
+        fromKind = currentKind;
+        currentKind = kind;
+        toKind = kind;
+        state = new WeatherState { kind = kind };
+        blendStart = Time.time;
+        blending = true;
+        EnsureRain();
+        ApplyVisuals();
+    }
+
+    public static float WetFor(WeatherKind kind) => kind == WeatherKind.Rain ? 1f : 0f;
+    public static float FogFor(WeatherKind kind) => kind == WeatherKind.Fog ? 1f : 0f;
 
     public void StartWeatherClock()
     {
@@ -88,19 +120,35 @@ public class ForestClimate : MonoBehaviour
     /// <summary>Применить текущую погоду/время к небу, материалам и дождю.</summary>
     public void ApplyVisuals()
     {
+        float t = 1f;
+        if (blending)
+        {
+            float span = Mathf.Max(0.01f, weatherBlendSeconds);
+            t = Mathf.Clamp01((Time.time - blendStart) / span);
+            if (t >= 1f) blending = false;
+        }
+        WeatherKind a = blending ? fromKind : currentKind;
+        WeatherKind b = blending ? toKind : currentKind;
+        WetAmount = Mathf.Lerp(WetFor(a), WetFor(b), t);
+        FogAmount = Mathf.Lerp(FogFor(a), FogFor(b), t);
+
         if (skyRoot != null)
             DomeSkyRig.ApplyPhase(skyRoot, timeMinutes, false);
 
-        float wet = state.kind == WeatherKind.Rain ? 1f : 0f;
         if (wetMaterials != null)
-            DomeWeather.ApplyWet(wetMaterials, wet);
+            DomeWeather.ApplyWet(wetMaterials, WetAmount);
 
         // Туман павильона — не только кривая суток: погодный туман усиливает плотность.
-        if (state.kind == WeatherKind.Fog)
-            RenderSettings.fogDensity *= 1.8f;
+        if (FogAmount > 0f)
+            RenderSettings.fogDensity = Mathf.Max(RenderSettings.fogDensity, 0.012f)
+                                        * (1f + 1.5f * FogAmount);
 
         if (rain != null)
-            rain.gameObject.SetActive(state.kind == WeatherKind.Rain);
+        {
+            bool wetWeather = (blending && (a == WeatherKind.Rain || b == WeatherKind.Rain))
+                              || (!blending && currentKind == WeatherKind.Rain);
+            rain.gameObject.SetActive(wetWeather);
+        }
     }
 
     /// <summary>Множитель дальности чувства: умножается поверх, не подменяет.</summary>

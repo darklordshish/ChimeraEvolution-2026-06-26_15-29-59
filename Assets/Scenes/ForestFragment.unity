@@ -658,6 +658,7 @@ MonoBehaviour:
   climateTimeScale: 0.0166667
   climateAutoWeather: 1
   climateChangeMinutes: 8
+  climateBlendSeconds: 20
   labStyle: 1
   labEntrance: 1
   minLabDistance: 150
