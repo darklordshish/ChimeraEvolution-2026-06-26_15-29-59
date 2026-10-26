@@ -223,9 +223,9 @@ public class DomeWorld
         if (Ravines.Count > 0)
         {
             DomeRavines.BuildFloor(Root, Ravines, SampleGround,
-                Flat(DomePalette.ConcreteDark), meshes);
+                Flat(new Color(0.24f, 0.20f, 0.15f)), meshes);
             DomeRavines.BuildWalls(Root, Ravines, SampleGround,
-                Flat(DomePalette.Rock), meshes);
+                Flat(DomePalette.Bark * 0.9f), meshes);
             FallenTrees = DomeRavines.BuildFallenTrees(Root, Ravines, seed, SampleGround,
                 Flat(DomePalette.Bark), meshes);
             VisualNests = DomeRavines.BuildNests(Root, Ravines, seed, SampleGround,

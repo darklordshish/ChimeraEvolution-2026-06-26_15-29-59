@@ -25,7 +25,7 @@ public static class DomeRavines
         for (int i = 0; i < count; i++)
         {
             Ravine best = default;
-            float bestGround = float.NegativeInfinity;
+            float bestScore = float.PositiveInfinity;
             bool has = false;
             for (int attempt = 0; attempt < 96; attempt++)
             {
@@ -47,8 +47,10 @@ public static class DomeRavines
                     SeededHash.ToFloat01(SeededHash.Hash(seed, 7304, salt)));
                 float depth = Mathf.Lerp(4f, 6f,
                     SeededHash.ToFloat01(SeededHash.Hash(seed, 7305, salt)));
-                depth = Mathf.Min(depth, ground - hydro.lakeLevel - 0.15f);
-                if (depth < 1.2f) continue;
+                // Дно обязано остаться сухим: 1.2 м запаса над водой. Иначе Apply
+                // упирается в lake+0.45 и овраг читается плоской чашей.
+                depth = Mathf.Min(depth, ground - hydro.lakeLevel - 1.2f);
+                if (depth < 1.5f) continue;
 
                 bool overlap = false;
                 for (int k = 0; k < list.Count; k++)
@@ -58,9 +60,17 @@ public static class DomeRavines
                 }
                 if (overlap) continue;
 
-                if (ground > bestGround)
+                float ring = 0f;
+                for (int j = 0; j < 8; j++)
                 {
-                    bestGround = ground;
+                    float ra = j * Mathf.PI * 0.25f;
+                    ring += DomeHydro.SampleHydro(cfg, hydro,
+                        p.x + Mathf.Cos(ra) * 12f, p.y + Mathf.Sin(ra) * 12f);
+                }
+                float score = Mathf.Abs(ground - ring / 8f);
+                if (score < bestScore)
+                {
+                    bestScore = score;
                     best = new Ravine
                     {
                         center = p,
@@ -100,11 +110,13 @@ public static class DomeRavines
                 k = k * k * (3f - 2f * k);
                 y -= r.depth * k;
             }
-            else if (u < 1.6f)
+            else if (u < 3f)
             {
-                float k = 1f - (u - 1f) / 0.6f;
+                // Широкое земляное плечо вокруг ложбины: поднимает окружающий уровень,
+                // чтобы дно читалось ниже поля, а не как коричневая полоса на склоне.
+                float k = 1f - (u - 1f) / 2f;
                 k = k * k * (3f - 2f * k);
-                y += r.rim * k;
+                y += r.rim * 1.8f * k;
             }
         }
         return Mathf.Max(y, lakeLevel + 0.45f);
@@ -118,10 +130,10 @@ public static class DomeRavines
         for (int i = 0; i < ravines.Count; i++)
         {
             var r = ravines[i];
-            for (int k = 0; k < 2; k++)
+            for (int k = 0; k < 3; k++)
             {
-                float along = (k == 0 ? -0.2f : 0.25f) * r.length;
-                float across = (k == 0 ? -1f : 1f) * r.width * 0.45f;
+                float along = (k - 1) * 0.22f * r.length;
+                float across = (k % 2 == 0 ? -1f : 1f) * r.width * 0.38f;
                 float c = Mathf.Cos(r.angleDeg * Mathf.Deg2Rad);
                 float s = Mathf.Sin(r.angleDeg * Mathf.Deg2Rad);
                 float x = r.center.x + along * c - across * s;
@@ -132,7 +144,7 @@ public static class DomeRavines
                 var go = new GameObject("FallenTrunk");
                 go.transform.SetParent(root.transform, false);
                 go.transform.position = new Vector3(x, y + 0.28f, z);
-                go.transform.rotation = Quaternion.Euler(90f, r.angleDeg + (k == 0 ? 20f : -25f), 0f);
+                go.transform.rotation = Quaternion.Euler(90f, r.angleDeg + (k - 1) * 18f, 0f);
                 go.AddComponent<MeshFilter>().sharedMesh = mesh;
                 go.AddComponent<MeshRenderer>().sharedMaterial = bark;
                 n++;
@@ -154,25 +166,31 @@ public static class DomeRavines
             float s = Mathf.Sin(r.angleDeg * Mathf.Deg2Rad);
             for (int side = -1; side <= 1; side += 2)
             {
-                float across = side * r.width * 0.38f;
-                float x = r.center.x - across * s;
-                float z = r.center.y + across * c;
-                float y = ground(x, z);
-                var mesh = FloraMeshKit.Slab(1.0f, 3.2f, r.length * 0.48f);
-                track?.Add(mesh);
-                var go = new GameObject("RavineWall");
-                go.transform.SetParent(root.transform, false);
-                go.transform.position = new Vector3(x, y - 0.3f, z);
-                go.transform.rotation = Quaternion.Euler(0f, r.angleDeg, 0f);
-                go.AddComponent<MeshFilter>().sharedMesh = mesh;
-                go.AddComponent<MeshRenderer>().sharedMaterial = rock;
-                n++;
+                for (int k = -2; k <= 2; k++)
+                {
+                    float along = k * r.length * 0.18f;
+                    float across = side * r.width * 0.43f;
+                    float x = r.center.x + along * c - across * s;
+                    float z = r.center.y + along * s + across * c;
+                    float y = ground(x, z);
+                    float radius = 1.0f + Mathf.Abs(k) * 0.12f;
+                    var mesh = FloraMeshKit.Icosahedron(radius);
+                    track?.Add(mesh);
+                    var go = new GameObject("RavineBank");
+                    go.transform.SetParent(root.transform, false);
+                    go.transform.position = new Vector3(x, y + 0.15f, z);
+                    go.transform.localScale = new Vector3(1.6f, 1.6f, 1.4f);
+                    go.transform.rotation = Quaternion.Euler(0f, r.angleDeg + k * 9f, 0f);
+                    go.AddComponent<MeshFilter>().sharedMesh = mesh;
+                    go.AddComponent<MeshRenderer>().sharedMaterial = rock;
+                    n++;
+                }
             }
         }
         return n;
     }
 
-    /// <summary>РўС‘РјРЅРѕРµ РґРЅРѕ: С‡РёС‚Р°РµРјР°СЏ РїРѕР»РѕСЃР° Р·РµРјР»Рё РјРµР¶РґСѓ Р±РѕСЂС‚Р°РјРё.</summary>
+    /// <summary>Тёмное дно: читаемая полоса земли между бортами.</summary>
     public static int BuildFloor(GameObject root, IReadOnlyList<Ravine> ravines,
         System.Func<float, float, float> ground, Material dark, ICollection<Mesh> track)
     {
@@ -183,11 +201,11 @@ public static class DomeRavines
             var r = ravines[i];
             float x = r.center.x, z = r.center.y;
             float y = ground(x, z);
-            var mesh = FloraMeshKit.Slab(r.width * 0.42f, 0.08f, r.length * 0.42f);
+            var mesh = FloraMeshKit.Slab(r.width * 0.32f, 0.08f, r.length * 0.40f);
             track?.Add(mesh);
             var go = new GameObject("RavineFloor");
             go.transform.SetParent(root.transform, false);
-            go.transform.position = new Vector3(x, y + 0.04f, z);
+            go.transform.position = new Vector3(x, y + 0.03f, z);
             go.transform.rotation = Quaternion.Euler(0f, r.angleDeg, 0f);
             go.AddComponent<MeshFilter>().sharedMesh = mesh;
             go.AddComponent<MeshRenderer>().sharedMaterial = dark;
@@ -209,19 +227,19 @@ public static class DomeRavines
             float s = Mathf.Sin(r.angleDeg * Mathf.Deg2Rad);
             for (int side = -1; side <= 1; side += 2)
             {
-                for (int k = -2; k <= 2; k++)
+                for (int k = -1; k <= 1; k++)
                 {
-                    float along = k * r.length * 0.18f;
-                    float across = side * r.width * 0.38f;
+                    float along = k * r.length * 0.22f;
+                    float across = side * r.width * 0.42f;
                     float x = r.center.x + along * c - across * s;
                     float z = r.center.y + along * s + across * c;
                     float y = ground(x, z);
-                    float radius = 1.8f + Mathf.Abs(k) * 0.25f;
+                    float radius = 1.1f + Mathf.Abs(k) * 0.15f;
                     var mesh = FloraMeshKit.Icosahedron(radius);
                     track?.Add(mesh);
                     var go = new GameObject("RavineRim");
                     go.transform.SetParent(root.transform, false);
-                    go.transform.position = new Vector3(x, y + radius * 0.55f, z);
+                    go.transform.position = new Vector3(x, y + radius * 0.35f, z);
                     go.AddComponent<MeshFilter>().sharedMesh = mesh;
                     go.AddComponent<MeshRenderer>().sharedMaterial = rock;
                     n++;
