@@ -232,6 +232,32 @@ namespace Chimera.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator DeepWingsPlan_MovesFurnitureToWingEdges()
+        {
+            long deepSeed = 0;
+            for (long s = 1; s <= 64 && deepSeed == 0; s++)
+            {
+                var p = LabPlanGenerator.Generate(s, 1, LabEntrance.Rock, LabStyle.Bastion);
+                if (p.template == "deep-wings") deepSeed = s;
+            }
+            Assert.AreNotEqual(0, deepSeed, "генератор должен уметь deep-wings в первых 64 сидах");
+
+            var b = BuildLab(LabStyle.Bastion, seed: deepSeed, plan: true);
+            yield return null;
+
+            Assert.AreEqual("deep-wings", b.LabComplex.planTemplate, "план должен быть deep-wings");
+            var root = b.LabComplex.root.transform;
+            var cabinet = Find(root, "SurgeryCabinet");
+            var cellsLocker = Find(root, "CellsLocker");
+            var table = Find(root, "SurgeryTableTop");
+            Assert.IsNotNull(cabinet, "шкаф хирургии собран");
+            Assert.IsNotNull(cellsLocker, "шкаф клеток собран");
+            Assert.Greater(cabinet.localPosition.z, 7f, "deep-wings: шкаф хирургии у дальнего края");
+            Assert.Greater(cellsLocker.localPosition.z, 7f, "deep-wings: шкаф клеток у дальнего края");
+            Assert.Less(Mathf.Abs(table.localPosition.z), 2f, "стол хирургии остался в центре");
+        }
+
+        [UnityTest]
         public IEnumerator A_OldLab_WhenComplexOff()
         {
             var b = BuildLab(LabStyle.Bastion, complex: false);

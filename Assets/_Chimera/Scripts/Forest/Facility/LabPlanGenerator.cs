@@ -1,8 +1,9 @@
 using System.Collections.Generic;
 
 /// <summary>
-/// B0.3: выбор допустимого плана. Пока два проверенных варианта: fixed и mirror
-/// (хирургия и клетки меняются сторонами). Всё, что не проходит правила, — fixed.
+/// B0.3: выбор допустимого плана. Три варианта: fixed, mirror (крылья меняются
+/// сторонами) и deep-wings (та же глубина 19, мебель уходит к дальним краям крыльев).
+/// Всё, что не проходит правила, — fixed.
 /// </summary>
 public static class LabPlanGenerator
 {
@@ -12,11 +13,16 @@ public static class LabPlanGenerator
         plan.version = version;
         plan.template = "fixed";
 
-        int roll = (int)(SeededHash.Hash(seed, 8301, version) % 2);
+        int roll = (int)(SeededHash.Hash(seed, 8301, version) % 3);
         if (roll == 1)
         {
             plan.template = "mirror";
             Mirror(plan);
+        }
+        else if (roll == 2)
+        {
+            plan.template = "deep-wings";
+            plan.note = "deep-wings: furniture to wing edges";
         }
 
         var errors = LabPlanRules.Validate(plan);

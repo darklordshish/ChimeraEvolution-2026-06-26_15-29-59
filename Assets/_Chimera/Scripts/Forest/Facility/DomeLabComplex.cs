@@ -182,8 +182,8 @@ public static class DomeLabComplex
         BuildRoofs(b);
         BuildBeams(b, flip);
         BuildHall(b);
-        BuildSurgery(b, flip);
-        BuildCells(b, flip);
+        BuildSurgery(b, flip, plan);
+        BuildCells(b, flip, plan);
         BuildRest(b);
         BuildEntryLobby(b);
         BuildCeilingFixtures(b, flip);
@@ -358,17 +358,20 @@ public static class DomeLabComplex
     }
 
     /// <summary>Хирургия: стол, тумба, шкаф, рабочая лампа; стекло и дверь — в стене зала.</summary>
-    static void BuildSurgery(Builder b, int flip)
+    static void BuildSurgery(Builder b, int flip, LabPlan plan)
     {
         float y = Plinth;
         const float cx = -16f, cz = 0f;
         float F(float v) => v * flip;
+        bool deep = LabPlanGeometry.IsDeepWings(plan);
+        float farZ = deep ? LabPlanGeometry.FarZ(plan.Room("surgery"), 1.5f) : 5f;
+        float nearZ = deep ? -farZ : -6f;
         b.Add("SurgeryTableBase", Kit.Metal, 1.2f, 0.6f, 1.8f, F(cx), y, cz, true);
         b.Add("SurgeryTableTop", Kit.Metal, 1.4f, 0.2f, 2.4f, F(cx), y + 0.6f, cz, true);
         b.Add("SurgeryTray", Kit.Metal, 0.6f, 0.08f, 0.4f, F(cx - 0.2f), y + 0.8f, cz + 0.7f, true);
         b.Add("SurgeryStool", Kit.Metal, 0.5f, 0.45f, 0.5f, F(cx + 1.8f), y, cz + 1.8f, true);
-        b.Add("SurgeryCabinet", Kit.Concrete, 0.7f, 1.8f, 1.4f, F(-22.1f), y, 5f, true);
-        b.Add("SurgeryLocker", Kit.Metal, 0.6f, 2f, 1.2f, F(-22.1f), y, -6f, true);
+        b.Add("SurgeryCabinet", Kit.Concrete, 0.7f, 1.8f, 1.4f, F(-22.1f), y, farZ, true);
+        b.Add("SurgeryLocker", Kit.Metal, 0.6f, 2f, 1.2f, F(-22.1f), y, nearZ, true);
         b.Add("SurgeryWorkLamp", Kit.PanelWarm, 1.2f, 0.15f, 0.8f, F(cx), y + 3f, cz);
     }
 
@@ -376,7 +379,7 @@ public static class DomeLabComplex
     /// Клетки: четыре глубоких отсека у восточной стены, бетонные разделители и решётки.
     /// Отсеки ПУСТЫЕ (ни раковин, ни поилок); проход перед решётками свободен.
     /// </summary>
-    static void BuildCells(Builder b, int flip)
+    static void BuildCells(Builder b, int flip, LabPlan plan)
     {
         float y = Plinth;
         const float barX = 17.5f;
@@ -384,6 +387,9 @@ public static class DomeLabComplex
         float depth = backX - barX;              // 5.0
         float midX = (barX + backX) * 0.5f;      // 20.0
         float F(float v) => v * flip;
+        bool deep = LabPlanGeometry.IsDeepWings(plan);
+        float farZ = deep ? LabPlanGeometry.FarZ(plan.Room("cells"), 1.5f) : 6.5f;
+        float nearZ = deep ? -farZ : -6.5f;
         float[] centers = { -6.3f, -2.1f, 2.1f, 6.3f };
 
         for (int i = 0; i < 5; i++)
@@ -409,9 +415,9 @@ public static class DomeLabComplex
             b.Add("CellLamp", Kit.PanelWarm, 0.18f, 0.25f, 0.6f, F(barX - 0.28f), y + 2.85f, zc);
         }
 
-        b.Add("CellsDesk", Kit.Metal, 0.7f, 0.75f, 2f, F(11f), y, -6.5f, true);
-        b.Add("CellsStool", Kit.Olive, 0.45f, 0.45f, 0.45f, F(11.9f), y, -6.5f, true);
-        b.Add("CellsLocker", Kit.Metal, 0.6f, 2f, 1.2f, F(10.2f), y, 6.5f, true);
+        b.Add("CellsDesk", Kit.Metal, 0.7f, 0.75f, 2f, F(11f), y, nearZ, true);
+        b.Add("CellsStool", Kit.Olive, 0.45f, 0.45f, 0.45f, F(11.9f), y, nearZ, true);
+        b.Add("CellsLocker", Kit.Metal, 0.6f, 2f, 1.2f, F(10.2f), y, farZ, true);
     }
 
     /// <summary>

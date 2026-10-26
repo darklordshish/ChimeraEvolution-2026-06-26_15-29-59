@@ -27,6 +27,21 @@ namespace Chimera.Tests.EditMode
         }
 
         [Test]
+        public void DeepWings_IsValidAndKeepsB02Depth()
+        {
+            LabPlan deep = null;
+            for (long seed = 1; seed <= 64 && deep == null; seed++)
+            {
+                var p = LabPlanGenerator.Generate(seed, 1, LabEntrance.Underground, LabStyle.InSlope);
+                if (p.template == "deep-wings") deep = p;
+            }
+            Assert.IsNotNull(deep, "на 64 сидах должен найтись deep-wings");
+            Assert.IsEmpty(LabPlanRules.Validate(deep), "deep-wings обязан проходить правила");
+            Assert.AreEqual(19f, deep.Room("surgery").depth, 0.01f);
+            Assert.AreEqual(19f, deep.Room("cells").depth, 0.01f);
+        }
+
+        [Test]
         public void Mirror_SwapsSurgeryAndCells()
         {
             LabPlan mirror = null;
