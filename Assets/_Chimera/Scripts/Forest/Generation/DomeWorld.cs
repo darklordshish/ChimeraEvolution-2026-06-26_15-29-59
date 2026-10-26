@@ -592,6 +592,7 @@ public class DomeWorld
         {
             LabComplex = DomeLabComplex.Build(Root, LabCenter, platformY, padYaw,
                 ResolvedLabStyle, ResolvedLabEntrance, LabWetApproach);
+            DomeLabDamage.Apply(LabComplex, seed);
             LabDoor = LabComplex.door;
             Facility = null;
             return;

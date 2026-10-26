@@ -142,6 +142,25 @@ namespace Chimera.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator Damage_SameSeed_IsReproducible()
+        {
+            var a = BuildLab(LabStyle.InSlope, seed: 9, entrance: LabEntrance.Underground);
+            yield return null;
+            string first = a.LabComplex.damageSignature;
+            Assert.IsFalse(string.IsNullOrEmpty(first), "подпись повреждений есть");
+            Assert.Greater(a.LabComplex.damageParts, 0, "повреждения добавили детали");
+            a.Clear();
+            Object.Destroy(host);
+            host = null;
+            builder = null;
+
+            var b = BuildLab(LabStyle.InSlope, seed: 9, entrance: LabEntrance.Underground);
+            yield return null;
+            Assert.AreEqual(first, b.LabComplex.damageSignature,
+                "тот же сид — та же раскладка повреждений");
+        }
+
+        [UnityTest]
         public IEnumerator Underground_BuildsRamp_OnSeed9()
         {
             var b = BuildLab(LabStyle.InSlope, seed: 9, entrance: LabEntrance.Underground);

@@ -72,6 +72,9 @@ public static class DomeLabComplex
         public LabEntrance entrance;
         /// <summary>Подход мокрый: построен настил от двери до сухого места.</summary>
         public bool wetApproach;
+        /// <summary>Следы происшествия B0.2c: подпись выбранного варианта и число деталей.</summary>
+        public string damageSignature;
+        public int damageParts;
         public GameObject root;
     }
 
@@ -674,6 +677,9 @@ public static class DomeLabComplex
         meshCache[key] = mesh;
         return mesh;
     }
+
+    /// <summary>Общий материал отдела — для слоя разрушений (тот же кэш).</summary>
+    public static Material MaterialOf(Kit kit) => KitMat(kit);
 
     static Material KitMat(Kit kit)
     {
