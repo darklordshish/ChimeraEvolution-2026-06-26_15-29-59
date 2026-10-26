@@ -60,6 +60,9 @@ public class ForestBuilder : MonoBehaviour
     [Header("Стиль оболочки: Bastion (наземный) / InSlope (в склоне) / Auto")]
     public LabStyle labStyle = LabStyle.Bastion;
 
+    [Header("Вход B0.2: Rock (портал в скале) / Underground (спуск) / Auto")]
+    public LabEntrance labEntrance = LabEntrance.Rock;
+
     // Ноль = «не настроено»: новое сериализованное поле у компонента из сцены приходит
     // нулём (гоча проекта), а порог 150 м — решение B0.1, не случайное число.
     [Header("Комплекс не ближе стольких метров к входу (0 — 150)")]
@@ -108,6 +111,7 @@ public class ForestBuilder : MonoBehaviour
     public Vector3 LabDoor => world != null ? world.LabDoor : default;
     /// <summary>Какой стиль комплекс получил на самом деле (Auto разрешён в один из двух).</summary>
     public LabStyle ResolvedLabStyle => world != null ? world.ResolvedLabStyle : labStyle;
+    public LabEntrance ResolvedLabEntrance => world != null ? world.ResolvedLabEntrance : labEntrance;
     /// <summary>Построенный комплекс (null при старом лабиринте A/C).</summary>
     public DomeLabComplex.Result LabComplex => world != null ? world.LabComplex : null;
     public float SampleGround(float x, float z) => world != null ? world.SampleGround(x, z) : 0f;
@@ -219,7 +223,7 @@ public class ForestBuilder : MonoBehaviour
         // B0.1: стиль и порог лаборатории идут в мир; 0 в пороге — «не настроено».
         world.Build(BuiltRoot, ownedConfig, terrainQuads, chosen, buildAsh, spawnAtEntry,
             labStyle, minLabDistance > 0f ? minLabDistance : DefaultMinLabDistance,
-            buildLabComplex);
+            buildLabComplex, labEntrance);
 
         var surface = GetComponent<NavMeshSurface>();
         world.BuildNavMesh(surface);

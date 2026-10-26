@@ -68,6 +68,8 @@ public static class DomeLabComplex
         public int exteriorParts;
         public int lights;
         public bool berm;
+        /// <summary>Тип входа: Rock или Underground.</summary>
+        public LabEntrance entrance;
         /// <summary>Подход мокрый: построен настил от двери до сухого места.</summary>
         public bool wetApproach;
         public GameObject root;
@@ -111,6 +113,10 @@ public static class DomeLabComplex
     public const float SurgeryDoorZ = 6f;
     public const float SurgeryGlassZ = -2f;
     public const float SurgeryGlassWidth = 5f;
+    /// <summary>Подземный вход B0.2b: перепад и длина наклонной части рампы (м).</summary>
+    public const float UndergroundDrop = 2.5f;
+    public const float RampLength = 24f;
+    public const float RampWidth = 6f;
 
     static readonly Dictionary<string, Mesh> meshCache = new Dictionary<string, Mesh>();
     static readonly Dictionary<Kit, Material> matCache = new Dictionary<Kit, Material>();
@@ -121,16 +127,18 @@ public static class DomeLabComplex
     /// — верх площадки в координатах поля: плита встаёт на него, не пересчитывая землю.
     /// </summary>
     public static Result Build(GameObject parent, Vector2 center, float groundY, float yawDeg,
-        LabStyle style, bool wetApproach = false)
+        LabStyle style, LabEntrance entrance = LabEntrance.Rock, bool wetApproach = false)
     {
         if (parent == null) throw new ArgumentNullException(nameof(parent));
         if (style == LabStyle.Auto) style = LabStyle.Bastion;
+        if (entrance == LabEntrance.Auto) entrance = LabEntrance.Rock;
 
         var result = new Result
         {
             center = center,
             yawDeg = yawDeg,
             style = style,
+            entrance = entrance,
             door = DoorPoint(center, groundY, yawDeg),
             berm = style == LabStyle.InSlope,
             wetApproach = wetApproach,
@@ -158,8 +166,9 @@ public static class DomeLabComplex
 
         // Всё, что выше, — ОДИН интерьер. Ниже — только внешняя оболочка стиля.
         result.interiorParts = b.parts;
-        if (wetApproach) BuildWetApproach(b);
-        if (style == LabStyle.InSlope) BuildSlopeDressing(b);
+        if (wetApproach && entrance != LabEntrance.Underground) BuildWetApproach(b);
+        if (entrance == LabEntrance.Underground) BuildUndergroundDressing(b);
+        else if (style == LabStyle.InSlope) BuildSlopeDressing(b);
         else BuildBastionDressing(b);
         result.exteriorParts = b.parts - result.interiorParts;
 
@@ -494,6 +503,45 @@ public static class DomeLabComplex
     }
 
     /// <summary>
+    /// Подземный вход B0.2b: пологая рампа от двери вверх к лесной площадке,
+    /// подпорные стены, земляная крыша над рампой и низкий портал. Внутри — тот же
+    /// закрытый интерьер; снаружи читается спуск, а не фасад.
+    /// </summary>
+    static void BuildUndergroundDressing(Builder b)
+    {
+        float angle = Mathf.Atan2(UndergroundDrop, RampLength) * Mathf.Rad2Deg;
+        float rampLen = Mathf.Sqrt(RampLength * RampLength + UndergroundDrop * UndergroundDrop);
+        float rampZ = -HalfDepth - RampLength * 0.5f;
+
+        b.AddRotated("RampFloor", Kit.Floor, RampWidth, 0.25f, rampLen,
+            new Vector3(0f, Plinth + UndergroundDrop * 0.5f, rampZ),
+            Quaternion.Euler(angle, 0f, 0f), true);
+        b.Add("RampWallW", Kit.Concrete, 0.5f, 3.4f, RampLength,
+            -RampWidth * 0.5f, 0f, rampZ, true);
+        b.Add("RampWallE", Kit.Concrete, 0.5f, 3.4f, RampLength,
+            RampWidth * 0.5f, 0f, rampZ, true);
+
+        // Земля над рампой: спуск не должен быть открытой траншеей.
+        b.AddNoNav("RampEarthRoof", Kit.Rock, RampWidth + 2f, 1.2f, RampLength + 2f,
+            0f, UndergroundDrop + 0.7f, rampZ, true);
+
+        // Низкий портал: видна только рама и козырёк, не башня.
+        b.Add("RampPortalW", Kit.Concrete, 1.2f, 4.0f, 1.8f,
+            -RampWidth * 0.5f, 0f, -HalfDepth - 0.6f, true);
+        b.Add("RampPortalE", Kit.Concrete, 1.2f, 4.0f, 1.8f,
+            RampWidth * 0.5f, 0f, -HalfDepth - 0.6f, true);
+        b.Add("RampCanopy", Kit.Concrete, RampWidth + 1.8f, 0.4f, 2.2f,
+            0f, 4.0f, -HalfDepth - 1.2f, true);
+
+        // Земляной навал над комплексом и по бокам: бункер утоплен, а не стоит коробкой.
+        b.AddNoNav("UndergroundEarth", Kit.Rock, HalfWidth * 2f + 3f, 1.3f,
+            HalfDepth * 2f + 3f, 0f, Plinth + RoomHeight + 0.35f, 0f, true);
+        b.Add("UndergroundHill", Kit.Rock, 62f, 10f, 18f, 0f, -2f, 23f, true);
+        b.Add("UndergroundWingW", Kit.Rock, 8f, 7f, 30f, -26f, -2f, 2f, true);
+        b.Add("UndergroundWingE", Kit.Rock, 8f, 7f, 30f, 26f, -2f, 2f, true);
+    }
+
+    /// <summary>
     /// Bastion: низкий наземный блокгауз. Одна плита, общий кровельный пояс/парапет,
     /// тяжёлая рама входа. Открытого двора нет — крыша сплошная.
     /// </summary>
@@ -703,6 +751,28 @@ public static class DomeLabComplex
                 var box = go.AddComponent<BoxCollider>();
                 // Меш плиты растёт от основания вверх — коллайдер обязан совпасть с ним,
                 // а не встать центром в ноль (иначе половина стены без коллайдера).
+                box.center = new Vector3(0f, sy * 0.5f, 0f);
+                box.size = new Vector3(sx, sy, sz);
+            }
+            parts++;
+            return go;
+        }
+
+        /// <summary>Наклонная деталь (рампа): размер — полные габариты, поворот локальный.</summary>
+        public GameObject AddRotated(string name, Kit kit, float sx, float sy, float sz,
+            Vector3 pos, Quaternion rot, bool collider = false)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(root, false);
+            go.transform.localPosition = pos;
+            go.transform.localRotation = rot;
+            go.AddComponent<MeshFilter>().sharedMesh = SlabCached(sx, sy, sz);
+            var renderer = go.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = KitMat(kit);
+            renderer.shadowCastingMode = ShadowCastingMode.Off;
+            if (collider)
+            {
+                var box = go.AddComponent<BoxCollider>();
                 box.center = new Vector3(0f, sy * 0.5f, 0f);
                 box.size = new Vector3(sx, sy, sz);
             }

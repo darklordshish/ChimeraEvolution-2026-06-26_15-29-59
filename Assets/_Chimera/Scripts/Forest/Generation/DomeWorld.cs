@@ -52,6 +52,8 @@ public class DomeWorld
     public Vector3 LabDoor { get; private set; }
     /// <summary>Подход к лаборатории мокрый: у комплекса построен настил.</summary>
     public bool LabWetApproach { get; private set; }
+    /// <summary>Решённый вход B0.2: Rock или Underground.</summary>
+    public LabEntrance ResolvedLabEntrance { get; private set; }
     /// <summary>Решённый облик комплекса (Bastion или InSlope).</summary>
     public LabStyle ResolvedLabStyle { get; private set; }
     public List<DomeSlope.MouthSpot> Mouths { get; private set; } = new List<DomeSlope.MouthSpot>();
@@ -98,7 +100,7 @@ public class DomeWorld
     public void Build(GameObject root, DomeGenConfigSO cfg, int terrainQuads, long seed,
         bool buildAsh = true, bool buildEntry = false,
         LabStyle labStyle = LabStyle.Bastion, float minLabDistance = DefaultMinLabDistance,
-        bool buildLabComplex = false)
+        bool buildLabComplex = false, LabEntrance labEntrance = LabEntrance.Rock)
     {
         if (root == null) throw new ArgumentNullException(nameof(root));
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
@@ -112,13 +114,15 @@ public class DomeWorld
         //    света вход; сама точка — у подножия кольца внутри чаши. Ни площадки, ни корпусов
         //    для этого не нужно, поэтому лабораторию можно ставить «от входа», а не наоборот.
         Vector2 entryXZ = EntryPointXZ(seed);
+        ResolvedLabEntrance = labEntrance == LabEntrance.Auto ? LabEntrance.Rock : labEntrance;
 
-        // 2) МЕСТО лаборатории: B0.1 — поиск по сиду; A/C — двор в центре мира.
+        // 2) Место лаборатории: B0.1 — поиск по сиду; A/C — двор в центре мира.
         float minDistance = minLabDistance > 0f ? minLabDistance : DefaultMinLabDistance;
         var site = default(DomeLabSite.Spot);
         if (buildLabComplex)
         {
-            site = DomeLabSite.Find(cfg, seed, entryXZ, Hydro, labStyle, minDistance);
+            site = DomeLabSite.Find(cfg, seed, entryXZ, Hydro, labStyle, minDistance,
+                ResolvedLabEntrance);
             if (!site.found)
             {
                 Debug.LogError($"[Forest] лаборатории нет места: {site.note} — остаётся старый лабиринт");
@@ -135,6 +139,10 @@ public class DomeWorld
             padRect = true;
             // Плита стоит на верхней точке пятна (поиск её и вернул): не висит и не режет склон.
             platformY = Mathf.Max(site.groundY, Hydro.lakeLevel + 0.5f);
+            // Подземный вход: пол ниже подхода на перепад рампы; земля над ним — позже.
+            if (ResolvedLabEntrance == LabEntrance.Underground)
+                platformY = Mathf.Max(site.groundY - DomeLabComplex.UndergroundDrop,
+                    Hydro.lakeLevel + 0.5f);
             if (site.relaxed || site.wetApproach || site.fallback)
                 Debug.LogWarning($"[Forest] лаборатория: {site.note}");
             Debug.Log($"[Forest] лаборатория: {site.style} в {site.distanceToEntry:F0} м от входа, " +
@@ -190,12 +198,14 @@ public class DomeWorld
             // Перед LabDoor — спокойный участок: дверь видна целиком, деревья
             // обрамляют сбоку, а не закрывают вход (правило дизайн-линии 25.10).
             // Мокрый подход длиннее — настил не должен прорастать стволами.
-            float approachClear = LabWetApproach ? 32f : 14f;
+            float approachClear = (LabWetApproach || ResolvedLabEntrance == LabEntrance.Underground)
+                ? 32f : 14f;
             return Vector2.Distance(new Vector2(x, z), new Vector2(LabDoor.x, LabDoor.z)) < approachClear;
         };
         // Вырубка гасит деревья; подлесок живёт в R12/R14 и пятнах, но не под плитой
         // комплекса (12 см плиты — трава торчала бы в зале).
-        Trees = DomeFlora.Build(Root, cfg, Hydro, seed, SampleGround, clearing, labPad);
+        Func<float, float, bool> undergrowthExclude = (x, z) => labPad(x, z) || InsideRamp(x, z);
+        Trees = DomeFlora.Build(Root, cfg, Hydro, seed, SampleGround, clearing, undergrowthExclude);
         BuildSky(seed);
     }
 
@@ -208,6 +218,25 @@ public class DomeWorld
     {
         if (cfg == null || Hydro == null) return 0f;
         float raw = DomeHydro.SampleHydro(cfg, Hydro, x, z);
+
+        // Подземный вход: вырезаем пологую траншею-рампу от двери к лесной площадке.
+        if (padRect && ResolvedLabEntrance == LabEntrance.Underground)
+        {
+            float dx = x - LabCenter.x, dz = z - LabCenter.y;
+            float yaw = padYaw * Mathf.Deg2Rad;
+            float c = Mathf.Cos(yaw), s = Mathf.Sin(yaw);
+            float lx = dx * c - dz * s;
+            float lz = dx * s + dz * c;
+            float zDoor = -DomeLabComplex.HalfDepth;
+            float zOuter = zDoor - DomeLabComplex.RampLength;
+            if (Mathf.Abs(lx) <= DomeLabComplex.RampWidth * 0.5f &&
+                lz <= zDoor && lz >= zOuter)
+            {
+                float rampT = Mathf.Clamp01((zDoor - lz) / DomeLabComplex.RampLength);
+                return Mathf.Lerp(platformY, platformY + DomeLabComplex.UndergroundDrop, rampT);
+            }
+        }
+
         float u = PadWeight(x, z);
         if (u <= 0f) return platformY;
         float t = u * u * (3f - 2f * u);
@@ -258,6 +287,21 @@ public class DomeWorld
     /// Запечь NavMesh тайлами по коллайдерам мира. Поверхность — компонент ForestBuilder;
     /// collectObjects=Children означает, что корень мира должен быть её ребёнком.
     /// </summary>
+    /// <summary>Точка в полосе подземной рампы (B0.2b): там не растёт подлесок.</summary>
+    bool InsideRamp(float x, float z)
+    {
+        if (!padRect || ResolvedLabEntrance != LabEntrance.Underground) return false;
+        float dx = x - LabCenter.x, dz = z - LabCenter.y;
+        float yaw = padYaw * Mathf.Deg2Rad;
+        float c = Mathf.Cos(yaw), s = Mathf.Sin(yaw);
+        float lx = dx * c - dz * s;
+        float lz = dx * s + dz * c;
+        float zDoor = -DomeLabComplex.HalfDepth;
+        float zOuter = zDoor - DomeLabComplex.RampLength;
+        return Mathf.Abs(lx) <= DomeLabComplex.RampWidth * 0.5f + 0.8f &&
+               lz <= zDoor && lz >= zOuter;
+    }
+
     public void BuildNavMesh(NavMeshSurface surface)
     {
         if (surface == null || cfg == null)
@@ -547,7 +591,7 @@ public class DomeWorld
         if (buildLabComplex)
         {
             LabComplex = DomeLabComplex.Build(Root, LabCenter, platformY, padYaw,
-                ResolvedLabStyle, LabWetApproach);
+                ResolvedLabStyle, ResolvedLabEntrance, LabWetApproach);
             LabDoor = LabComplex.door;
             Facility = null;
             return;

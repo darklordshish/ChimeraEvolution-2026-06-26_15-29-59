@@ -26,7 +26,8 @@ namespace Chimera.Tests.PlayMode
             host = null;
         }
 
-        ForestBuilder BuildLab(LabStyle style, bool complex = true, long seed = 4)
+        ForestBuilder BuildLab(LabStyle style, bool complex = true, long seed = 4,
+            LabEntrance entrance = LabEntrance.Rock)
         {
             host = new GameObject("~ForestLabComplexProbe");
             host.SetActive(false);
@@ -41,6 +42,7 @@ namespace Chimera.Tests.PlayMode
             builder.spawnAtEntry = true;
             builder.buildLabComplex = complex;
             builder.labStyle = style;
+            builder.labEntrance = entrance;
             builder.minLabDistance = 150f;
             builder.speciesPool = new List<SpeciesSO>();
             host.SetActive(true);
@@ -137,6 +139,20 @@ namespace Chimera.Tests.PlayMode
                 host = null;
                 builder = null;
             }
+        }
+
+        [UnityTest]
+        public IEnumerator Underground_BuildsRamp_OnSeed9()
+        {
+            var b = BuildLab(LabStyle.InSlope, seed: 9, entrance: LabEntrance.Underground);
+            yield return null;
+
+            Assert.IsNotNull(b.LabComplex, "подземный вход собирается");
+            Assert.AreEqual(LabEntrance.Underground, b.LabComplex.entrance, "вход — Underground");
+            Assert.AreEqual(12, b.Chunks, "чанки B0");
+            Assert.Greater(b.LabComplex.parts, 163, "рампа/стены добавили детали");
+            Assert.Less(b.LabDoor.y, b.SampleGround(b.LabDoor.x, b.LabDoor.z) + 0.5f,
+                "дверь стоит внизу спуска, а не на верхней площадке");
         }
 
         [UnityTest]
