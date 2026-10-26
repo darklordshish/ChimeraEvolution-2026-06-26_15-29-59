@@ -516,26 +516,35 @@ public static class DomeLabComplex
         b.AddRotated("RampFloor", Kit.Floor, RampWidth, 0.25f, rampLen,
             new Vector3(0f, Plinth + UndergroundDrop * 0.5f, rampZ),
             Quaternion.Euler(angle, 0f, 0f), true);
-        b.Add("RampWallW", Kit.Concrete, 0.5f, 3.4f, RampLength,
-            -RampWidth * 0.5f, 0f, rampZ, true);
-        b.Add("RampWallE", Kit.Concrete, 0.5f, 3.4f, RampLength,
-            RampWidth * 0.5f, 0f, rampZ, true);
+        b.Add("RampWallW", Kit.Rock, 1.2f, 2.4f, RampLength,
+            -RampWidth * 0.5f - 0.4f, 0f, rampZ, true);
+        b.Add("RampWallE", Kit.Rock, 1.2f, 2.4f, RampLength,
+            RampWidth * 0.5f + 0.4f, 0f, rampZ, true);
 
-        // Земля над рампой: спуск не должен быть открытой траншеей.
-        b.AddNoNav("RampEarthRoof", Kit.Rock, RampWidth + 2f, 1.2f, RampLength + 2f,
-            0f, UndergroundDrop + 0.7f, rampZ, true);
+        // Не сплошная плита над головой: рваные земляные борта, спуск читается trench'ем.
+        b.AddRock("RampBermW1", 4.2f, -5.4f, 0f, -HalfDepth - 6f);
+        b.AddRock("RampBermW2", 3.8f, -5.0f, 0f, -HalfDepth - 15f);
+        b.AddRock("RampBermE1", 4.4f, 5.6f, 0f, -HalfDepth - 7f);
+        b.AddRock("RampBermE2", 3.6f, 5.2f, 0f, -HalfDepth - 16f);
 
-        // Низкий портал: видна только рама и козырёк, не башня.
-        b.Add("RampPortalW", Kit.Concrete, 1.2f, 4.0f, 1.8f,
-            -RampWidth * 0.5f, 0f, -HalfDepth - 0.6f, true);
-        b.Add("RampPortalE", Kit.Concrete, 1.2f, 4.0f, 1.8f,
-            RampWidth * 0.5f, 0f, -HalfDepth - 0.6f, true);
-        b.Add("RampCanopy", Kit.Concrete, RampWidth + 1.8f, 0.4f, 2.2f,
-            0f, 4.0f, -HalfDepth - 1.2f, true);
+        // Низкий портал на верхней площадке: видна рама и козырёк, не башня.
+        float zOuter = -HalfDepth - RampLength + 0.6f;
+        b.Add("RampOuterW", Kit.Concrete, 1.1f, 3.4f, 1.4f,
+            -RampWidth * 0.5f - 0.2f, UndergroundDrop, zOuter, true);
+        b.Add("RampOuterE", Kit.Concrete, 1.1f, 3.4f, 1.4f,
+            RampWidth * 0.5f + 0.2f, UndergroundDrop, zOuter, true);
+        b.Add("RampOuterLintel", Kit.Dark, RampWidth + 2.2f, 0.8f, 1.6f,
+            0f, UndergroundDrop + 3.2f, zOuter, true);
+        b.Add("RampOuterCanopy", Kit.Concrete, RampWidth + 2.2f, 0.3f, 2.4f,
+            0f, UndergroundDrop + 3.4f, zOuter - 0.8f, true);
 
-        // Земляной навал над комплексом и по бокам: бункер утоплен, а не стоит коробкой.
-        b.AddNoNav("UndergroundEarth", Kit.Rock, HalfWidth * 2f + 3f, 1.3f,
-            HalfDepth * 2f + 3f, 0f, Plinth + RoomHeight + 0.35f, 0f, true);
+        // Земляной навал над комплексом — холмом из крупных масс, а не одной плитой.
+        b.AddRock("UndergroundRockW", 6f, -12f, Plinth + RoomHeight, 2f);
+        b.AddRock("UndergroundRockE", 5.5f, 12f, Plinth + RoomHeight, 1f);
+        b.AddRock("UndergroundRockN", 7f, 0f, Plinth + RoomHeight, 10f);
+        b.AddRock("UndergroundRockC", 6.5f, 0f, Plinth + RoomHeight, 0f);
+        b.AddRock("UndergroundRockS", 5f, 4f, Plinth + RoomHeight, -8f);
+        b.AddRock("UndergroundRockSW", 4.5f, -9f, Plinth + RoomHeight, -7f);
         b.Add("UndergroundHill", Kit.Rock, 62f, 10f, 18f, 0f, -2f, 23f, true);
         b.Add("UndergroundWingW", Kit.Rock, 8f, 7f, 30f, -26f, -2f, 2f, true);
         b.Add("UndergroundWingE", Kit.Rock, 8f, 7f, 30f, 26f, -2f, 2f, true);
