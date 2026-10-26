@@ -124,6 +124,7 @@ public class ForestBuilder : MonoBehaviour
     /// <summary>Построенный комплекс (null при старом лабиринте A/C).</summary>
     public DomeLabComplex.Result LabComplex => world != null ? world.LabComplex : null;
     public float SampleGround(float x, float z) => world != null ? world.SampleGround(x, z) : 0f;
+    public float RawGround(float x, float z) => world != null ? world.RawGround(x, z) : 0f;
 
     /// <summary>Логова этого мира в порядке постановки: змеиные, затем совиное — ровно то, что в реестре.</summary>
     public IReadOnlyList<LairSite> Lairs => lairs;

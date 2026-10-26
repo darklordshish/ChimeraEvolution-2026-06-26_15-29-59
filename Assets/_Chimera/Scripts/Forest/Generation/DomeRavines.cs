@@ -1,9 +1,9 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// B1.1: локальные овраги на стенде B0. Детерминированная выемка в поле высот,
-/// упавшие стволы по бортам и визуальные гнёзда змей без LairSite/спавнера.
+/// B1.1: Р»РѕРєР°Р»СЊРЅС‹Рµ РѕРІСЂР°РіРё РЅР° СЃС‚РµРЅРґРµ B0. Р”РµС‚РµСЂРјРёРЅРёСЂРѕРІР°РЅРЅР°СЏ РІС‹РµРјРєР° РІ РїРѕР»Рµ РІС‹СЃРѕС‚,
+/// СѓРїР°РІС€РёРµ СЃС‚РІРѕР»С‹ РїРѕ Р±РѕСЂС‚Р°Рј Рё РІРёР·СѓР°Р»СЊРЅС‹Рµ РіРЅС‘Р·РґР° Р·РјРµР№ Р±РµР· LairSite/СЃРїР°РІРЅРµСЂР°.
 /// </summary>
 public static class DomeRavines
 {
@@ -14,6 +14,7 @@ public static class DomeRavines
         public float length;
         public float width;
         public float depth;
+        public float rim;
     }
 
     public static List<Ravine> Build(DomeGenConfigSO cfg, long seed, Vector2 labCenter,
@@ -67,6 +68,8 @@ public static class DomeRavines
                         length = length,
                         width = width,
                         depth = depth,
+                        rim = Mathf.Lerp(1.2f, 2.2f,
+                            SeededHash.ToFloat01(SeededHash.Hash(seed, 7307, salt))),
                     };
                     has = true;
                 }
@@ -76,7 +79,7 @@ public static class DomeRavines
         return list;
     }
 
-    /// <summary>Выемка оврага в сыром поле высот; дно не опускается ниже воды.</summary>
+    /// <summary>Р’С‹РµРјРєР° РѕРІСЂР°РіР° РІ СЃС‹СЂРѕРј РїРѕР»Рµ РІС‹СЃРѕС‚; РґРЅРѕ РЅРµ РѕРїСѓСЃРєР°РµС‚СЃСЏ РЅРёР¶Рµ РІРѕРґС‹.</summary>
     public static float Apply(float raw, IReadOnlyList<Ravine> ravines, float x, float z, float lakeLevel)
     {
         if (ravines == null) return raw;
@@ -91,10 +94,18 @@ public static class DomeRavines
             float across = -dx * s + dz * c;
             float u = (along / r.length) * (along / r.length) +
                       (across / r.width) * (across / r.width);
-            if (u >= 1f) continue;
-            float k = 1f - u;
-            k = k * k * (3f - 2f * k);
-            y -= r.depth * k;
+            if (u < 1f)
+            {
+                float k = 1f - u;
+                k = k * k * (3f - 2f * k);
+                y -= r.depth * k;
+            }
+            else if (u < 1.6f)
+            {
+                float k = 1f - (u - 1f) / 0.6f;
+                k = k * k * (3f - 2f * k);
+                y += r.rim * k;
+            }
         }
         return Mathf.Max(y, lakeLevel + 0.45f);
     }
@@ -130,7 +141,7 @@ public static class DomeRavines
         return n;
     }
 
-    /// <summary>Земляные борта: приподнятые валы по краям, чтобы ложбина читалась.</summary>
+    /// <summary>Р—РµРјР»СЏРЅС‹Рµ Р±РѕСЂС‚Р°: РїСЂРёРїРѕРґРЅСЏС‚С‹Рµ РІР°Р»С‹ РїРѕ РєСЂР°СЏРј, С‡С‚РѕР±С‹ Р»РѕР¶Р±РёРЅР° С‡РёС‚Р°Р»Р°СЃСЊ.</summary>
     public static int BuildWalls(GameObject root, IReadOnlyList<Ravine> ravines,
         System.Func<float, float, float> ground, Material rock, ICollection<Mesh> track)
     {
@@ -143,15 +154,15 @@ public static class DomeRavines
             float s = Mathf.Sin(r.angleDeg * Mathf.Deg2Rad);
             for (int side = -1; side <= 1; side += 2)
             {
-                float across = side * r.width * 0.58f;
+                float across = side * r.width * 0.38f;
                 float x = r.center.x - across * s;
                 float z = r.center.y + across * c;
                 float y = ground(x, z);
-                var mesh = FloraMeshKit.Slab(0.9f, 2.4f, r.length * 0.48f);
+                var mesh = FloraMeshKit.Slab(1.0f, 3.2f, r.length * 0.48f);
                 track?.Add(mesh);
                 var go = new GameObject("RavineWall");
                 go.transform.SetParent(root.transform, false);
-                go.transform.position = new Vector3(x, y - 0.25f, z);
+                go.transform.position = new Vector3(x, y - 0.3f, z);
                 go.transform.rotation = Quaternion.Euler(0f, r.angleDeg, 0f);
                 go.AddComponent<MeshFilter>().sharedMesh = mesh;
                 go.AddComponent<MeshRenderer>().sharedMaterial = rock;
@@ -161,7 +172,7 @@ public static class DomeRavines
         return n;
     }
 
-    /// <summary>Тёмное дно: читаемая полоса земли между бортами.</summary>
+    /// <summary>РўС‘РјРЅРѕРµ РґРЅРѕ: С‡РёС‚Р°РµРјР°СЏ РїРѕР»РѕСЃР° Р·РµРјР»Рё РјРµР¶РґСѓ Р±РѕСЂС‚Р°РјРё.</summary>
     public static int BuildFloor(GameObject root, IReadOnlyList<Ravine> ravines,
         System.Func<float, float, float> ground, Material dark, ICollection<Mesh> track)
     {
@@ -185,7 +196,7 @@ public static class DomeRavines
         return n;
     }
 
-    /// <summary>Каменные борта: делают выемку читаемой, даже если поле вокруг низкое.</summary>
+    /// <summary>РљР°РјРµРЅРЅС‹Рµ Р±РѕСЂС‚Р°: РґРµР»Р°СЋС‚ РІС‹РµРјРєСѓ С‡РёС‚Р°РµРјРѕР№, РґР°Р¶Рµ РµСЃР»Рё РїРѕР»Рµ РІРѕРєСЂСѓРі РЅРёР·РєРѕРµ.</summary>
     public static int BuildRim(GameObject root, IReadOnlyList<Ravine> ravines, long seed,
         System.Func<float, float, float> ground, Material rock, ICollection<Mesh> track)
     {
@@ -201,7 +212,7 @@ public static class DomeRavines
                 for (int k = -2; k <= 2; k++)
                 {
                     float along = k * r.length * 0.18f;
-                    float across = side * r.width * 0.58f;
+                    float across = side * r.width * 0.38f;
                     float x = r.center.x + along * c - across * s;
                     float z = r.center.y + along * s + across * c;
                     float y = ground(x, z);
@@ -260,3 +271,4 @@ public static class DomeRavines
         go.AddComponent<MeshRenderer>().sharedMaterial = mat;
     }
 }
+

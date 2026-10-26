@@ -216,6 +216,8 @@ public class DomeWorld
         Trees = DomeFlora.Build(Root, cfg, Hydro, seed, SampleGround, clearing, undergrowthExclude);
         if (Ravines.Count > 0)
         {
+            DomeRavines.BuildFloor(Root, Ravines, SampleGround,
+                Flat(DomePalette.ConcreteDark), meshes);
             DomeRavines.BuildWalls(Root, Ravines, SampleGround,
                 Flat(DomePalette.Rock), meshes);
             FallenTrees = DomeRavines.BuildFallenTrees(Root, Ravines, seed, SampleGround,
@@ -231,6 +233,10 @@ public class DomeWorld
     /// (плоско до R20, плавный блендинг к сырому полю на краю). Вода, устья и ясень
     /// эту функцию НЕ используют.
     /// </summary>
+    /// <summary>Сырое поле без площадки/рампы/оврагов — только для диагностики.</summary>
+    public float RawGround(float x, float z) =>
+        cfg != null && Hydro != null ? DomeHydro.SampleHydro(cfg, Hydro, x, z) : 0f;
+
     public float SampleGround(float x, float z)
     {
         if (cfg == null || Hydro == null) return 0f;
