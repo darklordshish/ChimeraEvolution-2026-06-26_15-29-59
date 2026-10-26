@@ -25,7 +25,7 @@ public static class DomeRavines
         for (int i = 0; i < count; i++)
         {
             Ravine best = default;
-            float bestScore = float.PositiveInfinity;
+            float bestGround = float.PositiveInfinity;
             bool has = false;
             for (int attempt = 0; attempt < 96; attempt++)
             {
@@ -60,17 +60,9 @@ public static class DomeRavines
                 }
                 if (overlap) continue;
 
-                float ring = 0f;
-                for (int j = 0; j < 8; j++)
+                if (ground < bestGround)
                 {
-                    float ra = j * Mathf.PI * 0.25f;
-                    ring += DomeHydro.SampleHydro(cfg, hydro,
-                        p.x + Mathf.Cos(ra) * 12f, p.y + Mathf.Sin(ra) * 12f);
-                }
-                float score = Mathf.Abs(ground - ring / 8f);
-                if (score < bestScore)
-                {
-                    bestScore = score;
+                    bestGround = ground;
                     best = new Ravine
                     {
                         center = p,
@@ -120,6 +112,25 @@ public static class DomeRavines
             }
         }
         return Mathf.Max(y, lakeLevel + 0.45f);
+    }
+
+    /// <summary>Точка внутри ложбины — для вырубки деревьев на дне и бортах.</summary>
+    public static bool Contains(IReadOnlyList<Ravine> ravines, float x, float z, float margin = 1.1f)
+    {
+        if (ravines == null) return false;
+        for (int i = 0; i < ravines.Count; i++)
+        {
+            var r = ravines[i];
+            float dx = x - r.center.x, dz = z - r.center.y;
+            float c = Mathf.Cos(r.angleDeg * Mathf.Deg2Rad);
+            float s = Mathf.Sin(r.angleDeg * Mathf.Deg2Rad);
+            float along = dx * c + dz * s;
+            float across = -dx * s + dz * c;
+            float u = (along / r.length) * (along / r.length) +
+                      (across / r.width) * (across / r.width);
+            if (u < margin) return true;
+        }
+        return false;
     }
 
     public static int BuildFallenTrees(GameObject root, IReadOnlyList<Ravine> ravines, long seed,
@@ -179,7 +190,7 @@ public static class DomeRavines
                     var go = new GameObject("RavineBank");
                     go.transform.SetParent(root.transform, false);
                     go.transform.position = new Vector3(x, y + 0.15f, z);
-                    go.transform.localScale = new Vector3(1.6f, 1.6f, 1.4f);
+                    go.transform.localScale = new Vector3(1.8f, 2.4f, 1.6f);
                     go.transform.rotation = Quaternion.Euler(0f, r.angleDeg + k * 9f, 0f);
                     go.AddComponent<MeshFilter>().sharedMesh = mesh;
                     go.AddComponent<MeshRenderer>().sharedMaterial = rock;

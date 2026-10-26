@@ -207,6 +207,7 @@ public class DomeWorld
         {
             if (Vector2.Distance(new Vector2(x, z), new Vector2(Entry.x, Entry.z)) < 12f)
                 return true;
+            if (DomeRavines.Contains(Ravines, x, z, 2.0f)) return true;
             if (LabComplex == null) return false;
             if (labPad(x, z)) return true;
             // Перед LabDoor — спокойный участок: дверь видна целиком, деревья
@@ -510,7 +511,8 @@ public class DomeWorld
             // и «100–400 м от лаборатории» — это расстояние до комплекса.
             bool standLab = LabCenter.sqrMagnitude > 0.01f;
             float ashScale = standLab ? DomeAshSite.ScaleFor(cfg) : 1f;
-            var spot = DomeAshSite.FindSpot(cfg, seed, LabCenter, Hydro, 96, ashScale, standLab);
+            var spot = DomeAshSite.FindSpot(cfg, seed, LabCenter, Hydro, 96, ashScale, standLab,
+                (x, z) => DomeRavines.Contains(Ravines, x, z, 2.0f));
             float gy = DomeHydro.SampleHydro(cfg, Hydro, spot.pos.x, spot.pos.y);
             spot.groundY = gy;
             Ash = spot;

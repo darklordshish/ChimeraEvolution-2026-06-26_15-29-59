@@ -35,7 +35,8 @@ public static class DomeAshSite
 
     /// <summary>Место ясеня: первое годное по детерминированному обходу сетки.</summary>
     public static AshSpot FindSpot(DomeGenConfigSO cfg, long seed, Vector2 labCenter,
-        DomeHydro.State hydro, int gridRes, float scale = 1f, bool requireRingFit = false)
+        DomeHydro.State hydro, int gridRes, float scale = 1f, bool requireRingFit = false,
+        Func<float, float, bool> reject = null)
     {
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
         if (hydro == null) throw new ArgumentNullException(nameof(hydro));
@@ -54,6 +55,7 @@ public static class DomeAshSite
                 if (p.magnitude > d / 2) continue;
                 float distLab = Vector2.Distance(p, labCenter);
                 if (distLab < 100f || distLab > 400f) continue;
+                if (reject != null && reject(x, z)) continue;
                 // На B0 крона не должна входить в кольцо; A/C сохраняют старое поведение.
                 if (requireRingFit && p.magnitude + CrownDiameter * 0.5f * scale > rin - 6f) continue;
                 if (DomeSlope.SlopeAt(cfg, x, z) >= 15f) continue;

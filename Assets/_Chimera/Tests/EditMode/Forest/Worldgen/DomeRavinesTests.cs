@@ -25,6 +25,22 @@ namespace Chimera.Tests.EditMode
         }
 
         [Test]
+        public void Contains_CenterTrue_OutsideFalse()
+        {
+            var list = new List<DomeRavines.Ravine>
+            {
+                new DomeRavines.Ravine
+                {
+                    center = Vector2.zero, angleDeg = 0f,
+                    length = 20f, width = 5f, depth = 3f,
+                },
+            };
+            Assert.IsTrue(DomeRavines.Contains(list, 0f, 0f), "центр внутри");
+            Assert.IsTrue(DomeRavines.Contains(list, 2f, 0f, 1.2f), "край внутри с запасом");
+            Assert.IsFalse(DomeRavines.Contains(list, 40f, 0f), "далеко снаружи");
+        }
+
+        [Test]
         public void Build_Seed9_IsDeterministic_AndAwayFromLab()
         {
             var cfg = ScriptableObject.CreateInstance<DomeGenConfigSO>();
