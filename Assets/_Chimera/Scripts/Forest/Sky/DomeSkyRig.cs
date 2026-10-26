@@ -17,7 +17,7 @@ public static class DomeSkyRig
         baseIntensities.Clear();
     }
 
-    public static void ApplyPhase(GameObject root, float timeMinutes)
+    public static void ApplyPhase(GameObject root, float timeMinutes, bool log = true)
     {
         if (root == null) throw new System.ArgumentNullException(nameof(root));
         var s = DomeCelestial.StateAt(timeMinutes);
@@ -65,6 +65,6 @@ public static class DomeSkyRig
         RenderSettings.fogMode = FogMode.ExponentialSquared;
         RenderSettings.fogDensity = s.fogDensity;
         RenderSettings.fogColor = s.fogColor;
-        Debug.Log($"[Forest] фаза неба: t={timeMinutes:F1} мин, день {s.dayT:F2}, туман {s.fogDensity:F3}");
+        if (log) Debug.Log($"[Forest] фаза неба: t={timeMinutes:F1} мин, день {s.dayT:F2}, туман {s.fogDensity:F3}");
     }
 }

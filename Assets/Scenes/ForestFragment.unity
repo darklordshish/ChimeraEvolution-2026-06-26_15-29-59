@@ -652,6 +652,10 @@ MonoBehaviour:
   buildLabComplex: 1
   buildLabPlan: 1
   labPlanVersion: 1
+  buildClimate: 1
+  climateWeather: 0
+  climateTimeMinutes: 10
+  climateTimeScale: 0.0166667
   labStyle: 1
   labEntrance: 1
   minLabDistance: 150

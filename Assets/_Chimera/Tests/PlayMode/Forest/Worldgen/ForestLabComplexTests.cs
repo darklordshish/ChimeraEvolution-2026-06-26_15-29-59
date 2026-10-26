@@ -22,6 +22,7 @@ namespace Chimera.Tests.PlayMode
         public void TearDown()
         {
             if (builder != null) builder.Clear();
+            ForestClimate.ResetStatic();
             if (host != null) Object.Destroy(host);
             builder = null;
             host = null;
@@ -29,7 +30,8 @@ namespace Chimera.Tests.PlayMode
 
         ForestBuilder BuildLab(LabStyle style, bool complex = true, long seed = 4,
             LabEntrance entrance = LabEntrance.Rock, bool ash = false, bool ravines = false,
-            bool plan = false, int planVersion = 1)
+            bool plan = false, int planVersion = 1, bool climate = false,
+            WeatherKind weather = WeatherKind.Clear, float timeMinutes = 10f)
         {
             host = new GameObject("~ForestLabComplexProbe");
             host.SetActive(false);
@@ -48,6 +50,10 @@ namespace Chimera.Tests.PlayMode
             builder.labEntrance = entrance;
             builder.buildLabPlan = plan;
             builder.labPlanVersion = planVersion;
+            builder.buildClimate = climate;
+            builder.climateWeather = weather;
+            builder.climateTimeMinutes = timeMinutes;
+            builder.climateTimeScale = 0f;
             builder.minLabDistance = 150f;
             builder.speciesPool = new List<SpeciesSO>();
             host.SetActive(true);
@@ -310,6 +316,43 @@ namespace Chimera.Tests.PlayMode
             b.Clear();
             Assert.IsNull(b.LabPlan, "Clear обнуляет план");
             Assert.IsNull(b.LabComplex, "Clear снимает комплекс");
+        }
+
+        [UnityTest]
+        public IEnumerator Climate_Rain_BuildsRainAndWet()
+        {
+            var b = BuildLab(LabStyle.Bastion, seed: 9, climate: true,
+                weather: WeatherKind.Rain, timeMinutes: 10f);
+            yield return null;
+
+            var climate = b.GetComponent<ForestClimate>();
+            Assert.IsNotNull(climate, "климат повешен на builder");
+            Assert.AreEqual(WeatherKind.Rain, ForestClimate.CurrentState.kind, "дождь — текущая погода");
+            Assert.IsNotNull(GameObject.Find("~DomeRain"), "дождь собран");
+            Assert.AreEqual(0f, ForestClimate.CurrentTimeMinutes - 10f, 0.5f, "время не убежало");
+        }
+
+        [UnityTest]
+        public IEnumerator Climate_Night_IsNight()
+        {
+            var b = BuildLab(LabStyle.Bastion, seed: 9, climate: true,
+                weather: WeatherKind.Clear, timeMinutes: 25f);
+            yield return null;
+
+            Assert.IsTrue(ForestClimate.IsNight(), "25 минут — ночь");
+        }
+
+        [UnityTest]
+        public IEnumerator Climate_Clear_RemovesRain()
+        {
+            var b = BuildLab(LabStyle.Bastion, seed: 9, climate: true,
+                weather: WeatherKind.Rain);
+            yield return null;
+            Assert.IsNotNull(GameObject.Find("~DomeRain"), "дождь есть до Clear");
+
+            b.Clear();
+            yield return null;
+            Assert.IsNull(GameObject.Find("~DomeRain"), "Clear снимает дождь");
         }
 
         [UnityTest]

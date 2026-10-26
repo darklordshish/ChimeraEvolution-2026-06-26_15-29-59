@@ -87,6 +87,7 @@ public class DomeWorld
     bool padRect;
     NavMeshSurface navSurface;
     readonly List<Material> mats = new List<Material>();
+    public IReadOnlyList<Material> Materials => mats;
     readonly List<Mesh> meshes = new List<Mesh>();
 
     /// <summary>

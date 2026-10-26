@@ -64,6 +64,13 @@ public class ForestBuilder : MonoBehaviour
     public bool buildLabPlan = false;
     public int labPlanVersion = 1;
 
+    [Header("B1.2: климат — время и погода (B0.3)")]
+    public bool buildClimate = false;
+    public WeatherKind climateWeather = WeatherKind.Clear;
+    public float climateTimeMinutes = 10f;
+    public float climateTimeScale = 1f / 60f;
+    ForestClimate climate;
+
     [Header("Стиль оболочки: Bastion (наземный) / InSlope (в склоне) / Auto")]
     public LabStyle labStyle = LabStyle.Bastion;
 
@@ -246,6 +253,7 @@ public class ForestBuilder : MonoBehaviour
         SpawnPlayer();
 
         BuildLairs();
+        SetupClimate();
 
         int parts = world.Facility != null ? world.Facility.parts.Count
             : world.LabComplex != null ? world.LabComplex.parts : 0;
@@ -479,6 +487,13 @@ public class ForestBuilder : MonoBehaviour
         if (lairRegistry != null) lairRegistry.Clear();
         lairs.Clear();
 
+        if (climate != null)
+        {
+            climate.enabled = false;
+            climate.skyRoot = null;
+            climate.wetMaterials = null;
+            climate.rain = null;
+        }
         if (world != null)
         {
             world.Clear();
@@ -503,6 +518,30 @@ public class ForestBuilder : MonoBehaviour
         SpawnPoint = default;
         DomeSkyRig.Reset();
         DomeWeather.ResetWet();
+        ForestClimate.ResetStatic();
+    }
+
+    void SetupClimate()
+    {
+        if (!buildClimate || world == null)
+        {
+            if (climate != null) climate.enabled = false;
+            return;
+        }
+        if (climate == null)
+        {
+            climate = GetComponent<ForestClimate>();
+            if (climate == null) climate = gameObject.AddComponent<ForestClimate>();
+        }
+        climate.enabled = true;
+        climate.state = new WeatherState { kind = climateWeather };
+        climate.timeMinutes = climateTimeMinutes;
+        climate.timeScale = climateTimeScale;
+        climate.skyRoot = world.Root;
+        climate.wetMaterials = world.Materials;
+        if (climateWeather == WeatherKind.Rain && climate.rain == null)
+            climate.rain = DomeRain.BuildPreview(world.Root, 0f, 0f);
+        climate.ApplyVisuals();
     }
 
     void DestroyOwnedConfig()
