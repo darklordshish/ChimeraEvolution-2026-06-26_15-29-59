@@ -222,8 +222,6 @@ public class DomeWorld
         Trees = DomeFlora.Build(Root, cfg, Hydro, seed, SampleGround, clearing, undergrowthExclude);
         if (Ravines.Count > 0)
         {
-            DomeRavines.BuildFloor(Root, Ravines, SampleGround,
-                Flat(new Color(0.24f, 0.20f, 0.15f)), meshes);
             DomeRavines.BuildWalls(Root, Ravines, SampleGround,
                 Flat(DomePalette.Bark * 0.9f), meshes);
             FallenTrees = DomeRavines.BuildFallenTrees(Root, Ravines, seed, SampleGround,

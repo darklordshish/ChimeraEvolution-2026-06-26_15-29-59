@@ -191,29 +191,6 @@ public static class DomeRavines
     }
 
     /// <summary>Тёмное дно: читаемая полоса земли между бортами.</summary>
-    public static int BuildFloor(GameObject root, IReadOnlyList<Ravine> ravines,
-        System.Func<float, float, float> ground, Material dark, ICollection<Mesh> track)
-    {
-        if (root == null || ravines == null) return 0;
-        int n = 0;
-        for (int i = 0; i < ravines.Count; i++)
-        {
-            var r = ravines[i];
-            float x = r.center.x, z = r.center.y;
-            float y = ground(x, z);
-            var mesh = FloraMeshKit.Slab(r.width * 0.32f, 0.08f, r.length * 0.40f);
-            track?.Add(mesh);
-            var go = new GameObject("RavineFloor");
-            go.transform.SetParent(root.transform, false);
-            go.transform.position = new Vector3(x, y + 0.03f, z);
-            go.transform.rotation = Quaternion.Euler(0f, r.angleDeg, 0f);
-            go.AddComponent<MeshFilter>().sharedMesh = mesh;
-            go.AddComponent<MeshRenderer>().sharedMaterial = dark;
-            n++;
-        }
-        return n;
-    }
-
     /// <summary>РљР°РјРµРЅРЅС‹Рµ Р±РѕСЂС‚Р°: РґРµР»Р°СЋС‚ РІС‹РµРјРєСѓ С‡РёС‚Р°РµРјРѕР№, РґР°Р¶Рµ РµСЃР»Рё РїРѕР»Рµ РІРѕРєСЂСѓРі РЅРёР·РєРѕРµ.</summary>
     public static int BuildRim(GameObject root, IReadOnlyList<Ravine> ravines, long seed,
         System.Func<float, float, float> ground, Material rock, ICollection<Mesh> track)
