@@ -60,6 +60,10 @@ public class ForestBuilder : MonoBehaviour
     [Header("Лаборатория B0.1: единый закрытый бункер вместо старого лабиринта")]
     public bool buildLabComplex = false;
 
+    [Header("B0.3: генерировать план интерьера (fixed/mirror)")]
+    public bool buildLabPlan = false;
+    public int labPlanVersion = 1;
+
     [Header("Стиль оболочки: Bastion (наземный) / InSlope (в склоне) / Auto")]
     public LabStyle labStyle = LabStyle.Bastion;
 
@@ -123,6 +127,7 @@ public class ForestBuilder : MonoBehaviour
     public LabEntrance ResolvedLabEntrance => world != null ? world.ResolvedLabEntrance : labEntrance;
     /// <summary>Построенный комплекс (null при старом лабиринте A/C).</summary>
     public DomeLabComplex.Result LabComplex => world != null ? world.LabComplex : null;
+    public LabPlan LabPlan => world != null ? world.LabPlan : null;
     public float SampleGround(float x, float z) => world != null ? world.SampleGround(x, z) : 0f;
     public float RawGround(float x, float z) => world != null ? world.RawGround(x, z) : 0f;
 
@@ -233,7 +238,7 @@ public class ForestBuilder : MonoBehaviour
         // B0.1: стиль и порог лаборатории идут в мир; 0 в пороге — «не настроено».
         world.Build(BuiltRoot, ownedConfig, terrainQuads, chosen, buildAsh, spawnAtEntry,
             labStyle, minLabDistance > 0f ? minLabDistance : DefaultMinLabDistance,
-            buildLabComplex, labEntrance, buildRavines);
+            buildLabComplex, labEntrance, buildRavines, buildLabPlan, labPlanVersion);
 
         var surface = GetComponent<NavMeshSurface>();
         world.BuildNavMesh(surface);
@@ -252,7 +257,9 @@ public class ForestBuilder : MonoBehaviour
             lab = $"комплекс {world.LabComplex.style} в {labToEntry:F0} м от входа, " +
                   $"деталей {world.LabComplex.parts} " +
                   $"(интерьер {world.LabComplex.interiorParts}, оболочка {world.LabComplex.exteriorParts}), " +
-                  $"ламп {world.LabComplex.lights}, портал {world.LabDoor}";
+                  $"ламп {world.LabComplex.lights}, портал {world.LabDoor}, " +
+                  $"план {world.LabComplex.planTemplate} v{world.LabComplex.planVersion}" +
+                  (world.LabComplex.planFallback ? " fallback" : "");
         }
         else
         {

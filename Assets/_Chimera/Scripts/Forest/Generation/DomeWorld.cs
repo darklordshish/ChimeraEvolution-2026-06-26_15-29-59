@@ -46,6 +46,8 @@ public class DomeWorld
     public DomeFacilityLayout.Facility Facility { get; private set; }
     /// <summary>Комплекс B0.1 (null, когда стоит старый лабиринт A/C).</summary>
     public DomeLabComplex.Result LabComplex { get; private set; }
+    /// <summary>B0.3: план интерьера, выбранный до сборки.</summary>
+    public LabPlan LabPlan { get; private set; }
     /// <summary>Центр лаборатории в координатах поля: двор A/C или плита комплекса.</summary>
     public Vector2 LabCenter { get; private set; }
     /// <summary>Портал комплекса (координаты поля); default у старого лабиринта.</summary>
@@ -104,7 +106,7 @@ public class DomeWorld
         bool buildAsh = true, bool buildEntry = false,
         LabStyle labStyle = LabStyle.Bastion, float minLabDistance = DefaultMinLabDistance,
         bool buildLabComplex = false, LabEntrance labEntrance = LabEntrance.Rock,
-        bool buildRavines = false)
+        bool buildRavines = false, bool buildLabPlan = false, int labPlanVersion = 1)
     {
         if (root == null) throw new ArgumentNullException(nameof(root));
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
@@ -182,6 +184,10 @@ public class DomeWorld
             Ash = default;
             NestSite = null;
         }
+        if (buildLabComplex)
+            LabPlan = buildLabPlan
+                ? LabPlanGenerator.Generate(seed, labPlanVersion, ResolvedLabEntrance, ResolvedLabStyle)
+                : LabPlanFixed.Create();
         BuildFacility(seed, buildLabComplex);
 
         // SpawnPoint — двор старого лабиринта или закрытый зал комплекса. У комплекса
@@ -388,6 +394,7 @@ public class DomeWorld
         HasAsh = false;
         Facility = null;
         LabComplex = null;
+        LabPlan = null;
         LabCenter = Vector2.zero;
         LabDoor = default;
         LabWetApproach = false;
@@ -620,7 +627,7 @@ public class DomeWorld
         if (buildLabComplex)
         {
             LabComplex = DomeLabComplex.Build(Root, LabCenter, platformY, padYaw,
-                ResolvedLabStyle, ResolvedLabEntrance, LabWetApproach);
+                ResolvedLabStyle, ResolvedLabEntrance, LabWetApproach, LabPlan);
             DomeLabDamage.Apply(LabComplex, seed);
             LabDoor = LabComplex.door;
             Facility = null;
