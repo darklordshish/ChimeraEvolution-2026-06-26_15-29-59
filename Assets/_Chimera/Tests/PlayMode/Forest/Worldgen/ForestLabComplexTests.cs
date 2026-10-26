@@ -27,7 +27,7 @@ namespace Chimera.Tests.PlayMode
         }
 
         ForestBuilder BuildLab(LabStyle style, bool complex = true, long seed = 4,
-            LabEntrance entrance = LabEntrance.Rock)
+            LabEntrance entrance = LabEntrance.Rock, bool ash = false)
         {
             host = new GameObject("~ForestLabComplexProbe");
             host.SetActive(false);
@@ -38,7 +38,7 @@ namespace Chimera.Tests.PlayMode
             builder.mapDiameter = 400f;
             builder.chunkSize = 100f;
             builder.terrainQuads = 24;
-            builder.buildAsh = false;
+            builder.buildAsh = ash;
             builder.spawnAtEntry = true;
             builder.buildLabComplex = complex;
             builder.labStyle = style;
@@ -139,6 +139,17 @@ namespace Chimera.Tests.PlayMode
                 host = null;
                 builder = null;
             }
+        }
+
+        [UnityTest]
+        public IEnumerator Ash_OnB0_StandScale_Builds()
+        {
+            var b = BuildLab(LabStyle.InSlope, seed: 9, entrance: LabEntrance.Underground, ash: true);
+            yield return null;
+
+            Assert.IsTrue(b.HasAsh, "ясень на стенде включён и поставлен");
+            Assert.AreNotEqual(Vector2.zero, b.Ash.pos, "у ясеня есть место");
+            Assert.IsNotNull(b.NestSite, "гнездо на ясене есть геометрией");
         }
 
         [UnityTest]

@@ -476,7 +476,9 @@ public class DomeWorld
         {
             // Место ясеня считается ОТ лаборатории, а не от центра мира: в B0.1 двор уехал,
             // и «100–400 м от лаборатории» — это расстояние до комплекса.
-            var spot = DomeAshSite.FindSpot(cfg, seed, LabCenter, Hydro, 96);
+            bool standLab = LabCenter.sqrMagnitude > 0.01f;
+            float ashScale = standLab ? DomeAshSite.ScaleFor(cfg) : 1f;
+            var spot = DomeAshSite.FindSpot(cfg, seed, LabCenter, Hydro, 96, ashScale, standLab);
             float gy = DomeHydro.SampleHydro(cfg, Hydro, spot.pos.x, spot.pos.y);
             spot.groundY = gy;
             Ash = spot;
@@ -486,15 +488,15 @@ public class DomeWorld
             var crown = Flat(DomePalette.Crown);
             var owl = Flat(DomePalette.Owl);
             DomeAshSite.BuildGeometry(Root.transform, new Vector3(spot.pos.x, gy, spot.pos.y),
-                bark, crown, owl, meshes);
+                bark, crown, owl, meshes, ashScale);
 
             var nestGo = new GameObject("AshNest");
             nestGo.transform.SetParent(Root.transform, false);
             var site = nestGo.AddComponent<LairSite>();
             // Гнездо на 36 м по OTVET; вбок — потому что ствол 16 м в поперечнике
             // (на 36 м радиус ≈ 5 м, присада в 12 м от оси уже снаружи).
-            var nestLocal = new Vector3(spot.pos.x + DomeAshSite.NestLateral,
-                gy + DomeAshSite.NestHeight, spot.pos.y);
+            var nestLocal = new Vector3(spot.pos.x + DomeAshSite.NestLateral * ashScale,
+                gy + DomeAshSite.NestHeight * ashScale, spot.pos.y);
             DomeAshSite.ConfigureNest(site, Root.transform.TransformPoint(nestLocal));
             NestSite = site;
         }

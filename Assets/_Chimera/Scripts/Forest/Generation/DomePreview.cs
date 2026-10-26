@@ -288,7 +288,8 @@ public static class DomePreview
     /// </summary>
     public static void BuildAsh(DomeGenConfigSO cfg, DomeHydro.State hydro, long seed)
     {
-        var spot = DomeAshSite.FindSpot(cfg, seed, Vector2.zero, hydro, 96);
+        float ashScale = DomeAshSite.ScaleFor(cfg);
+        var spot = DomeAshSite.FindSpot(cfg, seed, Vector2.zero, hydro, 96, ashScale, false);
         float gy = DomeHydro.SampleHydro(cfg, hydro, spot.pos.x, spot.pos.y);
         spot.groundY = gy;
         Ash = spot;
@@ -297,7 +298,7 @@ public static class DomePreview
         crownMat = Flat(DomePalette.Crown);
         owlMat = Flat(DomePalette.Owl);
         DomeAshSite.BuildGeometry(PreviewRoot.transform, new Vector3(spot.pos.x, gy, spot.pos.y),
-            barkMat, crownMat, owlMat);
+            barkMat, crownMat, owlMat, null, ashScale);
         Debug.Log($"[Forest] ясень: ({Ash.pos.x:F0},{Ash.pos.y:F0}), {DomeAshSite.Height:F0}м, гнездо на {DomeAshSite.NestHeight:F0}м");
     }
 

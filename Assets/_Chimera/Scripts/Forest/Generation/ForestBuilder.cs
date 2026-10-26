@@ -99,6 +99,7 @@ public class ForestBuilder : MonoBehaviour
     public DomeHydro.State Hydro => world != null ? world.Hydro : null;
     public DomeFacilityLayout.Facility Facility => world != null ? world.Facility : null;
     public DomeAshSite.AshSpot Ash => world != null ? world.Ash : default;
+    public bool HasAsh => world != null && world.HasAsh;
     public LairSite NestSite => world != null ? world.NestSite : null;
     public int Chunks => world != null ? world.Chunks : 0;
     public int Trees => world != null ? world.Trees : 0;

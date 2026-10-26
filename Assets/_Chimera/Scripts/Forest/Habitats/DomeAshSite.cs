@@ -20,6 +20,12 @@ public static class DomeAshSite
     public const float RootSpread = 50f;
     public const float NestHeight = 36f;
     public const float NestLateral = 12f;
+    /// <summary>На стенде B0 (Ø400) панорамные 85/140 не влезают; A остаётся 1.0.</summary>
+    public const float StandScale = 0.6f;
+    public const float StandMaxDiameter = 600f;
+
+    public static float ScaleFor(DomeGenConfigSO cfg) =>
+        cfg != null && cfg.mapDiameter <= StandMaxDiameter ? StandScale : 1f;
 
     public struct AshSpot
     {
@@ -29,13 +35,14 @@ public static class DomeAshSite
 
     /// <summary>Место ясеня: первое годное по детерминированному обходу сетки.</summary>
     public static AshSpot FindSpot(DomeGenConfigSO cfg, long seed, Vector2 labCenter,
-        DomeHydro.State hydro, int gridRes)
+        DomeHydro.State hydro, int gridRes, float scale = 1f, bool requireRingFit = false)
     {
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
         if (hydro == null) throw new ArgumentNullException(nameof(hydro));
         gridRes = Mathf.Clamp(gridRes, 32, 160);
         float d = cfg.mapDiameter;
         float cell = d / gridRes;
+        float rin = Mathf.Max(1f, DomeRockRing.InnerRadius(cfg));
         var fallback = new AshSpot { pos = new Vector2(labCenter.x + 150f, labCenter.y), groundY = 0f };
         bool hasFallback = false;
         for (int ix = 0; ix < gridRes; ix++)
@@ -47,6 +54,8 @@ public static class DomeAshSite
                 if (p.magnitude > d / 2) continue;
                 float distLab = Vector2.Distance(p, labCenter);
                 if (distLab < 100f || distLab > 400f) continue;
+                // На B0 крона не должна входить в кольцо; A/C сохраняют старое поведение.
+                if (requireRingFit && p.magnitude + CrownDiameter * 0.5f * scale > rin - 6f) continue;
                 if (DomeSlope.SlopeAt(cfg, x, z) >= 15f) continue;
                 float dx = x - hydro.lakeCenter.x, dz = z - hydro.lakeCenter.y;
                 if (dx * dx + dz * dz < (hydro.lakeRadius + 10f) * (hydro.lakeRadius + 10f)) continue;
@@ -90,7 +99,8 @@ public static class DomeAshSite
     /// Один источник для DomePreview и DomeWorld; меши можно отдать track на снос.
     /// </summary>
     public static GameObject BuildGeometry(Transform parent, Vector3 ground,
-        Material bark, Material crown, Material owl, ICollection<Mesh> track = null)
+        Material bark, Material crown, Material owl, ICollection<Mesh> track = null,
+        float scale = 1f)
     {
         if (parent == null) throw new ArgumentNullException(nameof(parent));
         if (bark == null) throw new ArgumentNullException(nameof(bark));
@@ -101,6 +111,7 @@ public static class DomeAshSite
         root.transform.SetParent(parent, false);
         // ground — координаты поля, то есть локальные для корня мира.
         root.transform.localPosition = ground;
+        root.transform.localScale = Vector3.one * Mathf.Max(0.01f, scale);
 
         // Ствол: r 12 у земли → 4 на 42 м; на середине r 8 = диаметр 16.
         float r0 = TrunkDiameterMid * 0.75f;
