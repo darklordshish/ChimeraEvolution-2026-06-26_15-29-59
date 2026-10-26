@@ -648,6 +648,7 @@ MonoBehaviour:
   playerSpawn: {fileID: 0}
   spawnAtEntry: 1
   buildAsh: 1
+  buildRavines: 1
   buildLabComplex: 1
   labStyle: 1
   labEntrance: 1

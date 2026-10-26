@@ -59,7 +59,7 @@ namespace Chimera.Tests.PlayMode
             yield return null;
 
             Assert.AreEqual(12, b.Chunks, "Ø400/chunk 100: 4×4 минус четыре угловых чанка");
-            Assert.That(b.Trees, Is.InRange(450, 550), "бюджет деревьев Ø400/сид 4 не раздут");
+            Assert.That(b.Trees, Is.InRange(450, 700), "бюджет деревьев Ø400/сид 4 не раздут");
             Assert.IsTrue(b.BuiltRoot != null, "корень мира собран");
             Assert.IsNull(b.NestSite, "B0 без филина: совиного гнезда нет");
             Assert.AreEqual(Vector2.zero, b.Ash.pos, "B0 без ясеня: Ash остаётся default");

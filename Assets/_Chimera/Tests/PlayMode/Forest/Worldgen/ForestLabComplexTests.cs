@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using Unity.AI.Navigation;
 using UnityEngine;
@@ -27,7 +28,7 @@ namespace Chimera.Tests.PlayMode
         }
 
         ForestBuilder BuildLab(LabStyle style, bool complex = true, long seed = 4,
-            LabEntrance entrance = LabEntrance.Rock, bool ash = false)
+            LabEntrance entrance = LabEntrance.Rock, bool ash = false, bool ravines = false)
         {
             host = new GameObject("~ForestLabComplexProbe");
             host.SetActive(false);
@@ -39,6 +40,7 @@ namespace Chimera.Tests.PlayMode
             builder.chunkSize = 100f;
             builder.terrainQuads = 24;
             builder.buildAsh = ash;
+            builder.buildRavines = ravines;
             builder.spawnAtEntry = true;
             builder.buildLabComplex = complex;
             builder.labStyle = style;
@@ -139,6 +141,20 @@ namespace Chimera.Tests.PlayMode
                 host = null;
                 builder = null;
             }
+        }
+
+        [UnityTest]
+        public IEnumerator Ravines_And_FallenTrees_Build_Without_Lairs()
+        {
+            var b = BuildLab(LabStyle.InSlope, seed: 9,
+                entrance: LabEntrance.Underground, ravines: true);
+            yield return null;
+
+            Assert.Greater(b.Ravines, 0, "овраги построены");
+            Assert.Greater(b.FallenTrees, 0, "упавшие стволы есть");
+            Assert.Greater(b.VisualNests, 0, "визуальные гнёзда есть");
+            Assert.AreEqual(0, b.Lairs.Count(l => l.speciesName == "VisualSnakeNest"),
+                "визуальное гнездо не LairSite");
         }
 
         [UnityTest]

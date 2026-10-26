@@ -54,6 +54,9 @@ public class ForestBuilder : MonoBehaviour
     [Header("Ясень и гнездо совы (B выключает: на Ø400 дерево встаёт в скалу)")]
     public bool buildAsh = true;
 
+    [Header("Овраги B1.1: выемки, упавшие стволы, визуальные гнёзда (без LairSite)")]
+    public bool buildRavines = false;
+
     [Header("Лаборатория B0.1: единый закрытый бункер вместо старого лабиринта")]
     public bool buildLabComplex = false;
 
@@ -103,6 +106,11 @@ public class ForestBuilder : MonoBehaviour
     public LairSite NestSite => world != null ? world.NestSite : null;
     public int Chunks => world != null ? world.Chunks : 0;
     public int Trees => world != null ? world.Trees : 0;
+    public int Ravines => world != null ? world.Ravines.Count : 0;
+    public IReadOnlyList<DomeRavines.Ravine> RavineList =>
+        world != null ? world.Ravines : new List<DomeRavines.Ravine>();
+    public int FallenTrees => world != null ? world.FallenTrees : 0;
+    public int VisualNests => world != null ? world.VisualNests : 0;
     public Vector3 SpawnPoint { get; private set; }
     /// <summary>Вход мира (срез B): у подножия скального кольца, внутри чаши. До SpawnPlayer готов.</summary>
     public Vector3 Entry => world != null ? world.Entry : default;
@@ -224,7 +232,7 @@ public class ForestBuilder : MonoBehaviour
         // B0.1: стиль и порог лаборатории идут в мир; 0 в пороге — «не настроено».
         world.Build(BuiltRoot, ownedConfig, terrainQuads, chosen, buildAsh, spawnAtEntry,
             labStyle, minLabDistance > 0f ? minLabDistance : DefaultMinLabDistance,
-            buildLabComplex, labEntrance);
+            buildLabComplex, labEntrance, buildRavines);
 
         var surface = GetComponent<NavMeshSurface>();
         world.BuildNavMesh(surface);
@@ -252,7 +260,9 @@ public class ForestBuilder : MonoBehaviour
         Debug.Log($"[Forest] мир {chosen}: чанков {world.Chunks}, деревьев {world.Trees}, " +
                   $"устий {world.Mouths.Count}, гнёзд {world.Nests.Count}, {lab}, " +
                   $"ясень {(world.HasAsh ? "есть" : "нет")}, " +
-                  $"гнездо совы {(world.NestSite != null ? "есть" : "нет")}, вход {world.Entry}");
+                  $"гнездо совы {(world.NestSite != null ? "есть" : "нет")}, " +
+                  $"оврагов {world.Ravines.Count}, стволов {world.FallenTrees}, визуальных гнёзд {world.VisualNests}, " +
+                  $"вход {world.Entry}");
     }
 
     /// <summary>

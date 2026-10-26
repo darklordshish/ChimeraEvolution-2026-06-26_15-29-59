@@ -58,6 +58,9 @@ public class DomeWorld
     public LabStyle ResolvedLabStyle { get; private set; }
     public List<DomeSlope.MouthSpot> Mouths { get; private set; } = new List<DomeSlope.MouthSpot>();
     public List<DomeSlope.NestSpot> Nests { get; private set; } = new List<DomeSlope.NestSpot>();
+    public List<DomeRavines.Ravine> Ravines { get; private set; } = new List<DomeRavines.Ravine>();
+    public int FallenTrees { get; private set; }
+    public int VisualNests { get; private set; }
     public LairSite NestSite { get; private set; }
     /// <summary>
     /// Точка постановки игрока: центр двора/атриума лаборатории, земля + 1 м.
@@ -100,7 +103,8 @@ public class DomeWorld
     public void Build(GameObject root, DomeGenConfigSO cfg, int terrainQuads, long seed,
         bool buildAsh = true, bool buildEntry = false,
         LabStyle labStyle = LabStyle.Bastion, float minLabDistance = DefaultMinLabDistance,
-        bool buildLabComplex = false, LabEntrance labEntrance = LabEntrance.Rock)
+        bool buildLabComplex = false, LabEntrance labEntrance = LabEntrance.Rock,
+        bool buildRavines = false)
     {
         if (root == null) throw new ArgumentNullException(nameof(root));
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
@@ -162,6 +166,10 @@ public class DomeWorld
                 Hydro.lakeLevel + 0.5f);
         }
 
+        if (buildRavines)
+            Ravines = DomeRavines.Build(cfg, seed, LabCenter, entryXZ, Hydro,
+                DomeRockRing.InnerRadius(cfg));
+
         BuildChunks(terrainQuads);
         BuildRockRing();
         BuildWater();
@@ -206,6 +214,15 @@ public class DomeWorld
         // комплекса (12 см плиты — трава торчала бы в зале).
         Func<float, float, bool> undergrowthExclude = (x, z) => labPad(x, z) || InsideRamp(x, z);
         Trees = DomeFlora.Build(Root, cfg, Hydro, seed, SampleGround, clearing, undergrowthExclude);
+        if (Ravines.Count > 0)
+        {
+            DomeRavines.BuildWalls(Root, Ravines, SampleGround,
+                Flat(DomePalette.Rock), meshes);
+            FallenTrees = DomeRavines.BuildFallenTrees(Root, Ravines, seed, SampleGround,
+                Flat(DomePalette.Bark), meshes);
+            VisualNests = DomeRavines.BuildNests(Root, Ravines, seed, SampleGround,
+                Flat(DomePalette.ConcreteDark), Flat(DomePalette.Olive), meshes);
+        }
         BuildSky(seed);
     }
 
@@ -218,6 +235,7 @@ public class DomeWorld
     {
         if (cfg == null || Hydro == null) return 0f;
         float raw = DomeHydro.SampleHydro(cfg, Hydro, x, z);
+        raw = DomeRavines.Apply(raw, Ravines, x, z, Hydro.lakeLevel);
 
         // Подземный вход: вырезаем пологую траншею-рампу от двери к лесной площадке.
         if (padRect && ResolvedLabEntrance == LabEntrance.Underground)
@@ -377,6 +395,9 @@ public class DomeWorld
         Entry = default;
         Chunks = 0;
         Trees = 0;
+        Ravines = new List<DomeRavines.Ravine>();
+        FallenTrees = 0;
+        VisualNests = 0;
         platformY = 0f;
         cfg = null;
     }
