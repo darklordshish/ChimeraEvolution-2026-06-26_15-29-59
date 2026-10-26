@@ -75,6 +75,11 @@ public static class DomeLabComplex
         /// <summary>Следы происшествия B0.2c: подпись выбранного варианта и число деталей.</summary>
         public string damageSignature;
         public int damageParts;
+        /// <summary>B0.3: план, по которому собран интерьер.</summary>
+        public LabPlan plan;
+        public string planTemplate;
+        public int planVersion;
+        public bool planFallback;
         public GameObject root;
     }
 
@@ -130,14 +135,28 @@ public static class DomeLabComplex
     /// — верх площадки в координатах поля: плита встаёт на него, не пересчитывая землю.
     /// </summary>
     public static Result Build(GameObject parent, Vector2 center, float groundY, float yawDeg,
-        LabStyle style, LabEntrance entrance = LabEntrance.Rock, bool wetApproach = false)
+        LabStyle style, LabEntrance entrance = LabEntrance.Rock, bool wetApproach = false,
+        LabPlan plan = null)
     {
         if (parent == null) throw new ArgumentNullException(nameof(parent));
         if (style == LabStyle.Auto) style = LabStyle.Bastion;
         if (entrance == LabEntrance.Auto) entrance = LabEntrance.Rock;
+        plan = plan ?? LabPlanFixed.Create();
+        var planErrors = LabPlanRules.Validate(plan);
+        if (planErrors.Count > 0)
+        {
+            Debug.LogWarning($"[Forest] план бункера невалиден ({string.Join("; ", planErrors)}); беру fixed");
+            plan = LabPlanFixed.Create();
+            plan.fallback = true;
+            plan.note = "fallback: invalid plan";
+        }
 
         var result = new Result
         {
+            plan = plan,
+            planTemplate = plan.template,
+            planVersion = plan.version,
+            planFallback = plan.fallback,
             center = center,
             yawDeg = yawDeg,
             style = style,
