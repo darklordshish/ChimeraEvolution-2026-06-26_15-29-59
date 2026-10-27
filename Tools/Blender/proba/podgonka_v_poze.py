@@ -14,7 +14,7 @@
   4. обратно в покой: вершина умножается на обратную матрицу своего скина; результат — форма-ключ `--imya`.
 
   blender -b --factory-startup -P podgonka_v_poze.py -- шасси.blend цель.obj ориентиры_цели.json скелет_шасси.json выход.blend
-      [--imya Волк] [--zhestkost 30,15,8,4] [--normal 0.5] [--maxd 0.25] [--dal 0.12] [--bez голова,Чутьё] [--poza_obj файл.obj] [--poza файл.json] [--sustavy файл.json] [--cel_pokoj файл.obj] [--dop_cel f.obj --dop_lm f.json --dop_pokoj f.obj] [--vstrechnye 1 [--vstr_maxd 0.05|0.25,предплечье:0.05]]
+      [--imya Волк] [--zhestkost 30,15,8,4] [--normal 0.5] [--maxd 0.25] [--dal 0.12] [--bez голова,Чутьё] [--poza_obj файл.obj] [--poza файл.json] [--sustavy файл.json] [--cel_pokoj файл.obj] [--dop_cel f.obj --dop_lm f.json --dop_pokoj f.obj] [--vstrechnye 1 [--vstr_maxd 0.05|0.25,предплечье:0.05]] [--cel_glad 0|шагов] [--bez_razvorota 1|0]
 Ориентиры цели — имена как у `kluch_vida.py` (сустав:head/tail, носок, плюсна_вн/нар…), оси Blender, метры тела.
 """
 import sys, json
@@ -142,6 +142,20 @@ for o in OBJ:
 bpy.ops.wm.obj_import(filepath=tgt, forward_axis='NEGATIVE_Z', up_axis='Y')
 tg = [o for o in bpy.context.selected_objects if o.type == 'MESH'][0]
 bm = bmesh.new(); bm.from_mesh(tg.data); bm.transform(tg.matrix_world); bm.verts.ensure_lookup_table(); bm.faces.ensure_lookup_table()
+# ЦЕЛЬ — ОБЪЁМАМИ, А НЕ ГРАНЯМИ (`--cel_glad шагов`, 27.10, пункт В разбора тракта): цель с генератора — гранёный low-poly с шумом,
+# и подгонка списывала в ключ каждую его грань и рябь; грани потом всё равно ставит огранка. Таубин (λ 0.5, μ −0.53) объём
+# не сжимает, а грани и мелкий шум снимает; края цели (открытые рёбра) не двигаются
+def cel_glad(bm_, n_):
+    if n_ <= 0: return
+    V = np.array([list(v.co) for v in bm_.verts]); NB = [[e.other_vert(v).index for e in v.link_edges] for v in bm_.verts]
+    fix = np.array([any(not e.is_manifold for e in v.link_edges) for v in bm_.verts])
+    for _ in range(n_):
+        for lam in (0.5, -0.53):
+            L = np.array([V[nb_].mean(0) - V[k] if nb_ else np.zeros(3) for k, nb_ in enumerate(NB)])
+            L[fix] = 0; V = V + lam * L
+    for v, c in zip(bm_.verts, V): v.co = Vector(c)
+    bm_.normal_update()
+cel_glad(bm, int(opt.get('cel_glad', '0')))
 segs = []
 for bn in PART:
     td = tgt_dir(bn)
@@ -213,6 +227,26 @@ def normals(Y):
             for j in ids: nrm[j] += n_
     l = np.linalg.norm(nrm, axis=1); l[l == 0] = 1; return nrm / l[:, None]
 X0 = X.copy(); D0 = lap(X0)
+FACES = np.array([[vmap[(o.name, pl.vertices[0])], vmap[(o.name, pl.vertices[j])], vmap[(o.name, pl.vertices[j + 1])]]
+                  for o in OBJ for pl in o.data.polygons for j in range(1, len(pl.vertices) - 1)])
+def fnorm(Y):
+    return np.cross(Y[FACES[:, 1]] - Y[FACES[:, 0]], Y[FACES[:, 2]] - Y[FACES[:, 0]])
+N_REF = fnorm(X0)
+BEZ_RAZV = opt.get('bez_razvorota', '1') == '1'
+def razvernuty(Y):
+    """грани, чья нормаль смотрит против нормали шаблона в позе (до притяжки)"""
+    return np.where(np.einsum('ij,ij->i', fnorm(Y), N_REF) < 0)[0]
+def resh(s_, M, C, Y0):
+    """min s·|L Y − L X₀|² + Σ m_k |Y_k − C_k|² — сопряжённые градиенты от Y0"""
+    A = lambda Y: s_ * lapT(lap(Y)) + M[:, None] * Y
+    b = s_ * lapT(D0) + M[:, None] * C
+    Y = Y0.copy(); r = b - A(Y); p = r.copy(); rs = np.sum(r * r, axis=0)
+    for _cg in range(200):
+        Ap = A(p); al = rs / np.maximum(np.sum(p * Ap, axis=0), 1e-12)
+        Y += p * al; r -= Ap * al; rn = np.sum(r * r, axis=0)
+        if np.all(rn < 1e-10): break
+        p = r + p * (rn / np.maximum(rs, 1e-20)); rs = rn
+    return Y
 FREE = np.array(free)
 COSN = float(opt.get('normal', '0.5'))
 # ВСТРЕЧНЫЕ ПАРЫ (`--vstrechnye 1`, 21.10, критик лося: «голень — труба без скакательного сустава» при среднем расстоянии
@@ -258,16 +292,22 @@ for s_ in [float(v) for v in opt.get('zhestkost', '30,15,8,4').split(',')]:
             C[has] = acc[has] / cnt[has][:, None]; M[has] = 1.0
         # несвободные (голова) держатся на месте жёстко
         M[~FREE] = 10.0; C[~FREE] = X0[~FREE]
-        A = lambda Y: s_ * lapT(lap(Y)) + M[:, None] * Y
-        b = s_ * lapT(D0) + M[:, None] * C
-        Y = X.copy(); r = b - A(Y); p = r.copy(); rs = np.sum(r * r, axis=0)
-        for _cg in range(200):
-            Ap = A(p); al = rs / np.maximum(np.sum(p * Ap, axis=0), 1e-12)
-            Y += p * al; r -= Ap * al; rn = np.sum(r * r, axis=0)
-            if np.all(rn < 1e-10): break
-            p = r + p * (rn / np.maximum(rs, 1e-20)); rs = rn
+        Y = resh(s_, M, C, X)
+        # БЕЗ РАЗВОРОТА ГРАНЕЙ (27.10, пункт В): пара тянет вершину через соседку — грань выворачивается (тёмные провалы в игре,
+        # которые потом расправляла формовка). Вершины вывернутых граней и их соседи отпускают пары, лапласиан возвращает их к
+        # форме шаблона; три захода, одно кольцо соседей (волк ст.2: 313 → 131 вывернутых, расстояние до цели 2.8 → 4.2 мм; два кольца
+        # и шесть заходов хуже — пар 3343 из 5702, 6.7 мм, а вывернутых к концу 156). `--bez_razvorota 0` — по-старому
+        if BEZ_RAZV:
+            for _r in range(3):
+                bad = razvernuty(Y)
+                if not len(bad): break
+                vs = set(FACES[bad].ravel()); vs |= {u for v in list(vs) for u in nb[v]}
+                vs = np.array(sorted(vs)); M[vs] = np.where(FREE[vs], 0.0, M[vs]); Y = resh(s_, M, C, Y)
         X = Y
-    print('ПОДГОНКА: жёсткость %.1f, пар %d из %d' % (s_, int((M == 1).sum()), int(FREE.sum())))
+    print('ПОДГОНКА: жёсткость %.1f, пар %d из %d, вывернутых граней %d' % (s_, int((M == 1).sum()), int(FREE.sum()), len(razvernuty(X))))
+_bad = razvernuty(X); _bp = {}
+for f_ in FACES[_bad]: _bp[vpart[f_[0]] or ('несвободные' if not free[f_[0]] else '—')] = _bp.get(vpart[f_[0]] or ('несвободные' if not free[f_[0]] else '—'), 0) + 1
+print('ПОДГОНКА: вывернутые грани по частям — ' + ', '.join('%s %d' % kv for kv in sorted(_bp.items(), key=lambda kv: -kv[1])))
 res = [BVH[vpart[k]].find_nearest(Vector(X[k]))[3] for k in range(N) if free[k] and vpart[k] in BVH]
 print('ПОДГОНКА: до своей части цели — средн. %.4f м, 95%% %.4f' % (float(np.mean(res)), float(np.percentile(res, 95))))
 # обратная мера — ПОКРЫТИЕ: от точки цели (центр грани своей части) до ближайшей вершины тела той же части; пара «тело → цель»
