@@ -1,38 +1,57 @@
 ﻿---
 name: chimera-testing
-description: Use when writing or running tests for CHIMERA — EditMode/PlayMode, audit.py, BodyMap detector, cage blending, hit effects. Guards against regressions in morph, combat, and evolution.
+description: Use when writing or running CHIMERA tests — EditMode/PlayMode via the Unity pipeline, forest and form tests, detectors as gates. Tests guard invariants, not coverage.
 ---
 
 # Chimera Testing
 
-Тестов в проекте почти нет — единственный детектор `Anatomy/tools/audit.py` + `BodyRules` + `BodyMap` (`chimera-validation`). Тестер закрывает дыру.
+Тесты в проекте есть и являются воротами для логики. Инвариант без теста — пожелание.
 
 ## Где что
-- **Unity Test Framework** `com.unity.test-framework@1.4` уже в `Packages/manifest.json` (EditMode + PlayMode, `NUnit`).
-- Тесты живут в `Assets/_Chimera/Tests/` (создать): `EditMode/` (чистые функции, без сцены) + `PlayMode/` (сцена, `CC`, `Instantiate`), `asmdef` с `testables`.
-- Python: `Anatomy/tools/audit.py --selftest`, `check.py wolf`, `Tools/Blender/check.py`.
 
-## Что крыть первым (приоритет сквада)
-| приоритет | что | тип | инвариант |
-|---|---|---|---|
-| P0 | `CageTable.SameTopology` + `Blend Σ=1` + `NoMetersInDonor` | EditMode | И4-И6, клетка смешивается без метров |
-| P0 | `BodyRules` длинная ось, запас ≥5% | EditMode | `CLAUDE.md:49` |
-| P0 | `Hit.Apply` + `MeleeBlow.Deliver` | EditMode | 9 EffectKind, без GC |
-| P1 | `CreatureBody.Identity` веса выпуклы, `MostKin` | EditMode | `Identity.cs:39` Σ=1 |
-| P1 | `PsycheDispatch` по доминанте, `Metamorph` смена | PlayMode | три оси `CLAUDE.md:64` |
-| P1 | `MorphBuilder` — тождественность `вес=1` + `I8` шов | PlayMode | `SPEC-kletka:83` |
-| P2 | `Telegraph.Rebuild` + `IsHeadName`/`IsOwnFace` контракт | PlayMode | `CLAUDE.md:50` |
-| P2 | `Evolution` петля 25 киллов → графт | PlayMode | `EvolutionConfig` |
+- `Assets/_Chimera/Tests/EditMode/` — чистая логика, без сцены; `PlayMode/` — сцена, `CharacterController`,
+  `Instantiate`, кадры. Отдельные asmdef: `Chimera.Tests.EditMode`, `Chimera.Tests.PlayMode`.
+- `com.unity.test-framework` в `Packages/manifest.json` (сейчас 1.6.0), NUnit.
+- Лесные тесты: `Tests/EditMode/Forest/` и `Tests/PlayMode/Forest/` — детерминизм сида, швы чанков,
+  вода, флора, логова, спавнер, хуки климата.
+- Форма: `BodyMeshTests`, `PartRingFitTests`, `PartsImportTests`, `GrowthTests`, `BodySizeTests`,
+  `RegionKeysTests`, `ChimeraMatrixTests`, `SkinGrainTests`, `LatticePhaseTests`.
+- Python — только Anaconda `C:\ProgramData\Anaconda3\python.exe`; `Anatomy/tools/audit.py` и старые
+  cage-проверки — исторический слой, не главный детектор формы.
+
+## Как гонять
+
+Пайплайн живого редактора (подробности — `CLAUDE.md`, «Тесты»; полный набор команд — `.claude/skills/chimera-unity`):
+
+```
+unity command set_autotick --enable true
+unity command run_tests --mode editor --async_tests true
+unity command test_status          # опрашивать до завершения
+```
+
+Без `set_autotick` Unity душит тик неактивного окна и тесты «висят». PlayMode — отдельным прогоном.
+Запасной путь — Unity Test Runner. `--no-verify` и коммит по непрогнанным тестам не использовать.
 
 ## Как писать
-- **EditMode — без Unity API тяжёлого:** `BodySlots`, `CageTable`, `Hit`, `Identity` — чистые `struct`, `NUnit` + `Assert.That(..., Is.EqualTo(...).Within(1e-4))`. Никаких `FindObject`.
-- **PlayMode — сцена-минималка:** `SampleScene` не грузить, создавай `new GameObject("Probe", typeof(CharacterController), typeof(CreatureBody))` + `MorphBuilder.Build` → `BodyProbe.Measure` → `Assert.Gap < 0.08*detail`.
-- **Python — `C:\ProgramData\anaconda3\python.exe`:** `python Anatomy/tools/audit.py --selftest` + `python Tools/Blender/check.py wolf` в CI, не руками.
-- **Детектор — не тест, но ворота:** `Chimera → Выгрузить карту тел` 0 щелей — зелёный билд, иначе красный, как `audit.py`.
 
-## Запреты
-- Не мокай `SpeciesSO` руками — бери `SpeciesBootstrap` `Data/*.asset`.
-- Не пиши тесты ради покрытия — пиши ради инвариантов И1-И8 и гочей `CLAUDE.md:37-55`.
-- Не коммить без `EditMode` прогнаных локально (`Window → General → Test Runner`).
+- EditMode — без тяжёлого Unity API: чистые функции/структуры, `Assert.That(..., Within(...))`.
+- PlayMode — минимальная сцена, не грузить `SampleScene`; создавать пробный объект и звать настоящий билдер.
+- Не мокать `SpeciesSO` руками — брать `SpeciesBootstrap`/`Data/*.asset`.
+- Тест пишется рядом с фичей, а не «после». Меняешь правило — правь его сторожа тем же заходом.
+- Не гнаться за покрытием: тест на инвариант, гоча или найденную мину.
+- **Сцена — тоже тест:** `ForestSceneCameraTests` читает `ForestFragment`/`ForestSandbox` и требует одну
+  включённую `Main Camera`; `GameObject.Find` не видит неактивное — для `Clear` брать
+  `FindObjectsByType<T>(FindObjectsInactive.Include)` и прямые ссылки.
+- **Станция/климат:** `Climate_InsideLab_HidesRainAndFog` проверяет точку внутри `DomeLabComplex`; `Clear`
+  проверять по объектам, статикам и `RenderSettings`, не только по `null` полям.
+- **Камера:** `BodySize.FromGround` — тест от земли; FPS/третье лицо — через `OverlapSphere` по коллайдерам
+  лаборатории; `SphereCast` держать с запасом буфера.
+- **Сцена после теста:** `EditorSceneManager.CloseScene(..., true)`; PlayMode не оставлять в Play перед
+  EditMode-прогоном (SaveModifiedSceneTask падает с «cannot be used during play mode»).
 
-Триггерит `tester`, но зовут все на кросс-чек.
+## Ворота
+
+- `Docs/tools/spec_status.py` — перед коммитом спеки/правила.
+- `chimera-map`, `chimera-silhouette`, `chimera-matrix` — детекторы формы, не замена тестам.
+- Известные неопределённые тесты (`ChimeraPlanTests` — смешение графа) не считать «красными»,
+  но и не прятать: они ведут долг.
