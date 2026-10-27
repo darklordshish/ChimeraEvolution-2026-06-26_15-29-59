@@ -34,6 +34,19 @@
 - После шага веса не трогает никто: ключи областей — после него, выгрузка проверяет (не больше 4 костей, сумма 1, швы равны).
 - `vesa_gladit.py` отдельно не запускать — его сглаживание вошло в `vesa_final.py --gladit`.
 
+## Новая цель по листу (целиком или только торс)
+
+Ключ снимается с картинки-референса, а не лепится формовкой по глазу (ГеймБосс, 27.10). Цель — 3D Hunyuan3D-2mv по листу дизайн-линии:
+
+    python Tools/Blender/proba/cel_vyrezki.py <лист.png> <папка вырезок> --imena front,left,34      # RGBA по ракурсам, right = зеркало left
+    GRADIO_TEMP_DIR=<черновик> python Tools/Blender/proba/cel_gen.py <папка вырезок> <_refs-local/эксперименты/…> A front,left,right 1234
+    blender -b --factory-startup -P Tools/Blender/proba/cel_norm.py -- cel_mv_A.glb cel_A_norm.obj 1.86 [префикс кадров с сеткой]
+    blender -b --factory-startup -P Tools/Blender/proba/vkleit_tors.py -- старая.obj cel_A_norm.obj orientiry-celi.json вклейка.obj   # только торс
+    CEL_TELO=вклейка.obj bash Tools/Blender/proba/sborka_k2.sh …                                     # дальше стенд
+
+Целиком — новые ориентиры (`orientiry-celi.json`, по кадрам сетки `cel_norm`); только торс — ориентиры старой цели: вклейка
+заменяет переднюю половину торса между `таз:head` и `шея:head` (|x| < 0.24) и сдвигает новую цель к старой по торсу.
+
 ## Стенд: проверка без Unity (пункт Б)
 
     blender -b --factory-startup -P Tools/Blender/proba/stend_k2.py -- chelovek_mesh.fbx --pokoj Docs/models/handoff/klyuchi/chelovek-pokoj.json \
