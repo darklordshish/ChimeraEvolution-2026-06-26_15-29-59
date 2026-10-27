@@ -60,6 +60,8 @@ public static class DomeLabComplex
         public LabStyle style;
         /// <summary>Портал с фасада, координаты поля (как <c>DomeWorld.Entry</c>).</summary>
         public Vector3 door;
+        /// <summary>Северный выход петли A; default, если дверь не включена.</summary>
+        public Vector3 northDoor;
         /// <summary>Все детали, включая внешнюю оболочку стиля.</summary>
         public int parts;
         /// <summary>Детали ОДНОГО интерьера: одинаковы у Bastion и InSlope (сторожит план).</summary>
@@ -136,7 +138,7 @@ public static class DomeLabComplex
     /// </summary>
     public static Result Build(GameObject parent, Vector2 center, float groundY, float yawDeg,
         LabStyle style, LabEntrance entrance = LabEntrance.Rock, bool wetApproach = false,
-        LabPlan plan = null)
+        LabPlan plan = null, bool northDoor = false)
     {
         if (parent == null) throw new ArgumentNullException(nameof(parent));
         if (style == LabStyle.Auto) style = LabStyle.Bastion;
@@ -162,6 +164,8 @@ public static class DomeLabComplex
             style = style,
             entrance = entrance,
             door = DoorPoint(center, groundY, yawDeg),
+            northDoor = northDoor && style == LabStyle.Bastion
+                ? NorthDoorPoint(center, groundY, yawDeg) : default,
             berm = style == LabStyle.InSlope,
             wetApproach = wetApproach,
         };
@@ -178,7 +182,7 @@ public static class DomeLabComplex
         int flip = plan.Room("surgery").x > 0f ? -1 : 1;
         var b = new Builder(root.transform);
         BuildPlate(b);
-        BuildShell(b, flip);
+        BuildShell(b, flip, northDoor && style == LabStyle.Bastion);
         BuildRoofs(b);
         BuildBeams(b, flip);
         BuildHall(b);
@@ -213,6 +217,15 @@ public static class DomeLabComplex
             center.y + facade.y * HalfDepth);
     }
 
+    /// <summary>Северный выход: противоположная стена, +Z в локальных координатах.</summary>
+    public static Vector3 NorthDoorPoint(Vector2 center, float groundY, float yawDeg)
+    {
+        float yaw = yawDeg * Mathf.Deg2Rad;
+        var back = new Vector2(Mathf.Sin(yaw), Mathf.Cos(yaw));
+        return new Vector3(center.x + back.x * HalfDepth, groundY + Plinth,
+            center.y + back.y * HalfDepth);
+    }
+
     // ------------------------------------------------------------------ плита, стены, крыша
 
     static void BuildPlate(Builder b)
@@ -223,7 +236,7 @@ public static class DomeLabComplex
             0f, Plinth - PlateThickness, 0f, true);
     }
 
-    static void BuildShell(Builder b, int flip)
+    static void BuildShell(Builder b, int flip, bool northDoor = false)
     {
         float y0 = Plinth;
         float ox = HalfWidth - Wall * 0.5f;   // ось внешней стены 22.75
@@ -231,7 +244,8 @@ public static class DomeLabComplex
 
         // Внешний контур: фасад (юг, −Z) с порталом, остальные три стороны глухие.
         b.WallRun(true, -oz, -HalfWidth, HalfWidth, y0, RoomHeight, Kit.Concrete, 0f, PortalWidth);
-        b.WallRun(true, oz, -HalfWidth, HalfWidth, y0, RoomHeight, Kit.Concrete, 0f, 0f);
+        b.WallRun(true, oz, -HalfWidth, HalfWidth, y0, RoomHeight, Kit.Concrete, 0f,
+            northDoor ? PortalWidth : 0f);
         b.WallRun(false, ox, -HalfDepth, HalfDepth, y0, RoomHeight, Kit.Concrete, 0f, 0f);
         b.WallRun(false, -ox, -HalfDepth, HalfDepth, y0, RoomHeight, Kit.Concrete, 0f, 0f);
 

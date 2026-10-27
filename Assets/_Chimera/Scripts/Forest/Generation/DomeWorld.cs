@@ -52,6 +52,8 @@ public class DomeWorld
     public Vector2 LabCenter { get; private set; }
     /// <summary>Портал комплекса (координаты поля); default у старого лабиринта.</summary>
     public Vector3 LabDoor { get; private set; }
+    /// <summary>Северный выход станции для петли A; default — нет двери.</summary>
+    public Vector3 LabNorthDoor { get; private set; }
     /// <summary>Подход к лаборатории мокрый: у комплекса построен настил.</summary>
     public bool LabWetApproach { get; private set; }
     /// <summary>Решённый вход B0.2: Rock или Underground.</summary>
@@ -110,7 +112,7 @@ public class DomeWorld
         LabStyle labStyle = LabStyle.Bastion, float minLabDistance = DefaultMinLabDistance,
         bool buildLabComplex = false, LabEntrance labEntrance = LabEntrance.Rock,
         bool buildRavines = false, bool buildLabPlan = false, int labPlanVersion = 1,
-        bool buildTerrace = false, bool buildCanyon = false)
+        bool buildTerrace = false, bool buildCanyon = false, bool buildStationLoop = false)
     {
         if (root == null) throw new ArgumentNullException(nameof(root));
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
@@ -198,7 +200,7 @@ public class DomeWorld
             LabPlan = buildLabPlan
                 ? LabPlanGenerator.Generate(seed, labPlanVersion, ResolvedLabEntrance, ResolvedLabStyle)
                 : LabPlanFixed.Create();
-        BuildFacility(seed, buildLabComplex);
+        BuildFacility(seed, buildLabComplex, buildStationLoop);
 
         // SpawnPoint — двор старого лабиринта или закрытый зал комплекса. У комплекса
         // верх плиты на Plinth выше площадки: игрок встаёт на плиту, а не в её толщу.
@@ -412,6 +414,7 @@ public class DomeWorld
         LabPlan = null;
         LabCenter = Vector2.zero;
         LabDoor = default;
+        LabNorthDoor = default;
         LabWetApproach = false;
         ResolvedLabStyle = LabStyle.Bastion;
         padYaw = 0f;
@@ -638,14 +641,15 @@ public class DomeWorld
     /// true — единый закрытый бункер B0.1 в найденном месте: плита, четыре комнаты вокруг
     /// закрытого зала, сплошное перекрытие, искусственный свет; старый <c>Facility</c> тогда null.
     /// </summary>
-    void BuildFacility(long seed, bool buildLabComplex)
+    void BuildFacility(long seed, bool buildLabComplex, bool buildStationLoop = false)
     {
         if (buildLabComplex)
         {
             LabComplex = DomeLabComplex.Build(Root, LabCenter, platformY, padYaw,
-                ResolvedLabStyle, ResolvedLabEntrance, LabWetApproach, LabPlan);
+                ResolvedLabStyle, ResolvedLabEntrance, LabWetApproach, LabPlan, buildStationLoop);
             DomeLabDamage.Apply(LabComplex, seed, 1, LabPlan);
             LabDoor = LabComplex.door;
+            LabNorthDoor = LabComplex.northDoor;
             Facility = null;
             return;
         }
@@ -664,6 +668,7 @@ public class DomeWorld
         DomeFacilityPlacer.Build(Root, Facility, ground);
         LabComplex = null;
         LabDoor = default;
+        LabNorthDoor = default;
     }
 
     void BuildSky(long seed)

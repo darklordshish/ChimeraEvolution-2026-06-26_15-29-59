@@ -651,6 +651,7 @@ MonoBehaviour:
   buildRavines: 0
   buildTerrace: 1
   buildCanyon: 1
+  buildStationLoop: 1
   buildLabComplex: 1
   buildLabPlan: 1
   labPlanVersion: 1

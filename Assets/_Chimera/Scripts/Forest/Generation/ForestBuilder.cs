@@ -60,6 +60,8 @@ public class ForestBuilder : MonoBehaviour
     [Header("География 27.10: терраса и каньон (Ø2000)")]
     public bool buildTerrace = false;
     public bool buildCanyon = false;
+    /// <summary>Петля A: северная дверь станции (Bastion). По умолчанию выключена, A/C не меняются.</summary>
+    public bool buildStationLoop = false;
 
     [Header("Лаборатория B0.1: единый закрытый бункер вместо старого лабиринта")]
     public bool buildLabComplex = false;
@@ -138,6 +140,7 @@ public class ForestBuilder : MonoBehaviour
     public Vector2 LabCenter => world != null ? world.LabCenter : Vector2.zero;
     /// <summary>Портал комплекса B0.1 в координатах поля (как Entry); default у старого лабиринта.</summary>
     public Vector3 LabDoor => world != null ? world.LabDoor : default;
+    public Vector3 LabNorthDoor => world != null ? world.LabNorthDoor : default;
     /// <summary>Какой стиль комплекс получил на самом деле (Auto разрешён в один из двух).</summary>
     public LabStyle ResolvedLabStyle => world != null ? world.ResolvedLabStyle : labStyle;
     public LabEntrance ResolvedLabEntrance => world != null ? world.ResolvedLabEntrance : labEntrance;
@@ -255,7 +258,7 @@ public class ForestBuilder : MonoBehaviour
         world.Build(BuiltRoot, ownedConfig, terrainQuads, chosen, buildAsh, spawnAtEntry,
             labStyle, minLabDistance > 0f ? minLabDistance : DefaultMinLabDistance,
             buildLabComplex, labEntrance, buildRavines, buildLabPlan, labPlanVersion,
-            buildTerrace, buildCanyon);
+            buildTerrace, buildCanyon, buildStationLoop);
 
         var surface = GetComponent<NavMeshSurface>();
         world.BuildNavMesh(surface);

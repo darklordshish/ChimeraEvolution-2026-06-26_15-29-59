@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using UnityEngine.AI;
 
 namespace Chimera.Tests.PlayMode
 {
@@ -24,7 +25,7 @@ namespace Chimera.Tests.PlayMode
             host = null;
         }
 
-        ForestBuilder Build(bool geography)
+        ForestBuilder Build(bool geography, bool stationLoop = false)
         {
             host = new GameObject("~ForestPavilionProbe");
             host.SetActive(false);
@@ -37,7 +38,11 @@ namespace Chimera.Tests.PlayMode
             builder.terrainQuads = 16;
             builder.buildAsh = false;
             builder.buildRavines = false;
-            builder.buildLabComplex = false;
+            builder.buildLabComplex = stationLoop;
+            builder.buildStationLoop = stationLoop;
+            builder.buildLabPlan = stationLoop;
+            builder.labStyle = LabStyle.Bastion;
+            builder.minLabDistance = 150f;
             builder.buildTerrace = geography;
             builder.buildCanyon = geography;
             builder.spawnAtEntry = true;
@@ -71,6 +76,29 @@ namespace Chimera.Tests.PlayMode
                 "борт каньона выше дна");
             Assert.IsTrue(DomeCanyon.Contains(b.Canyon, mid.x, mid.y), "центр — в каньоне");
             Assert.IsFalse(DomeCanyon.Contains(b.Canyon, shoulder.x, shoulder.y), "борт — снаружи каньона");
+        }
+
+        [UnityTest]
+        public IEnumerator StationLoop_NorthDoor_IsBuilt_AndReachable()
+        {
+            var b = Build(true, true);
+            yield return null;
+
+            Assert.AreNotEqual(Vector3.zero, b.LabNorthDoor, "северная дверь станции построена");
+            Assert.IsTrue(NavMesh.SamplePosition(b.LabNorthDoor, out var hit, 20f, NavMesh.AllAreas),
+                "северная дверь на NavMesh");
+            Assert.Less(Vector3.Distance(hit.position, b.LabNorthDoor), 2f,
+                "точка северной двери достижима");
+
+            var path = new NavMeshPath();
+            Assert.IsTrue(NavMesh.CalculatePath(b.LabDoor, b.LabNorthDoor, NavMesh.AllAreas, path),
+                "путь от центра станции до северной двери существует");
+            Assert.AreEqual(NavMeshPathStatus.PathComplete, path.status,
+                "путь до северной двери полный");
+            float length = 0f;
+            for (int i = 1; i < path.corners.Length; i++)
+                length += Vector3.Distance(path.corners[i - 1], path.corners[i]);
+            Assert.Less(length, 70f, "путь сквозь станцию короче обхода вокруг");
         }
 
         [UnityTest]
