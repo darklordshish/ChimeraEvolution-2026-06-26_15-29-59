@@ -18,7 +18,7 @@
 Правится только форма-ключ `--imya` (базовая форма К2 — нет) и сетка кусков.
 
   blender -b --factory-startup -P ogranka.py -- вход.blend выход.blend [--imya Волк] [--rezhim myshcy|massy [--ploshchad_massy 0.02 --povorot 12 --sredina_shag 0.12]] [--sila 1] [--iter 30] [--lap 0]
-      [--ploshchad_ploskosti 0.008] [--min_oblast 0.003] [--ploshchad 0.006] [--masshtab 0.08] [--bez голова,Чутьё] [--linii 2|1|0] [--kuski 1 [--ploshchad_kuski 0.01]]
+      [--ploshchad_ploskosti 0.008] [--min_oblast 0.003] [--ploshchad 0.006] [--masshtab 0.08] [--bez голова,Чутьё] [--linii 2|1|0] [--maks_sdvig 0.025] [--kuski 1 [--ploshchad_kuski 0.01]]
 """
 import sys
 import bpy
@@ -257,6 +257,11 @@ def vypryamit(P, F, lab, fixed, nb, vf):
         L = np.array([P[v] - P[nb[v]].mean(0) if nb[v] else np.zeros(3) for v in range(len(P))])
         L0 = np.array([P0[v] - P0[nb[v]].mean(0) if nb[v] else np.zeros(3) for v in range(len(P))])
         P = np.where(fixed[:, None], P, P + float(opt['sila']) * (T - P) - float(opt['lap']) * (L - L0))
+        # ПРЕДЕЛ СДВИГА (`--maks_sdvig` м, 27.10): огранка поворачивает плоскости, а не переносит объём — массы без предела
+        # сдвигали вершины до 11 см (развороты в позе 186 → 216, IoU анфас вниз)
+        if opt.get('maks_sdvig'):
+            d_ = P - P0; n_ = np.linalg.norm(d_, axis=1); m_ = float(opt['maks_sdvig'])
+            P = P0 + d_ * np.minimum(1.0, m_ / np.maximum(n_, 1e-12))[:, None]
     return P
 
 

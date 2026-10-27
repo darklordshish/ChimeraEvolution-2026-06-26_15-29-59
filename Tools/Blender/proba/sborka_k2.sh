@@ -2,7 +2,7 @@
 # СБОРКА ШАБЛОНА К2 С КЛЮЧАМИ ОДНИМ ЗАХОДОМ (22.10): переподгонка ключей «Волк» (голое тело витрины + черты колонки ст.2),
 # «Лось» (колонка ст.2 лося) и ступени 1 волка (колонка ст.1) на сетке шасси, куски-черты из целей, огранка тела, грудь→живот,
 # органы на шаблоне, складки, ВЕСА ФИНАЛЬНЫЕ С ПЕРЕВЯЗКОЙ, ключи областей, выгрузка FBX. Позы и суставы зависят только от ориентиров — пишутся в поставку как есть.
-#   bash sborka_k2.sh <шасси.blend> <рабочая папка> <выход.fbx>
+#   [OGR="ключи огранки"] [OT_OGRANKI=1] bash sborka_k2.sh <шасси.blend> <рабочая папка> <выход.fbx>
 # Цели и ориентиры — в _refs-local/эксперименты (вне git), пути ниже.
 set -euo pipefail
 K2="$1"; W="$2"; FBX="$3"
@@ -16,7 +16,11 @@ bl() { if ! "$B" -b --factory-startup --python-exit-code 1 -P "$@" > "$W/shag.lo
        grep -E "ПОДГОНКА: до|ПОКРЫТИЕ|ЦЕПЬ|КУСОК: «|СЛИТО|ОГРАНКА: (тело|всего)|ЛИНИИ: {|ПЕРЕНОС: @|ФОРМОВКА|СВОДКА|ДОБАВЛЕНО|ОРГАН|КЛЮЧИ ОБЛАСТЕЙ|ВЕСА|ПЕРЕВЯЗКА|вывернутые грани по|ЭКСПОРТ" "$W/shag.log" || true; }
 # --lap_glad 10 (27.10): рельеф ключа — от цели, не от шаблона (белая линия и пресс человека К2 давали «щит до паха»)
 VSTR="--vstrechnye 1 --vstr_maxd 0.1,предплечье:0.05,предплечье.L:0.05,бедро:0.03,бедро.L:0.03 --zhestkost 30,15,8,4,2 --lap_glad 10"
+# OGR — ключи огранки; OT_OGRANKI=1 — начать с огранки в готовой рабочей папке (подгонки и куски — оттуда): проба огранки
+# на стенде за ~3 мин вместо 15 (27.10)
+OGR="${OGR:---ploshchad 0.012 --sila 0.9 --iter 10}"
 
+if [ -z "${OT_OGRANKI:-}" ]; then
 # ВЕСА ФИНАЛЬНЫЕ ДО СНЯТИЯ КЛЮЧЕЙ (27.10, пункт А): ключ снимается обратным скиннингом — при тех весах, что уйдут в игру
 # (не больше 4 костей, швы с общими весами). Иначе любая правка весов потом уводит ключ в позе или требует перевязки,
 # а перевязка сохраняет и складку скиннинга, которую правка весов должна была снять (проба 27.10: развороты ключа 132 → 329)
@@ -39,12 +43,15 @@ bl $T/kusok_celi.py -- "$W/volk/k.blend" "$W/volk/kol_pokoj.obj" "$W/volk/m.fbx"
 bl $T/kusok_celi.py -- "$W/volk/k.blend" "$W/volk/cel_pokoj.obj" "$W/volk/g.fbx" "$W/volk/g.json" --vesa "$W/volk/cel_pokoj.obj.vesa.json" \
    --griva_z 9 --hvost_z -1 --lapy_z 0.13 --kisti_z 0.9 --golova_po_vesam 1 --golova_sheya_z 1.5 --dolya 0.15 --ushi 1.80:0.06:1.4 --blend "$W/volk/kk_g.blend"
 bl $T/slit_kuski.py -- "$W/volk/k.blend" @Волк "$W/volk/kk.blend" "$W/volk/kk_g.blend" "$W/volk/kk_m.blend"
+fi
 echo "== Волк: огранка тела, грудь → живот"
 # огранка k-средних, стены — рёбра линий Г. Режим «массы от линий» (--rezhim massy --ploshchad_massy 0.035 --povorot 20 --linii 1)
-# торс спокойнее, но двигает вершины до 11 см: на стенде ст.2 развороты в позе 186 → 216, IoU анфас 0.672 → 0.666 (27.10) — опция
-bl $T/ogranka.py -- "$W/volk/kk.blend" "$W/volk/o.blend" --ploshchad 0.012 --sila 0.9 --iter 10
+# торс спокойнее; без предела двигала вершины до 11 см (развороты 186 → 216), с --sila 0.9 --maks_sdvig 0.02 (E′) — 176, IoU 0.666/0.574;
+# выбор D/E′ — у дизайн-линии (ряд Референсы/работа/модельная/2026-10-27-ogranka-BDE/)
+bl $T/ogranka.py -- "$W/volk/kk.blend" "$W/volk/o.blend" $OGR
 bl $T/formovka.py -- "$W/volk/o.blend" "$W/volk/f.blend" --sustavy "$W/volk/sustavy.json" --golen 1 --koleno 0 --talia 1 --grud 1.04:1.24:12
 
+if [ -z "${OT_OGRANKI:-}" ]; then
 echo "== Лось: подгонка, кусок головы с рогами и копыт"
 bl $T/podgonka_v_poze.py -- "$K2" "$LOS/cel_A_norm.obj" "$LOS/orientiry-celi.json" $SK "$W/los/k.blend" --imya Лось $VSTR \
    --poza "$W/los/poza.json" --sustavy "$W/los/sustavy.json" --cel_pokoj "$W/los/cel_pokoj.obj"
@@ -60,6 +67,7 @@ bl $KC "$W/st1/u.fbx" "$W/st1/u.json" $COM --st1_ushi 1.66:0.06:-0.04 --griva_z 
 bl $KC "$W/st1/g.fbx" "$W/st1/g.json" $COM --st1_niz 1.20 --st1_verh 1.90 --st1_z 9 --st1_y 0.0 --griva_x 0.25 --hvost_z -1 --ostrov 300    --dolya 0.12 --blend "$W/st1/greben.blend"
 bl $KC "$W/st1/c.fbx" "$W/st1/c.json" $COM --golova_z 9 --griva_z 9 --hvost_z -1 --kisti_z 0.9 --kisti_zazor 0.012 --ostrov 20 --dolya 0.3    --blend "$W/st1/kogti.blend"
 
+fi
 echo "== Сводка: ключ «Лось» и @Лось, @Волк1, органы на шаблоне, складки"
 bl $T/svesti_klyuchi.py -- "$W/volk/f.blend" "$W/los/kk.blend" Лось "$W/svod.fbx" --cherty @Лось --blend "$W/svod.blend"
 bl $T/dobavit_kusok.py -- "$W/svod.blend" "$W/st1/hvost.blend" @Волк11 @Волк1 "$W/o1h.blend"
