@@ -2,7 +2,7 @@
 # СБОРКА ШАБЛОНА К2 С КЛЮЧАМИ ОДНИМ ЗАХОДОМ (22.10): переподгонка ключей «Волк» (голое тело витрины + черты колонки ст.2),
 # «Лось» (колонка ст.2 лося) и ступени 1 волка (колонка ст.1) на сетке шасси, куски-черты из целей, огранка тела, грудь→живот,
 # органы на шаблоне, складки, ВЕСА ФИНАЛЬНЫЕ С ПЕРЕВЯЗКОЙ, ключи областей, выгрузка FBX. Позы и суставы зависят только от ориентиров — пишутся в поставку как есть.
-#   [OGR="ключи огранки"] [OT_OGRANKI=1] bash sborka_k2.sh <шасси.blend> <рабочая папка> <выход.fbx>
+#   [CEL_TELO=цель.obj] [OGR="ключи огранки"] [OT_OGRANKI=1] bash sborka_k2.sh <шасси.blend> <рабочая папка> <выход.fbx>
 # Цели и ориентиры — в _refs-local/эксперименты (вне git), пути ниже.
 set -euo pipefail
 K2="$1"; W="$2"; FBX="$3"
@@ -10,6 +10,9 @@ B="/c/Program Files/Blender Foundation/Blender 5.2/blender.exe"
 T=Tools/Blender/proba; SK=Docs/models/rig/chelovek-skelet.json
 R="C:/Users/semion/Documents/Chimera_game/_refs-local/эксперименты"
 TELO="$R/oboroten-telo-st2-2026-10-21"; KOL="$R/oboroten-st2-cel-2026-10-20"; LOS="$R/los-st2-cel-2026-10-21"; ST1="$R/oboroten-st1-cel-2026-10-22"
+# CEL_TELO — цель голого тела ст.2 (по умолчанию $TELO/cel_A_norm.obj); подменяется целью с вклеенным торсом (vkleit_tors.py),
+# ориентиры остаются от старой цели — торс их не двигает (27.10)
+CEL_TELO="${CEL_TELO:-$TELO/cel_A_norm.obj}"
 mkdir -p "$W"/{volk,los,st1}
 # шаг падает — сборка стоит (27.10: раньше grep глотал падение, и выгрузка шла из недоделанного файла); журнал шага — $W/shag.log
 bl() { if ! "$B" -b --factory-startup --python-exit-code 1 -P "$@" > "$W/shag.log" 2>&1; then tail -20 "$W/shag.log"; echo "СБОЙ: $1"; exit 1; fi
@@ -33,7 +36,7 @@ echo "== Шаблон: веса финальные"
 bl $T/vesa_final.py -- "$K2" "$W/k2_vesa.blend"
 K2="$W/k2_vesa.blend"
 echo "== Волк: подгонка к голому телу, колонка ст.2 — вторая цель"
-bl $T/podgonka_v_poze.py -- "$K2" "$TELO/cel_A_norm.obj" "$TELO/orientiry-celi.json" $SK "$W/volk/k.blend" $VSTR \
+bl $T/podgonka_v_poze.py -- "$K2" "$CEL_TELO" "$TELO/orientiry-celi.json" $SK "$W/volk/k.blend" $VSTR \
    --poza "$W/volk/poza.json" --sustavy "$W/volk/sustavy.json" --cel_pokoj "$W/volk/cel_pokoj.obj" \
    --dop_cel "$KOL/cel_A_norm.obj" --dop_lm "$KOL/orientiry-celi-v-poze-lista.json" --dop_pokoj "$W/volk/kol_pokoj.obj"
 echo "== Волк: куски (грива и хвост — колонка; голова, кисти, лапы — голое тело)"
