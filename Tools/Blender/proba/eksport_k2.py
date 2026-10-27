@@ -4,40 +4,29 @@ import bpy, sys
 a = sys.argv[sys.argv.index('--') + 1:]
 bpy.ops.wm.open_mainfile(filepath=a[0])
 arm = [o for o in bpy.data.objects if o.type == 'ARMATURE'][0]
-# ВЕСА — НЕ БОЛЬШЕ 4 КОСТЕЙ с нормализацией (ГеймБосс 22.10: импорт Unity режет до 4, у «Сердце» урезалось 54 % вершин, у @Волк 934 —
-# игра гнула их не как Blender: «нагрудник», дыра в гриве, тёмный пояс). Группы областей «*.область» — служебные (ключи областей
-# уже запечены), в выгрузку не идут
 # все формы-ключи — на 0 (svesti_klyuchi оставлял «Лось» включённым на 1: в Blender-кадрах тело раздувалось «капюшоном»;
-# вес ставит игра, в FBX веса по умолчанию — нули)
-for o in [x for x in bpy.data.objects if x.type == 'MESH' and x.data.shape_keys]:
-    for kb in o.data.shape_keys.key_blocks: kb.value = 0.0
-bones_ = {b.name for b in arm.data.bones}
+# вес ставит игра, в FBX веса по умолчанию — нули). Группы областей «*.область» — служебные (ключи областей уже запечены)
 for o in [x for x in bpy.data.objects if x.type == 'MESH']:
+    if o.data.shape_keys:
+        for kb in o.data.shape_keys.key_blocks: kb.value = 0.0
     for g in [g for g in o.vertex_groups if g.name.endswith('.область')]: o.vertex_groups.remove(g)
-    bpy.ops.object.select_all(action='DESELECT'); o.select_set(True); bpy.context.view_layer.objects.active = o
-    bpy.ops.object.vertex_group_limit_total(group_select_mode='BONE_DEFORM', limit=4)
-    bpy.ops.object.vertex_group_normalize_all(group_select_mode='BONE_DEFORM', lock_active=False)
-    over = sum(1 for v in o.data.vertices if sum(1 for g in v.groups if o.vertex_groups[g.group].name in bones_ and g.weight > 0) > 4)
-    print('ВЕСА: %s — вершин с >4 костями после ограничения: %d' % (o.name, over))
-# ШВЫ — ОДИНАКОВЫЕ ВЕСА (22.10, критик ряда: «тёмный пояс на талии»): вершины разных объектов шасси в одной точке (шов
-# Сердце–хребет, рука–корпус) после ограничения 4 костями получали разные веса и в позе расходились — щель на шве. Совпадающим по
-# базовому положению вершинам ставятся веса первого объекта (усреднять нельзя — снова станет больше 4 костей)
-seen, n_sv = {}, 0
-for o in [x for x in bpy.data.objects if x.type == 'MESH' and '@' not in x.name]:
+# ВЕСА ЗДЕСЬ НЕ МЕНЯЮТСЯ, ТОЛЬКО ПРОВЕРЯЮТСЯ (27.10, пункт А разбора тракта): смена весов после снятия ключа уводит ключ в позе
+# (опыт дизайн-линии: до 87 мм; ограничение 4 костями здесь же сдвигало ключ «Лось» на руках до 31 мм). Веса доводит
+# vesa_final.py — с перевязкой ключей; тут — что игра получит то же, что Blender: не больше 4 костей (импорт Unity режет до 4),
+# сумма 1, швы шасси (вершины разных объектов в одной точке) — с одинаковыми весами
+bones_ = {b.name for b in arm.data.bones}; bad = []; seen = {}
+for o in [x for x in bpy.data.objects if x.type == 'MESH']:
     gn = {g.index: g.name for g in o.vertex_groups}
     for v in o.data.vertices:
+        ws = {gn[g.group]: g.weight for g in v.groups if gn[g.group] in bones_ and g.weight > 0}
+        if len(ws) > 4: bad.append('%s:%d — костей %d' % (o.name, v.index, len(ws)))
+        elif ws and abs(sum(ws.values()) - 1) > 1e-3: bad.append('%s:%d — сумма %.4f' % (o.name, v.index, sum(ws.values())))
+        if '@' in o.name: continue
         w_ = o.matrix_world @ v.co; k = (round(w_.x, 4), round(w_.y, 4), round(w_.z, 4))
-        ws = {gn[g.group]: g.weight for g in v.groups if gn[g.group] in bones_}
-        if k not in seen: seen[k] = ws; continue
-        ref = seen[k]
-        if ref == ws: continue
-        for g in list(v.groups):
-            if gn[g.group] in bones_: o.vertex_groups[g.group].remove([v.index])
-        for nm_, w__ in ref.items():
-            g = o.vertex_groups.get(nm_) or o.vertex_groups.new(name=nm_)
-            g.add([v.index], w__, 'REPLACE')
-        n_sv += 1
-print('ВЕСА: швы — выровнено вершин %d' % n_sv)
+        if k not in seen: seen[k] = (o.name, ws)
+        elif any(abs(seen[k][1].get(n, 0) - ws.get(n, 0)) > 1e-4 for n in set(ws) | set(seen[k][1])): bad.append('%s:%d — шов с %s' % (o.name, v.index, seen[k][0]))
+print('ВЕСА: нарушений %d%s' % (len(bad), (' — ' + '; '.join(bad[:5])) if bad else ''))
+if bad: raise SystemExit('ВЕСА не финальные — сначала vesa_final.py (с перевязкой ключей), потом oblasti_k2.py')
 for o in bpy.data.objects: o.select_set(o.type in ('ARMATURE', 'MESH'))
 bpy.context.view_layer.objects.active = arm
 bpy.ops.export_scene.fbx(filepath=a[1], use_selection=True, apply_scale_options='FBX_SCALE_ALL', axis_forward='-Z', axis_up='Y',
