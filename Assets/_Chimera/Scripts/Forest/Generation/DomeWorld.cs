@@ -61,6 +61,8 @@ public class DomeWorld
     public List<DomeSlope.MouthSpot> Mouths { get; private set; } = new List<DomeSlope.MouthSpot>();
     public List<DomeSlope.NestSpot> Nests { get; private set; } = new List<DomeSlope.NestSpot>();
     public List<DomeRavines.Ravine> Ravines { get; private set; } = new List<DomeRavines.Ravine>();
+    public DomeTerrace.State Terrace { get; private set; }
+    public DomeCanyon.State Canyon { get; private set; }
     public int FallenTrees { get; private set; }
     public int VisualNests { get; private set; }
     public LairSite NestSite { get; private set; }
@@ -107,7 +109,8 @@ public class DomeWorld
         bool buildAsh = true, bool buildEntry = false,
         LabStyle labStyle = LabStyle.Bastion, float minLabDistance = DefaultMinLabDistance,
         bool buildLabComplex = false, LabEntrance labEntrance = LabEntrance.Rock,
-        bool buildRavines = false, bool buildLabPlan = false, int labPlanVersion = 1)
+        bool buildRavines = false, bool buildLabPlan = false, int labPlanVersion = 1,
+        bool buildTerrace = false, bool buildCanyon = false)
     {
         if (root == null) throw new ArgumentNullException(nameof(root));
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
@@ -169,6 +172,12 @@ public class DomeWorld
                 Hydro.lakeLevel + 0.5f);
         }
 
+        if (buildTerrace)
+            Terrace = DomeTerrace.Build(cfg, seed, LabCenter, entryXZ, Hydro,
+                DomeRockRing.InnerRadius(cfg));
+        if (buildCanyon)
+            Canyon = DomeCanyon.Build(cfg, seed, Hydro, entryXZ, LabCenter,
+                DomeRockRing.InnerRadius(cfg));
         if (buildRavines)
             Ravines = DomeRavines.Build(cfg, seed, LabCenter, entryXZ, Hydro,
                 DomeRockRing.InnerRadius(cfg));
@@ -247,6 +256,8 @@ public class DomeWorld
     {
         if (cfg == null || Hydro == null) return 0f;
         float raw = DomeHydro.SampleHydro(cfg, Hydro, x, z);
+        raw = DomeTerrace.Apply(raw, Terrace, x, z);
+        raw = DomeCanyon.Apply(raw, Canyon, x, z, Hydro.lakeLevel);
         raw = DomeRavines.Apply(raw, Ravines, x, z, Hydro.lakeLevel);
 
         // Подземный вход: вырезаем пологую траншею-рампу от двери к лесной площадке.
@@ -410,6 +421,8 @@ public class DomeWorld
         Chunks = 0;
         Trees = 0;
         Ravines = new List<DomeRavines.Ravine>();
+        Terrace = default;
+        Canyon = default;
         FallenTrees = 0;
         VisualNests = 0;
         platformY = 0f;

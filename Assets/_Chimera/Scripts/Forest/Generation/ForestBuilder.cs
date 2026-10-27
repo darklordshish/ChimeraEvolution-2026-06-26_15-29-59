@@ -57,6 +57,10 @@ public class ForestBuilder : MonoBehaviour
     [Header("Овраги B1.1: выемки, упавшие стволы, визуальные гнёзда (без LairSite)")]
     public bool buildRavines = false;
 
+    [Header("География 27.10: терраса и каньон (Ø2000)")]
+    public bool buildTerrace = false;
+    public bool buildCanyon = false;
+
     [Header("Лаборатория B0.1: единый закрытый бункер вместо старого лабиринта")]
     public bool buildLabComplex = false;
 
@@ -123,6 +127,8 @@ public class ForestBuilder : MonoBehaviour
     public int Ravines => world != null ? world.Ravines.Count : 0;
     public IReadOnlyList<DomeRavines.Ravine> RavineList =>
         world != null ? world.Ravines : new List<DomeRavines.Ravine>();
+    public DomeTerrace.State Terrace => world != null ? world.Terrace : default;
+    public DomeCanyon.State Canyon => world != null ? world.Canyon : default;
     public int FallenTrees => world != null ? world.FallenTrees : 0;
     public int VisualNests => world != null ? world.VisualNests : 0;
     public Vector3 SpawnPoint { get; private set; }
@@ -248,7 +254,8 @@ public class ForestBuilder : MonoBehaviour
         // B0.1: стиль и порог лаборатории идут в мир; 0 в пороге — «не настроено».
         world.Build(BuiltRoot, ownedConfig, terrainQuads, chosen, buildAsh, spawnAtEntry,
             labStyle, minLabDistance > 0f ? minLabDistance : DefaultMinLabDistance,
-            buildLabComplex, labEntrance, buildRavines, buildLabPlan, labPlanVersion);
+            buildLabComplex, labEntrance, buildRavines, buildLabPlan, labPlanVersion,
+            buildTerrace, buildCanyon);
 
         var surface = GetComponent<NavMeshSurface>();
         world.BuildNavMesh(surface);
