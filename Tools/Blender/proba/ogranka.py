@@ -17,7 +17,7 @@
 
 Правится только форма-ключ `--imya` (базовая форма К2 — нет) и сетка кусков.
 
-  blender -b --factory-startup -P ogranka.py -- вход.blend выход.blend [--imya Волк] [--rezhim myshcy] [--sila 1] [--iter 30] [--lap 0]
+  blender -b --factory-startup -P ogranka.py -- вход.blend выход.blend [--imya Волк] [--rezhim myshcy|massy [--ploshchad_massy 0.02 --povorot 12 --sredina_shag 0.12]] [--sila 1] [--iter 30] [--lap 0]
       [--ploshchad_ploskosti 0.008] [--min_oblast 0.003] [--ploshchad 0.006] [--masshtab 0.08] [--bez голова,Чутьё] [--linii 2|1|0] [--kuski 1 [--ploshchad_kuski 0.01]]
 """
 import sys
@@ -166,6 +166,55 @@ def oblasti_kmeans(C, N, A, plosh):
     return lab
 
 
+def oblasti_massy(P, F, C, A, nb, fixed, bar):
+    """МАССЫ ОТ ЛИНИЙ (`--rezhim massy`, 27.10, Г шаг 2): k-средних режут гладкий торс клиньями («щит до паха», полка), потому что
+    граница кластера ложится где угодно. Здесь области растут от затравок по поверхности (Дейкстра по соседству граней), через
+    ребро линии Г не проходят, а цена шага растёт с поворотом сглаженной нормали — сама собой граница встаёт там, где поверхность
+    поворачивает, и не встаёт посреди широкой плоскости. Затравки — `--ploshchad_massy` м² на массу, 4 прохода Ллойда"""
+    import heapq
+    Ps = P.copy()
+    for _ in range(30):
+        for lam_ in (0.5, -0.53):
+            Ls = np.array([Ps[nb[v]].mean(0) - Ps[v] if nb[v] else np.zeros(3) for v in range(len(Ps))])
+            Ps = np.where(fixed[:, None], Ps, Ps + lam_ * Ls)
+    _, Ns, _ = geom(Ps, F)
+    adj = svyaz(F, bar); beta = float(opt.get('povorot', '12'))
+    K = max(4, int(A.sum() / float(opt.get('ploshchad_massy', '0.02'))))
+    # затравки: дальние точки по центрам граней
+    # затравки на СРЕДНЕЙ ЛИНИИ передней поверхности торса через `--sredina_shag` м (0.12): иначе ни одна масса не переходит через
+    # средину, левая и правая половины живота сходятся килем от груди до паха — запрещённый «центральный щит» листа 03
+    seeds = []
+    sh_ = float(opt.get('sredina_shag', '0.12'))
+    if sh_ > 0:
+        mid = np.nonzero((np.abs(C[:, 0]) < 0.015) & (Ns[:, 1] < -0.6))[0]
+        if len(mid):
+            for z_ in np.arange(C[mid, 2].min() + sh_ / 2, C[mid, 2].max(), sh_):
+                seeds.append(int(mid[np.argmin(np.abs(C[mid, 2] - z_))]))
+    if not seeds: seeds = [int(np.argmax(A))]
+    dmin = np.min([np.linalg.norm(C - C[s_], axis=1) for s_ in seeds], axis=0)
+    for _ in range(K - len(seeds)):
+        seeds.append(int(np.argmax(dmin))); dmin = np.minimum(dmin, np.linalg.norm(C - C[seeds[-1]], axis=1))
+    for it in range(4):
+        dist = np.full(len(F), np.inf); lab = -np.ones(len(F), dtype=np.int64); pq = []
+        for k, f0 in enumerate(seeds): dist[f0] = 0.0; lab[f0] = k; heapq.heappush(pq, (0.0, f0))
+        while pq:
+            d, g = heapq.heappop(pq)
+            if d > dist[g]: continue
+            for h_ in adj[g]:
+                nd = d + float(np.linalg.norm(C[g] - C[h_])) * (1.0 + beta * (1.0 - float(Ns[g] @ Ns[h_])))
+                if nd < dist[h_]: dist[h_] = nd; lab[h_] = lab[g]; heapq.heappush(pq, (nd, h_))
+        lab[lab < 0] = len(seeds)          # не досягнутые (за линией без затравки) — своя область, разделит svyaznye
+        if it == 3: break
+        new_ = []
+        for k in range(len(seeds)):
+            m = np.nonzero(lab == k)[0]
+            if not len(m): new_.append(seeds[k]); continue
+            cn = (Ns[m] * A[m, None]).sum(0); cn /= max(np.linalg.norm(cn), 1e-9); cc = (C[m] * A[m, None]).sum(0) / A[m].sum()
+            new_.append(int(m[np.argmin(np.linalg.norm(C[m] - cc, axis=1) * (1 + beta * (1 - Ns[m] @ cn)))]))
+        seeds = new_
+    return lab
+
+
 def svyaznye(lab, F, A, bar=None):
     """область — связный кусок (иначе общая плоскость через средний центр сдвигала грани разной глубины до 20 см); островки
     мельче `--min_oblast` сливаются с соседом по большинству общих рёбер"""
@@ -260,6 +309,10 @@ if opt.get('rezhim') == 'myshcy':
     for fi, f in enumerate(Fu):
         if fmysh[fi][0] == 'стопа': fixed[f] = True
     lab = oblasti_myshcy(P, Fu, nb, fixed, A, fmysh)
+elif opt.get('rezhim') == 'massy':
+    for fi, f in enumerate(Fu):        # стопа не трогается (как в режиме мышц)
+        if fbone[fi].split('.')[0] == 'стопа': fixed[f] = True
+    lab = oblasti_massy(P, Fu, C, A, nb, fixed, BAR)
 else:
     lab = oblasti_kmeans(C, N, A, float(opt['ploshchad']))
 lab = svyaznye(lab, Fu, A, BAR)
