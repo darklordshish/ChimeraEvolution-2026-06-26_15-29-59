@@ -82,7 +82,12 @@ public static class DomeTerrace
                 Hash01(seed, SaltRadius, s));
             float blend = radius * Mathf.Lerp(BlendMinFraction, BlendMaxFraction,
                 Hash01(seed, SaltBlend, s));
-            float height = Mathf.Lerp(HeightMin, HeightMax, Hash01(seed, SaltHeight, s));
+            // На Ø400 — 5..9 м, на Ø2000 — 12..18 м: водопад должен быть выше
+            // «холма» и читаться с игровой камеры.
+            float scale = Mathf.InverseLerp(400f, 2000f, d);
+            float hMin = Mathf.Lerp(HeightMin, 12f, scale);
+            float hMax = Mathf.Lerp(HeightMax, 18f, scale);
+            float height = Mathf.Lerp(hMin, hMax, Hash01(seed, SaltHeight, s));
             float reach = radius + blend;
             float maxCenter = rin - reach - RingKeep;
             if (maxCenter <= 0f) continue;

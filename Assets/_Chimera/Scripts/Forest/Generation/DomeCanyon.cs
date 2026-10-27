@@ -27,6 +27,7 @@ public static class DomeCanyon
         public float depthHead;
         public float depthMouth;
         public float fallHeight;
+        public float rim;
         public Vector2 pool;
         public float poolRadius;
     }
@@ -34,6 +35,8 @@ public static class DomeCanyon
     // Рабочие цели спеки, не нормы. Локальные дефолты Task 1: DomeGenConfigSO не меняется.
     public const float MinLength = 150f;
     public const float MaxLength = 250f;
+    // На террасе исток дальше: каньон большого павильона до 600 м, не B1.1-ложбина.
+    public const float AnchoredMaxLength = 600f;
     public const float MinHalfWidth = 7f;
     public const float MaxHalfWidth = 12f;
     public const float MinDepth = 8f;
@@ -49,7 +52,7 @@ public static class DomeCanyon
     public const float LakeGap = 2f;
 
     const int Attempts = 192;
-    const float ShoulderFactor = 0.8f;
+    const float ShoulderFactor = 1.2f;
     const float EndFadeMeters = 8f;
     const float FloorAboveLake = 0.45f;
 
@@ -69,7 +72,7 @@ public static class DomeCanyon
     /// </para>
     /// </summary>
     public static State Build(DomeGenConfigSO cfg, long seed, DomeHydro.State hydro,
-        Vector2 entry, Vector2 labCenter, float rin)
+        Vector2 entry, Vector2 labCenter, float rin, DomeTerrace.State terrace = default)
     {
         var none = new State { valid = false };
         if (cfg == null || hydro == null) return none;
@@ -80,6 +83,14 @@ public static class DomeCanyon
         if (radius <= 0f) radius = 1000f;
         float lakeR = hydro.lakeRadius;
         int version = cfg.version;
+        bool anchored = terrace.valid && terrace.radius > 0f;
+        Vector2 lipTarget = default;
+        if (anchored)
+        {
+            Vector2 toLake = hydro.lakeCenter - terrace.center;
+            if (toLake.sqrMagnitude < 1e-6f) anchored = false;
+            else lipTarget = terrace.center + toLake.normalized * (terrace.radius * 0.8f);
+        }
 
         bool hasBest = false;
         State best = none;
@@ -88,7 +99,9 @@ public static class DomeCanyon
         for (int attempt = 0; attempt < Attempts; attempt++)
         {
             float angle = Roll(seed, version, 8101, attempt) * Mathf.PI * 2f;
-            Vector2 outward = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+            Vector2 outward = anchored
+                ? (terrace.center - hydro.lakeCenter).normalized
+                : new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
 
             float halfWidth = Mathf.Lerp(MinHalfWidth, MaxHalfWidth,
                 Roll(seed, version, 8102, attempt));
@@ -100,6 +113,7 @@ public static class DomeCanyon
                 Roll(seed, version, 8105, attempt)));
             float meander = Mathf.Lerp(0.12f, 0.30f,
                 Roll(seed, version, 8106, attempt));
+            if (anchored) meander = 0.05f;
             float phase = Roll(seed, version, 8107, attempt) * Mathf.PI * 2f;
             float poolRadius = Mathf.Lerp(6f, 9f,
                 Roll(seed, version, 8108, attempt));
@@ -109,9 +123,13 @@ public static class DomeCanyon
                 Mathf.Lerp(6f, 24f, Roll(seed, version, 8109, attempt));
             Vector2 mouth = hydro.lakeCenter + outward * mouthDist;
 
+            if (anchored)
+                length = Mathf.Clamp(Vector2.Distance(mouth, lipTarget), MinLength, AnchoredMaxLength);
             List<Vector2> axis = MakeAxis(mouth, outward, length, meander, phase);
 
             Vector2 lip = axis[axis.Count - 1];
+            if (anchored && Vector2.Distance(lip, lipTarget) > terrace.radius * 0.35f)
+                continue;
             if (!FitsRing(axis, radius)) continue;
             if (!AvoidsLake(axis, hydro.lakeCenter, lakeR, halfWidth)) continue;
 
@@ -131,7 +149,7 @@ public static class DomeCanyon
             // ручья всё равно читаются через SampleGround.
             float drop = DomeHydro.SampleHydro(cfg, hydro, lip.x, lip.y)
                        - DomeHydro.SampleHydro(cfg, hydro, mouth.x, mouth.y);
-            if (drop < 0f) continue;
+            if (!anchored && drop < 0f) continue;
 
             float poolOffset = Mathf.Min(poolRadius * 1.4f, length * 0.3f);
             Vector2 pool = PointAtDistance(axis, length - poolOffset);
@@ -139,6 +157,7 @@ public static class DomeCanyon
             // посадка — Task 2; поле даёт только лип, плёс и вырезку.
             float fall = Mathf.Lerp(MinFall, MaxFall,
                 Roll(seed, version, 8110, attempt));
+            if (anchored) fall = Mathf.Max(fall, terrace.height);
 
             float score = Mathf.Min(entryClear, Mathf.Min(labClear, riverClear))
                         + length * 0.001f;
@@ -156,6 +175,7 @@ public static class DomeCanyon
                     depthHead = depthHead,
                     depthMouth = depthMouth,
                     fallHeight = fall,
+                    rim = Mathf.Lerp(10f, 16f, Roll(seed, version, 8111, attempt)),
                     pool = pool,
                     poolRadius = poolRadius,
                 };
@@ -184,12 +204,19 @@ public static class DomeCanyon
         float across;
         if (lateral <= width)
         {
-            across = 1f;
+            float u = 1f - lateral / width;
+            across = u * u * (3f - 2f * u);
         }
         else
         {
+            // Борт: не просто срез, а поднятый вал, иначе на низком поле
+            // каньон читается канавой. На кромке (lateral == width) вал = 0.
             float u = 1f - (lateral - width) / shoulder;
             across = u * u * (3f - 2f * u);
+            float rimK = 1f - Mathf.Abs((lateral - width) / shoulder - 0.5f) * 2f;
+            rimK = Mathf.Clamp01(rimK);
+            rimK = rimK * rimK * (3f - 2f * rimK);
+            return raw + s.rim * rimK;
         }
 
         float length = PolyLength(s.axis);

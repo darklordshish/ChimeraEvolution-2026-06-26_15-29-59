@@ -14,6 +14,7 @@ namespace Chimera.Tests.EditMode
     {
         [TestCase("Assets/Scenes/ForestFragment.unity")]
         [TestCase("Assets/Scenes/ForestSandbox.unity")]
+        [TestCase("Assets/Scenes/ForestPavilion.unity")]
         public void GameScene_HasOnlyMainCameraEnabled(string path)
         {
             var scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Additive);

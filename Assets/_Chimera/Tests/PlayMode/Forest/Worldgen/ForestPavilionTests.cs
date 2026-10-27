@@ -57,11 +57,20 @@ namespace Chimera.Tests.PlayMode
             Assert.IsTrue(b.Canyon.valid, "каньон найден на Ø2000/1337");
             Assert.IsNotNull(b.Canyon.axis, "ось каньона есть");
 
-            var mid = b.Canyon.axis[b.Canyon.axis.Count / 2];
-            Assert.Less(b.SampleGround(mid.x, mid.y), b.RawGround(mid.x, mid.y),
-                "каньон опускает пол относительно сырого поля");
+            int i = b.Canyon.axis.Count / 2;
+            var mid = b.Canyon.axis[i];
+            var next = b.Canyon.axis[Mathf.Min(i + 1, b.Canyon.axis.Count - 1)];
+            var dir = (next - mid).normalized;
+            var perp = new Vector2(-dir.y, dir.x);
+            var shoulder = mid + perp * (b.Canyon.halfWidth * 1.2f);
+
             Assert.Greater(b.SampleGround(mid.x, mid.y), b.Hydro.lakeLevel,
                 "дно каньона выше воды");
+            Assert.Greater(b.SampleGround(shoulder.x, shoulder.y),
+                b.SampleGround(mid.x, mid.y) + 1f,
+                "борт каньона выше дна");
+            Assert.IsTrue(DomeCanyon.Contains(b.Canyon, mid.x, mid.y), "центр — в каньоне");
+            Assert.IsFalse(DomeCanyon.Contains(b.Canyon, shoulder.x, shoulder.y), "борт — снаружи каньона");
         }
 
         [UnityTest]

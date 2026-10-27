@@ -41,6 +41,7 @@ namespace Chimera.Tests.EditMode
                 fallHeight = 14f,
                 pool = new Vector2(90f, 0f),
                 poolRadius = 7f,
+                rim = 6f,
             };
         }
 
@@ -84,11 +85,11 @@ namespace Chimera.Tests.EditMode
             float center = DomeCanyon.Apply(30f, s, 50f, 0f, 0f);
             float halfway = DomeCanyon.Apply(30f, s, 50f, 5f + 4f * 0.5f, 0f);
             float justInsideEdge = DomeCanyon.Apply(30f, s, 50f, 4.999f, 0f);
-            float outside = DomeCanyon.Apply(30f, s, 50f, 10f, 0f);
+            float outside = DomeCanyon.Apply(30f, s, 50f, 12f, 0f);
 
-            Assert.AreEqual(center, justInsideEdge, 1e-3f, "ядро вырезано на полную глубину");
-            Assert.Greater(halfway, center, "плечо мягче ядра");
-            Assert.Less(halfway, 30f, "плечо всё ещё ниже поля");
+            Assert.Less(center, justInsideEdge, "ядро глубже кромки");
+            Assert.AreEqual(30f, justInsideEdge, 0.1f, "на кромке вырезка сходит на нет");
+            Assert.Greater(halfway, 30f, "плечо поднято над полем");
             Assert.AreEqual(30f, outside, 1e-4f, "за плечом — снова сырое поле");
         }
 

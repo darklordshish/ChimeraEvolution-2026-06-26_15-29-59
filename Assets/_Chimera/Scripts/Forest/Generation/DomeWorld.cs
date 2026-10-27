@@ -177,7 +177,7 @@ public class DomeWorld
                 DomeRockRing.InnerRadius(cfg));
         if (buildCanyon)
             Canyon = DomeCanyon.Build(cfg, seed, Hydro, entryXZ, LabCenter,
-                DomeRockRing.InnerRadius(cfg));
+                DomeRockRing.InnerRadius(cfg), Terrace);
         if (buildRavines)
             Ravines = DomeRavines.Build(cfg, seed, LabCenter, entryXZ, Hydro,
                 DomeRockRing.InnerRadius(cfg));
@@ -479,12 +479,9 @@ public class DomeWorld
     void BuildWater()
     {
         var mat = Flat(DomePalette.Water);
-        var lake = DomeWaterMesh.LakeDisc(Hydro);
-        Track(lake);
-        Part("Lake", lake, mat);
-        var river = DomeWaterMesh.RiverRibbon(cfg, Hydro);
-        Track(river);
-        Part("River", river, mat);
+        // Озеро и река — прежнее поведение; плёс/полотно/ручей добавляются только при
+        // живом каньоне и читают тот же SampleGround, что чанки и NavMesh (Task 2).
+        DomeWaterMesh.Build(Root.transform, cfg, Hydro, Canyon, SampleGround, mat, meshes);
     }
 
     void BuildMouthsAndNests(long seed)
