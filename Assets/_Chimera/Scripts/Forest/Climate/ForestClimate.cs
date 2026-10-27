@@ -170,7 +170,7 @@ public class ForestClimate : MonoBehaviour
 
         // Туман павильона — не только кривая суток: погодный туман усиливает плотность.
         if (FogAmount > 0f)
-            RenderSettings.fogDensity = Mathf.Max(RenderSettings.fogDensity, 0.004f)
+            RenderSettings.fogDensity = Mathf.Max(RenderSettings.fogDensity, 0.0008f)
                                         * (1f + 1.5f * FogAmount);
 
         // Внутри станции нет внешнего тумана и дождя: это закрытый объём.
