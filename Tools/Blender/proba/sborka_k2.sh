@@ -17,13 +17,15 @@ CEL_TELO="${CEL_TELO:-$R/oboroten-telo-st2-sidy-2026-10-27/vkleika_s7b.obj}"
 mkdir -p "$W"/{volk,los,st1}
 # шаг падает — сборка стоит (27.10: раньше grep глотал падение, и выгрузка шла из недоделанного файла); журнал шага — $W/shag.log
 bl() { if ! "$B" -b --factory-startup --python-exit-code 1 -P "$@" > "$W/shag.log" 2>&1; then tail -20 "$W/shag.log"; echo "СБОЙ: $1"; exit 1; fi
-       grep -E "ПОДГОНКА: до|ПОКРЫТИЕ|ЦЕПЬ|КУСОК: «|СЛИТО|ОГРАНКА: (тело|всего)|ЛИНИИ: {|ГРИВА:|ОГРАНКА: живот|ПЕРЕНОС: @|ФОРМОВКА|СВОДКА|ДОБАВЛЕНО|ОРГАН|КЛЮЧИ ОБЛАСТЕЙ|ВЕСА|ПЕРЕВЯЗКА|вывернутые грани по|ЭКСПОРТ" "$W/shag.log" || true; }
+       grep -E "ПОДГОНКА: до|ПОКРЫТИЕ|ЦЕПЬ|КУСОК: «|СЛИТО|ОГРАНКА: (тело|всего)|ЛИНИИ: {|КРАСИВЫЕ|ГРИВА-МАССА|ГРИВА:|ОГРАНКА: живот|ПЕРЕНОС: @|ФОРМОВКА|СВОДКА|ДОБАВЛЕНО|ОРГАН|КЛЮЧИ ОБЛАСТЕЙ|ВЕСА|ПЕРЕВЯЗКА|вывернутые грани по|ЭКСПОРТ" "$W/shag.log" || true; }
 # --lap_glad 10 (27.10): рельеф ключа — от цели, не от шаблона (белая линия и пресс человека К2 давали «щит до паха»)
 VSTR="--vstrechnye 1 --vstr_maxd 0.1,предплечье:0.05,предплечье.L:0.05,бедро:0.03,бедро.L:0.03 --zhestkost 30,15,8,4,2 --lap_glad 10"
 # OGR — ключи огранки; OT_OGRANKI=1 — начать с огранки в готовой рабочей папке (подгонки и куски — оттуда): проба огранки
 # на стенде за ~3 мин вместо 15 (27.10)
 # FORM_GRUD, RASPRAVIT — шаги формовки в ПОКОЕ ключа после огранки (грудь → живот, расправление складок); в покое они мнут то,
 # что огранка выпрямила в позе (27.10, shum.py) — пустая строка выключает
+# GRIVA — ключи griva_massa (шерсть гривы и хвоста); 0.35/6/0.8 срезали объём гривы (IoU ст.2 0.680 → 0.611) — мягче
+GRIVA="${GRIVA:---dolya 0.7 --glad 3 --prizhim 1.0}"   # G2: объём гривы цел (IoU 0.679/0.576), шипов меньше; 0.55/4/0.95 — снова срезала
 FORM_GRUD="${FORM_GRUD-}"; RASPRAVIT="${RASPRAVIT-}"   # выкл с 27.10: огранка в позе (shum.py: торс ст.2 5.1°/24 % → 3.4°/14 %, развороты 189 → 171)
 OGR="${OGR:---rezhim massy --ploshchad_massy 0.035 --povorot 20 --linii 1 --sila 0.9 --iter 10 --maks_sdvig 0.02 --zhivot 0.075:1.0:1.13:1.27 --v_poze Docs/models/handoff/klyuchi/chelovek-volk-poza.json}"   # E′ — выбор дизайн-линии 27.10; живот — две массы через середину до таза
 
@@ -36,6 +38,10 @@ if [ -z "${OT_OGRANKI:-}" ]; then
 echo "== Шаблон: линии перелома"
 bl $T/linii_k2.py -- "$K2" "$W/k2_linii.blend" --linii "Референсы/работа/модельная/2026-10-27-linii-k2/linii-lista.json" --otchet "$W/linii.json"
 K2="$W/k2_linii.blend"
+# треугольники шаблона — красивые (27.10: длинные тонкие треугольники поперёк двух плоскостей огранки давали «пилу» на животе);
+# рёбра линий, края и швы не поворачиваются, вершин столько же. KRASIVYE=1 — вкл (по умолчанию выкл: меняет грани базы человека на
+# ст.0 — изломов 13 → 17 %; развороты ст.2 171 → 129, IoU профиля ст.1 0.572 → 0.534; «пила» оказалась контуром стенда)
+if [ "${KRASIVYE:-0}" = 1 ]; then echo "== Шаблон: красивые треугольники"; bl $T/krasivye_treug.py -- "$K2" "$W/k2_kras.blend"; K2="$W/k2_kras.blend"; fi
 echo "== Шаблон: веса финальные"
 bl $T/vesa_final.py -- "$K2" "$W/k2_vesa.blend"
 K2="$W/k2_vesa.blend"
@@ -55,8 +61,11 @@ echo "== Волк: огранка тела, грудь → живот"
 # огранка k-средних, стены — рёбра линий Г. Режим «массы от линий» (--rezhim massy --ploshchad_massy 0.035 --povorot 20 --linii 1)
 # торс спокойнее; без предела двигала вершины до 11 см (развороты 186 → 216), с --sila 0.9 --maks_sdvig 0.02 (E′) — 176, IoU 0.666/0.574;
 # выбор D/E′ — у дизайн-линии (ряд Референсы/работа/модельная/2026-10-27-ogranka-BDE/)
+# грива и хвост массой прядей, а не стружкой: укрупнение, шипы Таубином, прижим к телу — только шерсть (голова, кисти, лапы не
+# трогаются; ГеймБосс 27.10: «осколки-шипы 2–5 см по контуру головы и плеч»)
+bl $T/griva_massa.py -- "$W/volk/kk.blend" "$W/volk/kkgm.blend" $GRIVA
 # край гривы на груди — двумя наклонными участками, низ прижат к телу (дизайн-линия 27.10, FEEDBACK-2026-10-27-codex-ogranka-BDE §2)
-bl $T/griva_kraj.py -- "$W/volk/kk.blend" "$W/volk/kkg.blend" --z_seredina 1.40 --z_pravyj 1.56 --z_levyj 1.52 --x_konec 0.26 --x_maks 0.30
+bl $T/griva_kraj.py -- "$W/volk/kkgm.blend" "$W/volk/kkg.blend" --z_seredina 1.40 --z_pravyj 1.56 --z_levyj 1.52 --x_konec 0.26 --x_maks 0.30
 bl $T/ogranka.py -- "$W/volk/kkg.blend" "$W/volk/o.blend" $OGR
 bl $T/formovka.py -- "$W/volk/o.blend" "$W/volk/f.blend" --sustavy "$W/volk/sustavy.json" --golen 1 --koleno 0 --talia 1 $FORM_GRUD
 
@@ -79,7 +88,8 @@ bl $KC "$W/st1/c.fbx" "$W/st1/c.json" $COM --golova_z 9 --griva_z 9 --hvost_z -1
 fi
 echo "== Сводка: ключ «Лось» и @Лось, @Волк1, органы на шаблоне, складки"
 bl $T/svesti_klyuchi.py -- "$W/volk/f.blend" "$W/los/kk.blend" Лось "$W/svod.fbx" --cherty @Лось --blend "$W/svod.blend"
-bl $T/dobavit_kusok.py -- "$W/svod.blend" "$W/st1/hvost.blend" @Волк11 @Волк1 "$W/o1h.blend"
+bl $T/griva_massa.py -- "$W/st1/hvost.blend" "$W/st1/hvost_m.blend" --kusok @Волк11 --imya Волк1 $GRIVA --ne_trogat нет
+bl $T/dobavit_kusok.py -- "$W/svod.blend" "$W/st1/hvost_m.blend" @Волк11 @Волк1 "$W/o1h.blend"
 # хвост ст.1 — на то тело, которое игра рисует на ст.1 («Волк»×0.5), а не на тело подгонки «Волк1» (зазор был 58 мм; 27.10)
 bl $T/perenesti_kusok.py -- "$W/o1h.blend" "$W/st1/k.blend" @Волк1 Волк1 Волк 0.5 "$W/o1.blend"
 bl $T/organ_objekt.py -- "$W/o1.blend" "$W/st1/ushi.blend" @Волк11 Чутьё@Волк "$W/o2.blend"

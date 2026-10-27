@@ -242,7 +242,7 @@ if opt.get('maski'):
 if opt.get('kadr'):
     sc = bpy.context.scene; sc.render.engine = 'BLENDER_WORKBENCH'
     sh = sc.display.shading; sh.light = 'STUDIO'; sh.color_type = 'SINGLE'; sh.single_color = (0.72, 0.68, 0.62)
-    sh.show_backface_culling = True; sh.show_object_outline = True
+    sh.show_backface_culling = True; sh.show_object_outline = False   # контур объекта рисовал швы шасси зубцами («пила» 27.10) — игра контуров не рисует
     sc.render.resolution_x, sc.render.resolution_y = 900, 1200; sc.render.film_transparent = False
     w_ = bpy.data.worlds.new('w'); w_.color = (1, 1, 1); sc.world = w_
     for me in {o.data for o in vid}:
