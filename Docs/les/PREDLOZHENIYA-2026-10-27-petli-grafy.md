@@ -67,7 +67,7 @@
 - B0.2b LabEntrance.Underground с 2.5 м **не тронут** — это отдельный профиль;
 - тест Buried_NorthExit_IsCrevice_NotBreach: есть CreviceFloor, CreviceWallW, нет BreachRubble, подпись exit=crevice;
 - путь LabDoor → LabNorthDoor полный; капсула проходит; северная дверь на NavMesh;
-- кадры: Диаграммы/Лес/Кадры/Пилот-станция-2026-10-27-подземный-бункер.png, ...-расщелина.png;
+- кадры: Диаграммы/Лес/Кадры/Пилот-станция-2026-10-27-холм.png, ...-расщелина-снаружи.png, ...-подземный-бункер.png, ...-расщелина.png;
 - полный прогон: EditMode **412** (409 passed, 1 skipped, 2 inconclusive), PlayMode **152/152**.
 
 ---

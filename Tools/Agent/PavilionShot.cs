@@ -122,6 +122,8 @@ public static class PavilionShot
             case "CascadeLip": return CascadeLip();
             case "Lake": return Lake();
             case "Station": return Station();
+            case "Buried": return Buried();
+            case "Crevice": return Crevice();
             default: return "unknown mode " + mode + " (CanyonTop|Canyon3_4|CascadePool|CascadeLip|Lake)";
         }
     }
@@ -198,6 +200,34 @@ public static class PavilionShot
         Vector3 desired = Field(camField.x,
             Ground(camField.x, camField.y) + Mathf.Max(20f, length * 0.12f), camField.y);
         return PlaceClear("CascadeLip", target, desired, 1.5f);
+    }
+
+    static string Buried()
+    {
+        Vector2 c = builder.LabCenter;
+        float g = builder.SampleGround(c.x, c.y);
+        Vector3 target = Field(c.x, g + 4f, c.y);
+        Vector3 pos = Field(c.x + 34f, g + 24f, c.y - 54f);
+        cam.orthographic = false;
+        cam.fieldOfView = 52f;
+        cam.nearClipPlane = 0.3f;
+        cam.farClipPlane = 6000f;
+        cam.transform.SetPositionAndRotation(pos, Quaternion.LookRotation(target - pos, Vector3.up));
+        return $"Buried pos={pos} target={target}";
+    }
+
+    static string Crevice()
+    {
+        Vector3 n = builder.LabNorthDoor;
+        float g = builder.SampleGround(n.x, n.z);
+        Vector3 target = new Vector3(n.x, g + 1.2f, n.z + 8f);
+        Vector3 pos = new Vector3(n.x + 18f, g + 9f, n.z + 34f);
+        cam.orthographic = false;
+        cam.fieldOfView = 55f;
+        cam.nearClipPlane = 0.3f;
+        cam.farClipPlane = 6000f;
+        cam.transform.SetPositionAndRotation(pos, Quaternion.LookRotation(target - pos, Vector3.up));
+        return $"Crevice pos={pos} target={target}";
     }
 
     static string Station()
