@@ -250,7 +250,7 @@ if opt.get('kadr'):
     P = np.concatenate([geom(o, True)[0] for o in vid]); c = (P.min(0) + P.max(0)) / 2; H = (P.max(0) - P.min(0)).max() * 1.1
     cam = bpy.data.objects.new('cam', bpy.data.cameras.new('cam')); sc.collection.objects.link(cam); sc.camera = cam
     cam.data.type = 'ORTHO'; cam.data.ortho_scale = H
-    for nm, ang in (('front', 0), ('profile', 90), ('34', 35)):
+    for nm, ang in (('front', 0), ('profile', 90), ('34', 35), ('back', 180), ('34back', 145)):
         r = math.radians(ang); d = Vector((math.sin(r), -math.cos(r), 0))
         cam.location = Vector(c) + d * 10; cam.rotation_euler = (-d).to_track_quat('-Z', 'Y').to_euler()
         sc.render.filepath = opt['kadr'] + '_' + nm + '.png'; bpy.ops.render.render(write_still=True)
