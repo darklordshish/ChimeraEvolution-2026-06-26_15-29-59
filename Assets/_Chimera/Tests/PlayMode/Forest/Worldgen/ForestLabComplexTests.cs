@@ -182,6 +182,25 @@ namespace Chimera.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator Buried_NorthExit_IsCrevice_NotBreach()
+        {
+            var b = BuildLab(LabStyle.Bastion, seed: 4, entrance: LabEntrance.Buried,
+                stationLoop: true);
+            yield return null;
+
+            Assert.AreEqual(LabEntrance.Buried, b.LabComplex.entrance, "вход — Buried");
+            Assert.AreNotEqual(Vector3.zero, b.LabNorthDoor, "северная расщелина есть");
+            Assert.IsNotNull(Find(b.LabComplex.root.transform, "CreviceFloor"),
+                "пол расщелины построен");
+            Assert.IsNotNull(Find(b.LabComplex.root.transform, "CreviceWallW"),
+                "борт расщелины построен");
+            Assert.IsNull(Find(b.LabComplex.root.transform, "BreachRubble"),
+                "у подземного бункера нет настенного пролома");
+            StringAssert.Contains("exit=crevice", b.LabComplex.damageSignature,
+                "подпись повреждений знает про расщелину");
+        }
+
+        [UnityTest]
         public IEnumerator StationLoop_NorthExit_IsBreachDamage()
         {
             var b = BuildLab(LabStyle.Bastion, seed: 4, stationLoop: true);

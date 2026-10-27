@@ -152,8 +152,9 @@ public class DomeWorld
             // Плита стоит на верхней точке пятна (поиск её и вернул): не висит и не режет склон.
             platformY = Mathf.Max(site.groundY, Hydro.lakeLevel + 0.5f);
             // Подземный вход: пол ниже подхода на перепад рампы; земля над ним — позже.
-            if (ResolvedLabEntrance == LabEntrance.Underground)
-                platformY = Mathf.Max(site.groundY - DomeLabComplex.UndergroundDrop,
+            if (ResolvedLabEntrance == LabEntrance.Underground ||
+                ResolvedLabEntrance == LabEntrance.Buried)
+                platformY = Mathf.Max(site.groundY - DomeLabComplex.DepthFor(ResolvedLabEntrance),
                     Hydro.lakeLevel + 0.5f);
             if (site.relaxed || site.wetApproach || site.fallback)
                 Debug.LogWarning($"[Forest] лаборатория: {site.note}");
@@ -266,7 +267,8 @@ public class DomeWorld
         raw = DomeRavines.Apply(raw, Ravines, x, z, Hydro.lakeLevel);
 
         // Подземный вход: вырезаем пологую траншею-рампу от двери к лесной площадке.
-        if (padRect && ResolvedLabEntrance == LabEntrance.Underground)
+        if (padRect && (ResolvedLabEntrance == LabEntrance.Underground ||
+                        ResolvedLabEntrance == LabEntrance.Buried))
         {
             float dx = x - LabCenter.x, dz = z - LabCenter.y;
             float yaw = padYaw * Mathf.Deg2Rad;
@@ -279,7 +281,8 @@ public class DomeWorld
                 lz <= zDoor && lz >= zOuter)
             {
                 float rampT = Mathf.Clamp01((zDoor - lz) / DomeLabComplex.RampLength);
-                return Mathf.Lerp(platformY, platformY + DomeLabComplex.UndergroundDrop, rampT);
+                return Mathf.Lerp(platformY, platformY +
+                    DomeLabComplex.DepthFor(ResolvedLabEntrance), rampT);
             }
         }
 
@@ -336,7 +339,8 @@ public class DomeWorld
     /// <summary>Точка в полосе подземной рампы (B0.2b): там не растёт подлесок.</summary>
     bool InsideRamp(float x, float z)
     {
-        if (!padRect || ResolvedLabEntrance != LabEntrance.Underground) return false;
+        if (!padRect || (ResolvedLabEntrance != LabEntrance.Underground &&
+                         ResolvedLabEntrance != LabEntrance.Buried)) return false;
         float dx = x - LabCenter.x, dz = z - LabCenter.y;
         float yaw = padYaw * Mathf.Deg2Rad;
         float c = Mathf.Cos(yaw), s = Mathf.Sin(yaw);

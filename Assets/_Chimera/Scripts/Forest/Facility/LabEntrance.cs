@@ -7,4 +7,6 @@ public enum LabEntrance
     Rock = 0,
     Underground = 1,
     Auto = 2,
+    /// <summary>Полностью заглублённый бункер: пол ниже земли, крыша на уровне земли.</summary>
+    Buried = 3,
 }

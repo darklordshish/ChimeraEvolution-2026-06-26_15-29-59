@@ -54,13 +54,15 @@ public static class DomeLabDamage
         int debris = AddDebris(root, seed, version, z, gateX);
         parts += debris;
 
-        int breach = result.northDoor != Vector3.zero
+        int breach = result.northDoor != Vector3.zero && result.entrance != LabEntrance.Buried
             ? AddNorthBreach(root, result, seed, version) : 0;
+        string exitKind = result.northDoor == Vector3.zero ? "" :
+            result.entrance == LabEntrance.Buried ? "crevice" : breach > 0 ? "breach" : "";
         parts += breach;
 
         result.damageSignature = $"plan={plan.template};gate={cell};glass=1;" +
                                  $"table={shift.x:F1},{shift.z:F1};light={LightNames[light]};debris={debris}" +
-                                 (breach > 0 ? $";exit=breach({breach})" : "");
+                                 (exitKind == "" ? "" : $";exit={exitKind}({breach})");
         result.damageParts = parts;
     }
 

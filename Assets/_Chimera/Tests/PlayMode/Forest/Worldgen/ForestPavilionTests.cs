@@ -40,6 +40,7 @@ namespace Chimera.Tests.PlayMode
             builder.buildRavines = false;
             builder.buildLabComplex = stationLoop;
             builder.buildStationLoop = stationLoop;
+            builder.labEntrance = stationLoop ? LabEntrance.Buried : LabEntrance.Rock;
             builder.buildLabPlan = stationLoop;
             builder.labStyle = LabStyle.Bastion;
             builder.minLabDistance = 150f;

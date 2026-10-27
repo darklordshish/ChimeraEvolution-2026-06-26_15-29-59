@@ -266,7 +266,8 @@ public static class DomeLabSite
         // В запасном «мокром» проходе её пропускаем и строим настил.
         if (requireDryApproach)
         {
-            float approachLength = entrance == LabEntrance.Underground ? 24f : ApproachLength;
+            float approachLength = (entrance == LabEntrance.Underground ||
+                                    entrance == LabEntrance.Buried) ? 24f : ApproachLength;
             for (int d = 0; d <= (int)approachLength; d += (int)ApproachStep)
             {
                 for (int side = -1; side <= 1; side++)

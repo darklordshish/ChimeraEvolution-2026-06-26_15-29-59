@@ -663,7 +663,7 @@ MonoBehaviour:
   climateChangeMinutes: 8
   climateBlendSeconds: 20
   labStyle: 0
-  labEntrance: 0
+  labEntrance: 3
   minLabDistance: 150
   speciesPool: []
   snakePrefab: {fileID: 0}

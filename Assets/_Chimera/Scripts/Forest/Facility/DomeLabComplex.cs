@@ -125,7 +125,15 @@ public static class DomeLabComplex
     public const float SurgeryGlassWidth = 5f;
     /// <summary>Подземный вход B0.2b: перепад и длина наклонной части рампы (м).</summary>
     public const float UndergroundDrop = 2.5f;
+    /// <summary>Полностью заглублённый бункер: плита ниже земли на высоту интерьера + крыша.</summary>
+    public const float BuriedDepth = 4.8f;
     public const float RampLength = 24f;
+    public const float CreviceLength = 12f;
+    public const float CreviceWidth = 4.2f;
+
+    public static float DepthFor(LabEntrance entrance) =>
+        entrance == LabEntrance.Buried ? BuriedDepth :
+        entrance == LabEntrance.Underground ? UndergroundDrop : 0f;
     public const float RampWidth = 6f;
 
     static readonly Dictionary<string, Mesh> meshCache = new Dictionary<string, Mesh>();
@@ -196,7 +204,8 @@ public static class DomeLabComplex
         // Всё, что выше, — ОДИН интерьер. Ниже — только внешняя оболочка стиля.
         result.interiorParts = b.parts;
         if (wetApproach && entrance != LabEntrance.Underground) BuildWetApproach(b);
-        if (entrance == LabEntrance.Underground) BuildUndergroundDressing(b);
+        if (entrance == LabEntrance.Underground || entrance == LabEntrance.Buried)
+            BuildUndergroundDressing(b, DepthFor(entrance), northDoor && style == LabStyle.Bastion);
         else if (style == LabStyle.InSlope) BuildSlopeDressing(b);
         else BuildBastionDressing(b);
         result.exteriorParts = b.parts - result.interiorParts;
@@ -556,45 +565,79 @@ public static class DomeLabComplex
     /// подпорные стены, земляная крыша над рампой и низкий портал. Внутри — тот же
     /// закрытый интерьер; снаружи читается спуск, а не фасад.
     /// </summary>
-    static void BuildUndergroundDressing(Builder b)
+    static void BuildUndergroundDressing(Builder b, float depth, bool northCrevice)
     {
-        float angle = Mathf.Atan2(UndergroundDrop, RampLength) * Mathf.Rad2Deg;
-        float rampLen = Mathf.Sqrt(RampLength * RampLength + UndergroundDrop * UndergroundDrop);
+        float angle = Mathf.Atan2(depth, RampLength) * Mathf.Rad2Deg;
+        float rampLen = Mathf.Sqrt(RampLength * RampLength + depth * depth);
         float rampZ = -HalfDepth - RampLength * 0.5f;
 
         b.AddRotated("RampFloor", Kit.Floor, RampWidth, 0.25f, rampLen,
-            new Vector3(0f, Plinth + UndergroundDrop * 0.5f, rampZ),
+            new Vector3(0f, Plinth + depth * 0.5f, rampZ),
             Quaternion.Euler(angle, 0f, 0f), true);
         b.Add("RampWallW", Kit.Rock, 1.2f, 2.4f, RampLength,
             -RampWidth * 0.5f - 0.4f, 0f, rampZ, true);
         b.Add("RampWallE", Kit.Rock, 1.2f, 2.4f, RampLength,
             RampWidth * 0.5f + 0.4f, 0f, rampZ, true);
 
-        // Не сплошная плита над головой: рваные земляные борта, спуск читается trench'ем.
         b.AddRock("RampBermW1", 4.2f, -5.4f, 0f, -HalfDepth - 6f);
         b.AddRock("RampBermW2", 3.8f, -5.0f, 0f, -HalfDepth - 15f);
         b.AddRock("RampBermE1", 4.4f, 5.6f, 0f, -HalfDepth - 7f);
         b.AddRock("RampBermE2", 3.6f, 5.2f, 0f, -HalfDepth - 16f);
 
-        // Низкий портал на верхней площадке: видна рама и козырёк, не башня.
         float zOuter = -HalfDepth - RampLength + 0.6f;
         b.Add("RampOuterW", Kit.Concrete, 1.1f, 3.4f, 1.4f,
-            -RampWidth * 0.5f - 0.2f, UndergroundDrop, zOuter, true);
+            -RampWidth * 0.5f - 0.2f, depth, zOuter, true);
         b.Add("RampOuterE", Kit.Concrete, 1.1f, 3.4f, 1.4f,
-            RampWidth * 0.5f + 0.2f, UndergroundDrop, zOuter, true);
+            RampWidth * 0.5f + 0.2f, depth, zOuter, true);
         b.Add("RampOuterLintel", Kit.Dark, RampWidth + 2.2f, 0.8f, 1.6f,
-            0f, UndergroundDrop + 3.2f, zOuter, true);
+            0f, depth + 3.2f, zOuter, true);
         b.Add("RampOuterCanopy", Kit.Concrete, RampWidth + 2.2f, 0.3f, 2.4f,
-            0f, UndergroundDrop + 3.4f, zOuter - 0.8f, true);
+            0f, depth + 3.4f, zOuter - 0.8f, true);
 
-        // Земляной навал над комплексом — холмом из крупных масс, а не одной плитой.
+        if (northCrevice)
+        {
+            // Земляная крыша с разрывом под расщелину: станция больше не коробка на газоне.
+            float gap = CreviceWidth * 0.5f + 0.5f;
+            float sideW = (HalfWidth * 2f - gap * 2f) * 0.5f;
+            float roofY = Plinth + RoomHeight + RoofThickness + 0.3f;
+            b.Add("UndergroundEarthRoofW", Kit.Rock, sideW, 0.7f, HalfDepth * 2f + 4f,
+                -gap - sideW * 0.5f, roofY, 0f, true);
+            b.Add("UndergroundEarthRoofE", Kit.Rock, sideW, 0.7f, HalfDepth * 2f + 4f,
+                gap + sideW * 0.5f, roofY, 0f, true);
+
+            // Северная расщелина: пол поднимается от двери к поверхности, борта — скала.
+            float rise = Mathf.Max(0.1f, depth - Plinth);
+            float creviceLen = Mathf.Sqrt(CreviceLength * CreviceLength + rise * rise);
+            float creviceAngle = Mathf.Atan2(rise, CreviceLength) * Mathf.Rad2Deg;
+            float z0 = HalfDepth;
+            float z1 = HalfDepth + CreviceLength;
+            float cz = (z0 + z1) * 0.5f;
+            b.AddRotated("CreviceFloor", Kit.Floor, CreviceWidth, 0.25f, creviceLen,
+                new Vector3(0f, Plinth + rise * 0.5f, cz),
+                Quaternion.Euler(-creviceAngle, 0f, 0f), true);
+            b.Add("CreviceWallW", Kit.Rock, 1.1f, 3.4f, CreviceLength,
+                -CreviceWidth * 0.5f - 0.55f, Plinth + 1.4f, cz, true);
+            b.Add("CreviceWallE", Kit.Rock, 1.1f, 3.4f, CreviceLength,
+                CreviceWidth * 0.5f + 0.55f, Plinth + 1.4f, cz, true);
+            b.AddRock("CreviceMouthW", 4.2f, -3.2f, depth - 0.2f, z1 + 0.8f);
+            b.AddRock("CreviceMouthE", 3.8f, 3.1f, depth - 0.2f, z1 + 0.8f);
+            b.AddRock("CreviceBrow", 4.5f, 0f, depth + 1.4f, z1 + 1.6f);
+
+            // Насыпь расходится в стороны, оставляя проход по центру.
+            b.Add("UndergroundHillW", Kit.Rock, 26f, 12f, 18f, -16f, -2f, 23f, true);
+            b.Add("UndergroundHillE", Kit.Rock, 26f, 12f, 18f, 16f, -2f, 23f, true);
+        }
+        else
+        {
+            b.Add("UndergroundHill", Kit.Rock, 62f, 10f, 18f, 0f, -2f, 23f, true);
+        }
+
         b.AddRock("UndergroundRockW", 6f, -12f, Plinth + RoomHeight, 2f);
         b.AddRock("UndergroundRockE", 5.5f, 12f, Plinth + RoomHeight, 1f);
-        b.AddRock("UndergroundRockN", 7f, 0f, Plinth + RoomHeight, 10f);
+        if (!northCrevice) b.AddRock("UndergroundRockN", 7f, 0f, Plinth + RoomHeight, 10f);
         b.AddRock("UndergroundRockC", 6.5f, 0f, Plinth + RoomHeight, 0f);
         b.AddRock("UndergroundRockS", 5f, 4f, Plinth + RoomHeight, -8f);
         b.AddRock("UndergroundRockSW", 4.5f, -9f, Plinth + RoomHeight, -7f);
-        b.Add("UndergroundHill", Kit.Rock, 62f, 10f, 18f, 0f, -2f, 23f, true);
         b.Add("UndergroundWingW", Kit.Rock, 8f, 7f, 30f, -26f, -2f, 2f, true);
         b.Add("UndergroundWingE", Kit.Rock, 8f, 7f, 30f, 26f, -2f, 2f, true);
     }
