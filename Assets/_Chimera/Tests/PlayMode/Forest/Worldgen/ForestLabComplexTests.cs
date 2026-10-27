@@ -175,6 +175,8 @@ namespace Chimera.Tests.PlayMode
             Assert.IsTrue(b.HasAsh, "ясень на стенде включён и поставлен");
             Assert.AreNotEqual(Vector2.zero, b.Ash.pos, "у ясеня есть место");
             Assert.IsNotNull(b.NestSite, "гнездо на ясене есть геометрией");
+            Assert.AreEqual(b.SampleGround(b.Ash.pos.x, b.Ash.pos.y), b.Ash.groundY, 0.05f,
+                "ясень стоит по тому же рельефу, что и мир");
         }
 
         [UnityTest]

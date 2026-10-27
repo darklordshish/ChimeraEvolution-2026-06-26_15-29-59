@@ -208,7 +208,7 @@ public class DomeWorld
         {
             if (Vector2.Distance(new Vector2(x, z), new Vector2(Entry.x, Entry.z)) < 12f)
                 return true;
-            if (DomeRavines.Contains(Ravines, x, z, 2.0f)) return true;
+            if (DomeRavines.Contains(Ravines, x, z, 1.2f)) return true;
             if (LabComplex == null) return false;
             if (labPad(x, z)) return true;
             // Перед LabDoor — спокойный участок: дверь видна целиком, деревья
@@ -225,7 +225,7 @@ public class DomeWorld
         if (Ravines.Count > 0)
         {
             DomeRavines.BuildWalls(Root, Ravines, SampleGround,
-                Flat(DomePalette.Bark * 0.9f), meshes);
+                Flat(DomePalette.Rock * 0.65f), meshes);
             FallenTrees = DomeRavines.BuildFallenTrees(Root, Ravines, seed, SampleGround,
                 Flat(DomePalette.Bark), meshes);
             VisualNests = DomeRavines.BuildNests(Root, Ravines, seed, SampleGround,
@@ -513,8 +513,9 @@ public class DomeWorld
             bool standLab = LabCenter.sqrMagnitude > 0.01f;
             float ashScale = standLab ? DomeAshSite.ScaleFor(cfg) : 1f;
             var spot = DomeAshSite.FindSpot(cfg, seed, LabCenter, Hydro, 96, ashScale, standLab,
-                (x, z) => DomeRavines.Contains(Ravines, x, z, 2.0f));
-            float gy = DomeHydro.SampleHydro(cfg, Hydro, spot.pos.x, spot.pos.y);
+                (x, z) => DomeRavines.Contains(Ravines, x, z, 1.4f));
+            // Ясень стоит по тому же рельефу, что и всё остальное (с оврагами/рампой).
+            float gy = SampleGround(spot.pos.x, spot.pos.y);
             spot.groundY = gy;
             Ash = spot;
             HasAsh = true;

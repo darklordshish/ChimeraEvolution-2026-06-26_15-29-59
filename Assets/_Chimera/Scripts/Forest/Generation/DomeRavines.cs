@@ -43,10 +43,20 @@ public static class DomeRavines
 
                 float length = Mathf.Lerp(34f, 58f,
                     SeededHash.ToFloat01(SeededHash.Hash(seed, 7303, salt)));
-                float width = Mathf.Lerp(8f, 12f,
+                // width — ПОЛУширина: 4.5..6.5 даёт полную ложбину 9..13 м.
+                float width = Mathf.Lerp(4.5f, 6.5f,
                     SeededHash.ToFloat01(SeededHash.Hash(seed, 7304, salt)));
                 float depth = Mathf.Lerp(4f, 6f,
                     SeededHash.ToFloat01(SeededHash.Hash(seed, 7305, salt)));
+                // Тело оврага не должно залезать в кольцо/русло даже концом.
+                if (p.magnitude + length * 0.5f > rin - 24f) continue;
+                bool nearRiver = false;
+                foreach (var rp in hydro.riverPts)
+                {
+                    if (Vector2.Distance(p, rp) < hydro.riverHalfWidth + width * 1.5f + 8f)
+                    { nearRiver = true; break; }
+                }
+                if (nearRiver) continue;
                 // Дно обязано остаться сухим: 1.2 м запаса над водой. Иначе Apply
                 // упирается в lake+0.45 и овраг читается плоской чашей.
                 depth = Mathf.Min(depth, ground - hydro.lakeLevel - 1.2f);
@@ -70,8 +80,8 @@ public static class DomeRavines
                         length = length,
                         width = width,
                         depth = depth,
-                        rim = Mathf.Lerp(1.2f, 2.2f,
-                            SeededHash.ToFloat01(SeededHash.Hash(seed, 7307, salt))),
+                        rim = Mathf.Min(Mathf.Lerp(1.2f, 2.2f,
+                            SeededHash.ToFloat01(SeededHash.Hash(seed, 7307, salt))), depth * 0.3f),
                     };
                     has = true;
                 }
@@ -103,13 +113,13 @@ public static class DomeRavines
                 k = k * k * (3f - 2f * k);
                 y -= r.depth * k;
             }
-            else if (u < 3f)
+            else if (u < 2f)
             {
-                // Широкое земляное плечо вокруг ложбины: поднимает окружающий уровень,
-                // чтобы дно читалось ниже поля, а не как коричневая полоса на склоне.
-                float k = 1f - (u - 1f) / 2f;
+                // Непрерывное плечо: 0 на u=1, максимум на u=1.5, 0 на u=2.
+                // Никакого вертикального уступа на кромке.
+                float k = 1f - (u - 1f);
                 k = k * k * (3f - 2f * k);
-                y += r.rim * 1.8f * k;
+                y += r.rim * k;
             }
         }
         return Mathf.Max(y, lakeLevel + 0.45f);
@@ -145,7 +155,7 @@ public static class DomeRavines
             for (int k = 0; k < 3; k++)
             {
                 float along = (k - 1) * 0.22f * r.length;
-                float across = (k % 2 == 0 ? -1f : 1f) * r.width * 0.38f;
+                float across = (k % 2 == 0 ? -1f : 1f) * r.width * 0.75f;
                 float c = Mathf.Cos(r.angleDeg * Mathf.Deg2Rad);
                 float s = Mathf.Sin(r.angleDeg * Mathf.Deg2Rad);
                 float x = r.center.x + along * c - across * s;
@@ -181,7 +191,7 @@ public static class DomeRavines
                 for (int k = -2; k <= 2; k++)
                 {
                     float along = k * r.length * 0.18f;
-                    float across = side * r.width * 0.43f;
+                    float across = side * r.width * 0.82f;
                     float x = r.center.x + along * c - across * s;
                     float z = r.center.y + along * s + across * c;
                     float y = ground(x, z);
