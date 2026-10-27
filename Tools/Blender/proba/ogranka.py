@@ -18,7 +18,7 @@
 Правится только форма-ключ `--imya` (базовая форма К2 — нет) и сетка кусков.
 
   blender -b --factory-startup -P ogranka.py -- вход.blend выход.blend [--imya Волк] [--rezhim myshcy] [--sila 1] [--iter 30] [--lap 0]
-      [--ploshchad_ploskosti 0.008] [--min_oblast 0.003] [--ploshchad 0.006] [--masshtab 0.08] [--bez голова,Чутьё] [--kuski 1 [--ploshchad_kuski 0.01]]
+      [--ploshchad_ploskosti 0.008] [--min_oblast 0.003] [--ploshchad 0.006] [--masshtab 0.08] [--bez голова,Чутьё] [--linii 2|1|0] [--kuski 1 [--ploshchad_kuski 0.01]]
 """
 import sys
 import bpy
@@ -113,13 +113,15 @@ def geom(P, F):
     return C, N, A
 
 
-def svyaz(F):
+def svyaz(F, bar=None):
+    """соседство граней по общим рёбрам; через ребро из `bar` (линия перелома) соседства нет"""
     ed = {}
     for fi, f in enumerate(F):
         for i_ in range(len(f)):
             e = tuple(sorted((f[i_], f[(i_ + 1) % len(f)]))); ed.setdefault(e, []).append(fi)
     adj = [[] for _ in F]
-    for fs in ed.values():
+    for e, fs in ed.items():
+        if bar and e in bar: continue
         for a_ in fs:
             for b_ in fs:
                 if a_ != b_: adj[a_].append(b_)
@@ -164,10 +166,10 @@ def oblasti_kmeans(C, N, A, plosh):
     return lab
 
 
-def svyaznye(lab, F, A):
+def svyaznye(lab, F, A, bar=None):
     """область — связный кусок (иначе общая плоскость через средний центр сдвигала грани разной глубины до 20 см); островки
     мельче `--min_oblast` сливаются с соседом по большинству общих рёбер"""
-    adj = svyaz(F)
+    adj = svyaz(F, bar)
     lab3 = -np.ones(len(F), dtype=np.int64); nxt = 0
     for f0 in range(len(F)):
         if lab3[f0] >= 0: continue
@@ -228,6 +230,10 @@ body = [o for o in bpy.data.objects if o.type == 'MESH' and not o.name.startswit
         and o.data.shape_keys and NAME in o.data.shape_keys.key_blocks]
 uid, Pu, Bu, vmap = {}, [], [], {}
 Fu, fobj, fbone = [], [], []
+# ЛИНИИ ПЕРЕЛОМА (27.10, пункт Г): рёбра с атрибутом `перелом` (linii_k2.py; 2 — главная Г, 1 — второстепенная В) — граница
+# областей: область не связывается через такое ребро, и грань ломается по линии листа, а не там, где легли k-средние.
+# `--linii 2` — только Г (по умолчанию: второстепенные «могут исчезать в тумане», записка дизайн-линии), `--linii 1` — и В, `0` — выкл
+LIN = int(opt.get('linii', '2')); BAR = set()
 for o in body:
     Mw = o.matrix_world; kb = o.data.shape_keys.key_blocks[NAME]
     gn = {g.index: g.name for g in o.vertex_groups}
@@ -236,6 +242,11 @@ for o in body:
         if k not in uid:
             uid[k] = len(Pu); Pu.append(list(Mw @ kb.data[vi].co)); Bu.append(list(bpos))
         vmap[(o.name, vi)] = uid[k]
+    at = o.data.attributes.get('перелом')
+    if at and LIN > 0:
+        vals = [0] * len(o.data.edges); at.data.foreach_get('value', vals)
+        for ed, s_ in zip(o.data.edges, vals):
+            if s_ >= LIN: BAR.add(tuple(sorted((vmap[(o.name, ed.vertices[0])], vmap[(o.name, ed.vertices[1])]))))
     vb = [gn[max(v.groups, key=lambda g: g.weight).group] if v.groups else '' for v in o.data.vertices]
     for pl in o.data.polygons:
         Fu.append([vmap[(o.name, vi)] for vi in pl.vertices]); fobj.append(o.name)
@@ -251,7 +262,7 @@ if opt.get('rezhim') == 'myshcy':
     lab = oblasti_myshcy(P, Fu, nb, fixed, A, fmysh)
 else:
     lab = oblasti_kmeans(C, N, A, float(opt['ploshchad']))
-lab = svyaznye(lab, Fu, A)
+lab = svyaznye(lab, Fu, A, BAR)
 P2 = vypryamit(P, Fu, lab, fixed, nb, vf)
 dv = np.linalg.norm(P2 - P, axis=1)
 if opt.get('otladka') == '1' and opt.get('rezhim') == 'myshcy':
@@ -261,8 +272,8 @@ for o in body:
     kb = o.data.shape_keys.key_blocks[NAME]; inv = o.matrix_world.inverted()
     for vi in range(len(o.data.vertices)):
         kb.data[vi].co = inv @ Vector(P2[vmap[(o.name, vi)]])
-print('ОГРАНКА: тело одной сеткой (%s) — областей %d, вершин %d (неподвижных: %d), сдвиг средн. %.4f, макс %.4f м' % (
-    ', '.join(o.name for o in body), len(np.unique(lab)), len(P), int(fixed.sum()), dv.mean(), dv.max()))
+print('ОГРАНКА: тело одной сеткой (%s) — областей %d, вершин %d (неподвижных: %d), рёбер линий %d, сдвиг средн. %.4f, макс %.4f м' % (
+    ', '.join(o.name for o in body), len(np.unique(lab)), len(P), int(fixed.sum()), len(BAR), dv.mean(), dv.max()))
 
 # ---------- КУСКИ ----------
 if opt.get('kuski', '0') == '1':
