@@ -18,7 +18,7 @@ public static class EmissionSetup
         {
             string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
             var mat = UnityEditor.AssetDatabase.LoadAssetAtPath<Material>(path);
-            if (mat == null) continue;
+            if (mat == null || mat.shader == null || mat.shader.name != "Universal Render Pipeline/Lit") continue;
             if (mat.IsKeywordEnabled("_EMISSION")) continue;
             mat.EnableKeyword("_EMISSION");
             UnityEditor.EditorUtility.SetDirty(mat);

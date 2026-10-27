@@ -15,6 +15,7 @@ public static class DomeSkyRig
     static FogMode fogMode;
     static float fogDensity;
     static Color fogColor;
+    static float ambientIntensity;
 
     public static void Reset()
     {
@@ -32,6 +33,7 @@ public static class DomeSkyRig
             RenderSettings.fogMode = fogMode;
             RenderSettings.fogDensity = fogDensity;
             RenderSettings.fogColor = fogColor;
+            RenderSettings.ambientIntensity = ambientIntensity;
             fogCaptured = false;
         }
     }
@@ -86,12 +88,14 @@ public static class DomeSkyRig
             fogMode = RenderSettings.fogMode;
             fogDensity = RenderSettings.fogDensity;
             fogColor = RenderSettings.fogColor;
+            ambientIntensity = RenderSettings.ambientIntensity;
             fogCaptured = true;
         }
         RenderSettings.fog = true;
         RenderSettings.fogMode = FogMode.ExponentialSquared;
         RenderSettings.fogDensity = s.fogDensity;
         RenderSettings.fogColor = s.fogColor;
+        RenderSettings.ambientIntensity = ambientIntensity * (0.35f + 0.65f * s.dayT);
         if (log) Debug.Log($"[Forest] фаза неба: t={timeMinutes:F1} мин, день {s.dayT:F2}, туман {s.fogDensity:F3}");
     }
 }
