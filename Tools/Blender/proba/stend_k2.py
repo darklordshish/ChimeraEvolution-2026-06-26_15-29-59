@@ -26,7 +26,7 @@
   blender -b --factory-startup -P stend_k2.py -- chelovek_mesh.fbx --pokoj klyuchi/chelovek-pokoj.json
       [--kluch Волк --ves 1 --poza klyuchi/chelovek-volk-poza.json --stupen klyuchi/chelovek-volk-st2.json]
       [--organy Чутьё@Волк:1,Шкура@Волк:1] [--skryt_organy klyuchi/../organy/chelovek.json] [--maski f.png,p.png]
-      [--bez @Волк] [--kadr префикс] [--otchet отчёт.json]
+      [--bez @Волк] [--poza_obj тело.obj] [--kadr префикс] [--otchet отчёт.json]
 """
 import sys, json, math
 import bpy, bmesh
@@ -41,7 +41,7 @@ while i < len(a):
     opt[a[i].lstrip('-')] = a[i + 1]; i += 2
 KEY, W = opt.get('kluch'), float(opt.get('ves', '1'))
 import os
-for k_ in ('maski', 'kadr', 'otchet'):   # Blender читает и пишет картинки не от рабочей папки — пути абсолютные
+for k_ in ('maski', 'kadr', 'otchet', 'poza_obj'):   # Blender читает и пишет картинки не от рабочей папки — пути абсолютные
     if opt.get(k_): opt[k_] = ','.join(os.path.abspath(x) for x in opt[k_].split(','))
 
 bpy.ops.wm.read_factory_settings(use_empty=True)
@@ -255,6 +255,16 @@ if opt.get('kadr'):
         cam.location = Vector(c) + d * 10; cam.rotation_euler = (-d).to_track_quat('-Z', 'Y').to_euler()
         sc.render.filepath = opt['kadr'] + '_' + nm + '.png'; bpy.ops.render.render(write_still=True)
 
+# `--poza_obj файл.obj` — тело шасси в позе, как его покажет игра (без кусков `@`) — для меры шума поверхности (shum.py)
+if opt.get('poza_obj'):
+    with open(opt['poza_obj'], 'w') as fo:
+        base_ = 1
+        for o in vid:
+            if '@' in o.name: continue
+            Pp, Fp = geom(o, True)
+            for p in Pp: fo.write('v %.6f %.6f %.6f\n' % (p[0], p[2], -p[1]))
+            for f in Fp: fo.write('f ' + ' '.join(str(base_ + j) for j in f) + '\n')
+            base_ += len(Pp)
 print('СТЕНД: ' + json.dumps({k: v for k, v in otchet.items() if k != 'obekty'}, ensure_ascii=False))
 if opt.get('otchet'):
     json.dump(otchet, open(opt['otchet'], 'w', encoding='utf-8'), ensure_ascii=False, indent=2)
