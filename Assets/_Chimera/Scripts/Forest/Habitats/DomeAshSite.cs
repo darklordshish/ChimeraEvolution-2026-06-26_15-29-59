@@ -36,10 +36,12 @@ public static class DomeAshSite
     /// <summary>Место ясеня: первое годное по детерминированному обходу сетки.</summary>
     public static AshSpot FindSpot(DomeGenConfigSO cfg, long seed, Vector2 labCenter,
         DomeHydro.State hydro, int gridRes, float scale = 1f, bool requireRingFit = false,
-        Func<float, float, bool> reject = null)
+        Func<float, float, bool> reject = null, Func<float, float, float> ground = null)
     {
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
         if (hydro == null) throw new ArgumentNullException(nameof(hydro));
+        Func<float, float, float> field = ground ??
+            ((x, z) => DomeHeightField.SampleHeight(cfg, x, z));
         gridRes = Mathf.Clamp(gridRes, 32, 160);
         float d = cfg.mapDiameter;
         float cell = d / gridRes;
@@ -58,7 +60,7 @@ public static class DomeAshSite
                 if (reject != null && reject(x, z)) continue;
                 // На B0 крона не должна входить в кольцо; A/C сохраняют старое поведение.
                 if (requireRingFit && p.magnitude + CrownDiameter * 0.5f * scale > rin - 6f) continue;
-                if (DomeSlope.SlopeAt(cfg, x, z) >= 15f) continue;
+                if (DomeSlope.SlopeAtS(cfg, x, z, field) >= 15f) continue;
                 float dx = x - hydro.lakeCenter.x, dz = z - hydro.lakeCenter.y;
                 if (dx * dx + dz * dz < (hydro.lakeRadius + 10f) * (hydro.lakeRadius + 10f)) continue;
                 bool nearRiver = false;
@@ -70,12 +72,12 @@ public static class DomeAshSite
                 if (nearRiver) continue;
                 if (!hasFallback)
                 {
-                    fallback = new AshSpot { pos = p, groundY = DomeHeightField.SampleHeight(cfg, x, z) };
+                    fallback = new AshSpot { pos = p, groundY = field(x, z) };
                     hasFallback = true;
                 }
                 long roll = (long)(SeededHash.Hash(seed, 1000, ix * 1000 + iz) % 7);
                 if (roll == 0)
-                    return new AshSpot { pos = p, groundY = DomeHeightField.SampleHeight(cfg, x, z) };
+                    return new AshSpot { pos = p, groundY = field(x, z) };
             }
         if (!hasFallback) throw new InvalidOperationException("места ясеню нет (смени сид)");
         return fallback;

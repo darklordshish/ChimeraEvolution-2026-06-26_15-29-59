@@ -42,6 +42,24 @@ namespace Chimera.Tests.EditMode
         }
 
         [Test]
+        public void Spot_WithWorldGround_ReportsThatHeight()
+        {
+            var cfg = Config(1337);
+            try
+            {
+                var hydro = DomeHydro.Build(cfg, 128);
+                var spot = DomeAshSite.FindSpot(cfg, 4242, Vector2.zero, hydro, 96,
+                    1f, false, null, (x, z) => DomeHeightField.SampleHeight(cfg, x, z) + 100f);
+                Assert.AreEqual(DomeHeightField.SampleHeight(cfg, spot.pos.x, spot.pos.y) + 100f,
+                    spot.groundY, 1e-3f, "ясень читает переданный пол, а не сырое поле");
+            }
+            finally
+            {
+                Object.DestroyImmediate(cfg);
+            }
+        }
+
+        [Test]
         public void Nest_IsOwl_AndValid()
         {
             var go = new GameObject("~OwlProbe");

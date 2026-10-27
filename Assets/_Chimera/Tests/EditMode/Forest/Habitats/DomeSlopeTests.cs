@@ -98,6 +98,23 @@ namespace Chimera.Tests.EditMode
         }
 
         [Test]
+        public void RingField_WithWorldGround_ReadsTerraceNotRawField()
+        {
+            var cfg = Config(1337);
+            try
+            {
+                float raised = DomeSlope.RingField(cfg, 100f, 0f, (x, z) => 42f);
+                Assert.AreEqual(42f, raised, 1e-5f, "вне кольца — переданный пол");
+                float raw = DomeHeightField.SampleHeight(cfg, 100f, 0f);
+                Assert.Greater(raised, raw, "подъём террасы не теряется");
+            }
+            finally
+            {
+                Object.DestroyImmediate(cfg);
+            }
+        }
+
+        [Test]
         public void RingField_MeetsField_AndRisesOnRing()
         {
             var cfg = Config(1337);

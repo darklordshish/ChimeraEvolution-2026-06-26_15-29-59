@@ -368,11 +368,11 @@ public class ForestBuilder : MonoBehaviour
             // быть выше поля. Вход остаётся точкой самого устья.
             Vector2 down = new Vector2(Mathf.Cos(m.facing), Mathf.Sin(m.facing));
             Vector2 pad = BowlPad(m.pos + down * 5f);
-            float y = Mathf.Max(DomeSlope.RingField(ownedConfig, pad.x, pad.y),
+            float y = Mathf.Max(world.RingGround(pad.x, pad.y),
                                 world.SampleGround(pad.x, pad.y));
             var site = MakeSnakeLair($"Логово_устье_{mouths}", FieldToWorld(pad.x, y, pad.y),
                 LairSite.LairAreaType.Den);
-            float yMouth = DomeSlope.RingField(ownedConfig, m.pos.x, m.pos.y);
+            float yMouth = world.RingGround(m.pos.x, m.pos.y);
             site.entrances.Add(FieldToWorld(m.pos.x, yMouth, m.pos.y));
             mouths++;
         }
@@ -383,7 +383,7 @@ public class ForestBuilder : MonoBehaviour
             // Гнёзда тоже могут стоять на кромке кольца. Тот же BowlPad: адрес — в чаше,
             // каирн остаётся на месте. Высота — верхняя из скалы и поля, чтобы не под водой.
             Vector2 pad = BowlPad(n.pos);
-            float y = Mathf.Max(DomeSlope.RingField(ownedConfig, pad.x, pad.y),
+            float y = Mathf.Max(world.RingGround(pad.x, pad.y),
                                 world.SampleGround(pad.x, pad.y));
             MakeSnakeLair($"Логово_гнездо_{nests}", FieldToWorld(pad.x, y, pad.y),
                 LairSite.LairAreaType.Nest);
@@ -445,7 +445,7 @@ public class ForestBuilder : MonoBehaviour
         Vector2 p = start;
         for (int i = 0; i < 12; i++)
         {
-            float ring = DomeSlope.RingField(ownedConfig, p.x, p.y);
+            float ring = world.RingGround(p.x, p.y);
             float field = world.SampleGround(p.x, p.y);
             if (ring <= field + 0.5f) return p;
             if (p.sqrMagnitude < 1f) break;
@@ -470,7 +470,7 @@ public class ForestBuilder : MonoBehaviour
         if (world == null || world.Root == null || ownedConfig == null) return 0f;
         var root = world.Root.transform;
         Vector3 local = root.InverseTransformPoint(new Vector3(x, 0f, z));
-        float y = Mathf.Max(DomeSlope.RingField(ownedConfig, local.x, local.z),
+        float y = Mathf.Max(world.RingGround(local.x, local.z),
                             world.SampleGround(local.x, local.z));
         return root.TransformPoint(new Vector3(local.x, y, local.z)).y;
     }
@@ -504,6 +504,7 @@ public class ForestBuilder : MonoBehaviour
             climate.wetMaterials = null;
             climate.rain = null;
             climate.lab = null;
+            climate.ground = null;
             ForestClimate.LabZone = null;
         }
         if (world != null)
@@ -557,12 +558,13 @@ public class ForestBuilder : MonoBehaviour
         climate.StartWeatherClock();
         climate.skyRoot = world.Root;
         climate.lab = world.LabComplex;
+        climate.SetGround(world.SampleGround, world.Hydro.lakeLevel);
         ForestClimate.LabZone = world.LabComplex;
         var wet = new List<Material>(world.Materials);
         wet.AddRange(DomeFlora.Materials);
         climate.wetMaterials = wet;
         if (climateWeather == WeatherKind.Rain && climate.rain == null)
-            climate.rain = DomeRain.BuildPreview(world.Root, 0f, 0f);
+            climate.rain = DomeRain.BuildPreview(world.Root, 0f, 0f, world.SampleGround);
         climate.ApplyVisuals();
     }
 

@@ -13,9 +13,11 @@ public static class DomePass
     /// круги корпусов (r = половина габарита + 1м).
     /// </summary>
     public static bool[,] BlockedGrid(DomeGenConfigSO cfg, DomeHydro.State hydro,
-        DomeFacilityLayout.Facility f, int res)
+        DomeFacilityLayout.Facility f, int res, Func<float, float, float> ground = null)
     {
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
+        Func<float, float, float> field = ground ??
+            ((x, z) => DomeHeightField.SampleHeight(cfg, x, z));
         res = Mathf.Clamp(res, 32, 256);
         float d = cfg.mapDiameter;
         float cell = d / res;
@@ -26,7 +28,7 @@ public static class DomePass
                 float x = -d / 2 + (ix + 0.5f) * cell;
                 float z = -d / 2 + (iz + 0.5f) * cell;
                 if (new Vector2(x, z).magnitude > d / 2) { blocked[ix, iz] = true; continue; }
-                if (DomeSlope.SlopeAt(cfg, x, z) > 22f) { blocked[ix, iz] = true; continue; }
+                if (DomeSlope.SlopeAtS(cfg, x, z, field) > 22f) { blocked[ix, iz] = true; continue; }
                 if (hydro != null)
                 {
                     float dx = x - hydro.lakeCenter.x, dz = z - hydro.lakeCenter.y;

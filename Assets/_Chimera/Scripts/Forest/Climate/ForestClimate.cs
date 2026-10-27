@@ -23,6 +23,11 @@ public class ForestClimate : MonoBehaviour
     public DomeLabComplex.Result lab;
     public float visualInterval = 0.5f;
 
+    [Header("B1.3: высотный климат")]
+    public System.Func<float, float, float> ground;
+    public float lakeLevel;
+    public float heightFalloffPerMeter = 0.04f;
+
     [Header("B1.2: смена погоды по таблице")]
     public bool autoWeather = false;
     public float weatherChangeMinutes = 8f;
@@ -82,6 +87,19 @@ public class ForestClimate : MonoBehaviour
         }
     }
 
+    /// <summary>Пол и уровень воды павильона: климат читает высоту над озером.</summary>
+    public void SetGround(System.Func<float, float, float> sampler, float lakeY)
+    {
+        ground = sampler;
+        lakeLevel = lakeY;
+        if (rain != null) rain.SetGround(sampler);
+    }
+
+    public static float HeightFog(float groundY, float lakeY, float falloffPerMeter = 0.04f)
+    {
+        return WeatherModifier.HeightFogMult(groundY - lakeY, falloffPerMeter);
+    }
+
     public void SetWeatherImmediate(WeatherKind kind)
     {
         currentKind = kind;
@@ -121,7 +139,7 @@ public class ForestClimate : MonoBehaviour
     void EnsureRain()
     {
         if (state.kind != WeatherKind.Rain || rain != null || skyRoot == null) return;
-        rain = DomeRain.BuildPreview(skyRoot, 0f, 0f);
+        rain = DomeRain.BuildPreview(skyRoot, 0f, 0f, ground);
     }
 
     /// <summary>Детерминированный выбор погоды по таблице; пустая таблица — Clear.</summary>
@@ -172,6 +190,15 @@ public class ForestClimate : MonoBehaviour
         if (FogAmount > 0f)
             RenderSettings.fogDensity = Mathf.Max(RenderSettings.fogDensity, 0.0008f)
                                         * (1f + 1.5f * FogAmount);
+
+        // B1.3: высота над озером, а не мировая Y. Низина/каньон туманятся,
+        // плато остаётся читаемым; внутри станции это всё равно гасится ниже.
+        if (ground != null)
+        {
+            float heightAboveLake = ground(viewPoint.x, viewPoint.z) - lakeLevel;
+            float band = WeatherModifier.HeightFogMult(heightAboveLake, heightFalloffPerMeter);
+            RenderSettings.fogDensity *= Mathf.Lerp(0.25f, 1f, band);
+        }
 
         // Внутри станции нет внешнего тумана и дождя: это закрытый объём.
         if (inside)

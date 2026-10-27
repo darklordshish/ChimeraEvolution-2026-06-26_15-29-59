@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -14,19 +15,34 @@ public class DomeRain : MonoBehaviour
     public float area = 160f;
     public float height = 30f;
     public float speed = 25f;
+    public Func<float, float, float> ground;
 
     readonly List<Transform> pool = new List<Transform>();
     static Mesh streakMesh;
     static Material streakMat;
 
-    public static DomeRain BuildPreview(GameObject parent, float cx, float cz)
+    public static DomeRain BuildPreview(GameObject parent, float cx, float cz,
+        Func<float, float, float> ground = null)
     {
         var go = new GameObject("~DomeRain");
         go.transform.SetParent(parent.transform, false);
-        go.transform.position = new Vector3(cx, 0f, cz);
+        go.transform.position = new Vector3(cx, ground != null ? ground(cx, cz) : 0f, cz);
         var rain = go.AddComponent<DomeRain>();
+        rain.SetGround(ground);
         rain.Build();
         return rain;
+    }
+
+    public void SetGround(Func<float, float, float> sampler)
+    {
+        ground = sampler;
+    }
+
+    /// <summary>Поставить дождь над точкой, на землю, а не на Y=0.</summary>
+    public void Follow(Vector3 p)
+    {
+        float y = ground != null ? ground(p.x, p.z) : 0f;
+        transform.position = new Vector3(p.x, y, p.z);
     }
 
     void Build()
@@ -64,8 +80,7 @@ public class DomeRain : MonoBehaviour
     {
         if (followCamera && Camera.main != null)
         {
-            Vector3 p = Camera.main.transform.position;
-            transform.position = new Vector3(p.x, transform.position.y, p.z);
+            Follow(Camera.main.transform.position);
         }
         float dt = Time.deltaTime;
         foreach (var t in pool)
@@ -80,8 +95,8 @@ public class DomeRain : MonoBehaviour
     public static void WipePreview(GameObject parent)
     {
         foreach (var rain in parent.GetComponentsInChildren<DomeRain>())
-            Object.DestroyImmediate(rain.gameObject);
-        if (streakMesh != null) { Object.DestroyImmediate(streakMesh); streakMesh = null; }
-        if (streakMat != null) { Object.DestroyImmediate(streakMat); streakMat = null; }
+            UnityEngine.Object.DestroyImmediate(rain.gameObject);
+        if (streakMesh != null) { UnityEngine.Object.DestroyImmediate(streakMesh); streakMesh = null; }
+        if (streakMat != null) { UnityEngine.Object.DestroyImmediate(streakMat); streakMat = null; }
     }
 }

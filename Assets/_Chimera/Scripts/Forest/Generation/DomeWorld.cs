@@ -252,6 +252,9 @@ public class DomeWorld
     public float RawGround(float x, float z) =>
         cfg != null && Hydro != null ? DomeHydro.SampleHydro(cfg, Hydro, x, z) : 0f;
 
+    public float RingGround(float x, float z) =>
+        DomeSlope.RingField(cfg, x, z, SampleGround);
+
     public float SampleGround(float x, float z)
     {
         if (cfg == null || Hydro == null) return 0f;
@@ -487,7 +490,7 @@ public class DomeWorld
     void BuildMouthsAndNests(long seed)
     {
         // Устья стоят на скальном кольце: площадку лаборатории сюда не тянем.
-        Func<float, float, float> ringGround = (x, z) => DomeSlope.RingField(cfg, x, z);
+        Func<float, float, float> ringGround = RingGround;
         Mouths = DomeSlope.FindMouths(cfg, 3, 96, ringGround);
         Nests = DomeSlope.FindNests(cfg, seed, Mouths, 2, ringGround);
         // Гнездо — каирн на земле. Оно не знает про пятно комплекса (DomeSlope про него
@@ -524,7 +527,7 @@ public class DomeWorld
             bool standLab = LabCenter.sqrMagnitude > 0.01f;
             float ashScale = standLab ? DomeAshSite.ScaleFor(cfg) : 1f;
             var spot = DomeAshSite.FindSpot(cfg, seed, LabCenter, Hydro, 96, ashScale, standLab,
-                (x, z) => DomeRavines.Contains(Ravines, x, z, 1.4f));
+                (x, z) => DomeRavines.Contains(Ravines, x, z, 1.4f), SampleGround);
             // Ясень стоит по тому же рельефу, что и всё остальное (с оврагами/рампой).
             float gy = SampleGround(spot.pos.x, spot.pos.y);
             spot.groundY = gy;
@@ -656,7 +659,7 @@ public class DomeWorld
         {
             float d = Vector2.Distance(new Vector2(x, z), lab);
             if (d <= LabRadius + 10f) return SampleGround(x, z);
-            return Mathf.Max(SampleGround(x, z), DomeSlope.RingField(cfg, x, z));
+            return Mathf.Max(SampleGround(x, z), RingGround(x, z));
         };
         DomeFacilityPlacer.Build(Root, Facility, ground);
         LabComplex = null;

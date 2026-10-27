@@ -80,7 +80,19 @@ public static class DomeSlope
     public static float RingField(DomeGenConfigSO cfg, float x, float z)
     {
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
-        float field = DomeHeightField.SampleHeight(cfg, x, z);
+        return RingField(cfg, x, z, (ax, az) => DomeHeightField.SampleHeight(cfg, ax, az));
+    }
+
+    /// <summary>
+    /// Тот же RingField, но поле — слой мира (SampleGround): терраса/каньон/овраг,
+    /// а не сырое поле. Скальное кольцо по-прежнему сверху.
+    /// </summary>
+    public static float RingField(DomeGenConfigSO cfg, float x, float z,
+        Func<float, float, float> ground)
+    {
+        if (cfg == null) throw new ArgumentNullException(nameof(cfg));
+        if (ground == null) throw new ArgumentNullException(nameof(ground));
+        float field = ground(x, z);
         float r = Mathf.Sqrt(x * x + z * z);
         float rin = DomeRockRing.InnerRadius(cfg);
         float rout = DomeRockRing.OuterRadius(cfg);

@@ -112,6 +112,17 @@ namespace Chimera.Tests.EditMode
         }
 
         [Test]
+        public void HeightFog_LowlandThick_PlateauClear_AndMonotone()
+        {
+            Assert.AreEqual(1f, ForestClimate.HeightFog(0f, 0f), 1e-5f, "у воды густо");
+            Assert.AreEqual(1f, ForestClimate.HeightFog(-5f, 0f), 1e-5f, "ниже воды — тот же низ");
+            Assert.Less(ForestClimate.HeightFog(10f, 0f), 1f, "на высоте реже");
+            Assert.Less(ForestClimate.HeightFog(20f, 0f), ForestClimate.HeightFog(10f, 0f),
+                "монотонно вниз");
+            Assert.AreEqual(0f, ForestClimate.HeightFog(30f, 0f), 1e-5f, "плато чисто");
+        }
+
+        [Test]
         public void Wind_ValidatesDirection()
         {
             var ok = new WeatherState { kind = WeatherKind.Wind, windDir = new Vector2(1f, 0f), windStrength = 3f };
