@@ -54,8 +54,13 @@ public static class DomeLabDamage
         int debris = AddDebris(root, seed, version, z, gateX);
         parts += debris;
 
+        int breach = result.northDoor != Vector3.zero
+            ? AddNorthBreach(root, result, seed, version) : 0;
+        parts += breach;
+
         result.damageSignature = $"plan={plan.template};gate={cell};glass=1;" +
-                                 $"table={shift.x:F1},{shift.z:F1};light={LightNames[light]};debris={debris}";
+                                 $"table={shift.x:F1},{shift.z:F1};light={LightNames[light]};debris={debris}" +
+                                 (breach > 0 ? $";exit=breach({breach})" : "");
         result.damageParts = parts;
     }
 
@@ -154,6 +159,70 @@ public static class DomeLabDamage
                     0.1f, gateZ - 1.2f + i * 0.5f),
                 new Vector3(0.3f, 0.12f, 0.25f), dark,
                 Quaternion.Euler(0f, i * 30f, 0f));
+            n++;
+        }
+        return n;
+    }
+
+    /// <summary>
+    /// Северный выход как повреждение: рваная кромка, плиты и арматура вокруг
+    /// уже вырезанного проёма. Геометрию проёма даёт DomeLabComplex, вид — этот слой.
+    /// </summary>
+    static int AddNorthBreach(Transform root, DomeLabComplex.Result result, long seed, int version)
+    {
+        Vector3 c = root.InverseTransformPoint(result.northDoor);
+        var concrete = DomeLabComplex.MaterialOf(DomeLabComplex.Kit.ConcreteDark);
+        var rust = DomeLabComplex.MaterialOf(DomeLabComplex.Kit.Rust);
+        var dark = DomeLabComplex.MaterialOf(DomeLabComplex.Kit.Dark);
+        int n = 0;
+        float half = DomeLabComplex.PortalWidth * 0.5f;
+
+        // Рваные края проёма: сколы по бокам и сверху, детерминированно по сиду.
+        for (int i = 0; i < 8; i++)
+        {
+            float side = i % 2 == 0 ? -1f : 1f;
+            float u = SeededHash.ToFloat01(SeededHash.Hash(seed, 9201, i + version * 100));
+            float y = 0.25f + u * 3.4f;
+            float x = c.x + side * (half + 0.1f + u * 0.35f);
+            Cube(root, "BreachRubble", new Vector3(x, y, c.z - 0.15f),
+                new Vector3(0.45f + u * 0.35f, 0.3f + u * 0.5f, 0.55f + u * 0.3f),
+                i % 3 == 0 ? rust : concrete,
+                Quaternion.Euler(0f, u * 40f, side * (8f + u * 12f)));
+            n++;
+        }
+
+        // Верхняя кромка: обломки, свисающие в проём.
+        for (int i = 0; i < 4; i++)
+        {
+            float u = SeededHash.ToFloat01(SeededHash.Hash(seed, 9202, i + version * 100));
+            Cube(root, "BreachRubble", new Vector3(c.x - 1.4f + i * 0.95f,
+                3.7f + u * 0.4f, c.z - 0.25f),
+                new Vector3(0.55f, 0.35f + u * 0.3f, 0.6f), concrete,
+                Quaternion.Euler(u * 18f, u * 55f, 0f));
+            n++;
+        }
+
+        // Арматура: три погнутых прута, торчат из краёв.
+        for (int i = 0; i < 3; i++)
+        {
+            float side = i == 0 ? -1f : i == 1 ? 1f : 0f;
+            float x = c.x + side * (half - 0.2f);
+            Cube(root, "BreachRebar", new Vector3(x, 1.8f + i * 0.55f, c.z - 0.3f),
+                new Vector3(0.06f, 1.5f + i * 0.35f, 0.06f), rust,
+                Quaternion.Euler(0f, 0f, side * 18f));
+            n++;
+        }
+
+        // Обломки на полу снаружи: проход не перекрывают, коллайдеров нет.
+        for (int i = 0; i < 5; i++)
+        {
+            float u = SeededHash.ToFloat01(SeededHash.Hash(seed, 9203, i + version * 100));
+            float v = SeededHash.ToFloat01(SeededHash.Hash(seed, 9204, i + version * 100));
+            Cube(root, "BreachDebris", new Vector3(c.x - 2.4f + u * 4.8f, 0.12f,
+                c.z + 0.8f + v * 2.4f),
+                new Vector3(0.4f + u * 0.4f, 0.16f + v * 0.2f, 0.35f + v * 0.4f),
+                i % 2 == 0 ? concrete : dark,
+                Quaternion.Euler(0f, u * 180f, 0f));
             n++;
         }
         return n;

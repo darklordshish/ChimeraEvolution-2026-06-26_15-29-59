@@ -31,7 +31,8 @@ namespace Chimera.Tests.PlayMode
         ForestBuilder BuildLab(LabStyle style, bool complex = true, long seed = 4,
             LabEntrance entrance = LabEntrance.Rock, bool ash = false, bool ravines = false,
             bool plan = false, int planVersion = 1, bool climate = false,
-            WeatherKind weather = WeatherKind.Clear, float timeMinutes = 10f)
+            WeatherKind weather = WeatherKind.Clear, float timeMinutes = 10f,
+            bool stationLoop = false)
         {
             host = new GameObject("~ForestLabComplexProbe");
             host.SetActive(false);
@@ -46,6 +47,7 @@ namespace Chimera.Tests.PlayMode
             builder.buildRavines = ravines;
             builder.spawnAtEntry = true;
             builder.buildLabComplex = complex;
+            builder.buildStationLoop = stationLoop;
             builder.labStyle = style;
             builder.labEntrance = entrance;
             builder.buildLabPlan = plan;
@@ -177,6 +179,21 @@ namespace Chimera.Tests.PlayMode
             Assert.IsNotNull(b.NestSite, "гнездо на ясене есть геометрией");
             Assert.AreEqual(b.SampleGround(b.Ash.pos.x, b.Ash.pos.y), b.Ash.groundY, 0.05f,
                 "ясень стоит по тому же рельефу, что и мир");
+        }
+
+        [UnityTest]
+        public IEnumerator StationLoop_NorthExit_IsBreachDamage()
+        {
+            var b = BuildLab(LabStyle.Bastion, seed: 4, stationLoop: true);
+            yield return null;
+
+            Assert.AreNotEqual(Vector3.zero, b.LabNorthDoor, "северный выход есть");
+            Assert.IsNotNull(Find(b.LabComplex.root.transform, "BreachRubble"),
+                "рваная кромка пролома построена");
+            Assert.IsNotNull(Find(b.LabComplex.root.transform, "BreachRebar"),
+                "арматура пролома построена");
+            StringAssert.Contains("exit=breach", b.LabComplex.damageSignature,
+                "подпись повреждений знает про выход");
         }
 
         [UnityTest]

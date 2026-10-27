@@ -48,12 +48,14 @@
 
 - `ForestBuilder.buildStationLoop` — выключен по умолчанию, A/C/B0 не меняются;
 - в `ForestPavilion` включён;
-- северная дверь строится только для `Bastion`, проём 4.2 м, высота 4.0 м;
-- `LabNorthDoor` — адрес двери, `DomeWorld` отдаёт его наружу;
-- тест `ForestPavilionTests.StationLoop_NorthDoor_IsBuilt_AndReachable`: дверь на NavMesh, путь `LabDoor → NorthDoor` полный и короче 70 м (то есть сквозь станцию, а не вокруг).
-- замер в Play: `path=True status=PathComplete length=36.0`; северная и южная двери на NavMesh с ошибкой 0.07 м; капсула игрока 0.5 м проходит северный проём (`northBlocked=False`); центр станции внутри (`centerInside=True`), северная дверь снаружи (`northInside=False`).
-- кадры: `Диаграммы/Лес/Кадры/Пилот-станция-2026-10-27-внутри.png`, `...-дверь.png`.
-- Полный прогон после пилота: EditMode **412** (409 passed, 1 skipped, 2 inconclusive), PlayMode **150/150**.
+- северный выход строится только для `Bastion`, проём 4.2 м, высота 4.0 м;
+- выход — **элемент повреждений**: `DomeLabDamage` добавляет рваную кромку, обломки, арматуру и подпись `exit=breach`; геометрию проёма даёт `DomeLabComplex`, вид — слой разрушений;
+- `LabNorthDoor` — адрес выхода, `DomeWorld` отдаёт его наружу;
+- тест `ForestPavilionTests.StationLoop_NorthDoor_IsBuilt_AndReachable`: выход на NavMesh, путь `LabDoor → NorthDoor` полный и короче 70 м (то есть сквозь станцию, а не вокруг);
+- тест `ForestLabComplexTests.StationLoop_NorthExit_IsBreachDamage`: есть `BreachRubble`, `BreachRebar`, подпись `exit=breach`;
+- замер в Play: `path=True status=PathComplete length=36.0`; северная и южная двери на NavMesh с ошибкой 0.07 м; капсула игрока 0.5 м проходит северный проём (`northBlocked=False`); центр станции внутри (`centerInside=True`), северный выход снаружи (`northInside=False`);
+- кадры: `Диаграммы/Лес/Кадры/Пилот-станция-2026-10-27-внутри.png`, `...-дверь.png`, `...-пролом.png`;
+- Полный прогон после пилота: EditMode **412** (409 passed, 1 skipped, 2 inconclusive), PlayMode **151/151**.
 
 Пилот не решает, останется ли второй выход в каноне: это по-прежнему вопрос геймдизайнера.
 
