@@ -18,7 +18,7 @@ bl() { if ! "$B" -b --factory-startup --python-exit-code 1 -P "$@" > "$W/shag.lo
 VSTR="--vstrechnye 1 --vstr_maxd 0.1,предплечье:0.05,предплечье.L:0.05,бедро:0.03,бедро.L:0.03 --zhestkost 30,15,8,4,2 --lap_glad 10"
 # OGR — ключи огранки; OT_OGRANKI=1 — начать с огранки в готовой рабочей папке (подгонки и куски — оттуда): проба огранки
 # на стенде за ~3 мин вместо 15 (27.10)
-OGR="${OGR:---ploshchad 0.012 --sila 0.9 --iter 10}"
+OGR="${OGR:---rezhim massy --ploshchad_massy 0.035 --povorot 20 --linii 1 --sila 0.9 --iter 10 --maks_sdvig 0.02}"   # E′ — выбор дизайн-линии 27.10
 
 if [ -z "${OT_OGRANKI:-}" ]; then
 # ВЕСА ФИНАЛЬНЫЕ ДО СНЯТИЯ КЛЮЧЕЙ (27.10, пункт А): ключ снимается обратным скиннингом — при тех весах, что уйдут в игру
