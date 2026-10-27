@@ -369,6 +369,26 @@ namespace Chimera.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator Climate_InsideLab_SensesIgnorePavilionWeather()
+        {
+            var b = BuildLab(LabStyle.Bastion, seed: 9, climate: true,
+                weather: WeatherKind.Rain, timeMinutes: 25f);
+            yield return null;
+            var lab = b.LabComplex;
+            var inside = lab.root.transform.TransformPoint(
+                new Vector3(0f, DomeLabComplex.Plinth + 1f, 0f));
+            var outside = lab.root.transform.TransformPoint(
+                new Vector3(0f, 0f, -DomeLabComplex.HalfDepth - 20f));
+
+            Assert.AreEqual(1f, ForestClimate.RangeMult(SenseKind.Sight, inside), 1e-4f,
+                "внутри станции внешняя ночь/дождь не режут зрение");
+            Assert.Less(ForestClimate.RangeMult(SenseKind.Sight, outside), 1f,
+                "снаружи погода/ночь действуют");
+            Assert.AreEqual(1f, ForestClimate.CueDurationMult(inside), 1e-4f);
+            Assert.AreEqual(1f, ForestClimate.ScentLifetimeMult(inside), 1e-4f);
+        }
+
+        [UnityTest]
         public IEnumerator Climate_Clear_RemovesRain()
         {
             var b = BuildLab(LabStyle.Bastion, seed: 9, climate: true,

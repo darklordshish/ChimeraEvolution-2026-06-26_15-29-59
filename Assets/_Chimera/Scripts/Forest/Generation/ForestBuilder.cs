@@ -497,6 +497,7 @@ public class ForestBuilder : MonoBehaviour
             climate.wetMaterials = null;
             climate.rain = null;
             climate.lab = null;
+            ForestClimate.LabZone = null;
         }
         if (world != null)
         {
@@ -549,6 +550,7 @@ public class ForestBuilder : MonoBehaviour
         climate.StartWeatherClock();
         climate.skyRoot = world.Root;
         climate.lab = world.LabComplex;
+        ForestClimate.LabZone = world.LabComplex;
         var wet = new List<Material>(world.Materials);
         wet.AddRange(DomeFlora.Materials);
         climate.wetMaterials = wet;

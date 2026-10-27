@@ -23,7 +23,7 @@ public class Senses : MonoBehaviour
     public float Range(SenseKind k)
     {
         if (alert == null) TryGetComponent(out alert); // ленивая привязка (порядок Awake не гарантирован)
-        return Ch(k).For(alert != null ? alert.State : Alert.Wary) * ForestClimate.RangeMult(k);
+        return Ch(k).For(alert != null ? alert.State : Alert.Wary) * ForestClimate.RangeMult(k, transform.position);
     }
 
     public float Acuity(SenseKind k) => Ch(k).acuity;

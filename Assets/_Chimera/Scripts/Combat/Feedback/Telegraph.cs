@@ -125,7 +125,7 @@ public class Telegraph : MonoBehaviour
         float pulseAmp = 0f, pulseWave = 0f;
         if (pulseTime >= 0f && pulseLatched)
         {
-            pulseAmp = pulse.pulseAmp * Mathf.Clamp01((0.85f - ForestClimate.RangeMult(SenseKind.Sight)) / 0.45f);
+            pulseAmp = pulse.pulseAmp * Mathf.Clamp01((0.85f - ForestClimate.RangeMult(SenseKind.Sight, transform.position)) / 0.45f);
             pulseWave = 0.5f + 0.5f * Mathf.Sin(pulseTime * pulse.pulseFreq * Mathf.PI * 2f);
         }
 
@@ -168,7 +168,7 @@ public class Telegraph : MonoBehaviour
     void Update()
     {
         if (!pulseArmed || !active || !activeIntent) return;
-        float f = ForestClimate.RangeMult(SenseKind.Sight);
+        float f = ForestClimate.RangeMult(SenseKind.Sight, transform.position);
         if (!pulseLatched && f < 0.8f) pulseLatched = true;
         else if (pulseLatched && f > 0.9f) pulseLatched = false;
         if (!pulseLatched) return;

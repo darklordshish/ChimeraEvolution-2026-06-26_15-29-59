@@ -37,6 +37,7 @@ public class ForestClimate : MonoBehaviour
 
     public static WeatherState CurrentState;
     public static float CurrentTimeMinutes = 10f;
+    public static DomeLabComplex.Result LabZone;
 
     float nextVisual;
     float weatherElapsed;
@@ -187,6 +188,12 @@ public class ForestClimate : MonoBehaviour
         }
     }
 
+    /// <summary>Внутри станции внешняя погода/ночь не действуют на чувства.</summary>
+    public static bool InsideLab(Vector3 worldPos)
+    {
+        return LabZone != null && DomeLabComplex.Contains(LabZone, worldPos);
+    }
+
     /// <summary>Множитель дальности чувства: умножается поверх, не подменяет.</summary>
     public static float RangeMult(SenseKind kind)
     {
@@ -205,14 +212,29 @@ public class ForestClimate : MonoBehaviour
         }
     }
 
+    public static float RangeMult(SenseKind kind, Vector3 worldPos)
+    {
+        return InsideLab(worldPos) ? 1f : RangeMult(kind);
+    }
+
     public static float CueDurationMult()
     {
         return WeatherModifier.CueLoudnessMult(CurrentState.kind);
     }
 
+    public static float CueDurationMult(Vector3 worldPos)
+    {
+        return InsideLab(worldPos) ? 1f : CueDurationMult();
+    }
+
     public static float ScentLifetimeMult()
     {
         return WeatherModifier.ScentLifetimeMult(CurrentState.kind);
+    }
+
+    public static float ScentLifetimeMult(Vector3 worldPos)
+    {
+        return InsideLab(worldPos) ? 1f : ScentLifetimeMult();
     }
 
     public static bool IsNight()
@@ -224,5 +246,6 @@ public class ForestClimate : MonoBehaviour
     {
         CurrentState = new WeatherState { kind = WeatherKind.Clear };
         CurrentTimeMinutes = 10f;
+        LabZone = null;
     }
 }
