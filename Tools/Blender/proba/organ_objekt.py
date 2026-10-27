@@ -3,7 +3,7 @@
 `рост`: база — объект, прижатый к телу шасси (каждая вершина сдвинута к ближайшей точке тела в покое на `--sjatie`), `рост` на весе 1 —
 полная форма. Код ставит вес `рост` = доля вида / 0.65.
 
-  blender -b --factory-startup -P organ_objekt.py -- сборка.blend откуда.blend имя_там <слот>@<вид> выход.blend [--sjatie 0.85]
+  blender -b --factory-startup -P organ_objekt.py -- сборка.blend откуда.blend имя_там <слот>@<вид> выход.blend [--sjatie 0.85] [--srez 0.025 [--srez_ot Руки]] [--sherst 0.5:4]
 """
 import sys
 import bpy
@@ -32,6 +32,54 @@ o.name = nm; o.data.name = nm; o.parent = arm
 for m in o.modifiers:
     if m.type == 'ARMATURE': m.object = arm
 if o.data.shape_keys: o.shape_key_clear()
+# ИСХОДНАЯ ГЕОМЕТРИЯ ОРГАНА — ДО ЗАПИСИ БАЗЫ И РОСТА (27.10, ГеймБосс по ст.1: «когти — две палочки вбок у каждой кисти, гребень —
+# пучок стружки над спиной»; правка одного «роста» их не брала — форма сидит и в базе):
+#   `--srez N` — грани, у которых все вершины дальше N м от тела шасси, срезаются (палочки длиннее N); островки мельче 6 граней — тоже;
+#   `--sherst доля:шаги` — шерсть массой: прореживание до доли и Таубин (λ 0.5, μ −0.53, края на месте), как griva_massa.py
+import bmesh
+import numpy as np
+if opt.get('srez') or opt.get('sherst'):
+    bpy.context.view_layer.objects.active = o; o.select_set(True)
+    if opt.get('sherst'):
+        dl, gl = opt['sherst'].split(':')
+        m_ = o.modifiers.new('d', 'DECIMATE'); m_.ratio = float(dl); m_.use_collapse_triangulate = True
+        bpy.ops.object.modifier_apply(modifier='d')
+    bm = bmesh.new(); bm.from_mesh(o.data); bm.verts.ensure_lookup_table()
+    Mw_ = o.matrix_world; n_s = 0
+    if opt.get('srez'):
+        N_ = float(opt['srez'])
+        # `--srez_ot Руки` — мерить только от своих объектов шасси: палочка когтя смотрит в бедро, и ближайшим «телом» была нога (G8)
+        bv_ = bvh
+        if opt.get('srez_ot'):
+            V2, F2 = [], []
+            for b_ in [x for x in body if x.name in opt['srez_ot'].split(',')]:
+                n2 = len(V2); V2 += [b_.matrix_world @ v.co for v in b_.data.vertices]; F2 += [[n2 + k for k in p_.vertices] for p_ in b_.data.polygons]
+            bv_ = BVHTree.FromPolygons(V2, F2)
+        dal = {v.index: bv_.find_nearest(Mw_ @ v.co)[3] > N_ for v in bm.verts}
+        ub = [f for f in bm.faces if all(dal[v.index] for v in f.verts)]; n_s = len(ub)
+        bmesh.ops.delete(bm, geom=ub, context='FACES')
+        seen, mel = set(), []
+        for f in bm.faces:
+            if f in seen: continue
+            st, isl = [f], []; seen.add(f)
+            while st:
+                g = st.pop(); isl.append(g)
+                for e in g.edges:
+                    for h in e.link_faces:
+                        if h not in seen: seen.add(h); st.append(h)
+            if len(isl) < 6: mel += isl
+        bmesh.ops.delete(bm, geom=mel, context='FACES')
+        bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context='VERTS')
+    if opt.get('sherst'):
+        bm.verts.ensure_lookup_table()
+        X = np.array([list(v.co) for v in bm.verts]); NB = [[e.other_vert(v).index for e in v.link_edges] for v in bm.verts]
+        kr = np.array([any(e.is_boundary for e in v.link_edges) for v in bm.verts])
+        for _ in range(int(gl)):
+            for lam in (0.5, -0.53):
+                L = np.array([X[nb_].mean(0) - X[k] if nb_ else np.zeros(3) for k, nb_ in enumerate(NB)]); L[kr] = 0; X = X + lam * L
+        for v, x in zip(bm.verts, X): v.co = x
+    bm.to_mesh(o.data); bm.free(); o.data.update()
+    print('ОРГАН: %s — срезано граней %d (дальше %s м), шерсть %s; осталось граней %d' % (nm, n_s, opt.get('srez', '—'), opt.get('sherst', '—'), len(o.data.polygons)))
 full = [v.co.copy() for v in o.data.vertices]
 for v in o.data.vertices:
     w = o.matrix_world @ v.co; loc = bvh.find_nearest(w)[0]
