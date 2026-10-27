@@ -7,7 +7,7 @@
   3. ПРИЖИМ — отступ шерсти от поверхности тела (форма-ключ `--imya` шасси) сжимается в `--prizhim` раз: грива ложится на объём.
 
   blender -b --factory-startup -P griva_massa.py -- вход.blend выход.blend [--kusok @Волк] [--imya Волк] [--dolya 0.35] [--glad 6]
-      [--prizhim 0.8] [--ne_trogat голова,предплечье,…]
+      [--prizhim 0.8] [--ne_trogat голова,предплечье,…] [--hvost_ne 0.08:1.05|0] [--zad 1.2:0.5]
 """
 import sys
 import bpy, bmesh
@@ -29,16 +29,26 @@ NT = set(opt.get('ne_trogat', 'голова,предплечье,предпле�
 gn = {g.index: g.name for g in o.vertex_groups}
 def glavnaya(v): return gn[max(v.groups, key=lambda g: g.weight).group] if v.groups else ''
 sherst = o.vertex_groups.get('шерсть') or o.vertex_groups.new(name='шерсть')
-ids = [v.index for v in o.data.vertices if glavnaya(v) not in NT]
+# ХВОСТ — НЕ ТРОГАТЬ (`--hvost_ne y:z`, ГеймБосс по G2: «хвост стал плоской лопастью — лист-клинок в профиль»): прореживание
+# схлопывало его объём; хвост — вершины позади (y > y) и ниже поясницы (z < z) в покое
+HN = [float(x) for x in opt.get('hvost_ne', '0.08:1.05').split(':')] if opt.get('hvost_ne', '0.08:1.05') != '0' else None
+def hvost(v):
+    p = o.matrix_world @ v.co; return HN is not None and p.y > HN[0] and p.z < HN[1]
+ids = [v.index for v in o.data.vertices if glavnaya(v) not in NT and not hvost(v)]
 sherst.add(ids, 1.0, 'REPLACE')
 # 1. укрупнение — только по группе «шерсть»
 bpy.ops.object.select_all(action='DESELECT'); o.select_set(True); bpy.context.view_layer.objects.active = o
-m = o.modifiers.new('d', 'DECIMATE'); m.ratio = float(opt['dolya']); m.use_collapse_triangulate = True
+# доля — от граней ШЕРСТИ, а не всего куска: иначе вынутый из группы хвост отдавал свою долю гриве, и её прореживало вдвое
+# (G4 27.10: IoU ст.2 0.679 → 0.591)
+ids_s = set(ids); n_sh = sum(1 for p in o.data.polygons if all(v in ids_s for v in p.vertices))
+m = o.modifiers.new('d', 'DECIMATE'); m.use_collapse_triangulate = True
+m.ratio = max(0.05, 1.0 - (1.0 - float(opt['dolya'])) * n_sh / max(n0, 1))
 m.vertex_group = 'шерсть'; m.vertex_group_factor = 1000.0
 bpy.ops.object.modifier_apply(modifier='d')
-gi = o.vertex_groups['шерсть'].index
-SH = np.array([any(g.group == gi and g.weight > 0.5 for g in v.groups) for v in o.data.vertices])
+# сглаживание и прижим — вся шерсть, ВКЛЮЧАЯ хвост: хвост не прореживается (объём), но стружку Таубин с него снимает (G5 27.10)
 o.vertex_groups.remove(o.vertex_groups['шерсть'])
+gn = {g.index: g.name for g in o.vertex_groups}
+SH = np.array([glavnaya(v) not in NT for v in o.data.vertices])
 # 2. шипы
 bm = bmesh.new(); bm.from_mesh(o.data); bm.verts.ensure_lookup_table()
 V = np.array([list(v.co) for v in bm.verts]); NB = [[e.other_vert(v).index for e in v.link_edges] for v in bm.verts]
@@ -53,13 +63,18 @@ for b in bpy.data.objects:
     if b.type != 'MESH' or '@' in b.name or not b.data.shape_keys or opt['imya'] not in b.data.shape_keys.key_blocks: continue
     kb = b.data.shape_keys.key_blocks[opt['imya']]; b0 = len(T)
     T += [b.matrix_world @ d.co for d in kb.data]; TF += [[b0 + v for v in p.vertices] for p in b.data.polygons]
+ZAD = [float(x) for x in opt['zad'].split(':')] if opt.get('zad') else None
 K = float(opt['prizhim']); Mw = o.matrix_world; inv = Mw.inverted(); sd = []
 if T:
     BV = BVHTree.FromPolygons(T, TF)
     for k, v in enumerate(bm.verts):
         if not SH[k]: v.co = Vector(V[k]); continue
         p = Mw @ Vector(V[k]); q = BV.find_nearest(p)[0]
-        p2 = q + (p - q) * K if q is not None else p; sd.append((p2 - p).length); v.co = inv @ p2
+        k_ = K
+        # ЛЕНТА ВДОЛЬ СПИНЫ (`--zad z:k`, ГеймБосс по G2: «тонкая пластина от затылка, отстаёт на 2–4 см»): шерсть сзади выше `z`
+        # прижимается сильнее (`k`), только то, что отстоит от тела больше 1 см
+        if ZAD and q is not None and p.y > 0.03 and abs(p.x) < (ZAD[2] if len(ZAD) > 2 else 0.08) and p.z > ZAD[0] and (p - q).length > 0.01: k_ = min(K, ZAD[1])   # только полоса вдоль хребта: бока гривы держат силуэт (G3: IoU 0.679 → 0.588)
+        p2 = q + (p - q) * k_ if q is not None else p; sd.append((p2 - p).length); v.co = inv @ p2
 else:
     for k, v in enumerate(bm.verts): v.co = Vector(V[k])
 bm.to_mesh(o.data); bm.free(); o.data.update()
