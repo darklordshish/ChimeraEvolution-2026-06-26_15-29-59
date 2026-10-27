@@ -156,6 +156,21 @@ public static class Perception
         return HasLineOfSight(observer.position, target, observer); // стена рвёт — тропят по запаху/слуху
     }
 
+    /// <summary>НЮХ NPC — цель в дальности запаха профиля (`Senses`, погода внутри: дождь гасит запах). Направления и прямой
+    /// видимости не требует, камуфляж не прячет: от глаз спрятаться можно, от носа — нет.</summary>
+    public static bool Smells(Transform observer, Transform target, Senses senses)
+    {
+        if (observer == null || target == null || senses == null || GhostHides(target)) return false;
+        float range = senses.Range(SenseKind.Scent);
+        return range > 0f && (target.position - observer.position).sqrMagnitude <= range * range;
+    }
+
+    /// <summary>ЗАМЕТИЛ ЛИ NPC цель своими каналами — глазами или носом. Прямой поиск вида в радиусе даёт психике только
+    /// КАНДИДАТОВ; выбор и погоня — по наблюдению (аудит дизайн-линии 26.10, §10 п.4: ёж выбирал змею на 18 м в дождь, когда
+    /// нос не работает, волк — лося на 22 м за спиной).</summary>
+    public static bool Notices(Transform observer, Transform target, Senses senses, float proximity = 0f) =>
+        Sees(observer, target, senses, proximity) || Smells(observer, target, senses);
+
     // термозрение (Пит-орган): видит ТЁПЛОГО в радиусе СКВОЗЬ укрытия — прямой видимости не требует,
     // этим и отличается от зрения. Холоднокровный не излучает тепло — невидим (см. IsWarm).
     public static bool SeesThermal(Vector3 from, Transform target, float range)
