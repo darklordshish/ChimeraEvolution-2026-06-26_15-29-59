@@ -47,7 +47,7 @@ public class PlayerAntler : MonoBehaviour, IAbility, IOrganAbility
         foreach (var hp in TargetScan.Healths(transform.position, data.range + ScanPad, transform))
         {
             if (!InCone(hp.transform.position)) continue;
-            blow.Deliver(hit, hp); // вспышка+стаггер, откидывание, кровь; эрозия по кину — внутри Hit.Apply
+            blow.Deliver(hit, hp, OutgoingDamage.Mult(this)); // вспышка+стаггер, откидывание, кровь; эрозия по кину — внутри Hit.Apply
             gored++;
         }
         if (gored > 0 && cam != null) cam.Shake(0.16f, shake);

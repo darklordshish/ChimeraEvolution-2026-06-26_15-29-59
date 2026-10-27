@@ -67,7 +67,7 @@ public class PlayerAttack : MonoBehaviour, IAbility, IOrganAbility
         foreach (var hp in TargetScan.Healths(transform.position, range + ScanPad, transform))
         {
             if (!InCone(hp.transform.position, range, halfAngle)) continue;
-            blow.Deliver(hit, hp, manual ? strike.damageMult : 1f); // урон; эрозия по кину — внутри Hit.Apply
+            blow.Deliver(hit, hp, (manual ? strike.damageMult : 1f) * OutgoingDamage.Mult(this)); // урон; эрозия по кину — внутри Hit.Apply
             struck++;
         }
 

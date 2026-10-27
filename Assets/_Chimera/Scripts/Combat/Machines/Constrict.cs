@@ -147,7 +147,7 @@ public class Constrict : MonoBehaviour, IOrganAbility
         {
             chokeNext = Time.time + (victimIsPlayer ? data.chokeInterval : data.npcChokeInterval);
             held.LastAttacker = ownHealth; // смерть от удушения — убийство захватчика (родство/переваривание)
-            held.TakeDamage(victimIsPlayer ? data.chokeDamage : data.npcChokeDamage, true);
+            held.TakeDamage(OutgoingDamage.Apply(this, victimIsPlayer ? data.chokeDamage : data.npcChokeDamage), true);
         }
         if (victimIsPlayer) held.MarkInCombat();
         return GrabTick.Holding;

@@ -40,7 +40,7 @@ public class PlayerKick : MonoBehaviour, IAbility, IOrganAbility
         var hit = new Hit(ownHealth, transform.position); // источник нужен раскрытию призрака
         var blow = new MeleeBlow { Damage = data.damage, KnockForce = data.knockForce }; // единый паёк (см. MeleeBlow)
         var targets = TargetScan.Healths(KickCenter(), data.radius, transform);
-        foreach (var hp in targets) blow.Deliver(hit, hp); // лёгкий урон (вспышка+сбив) + отталкивание; эрозия — внутри Hit.Apply
+        foreach (var hp in targets) blow.Deliver(hit, hp, OutgoingDamage.Mult(this)); // лёгкий урон (вспышка+сбив) + отталкивание; эрозия — внутри Hit.Apply
 
         if (targets.Count > 0 && cam != null) cam.Shake(0.16f, shake);
     }

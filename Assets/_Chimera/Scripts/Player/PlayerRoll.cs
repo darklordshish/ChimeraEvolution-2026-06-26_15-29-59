@@ -53,7 +53,7 @@ public class PlayerRoll : MonoBehaviour, IOrganAbility
         foreach (var hp in TargetScan.Healths(transform.position + transform.forward * data.radius, data.radius, transform))
         {
             if (!hitThisDash.Add(hp)) continue; // раз за рывок (память живёт весь дэш)
-            blow.Deliver(hit, hp); // урон + кровотечение + толчок; эрозия по кину — внутри Hit.Apply
+            blow.Deliver(hit, hp, OutgoingDamage.Mult(this)); // урон + кровотечение + толчок; эрозия по кину — внутри Hit.Apply
             if (cam != null) cam.Shake(0.12f, shake);
         }
     }
