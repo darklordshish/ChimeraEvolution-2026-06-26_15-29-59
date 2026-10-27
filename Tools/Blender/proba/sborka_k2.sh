@@ -25,6 +25,8 @@ VSTR="--vstrechnye 1 --vstr_maxd 0.1,предплечье:0.05,предплеч�
 # FORM_GRUD, RASPRAVIT — шаги формовки в ПОКОЕ ключа после огранки (грудь → живот, расправление складок); в покое они мнут то,
 # что огранка выпрямила в позе (27.10, shum.py) — пустая строка выключает
 # GRIVA — ключи griva_massa (шерсть гривы и хвоста); 0.35/6/0.8 срезали объём гривы (IoU ст.2 0.680 → 0.611) — мягче
+# органы ст.1: гребень — шерсть массой, когти — палочки длиннее 2.5 см срезаются (27.10)
+ORG_GREBEN="${ORG_GREBEN:---sherst 0.5:4 --srez 0.08}"; ORG_KOGTI="${ORG_KOGTI:---srez 0.015 --srez_ot Руки}"
 GRIVA="${GRIVA:---dolya 0.7 --glad 3 --prizhim 1.0 --zad 1.2:0.5}"   # G2: объём гривы цел (IoU 0.679/0.576), шипов меньше; 0.55/4/0.95 — снова срезала
 FORM_GRUD="${FORM_GRUD-}"; RASPRAVIT="${RASPRAVIT-}"   # выкл с 27.10: огранка в позе (shum.py: торс ст.2 5.1°/24 % → 3.4°/14 %, развороты 189 → 171)
 OGR="${OGR:---rezhim massy --ploshchad_massy 0.035 --povorot 20 --linii 1 --sila 0.9 --iter 10 --maks_sdvig 0.02 --zhivot 0.075:1.0:1.13:1.27 --v_poze Docs/models/handoff/klyuchi/chelovek-volk-poza.json}"   # E′ — выбор дизайн-линии 27.10; живот — две массы через середину до таза
@@ -93,11 +95,8 @@ bl $T/dobavit_kusok.py -- "$W/svod.blend" "$W/st1/hvost_m.blend" @Волк11 @В
 # хвост ст.1 — на то тело, которое игра рисует на ст.1 («Волк»×0.5), а не на тело подгонки «Волк1» (зазор был 58 мм; 27.10)
 bl $T/perenesti_kusok.py -- "$W/o1h.blend" "$W/st1/k.blend" @Волк1 Волк1 Волк 0.5 "$W/o1.blend"
 bl $T/organ_objekt.py -- "$W/o1.blend" "$W/st1/ushi.blend" @Волк11 Чутьё@Волк "$W/o2.blend"
-bl $T/organ_objekt.py -- "$W/o2.blend" "$W/st1/greben.blend" @Волк11 Шкура@Волк "$W/o3.blend"
-bl $T/organ_objekt.py -- "$W/o3.blend" "$W/st1/kogti.blend" @Волк11 Руки@Волк "$W/o4.blend"
-# когти ст.1 короче, гребень ст.1 без стружки (ГеймБосс 27.10)
-bl $T/organ_glad.py -- "$W/o4.blend" "$W/o4.blend" --obekt Руки@Волк --k_telu 0.45
-bl $T/organ_glad.py -- "$W/o4.blend" "$W/o4.blend" --obekt Шкура@Волк --glad 15
+bl $T/organ_objekt.py -- "$W/o2.blend" "$W/st1/greben.blend" @Волк11 Шкура@Волк "$W/o3.blend" $ORG_GREBEN
+bl $T/organ_objekt.py -- "$W/o3.blend" "$W/st1/kogti.blend" @Волк11 Руки@Волк "$W/o4.blend" $ORG_KOGTI
 bl $T/formovka.py -- "$W/o4.blend" "$W/o5.blend" --sustavy "$W/volk/sustavy.json" --golen 1 --koleno 0 --talia 1 $RASPRAVIT
 
 # ПЕРЕВЯЗКА-СТРАХОВКА: веса тела финальные с начала; куски и органы получают веса цели (`.vesa.json`) и бывают сверх 4 костей —
