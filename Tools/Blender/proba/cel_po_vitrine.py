@@ -14,7 +14,7 @@
 Внутренний рисунок (V живота) силуэт не содержит и не трогается.
 
   blender -b --factory-startup -P cel_po_vitrine.py -- цель.obj orientiry-celi.json выход.obj --list витрина/оборотень/тело.png
-      [--paneli front,left,34] [--porog 225] [--x_tors 0.2] [--glad 0.03] [--profil 1] [--anfas 1] [--sila 1] [--vybros 0.06] [--maks 0.03] [--skladki 1.15:1.35:0.03 [--sigma_x 0.006]]
+      [--paneli front,left,34] [--porog 225] [--x_tors 0.2] [--glad 0.03] [--profil 1] [--anfas 1] [--sila 1] [--vybros 0.06] [--maks 0.03] [--skladki 1.15:1.35:0.03 [--sigma_x 0.006]] [--podrez 1.15:1.35:0.05]
 """
 import sys, json, os
 import bpy, bmesh
@@ -208,6 +208,55 @@ if opt.get('skladki'):
         Pn[k_, 1] = P[k_, 1] + wz * (ys - P[k_, 1]); mx = max(mx, abs(Pn[k_, 1] - P[k_, 1]))
     P = Pn
     print('ВИТРИНА: складки — вершин %d в полосе z %.2f–%.2f (σz %.0f мм, σx %.0f мм), сдвиг по y макс %.1f мм' % (len(sel), a0, a1, sz * 1000, sx * 1000, mx * 1000))
+# ---------- 4. ПОДРЕЗ ПОД ГРУДЬЮ (`--podrez z0:z1:L`, ГеймБосс 27.10: «навес → монотонный спуск»): передний контур под грудью не
+# уходит внутрь и снова наружу. Передний торс — вертикальные полосы по 1 см по x; в полосе дно складки — самая глубокая точка
+# переднего контура (наибольший y) в зоне z0..z1; нижняя губа грудной над дном (до дно + L) заменяется прямым скатом от дна
+# к контуру на высоте дно + L. Вершины едут ТОЛЬКО НАЗАД (к телу); V живота ниже дна не трогается.
+# Итог пробы 27.10: складку смягчает в середине, но размазывает полосами по бокам (скат 4 см), скат 7 см — сдвиги до 12 см:
+# мнёт; полку чинит перегенерация цели (сиды Hunyuan + vkleit_tors.py), этот шаг — опция
+if opt.get('podrez'):
+    a0, a1, L_ = (float(x) for x in opt['podrez'].split(':'))
+    P_ISH = P.copy(); yc = np.median(P[tors, 1])
+    NN = np.zeros_like(P)
+    for f in bm.faces:
+        ii = [l.vert.index for l in f.loops]; n_ = np.cross(P[ii[1]] - P[ii[0]], P[ii[2]] - P[ii[0]])
+        for j in ii: NN[j] += n_
+    NY = NN[:, 1] / np.maximum(np.linalg.norm(NN, axis=1), 1e-12)
+    fr = np.nonzero((P[:, 2] > a0 - 0.02) & (P[:, 2] < a1 + L_ + 0.02) & (P[:, 1] < yc) & (np.abs(P[:, 0]) < XT))[0]
+    n_pd, mx = 0, 0.0
+    for xb in np.arange(-XT, XT, 0.01):
+        ids = fr[(P[fr, 0] >= xb) & (P[fr, 0] < xb + 0.01)]
+        if len(ids) < 6: continue
+        zg = np.arange(a0, a1 + L_ + 0.005, 0.005); prof = np.full(len(zg), np.nan)
+        for j, z in enumerate(zg):
+            m = np.abs(P[ids, 2] - z) < 0.004
+            if m.any(): prof[j] = P[ids[m], 1].min()
+        ok = ~np.isnan(prof)
+        if ok.sum() < 6: continue
+        prof = np.interp(zg, zg[ok], prof[ok])
+        prof = np.convolve(prof, np.ones(3) / 3, mode='same')
+        # дно складки — по ВСЕМ вершинам полосы, не смотрящим назад: под навесом губы дно спрятано, и передний контур (наименьший y
+        # по высоте) видит губу, а не дно — первая проба 27.10 строила скат на животе ниже складки
+        # дно — ЛОКАЛЬНАЯ впадина: глубина на высоте (наибольший y, вершины не смотрят назад) минус средний передний контур на
+        # 3 см выше и ниже; иначе «самое глубокое» в полосе — край зоны, где талия уходит назад (вторая проба 27.10)
+        dg = np.full(len(zg), np.nan)
+        for j, z in enumerate(zg):
+            m = (np.abs(P[ids, 2] - z) < 0.004) & (NY[ids] < 0.3)
+            if m.any(): dg[j] = P[ids[m], 1].max()
+        sc = np.full(len(zg), -1.0)
+        for j, z in enumerate(zg):
+            if not (a0 <= z <= a1) or np.isnan(dg[j]): continue
+            sc[j] = dg[j] - 0.5 * (np.interp(z + 0.03, zg, prof) + np.interp(z - 0.03, zg, prof))
+        if sc.max() < 0.003: continue                                     # впадины нет (меньше 3 мм)
+        jc = int(np.argmax(sc)); zc, yc_ = zg[jc], dg[jc]
+        yt = float(np.interp(zc + L_, zg, prof))
+        for k_ in ids:
+            z = P[k_, 2]
+            if not (zc < z < zc + L_): continue
+            yl = yc_ + (yt - yc_) * (z - zc) / L_
+            if P[k_, 1] < yl: mx = max(mx, yl - P[k_, 1]); P[k_, 1] = yl; n_pd += 1
+    gladit_sdvig(6)
+    print('ВИТРИНА: подрез — вершин сдвинуто назад %d, макс %.1f мм (зона дна z %.2f–%.2f, скат %.0f мм)' % (n_pd, mx * 1000, a0, a1, L_ * 1000))
 for v, p in zip(bm.verts, P): v.co = Vector(p)
 me = bpy.data.meshes.new('cel'); bm.to_mesh(me); o = bpy.data.objects.new('cel', me); bpy.context.scene.collection.objects.link(o)
 bpy.ops.wm.obj_export(filepath=out, export_selected_objects=False, forward_axis='NEGATIVE_Z', up_axis='Y', export_materials=False,
