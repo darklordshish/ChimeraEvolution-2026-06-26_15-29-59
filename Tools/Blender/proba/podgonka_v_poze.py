@@ -14,7 +14,7 @@
   4. обратно в покой: вершина умножается на обратную матрицу своего скина; результат — форма-ключ `--imya`.
 
   blender -b --factory-startup -P podgonka_v_poze.py -- шасси.blend цель.obj ориентиры_цели.json скелет_шасси.json выход.blend
-      [--imya Волк] [--zhestkost 30,15,8,4] [--normal 0.5] [--maxd 0.25] [--dal 0.12] [--bez голова,Чутьё] [--poza_obj файл.obj] [--poza файл.json] [--sustavy файл.json] [--cel_pokoj файл.obj] [--dop_cel f.obj --dop_lm f.json --dop_pokoj f.obj] [--vstrechnye 1 [--vstr_maxd 0.05|0.25,предплечье:0.05]] [--cel_glad 0|шагов] [--bez_razvorota 1|0]
+      [--imya Волк] [--zhestkost 30,15,8,4] [--normal 0.5] [--maxd 0.25] [--dal 0.12] [--bez голова,Чутьё] [--poza_obj файл.obj] [--poza файл.json] [--sustavy файл.json] [--cel_pokoj файл.obj] [--dop_cel f.obj --dop_lm f.json --dop_pokoj f.obj] [--vstrechnye 1 [--vstr_maxd 0.05|0.25,предплечье:0.05]] [--cel_glad 0|шагов [--cel_glad_obl торс --cel_glad_x 0.2]] [--bez_razvorota 1|0] [--lap_glad 0|шагов]
 Ориентиры цели — имена как у `kluch_vida.py` (сустав:head/tail, носок, плюсна_вн/нар…), оси Blender, метры тела.
 """
 import sys, json
@@ -145,14 +145,23 @@ bm = bmesh.new(); bm.from_mesh(tg.data); bm.transform(tg.matrix_world); bm.verts
 # ЦЕЛЬ — ОБЪЁМАМИ, А НЕ ГРАНЯМИ (`--cel_glad шагов`, 27.10, пункт В разбора тракта): цель с генератора — гранёный low-poly с шумом,
 # и подгонка списывала в ключ каждую его грань и рябь; грани потом всё равно ставит огранка. Таубин (λ 0.5, μ −0.53) объём
 # не сжимает, а грани и мелкий шум снимает; края цели (открытые рёбра) не двигаются
+# `--cel_glad_obl торс` (27.10, Г шаг (б)): только по торсу — от таза до шеи цели (ориентиры `таз:head`, `шея:head`), не дальше
+# `--cel_glad_x` (0.2 м) от средней линии; вес спадает к краям полосы (колокол по высоте, линейно по |x|) — центральный желоб и
+# узкий столб живота цели (несёт генератор, огранка их проявляла «щитом до паха») сглаживаются, руки и ноги — нет
 def cel_glad(bm_, n_):
     if n_ <= 0: return
     V = np.array([list(v.co) for v in bm_.verts]); NB = [[e.other_vert(v).index for e in v.link_edges] for v in bm_.verts]
     fix = np.array([any(not e.is_manifold for e in v.link_edges) for v in bm_.verts])
+    Wm = np.ones(len(V))
+    if opt.get('cel_glad_obl') == 'торс':
+        z0, z1 = LT['таз:head'].z, LT['шея:head'].z; xm = float(opt.get('cel_glad_x', '0.2'))
+        t_ = np.clip((V[:, 2] - z0) / max(z1 - z0, 1e-6), 0, 1)
+        Wm = np.sin(np.pi * t_) ** 2 * np.clip(1 - np.abs(V[:, 0]) / xm, 0, 1)
+        print('ЦЕЛЬ: сглаживание по торсу — вершин с весом > 0.5: %d из %d' % (int((Wm > 0.5).sum()), len(V)))
     for _ in range(n_):
         for lam in (0.5, -0.53):
             L = np.array([V[nb_].mean(0) - V[k] if nb_ else np.zeros(3) for k, nb_ in enumerate(NB)])
-            L[fix] = 0; V = V + lam * L
+            L[fix] = 0; V = V + lam * Wm[:, None] * L
     for v, c in zip(bm_.verts, V): v.co = Vector(c)
     bm_.normal_update()
 cel_glad(bm, int(opt.get('cel_glad', '0')))
@@ -227,6 +236,16 @@ def normals(Y):
             for j in ids: nrm[j] += n_
     l = np.linalg.norm(nrm, axis=1); l[l == 0] = 1; return nrm / l[:, None]
 X0 = X.copy(); D0 = lap(X0)
+# РЕЛЬЕФ — ОТ ЦЕЛИ, А НЕ ОТ ШАБЛОНА (`--lap_glad шагов`, 27.10, Г шаг (б)): регуляризация держит лапласиан шаблона, то есть его
+# мелкий рельеф, — и белая линия живота и пресс человека К2 переезжали в ключ волка центральным желобом («щит до паха»), хотя у
+# цели живот гладкий. Держится лапласиан СГЛАЖЕННОГО шаблона (Таубин): крупная форма шаблона та же, рельеф даёт цель
+if int(opt.get('lap_glad', '0')) > 0:
+    Xs = X0.copy(); FR = np.array(free)
+    for _ in range(int(opt['lap_glad'])):
+        for lam_ in (0.5, -0.53):
+            Xs = Xs + lam_ * np.where(FR[:, None], -lap(Xs), 0.0)
+    D0 = lap(Xs)
+    print('ПОДГОНКА: лапласиан шаблона сглажен (%s шагов Таубина)' % opt['lap_glad'])
 FACES = np.array([[vmap[(o.name, pl.vertices[0])], vmap[(o.name, pl.vertices[j])], vmap[(o.name, pl.vertices[j + 1])]]
                   for o in OBJ for pl in o.data.polygons for j in range(1, len(pl.vertices) - 1)])
 def fnorm(Y):

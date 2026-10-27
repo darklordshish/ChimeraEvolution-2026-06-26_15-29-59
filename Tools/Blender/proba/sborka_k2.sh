@@ -14,7 +14,8 @@ mkdir -p "$W"/{volk,los,st1}
 # шаг падает — сборка стоит (27.10: раньше grep глотал падение, и выгрузка шла из недоделанного файла); журнал шага — $W/shag.log
 bl() { if ! "$B" -b --factory-startup --python-exit-code 1 -P "$@" > "$W/shag.log" 2>&1; then tail -20 "$W/shag.log"; echo "СБОЙ: $1"; exit 1; fi
        grep -E "ПОДГОНКА: до|ПОКРЫТИЕ|ЦЕПЬ|КУСОК: «|СЛИТО|ОГРАНКА: (тело|всего)|ЛИНИИ: {|ПЕРЕНОС: @|ФОРМОВКА|СВОДКА|ДОБАВЛЕНО|ОРГАН|КЛЮЧИ ОБЛАСТЕЙ|ВЕСА|ПЕРЕВЯЗКА|вывернутые грани по|ЭКСПОРТ" "$W/shag.log" || true; }
-VSTR="--vstrechnye 1 --vstr_maxd 0.1,предплечье:0.05,предплечье.L:0.05,бедро:0.03,бедро.L:0.03 --zhestkost 30,15,8,4,2"
+# --lap_glad 10 (27.10): рельеф ключа — от цели, не от шаблона (белая линия и пресс человека К2 давали «щит до паха»)
+VSTR="--vstrechnye 1 --vstr_maxd 0.1,предплечье:0.05,предплечье.L:0.05,бедро:0.03,бедро.L:0.03 --zhestkost 30,15,8,4,2 --lap_glad 10"
 
 # ВЕСА ФИНАЛЬНЫЕ ДО СНЯТИЯ КЛЮЧЕЙ (27.10, пункт А): ключ снимается обратным скиннингом — при тех весах, что уйдут в игру
 # (не больше 4 костей, швы с общими весами). Иначе любая правка весов потом уводит ключ в позе или требует перевязки,
@@ -39,6 +40,8 @@ bl $T/kusok_celi.py -- "$W/volk/k.blend" "$W/volk/cel_pokoj.obj" "$W/volk/g.fbx"
    --griva_z 9 --hvost_z -1 --lapy_z 0.13 --kisti_z 0.9 --golova_po_vesam 1 --golova_sheya_z 1.5 --dolya 0.15 --ushi 1.80:0.06:1.4 --blend "$W/volk/kk_g.blend"
 bl $T/slit_kuski.py -- "$W/volk/k.blend" @Волк "$W/volk/kk.blend" "$W/volk/kk_g.blend" "$W/volk/kk_m.blend"
 echo "== Волк: огранка тела, грудь → живот"
+# огранка k-средних, стены — рёбра линий Г. Режим «массы от линий» (--rezhim massy --ploshchad_massy 0.035 --povorot 20 --linii 1)
+# торс спокойнее, но двигает вершины до 11 см: на стенде ст.2 развороты в позе 186 → 216, IoU анфас 0.672 → 0.666 (27.10) — опция
 bl $T/ogranka.py -- "$W/volk/kk.blend" "$W/volk/o.blend" --ploshchad 0.012 --sila 0.9 --iter 10
 bl $T/formovka.py -- "$W/volk/o.blend" "$W/volk/f.blend" --sustavy "$W/volk/sustavy.json" --golen 1 --koleno 0 --talia 1 --grud 1.04:1.24:12
 
