@@ -48,7 +48,7 @@ public class Health : MonoBehaviour
         if (dead || Current >= maxHealth) return;
         float rate = RegenPerSecond;
         if (!InCombat) rate += OutOfCombatRegen;
-        if (Time.time < regenSuppressUntil) rate *= regenSuppressFactor; // сбит укусом Пасти
+        rate *= RegenFactor; // сбит укусом Пасти или ядом
         if (rate <= 0f) return;
 
         regenAccum += rate * Time.deltaTime;
@@ -78,6 +78,11 @@ public class Health : MonoBehaviour
         if (Current == 0) Current = maxHealth;
         Current = Mathf.Min(maxHealth + OverhealCap, Current + amount); // вампиризм может уйти свыше макс. (temp HP)
     }
+
+    /// <summary>Доля восстановления, которая сейчас проходит: яд (стадия 1) — 0, укус Пасти — свой множитель, иначе 1.
+    /// ЛЮБОЕ восстановление HP — и сердца, и сытости — идёт через неё (аудит дизайн-линии 26.10, §10 п.2: сытый отравленный
+    /// зверь получал 4 HP/с едой мимо яда, и «яд останавливает реген» было правдой наполовину).</summary>
+    public float RegenFactor => Time.time < regenSuppressUntil ? regenSuppressFactor : 1f;
 
     // временно сбить реген цели (укус Пасти): factor<1 уменьшает реген на duration секунд (рефрешится)
     public void SuppressRegen(float factor, float duration)
