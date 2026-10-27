@@ -26,7 +26,7 @@
   blender -b --factory-startup -P stend_k2.py -- chelovek_mesh.fbx --pokoj klyuchi/chelovek-pokoj.json
       [--kluch Волк --ves 1 --poza klyuchi/chelovek-volk-poza.json --stupen klyuchi/chelovek-volk-st2.json]
       [--organy Чутьё@Волк:1,Шкура@Волк:1] [--skryt_organy klyuchi/../organy/chelovek.json] [--maski f.png,p.png]
-      [--kadr префикс] [--otchet отчёт.json]
+      [--bez @Волк] [--kadr префикс] [--otchet отчёт.json]
 """
 import sys, json, math
 import bpy, bmesh
@@ -58,6 +58,7 @@ otchet['vesa_bolshe_4'] = over
 
 # что видно на ступени
 skryt, cherta = set(), None
+BEZ = set(opt['bez'].split(',')) if opt.get('bez') else set()
 if opt.get('stupen'):
     st = json.load(open(opt['stupen'], encoding='utf-8')); cherta = st.get('object'); skryt |= set(st.get('skryvaet', []))
 ORG = dict((k, float(v)) for k, v in (x.split(':') for x in opt.get('organy', '').split(',') if x))
@@ -68,6 +69,7 @@ vid = []
 for o in MESH:
     slot = o.name.split('@')[0] if '@' in o.name and not o.name.startswith('@') else o.name
     show = (o.name == cherta) if o.name.startswith('@') else (o.name in ORG) if '@' in o.name else (o.name not in skryt)
+    if o.name in BEZ: show = False   # `--bez @Волк` — кадр без куска (сверка тела под гривой, дизайн-линия 27.10)
     o.hide_render = o.hide_viewport = not show
     if show: vid.append(o)
     if o.data.shape_keys:
