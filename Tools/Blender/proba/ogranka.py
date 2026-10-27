@@ -18,7 +18,7 @@
 Правится только форма-ключ `--imya` (базовая форма К2 — нет) и сетка кусков.
 
   blender -b --factory-startup -P ogranka.py -- вход.blend выход.blend [--imya Волк] [--rezhim myshcy|massy [--ploshchad_massy 0.02 --povorot 12 --sredina_shag 0.12 --zhivot 0.055:1.0:1.13:1.27|0 --zhivot_sdvig 0.035]] [--sila 1] [--iter 30] [--lap 0]
-      [--ploshchad_ploskosti 0.008] [--min_oblast 0.003] [--ploshchad 0.006] [--masshtab 0.08] [--bez голова,Чутьё] [--linii 2|1|0] [--maks_sdvig 0.025] [--kuski 1 [--ploshchad_kuski 0.01]]
+      [--ploshchad_ploskosti 0.008] [--min_oblast 0.003] [--ploshchad 0.006] [--masshtab 0.08] [--bez голова,Чутьё] [--linii 2|1|0] [--maks_sdvig 0.025] [--v_poze klyuchi/<…>-poza.json] [--kuski 1 [--ploshchad_kuski 0.01]]
 """
 import sys
 import bpy
@@ -307,6 +307,33 @@ for o in body:
         Fu.append([vmap[(o.name, vi)] for vi in pl.vertices]); fobj.append(o.name)
         fbone.append(max(set(vb[vi] for vi in pl.vertices), key=lambda n: sum(1 for vi in pl.vertices if vb[vi] == n)))
 P = np.array(Pu); B0 = np.array(Bu); MAKS_V = None
+# ОГРАНКА В ПОЗЕ СТУПЕНИ (`--v_poze поза.json`, 27.10, диагноз shum.py: мятость давала огранка на ПОКОЕ ключа — покой есть обратный
+# скиннинг и сам мятый (медиана разброса 10.5° против 3.7° в позе); плоскости, выпрямленные на нём, поза гнёт в мелкие изломы:
+# сырой ключ в позе 3.7°/13 % изломов, после огранки 4.9°/23 %). Ключ ставится в позу матрицами скиннинга игры (как vesa_final.py),
+# области и плоскости считаются там, обратно в покой — обращением тех же матриц (принцип (а) опыта дизайн-линии d47c063)
+MV = None
+if opt.get('v_poze'):
+    from mathutils import Matrix
+    PZ = {b['name']: b for b in __import__('json').load(open(opt['v_poze'], encoding='utf-8'))['bones']}
+    SKM = {}
+    for bone in ARM.data.bones:
+        if bone.name not in PZ: continue
+        pz = PZ[bone.name]; h, t, zz = (Vector(pz[k]) for k in ('head', 'tail', 'z_axis'))
+        yv = (t - h).normalized(); xv = yv.cross(zz).normalized(); zv = xv.cross(yv)
+        rest = AW @ bone.matrix_local
+        dd = Matrix((xv, yv, zv)).transposed() @ rest.to_3x3().inverted()
+        SKM[bone.name] = np.array(Matrix.Translation(h) @ dd.to_4x4() @ Matrix.Translation(-rest.translation))
+    MV = [None] * len(P)
+    for o in body:
+        gn = {g.index: g.name for g in o.vertex_groups}
+        for vi, v in enumerate(o.data.vertices):
+            u = vmap[(o.name, vi)]
+            if MV[u] is not None: continue
+            ws = {gn[g.group]: g.weight for g in v.groups if gn[g.group] in SKM and g.weight > 0}; sw = sum(ws.values())
+            MV[u] = sum((SKM[n] * (w / sw) for n, w in ws.items()), np.zeros((4, 4))) if sw else np.eye(4)
+    MV = np.array(MV)
+    P = np.einsum('vij,vj->vi', MV, np.c_[P, np.ones(len(P))])[:, :3]
+    print('ОГРАНКА: в позе %s — обусловленность макс %.2f' % (opt['v_poze'].split('/')[-1], max(np.linalg.cond(m[:3, :3]) for m in MV)))
 nb, vf, fixed = topologiya(Fu, len(P))
 C, N, A = geom(P, Fu)
 if opt.get('rezhim') == 'myshcy':
@@ -339,6 +366,10 @@ else:
     lab = oblasti_kmeans(C, N, A, float(opt['ploshchad']))
 lab = svyaznye(lab, Fu, A, BAR)
 P2 = vypryamit(P, Fu, lab, fixed, nb, vf)
+if MV is not None:   # обратно в покой ключа — теми же матрицами
+    Pr = np.linalg.solve(MV, np.c_[P2, np.ones(len(P2))][:, :, None])[:, :3, 0]
+    Pr0 = np.linalg.solve(MV, np.c_[P, np.ones(len(P))][:, :, None])[:, :3, 0]
+    P2, P = Pr, Pr0
 dv = np.linalg.norm(P2 - P, axis=1)
 if opt.get('otladka') == '1' and opt.get('rezhim') == 'myshcy':
     for v in np.argsort(-dv)[:6]:

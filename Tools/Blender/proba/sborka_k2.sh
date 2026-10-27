@@ -12,7 +12,8 @@ R="C:/Users/semion/Documents/Chimera_game/_refs-local/эксперименты"
 TELO="$R/oboroten-telo-st2-2026-10-21"; KOL="$R/oboroten-st2-cel-2026-10-20"; LOS="$R/los-st2-cel-2026-10-21"; ST1="$R/oboroten-st1-cel-2026-10-22"
 # CEL_TELO — цель голого тела ст.2 (по умолчанию $TELO/cel_A_norm.obj); подменяется целью с вклеенным торсом (vkleit_tors.py),
 # ориентиры остаются от старой цели — торс их не двигает (27.10)
-CEL_TELO="${CEL_TELO:-$TELO/cel_A_norm.obj}"
+# с 27.10 — торс из сида 7 Hunyuan по витрине тело.png, вклеен в старую цель (ГеймБосс: S7b по умолчанию; полки нет)
+CEL_TELO="${CEL_TELO:-$R/oboroten-telo-st2-sidy-2026-10-27/vkleika_s7b.obj}"
 mkdir -p "$W"/{volk,los,st1}
 # шаг падает — сборка стоит (27.10: раньше grep глотал падение, и выгрузка шла из недоделанного файла); журнал шага — $W/shag.log
 bl() { if ! "$B" -b --factory-startup --python-exit-code 1 -P "$@" > "$W/shag.log" 2>&1; then tail -20 "$W/shag.log"; echo "СБОЙ: $1"; exit 1; fi
@@ -21,7 +22,10 @@ bl() { if ! "$B" -b --factory-startup --python-exit-code 1 -P "$@" > "$W/shag.lo
 VSTR="--vstrechnye 1 --vstr_maxd 0.1,предплечье:0.05,предплечье.L:0.05,бедро:0.03,бедро.L:0.03 --zhestkost 30,15,8,4,2 --lap_glad 10"
 # OGR — ключи огранки; OT_OGRANKI=1 — начать с огранки в готовой рабочей папке (подгонки и куски — оттуда): проба огранки
 # на стенде за ~3 мин вместо 15 (27.10)
-OGR="${OGR:---rezhim massy --ploshchad_massy 0.035 --povorot 20 --linii 1 --sila 0.9 --iter 10 --maks_sdvig 0.02 --zhivot 0.075:1.0:1.13:1.27}"   # E′ — выбор дизайн-линии 27.10; живот — две массы через середину до таза
+# FORM_GRUD, RASPRAVIT — шаги формовки в ПОКОЕ ключа после огранки (грудь → живот, расправление складок); в покое они мнут то,
+# что огранка выпрямила в позе (27.10, shum.py) — пустая строка выключает
+FORM_GRUD="${FORM_GRUD-}"; RASPRAVIT="${RASPRAVIT-}"   # выкл с 27.10: огранка в позе (shum.py: торс ст.2 5.1°/24 % → 3.4°/14 %, развороты 189 → 171)
+OGR="${OGR:---rezhim massy --ploshchad_massy 0.035 --povorot 20 --linii 1 --sila 0.9 --iter 10 --maks_sdvig 0.02 --zhivot 0.075:1.0:1.13:1.27 --v_poze Docs/models/handoff/klyuchi/chelovek-volk-poza.json}"   # E′ — выбор дизайн-линии 27.10; живот — две массы через середину до таза
 
 if [ -z "${OT_OGRANKI:-}" ]; then
 # ВЕСА ФИНАЛЬНЫЕ ДО СНЯТИЯ КЛЮЧЕЙ (27.10, пункт А): ключ снимается обратным скиннингом — при тех весах, что уйдут в игру
@@ -54,7 +58,7 @@ echo "== Волк: огранка тела, грудь → живот"
 # край гривы на груди — двумя наклонными участками, низ прижат к телу (дизайн-линия 27.10, FEEDBACK-2026-10-27-codex-ogranka-BDE §2)
 bl $T/griva_kraj.py -- "$W/volk/kk.blend" "$W/volk/kkg.blend" --z_seredina 1.40 --z_pravyj 1.56 --z_levyj 1.52 --x_konec 0.26 --x_maks 0.30
 bl $T/ogranka.py -- "$W/volk/kkg.blend" "$W/volk/o.blend" $OGR
-bl $T/formovka.py -- "$W/volk/o.blend" "$W/volk/f.blend" --sustavy "$W/volk/sustavy.json" --golen 1 --koleno 0 --talia 1 --grud 1.04:1.24:12
+bl $T/formovka.py -- "$W/volk/o.blend" "$W/volk/f.blend" --sustavy "$W/volk/sustavy.json" --golen 1 --koleno 0 --talia 1 $FORM_GRUD
 
 if [ -z "${OT_OGRANKI:-}" ]; then
 echo "== Лось: подгонка, кусок головы с рогами и копыт"
@@ -81,7 +85,7 @@ bl $T/perenesti_kusok.py -- "$W/o1h.blend" "$W/st1/k.blend" @Волк1 Волк1
 bl $T/organ_objekt.py -- "$W/o1.blend" "$W/st1/ushi.blend" @Волк11 Чутьё@Волк "$W/o2.blend"
 bl $T/organ_objekt.py -- "$W/o2.blend" "$W/st1/greben.blend" @Волк11 Шкура@Волк "$W/o3.blend"
 bl $T/organ_objekt.py -- "$W/o3.blend" "$W/st1/kogti.blend" @Волк11 Руки@Волк "$W/o4.blend"
-bl $T/formovka.py -- "$W/o4.blend" "$W/o5.blend" --sustavy "$W/volk/sustavy.json" --golen 1 --koleno 0 --talia 1 --raspravit 60
+bl $T/formovka.py -- "$W/o4.blend" "$W/o5.blend" --sustavy "$W/volk/sustavy.json" --golen 1 --koleno 0 --talia 1 $RASPRAVIT
 
 # ПЕРЕВЯЗКА-СТРАХОВКА: веса тела финальные с начала; куски и органы получают веса цели (`.vesa.json`) и бывают сверх 4 костей —
 # здесь им 4 кости, а их база и «рост» перевязываются по позам ступеней ИЗ ПОСТАВКИ (их показывает игра; поправки
