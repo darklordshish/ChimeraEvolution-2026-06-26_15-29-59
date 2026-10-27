@@ -121,6 +121,7 @@ public static class PavilionShot
             case "CascadePool": return CascadePool();
             case "CascadeLip": return CascadeLip();
             case "Lake": return Lake();
+            case "Station": return Station();
             default: return "unknown mode " + mode + " (CanyonTop|Canyon3_4|CascadePool|CascadeLip|Lake)";
         }
     }
@@ -197,6 +198,14 @@ public static class PavilionShot
         Vector3 desired = Field(camField.x,
             Ground(camField.x, camField.y) + Mathf.Max(20f, length * 0.12f), camField.y);
         return PlaceClear("CascadeLip", target, desired, 1.5f);
+    }
+
+    static string Station()
+    {
+        if (builder.LabNorthDoor == Vector3.zero) return "no north door";
+        Vector3 target = Field(builder.LabNorthDoor.x, builder.LabNorthDoor.y + 2f, builder.LabNorthDoor.z);
+        Vector3 desired = Field(builder.LabNorthDoor.x, builder.LabNorthDoor.y + 12f, builder.LabNorthDoor.z + 28f);
+        return PlaceClear("Station", target, desired, 1.5f);
     }
 
     static string Lake()
