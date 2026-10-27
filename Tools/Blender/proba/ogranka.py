@@ -355,12 +355,37 @@ elif opt.get('rezhim') == 'massy':
         zx, z0_, zm_, z1_ = (float(x) for x in opt.get('zhivot', '0.055:1.0:1.13:1.27').split(':'))
         _, Nb_, _ = geom(B0, Fu); Cb = np.array([B0[f].mean(0) for f in Fu]); nl = lab.max() + 1; nz = 0
         MAKS_V = np.zeros(len(P))
-        for fi in range(len(Fu)):
-            x_, y_, z_ = Cb[fi]
-            if abs(x_) < zx and z0_ < z_ < z1_ and Nb_[fi][1] < -0.5:
-                lab[fi] = nl + int(z_ > zm_); nz += 1
-                # живот держит ширину до таза — его плоскость забирает край боков, предел сдвига свой (`--zhivot_sdvig`)
-                MAKS_V[Fu[fi]] = float(opt.get('zhivot_sdvig', '0.035'))
+        # ГРАНИЦЫ ЗОНЫ — ПУТИ ПО РЁБРАМ (27.10, ГеймБосс по P2: «пила из мелких треугольников поперёк живота» — граница по центрам
+        # граней шла зубцами): низ, середина и верх — кратчайшие пути поперёк живота на своей высоте (штраф за уход по высоте),
+        # зона — заливка граней от середины живота, через пути и стены линий не переходит
+        import heapq
+        def put_poperek(zz):
+            fr_ = [v for v in range(len(B0)) if B0[v][1] < -0.05 and abs(B0[v][2] - zz) < 0.03]
+            a_ = min((v for v in fr_ if B0[v][0] < 0), key=lambda v: abs(B0[v][0] + zx + 0.02) + abs(B0[v][2] - zz))
+            b_ = min((v for v in fr_ if B0[v][0] > 0), key=lambda v: abs(B0[v][0] - zx - 0.02) + abs(B0[v][2] - zz))
+            dist = {a_: 0.0}; prev = {}; pq = [(0.0, a_)]
+            while pq:
+                d, x = heapq.heappop(pq)
+                if x == b_: break
+                if d > dist.get(x, 1e9): continue
+                for y in nb[x]:
+                    if B0[y][1] > -0.02: continue
+                    nd = d + float(np.linalg.norm(B0[x] - B0[y])) * (1 + 200 * abs(B0[y][2] - zz))
+                    if nd < dist.get(y, 1e9): dist[y] = nd; prev[y] = x; heapq.heappush(pq, (nd, y))
+            pth = [b_]
+            while pth[-1] != a_ and pth[-1] in prev: pth.append(prev[pth[-1]])
+            return {tuple(sorted(e)) for e in zip(pth, pth[1:])}
+        STENY = put_poperek(z0_) | put_poperek(zm_) | put_poperek(z1_) | BAR
+        adjz = svyaz(Fu, STENY)
+        v_zone = lambda fi: abs(Cb[fi][0]) < zx + 0.03 and z0_ - 0.03 < Cb[fi][2] < z1_ + 0.03 and Nb_[fi][1] < -0.3
+        for zz, sl in (((z0_ + zm_) / 2, 0), ((zm_ + z1_) / 2, 1)):
+            f0 = min((fi for fi in range(len(Fu)) if v_zone(fi)), key=lambda fi: abs(Cb[fi][0]) + abs(Cb[fi][2] - zz))
+            st, seen_ = [f0], {f0}
+            while st:
+                g = st.pop(); lab[g] = nl + sl; nz += 1
+                MAKS_V[Fu[g]] = float(opt.get('zhivot_sdvig', '0.035'))   # живот держит ширину до таза — свой предел сдвига
+                for h_ in adjz[g]:
+                    if h_ not in seen_ and v_zone(h_): seen_.add(h_); st.append(h_)
         print('ОГРАНКА: живот — %d граней в двух массах (|x| < %.3f, z %.2f–%.2f–%.2f в базе)' % (nz, zx, z0_, zm_, z1_))
 else:
     lab = oblasti_kmeans(C, N, A, float(opt['ploshchad']))
