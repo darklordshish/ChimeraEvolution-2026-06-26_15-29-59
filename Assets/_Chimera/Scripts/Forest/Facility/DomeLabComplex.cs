@@ -600,10 +600,28 @@ public static class DomeLabComplex
             float gap = CreviceWidth * 0.5f + 0.5f;
             float sideW = (HalfWidth * 2f - gap * 2f) * 0.5f;
             float roofY = Plinth + RoomHeight + RoofThickness + 0.3f;
-            b.Add("UndergroundEarthRoofW", Kit.Rock, sideW, 0.7f, HalfDepth * 2f + 4f,
-                -gap - sideW * 0.5f, roofY, 0f, true);
-            b.Add("UndergroundEarthRoofE", Kit.Rock, sideW, 0.7f, HalfDepth * 2f + 4f,
-                gap + sideW * 0.5f, roofY, 0f, true);
+            // Рваные каменные всхолмления вместо плоской плиты: крыша — холм,
+            // а не бетонный стол. Коллайдеров нет — это только силуэт.
+            b.AddMound("BuriedMoundA", 14f, 4.5f, 14f, -10f, roofY - 1.1f, -8f);
+            b.AddMound("BuriedMoundB", 13f, 4.0f, 15f, 9f, roofY - 1.0f, -7f);
+            b.AddMound("BuriedMoundC", 13f, 5.0f, 13f, -11f, roofY - 1.2f, 9f);
+            b.AddMound("BuriedMoundD", 14f, 4.2f, 14f, 10f, roofY - 1.1f, 9f);
+            b.AddMound("BuriedMoundE", 11f, 3.4f, 10f, 0f, roofY - 0.8f, 0f);
+            b.AddMound("BuriedMoundF", 8f, 4.2f, 12f, -18f, roofY - 1.0f, 0f);
+            b.AddMound("BuriedMoundG", 8f, 4.0f, 12f, 18f, roofY - 1.0f, 0f);
+            b.AddMound("BuriedMoundH", 12f, 4.0f, 9f, 0f, roofY - 0.9f, -16f);
+            b.AddMound("BuriedMoundI", 10f, 4.5f, 8f, 0f, roofY - 1.0f, 16f);
+            b.AddMound("BuriedMoundJ", 28f, 5.0f, 16f, 0f, roofY - 1.8f, 0f);
+            b.AddMound("BuriedMoundK", 12f, 4.0f, 8f, -17f, roofY - 1.2f, 0f);
+            b.AddMound("BuriedMoundL", 12f, 4.0f, 8f, 17f, roofY - 1.2f, 0f);
+            b.AddMound("BuriedMoundM", 12f, 4.2f, 10f, -16f, roofY - 1.2f, -14f);
+            b.AddMound("BuriedMoundN", 12f, 4.2f, 10f, 16f, roofY - 1.2f, -14f);
+            b.AddMound("BuriedMoundO", 12f, 4.2f, 10f, -16f, roofY - 1.2f, 14f);
+            b.AddMound("BuriedMoundP", 12f, 4.2f, 10f, 16f, roofY - 1.2f, 14f);
+            b.AddRock("BuriedCrownW", 4.2f, -21f, roofY - 1.0f, -17f);
+            b.AddRock("BuriedCrownE", 4.4f, 21f, roofY - 1.0f, -17f);
+            b.AddRock("BuriedCrownS", 3.8f, -20f, roofY - 0.8f, 17f);
+            b.AddRock("BuriedCrownN", 3.8f, 20f, roofY - 0.8f, 17f);
 
             // Северная расщелина: пол поднимается от двери к поверхности, борта — скала.
             float rise = Mathf.Max(0.1f, depth - Plinth);
@@ -622,6 +640,8 @@ public static class DomeLabComplex
             b.AddRock("CreviceMouthW", 4.2f, -3.2f, depth - 0.2f, z1 + 0.8f);
             b.AddRock("CreviceMouthE", 3.8f, 3.1f, depth - 0.2f, z1 + 0.8f);
             b.AddRock("CreviceBrow", 4.5f, 0f, depth + 1.4f, z1 + 1.6f);
+            b.Light("LabLight_Crevice", new Vector3(0f, depth + 1.8f, z1 - 0.8f),
+                9f, 0.85f, DomePalette.LabCold);
 
             // Насыпь расходится в стороны, оставляя проход по центру.
             b.Add("UndergroundHillW", Kit.Rock, 26f, 12f, 18f, -16f, -2f, 23f, true);
@@ -924,6 +944,20 @@ public static class DomeLabComplex
         }
 
         /// <summary>Глыба: икосаэдр радиуса r стоит на земле (центр на r над y).</summary>
+        public void AddMound(string name, float sx, float sy, float sz,
+            float x, float y, float z)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(root, false);
+            go.transform.localPosition = new Vector3(x, y + sy * 0.4f, z);
+            go.transform.localScale = new Vector3(sx, sy, sz);
+            go.AddComponent<MeshFilter>().sharedMesh = IcoUnit();
+            var renderer = go.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = KitMat(Kit.Rock);
+            renderer.shadowCastingMode = ShadowCastingMode.Off;
+            parts++;
+        }
+
         public void AddRock(string name, float r, float x, float y, float z)
         {
             var go = new GameObject(name);
