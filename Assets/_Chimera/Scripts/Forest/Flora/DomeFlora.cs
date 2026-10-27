@@ -489,6 +489,7 @@ public static class DomeFlora
     public static void ClearMats() => DestroyCaches(true);
 
     /// <summary>Рантайм: в Play Destroy (отложенный), в редакторе — DestroyImmediate.</summary>
+    public static IReadOnlyList<Material> Materials => mats;
     public static void ReleaseCaches() => DestroyCaches(!Application.isPlaying);
 
     static void DestroyCaches(bool immediate)

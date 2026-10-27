@@ -376,6 +376,8 @@ public class DomeWorld
             DestroyObject(Root, !Application.isPlaying);
             Root = null;
         }
+        // Сначала вернуть сухие цвета живым материалам, потом уничтожать их.
+        DomeWeather.ResetWet();
         foreach (var mat in mats)
             if (mat != null) DestroyObject(mat, !Application.isPlaying);
         mats.Clear();
@@ -386,7 +388,6 @@ public class DomeWorld
         DomeFlora.ReleaseCaches();
         DomeFacilityPlacer.ReleaseCaches();
         DomeLabComplex.ReleaseCaches();
-        DomeWeather.ResetWet();
         DomeSkyRig.Reset();
 
         Hydro = null;

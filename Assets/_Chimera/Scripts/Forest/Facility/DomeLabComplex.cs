@@ -679,6 +679,7 @@ public static class DomeLabComplex
     // ------------------------------------------------------------------ кэши и снос
 
     /// <summary>Рантайм: Destroy отложен, редактор — DestroyImmediate. Зовёт <c>DomeWorld.Clear</c>.</summary>
+    public static IReadOnlyList<Material> Materials => new List<Material>(matCache.Values);
     public static void ReleaseCaches()
     {
         bool immediate = !Application.isPlaying;

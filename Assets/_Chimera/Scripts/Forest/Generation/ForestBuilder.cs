@@ -520,7 +520,6 @@ public class ForestBuilder : MonoBehaviour
         DestroyOwnedConfig();
         SpawnPoint = default;
         DomeSkyRig.Reset();
-        DomeWeather.ResetWet();
         ForestClimate.ResetStatic();
     }
 
@@ -548,7 +547,10 @@ public class ForestBuilder : MonoBehaviour
         climate.SetWeatherImmediate(climateWeather);
         climate.StartWeatherClock();
         climate.skyRoot = world.Root;
-        climate.wetMaterials = world.Materials;
+        var wet = new List<Material>(world.Materials);
+        wet.AddRange(DomeFlora.Materials);
+        wet.AddRange(DomeLabComplex.Materials);
+        climate.wetMaterials = wet;
         if (climateWeather == WeatherKind.Rain && climate.rain == null)
             climate.rain = DomeRain.BuildPreview(world.Root, 0f, 0f);
         climate.ApplyVisuals();
