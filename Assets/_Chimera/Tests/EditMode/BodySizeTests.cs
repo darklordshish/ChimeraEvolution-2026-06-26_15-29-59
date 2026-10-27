@@ -42,6 +42,23 @@ namespace Chimera.Tests.EditMode
         static SpeciesSO Load(string n) => AssetDatabase.LoadAssetAtPath<SpeciesSO>($"Assets/_Chimera/Data/{n}.asset");
 
         [Test]
+        public void FromGround_MeasuresFromGround_NotCapsuleBottom()
+        {
+            var go = Rig(0f, 2f);
+            try
+            {
+                var size = go.AddComponent<BodySize>();
+                size.Apply(1f);
+                Assert.AreEqual(0.7f, size.FromGround(1.7f), 1e-4f,
+                    "глаз 1.7 м от земли при корне в центре капсулы");
+                size.Apply(2f);
+                Assert.AreEqual(2.4f, size.FromGround(1.7f), 1e-4f,
+                    "высота от земли масштабируется");
+            }
+            finally { Object.DestroyImmediate(go); }
+        }
+
+        [Test]
         public void Of_PureSpecies_IsFormScale_ChimeraAddsGrowth()
         {
             var hog = Load("Ёж"); var human = Load("Человек"); var wolf = Load("Волк");

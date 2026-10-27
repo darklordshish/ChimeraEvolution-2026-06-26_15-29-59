@@ -20,6 +20,7 @@ public class ForestClimate : MonoBehaviour
     public GameObject skyRoot;
     public IReadOnlyList<Material> wetMaterials;
     public DomeRain rain;
+    public DomeLabComplex.Result lab;
     public float visualInterval = 0.5f;
 
     [Header("B1.2: смена погоды по таблице")]
@@ -39,6 +40,7 @@ public class ForestClimate : MonoBehaviour
 
     float nextVisual;
     float weatherElapsed;
+    bool lastInside;
     WeatherKind fromKind, toKind;
     float blendStart;
     bool blending;
@@ -64,7 +66,15 @@ public class ForestClimate : MonoBehaviour
             }
         }
 
-        if (skyRoot != null && Time.time >= nextVisual)
+        bool inside = lab != null && Camera.main != null
+            && DomeLabComplex.Contains(lab, Camera.main.transform.position);
+        if (inside != lastInside)
+        {
+            ApplyVisuals();
+            lastInside = inside;
+            nextVisual = Time.time + Mathf.Max(0.1f, visualInterval);
+        }
+        else if (skyRoot != null && Time.time >= nextVisual)
         {
             ApplyVisuals();
             nextVisual = Time.time + Mathf.Max(0.1f, visualInterval);
@@ -76,6 +86,8 @@ public class ForestClimate : MonoBehaviour
         currentKind = kind;
         fromKind = toKind = kind;
         state = new WeatherState { kind = kind };
+        CurrentState = state;
+        CurrentTimeMinutes = timeMinutes;
         blending = false;
         WetAmount = WetFor(kind);
         FogAmount = FogFor(kind);
@@ -88,6 +100,8 @@ public class ForestClimate : MonoBehaviour
         currentKind = kind;
         toKind = kind;
         state = new WeatherState { kind = kind };
+        CurrentState = state;
+        CurrentTimeMinutes = timeMinutes;
         blendStart = Time.time;
         blending = true;
         EnsureRain();
@@ -129,6 +143,12 @@ public class ForestClimate : MonoBehaviour
     /// <summary>Применить текущую погоду/время к небу, материалам и дождю.</summary>
     public void ApplyVisuals()
     {
+        ApplyVisuals(Camera.main != null ? Camera.main.transform.position : Vector3.zero);
+    }
+
+    public void ApplyVisuals(Vector3 viewPoint)
+    {
+        bool inside = lab != null && DomeLabComplex.Contains(lab, viewPoint);
         float t = 1f;
         if (blending)
         {
@@ -152,11 +172,18 @@ public class ForestClimate : MonoBehaviour
             RenderSettings.fogDensity = Mathf.Max(RenderSettings.fogDensity, 0.004f)
                                         * (1f + 1.5f * FogAmount);
 
+        // Внутри станции нет внешнего тумана и дождя: это закрытый объём.
+        if (inside)
+        {
+            RenderSettings.fog = false;
+            RenderSettings.fogDensity = 0f;
+        }
+
         if (rain != null)
         {
             bool wetWeather = (blending && (a == WeatherKind.Rain || b == WeatherKind.Rain))
                               || (!blending && currentKind == WeatherKind.Rain);
-            rain.gameObject.SetActive(wetWeather);
+            rain.gameObject.SetActive(wetWeather && !inside);
         }
     }
 

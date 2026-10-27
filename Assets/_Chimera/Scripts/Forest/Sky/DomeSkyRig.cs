@@ -10,11 +10,30 @@ public static class DomeSkyRig
 {
     static bool primed;
     static readonly Dictionary<int, float> baseIntensities = new Dictionary<int, float>();
+    static bool fogCaptured;
+    static bool fogEnabled;
+    static FogMode fogMode;
+    static float fogDensity;
+    static Color fogColor;
 
     public static void Reset()
     {
-        primed = false;
+        foreach (var pair in baseIntensities)
+        {
+            var l = Object.FindObjectsByType<Light>(FindObjectsInactive.Include);
+            foreach (var light in l)
+                if (light.GetInstanceID() == pair.Key) light.intensity = pair.Value;
+        }
         baseIntensities.Clear();
+        primed = false;
+        if (fogCaptured)
+        {
+            RenderSettings.fog = fogEnabled;
+            RenderSettings.fogMode = fogMode;
+            RenderSettings.fogDensity = fogDensity;
+            RenderSettings.fogColor = fogColor;
+            fogCaptured = false;
+        }
     }
 
     public static void ApplyPhase(GameObject root, float timeMinutes, bool log = true)
@@ -60,6 +79,14 @@ public static class DomeSkyRig
             if (l.type != LightType.Directional || l.name == "DomeSun") continue;
             if (baseIntensities.TryGetValue(l.GetInstanceID(), out float @base))
                 l.intensity = @base * (0.05f + 0.95f * s.dayT);
+        }
+        if (!fogCaptured)
+        {
+            fogEnabled = RenderSettings.fog;
+            fogMode = RenderSettings.fogMode;
+            fogDensity = RenderSettings.fogDensity;
+            fogColor = RenderSettings.fogColor;
+            fogCaptured = true;
         }
         RenderSettings.fog = true;
         RenderSettings.fogMode = FogMode.ExponentialSquared;

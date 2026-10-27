@@ -681,7 +681,7 @@ public class DomeWorld
         sun.transform.SetParent(Root.transform, false);
         var light = sun.AddComponent<Light>();
         light.type = LightType.Directional;
-        light.shadows = LightShadows.None;
+        light.shadows = LightShadows.Soft;
 
         DomeSkyRig.Reset();
         DomeSkyRig.ApplyPhase(Root, 10.5f);

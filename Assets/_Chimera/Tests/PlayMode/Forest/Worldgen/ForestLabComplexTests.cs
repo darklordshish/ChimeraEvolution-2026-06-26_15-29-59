@@ -345,6 +345,30 @@ namespace Chimera.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator Climate_InsideLab_HidesRainAndFog()
+        {
+            var b = BuildLab(LabStyle.Bastion, seed: 9, climate: true,
+                weather: WeatherKind.Rain, timeMinutes: 10f);
+            yield return null;
+            var c = b.GetComponent<ForestClimate>();
+            Assert.IsNotNull(c, "климат есть");
+            var lab = b.LabComplex;
+            Assert.IsNotNull(lab, "станция есть");
+
+            var inside = lab.root.transform.TransformPoint(
+                new Vector3(0f, DomeLabComplex.Plinth + 1f, 0f));
+            c.ApplyVisuals(inside);
+            Assert.IsFalse(RenderSettings.fog, "внутри станции нет внешнего тумана");
+            Assert.IsFalse(c.rain.gameObject.activeSelf, "внутри станции нет дождя");
+
+            var outside = lab.root.transform.TransformPoint(
+                new Vector3(0f, 0f, -DomeLabComplex.HalfDepth - 20f));
+            c.ApplyVisuals(outside);
+            Assert.IsTrue(RenderSettings.fog, "снаружи туман возвращается");
+            Assert.IsTrue(c.rain.gameObject.activeSelf, "снаружи дождь возвращается");
+        }
+
+        [UnityTest]
         public IEnumerator Climate_Clear_RemovesRain()
         {
             var b = BuildLab(LabStyle.Bastion, seed: 9, climate: true,
@@ -377,6 +401,53 @@ namespace Chimera.Tests.PlayMode
             Assert.Greater(c.WeatherStep, 0, "после заворота суток погода продолжает меняться");
             Assert.AreEqual(WeatherKind.Fog, ForestClimate.CurrentState.kind,
                 "таблица только с туманом даёт туман");
+        }
+
+        [UnityTest]
+        public IEnumerator LabRoof_AndSun_CastShadows()
+        {
+            var b = BuildLab(LabStyle.Bastion, seed: 9);
+            yield return null;
+            var roof = Find(b.LabComplex.root.transform, "LabRoofN");
+            Assert.IsNotNull(roof, "крыша лаборатории есть");
+            var roofRenderer = roof.GetComponent<MeshRenderer>();
+            Assert.IsNotNull(roofRenderer, "у крыши есть рендерер");
+            Assert.AreNotEqual(UnityEngine.Rendering.ShadowCastingMode.Off,
+                roofRenderer.shadowCastingMode, "крыша кастит тень");
+            var sun = GameObject.Find("DomeSun");
+            Assert.IsNotNull(sun, "DomeSun есть");
+            Assert.AreNotEqual(LightShadows.None, sun.GetComponent<Light>().shadows,
+                "солнце кастит тень");
+        }
+
+        [UnityTest]
+        public IEnumerator Clear_RestoresFogAndExternalDirectional()
+        {
+            var beforeFog = RenderSettings.fog;
+            var beforeDensity = RenderSettings.fogDensity;
+            var beforeColor = RenderSettings.fogColor;
+            var ext = new GameObject("~ExternalSun");
+            var light = ext.AddComponent<Light>();
+            light.type = LightType.Directional;
+            light.intensity = 1.3f;
+            try
+            {
+                var b = BuildLab(LabStyle.Bastion, seed: 9, climate: true,
+                    weather: WeatherKind.Rain, timeMinutes: 25f);
+                yield return null;
+                Assert.Less(light.intensity, 0.1f, "ночь приглушила внешний directional");
+
+                b.Clear();
+                yield return null;
+                Assert.AreEqual(1.3f, light.intensity, 1e-3f, "Clear вернул интенсивность");
+                Assert.AreEqual(beforeFog, RenderSettings.fog, "Clear вернул fog");
+                Assert.AreEqual(beforeDensity, RenderSettings.fogDensity, 1e-5f, "Clear вернул fogDensity");
+                Assert.AreEqual(beforeColor, RenderSettings.fogColor, "Clear вернул fogColor");
+            }
+            finally
+            {
+                Object.Destroy(ext);
+            }
         }
 
         [UnityTest]

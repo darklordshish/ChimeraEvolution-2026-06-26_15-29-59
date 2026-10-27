@@ -47,6 +47,8 @@ public static class ForestScenicTool
             top.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
         }
         var topCam = top.GetComponent<Camera>();
+        top.gameObject.SetActive(true);
+        topCam.enabled = true;
         topCam.orthographic = true;
         topCam.orthographicSize = size;
         // Окклюзия ВЫКЛ навсегда: в сцене лежат протухшие baked-данные, и они режут
@@ -54,6 +56,8 @@ public static class ForestScenicTool
         // Генеративный мир окклюзию не печёт.
         topCam.useOcclusionCulling = false;
         var sandboxCam0 = sandbox.GetComponent<Camera>();
+        sandbox.gameObject.SetActive(true);
+        sandboxCam0.enabled = true;
         sandboxCam0.useOcclusionCulling = false;
         Debug.Log("[Forest] камеры SandboxCam (3/4) + TopCam (топдаун-орто) готовы");
     }

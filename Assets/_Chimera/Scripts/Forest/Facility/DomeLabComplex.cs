@@ -315,7 +315,9 @@ public static class DomeLabComplex
         float x, float y, float z)
     {
         // Коллайдер — для камеры и физики; NavMeshModifier — чтобы по крыше не ходили.
-        b.AddNoNav(name, Kit.Concrete, sizeX, RoofThickness, sizeZ, x, y, z, true);
+        var go = b.AddNoNav(name, Kit.Concrete, sizeX, RoofThickness, sizeZ, x, y, z, true);
+        // Только крыша кастит тень: она закрывает интерьер от солнца павильона.
+        go.GetComponent<MeshRenderer>().shadowCastingMode = ShadowCastingMode.On;
     }
 
     static void BuildBeams(Builder b, int flip)
@@ -680,6 +682,17 @@ public static class DomeLabComplex
 
     /// <summary>Рантайм: Destroy отложен, редактор — DestroyImmediate. Зовёт <c>DomeWorld.Clear</c>.</summary>
     public static IReadOnlyList<Material> Materials => new List<Material>(matCache.Values);
+
+    /// <summary>Точка внутри закрытого объёма станции (локальный бокс, без триггеров).</summary>
+    public static bool Contains(Result result, Vector3 worldPos)
+    {
+        if (result == null || result.root == null) return false;
+        Vector3 p = result.root.transform.InverseTransformPoint(worldPos);
+        return Mathf.Abs(p.x) <= HalfWidth - Wall * 0.5f + 0.01f
+            && Mathf.Abs(p.z) <= HalfDepth - Wall * 0.5f + 0.01f
+            && p.y >= Plinth - 0.1f
+            && p.y <= Plinth + Mathf.Max(HallHeight, RoomHeight) + RoofThickness + 0.2f;
+    }
     public static void ReleaseCaches()
     {
         bool immediate = !Application.isPlaying;

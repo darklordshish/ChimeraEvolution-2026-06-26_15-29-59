@@ -143,7 +143,7 @@ Camera:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 74390237}
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 2
   m_ClearFlags: 1
   m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
@@ -474,7 +474,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::CameraFollow
   target: {fileID: 1024955155}
-  offset: {x: 0, y: 6, z: -7}
+  offset: {x: 0, y: 4, z: -5}
   followLerp: 10
   lookHeight: 1.2
   rotateBehind: 1
@@ -485,7 +485,7 @@ MonoBehaviour:
   wallProbeMask:
     serializedVersion: 2
     m_Bits: 0
-  headHeight: 1.4
+  headHeight: 1.7
   headForward: 0.25
   pitchSensitivity: 0.1
   minPitch: -60
@@ -756,7 +756,7 @@ Camera:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1616753771}
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 2
   m_ClearFlags: 1
   m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}

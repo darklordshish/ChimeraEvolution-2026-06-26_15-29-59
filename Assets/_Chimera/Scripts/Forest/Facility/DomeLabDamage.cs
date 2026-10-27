@@ -187,7 +187,8 @@ public static class DomeLabDamage
         if (collider != null)
         {
             collider.enabled = false;
-            Object.Destroy(collider);
+            if (Application.isPlaying) Object.Destroy(collider);
+            else Object.DestroyImmediate(collider);
         }
         return go;
     }

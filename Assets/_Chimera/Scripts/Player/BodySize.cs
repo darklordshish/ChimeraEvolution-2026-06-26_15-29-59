@@ -46,6 +46,8 @@ public class BodySize : MonoBehaviour
     {
         if (!cached) return y;
         float bottom = c0.y - h0 * 0.5f;
-        return bottom + (y - bottom) * Scale;
+        // y задан от земли: на масштабе 1 глаз 1.7 м — это 1.7 м над землёй,
+        // а не 1.7 м от низа капсулы. Корень персонажа стоит выше земли.
+        return bottom + y * Scale;
     }
 }

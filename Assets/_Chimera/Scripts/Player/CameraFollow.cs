@@ -101,6 +101,9 @@ public class CameraFollow : MonoBehaviour
             // глаза — с ростом тела (`BodySize`): человек-лось 3 м смотрит сверху, Хеджхалк — от земли
             float s = size != null ? size.Scale : 1f;
             Vector3 head = target.position + Vector3.up * (size != null ? size.FromGround(headHeight) : headHeight) + target.forward * headForward * s;
+            // Глаз вплотную к стене: не даём камере оказаться внутри геометрии.
+            Vector3 fpsAim = target.position + Vector3.up * (size != null ? size.FromGround(lookHeight) : lookHeight);
+            head = ResolveWall(fpsAim, head);
             transform.position = head + shake;
             transform.rotation = Quaternion.Euler(pitch, target.eulerAngles.y, 0f);
             return;
@@ -135,7 +138,7 @@ public class CameraFollow : MonoBehaviour
         if (distance < 1e-4f) return desired;
 
         Vector3 dir = delta / distance;
-        if (probeHits == null) probeHits = new RaycastHit[8]; // перекомпиляция на Play обнуляет поле
+        if (probeHits == null) probeHits = new RaycastHit[32]; // перекомпиляция на Play обнуляет поле
         int count = Physics.SphereCastNonAlloc(aim, ProbeRadius, dir, probeHits, distance,
             ProbeMask, QueryTriggerInteraction.Ignore);
 
