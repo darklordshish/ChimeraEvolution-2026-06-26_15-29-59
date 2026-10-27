@@ -17,7 +17,7 @@
 
 Правится только форма-ключ `--imya` (базовая форма К2 — нет) и сетка кусков.
 
-  blender -b --factory-startup -P ogranka.py -- вход.blend выход.blend [--imya Волк] [--rezhim myshcy|massy [--ploshchad_massy 0.02 --povorot 12 --sredina_shag 0.12]] [--sila 1] [--iter 30] [--lap 0]
+  blender -b --factory-startup -P ogranka.py -- вход.blend выход.blend [--imya Волк] [--rezhim myshcy|massy [--ploshchad_massy 0.02 --povorot 12 --sredina_shag 0.12 --zhivot 0.055:1.0:1.13:1.27|0 --zhivot_sdvig 0.035]] [--sila 1] [--iter 30] [--lap 0]
       [--ploshchad_ploskosti 0.008] [--min_oblast 0.003] [--ploshchad 0.006] [--masshtab 0.08] [--bez голова,Чутьё] [--linii 2|1|0] [--maks_sdvig 0.025] [--kuski 1 [--ploshchad_kuski 0.01]]
 """
 import sys
@@ -260,7 +260,8 @@ def vypryamit(P, F, lab, fixed, nb, vf):
         # ПРЕДЕЛ СДВИГА (`--maks_sdvig` м, 27.10): огранка поворачивает плоскости, а не переносит объём — массы без предела
         # сдвигали вершины до 11 см (развороты в позе 186 → 216, IoU анфас вниз)
         if opt.get('maks_sdvig'):
-            d_ = P - P0; n_ = np.linalg.norm(d_, axis=1); m_ = float(opt['maks_sdvig'])
+            d_ = P - P0; n_ = np.linalg.norm(d_, axis=1); m_ = np.full(len(P), float(opt['maks_sdvig']))
+            if MAKS_V is not None: m_ = np.maximum(m_, MAKS_V)
             P = P0 + d_ * np.minimum(1.0, m_ / np.maximum(n_, 1e-12))[:, None]
     return P
 
@@ -305,7 +306,7 @@ for o in body:
     for pl in o.data.polygons:
         Fu.append([vmap[(o.name, vi)] for vi in pl.vertices]); fobj.append(o.name)
         fbone.append(max(set(vb[vi] for vi in pl.vertices), key=lambda n: sum(1 for vi in pl.vertices if vb[vi] == n)))
-P = np.array(Pu); B0 = np.array(Bu)
+P = np.array(Pu); B0 = np.array(Bu); MAKS_V = None
 nb, vf, fixed = topologiya(Fu, len(P))
 C, N, A = geom(P, Fu)
 if opt.get('rezhim') == 'myshcy':
@@ -318,6 +319,22 @@ elif opt.get('rezhim') == 'massy':
     for fi, f in enumerate(Fu):        # стопа не трогается (как в режиме мышц)
         if fbone[fi].split('.')[0] == 'стопа': fixed[f] = True
     lab = oblasti_massy(P, Fu, C, A, nb, fixed, BAR)
+    # ЖИВОТ — ШИРОКОЙ ПЕРЕДНЕЙ ПОВЕРХНОСТЬЮ (`--zhivot x:z0:zm:z1`, 27.10, дизайн-линия по ряду B/D/E′: «треугольный щит над тазом —
+    # схождение диагоналей вниз и центральный киль; В4 — два раздельных продольных края, ширина живота до таза»). Массы сами
+    # сходились к паху клином. Зона между краями пресса задаётся в БАЗОВЫХ координатах шаблона (там стоят линии листа; ключ её
+    # везёт): |x| < x, z0..z1, спереди; две горизонтальные массы через середину (граница — zm), без киля и без острия.
+    # Дуга В3 — выше z1, своей стеной; бока — Г1 и массы
+    if opt.get('zhivot', '0.055:1.0:1.13:1.27') != '0':
+        zx, z0_, zm_, z1_ = (float(x) for x in opt.get('zhivot', '0.055:1.0:1.13:1.27').split(':'))
+        _, Nb_, _ = geom(B0, Fu); Cb = np.array([B0[f].mean(0) for f in Fu]); nl = lab.max() + 1; nz = 0
+        MAKS_V = np.zeros(len(P))
+        for fi in range(len(Fu)):
+            x_, y_, z_ = Cb[fi]
+            if abs(x_) < zx and z0_ < z_ < z1_ and Nb_[fi][1] < -0.5:
+                lab[fi] = nl + int(z_ > zm_); nz += 1
+                # живот держит ширину до таза — его плоскость забирает край боков, предел сдвига свой (`--zhivot_sdvig`)
+                MAKS_V[Fu[fi]] = float(opt.get('zhivot_sdvig', '0.035'))
+        print('ОГРАНКА: живот — %d граней в двух массах (|x| < %.3f, z %.2f–%.2f–%.2f в базе)' % (nz, zx, z0_, zm_, z1_))
 else:
     lab = oblasti_kmeans(C, N, A, float(opt['ploshchad']))
 lab = svyaznye(lab, Fu, A, BAR)
