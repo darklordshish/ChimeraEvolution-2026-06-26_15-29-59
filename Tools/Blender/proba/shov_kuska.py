@@ -5,7 +5,7 @@
 областях заливаются (дыра хвоста при отсечении задних граней).
 
   blender -b --factory-startup -P shov_kuska.py -- вход.blend выход.blend --kosti голень,голень.L,стопа,стопа.L [--imya Волк]
-      [--kusok @Волк] [--polosa 0.05] [--zalit 0]
+      [--kusok @Волк] [--polosa 0.05] [--zalit 0] [--oblast y:z]
 """
 import sys
 import bpy, bmesh
@@ -24,6 +24,12 @@ bpy.ops.wm.open_mainfile(filepath=src)
 o = bpy.data.objects[opt['kusok']]; Mw = o.matrix_world; inv = Mw.inverted()
 gn = {g.index: g.name for g in o.vertex_groups}
 glav = [gn[max(v.groups, key=lambda g: g.weight).group] if v.groups else '' for v in o.data.vertices]
+# `--oblast y:z` — только вершины позади y и ниже z (покой): корень хвоста, а не открытые края гривы на тех же костях
+OB = [float(x) for x in opt['oblast'].split(':')] if opt.get('oblast') else None
+if OB:
+    for v in o.data.vertices:
+        p_ = Mw @ v.co
+        if not (p_.y > OB[0] and p_.z < OB[1]): glav[v.index] = ''
 T, TF = [], []
 for b in bpy.data.objects:
     if b.type != 'MESH' or '@' in b.name or not b.data.shape_keys or opt['imya'] not in b.data.shape_keys.key_blocks: continue
