@@ -26,7 +26,7 @@
   blender -b --factory-startup -P stend_k2.py -- chelovek_mesh.fbx --pokoj klyuchi/chelovek-pokoj.json
       [--kluch Волк --ves 1 --poza klyuchi/chelovek-volk-poza.json --stupen klyuchi/chelovek-volk-st2.json]
       [--organy Чутьё@Волк:1,Шкура@Волк:1] [--skryt_organy klyuchi/../organy/chelovek.json] [--maski f.png,p.png]
-      [--bez @Волк] [--st1 0.5] [--kluchi Волк·Руки:0.5] [--poza_obj тело.obj] [--kadr префикс] [--otchet отчёт.json]
+      [--bez @Волк] [--dyry 1 [--dvustoronnie_organy 1]] [--st1 0.5] [--kluchi Волк·Руки:0.5] [--poza_obj тело.obj] [--kadr префикс] [--otchet отчёт.json]
 """
 import sys, json, math
 import bpy, bmesh
@@ -249,6 +249,88 @@ if opt.get('maski'):
             rgb = np.ones((512, 512, 3)); both = s_ & m_
             rgb[s_ & ~m_] = (0.9, 0.2, 0.2); rgb[m_ & ~s_] = (0.3, 0.5, 0.95); rgb[both] = (0.15, 0.15, 0.15)
             sohranit(opt['kadr'] + '_iou_' + nm + '.png', rgb)
+
+# ДЫРЫ (`--dyry 1`, 28.10, геймдизайнер: «в модели дырки»). Как в игре: черты `@` двусторонние (BodyMesh.TwoSided), тело шасси
+# и органы на шаблоне — односторонние. Два прохода:
+#  1. ЛУЧИ по ракурсам кадра сеткой 5 мм: первое попадание луча — в изнанку одностороннего объекта → видна изнанка (дыра насквозь
+#     или вывернутая грань); попадания кучкуются в пятна по соседству ячеек сетки → «объект · ракурс · высота · размер, мм»;
+#  2. ОТКРЫТЫЕ КРАЯ односторонних объектов: цепочки рёбер с одной гранью; край шасси, вершины которого в позе совпадают (< 1 мм) с
+#     вершинами другого видимого объекта шасси, — шов, не дыра
+if opt.get('dyry'):
+    from mathutils.bvhtree import BVHTree
+    DVU_ORG = opt.get('dvustoronnie_organy', '0') == '1'   # проверка «если органы `<слот>@<вид>` двусторонние, как черты»
+    TRIS, OWN, OSN = [], [], []
+    for o in vid:
+        P_, F_ = geom(o, True)
+        for f in F_:
+            for j in range(1, len(f) - 1): TRIS.append((P_[f[0]], P_[f[j]], P_[f[j + 1]])); OWN.append(o.name)
+        OSN.append((o.name, P_, F_))
+    allv = [Vector(p) for t in TRIS for p in t]; bv = BVHTree.FromPolygons(allv, [[3 * i, 3 * i + 1, 3 * i + 2] for i in range(len(TRIS))])
+    NRM = [np.cross(t[1] - t[0], t[2] - t[0]) for t in TRIS]
+    lo_, hi_ = np.min(allv, axis=0), np.max(allv, axis=0); c_ = (lo_ + hi_) / 2; SH = 0.005; pyatna = []
+    for nm, ang in (('front', 0), ('profile', 90), ('34', 35), ('back', 180), ('34back', 145)):
+        r_ = math.radians(ang); d_ = np.array([math.sin(r_), -math.cos(r_), 0.0]); up = np.array([0, 0, 1.0]); rt = np.cross(d_, up)
+        R_ = float(np.linalg.norm(hi_ - lo_)) / 2 + 0.05; cells = {}
+        for iu in range(int(2 * R_ / SH)):
+            for iz in range(int((hi_[2] - lo_[2] + 0.1) / SH)):
+                org = Vector(c_ + d_ * 5 + rt * (iu * SH - R_)); org.z = lo_[2] - 0.05 + iz * SH
+                hit = bv.ray_cast(org, Vector(-d_), 10.0)
+                if hit[0] is None: continue
+                nmo = OWN[hit[2]]
+                if nmo.startswith('@') or (DVU_ORG and '@' in nmo): continue
+                if float(NRM[hit[2]] @ (-d_)) > 0: cells[(iu, iz)] = (nmo, hit[0])
+        seen_ = set()
+        for k0 in cells:
+            if k0 in seen_: continue
+            st_, grp = [k0], []; seen_.add(k0)
+            while st_:
+                k_ = st_.pop(); grp.append(k_)
+                for du in (-1, 0, 1):
+                    for dz in (-1, 0, 1):
+                        kk = (k_[0] + du, k_[1] + dz)
+                        if kk in cells and kk not in seen_ and cells[kk][0] == cells[k0][0]: seen_.add(kk); st_.append(kk)
+            if len(grp) < 2: continue
+            pts = np.array([list(cells[g][1]) for g in grp])
+            pyatna.append(dict(rakurs=nm, obekt=cells[k0][0], vysota_m=round(float(pts[:, 2].mean()), 2), x_m=round(float(pts[:, 0].mean()), 2),
+                               razmer_mm=round(float(np.max(pts.max(0) - pts.min(0))) * 1000), ploshchad_sm2=round(len(grp) * SH * SH * 1e4, 1)))
+    # открытые края
+    VS = {nm_: P_ for nm_, P_, _ in OSN if '@' not in nm_}
+    from mathutils import kdtree as _kd
+    kraya = []
+    for nm_, P_, F_ in OSN:
+        if nm_.startswith('@'): continue
+        ec = {}
+        for f in F_:
+            for j in range(len(f)):
+                e = tuple(sorted((f[j], f[(j + 1) % len(f)]))); ec[e] = ec.get(e, 0) + 1
+        be = [e for e, c in ec.items() if c == 1]
+        if not be: continue
+        drug = np.concatenate([P2 for n2, P2 in VS.items() if n2 != nm_]) if len(VS) > 1 else np.zeros((0, 3))
+        kd_ = _kd.KDTree(len(drug))
+        for k_, p_ in enumerate(drug): kd_.insert(Vector(p_), k_)
+        kd_.balance()
+        adj = {}
+        for a_, b_ in be: adj.setdefault(a_, []).append(b_); adj.setdefault(b_, []).append(a_)
+        seen_ = set()
+        for v0 in adj:
+            if v0 in seen_: continue
+            st_, grp = [v0], []; seen_.add(v0)
+            while st_:
+                v_ = st_.pop(); grp.append(v_)
+                for w_ in adj[v_]:
+                    if w_ not in seen_: seen_.add(w_); st_.append(w_)
+            pts = P_[grp]
+            otkr = [g for g in grp if len(drug) == 0 or kd_.find(Vector(P_[g]))[2] > 0.001]
+            if len(otkr) < 3: continue
+            po = P_[otkr]
+            kraya.append(dict(obekt=nm_, vershin=len(otkr), iz=len(grp), vysota_m=round(float(po[:, 2].mean()), 2), x_m=round(float(po[:, 0].mean()), 2),
+                              razmer_mm=round(float(np.max(po.max(0) - po.min(0))) * 1000)))
+    otchet['dyry_izanka'] = sorted(pyatna, key=lambda x: -x['ploshchad_sm2'])
+    otchet['dyry_kraya'] = sorted(kraya, key=lambda x: -x['razmer_mm'])
+    print('ДЫРЫ: изнанка видна — пятен %d (крупных ≥ 2 см² — %d); открытых краёв не на шве — %d' % (
+        len(pyatna), sum(1 for x in pyatna if x['ploshchad_sm2'] >= 2), len(kraya)))
+    for x in otchet['dyry_izanka'][:12]: print('ДЫРА изнанка: %(obekt)s · %(rakurs)s · высота %(vysota_m).2f x %(x_m).2f · %(razmer_mm)d мм · %(ploshchad_sm2).1f см²' % x)
+    for x in otchet['dyry_kraya'][:12]: print('ДЫРА край: %(obekt)s · высота %(vysota_m).2f x %(x_m).2f · %(razmer_mm)d мм (%(vershin)d вершин)' % x)
 
 # кадры: Workbench, отсечение задних граней (как в игре)
 if opt.get('kadr'):
