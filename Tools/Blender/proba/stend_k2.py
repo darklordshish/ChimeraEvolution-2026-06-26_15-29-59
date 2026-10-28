@@ -346,6 +346,9 @@ if opt.get('dyry'):
             for yy, xx in ((y + 1, x), (y - 1, x), (y, x + 1), (y, x - 1)):
                 if 0 <= yy < H_ and 0 <= xx < W_ and fon[yy, xx] and not vis[yy, xx]: vis[yy, xx] = True; dq.append((yy, xx))
         ok_ = fon & ~vis; seen2 = np.zeros_like(ok_)
+        if opt.get('kadr'):   # карта окон: фигура серая, окна красные
+            rgb = np.ones((H_, W_, 3)); rgb[im] = (0.55, 0.55, 0.55); rgb[ok_] = (0.9, 0.1, 0.1)
+            sohranit(opt['kadr'] + '_okna_' + nm + '.png', rgb)
         for y0, x0 in zip(*np.nonzero(ok_)):
             if seen2[y0, x0]: continue
             dq = deque([(y0, x0)]); seen2[y0, x0] = True; cl = []
