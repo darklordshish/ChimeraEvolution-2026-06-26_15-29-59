@@ -1,0 +1,1087 @@
+{
+  "fbx": "C:/Temp/claude/C--Users-semion-Documents-Chimera-game-ChimeraEvolution-modeli/53623ae4-97d2-450f-a7bb-396e65699af4/scratchpad/sbW3/chelovek_mesh.fbx",
+  "kluch": "Волк",
+  "ves": 0.5,
+  "poza": "Docs/models/handoff/klyuchi/chelovek-volk-poza-st1.json",
+  "vesa_bolshe_4": 0,
+  "vidno": [
+    "@Волк1",
+    "Ноги",
+    "Руки",
+    "Руки@Волк",
+    "Сердце",
+    "Чутьё@Волк",
+    "Шкура@Волк",
+    "голова",
+    "хребет",
+    "шея"
+  ],
+  "kluchi": {
+    "Волк1": 1.0
+  },
+  "razvorot_klyucha": 638,
+  "razvorot_v_poze": 126,
+  "skladka_v_poze": 395,
+  "szhatie_v_poze": 74,
+  "obekty": {
+    "@Волк1": {
+      "granej": 1204,
+      "razvorot": 0,
+      "razvorot_v_poze": 58,
+      "skladka": 58,
+      "szhatie": 5
+    },
+    "Ноги": {
+      "granej": 5106,
+      "razvorot": 21,
+      "razvorot_v_poze": 12,
+      "skladka": 0,
+      "szhatie": 1
+    },
+    "Руки": {
+      "granej": 3140,
+      "razvorot": 348,
+      "razvorot_v_poze": 65,
+      "skladka": 224,
+      "szhatie": 17
+    },
+    "Руки@Волк": {
+      "granej": 501,
+      "razvorot": 6,
+      "razvorot_v_poze": 33,
+      "skladka": 28,
+      "szhatie": 1
+    },
+    "Сердце": {
+      "granej": 567,
+      "razvorot": 91,
+      "razvorot_v_poze": 3,
+      "skladka": 59,
+      "szhatie": 19
+    },
+    "Чутьё@Волк": {
+      "granej": 302,
+      "razvorot": 3,
+      "razvorot_v_poze": 3,
+      "skladka": 0,
+      "szhatie": 0
+    },
+    "Шкура@Волк": {
+      "granej": 587,
+      "razvorot": 10,
+      "razvorot_v_poze": 66,
+      "skladka": 64,
+      "szhatie": 1
+    },
+    "голова": {
+      "granej": 788,
+      "razvorot": 0,
+      "razvorot_v_poze": 0,
+      "skladka": 0,
+      "szhatie": 0
+    },
+    "хребет": {
+      "granej": 1137,
+      "razvorot": 121,
+      "razvorot_v_poze": 22,
+      "skladka": 69,
+      "szhatie": 1
+    },
+    "шея": {
+      "granej": 1474,
+      "razvorot": 38,
+      "razvorot_v_poze": 24,
+      "skladka": 43,
+      "szhatie": 36
+    }
+  },
+  "shov_vershin": 145,
+  "shov_razoshlos_1mm": 12,
+  "shov_maks_mm": 15.0,
+  "zazor_mm": {
+    "@Волк1": 6.7,
+    "Руки@Волк": 1.4,
+    "Чутьё@Волк": 4.0,
+    "Шкура@Волк": 3.8
+  },
+  "dyry_izanka": [
+    {
+      "rakurs": "34back",
+      "obekt": "Руки@Волк",
+      "vysota_m": 0.82,
+      "x_m": 0.32,
+      "razmer_mm": 130,
+      "ploshchad_sm2": 48.5
+    },
+    {
+      "rakurs": "front",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.7,
+      "x_m": -0.15,
+      "razmer_mm": 109,
+      "ploshchad_sm2": 36.8
+    },
+    {
+      "rakurs": "34",
+      "obekt": "Руки@Волк",
+      "vysota_m": 0.8,
+      "x_m": 0.31,
+      "razmer_mm": 100,
+      "ploshchad_sm2": 36.0
+    },
+    {
+      "rakurs": "front",
+      "obekt": "Руки@Волк",
+      "vysota_m": 0.81,
+      "x_m": 0.31,
+      "razmer_mm": 118,
+      "ploshchad_sm2": 34.8
+    },
+    {
+      "rakurs": "34",
+      "obekt": "Чутьё@Волк",
+      "vysota_m": 1.76,
+      "x_m": 0.08,
+      "razmer_mm": 178,
+      "ploshchad_sm2": 33.2
+    },
+    {
+      "rakurs": "back",
+      "obekt": "Руки@Волк",
+      "vysota_m": 0.82,
+      "x_m": 0.32,
+      "razmer_mm": 120,
+      "ploshchad_sm2": 31.0
+    },
+    {
+      "rakurs": "front",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.7,
+      "x_m": 0.11,
+      "razmer_mm": 157,
+      "ploshchad_sm2": 29.2
+    },
+    {
+      "rakurs": "profile",
+      "obekt": "голова",
+      "vysota_m": 1.82,
+      "x_m": 0.09,
+      "razmer_mm": 115,
+      "ploshchad_sm2": 25.5
+    },
+    {
+      "rakurs": "34",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.68,
+      "x_m": 0.04,
+      "razmer_mm": 202,
+      "ploshchad_sm2": 24.8
+    },
+    {
+      "rakurs": "back",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.68,
+      "x_m": -0.06,
+      "razmer_mm": 140,
+      "ploshchad_sm2": 23.0
+    },
+    {
+      "rakurs": "profile",
+      "obekt": "Чутьё@Волк",
+      "vysota_m": 1.74,
+      "x_m": 0.09,
+      "razmer_mm": 80,
+      "ploshchad_sm2": 21.5
+    },
+    {
+      "rakurs": "34back",
+      "obekt": "Чутьё@Волк",
+      "vysota_m": 1.74,
+      "x_m": 0.09,
+      "razmer_mm": 65,
+      "ploshchad_sm2": 20.8
+    },
+    {
+      "rakurs": "34back",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.77,
+      "x_m": -0.13,
+      "razmer_mm": 154,
+      "ploshchad_sm2": 20.0
+    },
+    {
+      "rakurs": "34back",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.7,
+      "x_m": -0.07,
+      "razmer_mm": 160,
+      "ploshchad_sm2": 17.3
+    },
+    {
+      "rakurs": "34back",
+      "obekt": "голова",
+      "vysota_m": 1.81,
+      "x_m": 0.09,
+      "razmer_mm": 120,
+      "ploshchad_sm2": 15.3
+    },
+    {
+      "rakurs": "front",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.8,
+      "x_m": -0.11,
+      "razmer_mm": 120,
+      "ploshchad_sm2": 14.5
+    },
+    {
+      "rakurs": "profile",
+      "obekt": "Чутьё@Волк",
+      "vysota_m": 1.81,
+      "x_m": 0.01,
+      "razmer_mm": 180,
+      "ploshchad_sm2": 14.5
+    },
+    {
+      "rakurs": "34",
+      "obekt": "голова",
+      "vysota_m": 1.82,
+      "x_m": 0.09,
+      "razmer_mm": 115,
+      "ploshchad_sm2": 14.0
+    },
+    {
+      "rakurs": "profile",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.7,
+      "x_m": -0.05,
+      "razmer_mm": 60,
+      "ploshchad_sm2": 12.8
+    },
+    {
+      "rakurs": "34back",
+      "obekt": "Чутьё@Волк",
+      "vysota_m": 1.8,
+      "x_m": -0.07,
+      "razmer_mm": 74,
+      "ploshchad_sm2": 12.8
+    },
+    {
+      "rakurs": "back",
+      "obekt": "Чутьё@Волк",
+      "vysota_m": 1.8,
+      "x_m": -0.06,
+      "razmer_mm": 89,
+      "ploshchad_sm2": 11.3
+    },
+    {
+      "rakurs": "profile",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.62,
+      "x_m": -0.08,
+      "razmer_mm": 238,
+      "ploshchad_sm2": 10.5
+    },
+    {
+      "rakurs": "34back",
+      "obekt": "Чутьё@Волк",
+      "vysota_m": 1.8,
+      "x_m": 0.06,
+      "razmer_mm": 69,
+      "ploshchad_sm2": 10.0
+    },
+    {
+      "rakurs": "profile",
+      "obekt": "Руки@Волк",
+      "vysota_m": 0.78,
+      "x_m": 0.27,
+      "razmer_mm": 630,
+      "ploshchad_sm2": 9.5
+    },
+    {
+      "rakurs": "back",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.72,
+      "x_m": 0.06,
+      "razmer_mm": 259,
+      "ploshchad_sm2": 9.2
+    },
+    {
+      "rakurs": "profile",
+      "obekt": "Чутьё@Волк",
+      "vysota_m": 1.78,
+      "x_m": 0.08,
+      "razmer_mm": 45,
+      "ploshchad_sm2": 9.0
+    },
+    {
+      "rakurs": "34back",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.79,
+      "x_m": -0.12,
+      "razmer_mm": 137,
+      "ploshchad_sm2": 8.8
+    },
+    {
+      "rakurs": "back",
+      "obekt": "Чутьё@Волк",
+      "vysota_m": 1.81,
+      "x_m": 0.05,
+      "razmer_mm": 55,
+      "ploshchad_sm2": 8.3
+    },
+    {
+      "rakurs": "back",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.85,
+      "x_m": -0.17,
+      "razmer_mm": 90,
+      "ploshchad_sm2": 8.0
+    },
+    {
+      "rakurs": "front",
+      "obekt": "Чутьё@Волк",
+      "vysota_m": 1.72,
+      "x_m": -0.12,
+      "razmer_mm": 50,
+      "ploshchad_sm2": 6.0
+    },
+    {
+      "rakurs": "profile",
+      "obekt": "Чутьё@Волк",
+      "vysota_m": 1.74,
+      "x_m": 0.08,
+      "razmer_mm": 35,
+      "ploshchad_sm2": 6.0
+    },
+    {
+      "rakurs": "back",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.38,
+      "x_m": -0.05,
+      "razmer_mm": 115,
+      "ploshchad_sm2": 6.0
+    },
+    {
+      "rakurs": "34back",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.36,
+      "x_m": -0.05,
+      "razmer_mm": 90,
+      "ploshchad_sm2": 5.8
+    },
+    {
+      "rakurs": "back",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.78,
+      "x_m": -0.1,
+      "razmer_mm": 137,
+      "ploshchad_sm2": 5.5
+    },
+    {
+      "rakurs": "34back",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.74,
+      "x_m": -0.1,
+      "razmer_mm": 35,
+      "ploshchad_sm2": 5.5
+    },
+    {
+      "rakurs": "34back",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.64,
+      "x_m": 0.07,
+      "razmer_mm": 60,
+      "ploshchad_sm2": 5.5
+    },
+    {
+      "rakurs": "profile",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.75,
+      "x_m": 0.11,
+      "razmer_mm": 40,
+      "ploshchad_sm2": 5.2
+    },
+    {
+      "rakurs": "back",
+      "obekt": "Руки@Волк",
+      "vysota_m": 0.77,
+      "x_m": -0.3,
+      "razmer_mm": 55,
+      "ploshchad_sm2": 5.0
+    },
+    {
+      "rakurs": "34back",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.68,
+      "x_m": -0.17,
+      "razmer_mm": 100,
+      "ploshchad_sm2": 5.0
+    },
+    {
+      "rakurs": "34back",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.74,
+      "x_m": 0.13,
+      "razmer_mm": 103,
+      "ploshchad_sm2": 5.0
+    },
+    {
+      "rakurs": "profile",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.7,
+      "x_m": -0.17,
+      "razmer_mm": 35,
+      "ploshchad_sm2": 4.8
+    },
+    {
+      "rakurs": "34",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.74,
+      "x_m": 0.15,
+      "razmer_mm": 39,
+      "ploshchad_sm2": 4.8
+    },
+    {
+      "rakurs": "34",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.75,
+      "x_m": 0.11,
+      "razmer_mm": 38,
+      "ploshchad_sm2": 4.5
+    },
+    {
+      "rakurs": "back",
+      "obekt": "Чутьё@Волк",
+      "vysota_m": 1.72,
+      "x_m": -0.11,
+      "razmer_mm": 25,
+      "ploshchad_sm2": 4.2
+    },
+    {
+      "rakurs": "back",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.74,
+      "x_m": -0.1,
+      "razmer_mm": 30,
+      "ploshchad_sm2": 3.8
+    },
+    {
+      "rakurs": "front",
+      "obekt": "Чутьё@Волк",
+      "vysota_m": 1.73,
+      "x_m": 0.08,
+      "razmer_mm": 30,
+      "ploshchad_sm2": 3.5
+    },
+    {
+      "rakurs": "34",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.69,
+      "x_m": -0.06,
+      "razmer_mm": 35,
+      "ploshchad_sm2": 3.5
+    },
+    {
+      "rakurs": "34back",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.86,
+      "x_m": -0.17,
+      "razmer_mm": 55,
+      "ploshchad_sm2": 3.5
+    },
+    {
+      "rakurs": "front",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.74,
+      "x_m": 0.15,
+      "razmer_mm": 30,
+      "ploshchad_sm2": 3.3
+    },
+    {
+      "rakurs": "profile",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.74,
+      "x_m": 0.15,
+      "razmer_mm": 30,
+      "ploshchad_sm2": 3.3
+    },
+    {
+      "rakurs": "profile",
+      "obekt": "Руки@Волк",
+      "vysota_m": 0.79,
+      "x_m": 0.3,
+      "razmer_mm": 35,
+      "ploshchad_sm2": 3.0
+    },
+    {
+      "rakurs": "back",
+      "obekt": "Руки@Волк",
+      "vysota_m": 0.85,
+      "x_m": -0.36,
+      "razmer_mm": 43,
+      "ploshchad_sm2": 3.0
+    },
+    {
+      "rakurs": "back",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.74,
+      "x_m": 0.14,
+      "razmer_mm": 30,
+      "ploshchad_sm2": 3.0
+    },
+    {
+      "rakurs": "profile",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.79,
+      "x_m": -0.11,
+      "razmer_mm": 42,
+      "ploshchad_sm2": 2.8
+    },
+    {
+      "rakurs": "back",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.63,
+      "x_m": 0.05,
+      "razmer_mm": 30,
+      "ploshchad_sm2": 2.8
+    },
+    {
+      "rakurs": "back",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.68,
+      "x_m": -0.11,
+      "razmer_mm": 30,
+      "ploshchad_sm2": 2.5
+    },
+    {
+      "rakurs": "34back",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.69,
+      "x_m": 0.13,
+      "razmer_mm": 151,
+      "ploshchad_sm2": 2.2
+    },
+    {
+      "rakurs": "profile",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.7,
+      "x_m": 0.16,
+      "razmer_mm": 16,
+      "ploshchad_sm2": 2.0
+    },
+    {
+      "rakurs": "34",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.79,
+      "x_m": 0.05,
+      "razmer_mm": 18,
+      "ploshchad_sm2": 1.8
+    },
+    {
+      "rakurs": "back",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.68,
+      "x_m": -0.18,
+      "razmer_mm": 20,
+      "ploshchad_sm2": 1.8
+    },
+    {
+      "rakurs": "back",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.76,
+      "x_m": -0.05,
+      "razmer_mm": 26,
+      "ploshchad_sm2": 1.8
+    },
+    {
+      "rakurs": "front",
+      "obekt": "голова",
+      "vysota_m": 1.82,
+      "x_m": 0.09,
+      "razmer_mm": 25,
+      "ploshchad_sm2": 1.5
+    },
+    {
+      "rakurs": "profile",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.74,
+      "x_m": -0.06,
+      "razmer_mm": 20,
+      "ploshchad_sm2": 1.5
+    },
+    {
+      "rakurs": "back",
+      "obekt": "голова",
+      "vysota_m": 1.76,
+      "x_m": -0.09,
+      "razmer_mm": 25,
+      "ploshchad_sm2": 1.5
+    },
+    {
+      "rakurs": "front",
+      "obekt": "голова",
+      "vysota_m": 1.79,
+      "x_m": -0.09,
+      "razmer_mm": 20,
+      "ploshchad_sm2": 1.2
+    },
+    {
+      "rakurs": "front",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.71,
+      "x_m": -0.18,
+      "razmer_mm": 20,
+      "ploshchad_sm2": 1.2
+    },
+    {
+      "rakurs": "34",
+      "obekt": "Руки@Волк",
+      "vysota_m": 0.96,
+      "x_m": -0.38,
+      "razmer_mm": 20,
+      "ploshchad_sm2": 1.2
+    },
+    {
+      "rakurs": "back",
+      "obekt": "Руки@Волк",
+      "vysota_m": 0.8,
+      "x_m": -0.32,
+      "razmer_mm": 20,
+      "ploshchad_sm2": 1.2
+    },
+    {
+      "rakurs": "34back",
+      "obekt": "Чутьё@Волк",
+      "vysota_m": 1.8,
+      "x_m": -0.03,
+      "razmer_mm": 8,
+      "ploshchad_sm2": 1.2
+    },
+    {
+      "rakurs": "front",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.74,
+      "x_m": -0.18,
+      "razmer_mm": 15,
+      "ploshchad_sm2": 1.0
+    },
+    {
+      "rakurs": "profile",
+      "obekt": "Руки@Волк",
+      "vysota_m": 0.81,
+      "x_m": 0.29,
+      "razmer_mm": 10,
+      "ploshchad_sm2": 1.0
+    },
+    {
+      "rakurs": "34",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.7,
+      "x_m": 0.17,
+      "razmer_mm": 15,
+      "ploshchad_sm2": 1.0
+    },
+    {
+      "rakurs": "34",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.72,
+      "x_m": -0.13,
+      "razmer_mm": 10,
+      "ploshchad_sm2": 1.0
+    },
+    {
+      "rakurs": "34",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.81,
+      "x_m": -0.13,
+      "razmer_mm": 12,
+      "ploshchad_sm2": 1.0
+    },
+    {
+      "rakurs": "34",
+      "obekt": "Руки@Волк",
+      "vysota_m": 0.84,
+      "x_m": -0.36,
+      "razmer_mm": 12,
+      "ploshchad_sm2": 1.0
+    },
+    {
+      "rakurs": "back",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.68,
+      "x_m": 0.09,
+      "razmer_mm": 15,
+      "ploshchad_sm2": 1.0
+    },
+    {
+      "rakurs": "back",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.66,
+      "x_m": 0.09,
+      "razmer_mm": 15,
+      "ploshchad_sm2": 1.0
+    },
+    {
+      "rakurs": "34back",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.77,
+      "x_m": -0.1,
+      "razmer_mm": 17,
+      "ploshchad_sm2": 1.0
+    },
+    {
+      "rakurs": "front",
+      "obekt": "голова",
+      "vysota_m": 1.77,
+      "x_m": 0.09,
+      "razmer_mm": 10,
+      "ploshchad_sm2": 0.7
+    },
+    {
+      "rakurs": "front",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.71,
+      "x_m": -0.1,
+      "razmer_mm": 10,
+      "ploshchad_sm2": 0.7
+    },
+    {
+      "rakurs": "front",
+      "obekt": "Чутьё@Волк",
+      "vysota_m": 1.77,
+      "x_m": -0.09,
+      "razmer_mm": 12,
+      "ploshchad_sm2": 0.7
+    },
+    {
+      "rakurs": "front",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.7,
+      "x_m": -0.11,
+      "razmer_mm": 5,
+      "ploshchad_sm2": 0.7
+    },
+    {
+      "rakurs": "profile",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.72,
+      "x_m": 0.17,
+      "razmer_mm": 5,
+      "ploshchad_sm2": 0.7
+    },
+    {
+      "rakurs": "profile",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.78,
+      "x_m": -0.04,
+      "razmer_mm": 222,
+      "ploshchad_sm2": 0.7
+    },
+    {
+      "rakurs": "profile",
+      "obekt": "Руки@Волк",
+      "vysota_m": 0.79,
+      "x_m": 0.3,
+      "razmer_mm": 10,
+      "ploshchad_sm2": 0.7
+    },
+    {
+      "rakurs": "34",
+      "obekt": "Руки@Волк",
+      "vysota_m": 0.85,
+      "x_m": -0.34,
+      "razmer_mm": 17,
+      "ploshchad_sm2": 0.7
+    },
+    {
+      "rakurs": "34",
+      "obekt": "Руки@Волк",
+      "vysota_m": 0.9,
+      "x_m": -0.39,
+      "razmer_mm": 10,
+      "ploshchad_sm2": 0.7
+    },
+    {
+      "rakurs": "back",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.49,
+      "x_m": -0.17,
+      "razmer_mm": 10,
+      "ploshchad_sm2": 0.7
+    },
+    {
+      "rakurs": "34back",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.71,
+      "x_m": -0.04,
+      "razmer_mm": 195,
+      "ploshchad_sm2": 0.7
+    },
+    {
+      "rakurs": "34back",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.78,
+      "x_m": 0.1,
+      "razmer_mm": 38,
+      "ploshchad_sm2": 0.7
+    },
+    {
+      "rakurs": "34back",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.72,
+      "x_m": 0.17,
+      "razmer_mm": 11,
+      "ploshchad_sm2": 0.7
+    },
+    {
+      "rakurs": "profile",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.73,
+      "x_m": -0.17,
+      "razmer_mm": 5,
+      "ploshchad_sm2": 0.5
+    },
+    {
+      "rakurs": "profile",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.71,
+      "x_m": 0.08,
+      "razmer_mm": 5,
+      "ploshchad_sm2": 0.5
+    },
+    {
+      "rakurs": "34",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.75,
+      "x_m": 0.13,
+      "razmer_mm": 4,
+      "ploshchad_sm2": 0.5
+    },
+    {
+      "rakurs": "34",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.78,
+      "x_m": 0.11,
+      "razmer_mm": 8,
+      "ploshchad_sm2": 0.5
+    },
+    {
+      "rakurs": "34",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.76,
+      "x_m": -0.12,
+      "razmer_mm": 5,
+      "ploshchad_sm2": 0.5
+    },
+    {
+      "rakurs": "34",
+      "obekt": "Руки@Волк",
+      "vysota_m": 0.92,
+      "x_m": -0.39,
+      "razmer_mm": 5,
+      "ploshchad_sm2": 0.5
+    },
+    {
+      "rakurs": "back",
+      "obekt": "Руки@Волк",
+      "vysota_m": 0.82,
+      "x_m": -0.35,
+      "razmer_mm": 5,
+      "ploshchad_sm2": 0.5
+    },
+    {
+      "rakurs": "34back",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.49,
+      "x_m": -0.17,
+      "razmer_mm": 5,
+      "ploshchad_sm2": 0.5
+    },
+    {
+      "rakurs": "34back",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.69,
+      "x_m": 0.04,
+      "razmer_mm": 4,
+      "ploshchad_sm2": 0.5
+    },
+    {
+      "rakurs": "34back",
+      "obekt": "Шкура@Волк",
+      "vysota_m": 1.68,
+      "x_m": 0.09,
+      "razmer_mm": 8,
+      "ploshchad_sm2": 0.5
+    },
+    {
+      "rakurs": "34back",
+      "obekt": "Чутьё@Волк",
+      "vysota_m": 1.77,
+      "x_m": 0.09,
+      "razmer_mm": 5,
+      "ploshchad_sm2": 0.5
+    }
+  ],
+  "dyry_kraya": [
+    {
+      "obekt": "Шкура@Волк",
+      "vershin": 176,
+      "iz": 176,
+      "vysota_m": 1.65,
+      "x_m": -0.02,
+      "razmer_mm": 752
+    },
+    {
+      "obekt": "Шкура@Волк",
+      "vershin": 33,
+      "iz": 33,
+      "vysota_m": 1.09,
+      "x_m": -0.0,
+      "razmer_mm": 278
+    },
+    {
+      "obekt": "Чутьё@Волк",
+      "vershin": 72,
+      "iz": 72,
+      "vysota_m": 1.76,
+      "x_m": -0.09,
+      "razmer_mm": 261
+    },
+    {
+      "obekt": "Шкура@Волк",
+      "vershin": 60,
+      "iz": 60,
+      "vysota_m": 1.74,
+      "x_m": -0.03,
+      "razmer_mm": 253
+    },
+    {
+      "obekt": "Чутьё@Волк",
+      "vershin": 74,
+      "iz": 74,
+      "vysota_m": 1.77,
+      "x_m": 0.07,
+      "razmer_mm": 208
+    },
+    {
+      "obekt": "Руки@Волк",
+      "vershin": 51,
+      "iz": 51,
+      "vysota_m": 0.81,
+      "x_m": -0.34,
+      "razmer_mm": 141
+    },
+    {
+      "obekt": "Шкура@Волк",
+      "vershin": 3,
+      "iz": 3,
+      "vysota_m": 1.84,
+      "x_m": -0.16,
+      "razmer_mm": 135
+    },
+    {
+      "obekt": "Руки@Волк",
+      "vershin": 43,
+      "iz": 43,
+      "vysota_m": 0.92,
+      "x_m": -0.39,
+      "razmer_mm": 131
+    },
+    {
+      "obekt": "Руки@Волк",
+      "vershin": 28,
+      "iz": 28,
+      "vysota_m": 0.79,
+      "x_m": 0.29,
+      "razmer_mm": 104
+    },
+    {
+      "obekt": "Руки@Волк",
+      "vershin": 66,
+      "iz": 66,
+      "vysota_m": 0.89,
+      "x_m": 0.39,
+      "razmer_mm": 102
+    },
+    {
+      "obekt": "Шкура@Волк",
+      "vershin": 20,
+      "iz": 20,
+      "vysota_m": 1.7,
+      "x_m": -0.18,
+      "razmer_mm": 98
+    },
+    {
+      "obekt": "Руки@Волк",
+      "vershin": 23,
+      "iz": 23,
+      "vysota_m": 0.89,
+      "x_m": 0.37,
+      "razmer_mm": 58
+    },
+    {
+      "obekt": "Шкура@Волк",
+      "vershin": 3,
+      "iz": 3,
+      "vysota_m": 1.51,
+      "x_m": -0.09,
+      "razmer_mm": 47
+    },
+    {
+      "obekt": "Руки@Волк",
+      "vershin": 18,
+      "iz": 18,
+      "vysota_m": 0.86,
+      "x_m": -0.35,
+      "razmer_mm": 46
+    },
+    {
+      "obekt": "Руки@Волк",
+      "vershin": 25,
+      "iz": 25,
+      "vysota_m": 0.86,
+      "x_m": 0.34,
+      "razmer_mm": 45
+    },
+    {
+      "obekt": "Руки@Волк",
+      "vershin": 6,
+      "iz": 6,
+      "vysota_m": 0.81,
+      "x_m": 0.28,
+      "razmer_mm": 34
+    },
+    {
+      "obekt": "Шкура@Волк",
+      "vershin": 4,
+      "iz": 4,
+      "vysota_m": 1.7,
+      "x_m": 0.17,
+      "razmer_mm": 22
+    },
+    {
+      "obekt": "Чутьё@Волк",
+      "vershin": 9,
+      "iz": 9,
+      "vysota_m": 1.81,
+      "x_m": -0.09,
+      "razmer_mm": 20
+    },
+    {
+      "obekt": "Шкура@Волк",
+      "vershin": 3,
+      "iz": 3,
+      "vysota_m": 1.72,
+      "x_m": 0.17,
+      "razmer_mm": 18
+    },
+    {
+      "obekt": "Шкура@Волк",
+      "vershin": 3,
+      "iz": 3,
+      "vysota_m": 1.23,
+      "x_m": -0.05,
+      "razmer_mm": 11
+    }
+  ]
+}

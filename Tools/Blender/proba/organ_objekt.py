@@ -3,7 +3,7 @@
 `рост`: база — объект, прижатый к телу шасси (каждая вершина сдвинута к ближайшей точке тела в покое на `--sjatie`), `рост` на весе 1 —
 полная форма. Код ставит вес `рост` = доля вида / 0.65.
 
-  blender -b --factory-startup -P organ_objekt.py -- сборка.blend откуда.blend имя_там <слот>@<вид> выход.blend [--sjatie 0.85] [--srez 0.025 [--srez_ot Руки]] [--sherst 0.5:4]
+  blender -b --factory-startup -P organ_objekt.py -- сборка.blend откуда.blend имя_там <слот>@<вид> выход.blend [--sjatie 0.85] [--srez 0.025 [--srez_ot Руки]] [--sherst 0.5:4] [--tolshchina 0.004]
 """
 import sys
 import bpy
@@ -80,6 +80,20 @@ if opt.get('srez') or opt.get('sherst'):
         for v, x in zip(bm.verts, X): v.co = x
     bm.to_mesh(o.data); bm.free(); o.data.update()
     print('ОРГАН: %s — срезано граней %d (дальше %s м), шерсть %s; осталось граней %d' % (nm, n_s, opt.get('srez', '—'), opt.get('sherst', '—'), len(o.data.polygons)))
+# ОБЪЁМ ВМЕСТО ОБОЛОЧКИ (`--tolshchina м`, 28.10, детектор дыр стенда: «в модели дырки» — органы ст.1 рисуются ОДНОСТОРОННЕ
+# (двусторонние в игре только черты `@`, BodyMesh.TwoSided), а когти, гребень и уши — тонкие оболочки: их изнанка видна насквозь
+# пятнами по 20–50 см²). Оболочка закрывается толщиной с бортиком (Solidify) — замкнутый объём виден с любой стороны
+if opt.get('tolshchina'):
+    # выделен ТОЛЬКО орган: режим правки берёт все выделенные — нормали шасси переворачивались вместе с органом (проба 28.10)
+    for x in bpy.context.view_layer.objects: x.select_set(False)
+    bpy.context.view_layer.objects.active = o; o.select_set(True)
+    # нормали оболочки из цели генератора разнонаправлены — толщина ложилась то наружу, то внутрь (пятен изнанки не убавилось):
+    # сначала нормали наружу
+    bpy.ops.object.mode_set(mode='EDIT'); bpy.ops.mesh.select_all(action='SELECT'); bpy.ops.mesh.normals_make_consistent(inside=False)
+    bpy.ops.object.mode_set(mode='OBJECT')
+    m_ = o.modifiers.new('t', 'SOLIDIFY'); m_.thickness = float(opt['tolshchina']); m_.offset = -1.0; m_.use_rim = True; m_.use_even_offset = True
+    bpy.ops.object.modifier_apply(modifier='t')
+    print('ОРГАН: %s — оболочка закрыта толщиной %.1f мм, граней %d' % (nm, float(opt['tolshchina']) * 1000, len(o.data.polygons)))
 full = [v.co.copy() for v in o.data.vertices]
 for v in o.data.vertices:
     w = o.matrix_world @ v.co; loc = bvh.find_nearest(w)[0]

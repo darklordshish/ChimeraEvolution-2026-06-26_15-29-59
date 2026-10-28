@@ -1,0 +1,211 @@
+{
+  "fbx": "C:/Temp/claude/C--Users-semion-Documents-Chimera-game-ChimeraEvolution-modeli/53623ae4-97d2-450f-a7bb-396e65699af4/scratchpad/sbW3/chelovek_mesh.fbx",
+  "kluch": "Волк",
+  "ves": 1.0,
+  "poza": "Docs/models/handoff/klyuchi/chelovek-volk-poza.json",
+  "vesa_bolshe_4": 0,
+  "vidno": [
+    "@Волк",
+    "Ноги",
+    "Руки",
+    "Сердце",
+    "хребет",
+    "шея"
+  ],
+  "kluchi": {
+    "Волк": 1.0
+  },
+  "razvorot_klyucha": 739,
+  "razvorot_v_poze": 196,
+  "skladka_v_poze": 560,
+  "szhatie_v_poze": 211,
+  "obekty": {
+    "@Волк": {
+      "granej": 6449,
+      "razvorot": 0,
+      "razvorot_v_poze": 391,
+      "skladka": 391,
+      "szhatie": 69
+    },
+    "Ноги": {
+      "granej": 5106,
+      "razvorot": 119,
+      "razvorot_v_poze": 92,
+      "skladka": 80,
+      "szhatie": 38
+    },
+    "Руки": {
+      "granej": 3140,
+      "razvorot": 412,
+      "razvorot_v_poze": 55,
+      "skladka": 303,
+      "szhatie": 15
+    },
+    "Сердце": {
+      "granej": 567,
+      "razvorot": 77,
+      "razvorot_v_poze": 2,
+      "skladka": 65,
+      "szhatie": 25
+    },
+    "хребет": {
+      "granej": 1137,
+      "razvorot": 91,
+      "razvorot_v_poze": 14,
+      "skladka": 72,
+      "szhatie": 7
+    },
+    "шея": {
+      "granej": 1474,
+      "razvorot": 40,
+      "razvorot_v_poze": 33,
+      "skladka": 40,
+      "szhatie": 126
+    }
+  },
+  "shov_vershin": 133,
+  "shov_razoshlos_1mm": 0,
+  "shov_maks_mm": 0.0,
+  "zazor_mm": {
+    "@Волк": 0.9
+  },
+  "dyry_izanka": [
+    {
+      "rakurs": "profile",
+      "obekt": "Ноги",
+      "vysota_m": 0.55,
+      "x_m": 0.12,
+      "razmer_mm": 615,
+      "ploshchad_sm2": 6.5
+    },
+    {
+      "rakurs": "front",
+      "obekt": "Ноги",
+      "vysota_m": 0.54,
+      "x_m": 0.3,
+      "razmer_mm": 72,
+      "ploshchad_sm2": 4.8
+    },
+    {
+      "rakurs": "34",
+      "obekt": "Ноги",
+      "vysota_m": 0.54,
+      "x_m": 0.3,
+      "razmer_mm": 58,
+      "ploshchad_sm2": 4.2
+    },
+    {
+      "rakurs": "34",
+      "obekt": "Ноги",
+      "vysota_m": 0.56,
+      "x_m": -0.3,
+      "razmer_mm": 45,
+      "ploshchad_sm2": 3.3
+    },
+    {
+      "rakurs": "front",
+      "obekt": "Ноги",
+      "vysota_m": 0.55,
+      "x_m": -0.31,
+      "razmer_mm": 40,
+      "ploshchad_sm2": 2.5
+    },
+    {
+      "rakurs": "34",
+      "obekt": "Руки",
+      "vysota_m": 1.13,
+      "x_m": 0.55,
+      "razmer_mm": 30,
+      "ploshchad_sm2": 2.0
+    },
+    {
+      "rakurs": "34",
+      "obekt": "Ноги",
+      "vysota_m": 0.51,
+      "x_m": -0.3,
+      "razmer_mm": 21,
+      "ploshchad_sm2": 1.5
+    },
+    {
+      "rakurs": "34back",
+      "obekt": "Ноги",
+      "vysota_m": 0.55,
+      "x_m": 0.31,
+      "razmer_mm": 22,
+      "ploshchad_sm2": 1.5
+    },
+    {
+      "rakurs": "34back",
+      "obekt": "Руки",
+      "vysota_m": 1.14,
+      "x_m": 0.55,
+      "razmer_mm": 25,
+      "ploshchad_sm2": 1.5
+    },
+    {
+      "rakurs": "profile",
+      "obekt": "Руки",
+      "vysota_m": 1.13,
+      "x_m": 0.56,
+      "razmer_mm": 20,
+      "ploshchad_sm2": 1.2
+    },
+    {
+      "rakurs": "back",
+      "obekt": "Руки",
+      "vysota_m": 1.14,
+      "x_m": 0.55,
+      "razmer_mm": 20,
+      "ploshchad_sm2": 1.2
+    },
+    {
+      "rakurs": "front",
+      "obekt": "Руки",
+      "vysota_m": 1.14,
+      "x_m": 0.55,
+      "razmer_mm": 15,
+      "ploshchad_sm2": 1.0
+    },
+    {
+      "rakurs": "front",
+      "obekt": "Ноги",
+      "vysota_m": 0.51,
+      "x_m": -0.31,
+      "razmer_mm": 20,
+      "ploshchad_sm2": 1.0
+    },
+    {
+      "rakurs": "34",
+      "obekt": "Ноги",
+      "vysota_m": 0.44,
+      "x_m": -0.31,
+      "razmer_mm": 18,
+      "ploshchad_sm2": 1.0
+    },
+    {
+      "rakurs": "34back",
+      "obekt": "Ноги",
+      "vysota_m": 0.53,
+      "x_m": 0.31,
+      "razmer_mm": 19,
+      "ploshchad_sm2": 1.0
+    },
+    {
+      "rakurs": "34",
+      "obekt": "Ноги",
+      "vysota_m": 0.58,
+      "x_m": 0.3,
+      "razmer_mm": 6,
+      "ploshchad_sm2": 0.5
+    },
+    {
+      "rakurs": "34",
+      "obekt": "хребет",
+      "vysota_m": 1.05,
+      "x_m": -0.0,
+      "razmer_mm": 5,
+      "ploshchad_sm2": 0.5
+    }
+  ],
+  "dyry_kraya": []
+}

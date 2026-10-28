@@ -1,0 +1,143 @@
+{
+  "fbx": "C:/Temp/claude/C--Users-semion-Documents-Chimera-game-ChimeraEvolution-modeli/53623ae4-97d2-450f-a7bb-396e65699af4/scratchpad/sbW3/chelovek_mesh.fbx",
+  "kluch": null,
+  "ves": 0.0,
+  "poza": null,
+  "vesa_bolshe_4": 0,
+  "vidno": [
+    "Ноги",
+    "Руки",
+    "Сердце",
+    "Чутьё",
+    "голова",
+    "хребет",
+    "шея"
+  ],
+  "kluchi": {},
+  "razvorot_klyucha": 0,
+  "razvorot_v_poze": 0,
+  "skladka_v_poze": 0,
+  "szhatie_v_poze": 0,
+  "obekty": {
+    "Ноги": {
+      "granej": 5106,
+      "razvorot": 0,
+      "razvorot_v_poze": 0,
+      "skladka": 0,
+      "szhatie": 0
+    },
+    "Руки": {
+      "granej": 3140,
+      "razvorot": 0,
+      "razvorot_v_poze": 0,
+      "skladka": 0,
+      "szhatie": 0
+    },
+    "Сердце": {
+      "granej": 567,
+      "razvorot": 0,
+      "razvorot_v_poze": 0,
+      "skladka": 0,
+      "szhatie": 0
+    },
+    "Чутьё": {
+      "granej": 160,
+      "razvorot": 0,
+      "razvorot_v_poze": 0,
+      "skladka": 0,
+      "szhatie": 0
+    },
+    "голова": {
+      "granej": 788,
+      "razvorot": 0,
+      "razvorot_v_poze": 0,
+      "skladka": 0,
+      "szhatie": 0
+    },
+    "хребет": {
+      "granej": 1137,
+      "razvorot": 0,
+      "razvorot_v_poze": 0,
+      "skladka": 0,
+      "szhatie": 0
+    },
+    "шея": {
+      "granej": 1474,
+      "razvorot": 0,
+      "razvorot_v_poze": 0,
+      "skladka": 0,
+      "szhatie": 0
+    }
+  },
+  "shov_vershin": 189,
+  "shov_razoshlos_1mm": 0,
+  "shov_maks_mm": 0.0,
+  "zazor_mm": {},
+  "dyry_izanka": [
+    {
+      "rakurs": "profile",
+      "obekt": "голова",
+      "vysota_m": 1.69,
+      "x_m": 0.07,
+      "razmer_mm": 40,
+      "ploshchad_sm2": 4.5
+    },
+    {
+      "rakurs": "34back",
+      "obekt": "голова",
+      "vysota_m": 1.69,
+      "x_m": 0.07,
+      "razmer_mm": 40,
+      "ploshchad_sm2": 3.0
+    },
+    {
+      "rakurs": "profile",
+      "obekt": "голова",
+      "vysota_m": 1.73,
+      "x_m": 0.07,
+      "razmer_mm": 20,
+      "ploshchad_sm2": 1.8
+    },
+    {
+      "rakurs": "34back",
+      "obekt": "голова",
+      "vysota_m": 1.74,
+      "x_m": 0.07,
+      "razmer_mm": 25,
+      "ploshchad_sm2": 1.5
+    },
+    {
+      "rakurs": "front",
+      "obekt": "Чутьё",
+      "vysota_m": 1.71,
+      "x_m": -0.07,
+      "razmer_mm": 20,
+      "ploshchad_sm2": 1.2
+    },
+    {
+      "rakurs": "34",
+      "obekt": "голова",
+      "vysota_m": 1.68,
+      "x_m": 0.07,
+      "razmer_mm": 15,
+      "ploshchad_sm2": 1.2
+    },
+    {
+      "rakurs": "34",
+      "obekt": "голова",
+      "vysota_m": 1.74,
+      "x_m": 0.07,
+      "razmer_mm": 20,
+      "ploshchad_sm2": 1.2
+    },
+    {
+      "rakurs": "front",
+      "obekt": "голова",
+      "vysota_m": 1.73,
+      "x_m": 0.07,
+      "razmer_mm": 10,
+      "ploshchad_sm2": 0.7
+    }
+  ],
+  "dyry_kraya": []
+}
