@@ -126,9 +126,14 @@ if opt.get('tolshchina'):
 # ПРИЖИМ ПОЛНОЙ ФОРМЫ (`--prizhim k`, 28.10, гребень ст.1): «рост» — тело + k·(форма − тело); пряди из цели стоят пластинами в
 # 5–8 см от кожи, между ними и шеей фон (окна 3/4 сзади) — при k < 1 масса ложится ближе к телу, затухание и контур те же
 if opt.get('prizhim'):
-    k_ = float(opt['prizhim'])
+    k_ = float(opt['prizhim']); bv_p = bvh
+    if opt.get('srez_ot'):   # когти: ближайшее «тело» кончика — бедро (G8); прижим — к своим объектам, как и срез
+        V2, F2 = [], []
+        for b_ in [x for x in body if x.name in opt['srez_ot'].split(',')]:
+            n2 = len(V2); V2 += [b_.matrix_world @ v.co for v in b_.data.vertices]; F2 += [[n2 + k for k in p_.vertices] for p_ in b_.data.polygons]
+        bv_p = BVHTree.FromPolygons(V2, F2)
     for v in o.data.vertices:
-        w = o.matrix_world @ v.co; loc = bvh.find_nearest(w)[0]
+        w = o.matrix_world @ v.co; loc = bv_p.find_nearest(w)[0]
         if loc is not None: v.co = o.matrix_world.inverted() @ (loc + (w - loc) * k_)
 full = [v.co.copy() for v in o.data.vertices]
 for v in o.data.vertices:

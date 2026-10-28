@@ -14,7 +14,7 @@
   4. обратно в покой: вершина умножается на обратную матрицу своего скина; результат — форма-ключ `--imya`.
 
   blender -b --factory-startup -P podgonka_v_poze.py -- шасси.blend цель.obj ориентиры_цели.json скелет_шасси.json выход.blend
-      [--imya Волк] [--zhestkost 30,15,8,4] [--normal 0.5] [--maxd 0.25] [--dal 0.12] [--bez голова,Чутьё] [--poza_obj файл.obj] [--poza файл.json] [--sustavy файл.json] [--cel_pokoj файл.obj] [--dop_cel f.obj --dop_lm f.json --dop_pokoj f.obj] [--vstrechnye 1 [--vstr_maxd 0.05|0.25,предплечье:0.05]] [--cel_glad 0|шагов [--cel_glad_obl торс --cel_glad_x 0.2]] [--bez_razvorota 1|0] [--lap_glad 0|шагов]
+      [--imya Волк] [--zhestkost 30,15,8,4] [--normal 0.5] [--maxd 0.25] [--dal 0.12] [--bez голова,Чутьё] [--poza_obj файл.obj] [--poza файл.json] [--sustavy файл.json] [--cel_pokoj файл.obj] [--dop_cel f.obj --dop_lm f.json --dop_pokoj f.obj] [--vstrechnye 1 [--vstr_maxd 0.05|0.25,предплечье:0.05]] [--cel_glad 0|шагов [--cel_glad_obl торс --cel_glad_x 0.2]] [--cel_glad_kol 30:0.14] [--bez_razvorota 1|0] [--lap_glad 0|шагов]
 Ориентиры цели — имена как у `kluch_vida.py` (сустав:head/tail, носок, плюсна_вн/нар…), оси Blender, метры тела.
 """
 import sys, json
@@ -165,6 +165,21 @@ def cel_glad(bm_, n_):
     for v, c in zip(bm_.verts, V): v.co = Vector(c)
     bm_.normal_update()
 cel_glad(bm, int(opt.get('cel_glad', '0')))
+# КОЛЕНИ ЦЕЛИ (`--cel_glad_kol шагов:радиус`, 28.10, критик r2 п.1 — «сапоги» ст.2): у цели Hunyuan сзади у колена горизонтальный
+# ободок — верх икры как край голенища; подгонка переносила его в ключ, а позу и веса он переживал. Таубин в шаре радиуса вокруг
+# ориентиров `голень:head`/`голень.L:head`, вес (1 − d/r)²
+if opt.get('cel_glad_kol'):
+    n_k, r_k = opt['cel_glad_kol'].split(':'); n_k, r_k = int(n_k), float(r_k)
+    V = np.array([list(v.co) for v in bm.verts]); NB = [[e.other_vert(v).index for e in v.link_edges] for v in bm.verts]
+    fix = np.array([any(not e.is_manifold for e in v.link_edges) for v in bm.verts]); Wk = np.zeros(len(V))
+    for nm_ in ('голень:head', 'голень.L:head'):
+        if nm_ in LT: Wk = np.maximum(Wk, np.clip(1 - np.linalg.norm(V - np.array(LT[nm_]), axis=1) / r_k, 0, 1) ** 2)
+    for _ in range(n_k):
+        for lam in (0.5, -0.53):
+            L = np.array([V[nb_].mean(0) - V[k] if nb_ else np.zeros(3) for k, nb_ in enumerate(NB)]); L[fix] = 0; V = V + lam * Wk[:, None] * L
+    for v, c in zip(bm.verts, V): v.co = Vector(c)
+    bm.normal_update()
+    print('ЦЕЛЬ: колени — вершин с весом > 0.5: %d, %d шагов, радиус %.2f м' % (int((Wk > 0.5).sum()), n_k, r_k))
 segs = []
 for bn in PART:
     td = tgt_dir(bn)

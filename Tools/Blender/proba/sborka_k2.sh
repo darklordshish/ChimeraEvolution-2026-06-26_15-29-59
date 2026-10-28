@@ -17,7 +17,7 @@ CEL_TELO="${CEL_TELO:-$R/oboroten-telo-st2-sidy-2026-10-27/vkleika_s7b.obj}"
 mkdir -p "$W"/{volk,los,st1}
 # шаг падает — сборка стоит (27.10: раньше grep глотал падение, и выгрузка шла из недоделанного файла); журнал шага — $W/shag.log
 bl() { if ! "$B" -b --factory-startup --python-exit-code 1 -P "$@" > "$W/shag.log" 2>&1; then tail -20 "$W/shag.log"; echo "СБОЙ: $1"; exit 1; fi
-       grep -E "ЛОЖЕ|ПОДГОНКА: до|ПОКРЫТИЕ|ЦЕПЬ|КУСОК: «|СЛИТО|ОГРАНКА: (тело|всего)|ЛИНИИ: {|КРАСИВЫЕ|ГРИВА-МАССА|ОРГАН-ГЛАДЬ|ШОВ:|ПОЛОСА:|БЛИЖЕ|ГРИВА:|ОГРАНКА: живот|ПЕРЕНОС: @|ФОРМОВКА|СВОДКА|ДОБАВЛЕНО|ОРГАН|КЛЮЧИ ОБЛАСТЕЙ|ВЕСА|ПЕРЕВЯЗКА|вывернутые грани по|ЭКСПОРТ" "$W/shag.log" || true; }
+       grep -E "ЦЕЛЬ: колени|ГРИВА-ШОВ|СПИНА|ХВОСТ-ОСЬ|ГОЛЕНЬ|КОЛЕНО|ЛОЖЕ|ПОДГОНКА: до|ПОКРЫТИЕ|ЦЕПЬ|КУСОК: «|СЛИТО|ОГРАНКА: (тело|всего)|ЛИНИИ: {|КРАСИВЫЕ|ГРИВА-МАССА|ОРГАН-ГЛАДЬ|ШОВ:|ПОЛОСА:|БЛИЖЕ|ГРИВА:|ОГРАНКА: живот|ПЕРЕНОС: @|ФОРМОВКА|СВОДКА|ДОБАВЛЕНО|ОРГАН|КЛЮЧИ ОБЛАСТЕЙ|ВЕСА|ПЕРЕВЯЗКА|вывернутые грани по|ЭКСПОРТ" "$W/shag.log" || true; }
 # --lap_glad 10 (27.10): рельеф ключа — от цели, не от шаблона (белая линия и пресс человека К2 давали «щит до паха»)
 VSTR="--vstrechnye 1 --vstr_maxd 0.1,предплечье:0.05,предплечье.L:0.05,бедро:0.03,бедро.L:0.03 --zhestkost 30,15,8,4,2 --lap_glad 10"
 # OGR — ключи огранки; OT_OGRANKI=1 — начать с огранки в готовой рабочей папке (подгонки и куски — оттуда): проба огранки
@@ -26,7 +26,7 @@ VSTR="--vstrechnye 1 --vstr_maxd 0.1,предплечье:0.05,предплеч�
 # что огранка выпрямила в позе (27.10, shum.py) — пустая строка выключает
 # GRIVA — ключи griva_massa (шерсть гривы и хвоста); 0.35/6/0.8 срезали объём гривы (IoU ст.2 0.680 → 0.611) — мягче
 # органы ст.1: гребень — шерсть массой, когти — палочки длиннее 2.5 см срезаются (27.10)
-ORG_GREBEN="${ORG_GREBEN:---sherst 0.3:8 --srez 0.08 --niz 1.42:1.56 --shir 0.13 --prizhim 0.5}"; ORG_KOGTI="${ORG_KOGTI:---srez 0.015 --srez_ot Руки}"
+ORG_GREBEN="${ORG_GREBEN:---sherst 0.3:8 --srez 0.08 --niz 1.42:1.56 --shir 0.13 --prizhim 0.5}"; ORG_KOGTI="${ORG_KOGTI:---srez 0.015 --srez_ot Руки --prizhim 0.5}"
 # толщина органов (--tolshchina) изнанку не снимает — оболочки цели лежат по коже и местами смотрят внутрь (детектор 28.10);
 # лечится двусторонним материалом органов в игре. ORG_USHI — ключи органа ушей
 ORG_USHI="${ORG_USHI:-}"
@@ -53,7 +53,7 @@ K2="$W/k2_vesa.blend"
 echo "== Волк: подгонка к голому телу, колонка ст.2 — вторая цель"
 bl $T/podgonka_v_poze.py -- "$K2" "$CEL_TELO" "$TELO/orientiry-celi.json" $SK "$W/volk/k.blend" $VSTR \
    --poza "$W/volk/poza.json" --sustavy "$W/volk/sustavy.json" --cel_pokoj "$W/volk/cel_pokoj.obj" \
-   --dop_cel "$KOL/cel_A_norm.obj" --dop_lm "$KOL/orientiry-celi-v-poze-lista.json" --dop_pokoj "$W/volk/kol_pokoj.obj"
+   --dop_cel "$KOL/cel_A_norm.obj" --dop_lm "$KOL/orientiry-celi-v-poze-lista.json" --dop_pokoj "$W/volk/kol_pokoj.obj" ${CEL_KOL:---cel_glad_kol 60:0.2}
 echo "== Волк: куски (грива и хвост — колонка; голова, кисти, лапы — голое тело)"
 bl $T/kusok_celi.py -- "$W/volk/k.blend" "$W/volk/kol_pokoj.obj" "$W/volk/m.fbx" "$W/volk/m.json" --vesa "$W/volk/kol_pokoj.obj.vesa.json" \
    --golova_z 9 --griva_x 0.28 --hvost_x 0.15 --hvost_z 0.95 --lapy_z -1 --ostrov 800 --prizhim_d 0.005 --prizhim_k 0.05 --prizhim_verh 9 \
@@ -77,6 +77,11 @@ bl $T/shov_kuska.py -- "$W/volk/kkgm.blend" "$W/volk/kkgm.blend" --kosti гол�
 bl $T/privyazat_polosu.py -- "$W/volk/kkgm.blend" "$W/volk/kkgm.blend" --kusok @Волк --imya Волк --oblast hvost --polosa ${POL_HV2:-0.08} --koren ${KOR_HV2:-0.04} --vesa 1 --glad ${GL_HV2:-8}
 bl $T/privyazat_polosu.py -- "$W/volk/kkgm.blend" "$W/volk/kkgm.blend" --kusok @Волк --imya Волк --oblast griva --polosa ${POL_GR2:-0.05} --vesa 1 --vesa_polosa ${VPOL_GR2:-0.25}
 bl $T/griva_kraj.py -- "$W/volk/kkgm.blend" "$W/volk/kkg.blend" --z_seredina 1.40 --z_pravyj 1.56 --z_levyj 1.52 --x_konec 0.26 --x_maks 0.30
+# грива сшита по хребту (критик r2 п.9: «трещина по хребту между лопатками» — половины куска не сшиты) и без игл ниже головы
+bl $T/griva_zashit.py -- "$W/volk/kkg.blend" "$W/volk/kkg.blend"
+# колено ст.2 без манжеты (критик r2 п.1): край лапы из цели обёрнут вокруг голени и сидит в самом ключе — сглаживание зоны перехода
+[ -n "${GOLEN-}" ] && bl $T/suzit_golen.py -- "$W/volk/kkg.blend" "$W/volk/kkg.blend" $GOLEN
+[ -n "${KOLENO-}" ] && bl $T/glad_koleno.py -- "$W/volk/kkg.blend" "$W/volk/kkg.blend" $KOLENO
 bl $T/ogranka.py -- "$W/volk/kkg.blend" "$W/volk/o.blend" $OGR
 bl $T/formovka.py -- "$W/volk/o.blend" "$W/volk/f.blend" --sustavy "$W/volk/sustavy.json" --golen 1 --koleno 0 --talia 1 $FORM_GRUD
 
@@ -105,6 +110,8 @@ OGR_ST1="${OGR_ST1:---rezhim massy --ploshchad_massy 0.035 --povorot 20 --linii 
 # ноги ст.1 — человеческая опора (дизайн-линия §5 п.4): ключ «Волк1» на ногах ближе к базе
 NOGI_ST1="${NOGI_ST1:---kosti голень:0.5,стопа:0.4,бедро:0.9}"
 bl $T/kluch_blizhe.py -- "$W/st1/k.blend" "$W/st1/kb.blend" --imya Волк1 $NOGI_ST1
+# спина ст.1 без «капюшона» (критик r2 п.2): тело Волк1 вобрало объём гребня цели — на задней стороне спины ключ к базе
+[ -n "${SPINA_ST1-x}" ] && bl $T/spina_blizhe.py -- "$W/st1/kb.blend" "$W/st1/kb.blend" ${SPINA_ST1:-}
 bl $T/ogranka.py -- "$W/st1/kb.blend" "$W/st1/o.blend" --imya Волк1 $OGR_ST1
 bl $T/svesti_klyuchi.py -- "$W/svod0.blend" "$W/st1/o.blend" Волк1 "$W/svod.fbx" --blend "$W/svod.blend"
 bl $T/griva_massa.py -- "$W/st1/hvost.blend" "$W/st1/hvost_m.blend" --kusok @Волк11 --imya Волк1 $GRIVA --ne_trogat нет --hvost_ne 0
@@ -118,6 +125,8 @@ else bl $T/perenesti_kusok.py -- "$W/o1h.blend" "$W/st1/k.blend" @Волк1 Во
 bl $T/organ_objekt.py -- "$W/o1.blend" "$W/st1/ushi.blend" @Волк11 Чутьё@Волк "$W/o2.blend" $ORG_USHI
 bl $T/organ_objekt.py -- "$W/o2.blend" "$W/st1/greben.blend" @Волк11 Шкура@Волк "$W/o3.blend" $ORG_GREBEN
 bl $T/organ_objekt.py -- "$W/o3.blend" "$W/st1/kogti.blend" @Волк11 Руки@Волк "$W/o4.blend" $ORG_KOGTI
+# хвост ст.1 на ось крестца (критик r2 п.5: хвост цели смотрит вбок, центр x 9.6 см)
+bl $T/centr_hvost.py -- "$W/o4.blend" "$W/o4.blend"
 # полосы корней ст.1 на тело «Волк1»: хвост и гребень ≈0.12H (дизайн-линия 28.10b)
 bl $T/privyazat_polosu.py -- "$W/o4.blend" "$W/o4.blend" --kusok @Волк1 --imya Волк1 --oblast vse --polosa ${POL_HV1:-0.06} --vesa 1 --glad ${GL_HV1:-8}
 # корень уха ст.1 на голову (дизайн-линия 28.10c п.3: «полоса у виска, основание пластинчатое»)
