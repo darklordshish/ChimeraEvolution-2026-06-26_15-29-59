@@ -244,6 +244,21 @@ if opt.get('maski'):
     otchet['iou_front'] = round(iou(sf, Mf), 3)
     otchet['iou_profile'] = round(max(iou(sp, Mp), iou(sp[:, ::-1], Mp)), 3)
     if iou(sp[:, ::-1], Mp) > iou(sp, Mp): sp = sp[:, ::-1]
+    # IoU В ПОЛОСЕ «колено — скакательный» (`--polosa_nog 1`, 28.10, координатор: отделить форму колена от расстановки ног —
+    # анфас целиком падал при любом сужении голени): высоты суставов в позе (голень:head, стопа:head, среднее двух ног) → доли
+    # роста фигуры → строки нормированного силуэта; IoU анфаса и профиля только по этим строкам
+    if opt.get('polosa_nog'):
+        am = [x for x in bpy.data.objects if x.type == 'ARMATURE'][0]
+        zk = np.mean([(am.matrix_world @ am.pose.bones['голень' + s_].head).z for s_ in ('', '.L')])
+        zh = np.mean([(am.matrix_world @ am.pose.bones['стопа' + s_].head).z for s_ in ('', '.L')])
+        Z = np.concatenate([geom(o, True)[0][:, 2] for o in vid]); z0, z1 = float(Z.min()), float(Z.max())
+        def stroki(m_):
+            ys = np.nonzero(m_.any(1))[0]; t, b = ys.min(), ys.max()
+            return int(t + (z1 - zk) / (z1 - z0) * (b - t)), int(t + (z1 - zh) / (z1 - z0) * (b - t))
+        for nm, s_, m_ in (('front', sf, Mf), ('profile', sp, Mp)):
+            a0, a1 = stroki(s_); c0, c1 = stroki(m_); r0, r1 = min(a0, c0), max(a1, c1)
+            otchet['iou_%s_koleno' % nm] = round(iou(s_[r0:r1 + 1], m_[r0:r1 + 1]), 3)
+        print('ПОЛОСА НОГ: колено %.2f м, скакательный %.2f м; IoU анфас %.3f, профиль %.3f' % (zk, zh, otchet['iou_front_koleno'], otchet['iou_profile_koleno']))
     if opt.get('kadr'):   # сверка: красное — только тело, синее — только лист, чёрное — совпало
         for nm, s_, m_ in (('front', sf, Mf), ('profile', sp, Mp)):
             rgb = np.ones((512, 512, 3)); both = s_ & m_
