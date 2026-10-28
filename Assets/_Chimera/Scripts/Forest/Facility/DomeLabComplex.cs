@@ -645,9 +645,8 @@ public static class DomeLabComplex
             b.Light("LabLight_Crevice", new Vector3(0f, depth + 1.8f, z1 - 0.8f),
                 9f, 0.85f, DomePalette.LabCold);
 
-            // Насыпь расходится в стороны, оставляя проход по центру.
-            b.Add("UndergroundHillW", Kit.Rock, 26f, 12f, 18f, -16f, -2f, 23f, true);
-            b.Add("UndergroundHillE", Kit.Rock, 26f, 12f, 18f, 16f, -2f, 23f, true);
+            // Насыпь вокруг расщелины даёт StationHill/камни; плоские коробки
+            // UndergroundHillW/E здесь были «столом» и убраны.
         }
         else
         {
@@ -660,8 +659,11 @@ public static class DomeLabComplex
         b.AddRock("UndergroundRockC", 6.5f, 0f, Plinth + RoomHeight, 0f);
         b.AddRock("UndergroundRockS", 5f, 4f, Plinth + RoomHeight, -8f);
         b.AddRock("UndergroundRockSW", 4.5f, -9f, Plinth + RoomHeight, -7f);
-        b.Add("UndergroundWingW", Kit.Rock, 8f, 7f, 30f, -26f, -2f, 2f, true);
-        b.Add("UndergroundWingE", Kit.Rock, 8f, 7f, 30f, 26f, -2f, 2f, true);
+        if (!northCrevice)
+        {
+            b.Add("UndergroundWingW", Kit.Rock, 8f, 7f, 30f, -26f, -2f, 2f, true);
+            b.Add("UndergroundWingE", Kit.Rock, 8f, 7f, 30f, 26f, -2f, 2f, true);
+        }
     }
 
     /// <summary>
