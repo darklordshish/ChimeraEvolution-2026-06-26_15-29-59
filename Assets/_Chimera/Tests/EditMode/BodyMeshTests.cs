@@ -191,9 +191,13 @@ namespace Chimera.Tests.EditMode
             foreach (var r in smrs) Object.DestroyImmediate(r.gameObject);
             var grown = new System.Collections.Generic.Dictionary<string, float> { [organ.name] = 0.4f };
             // без записи — поверх своего (роговой кусок на своей кисти)
-            BodyMesh.Place(container, skeleton, model, null, jointsOf: so, organObjects: grown);
+            var lit = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            BodyMesh.Place(container, skeleton, model, lit, jointsOf: so, organObjects: grown);
             smrs = container.GetComponentsInChildren<SkinnedMeshRenderer>(true);
             Assert.AreEqual(2, smrs.Length, "без записи орган на шаблоне садится поверх своего объекта");
+            // орган на шаблоне — тонкая оболочка: двусторонний, как черты ступени (28.10); тело — одностороннее
+            Assert.AreEqual(1, smrs.Count(r => r.sharedMaterial != null && r.sharedMaterial.GetFloat("_Cull") == 0f), "двусторонний — ровно орган");
+            Object.DestroyImmediate(lit);
             foreach (var r in smrs) Object.DestroyImmediate(r.gameObject);
             // по записи — снимает свой объект слота (уши Чутья вместо ушей носителя)
             so.organObjectRules = new[] { new OrganObjectRule { objectName = organ.name, hides = new[] { "голова" } } };
