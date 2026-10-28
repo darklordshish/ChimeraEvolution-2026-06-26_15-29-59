@@ -252,6 +252,12 @@ if opt.get('maski'):
 
 # кадры: Workbench, отсечение задних граней (как в игре)
 if opt.get('kadr'):
+    # ЧЕРТЫ `@` В ИГРЕ ДВУСТОРОННИЕ (материал черт, 22.10): отсечение задних граней на них — артефакт стенда («дыра в хвосте сзади»,
+    # критик 27.10). Кускам добавляется копия с обращёнными гранями — их изнанка видна, как в игре
+    for o in [x for x in vid if x.name.startswith('@')]:
+        dup = o.copy(); dup.data = o.data.copy(); bpy.context.scene.collection.objects.link(dup)
+        bm_ = bmesh.new(); bm_.from_mesh(dup.data); bmesh.ops.reverse_faces(bm_, faces=bm_.faces[:]); bm_.to_mesh(dup.data); bm_.free()
+        dup.hide_render = False
     sc = bpy.context.scene; sc.render.engine = 'BLENDER_WORKBENCH'
     sh = sc.display.shading; sh.light = 'STUDIO'; sh.color_type = 'SINGLE'; sh.single_color = (0.72, 0.68, 0.62)
     sh.show_backface_culling = True; sh.show_object_outline = False   # контур объекта рисовал швы шасси зубцами («пила» 27.10) — игра контуров не рисует
