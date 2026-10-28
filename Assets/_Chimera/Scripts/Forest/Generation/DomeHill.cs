@@ -65,10 +65,10 @@ public static class DomeHill
         float dx = x - s.center.x;
         float dz = z - s.center.y;
         float d = Mathf.Sqrt(dx * dx + dz * dz);
-        if (d >= s.radius + s.blend) return raw;
-        if (d <= s.radius) return raw + s.height;
-        if (s.blend <= 1e-4f) return raw;
-        float k = 1f - (d - s.radius) / s.blend;
+        float reach = s.radius + s.blend;
+        if (d >= reach) return raw;
+        if (reach <= 1e-4f) return raw;
+        float k = 1f - d / reach;
         k = k * k * (3f - 2f * k);
         return raw + s.height * k;
     }

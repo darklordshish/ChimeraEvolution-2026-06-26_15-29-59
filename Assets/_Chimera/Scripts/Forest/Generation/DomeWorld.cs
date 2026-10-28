@@ -659,7 +659,7 @@ public class DomeWorld
     /// </summary>
     void BuildStationHill()
     {
-        var mesh = DomeHillMesh.Build(Hill, RawGround, 40, 6f);
+        var mesh = DomeHillMesh.Build(Hill, RawGround, 40, 6f, DomeLabComplex.HalfWidth + 2f, DomeLabComplex.HalfDepth + 2f);
         if (mesh == null) return;
         Track(mesh);
         Part("StationHill", mesh, Flat(DomePalette.Rock));

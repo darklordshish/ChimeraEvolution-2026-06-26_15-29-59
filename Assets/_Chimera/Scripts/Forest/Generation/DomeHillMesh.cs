@@ -10,20 +10,22 @@ using UnityEngine;
 public static class DomeHillMesh
 {
     public static Mesh Build(DomeHill.State s, Func<float, float, float> ground,
-        int res = 32, float holeRadius = 6f)
+        int res = 32, float holeRadius = 6f, float halfX = 0f, float halfZ = 0f)
     {
         if (!s.valid || ground == null) return null;
         res = Mathf.Clamp(res, 8, 64);
-        float extent = s.radius + s.blend;
-        float step = 2f * extent / res;
+        float ex = halfX > 0f ? halfX : s.radius + s.blend;
+        float ez = halfZ > 0f ? halfZ : s.radius + s.blend;
+        float stepX = 2f * ex / res;
+        float stepZ = 2f * ez / res;
         var verts = new List<Vector3>(res * res * 6);
         var tris = new List<int>(res * res * 6);
         for (int iz = 0; iz < res; iz++)
             for (int ix = 0; ix < res; ix++)
             {
-                float x0 = s.center.x - extent + ix * step;
-                float z0 = s.center.y - extent + iz * step;
-                float x1 = x0 + step, z1 = z0 + step;
+                float x0 = s.center.x - ex + ix * stepX;
+                float z0 = s.center.y - ez + iz * stepZ;
+                float x1 = x0 + stepX, z1 = z0 + stepZ;
                 if (InHole(s, x0, z0, holeRadius) || InHole(s, x1, z0, holeRadius) ||
                     InHole(s, x0, z1, holeRadius) || InHole(s, x1, z1, holeRadius))
                     continue;

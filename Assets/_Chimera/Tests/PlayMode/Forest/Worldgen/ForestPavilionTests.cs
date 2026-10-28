@@ -88,6 +88,7 @@ namespace Chimera.Tests.PlayMode
 
             Assert.AreNotEqual(Vector3.zero, b.LabNorthDoor, "северная дверь станции построена");
             Assert.IsTrue(b.Hill.valid, "холм станции построен");
+            Assert.IsNotNull(GameObject.Find("StationHill"), "видимый StationHill-меш построен");
             Assert.IsTrue(NavMesh.SamplePosition(b.LabNorthDoor, out var hit, 20f, NavMesh.AllAreas),
                 "северная дверь на NavMesh");
             Assert.Less(Vector3.Distance(hit.position, b.LabNorthDoor), 3f,
