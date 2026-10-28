@@ -111,7 +111,7 @@ OGR_ST1="${OGR_ST1:---rezhim massy --ploshchad_massy 0.035 --povorot 20 --linii 
 NOGI_ST1="${NOGI_ST1:---kosti голень:0.5,стопа:0.4,бедро:0.9}"
 bl $T/kluch_blizhe.py -- "$W/st1/k.blend" "$W/st1/kb.blend" --imya Волк1 $NOGI_ST1
 # спина ст.1 без «капюшона» (критик r2 п.2): тело Волк1 вобрало объём гребня цели — на задней стороне спины ключ к базе
-[ -n "${SPINA_ST1-x}" ] && bl $T/spina_blizhe.py -- "$W/st1/kb.blend" "$W/st1/kb.blend" ${SPINA_ST1:-}
+[ -n "${SPINA_ST1-x}" ] && bl $T/spina_blizhe.py -- "$W/st1/kb.blend" "$W/st1/kb.blend" ${SPINA_ST1:---rezhim tors --k 0.5 --z 1.0:1.75 --kraj 0.2}
 bl $T/ogranka.py -- "$W/st1/kb.blend" "$W/st1/o.blend" --imya Волк1 $OGR_ST1
 bl $T/svesti_klyuchi.py -- "$W/svod0.blend" "$W/st1/o.blend" Волк1 "$W/svod.fbx" --blend "$W/svod.blend"
 bl $T/griva_massa.py -- "$W/st1/hvost.blend" "$W/st1/hvost_m.blend" --kusok @Волк11 --imya Волк1 $GRIVA --ne_trogat нет --hvost_ne 0

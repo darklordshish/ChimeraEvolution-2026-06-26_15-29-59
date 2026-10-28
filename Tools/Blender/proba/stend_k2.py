@@ -280,6 +280,24 @@ if opt.get('rastyazhka'):
         th.sort(key=lambda t: -t[0])
         print('ПАЛОЧКИ: %s — тонких граней %d' % (o.name, len(th)))
         for L, f, c in th[:15]: print('ПАЛОЧКИ: %.0f мм %s %s' % (1000 * L, c, [(k, glv(k)) for k in f]))
+# НОГИ (`--nogi 1`, 28.10, критик r3 п.1: «порог толщины бедро → лапа у колена 8–10 %»): в позе — радиус до оси кости (по
+# позным суставам) у вершин тела `Ноги` и кусков `@`, по главной кости; бедро — у колена (t 0.75–1), голень — полосами от колена
+if opt.get('nogi'):
+    am = [x for x in bpy.data.objects if x.type == 'ARMATURE'][0]
+    for st_ in ('', '.L'):
+        rez = {}
+        for o in [x for x in vid if x.name == 'Ноги' or x.name.startswith('@')]:
+            P1, _ = geom(o, True); gn_ = {g.index: g.name for g in o.vertex_groups}
+            for kost in ('бедро' + st_, 'голень' + st_):
+                pb = am.pose.bones[kost]; h = np.array(am.matrix_world @ pb.head); t = np.array(am.matrix_world @ pb.tail)
+                u = (t - h) / np.linalg.norm(t - h); L = np.linalg.norm(t - h)
+                idx = [v.index for v in o.data.vertices if v.groups and gn_[max(v.groups, key=lambda g: g.weight).group] == kost]
+                if not idx: continue
+                Q = P1[idx] - h; s_ = Q @ u / L; r_ = np.linalg.norm(Q - np.outer(Q @ u, u), axis=1)
+                for a0, a1 in ((0.75, 1.0), (0.0, 0.15), (0.15, 0.3), (0.3, 0.45)) if kost.startswith('бедро') else ((0.0, 0.1), (0.1, 0.2), (0.2, 0.35), (0.35, 0.5)):
+                    m_ = (s_ >= a0) & (s_ < a1)
+                    if m_.any(): rez[(kost, a0, o.name)] = (float(np.percentile(r_[m_], 90)), int(m_.sum()))
+        for k_ in sorted(rez): print('НОГИ: %s t %.2f %-6s r90 %.1f см (%d)' % (k_[0], k_[1], k_[2], 100 * rez[k_][0], rez[k_][1]))
 if opt.get('dyry'):
     from mathutils.bvhtree import BVHTree
     DVU_ORG = opt.get('dvustoronnie_organy', '1') == '1'   # органы `<слот>@<вид>` двусторонние, как черты (игра с bfd723e)

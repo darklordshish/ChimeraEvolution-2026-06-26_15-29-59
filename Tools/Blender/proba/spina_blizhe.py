@@ -5,7 +5,7 @@
 k = 1 − (1 − `--k`)·w, вес w — плавно по нормали (0 при n.y ≤ 0, 1 при n.y ≥ `--ny`) и по высоте (затухание `--kraj` м у краёв).
 Плечи, бока и грудь (нормаль не назад) ключ сохраняют.
 
-  blender -b --factory-startup -P spina_blizhe.py -- вход.blend выход.blend [--imya Волк1] [--z 1.05:1.70] [--k 0.25] [--ny 0.5] [--kraj 0.08]
+  blender -b --factory-startup -P spina_blizhe.py -- вход.blend выход.blend [--imya Волк1] [--z 1.05:1.70] [--k 0.25] [--ny 0.5] [--kraj 0.08] [--rezhim tors [--x 0.24]]
 """
 import sys
 import bpy
@@ -33,7 +33,14 @@ for o in bpy.data.objects:
     M = o.matrix_world; R3 = M.to_3x3()
     B = np.array([list(M @ v.co) for v in o.data.vertices]); X = np.array([list(M @ d.co) for d in kb.data])
     N = np.array([list((R3 @ v.normal).normalized()) for v in o.data.vertices])
-    w = ss(N[:, 1] / NY) * ss((B[:, 2] - Z0) / KR) * ss((Z1 - B[:, 2]) / KR)
+    if opt.get('rezhim') == 'tors':
+        # ВЕСЬ ТОРС (28.10, критик r3: притяжка «только спина» перенесла капюшон — V-борозда сзади, шаль и воротник спереди, полка
+        # над ягодицей; «притяжку делать по всей спине без жёсткой границы, и спереди тоже»): вес без нормали — колокол по высоте
+        # (затухание `--kraj` у краёв `--z`) и по |x| до `--x` (руки не трогаются)
+        XM = float(opt.get('x', '0.24'))
+        w = ss((B[:, 2] - Z0) / KR) * ss((Z1 - B[:, 2]) / KR) * ss((XM - np.abs(B[:, 0])) / 0.08)
+    else:
+        w = ss(N[:, 1] / NY) * ss((B[:, 2] - Z0) / KR) * ss((Z1 - B[:, 2]) / KR)
     if not (w > 0.01).any(): continue
     k = 1 - (1 - K) * w; X2 = B + (X - B) * k[:, None]
     Mi = M.inverted()
