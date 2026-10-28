@@ -10,7 +10,7 @@
   `--oblast` — фильтр в покое: «hvost» (сзади y > 0.06, ниже z 1.05), «griva» (не голова/кисти/лапы по главной кости и не хвост), «vse».
 
   blender -b --factory-startup -P privyazat_polosu.py -- вход.blend выход.blend --kusok @Волк --imya Волк --oblast hvost --polosa 0.05
-      [--koren 0.015] [--otstup 0.002] [--kluch рост] [--vesa 1 [--vesa_polosa 0.25]]
+      [--koren 0.015] [--otstup 0.002] [--kluch рост] [--vesa 1 [--vesa_polosa 0.25]] [--glad 6]
 """
 import sys
 import bpy
@@ -63,11 +63,12 @@ if not koren: raise SystemExit('ПОЛОСА: корня нет (ни одной
 kd = kdtree.KDTree(len(koren))
 for j, k in enumerate(koren): kd.insert(Vector(P[k]), j)
 kd.balance()
-n_p, sd = 0, []
+n_p, sd, polosa_d = 0, [], {}
 for k in range(len(P)):
     if not ob[k] or near[k][0] is None: continue
     d = kd.find(Vector(P[k]))[2]
     if d > max(POL, VPOL): continue
+    if d <= POL: polosa_d[k] = d
     q, nrm = near[k][0], near[k][1]
     if d <= POL:
         w = (1 - d / POL) ** 2
@@ -92,7 +93,23 @@ for k in range(len(P)):
         top = sorted(((g_, x) for g_, x in mix.items() if x > 1e-4), key=lambda t: -t[1])[:4]; sm = sum(x for _, x in top) or 1
         for g in list(o.data.vertices[k].groups): o.vertex_groups[g.group].remove([k])
         for g_, x in top: (o.vertex_groups.get(g_) or o.vertex_groups.new(name=g_)).add([k], x / sm, 'REPLACE')
+# СГЛАЖИВАНИЕ ПОЛОСЫ (`--glad N`, 28.10c, дизайн-линия п.4: корень хвоста ст.1 — «манжета плоских языков 0.2–0.3H», ст.2 — «вокруг
+# корня продольные иглы»): Таубин (λ 0.5, μ −0.53) по вершинам полосы, края куска тоже — языки сходятся в массу; вес по полосе тот же
+GL = int(opt.get('glad', '0')); n_g = 0
+if GL:
+    import bmesh
+    bm = bmesh.new(); bm.from_mesh(o.data); bm.verts.ensure_lookup_table()
+    NB = [[e.other_vert(v).index for e in v.link_edges] for v in bm.verts]; bm.free()
+    X = np.array([list(Mw @ d.co) for d in dst]); wg = np.zeros(len(X))
+    for k in range(len(X)):
+        if ob[k] and k in polosa_d: wg[k] = 1 - polosa_d[k] / POL
+    m = wg > 0; n_g = int(m.sum())
+    for _ in range(GL):
+        for lam in (0.5, -0.53):
+            L = np.array([X[nb].mean(0) - X[k] if nb else np.zeros(3) for k, nb in enumerate(NB)]); X = X + (lam * wg)[:, None] * L
+    for k in np.nonzero(m)[0]: dst[k].co = inv @ Vector(X[k])
 o.data.update()
+print('ПОЛОСА: сглажено вершин %d (%d шагов)' % (n_g, GL)) if GL else None
 print('ПОЛОСА: %s (%s%s) — корень %d вершин, в полосе %.0f мм посажено %d (сдвиг средн. %.1f, макс %.1f мм)' % (
     o.name, opt['oblast'], ', ключ ' + opt['kluch'] if opt['kluch'] else '', len(koren), POL * 1000, n_p,
     1000 * float(np.mean(sd)) if sd else 0, 1000 * max(sd, default=0)))

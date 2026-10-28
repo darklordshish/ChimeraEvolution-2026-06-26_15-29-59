@@ -17,7 +17,7 @@ CEL_TELO="${CEL_TELO:-$R/oboroten-telo-st2-sidy-2026-10-27/vkleika_s7b.obj}"
 mkdir -p "$W"/{volk,los,st1}
 # шаг падает — сборка стоит (27.10: раньше grep глотал падение, и выгрузка шла из недоделанного файла); журнал шага — $W/shag.log
 bl() { if ! "$B" -b --factory-startup --python-exit-code 1 -P "$@" > "$W/shag.log" 2>&1; then tail -20 "$W/shag.log"; echo "СБОЙ: $1"; exit 1; fi
-       grep -E "ПОДГОНКА: до|ПОКРЫТИЕ|ЦЕПЬ|КУСОК: «|СЛИТО|ОГРАНКА: (тело|всего)|ЛИНИИ: {|КРАСИВЫЕ|ГРИВА-МАССА|ОРГАН-ГЛАДЬ|ШОВ:|ПОЛОСА:|БЛИЖЕ|ГРИВА:|ОГРАНКА: живот|ПЕРЕНОС: @|ФОРМОВКА|СВОДКА|ДОБАВЛЕНО|ОРГАН|КЛЮЧИ ОБЛАСТЕЙ|ВЕСА|ПЕРЕВЯЗКА|вывернутые грани по|ЭКСПОРТ" "$W/shag.log" || true; }
+       grep -E "ЛОЖЕ|ПОДГОНКА: до|ПОКРЫТИЕ|ЦЕПЬ|КУСОК: «|СЛИТО|ОГРАНКА: (тело|всего)|ЛИНИИ: {|КРАСИВЫЕ|ГРИВА-МАССА|ОРГАН-ГЛАДЬ|ШОВ:|ПОЛОСА:|БЛИЖЕ|ГРИВА:|ОГРАНКА: живот|ПЕРЕНОС: @|ФОРМОВКА|СВОДКА|ДОБАВЛЕНО|ОРГАН|КЛЮЧИ ОБЛАСТЕЙ|ВЕСА|ПЕРЕВЯЗКА|вывернутые грани по|ЭКСПОРТ" "$W/shag.log" || true; }
 # --lap_glad 10 (27.10): рельеф ключа — от цели, не от шаблона (белая линия и пресс человека К2 давали «щит до паха»)
 VSTR="--vstrechnye 1 --vstr_maxd 0.1,предплечье:0.05,предплечье.L:0.05,бедро:0.03,бедро.L:0.03 --zhestkost 30,15,8,4,2 --lap_glad 10"
 # OGR — ключи огранки; OT_OGRANKI=1 — начать с огранки в готовой рабочей папке (подгонки и куски — оттуда): проба огранки
@@ -74,7 +74,7 @@ bl $T/griva_massa.py -- "$W/volk/kk.blend" "$W/volk/kkgm.blend" $GRIVA
 # (дыра хвоста сзади — артефакт стенда: в игре черты двусторонние; шов хвоста тянул края по всей длине хвоста — снят)
 bl $T/shov_kuska.py -- "$W/volk/kkgm.blend" "$W/volk/kkgm.blend" --kosti голень,голень.L,стопа,стопа.L --polosa ${SHOV_LAPY:-0.12}
 # полосы корней на тело ключа ст.2 (скилл privyazka-poverhnosti, швы — дизайн-линия 28.10b): хвост ≈0.2H, грива ≈0.2H, H — голова
-bl $T/privyazat_polosu.py -- "$W/volk/kkgm.blend" "$W/volk/kkgm.blend" --kusok @Волк --imya Волк --oblast hvost --polosa ${POL_HV2:-0.05} --vesa 1
+bl $T/privyazat_polosu.py -- "$W/volk/kkgm.blend" "$W/volk/kkgm.blend" --kusok @Волк --imya Волк --oblast hvost --polosa ${POL_HV2:-0.08} --koren ${KOR_HV2:-0.04} --vesa 1 --glad ${GL_HV2:-8}
 bl $T/privyazat_polosu.py -- "$W/volk/kkgm.blend" "$W/volk/kkgm.blend" --kusok @Волк --imya Волк --oblast griva --polosa ${POL_GR2:-0.05} --vesa 1 --vesa_polosa ${VPOL_GR2:-0.25}
 bl $T/griva_kraj.py -- "$W/volk/kkgm.blend" "$W/volk/kkg.blend" --z_seredina 1.40 --z_pravyj 1.56 --z_levyj 1.52 --x_konec 0.26 --x_maks 0.30
 bl $T/ogranka.py -- "$W/volk/kkg.blend" "$W/volk/o.blend" $OGR
@@ -119,13 +119,17 @@ bl $T/organ_objekt.py -- "$W/o1.blend" "$W/st1/ushi.blend" @Волк11 Чуть�
 bl $T/organ_objekt.py -- "$W/o2.blend" "$W/st1/greben.blend" @Волк11 Шкура@Волк "$W/o3.blend" $ORG_GREBEN
 bl $T/organ_objekt.py -- "$W/o3.blend" "$W/st1/kogti.blend" @Волк11 Руки@Волк "$W/o4.blend" $ORG_KOGTI
 # полосы корней ст.1 на тело «Волк1»: хвост и гребень ≈0.12H (дизайн-линия 28.10b)
-bl $T/privyazat_polosu.py -- "$W/o4.blend" "$W/o4.blend" --kusok @Волк1 --imya Волк1 --oblast vse --polosa ${POL_HV1:-0.03} --vesa 1
+bl $T/privyazat_polosu.py -- "$W/o4.blend" "$W/o4.blend" --kusok @Волк1 --imya Волк1 --oblast vse --polosa ${POL_HV1:-0.06} --vesa 1 --glad ${GL_HV1:-8}
+# корень уха ст.1 на голову (дизайн-линия 28.10c п.3: «полоса у виска, основание пластинчатое»)
+bl $T/privyazat_polosu.py -- "$W/o4.blend" "$W/o4.blend" --kusok Чутьё@Волк --imya Волк1 --kluch рост --oblast vse --polosa ${POL_U1:-0.03} --vesa 1
 bl $T/privyazat_polosu.py -- "$W/o4.blend" "$W/o4.blend" --kusok Шкура@Волк --imya Волк1 --kluch рост --oblast vse --polosa ${POL_GR1:-0.03} --vesa 1
 bl $T/formovka.py -- "$W/o4.blend" "$W/o5.blend" --sustavy "$W/volk/sustavy.json" --golen 1 --koleno 0 --talia 1 $RASPRAVIT
 
 # ПЕРЕВЯЗКА-СТРАХОВКА: веса тела финальные с начала; куски и органы получают веса цели (`.vesa.json`) и бывают сверх 4 костей —
 # здесь им 4 кости, а их база и «рост» перевязываются по позам ступеней ИЗ ПОСТАВКИ (их показывает игра; поправки
 # poza_po_listu.py живут там). У тела сдвиг ключа обязан быть ~0. Дальше веса не меняются: ключи областей — после, выгрузка проверяет
+# гнездо человеческого уха на голове — заплаткой: на ст.1 ухо скрыто органом Чутьё@Волк, и вывернутое гнездо светило у виска
+bl $T/zakryt_lozhe.py -- "$W/o5.blend" "$W/o5.blend"
 echo "== Перевязка-страховка, ключи областей, выгрузка"
 KL=Docs/models/handoff/klyuchi
 bl $T/vesa_final.py -- "$W/o5.blend" "$W/o6.blend" \
