@@ -5,7 +5,7 @@
 конца бедра (вершины бедра с t > 0.85). Где голень шире, на участке t < `--do` она радиально сводится к радиусу бедра с плавным
 переходом (smoothstep) к своему радиусу на t = `--do`.
 
-  blender -b --factory-startup -P suzit_golen.py -- вход.blend выход.blend [--imya Волк] [--obekt Ноги] [--do 0.4] [--zapas 1.0] [--kusok @Волк]
+  blender -b --factory-startup -P suzit_golen.py -- вход.blend выход.blend [--imya Волк] [--obekt Ноги] [--do 0.4] [--zapas 1.0] [--kusok @Волк] [--kap 1 [--otpusk 0.2]]
 """
 import sys
 import bpy
@@ -50,6 +50,21 @@ for st in ('', '.L'):
     bc = (bins[:-1] + bins[1:]) / 2; ok = ~np.isnan(rt); r_of = lambda t: np.interp(t, bc[ok], rt[ok])
     r_do = float(r_of(DO))
     idx = np.nonzero(mg)[0]; n_s = 0; sd = []
+    # `--kap 1` (28.10, критик r3: «порог ТОЛЩИНЫ бедро → лапа 8–10 %», замер стенда --nogi в позе: бедро у колена r90 13.0 см,
+    # голень на t 0.35 — 14.2–15.2): радиус КАЖДОЙ вершины голени ограничен k·r90 конца бедра до t = do, дальше предел плавно
+    # отпускается за `--otpusk` по t; средний радиус полосы (без --kap) раздутие икры не ловил — сведено было 31 вершина
+    if opt.get('kap') == '1':
+        r_b90 = float(np.percentile(rb[tb > 0.75], 90)) * ZAP; OT_ = float(opt.get('otpusk', '0.2'))
+        for j, k in enumerate(idx):
+            t = tg[j]
+            if t < -0.1 or t > DO + OT_: continue
+            s_ = 0.0 if t <= DO else (t - DO) / OT_; s_ = s_ * s_ * (3 - 2 * s_)
+            r_max = r_b90 + s_ * 1.0                      # за отпуском предел уходит в бесконечность (1 м)
+            if rg[j] <= r_max: continue
+            nov = X[k] - Rg[j] * (1 - r_max / rg[j]); sd.append(float(np.linalg.norm(nov - X[k]))); X[k] = nov; n_s += 1
+        itog.append('%s: предел k·r90 бедра %.1f см до t %.2f (отпуск %.2f); сведено %d вершин, сдвиг средн. %.1f, макс %.1f мм' % (
+            gol, 100 * r_b90, DO, OT_, n_s, 1000 * np.mean(sd) if sd else 0, 1000 * max(sd, default=0)))
+        continue
     for j, k in enumerate(idx):
         t = tg[j]
         if t >= DO or t < -0.1: continue
