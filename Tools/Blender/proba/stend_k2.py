@@ -325,6 +325,41 @@ if opt.get('dyry'):
             po = P_[otkr]
             kraya.append(dict(obekt=nm_, vershin=len(otkr), iz=len(grp), vysota_m=round(float(po[:, 2].mean()), 2), x_m=round(float(po[:, 0].mean()), 2),
                               razmer_mm=round(float(np.max(po.max(0) - po.min(0))) * 1000)))
+    # 3. ОКНА (дизайн-линия 28.10: «окно в гриве над плечом — видно фон», «щель между тазом и корнем хвоста»): в каждом ракурсе
+    # силуэт всех видимых объектов растрируется (2 мм), фон, не связанный с краем кадра, — окно сквозь фигуру
+    from collections import deque
+    okna = []; HH = float(hi_[2] - lo_[2]); PX = 0.002
+    for nm, ang in (('front', 0), ('profile', 90), ('34', 35), ('back', 180), ('34back', 145)):
+        r_ = math.radians(ang); d_ = np.array([math.sin(r_), -math.cos(r_), 0.0]); rt = np.cross(d_, np.array([0, 0, 1.0]))
+        T3 = np.array([[np.array(p) for p in t] for t in TRIS]); u = T3 @ rt; v = T3[..., 2]
+        u0, v0 = u.min() - 0.02, v.min() - 0.02; W_ = int((u.max() - u0 + 0.02) / PX) + 1; H_ = int((v.max() - v0 + 0.02) / PX) + 1
+        im = rastr(np.stack([(u - u0) / PX, (v.max() + 0.02 - v) / PX], -1), max(W_, H_))[:H_, :W_]
+        fon = ~im; vis = np.zeros_like(fon); dq = deque()
+        for y in range(H_):
+            for x in (0, W_ - 1):
+                if fon[y, x] and not vis[y, x]: vis[y, x] = True; dq.append((y, x))
+        for x in range(W_):
+            for y in (0, H_ - 1):
+                if fon[y, x] and not vis[y, x]: vis[y, x] = True; dq.append((y, x))
+        while dq:
+            y, x = dq.popleft()
+            for yy, xx in ((y + 1, x), (y - 1, x), (y, x + 1), (y, x - 1)):
+                if 0 <= yy < H_ and 0 <= xx < W_ and fon[yy, xx] and not vis[yy, xx]: vis[yy, xx] = True; dq.append((yy, xx))
+        ok_ = fon & ~vis; seen2 = np.zeros_like(ok_)
+        for y0, x0 in zip(*np.nonzero(ok_)):
+            if seen2[y0, x0]: continue
+            dq = deque([(y0, x0)]); seen2[y0, x0] = True; cl = []
+            while dq:
+                y, x = dq.popleft(); cl.append((y, x))
+                for yy, xx in ((y + 1, x), (y - 1, x), (y, x + 1), (y, x - 1)):
+                    if 0 <= yy < H_ and 0 <= xx < W_ and ok_[yy, xx] and not seen2[yy, xx]: seen2[yy, xx] = True; dq.append((yy, xx))
+            if len(cl) < 4: continue
+            cl = np.array(cl); hgt = (cl[:, 0].max() - cl[:, 0].min() + 1) * PX; wd = (cl[:, 1].max() - cl[:, 1].min() + 1) * PX
+            okna.append(dict(rakurs=nm, vysota_m=round(float(v.max() + 0.02 - cl[:, 0].mean() * PX), 2), poperek_m=round(float(u0 + cl[:, 1].mean() * PX), 2),
+                             vys_mm=round(hgt * 1000), shir_mm=round(wd * 1000), vys_H=round(hgt / HH, 3), shir_H=round(wd / HH, 3), ploshchad_sm2=round(len(cl) * PX * PX * 1e4, 1)))
+    otchet['dyry_okna'] = sorted(okna, key=lambda x: -x['ploshchad_sm2'])
+    print('ДЫРЫ: окон сквозь фигуру %d' % len(okna))
+    for x in otchet['dyry_okna'][:10]: print('ДЫРА окно: %(rakurs)s · высота %(vysota_m).2f · %(vys_mm)d×%(shir_mm)d мм (%(vys_H).2fH×%(shir_H).2fH) · %(ploshchad_sm2).1f см²' % x)
     otchet['dyry_izanka'] = sorted(pyatna, key=lambda x: -x['ploshchad_sm2'])
     otchet['dyry_kraya'] = sorted(kraya, key=lambda x: -x['razmer_mm'])
     print('ДЫРЫ: изнанка видна — пятен %d (крупных ≥ 2 см² — %d); открытых краёв не на шве — %d' % (
