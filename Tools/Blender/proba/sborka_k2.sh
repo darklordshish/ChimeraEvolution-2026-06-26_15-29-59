@@ -89,11 +89,17 @@ bl $KC "$W/st1/c.fbx" "$W/st1/c.json" $COM --golova_z 9 --griva_z 9 --hvost_z -1
 
 fi
 echo "== Сводка: ключ «Лось» и @Лось, @Волк1, органы на шаблоне, складки"
-bl $T/svesti_klyuchi.py -- "$W/volk/f.blend" "$W/los/kk.blend" Лось "$W/svod.fbx" --cherty @Лось --blend "$W/svod.blend"
+bl $T/svesti_klyuchi.py -- "$W/volk/f.blend" "$W/los/kk.blend" Лось "$W/svod.fbx" --cherty @Лось --blend "$W/svod0.blend"
+# ТЕЛО СТ.1 — СВОЙ КЛЮЧ «Волк1» (геймдизайнер 28.10, FEEDBACK-2026-10-28-codex-telo-st1; код игры — main f18b93e: вес ключа рисуется
+# ломаной база → Волк1 → Волк). Ключ подгонки ст.1 — огранка в позе ст.1 (без зоны острого V: он — решение ст.2) и в меш шасси
+OGR_ST1="${OGR_ST1:---rezhim massy --ploshchad_massy 0.035 --povorot 20 --linii 1 --sila 0.9 --iter 10 --maks_sdvig 0.02 --zhivot 0 --v_poze Docs/models/handoff/klyuchi/chelovek-volk-poza-st1.json}"
+bl $T/ogranka.py -- "$W/st1/k.blend" "$W/st1/o.blend" --imya Волк1 $OGR_ST1
+bl $T/svesti_klyuchi.py -- "$W/svod0.blend" "$W/st1/o.blend" Волк1 "$W/svod.fbx" --blend "$W/svod.blend"
 bl $T/griva_massa.py -- "$W/st1/hvost.blend" "$W/st1/hvost_m.blend" --kusok @Волк11 --imya Волк1 $GRIVA --ne_trogat нет --hvost_ne 0
 bl $T/dobavit_kusok.py -- "$W/svod.blend" "$W/st1/hvost_m.blend" @Волк11 @Волк1 "$W/o1h.blend"
-# хвост ст.1 — на то тело, которое игра рисует на ст.1 («Волк»×0.5), а не на тело подгонки «Волк1» (зазор был 58 мм; 27.10)
-bl $T/perenesti_kusok.py -- "$W/o1h.blend" "$W/st1/k.blend" @Волк1 Волк1 Волк 0.5 "$W/o1.blend"
+# хвост ст.1 вырезан с тела «Волк1», и игра с 28.10 рисует ст.1 им же — переносить не нужно. PERENOS=1 — прежний перенос на
+# «Волк»×0.5 (27.10, когда своего ключа ст.1 не было)
+if [ "${PERENOS:-0}" = 1 ]; then bl $T/perenesti_kusok.py -- "$W/o1h.blend" "$W/st1/k.blend" @Волк1 Волк1 Волк 0.5 "$W/o1.blend"; else cp "$W/o1h.blend" "$W/o1.blend"; fi
 bl $T/organ_objekt.py -- "$W/o1.blend" "$W/st1/ushi.blend" @Волк11 Чутьё@Волк "$W/o2.blend"
 bl $T/organ_objekt.py -- "$W/o2.blend" "$W/st1/greben.blend" @Волк11 Шкура@Волк "$W/o3.blend" $ORG_GREBEN
 bl $T/organ_objekt.py -- "$W/o3.blend" "$W/st1/kogti.blend" @Волк11 Руки@Волк "$W/o4.blend" $ORG_KOGTI
