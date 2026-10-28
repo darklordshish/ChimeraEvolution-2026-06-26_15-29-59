@@ -26,7 +26,7 @@
   blender -b --factory-startup -P stend_k2.py -- chelovek_mesh.fbx --pokoj klyuchi/chelovek-pokoj.json
       [--kluch Волк --ves 1 --poza klyuchi/chelovek-volk-poza.json --stupen klyuchi/chelovek-volk-st2.json]
       [--organy Чутьё@Волк:1,Шкура@Волк:1] [--skryt_organy klyuchi/../organy/chelovek.json] [--maski f.png,p.png]
-      [--bez @Волк] [--dyry 1 [--dvustoronnie_organy 1]] [--st1 0.5] [--kluchi Волк·Руки:0.5] [--poza_obj тело.obj] [--kadr префикс] [--otchet отчёт.json]
+      [--bez @Волк] [--dyry 1] [--dvustoronnie_organy 0] [--st1 0.5] [--kluchi Волк·Руки:0.5] [--poza_obj тело.obj] [--kadr префикс] [--otchet отчёт.json]
 """
 import sys, json, math
 import bpy, bmesh
@@ -250,15 +250,15 @@ if opt.get('maski'):
             rgb[s_ & ~m_] = (0.9, 0.2, 0.2); rgb[m_ & ~s_] = (0.3, 0.5, 0.95); rgb[both] = (0.15, 0.15, 0.15)
             sohranit(opt['kadr'] + '_iou_' + nm + '.png', rgb)
 
-# ДЫРЫ (`--dyry 1`, 28.10, геймдизайнер: «в модели дырки»). Как в игре: черты `@` двусторонние (BodyMesh.TwoSided), тело шасси
-# и органы на шаблоне — односторонние. Два прохода:
+# ДЫРЫ (`--dyry 1`, 28.10, геймдизайнер: «в модели дырки»). Как в игре: черты `@` и органы на шаблоне `<слот>@<вид>` двусторонние
+# (BodyMesh.TwoSided; органы — с main `bfd723e`), тело шасси одностороннее (`--dvustoronnie_organy 0` — органы по-старому). Два прохода:
 #  1. ЛУЧИ по ракурсам кадра сеткой 5 мм: первое попадание луча — в изнанку одностороннего объекта → видна изнанка (дыра насквозь
 #     или вывернутая грань); попадания кучкуются в пятна по соседству ячеек сетки → «объект · ракурс · высота · размер, мм»;
 #  2. ОТКРЫТЫЕ КРАЯ односторонних объектов: цепочки рёбер с одной гранью; край шасси, вершины которого в позе совпадают (< 1 мм) с
 #     вершинами другого видимого объекта шасси, — шов, не дыра
 if opt.get('dyry'):
     from mathutils.bvhtree import BVHTree
-    DVU_ORG = opt.get('dvustoronnie_organy', '0') == '1'   # проверка «если органы `<слот>@<вид>` двусторонние, как черты»
+    DVU_ORG = opt.get('dvustoronnie_organy', '1') == '1'   # органы `<слот>@<вид>` двусторонние, как черты (игра с bfd723e)
     TRIS, OWN, OSN = [], [], []
     for o in vid:
         P_, F_ = geom(o, True)
@@ -298,7 +298,7 @@ if opt.get('dyry'):
     from mathutils import kdtree as _kd
     kraya = []
     for nm_, P_, F_ in OSN:
-        if nm_.startswith('@'): continue
+        if nm_.startswith('@') or (DVU_ORG and '@' in nm_): continue
         ec = {}
         for f in F_:
             for j in range(len(f)):
@@ -372,9 +372,10 @@ if opt.get('dyry'):
 
 # кадры: Workbench, отсечение задних граней (как в игре)
 if opt.get('kadr'):
-    # ЧЕРТЫ `@` В ИГРЕ ДВУСТОРОННИЕ (материал черт, 22.10): отсечение задних граней на них — артефакт стенда («дыра в хвосте сзади»,
-    # критик 27.10). Кускам добавляется копия с обращёнными гранями — их изнанка видна, как в игре
-    for o in [x for x in vid if x.name.startswith('@')]:
+    # ЧЕРТЫ `@` И ОРГАНЫ `<слот>@<вид>` В ИГРЕ ДВУСТОРОННИЕ (материал черт 22.10, органы — main bfd723e): отсечение задних граней на
+    # них — артефакт стенда («дыра в хвосте сзади», критик 27.10). Кускам добавляется копия с обращёнными гранями, как в игре
+    dvu = opt.get('dvustoronnie_organy', '1') == '1'
+    for o in [x for x in vid if x.name.startswith('@') or (dvu and '@' in x.name)]:
         dup = o.copy(); dup.data = o.data.copy(); bpy.context.scene.collection.objects.link(dup)
         bm_ = bmesh.new(); bm_.from_mesh(dup.data); bmesh.ops.reverse_faces(bm_, faces=bm_.faces[:]); bm_.to_mesh(dup.data); bm_.free()
         dup.hide_render = False
