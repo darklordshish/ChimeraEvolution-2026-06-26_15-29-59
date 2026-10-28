@@ -7,10 +7,11 @@
   корень — вершины куска (в области `--oblast`) ближе `--koren` к телу; полоса — вершины не дальше `--polosa` от корня;
   вершина полосы садится на ближайшую точку тела (форма-ключ `--imya` шасси, `--otstup` наружу по нормали) с весом
   (1 − d/полоса)², d — расстояние до корня. `--kluch рост` — правится форма-ключ куска (орган на шаблоне), иначе база.
-  `--oblast` — фильтр в покое: «hvost» (сзади y > 0.06, ниже z 1.05), «griva» (не голова/кисти/лапы по главной кости и не хвост), «vse».
+  `--oblast` — фильтр в покое: «hvost» (сзади y > 0.06, ниже z 1.05), «griva» (не голова/кисти/лапы по главной кости и не хвост),
+  «gorlo» (главная кость голова, ниже её сустава), «vse».
 
   blender -b --factory-startup -P privyazat_polosu.py -- вход.blend выход.blend --kusok @Волк --imya Волк --oblast hvost --polosa 0.05
-      [--koren 0.015] [--otstup 0.002] [--kluch рост] [--vesa 1 [--vesa_polosa 0.25]] [--glad 6]
+      [--koren 0.015] [--otstup 0.002] [--kluch рост] [--vesa 1 [--vesa_polosa 0.25] [--bez_formy 1]] [--glad 6]
 """
 import sys
 import bpy
@@ -28,13 +29,14 @@ while i < len(a):
 bpy.ops.wm.open_mainfile(filepath=src)
 o = bpy.data.objects[opt['kusok']]; Mw = o.matrix_world; inv = Mw.inverted()
 T, TF, TW = [], [], []
+KOSTI = {bn.name for x in bpy.data.objects if x.type == 'ARMATURE' for bn in x.data.bones}
 for b in bpy.data.objects:
     if b.type != 'MESH' or '@' in b.name: continue
     kb = b.data.shape_keys.key_blocks.get(opt['imya']) if b.data.shape_keys else None
     if kb is None: continue
     gb = {g.index: g.name for g in b.vertex_groups}
     b0 = len(T); T += [b.matrix_world @ d.co for d in kb.data]
-    TW += [{gb[g.group]: g.weight for g in v.groups if g.weight > 0} for v in b.data.vertices]
+    TW += [{gb[g.group]: g.weight for g in v.groups if g.weight > 0 and gb[g.group] in KOSTI} for v in b.data.vertices]   # только кости: группы областей (`*.область`) не веса
     for p_ in b.data.polygons:
         vv = list(p_.vertices)
         for j in range(1, len(vv) - 1): TF.append([b0 + vv[0], b0 + vv[j], b0 + vv[j + 1]])
@@ -47,11 +49,17 @@ glav = [gn[max(v.groups, key=lambda g: g.weight).group] if v.groups else '' for 
 B0 = np.array([list(Mw @ v.co) for v in o.data.vertices])       # область — по покою базы
 
 
+ZG = next((x.matrix_world @ x.data.bones['голова'].head_local).z for x in bpy.data.objects if x.type == 'ARMATURE')
+
+
 def v_oblasti(k):
     y, z = B0[k][1], B0[k][2]
     hv = y > 0.06 and z < 1.05
     if opt['oblast'] == 'hvost': return hv
     if opt['oblast'] == 'griva': return glav[k] not in NT and not hv
+    # «gorlo» (28.10, критик r2 п.8 «палочка под подбородком»): вершины головы куска ниже сустава головы на `--gorlo_dz` — горло,
+    # с весом головы оно тянулось за опущенной головой ст.2 полосками по 18–21 см к груди
+    if opt['oblast'] == 'gorlo': return glav[k] == 'голова' and B0[k][2] < ZG - float(opt.get('gorlo_dz', '0.0'))
     return True
 
 
@@ -70,7 +78,7 @@ for k in range(len(P)):
     if d > max(POL, VPOL): continue
     if d <= POL: polosa_d[k] = d
     q, nrm = near[k][0], near[k][1]
-    if d <= POL:
+    if d <= POL and opt.get('bez_formy') != '1':   # `--bez_formy 1` — только веса кожи, форма куска на месте
         w = (1 - d / POL) ** 2
         tgt = np.array(q + nrm.normalized() * OT); p2 = P[k] + (tgt - P[k]) * w
         sd.append(float(np.linalg.norm(p2 - P[k]))); dst[k].co = inv @ Vector(p2); n_p += 1

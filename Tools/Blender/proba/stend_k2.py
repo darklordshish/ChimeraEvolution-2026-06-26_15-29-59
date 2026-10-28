@@ -256,6 +256,30 @@ if opt.get('maski'):
 #     или вывернутая грань); попадания кучкуются в пятна по соседству ячеек сетки → «объект · ракурс · высота · размер, мм»;
 #  2. ОТКРЫТЫЕ КРАЯ односторонних объектов: цепочки рёбер с одной гранью; край шасси, вершины которого в позе совпадают (< 1 мм) с
 #     вершинами другого видимого объекта шасси, — шов, не дыра
+# РАСТЯЖКА (`--rastyazhka 1`, 28.10, критик r2 п.8 «тонкая палочка под подбородком» ст.2): рёбра видимых кусков `@`, которые в позе
+# длиннее, чем в покое ключа, больше чем в 3 раза, — столбики между костями (вершины одной грани на разных костях)
+if opt.get('rastyazhka'):
+    for o in [x for x in vid if '@' in x.name]:
+        P0, F0 = geom(o, False); P1, _ = geom(o, True); gn_ = {g.index: g.name for g in o.vertex_groups}
+        ed = {tuple(sorted((f[j], f[(j + 1) % len(f)]))) for f in F0 for j in range(len(f))}
+        r_ = sorted(((np.linalg.norm(P1[u] - P1[v]) / max(np.linalg.norm(P0[u] - P0[v]), 1e-5), u, v) for u, v in ed), reverse=True)
+        big = [t for t in r_ if t[0] > 3 and np.linalg.norm(P1[t[1]] - P1[t[2]]) > 0.02]
+        glv = lambda k: gn_[max(o.data.vertices[k].groups, key=lambda g: g.weight).group] if o.data.vertices[k].groups else ''
+        print('РАСТЯЖКА: %s — рёбер ×3 и длиннее 2 см: %d' % (o.name, len(big)))
+        for t in big[:12]: print('РАСТЯЖКА: ×%.1f %d(%s) %d(%s) длина %.0f мм, середина %s' % (t[0], t[1], glv(t[1]), t[2], glv(t[2]),
+                                 1000 * np.linalg.norm(P1[t[1]] - P1[t[2]]), ((P1[t[1]] + P1[t[2]]) / 2).round(2)))
+    # тонкие длинные грани в позе (палочки): длина > 5 см, длина / высота > 8
+    for o in [x for x in vid if '@' in x.name]:
+        P1, F1 = geom(o, True); gn_ = {g.index: g.name for g in o.vertex_groups}; th = []
+        glv = lambda k: gn_[max(o.data.vertices[k].groups, key=lambda g: g.weight).group] if o.data.vertices[k].groups else ''
+        for f in F1:
+            if len(f) != 3: continue
+            A_, B_, C_ = P1[f[0]], P1[f[1]], P1[f[2]]; L = max(np.linalg.norm(A_ - B_), np.linalg.norm(B_ - C_), np.linalg.norm(C_ - A_))
+            ar = np.linalg.norm(np.cross(B_ - A_, C_ - A_)) / 2; h = 2 * ar / max(L, 1e-9)
+            if L > 0.05 and L / max(h, 1e-6) > 8: th.append((L, f, ((A_ + B_ + C_) / 3).round(2)))
+        th.sort(key=lambda t: -t[0])
+        print('ПАЛОЧКИ: %s — тонких граней %d' % (o.name, len(th)))
+        for L, f, c in th[:15]: print('ПАЛОЧКИ: %.0f мм %s %s' % (1000 * L, c, [(k, glv(k)) for k in f]))
 if opt.get('dyry'):
     from mathutils.bvhtree import BVHTree
     DVU_ORG = opt.get('dvustoronnie_organy', '1') == '1'   # органы `<слот>@<вид>` двусторонние, как черты (игра с bfd723e)
