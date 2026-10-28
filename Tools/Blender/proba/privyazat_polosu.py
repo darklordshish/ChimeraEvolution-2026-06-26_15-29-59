@@ -10,7 +10,7 @@
   `--oblast` — фильтр в покое: «hvost» (сзади y > 0.06, ниже z 1.05), «griva» (не голова/кисти/лапы по главной кости и не хвост), «vse».
 
   blender -b --factory-startup -P privyazat_polosu.py -- вход.blend выход.blend --kusok @Волк --imya Волк --oblast hvost --polosa 0.05
-      [--koren 0.015] [--otstup 0.002] [--kluch рост] [--vesa 1]
+      [--koren 0.015] [--otstup 0.002] [--kluch рост] [--vesa 1 [--vesa_polosa 0.25]]
 """
 import sys
 import bpy
@@ -56,7 +56,7 @@ def v_oblasti(k):
 
 
 ob = np.array([v_oblasti(k) for k in range(len(P))])
-KO, POL, OT = float(opt['koren']), float(opt['polosa']), float(opt['otstup'])
+KO, POL, OT = float(opt['koren']), float(opt['polosa']), float(opt['otstup']); VPOL = float(opt.get('vesa_polosa', '0'))
 near = [BV.find_nearest(Vector(p)) for p in P]
 koren = [k for k in range(len(P)) if ob[k] and near[k][0] is not None and near[k][3] <= KO]
 if not koren: raise SystemExit('ПОЛОСА: корня нет (ни одной вершины ближе %.0f мм к телу в области %s)' % (KO * 1000, opt['oblast']))
@@ -67,10 +67,16 @@ n_p, sd = 0, []
 for k in range(len(P)):
     if not ob[k] or near[k][0] is None: continue
     d = kd.find(Vector(P[k]))[2]
-    if d > POL: continue
-    w = (1 - d / POL) ** 2; q, nrm = near[k][0], near[k][1]
-    tgt = np.array(q + nrm.normalized() * OT); p2 = P[k] + (tgt - P[k]) * w
-    sd.append(float(np.linalg.norm(p2 - P[k]))); dst[k].co = inv @ Vector(p2); n_p += 1
+    if d > max(POL, VPOL): continue
+    q, nrm = near[k][0], near[k][1]
+    if d <= POL:
+        w = (1 - d / POL) ** 2
+        tgt = np.array(q + nrm.normalized() * OT); p2 = P[k] + (tgt - P[k]) * w
+        sd.append(float(np.linalg.norm(p2 - P[k]))); dst[k].co = inv @ Vector(p2); n_p += 1
+    else: w = 0.0
+    # `--vesa_polosa м` (28.10c, грива ст.2: «щель под пластиной на загривке» открывается наклоном шеи ступени — пластина дальше
+    # полосы держала веса цели): веса кожи шире геометрической полосы, с затуханием 1 − (d/VPOL)⁴, форма там не двигается
+    if VPOL > 0: w = max(w, 1 - (d / VPOL) ** 4) if d <= VPOL else w
     # ВЕСА ТЕЛА В ПОЛОСЕ (`--vesa 1`): кусок гнётся вместе с кожей под собой — грива на «хребте» и «лопатке» оставалась на месте,
     # когда шея ступени 2 гнулась вперёд, и на загривке открывалось окно (детектор окон 28.10). Веса ближайшего треугольника тела
     # (барицентрически по точке q), смешанные с весами куска по весу полосы w; не больше 4 костей

@@ -3,7 +3,7 @@
 `рост`: база — объект, прижатый к телу шасси (каждая вершина сдвинута к ближайшей точке тела в покое на `--sjatie`), `рост` на весе 1 —
 полная форма. Код ставит вес `рост` = доля вида / 0.65.
 
-  blender -b --factory-startup -P organ_objekt.py -- сборка.blend откуда.blend имя_там <слот>@<вид> выход.blend [--sjatie 0.85] [--srez 0.025 [--srez_ot Руки]] [--sherst 0.5:4] [--tolshchina 0.004]
+  blender -b --factory-startup -P organ_objekt.py -- сборка.blend откуда.blend имя_там <слот>@<вид> выход.blend [--sjatie 0.85] [--srez 0.025 [--srez_ot Руки]] [--sherst 0.5:4] [--niz 1.45:1.58 [--shir 0.08]] [--prizhim 0.5] [--tolshchina 0.004]
 """
 import sys
 import bpy
@@ -80,6 +80,35 @@ if opt.get('srez') or opt.get('sherst'):
         for v, x in zip(bm.verts, X): v.co = x
     bm.to_mesh(o.data); bm.free(); o.data.update()
     print('ОРГАН: %s — срезано граней %d (дальше %s м), шерсть %s; осталось граней %d' % (nm, n_s, opt.get('srez', '—'), opt.get('sherst', '—'), len(o.data.polygons)))
+# ЗАТУХАНИЕ КНИЗУ (`--niz z0:z1`, 28.10, дизайн-линия, повтор осмотра дыр п.1: гребень ст.1 — «длинная жёсткая пластина 1.3–1.6H
+# до нижних углов лопаток», рисунок — компактный гребень с затуханием выше углов лопаток). Грани, задевшие низ z0 (покой),
+# срезаются вместе с островками; от z0 до z1 вершина прижимается к телу шасси с долей (z1 − z)/(z1 − z0): гребень уходит в кожу
+if opt.get('niz'):
+    z0, z1 = (float(x) for x in opt['niz'].split(':'))
+    bm = bmesh.new(); bm.from_mesh(o.data); Mw_ = o.matrix_world; iv_ = Mw_.inverted()
+    # `--shir x` — и грани, задевшие |x| > x: гребень — срединная масса; боковая прядь, отогнутая за плечо, давала окно 94×84 мм
+    SH_ = float(opt.get('shir', '9'))
+    ub = [f for f in bm.faces if any((Mw_ @ v.co).z < z0 or abs((Mw_ @ v.co).x) > SH_ for v in f.verts)]; n_n = len(ub)   # любая вершина: длинные грани после Таубина тянули язык до 1.17
+    bmesh.ops.delete(bm, geom=ub, context='FACES')
+    seen, mel = set(), []
+    for f in bm.faces:
+        if f in seen: continue
+        st, isl = [f], []; seen.add(f)
+        while st:
+            g = st.pop(); isl.append(g)
+            for e in g.edges:
+                for h in e.link_faces:
+                    if h not in seen: seen.add(h); st.append(h)
+        if len(isl) < 6: mel += isl
+    bmesh.ops.delete(bm, geom=mel, context='FACES')
+    bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context='VERTS')
+    for v in bm.verts:
+        w = Mw_ @ v.co
+        if w.z >= z1: continue
+        loc = bvh.find_nearest(w)[0]
+        if loc is not None: v.co = iv_ @ (w + (loc - w) * min(1.0, (z1 - w.z) / (z1 - z0)))
+    bm.to_mesh(o.data); bm.free(); o.data.update()
+    print('ОРГАН: %s — ниже %.2f срезано граней %d, до %.2f затухает к телу; осталось граней %d' % (nm, z0, n_n, z1, len(o.data.polygons)))
 # ОБЪЁМ ВМЕСТО ОБОЛОЧКИ (`--tolshchina м`, 28.10, детектор дыр стенда: «в модели дырки» — органы ст.1 рисуются ОДНОСТОРОННЕ
 # (двусторонние в игре только черты `@`, BodyMesh.TwoSided), а когти, гребень и уши — тонкие оболочки: их изнанка видна насквозь
 # пятнами по 20–50 см²). Оболочка закрывается толщиной с бортиком (Solidify) — замкнутый объём виден с любой стороны
@@ -94,6 +123,13 @@ if opt.get('tolshchina'):
     m_ = o.modifiers.new('t', 'SOLIDIFY'); m_.thickness = float(opt['tolshchina']); m_.offset = -1.0; m_.use_rim = True; m_.use_even_offset = True
     bpy.ops.object.modifier_apply(modifier='t')
     print('ОРГАН: %s — оболочка закрыта толщиной %.1f мм, граней %d' % (nm, float(opt['tolshchina']) * 1000, len(o.data.polygons)))
+# ПРИЖИМ ПОЛНОЙ ФОРМЫ (`--prizhim k`, 28.10, гребень ст.1): «рост» — тело + k·(форма − тело); пряди из цели стоят пластинами в
+# 5–8 см от кожи, между ними и шеей фон (окна 3/4 сзади) — при k < 1 масса ложится ближе к телу, затухание и контур те же
+if opt.get('prizhim'):
+    k_ = float(opt['prizhim'])
+    for v in o.data.vertices:
+        w = o.matrix_world @ v.co; loc = bvh.find_nearest(w)[0]
+        if loc is not None: v.co = o.matrix_world.inverted() @ (loc + (w - loc) * k_)
 full = [v.co.copy() for v in o.data.vertices]
 for v in o.data.vertices:
     w = o.matrix_world @ v.co; loc = bvh.find_nearest(w)[0]
