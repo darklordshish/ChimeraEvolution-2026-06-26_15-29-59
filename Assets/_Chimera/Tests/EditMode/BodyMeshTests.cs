@@ -221,6 +221,44 @@ namespace Chimera.Tests.EditMode
             Near(OnSpine, v[0], "ключ сдвинул то, чего не двигает");
         }
 
+        static readonly Vector3 Step1Shift = new(0f, 0.08f, 0f);
+
+        /// <summary>КЛЮЧ ТЕЛА СТУПЕНИ 1 (28.10): есть форма `Волк1` — путь веса идёт ломаной через неё: на весе ступени 1 тело
+        /// ровно ст.1 (а не половина ст.2), на 1 — ровно ст.2, между — линейно по отрезкам.</summary>
+        [Test]
+        public void StageOneShape_PathGoesThroughItsOwnBody()
+        {
+            Species().bodyMesh = Model();
+            var mesh = model.GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh;
+            var w2o = model.GetComponentInChildren<SkinnedMeshRenderer>().transform.worldToLocalMatrix;
+            var d1 = new Vector3[3]; d1[1] = w2o.MultiplyVector(Step1Shift);
+            mesh.AddBlendShapeFrame("Волк1", 100f, d1, null, null);
+            float s1 = BodyMesh.KeyStep1;
+            Vector3 At(float w)
+            {
+                BodyMesh.ForceKey = "Волк"; BodyMesh.ForceWeight = w; BodyMesh.ResetCache();
+                if (go != null) Object.DestroyImmediate(go);
+                Build(so.organs.ToList());
+                return Baked(go.GetComponentsInChildren<SkinnedMeshRenderer>(true).Single())[1];
+            }
+            Near(OnHead + Step1Shift, At(s1), "вес ступени 1 — тело ст.1 целиком");
+            Near(OnHead + Step1Shift * 0.5f, At(s1 * 0.5f), "до ступени 1 растёт форма ст.1");
+            Near(OnHead + KeyShift, At(1f), "вес 1 — ровно ст.2, форма ст.1 ушла");
+            Near(OnHead + (Step1Shift + KeyShift) * 0.5f, At((s1 + 1f) * 0.5f), "между ступенями — отрезок ст.1 → ст.2");
+        }
+
+        /// <summary>Нет формы `<ключ>1` — путь прежний, линейный.</summary>
+        [Test]
+        public void StageOneShape_Absent_KeepsLinearPath()
+        {
+            var m = new Mesh { vertices = new[] { Vector3.zero, Vector3.right, Vector3.up }, triangles = new[] { 0, 1, 2 } };
+            m.AddBlendShapeFrame("Волк", 100f, new Vector3[3], null, null);
+            var shapes = BodyMesh.StageShapes(m, "Волк", 0.3f).ToList();
+            Assert.AreEqual(1, shapes.Count);
+            Assert.AreEqual(("Волк", 0.3f), shapes[0]);
+            Object.DestroyImmediate(m);
+        }
+
         /// <summary>ВАРИАНТ Б (геймдизайнер 19.10): с чужим органом тело ОСТАЁТСЯ мешем вида — орган без куска пока не виден.
         /// До 19.10 этот сторож требовал обратного («графт возвращает тело на поле»); с куском выключенным — по-прежнему поле.</summary>
         [Test]

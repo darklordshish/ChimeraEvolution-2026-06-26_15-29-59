@@ -126,6 +126,25 @@ public static class BodyMesh
     public const string GrowthShape = "рост";
     static bool IsOrganObject(string name) => name.IndexOf('@') > 0;
 
+    /// <summary>КЛЮЧ ТЕЛА СТУПЕНИ 1 (решение геймдизайнера 28.10 по разбору дизайн-линии `FEEDBACK-2026-10-28-codex-telo-st1.md`):
+    /// колонка ст.1 листа — атлет с волчьими акцентами, а не половина ст.2. Линейный ключ этого не умеет: его середина
+    /// жёстко B0 + ½(B2 − B0), и правка ст.2 двигает ст.1. Есть в меше форма `<ключ>1` (тело ст.1) — путь веса идёт ЛОМАНОЙ
+    /// через неё: от 0 до `KeyStep1` растёт `<ключ>1`, дальше она уходит, а `<ключ>` приходит; на весе ступени 1 тело ровно
+    /// ст.1, на 1 — ровно ст.2. Формы-ключи складываются дельтами от базы, поэтому ломаная точна. Нет формы `<ключ>1` — прежний
+    /// линейный путь. Логика ступеней (поза, черты, ключи областей) по-прежнему видит один ключ с весом — меняется только то,
+    /// какие формы его рисуют. Сторож — `BodyMeshTests.StageOneShape_*`.</summary>
+    public static IEnumerable<(string shape, float w)> StageShapes(Mesh mesh, string key, float weight)
+    {
+        float w = Mathf.Clamp01(weight);
+        bool has = mesh.GetBlendShapeIndex(key) >= 0, has1 = mesh.GetBlendShapeIndex(key + "1") >= 0;
+        if (!has1) { if (has) yield return (key, w); yield break; }
+        float s1 = Mathf.Clamp(KeyStep1, 1e-3f, 1f - 1e-3f);
+        if (w <= s1) { yield return (key + "1", w / s1); if (has) yield return (key, 0f); yield break; }
+        float t = (w - s1) / (1f - s1);
+        yield return (key + "1", 1f - t);
+        if (has) yield return (key, t);
+    }
+
     /// <summary>Вес ключа по ступени: 1 — ручка (лист: колонка 2 из «база · ст.1 · · ст.2»), 2 — полный ключ.
     /// Не `GlobalLayer.G`: тот смешивает пропорции поля с ЧИСТЫМ видом (вес 1 — родное шасси), а цель ключа — ступень 2.</summary>
     public static float KeyStep1 = 0.5f;
@@ -235,10 +254,8 @@ public static class BodyMesh
             smr.rootBone = skeleton;
             if (keys != null)
                 foreach (var kv in keys)
-                {
-                    int shape = skinned.GetBlendShapeIndex(kv.Key);
-                    if (shape >= 0) smr.SetBlendShapeWeight(shape, Mathf.Clamp01(kv.Value) * 100f);
-                }
+                    foreach (var (shapeName, w) in StageShapes(skinned, kv.Key, kv.Value))
+                        smr.SetBlendShapeWeight(skinned.GetBlendShapeIndex(shapeName), w * 100f);
             if (regionKeys != null)
                 foreach (var kv in regionKeys)
                 {
