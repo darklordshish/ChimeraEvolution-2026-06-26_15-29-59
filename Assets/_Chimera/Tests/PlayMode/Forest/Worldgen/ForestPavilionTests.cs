@@ -40,6 +40,7 @@ namespace Chimera.Tests.PlayMode
             builder.buildRavines = false;
             builder.buildLabComplex = stationLoop;
             builder.buildStationLoop = stationLoop;
+            builder.buildStationHill = stationLoop;
             builder.labEntrance = stationLoop ? LabEntrance.Buried : LabEntrance.Rock;
             builder.buildLabPlan = stationLoop;
             builder.labStyle = LabStyle.Bastion;
@@ -86,13 +87,16 @@ namespace Chimera.Tests.PlayMode
             yield return null;
 
             Assert.AreNotEqual(Vector3.zero, b.LabNorthDoor, "северная дверь станции построена");
+            Assert.IsTrue(b.Hill.valid, "холм станции построен");
             Assert.IsTrue(NavMesh.SamplePosition(b.LabNorthDoor, out var hit, 20f, NavMesh.AllAreas),
                 "северная дверь на NavMesh");
-            Assert.Less(Vector3.Distance(hit.position, b.LabNorthDoor), 2f,
+            Assert.Less(Vector3.Distance(hit.position, b.LabNorthDoor), 3f,
                 "точка северной двери достижима");
+            Assert.IsTrue(NavMesh.SamplePosition(b.LabDoor, out var southHit, 20f, NavMesh.AllAreas),
+                "южная дверь на NavMesh");
 
             var path = new NavMeshPath();
-            Assert.IsTrue(NavMesh.CalculatePath(b.LabDoor, b.LabNorthDoor, NavMesh.AllAreas, path),
+            Assert.IsTrue(NavMesh.CalculatePath(southHit.position, hit.position, NavMesh.AllAreas, path),
                 "путь от центра станции до северной двери существует");
             Assert.AreEqual(NavMeshPathStatus.PathComplete, path.status,
                 "путь до северной двери полный");

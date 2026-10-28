@@ -62,6 +62,8 @@ public class ForestBuilder : MonoBehaviour
     public bool buildCanyon = false;
     /// <summary>Петля A: северная дверь станции (Bastion). По умолчанию выключена, A/C не меняются.</summary>
     public bool buildStationLoop = false;
+    /// <summary>Холм станции: lift-слой вокруг Buried; по умолчанию выключен, A/C не меняются.</summary>
+    public bool buildStationHill = false;
 
     [Header("Лаборатория B0.1: единый закрытый бункер вместо старого лабиринта")]
     public bool buildLabComplex = false;
@@ -122,6 +124,7 @@ public class ForestBuilder : MonoBehaviour
     public DomeHydro.State Hydro => world != null ? world.Hydro : null;
     public DomeFacilityLayout.Facility Facility => world != null ? world.Facility : null;
     public DomeAshSite.AshSpot Ash => world != null ? world.Ash : default;
+    public DomeHill.State Hill => world != null ? world.Hill : default;
     public bool HasAsh => world != null && world.HasAsh;
     public LairSite NestSite => world != null ? world.NestSite : null;
     public int Chunks => world != null ? world.Chunks : 0;
@@ -258,7 +261,7 @@ public class ForestBuilder : MonoBehaviour
         world.Build(BuiltRoot, ownedConfig, terrainQuads, chosen, buildAsh, spawnAtEntry,
             labStyle, minLabDistance > 0f ? minLabDistance : DefaultMinLabDistance,
             buildLabComplex, labEntrance, buildRavines, buildLabPlan, labPlanVersion,
-            buildTerrace, buildCanyon, buildStationLoop);
+            buildTerrace, buildCanyon, buildStationLoop, buildStationHill);
 
         var surface = GetComponent<NavMeshSurface>();
         world.BuildNavMesh(surface);
