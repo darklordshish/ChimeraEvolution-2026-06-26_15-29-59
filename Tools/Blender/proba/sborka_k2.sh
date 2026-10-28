@@ -17,7 +17,7 @@ CEL_TELO="${CEL_TELO:-$R/oboroten-telo-st2-sidy-2026-10-27/vkleika_s7b.obj}"
 mkdir -p "$W"/{volk,los,st1}
 # шаг падает — сборка стоит (27.10: раньше grep глотал падение, и выгрузка шла из недоделанного файла); журнал шага — $W/shag.log
 bl() { if ! "$B" -b --factory-startup --python-exit-code 1 -P "$@" > "$W/shag.log" 2>&1; then tail -20 "$W/shag.log"; echo "СБОЙ: $1"; exit 1; fi
-       grep -E "ПОДГОНКА: до|ПОКРЫТИЕ|ЦЕПЬ|КУСОК: «|СЛИТО|ОГРАНКА: (тело|всего)|ЛИНИИ: {|КРАСИВЫЕ|ГРИВА-МАССА|ОРГАН-ГЛАДЬ|ГРИВА:|ОГРАНКА: живот|ПЕРЕНОС: @|ФОРМОВКА|СВОДКА|ДОБАВЛЕНО|ОРГАН|КЛЮЧИ ОБЛАСТЕЙ|ВЕСА|ПЕРЕВЯЗКА|вывернутые грани по|ЭКСПОРТ" "$W/shag.log" || true; }
+       grep -E "ПОДГОНКА: до|ПОКРЫТИЕ|ЦЕПЬ|КУСОК: «|СЛИТО|ОГРАНКА: (тело|всего)|ЛИНИИ: {|КРАСИВЫЕ|ГРИВА-МАССА|ОРГАН-ГЛАДЬ|БЛИЖЕ|ГРИВА:|ОГРАНКА: живот|ПЕРЕНОС: @|ФОРМОВКА|СВОДКА|ДОБАВЛЕНО|ОРГАН|КЛЮЧИ ОБЛАСТЕЙ|ВЕСА|ПЕРЕВЯЗКА|вывернутые грани по|ЭКСПОРТ" "$W/shag.log" || true; }
 # --lap_glad 10 (27.10): рельеф ключа — от цели, не от шаблона (белая линия и пресс человека К2 давали «щит до паха»)
 VSTR="--vstrechnye 1 --vstr_maxd 0.1,предплечье:0.05,предплечье.L:0.05,бедро:0.03,бедро.L:0.03 --zhestkost 30,15,8,4,2 --lap_glad 10"
 # OGR — ключи огранки; OT_OGRANKI=1 — начать с огранки в готовой рабочей папке (подгонки и куски — оттуда): проба огранки
@@ -92,14 +92,20 @@ echo "== Сводка: ключ «Лось» и @Лось, @Волк1, орга�
 bl $T/svesti_klyuchi.py -- "$W/volk/f.blend" "$W/los/kk.blend" Лось "$W/svod.fbx" --cherty @Лось --blend "$W/svod0.blend"
 # ТЕЛО СТ.1 — СВОЙ КЛЮЧ «Волк1» (геймдизайнер 28.10, FEEDBACK-2026-10-28-codex-telo-st1; код игры — main f18b93e: вес ключа рисуется
 # ломаной база → Волк1 → Волк). Ключ подгонки ст.1 — огранка в позе ст.1 (без зоны острого V: он — решение ст.2) и в меш шасси
-OGR_ST1="${OGR_ST1:---rezhim massy --ploshchad_massy 0.035 --povorot 20 --linii 1 --sila 0.9 --iter 10 --maks_sdvig 0.02 --zhivot 0 --v_poze Docs/models/handoff/klyuchi/chelovek-volk-poza-st1.json}"
-bl $T/ogranka.py -- "$W/st1/k.blend" "$W/st1/o.blend" --imya Волк1 $OGR_ST1
+OGR_ST1="${OGR_ST1:---rezhim massy --ploshchad_massy 0.035 --povorot 20 --linii 1 --sila 0.6 --iter 10 --maks_sdvig 0.015 --zhivot 0 --v_poze Docs/models/handoff/klyuchi/chelovek-volk-poza-st1.json}"
+# ноги ст.1 — человеческая опора (дизайн-линия §5 п.4): ключ «Волк1» на ногах ближе к базе
+NOGI_ST1="${NOGI_ST1:---kosti голень:0.5,стопа:0.4,бедро:0.9}"
+bl $T/kluch_blizhe.py -- "$W/st1/k.blend" "$W/st1/kb.blend" --imya Волк1 $NOGI_ST1
+bl $T/ogranka.py -- "$W/st1/kb.blend" "$W/st1/o.blend" --imya Волк1 $OGR_ST1
 bl $T/svesti_klyuchi.py -- "$W/svod0.blend" "$W/st1/o.blend" Волк1 "$W/svod.fbx" --blend "$W/svod.blend"
 bl $T/griva_massa.py -- "$W/st1/hvost.blend" "$W/st1/hvost_m.blend" --kusok @Волк11 --imya Волк1 $GRIVA --ne_trogat нет --hvost_ne 0
 bl $T/dobavit_kusok.py -- "$W/svod.blend" "$W/st1/hvost_m.blend" @Волк11 @Волк1 "$W/o1h.blend"
 # хвост ст.1 вырезан с тела «Волк1», и игра с 28.10 рисует ст.1 им же — переносить не нужно. PERENOS=1 — прежний перенос на
 # «Волк»×0.5 (27.10, когда своего ключа ст.1 не было)
-if [ "${PERENOS:-0}" = 1 ]; then bl $T/perenesti_kusok.py -- "$W/o1h.blend" "$W/st1/k.blend" @Волк1 Волк1 Волк 0.5 "$W/o1.blend"; else cp "$W/o1h.blend" "$W/o1.blend"; fi
+# с 28.10 ноги ключа ст.1 тянутся к базе (kluch_blizhe) — корень хвоста уходит с тела подгонки: хвост переносится с «Волк1»
+# подгонки на итоговый «Волк1» (вес 1); PERENOS=st1-05 — прежний перенос на «Волк»×0.5
+if [ "${PERENOS:-volk1}" = st1-05 ]; then bl $T/perenesti_kusok.py -- "$W/o1h.blend" "$W/st1/k.blend" @Волк1 Волк1 Волк 0.5 "$W/o1.blend"
+else bl $T/perenesti_kusok.py -- "$W/o1h.blend" "$W/st1/k.blend" @Волк1 Волк1 Волк1 1.0 "$W/o1.blend"; fi
 bl $T/organ_objekt.py -- "$W/o1.blend" "$W/st1/ushi.blend" @Волк11 Чутьё@Волк "$W/o2.blend"
 bl $T/organ_objekt.py -- "$W/o2.blend" "$W/st1/greben.blend" @Волк11 Шкура@Волк "$W/o3.blend" $ORG_GREBEN
 bl $T/organ_objekt.py -- "$W/o3.blend" "$W/st1/kogti.blend" @Волк11 Руки@Волк "$W/o4.blend" $ORG_KOGTI
