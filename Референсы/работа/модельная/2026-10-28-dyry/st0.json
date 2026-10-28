@@ -1,5 +1,5 @@
 {
-  "fbx": "C:/Temp/claude/C--Users-semion-Documents-Chimera-game-ChimeraEvolution-modeli/53623ae4-97d2-450f-a7bb-396e65699af4/scratchpad/sbW3/chelovek_mesh.fbx",
+  "fbx": "C:/Temp/claude/C--Users-semion-Documents-Chimera-game-ChimeraEvolution-modeli/53623ae4-97d2-450f-a7bb-396e65699af4/scratchpad/sbPR4/chelovek_mesh.fbx",
   "kluch": null,
   "ves": 0.0,
   "poza": null,
@@ -73,6 +73,48 @@
   "shov_razoshlos_1mm": 0,
   "shov_maks_mm": 0.0,
   "zazor_mm": {},
+  "dyry_okna": [
+    {
+      "rakurs": "34",
+      "vysota_m": 1.12,
+      "poperek_m": -0.15,
+      "vys_mm": 284,
+      "shir_mm": 72,
+      "vys_H": 0.154,
+      "shir_H": 0.039,
+      "ploshchad_sm2": 124.0
+    },
+    {
+      "rakurs": "34back",
+      "vysota_m": 1.12,
+      "poperek_m": -0.15,
+      "vys_mm": 284,
+      "shir_mm": 72,
+      "vys_H": 0.154,
+      "shir_H": 0.039,
+      "ploshchad_sm2": 124.0
+    },
+    {
+      "rakurs": "34",
+      "vysota_m": 1.2,
+      "poperek_m": 0.14,
+      "vys_mm": 66,
+      "shir_mm": 16,
+      "vys_H": 0.036,
+      "shir_H": 0.009,
+      "ploshchad_sm2": 4.6
+    },
+    {
+      "rakurs": "34back",
+      "vysota_m": 1.2,
+      "poperek_m": 0.14,
+      "vys_mm": 64,
+      "shir_mm": 16,
+      "vys_H": 0.035,
+      "shir_H": 0.009,
+      "ploshchad_sm2": 4.4
+    }
+  ],
   "dyry_izanka": [
     {
       "rakurs": "profile",

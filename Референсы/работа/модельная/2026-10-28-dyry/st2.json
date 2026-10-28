@@ -1,5 +1,5 @@
 {
-  "fbx": "C:/Temp/claude/C--Users-semion-Documents-Chimera-game-ChimeraEvolution-modeli/53623ae4-97d2-450f-a7bb-396e65699af4/scratchpad/sbW3/chelovek_mesh.fbx",
+  "fbx": "C:/Temp/claude/C--Users-semion-Documents-Chimera-game-ChimeraEvolution-modeli/53623ae4-97d2-450f-a7bb-396e65699af4/scratchpad/sbPR4/chelovek_mesh.fbx",
   "kluch": "Волк",
   "ves": 1.0,
   "poza": "Docs/models/handoff/klyuchi/chelovek-volk-poza.json",
@@ -23,9 +23,9 @@
     "@Волк": {
       "granej": 6449,
       "razvorot": 0,
-      "razvorot_v_poze": 391,
-      "skladka": 391,
-      "szhatie": 69
+      "razvorot_v_poze": 346,
+      "skladka": 346,
+      "szhatie": 57
     },
     "Ноги": {
       "granej": 5106,
@@ -69,6 +69,148 @@
   "zazor_mm": {
     "@Волк": 0.9
   },
+  "dyry_okna": [
+    {
+      "rakurs": "profile",
+      "vysota_m": 0.85,
+      "poperek_m": 0.06,
+      "vys_mm": 326,
+      "shir_mm": 140,
+      "vys_H": 0.168,
+      "shir_H": 0.072,
+      "ploshchad_sm2": 123.2
+    },
+    {
+      "rakurs": "34back",
+      "vysota_m": 1.13,
+      "poperek_m": -0.26,
+      "vys_mm": 132,
+      "shir_mm": 46,
+      "vys_H": 0.068,
+      "shir_H": 0.024,
+      "ploshchad_sm2": 27.9
+    },
+    {
+      "rakurs": "profile",
+      "vysota_m": 1.65,
+      "poperek_m": 0.11,
+      "vys_mm": 44,
+      "shir_mm": 168,
+      "vys_H": 0.023,
+      "shir_H": 0.086,
+      "ploshchad_sm2": 24.5
+    },
+    {
+      "rakurs": "34",
+      "vysota_m": 1.13,
+      "poperek_m": -0.26,
+      "vys_mm": 76,
+      "shir_mm": 24,
+      "vys_H": 0.039,
+      "shir_H": 0.012,
+      "ploshchad_sm2": 10.0
+    },
+    {
+      "rakurs": "profile",
+      "vysota_m": 0.81,
+      "poperek_m": -0.31,
+      "vys_mm": 72,
+      "shir_mm": 34,
+      "vys_H": 0.037,
+      "shir_H": 0.017,
+      "ploshchad_sm2": 8.8
+    },
+    {
+      "rakurs": "front",
+      "vysota_m": 0.59,
+      "poperek_m": 0.18,
+      "vys_mm": 34,
+      "shir_mm": 26,
+      "vys_H": 0.017,
+      "shir_H": 0.013,
+      "ploshchad_sm2": 4.5
+    },
+    {
+      "rakurs": "back",
+      "vysota_m": 0.59,
+      "poperek_m": -0.18,
+      "vys_mm": 32,
+      "shir_mm": 28,
+      "vys_H": 0.016,
+      "shir_H": 0.014,
+      "ploshchad_sm2": 4.5
+    },
+    {
+      "rakurs": "profile",
+      "vysota_m": 0.63,
+      "poperek_m": 0.14,
+      "vys_mm": 18,
+      "shir_mm": 38,
+      "vys_H": 0.009,
+      "shir_H": 0.02,
+      "ploshchad_sm2": 4.2
+    },
+    {
+      "rakurs": "34back",
+      "vysota_m": 1.82,
+      "poperek_m": 0.04,
+      "vys_mm": 18,
+      "shir_mm": 32,
+      "vys_H": 0.009,
+      "shir_H": 0.016,
+      "ploshchad_sm2": 2.6
+    },
+    {
+      "rakurs": "profile",
+      "vysota_m": 0.35,
+      "poperek_m": -0.75,
+      "vys_mm": 10,
+      "shir_mm": 8,
+      "vys_H": 0.005,
+      "shir_H": 0.004,
+      "ploshchad_sm2": 0.4
+    },
+    {
+      "rakurs": "front",
+      "vysota_m": 0.64,
+      "poperek_m": 0.44,
+      "vys_mm": 4,
+      "shir_mm": 6,
+      "vys_H": 0.002,
+      "shir_H": 0.003,
+      "ploshchad_sm2": 0.2
+    },
+    {
+      "rakurs": "profile",
+      "vysota_m": 0.88,
+      "poperek_m": -0.37,
+      "vys_mm": 2,
+      "shir_mm": 8,
+      "vys_H": 0.001,
+      "shir_H": 0.004,
+      "ploshchad_sm2": 0.2
+    },
+    {
+      "rakurs": "34",
+      "vysota_m": 0.65,
+      "poperek_m": 0.45,
+      "vys_mm": 2,
+      "shir_mm": 8,
+      "vys_H": 0.001,
+      "shir_H": 0.004,
+      "ploshchad_sm2": 0.2
+    },
+    {
+      "rakurs": "34",
+      "vysota_m": 0.64,
+      "poperek_m": 0.44,
+      "vys_mm": 2,
+      "shir_mm": 8,
+      "vys_H": 0.001,
+      "shir_H": 0.004,
+      "ploshchad_sm2": 0.2
+    }
+  ],
   "dyry_izanka": [
     {
       "rakurs": "profile",
