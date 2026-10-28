@@ -211,6 +211,7 @@ public class DomeWorld
                 ? LabPlanGenerator.Generate(seed, labPlanVersion, ResolvedLabEntrance, ResolvedLabStyle)
                 : LabPlanFixed.Create();
         BuildFacility(seed, buildLabComplex, buildStationLoop);
+        if (buildStationHill) BuildStationHill();
 
         // SpawnPoint — двор старого лабиринта или закрытый зал комплекса. У комплекса
         // верх плиты на Plinth выше площадки: игрок встаёт на плиту, а не в её толщу.
@@ -656,6 +657,14 @@ public class DomeWorld
     /// true — единый закрытый бункер B0.1 в найденном месте: плита, четыре комнаты вокруг
     /// закрытого зала, сплошное перекрытие, искусственный свет; старый <c>Facility</c> тогда null.
     /// </summary>
+    void BuildStationHill()
+    {
+        var mesh = DomeHillMesh.Build(Hill, RawGround, 40, 6f);
+        if (mesh == null) return;
+        Track(mesh);
+        Part("StationHill", mesh, Flat(DomePalette.Rock));
+    }
+
     void BuildFacility(long seed, bool buildLabComplex, bool buildStationLoop = false)
     {
         if (buildLabComplex)

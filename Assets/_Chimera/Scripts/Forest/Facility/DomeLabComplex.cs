@@ -191,7 +191,7 @@ public static class DomeLabComplex
         var b = new Builder(root.transform);
         BuildPlate(b);
         BuildShell(b, flip, northDoor && style == LabStyle.Bastion);
-        BuildRoofs(b);
+        BuildRoofs(b, entrance == LabEntrance.Buried);
         BuildBeams(b, flip);
         BuildHall(b);
         BuildSurgery(b, flip, plan);
@@ -313,7 +313,7 @@ public static class DomeLabComplex
             x, y0 + 1f, SurgeryGlassZ);
     }
 
-    static void BuildRoofs(Builder b)
+    static void BuildRoofs(Builder b, bool hideRender = false)
     {
         float roomY = Plinth + RoomHeight;
         float hallY = Plinth + HallHeight;
@@ -327,20 +327,22 @@ public static class DomeLabComplex
         float midXSize = outerX - hallEdge;
 
         // Четыре крыла + зал: перекрытие СПЛОШНОЕ, ни одного открытого проёма.
-        AddRoof(b, "LabRoofN", outerX * 2f, midZSize, 0f, roomY, midZ);
-        AddRoof(b, "LabRoofS", outerX * 2f, midZSize, 0f, roomY, -midZ);
-        AddRoof(b, "LabRoofW", midXSize, hallEdge * 2f, -midX, roomY, 0f);
-        AddRoof(b, "LabRoofE", midXSize, hallEdge * 2f, midX, roomY, 0f);
-        AddRoof(b, "LabRoofHall", hallEdge * 2f, hallEdge * 2f, 0f, hallY, 0f);
+        AddRoof(b, "LabRoofN", outerX * 2f, midZSize, 0f, roomY, midZ, hideRender);
+        AddRoof(b, "LabRoofS", outerX * 2f, midZSize, 0f, roomY, -midZ, hideRender);
+        AddRoof(b, "LabRoofW", midXSize, hallEdge * 2f, -midX, roomY, 0f, hideRender);
+        AddRoof(b, "LabRoofE", midXSize, hallEdge * 2f, midX, roomY, 0f, hideRender);
+        AddRoof(b, "LabRoofHall", hallEdge * 2f, hallEdge * 2f, 0f, hallY, 0f, hideRender);
     }
 
     static void AddRoof(Builder b, string name, float sizeX, float sizeZ,
-        float x, float y, float z)
+        float x, float y, float z, bool hideRender = false)
     {
         // Коллайдер — для камеры и физики; NavMeshModifier — чтобы по крыше не ходили.
         var go = b.AddNoNav(name, Kit.Concrete, sizeX, RoofThickness, sizeZ, x, y, z, true);
         // Только крыша кастит тень: она закрывает интерьер от солнца павильона.
-        go.GetComponent<MeshRenderer>().shadowCastingMode = ShadowCastingMode.On;
+        var roofRenderer = go.GetComponent<MeshRenderer>();
+        roofRenderer.shadowCastingMode = ShadowCastingMode.On;
+        roofRenderer.enabled = !hideRender;
     }
 
     static void BuildBeams(Builder b, int flip)
