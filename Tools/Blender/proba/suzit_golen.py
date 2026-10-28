@@ -5,7 +5,7 @@
 конца бедра (вершины бедра с t > 0.85). Где голень шире, на участке t < `--do` она радиально сводится к радиусу бедра с плавным
 переходом (smoothstep) к своему радиусу на t = `--do`.
 
-  blender -b --factory-startup -P suzit_golen.py -- вход.blend выход.blend [--imya Волк] [--obekt Ноги] [--do 0.4] [--zapas 1.0] [--kusok @Волк] [--kap 1 [--otpusk 0.2]]
+  blender -b --factory-startup -P suzit_golen.py -- вход.blend выход.blend [--imya Волк] [--obekt Ноги] [--do 0.4] [--zapas 1.0] [--kusok @Волк] [--kap 1 | --osi 1 [--bok vnutr]] [--otpusk 0.2]
 """
 import sys
 import bpy
@@ -50,6 +50,34 @@ for st in ('', '.L'):
     bc = (bins[:-1] + bins[1:]) / 2; ok = ~np.isnan(rt); r_of = lambda t: np.interp(t, bc[ok], rt[ok])
     r_do = float(r_of(DO))
     idx = np.nonzero(mg)[0]; n_s = 0; sd = []
+    # `--osi 1` (28.10, дизайн-линия FEEDBACK-2026-10-28d п.1, вариант В: «передняя и боковые плоскости через колено непрерывно,
+    # без полки голенища; полнота икры — сзади; ширину анфаса держать, а не круговым пределом радиуса»): отклонение от оси голени
+    # раскладывается на БОК (мировая X, перпендикулярно кости) и ПЕРЁД/ЗАД; бок ограничен боком конца бедра (p90 |бок|, t > 0.75),
+    # перёд — передом конца бедра; зад (икра) не трогается. До t = do полностью, дальше предел отпускается за `--otpusk`
+    if opt.get('osi') == '1':
+        hg, tg_ = os_(gol); ug = (tg_ - hg) / np.linalg.norm(tg_ - hg)
+        sb = np.array([1.0, 0, 0]) - ug[0] * ug; sb /= np.linalg.norm(sb); fr = np.cross(ug, sb)
+        if fr[1] > 0: fr = -fr                                   # перёд — к −y (лицо смотрит в −y)
+        _, Rb, _ = tr(X[mb], *os_(bed)); mb_t = tb > 0.75
+        # бедро — в своей системе, но бок и перёд берём теми же мировыми направлениями
+        bok_b = float(np.percentile(np.abs(Rb[mb_t] @ sb), 90)) * ZAP; per_b = float(np.percentile(Rb[mb_t] @ fr, 90)) * ZAP
+        OT_ = float(opt.get('otpusk', '0.2')); n_s = 0; sd = []
+        for j, k in enumerate(idx):
+            t = tg[j]
+            if t < -0.1 or t > DO + OT_: continue
+            s_ = 0.0 if t <= DO else (t - DO) / OT_; s_ = s_ * s_ * (3 - 2 * s_)
+            b_ = float(Rg[j] @ sb); f_ = float(Rg[j] @ fr); nb_, nf_ = b_, f_
+            lim_b = bok_b + s_ * 1.0; lim_f = per_b + s_ * 1.0
+            # `--bok vnutr` — бок сводится только к средней линии: у витрины ноги стоят шире (карта IoU анфаса: снаружи не хватает,
+            # изнутри лишнее), сужение снаружи теряло совпадение с силуэтом
+            vnutr = np.sign(b_) != np.sign(float((X[k] - Rg[j])[0]))      # бок смотрит к x = 0
+            if abs(b_) > lim_b and (opt.get('bok') != 'vnutr' or vnutr): nb_ = np.sign(b_) * lim_b
+            if f_ > lim_f: nf_ = lim_f
+            if nb_ == b_ and nf_ == f_: continue
+            nov = X[k] + sb * (nb_ - b_) + fr * (nf_ - f_); sd.append(float(np.linalg.norm(nov - X[k]))); X[k] = nov; n_s += 1
+        itog.append('%s: бок ≤ %.1f см, перёд ≤ %.1f см (конец бедра) до t %.2f, отпуск %.2f; сведено %d вершин, сдвиг средн. %.1f, макс %.1f мм' % (
+            gol, 100 * bok_b, 100 * per_b, DO, OT_, n_s, 1000 * np.mean(sd) if sd else 0, 1000 * max(sd, default=0)))
+        continue
     # `--kap 1` (28.10, критик r3: «порог ТОЛЩИНЫ бедро → лапа 8–10 %», замер стенда --nogi в позе: бедро у колена r90 13.0 см,
     # голень на t 0.35 — 14.2–15.2): радиус КАЖДОЙ вершины голени ограничен k·r90 конца бедра до t = do, дальше предел плавно
     # отпускается за `--otpusk` по t; средний радиус полосы (без --kap) раздутие икры не ловил — сведено было 31 вершина

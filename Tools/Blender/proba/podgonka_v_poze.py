@@ -14,7 +14,7 @@
   4. обратно в покой: вершина умножается на обратную матрицу своего скина; результат — форма-ключ `--imya`.
 
   blender -b --factory-startup -P podgonka_v_poze.py -- шасси.blend цель.obj ориентиры_цели.json скелет_шасси.json выход.blend
-      [--imya Волк] [--zhestkost 30,15,8,4] [--normal 0.5] [--maxd 0.25] [--dal 0.12] [--bez голова,Чутьё] [--poza_obj файл.obj] [--poza файл.json] [--sustavy файл.json] [--cel_pokoj файл.obj] [--dop_cel f.obj --dop_lm f.json --dop_pokoj f.obj] [--vstrechnye 1 [--vstr_maxd 0.05|0.25,предплечье:0.05]] [--cel_glad 0|шагов [--cel_glad_obl торс --cel_glad_x 0.2]] [--cel_glad_kol 30:0.14] [--bez_razvorota 1|0] [--lap_glad 0|шагов]
+      [--imya Волк] [--zhestkost 30,15,8,4] [--normal 0.5] [--maxd 0.25] [--dal 0.12] [--bez голова,Чутьё] [--poza_obj файл.obj] [--poza файл.json] [--sustavy файл.json] [--cel_pokoj файл.obj] [--dop_cel f.obj --dop_lm f.json --dop_pokoj f.obj] [--vstrechnye 1 [--vstr_maxd 0.05|0.25,предплечье:0.05]] [--cel_glad 0|шагов [--cel_glad_obl торс --cel_glad_x 0.2]] [--cel_glad_kol 30:0.14] [--cel_golen 0.4:0.25] [--bez_razvorota 1|0] [--lap_glad 0|шагов]
 Ориентиры цели — имена как у `kluch_vida.py` (сустав:head/tail, носок, плюсна_вн/нар…), оси Blender, метры тела.
 """
 import sys, json
@@ -165,6 +165,37 @@ def cel_glad(bm_, n_):
     for v, c in zip(bm_.verts, V): v.co = Vector(c)
     bm_.normal_update()
 cel_glad(bm, int(opt.get('cel_glad', '0')))
+# ГОЛЕНЬ ЦЕЛИ БЕЗ ГОЛЕНИЩА (`--cel_golen do:otpusk`, 28.10, дизайн-линия FEEDBACK-2026-10-28d п.1, вариант В: «передняя и боковые
+# плоскости через колено непрерывно, полнота икры — сзади»; та же правка в ключе после подгонки двигала рывком 23 вершины на 5 см —
+# развороты 191 → 216): у цели вершины у отрезка голени (ориентиры голень:head → голень:tail) раскладываются на бок (мировая X) и
+# перёд (−y); бок к средней линии и перёд ограничены p90 конца бедра (бедро:head → голень:head, t > 0.75); зад (икра) свободен
+def _cel_golen():   # в функции: имена tg/h/t — глобальные у подгонки (tg — объект цели), их не затирать
+    DO_, OT_ = (float(x) for x in opt['cel_golen'].split(':'))
+    V = np.array([list(v.co) for v in bm.verts]); n_g = 0
+    for s_ in ('', '.L'):
+        if 'голень%s:head' % s_ not in LT: continue
+        h, t = np.array(LT['голень%s:head' % s_]), np.array(LT['голень%s:tail' % s_]); bh = np.array(LT['бедро%s:head' % s_])
+        def proj(a_, b_):
+            d = b_ - a_; L = np.linalg.norm(d); u = d / L; Q = V - a_; tt = Q @ u / L; R = Q - np.outer(Q @ u, u); return tt, R, u
+        tg, Rg, ug = proj(h, t); tb, Rb, _ = proj(bh, h)
+        sb = np.array([1.0, 0, 0]) - ug[0] * ug; sb /= np.linalg.norm(sb); fr = np.cross(ug, sb)
+        if fr[1] > 0: fr = -fr
+        rg = np.linalg.norm(Rg, axis=1); rb = np.linalg.norm(Rb, axis=1)
+        mb = (tb > 0.75) & (tb < 1.0) & (rb < 0.25); mg = (tg > -0.05) & (tg < DO_ + OT_) & (rg < 0.25) & (rg < rb)
+        if not mb.any(): continue
+        bok = float(np.percentile(np.abs(Rb[mb] @ sb), 90)); per = float(np.percentile(Rb[mb] @ fr, 90)); xo = float(h[0])
+        for k in np.nonzero(mg)[0]:
+            ss_ = 0.0 if tg[k] <= DO_ else (tg[k] - DO_) / OT_; ss_ = ss_ * ss_ * (3 - 2 * ss_)
+            b_ = float(Rg[k] @ sb); f_ = float(Rg[k] @ fr); nb_, nf_ = b_, f_
+            if abs(b_) > bok + ss_ and np.sign(b_) != np.sign(xo): nb_ = np.sign(b_) * (bok + ss_)
+            if f_ > per + ss_: nf_ = per + ss_
+            if nb_ != b_ or nf_ != f_: V[k] = V[k] + sb * (nb_ - b_) + fr * (nf_ - f_); n_g += 1
+    for v, c in zip(bm.verts, V): v.co = Vector(c)
+    bm.normal_update()
+    print('ЦЕЛЬ: голень без голенища — сведено вершин %d (до t %.2f, отпуск %.2f)' % (n_g, DO_, OT_))
+
+
+if opt.get('cel_golen'): _cel_golen()
 # КОЛЕНИ ЦЕЛИ (`--cel_glad_kol шагов:радиус`, 28.10, критик r2 п.1 — «сапоги» ст.2): у цели Hunyuan сзади у колена горизонтальный
 # ободок — верх икры как край голенища; подгонка переносила его в ключ, а позу и веса он переживал. Таубин в шаре радиуса вокруг
 # ориентиров `голень:head`/`голень.L:head`, вес (1 − d/r)²
