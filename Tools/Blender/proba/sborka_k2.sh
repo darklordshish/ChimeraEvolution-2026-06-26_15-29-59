@@ -26,11 +26,11 @@ VSTR="--vstrechnye 1 --vstr_maxd 0.1,предплечье:0.05,предплеч�
 # что огранка выпрямила в позе (27.10, shum.py) — пустая строка выключает
 # GRIVA — ключи griva_massa (шерсть гривы и хвоста); 0.35/6/0.8 срезали объём гривы (IoU ст.2 0.680 → 0.611) — мягче
 # органы ст.1: гребень — шерсть массой, когти — палочки длиннее 2.5 см срезаются (27.10)
-ORG_GREBEN="${ORG_GREBEN:---sherst 0.5:4 --srez 0.08}"; ORG_KOGTI="${ORG_KOGTI:---srez 0.015 --srez_ot Руки}"
+ORG_GREBEN="${ORG_GREBEN:---sherst 0.3:8 --srez 0.08 --niz 1.42:1.56 --shir 0.13 --prizhim 0.5}"; ORG_KOGTI="${ORG_KOGTI:---srez 0.015 --srez_ot Руки}"
 # толщина органов (--tolshchina) изнанку не снимает — оболочки цели лежат по коже и местами смотрят внутрь (детектор 28.10);
 # лечится двусторонним материалом органов в игре. ORG_USHI — ключи органа ушей
 ORG_USHI="${ORG_USHI:-}"
-GRIVA="${GRIVA:---dolya 0.7 --glad 3 --prizhim 1.0 --zad 1.1:0.2:0.16}"   # G2: объём гривы цел (IoU 0.679/0.576), шипов меньше; 0.55/4/0.95 — снова срезала
+GRIVA="${GRIVA:---dolya 0.7 --glad 3 --prizhim 0.85 --zad 1.1:0.2:0.16}"   # G2: объём гривы цел (IoU 0.679/0.576), шипов меньше; 0.55/4/0.95 — снова срезала
 FORM_GRUD="${FORM_GRUD-}"; RASPRAVIT="${RASPRAVIT-}"   # выкл с 27.10: огранка в позе (shum.py: торс ст.2 5.1°/24 % → 3.4°/14 %, развороты 189 → 171)
 OGR="${OGR:---rezhim massy --ploshchad_massy 0.035 --povorot 20 --linii 1 --sila 0.9 --iter 10 --maks_sdvig 0.02 --zhivot 0.075:1.0:1.13:1.27 --v_poze Docs/models/handoff/klyuchi/chelovek-volk-poza.json}"   # E′ — выбор дизайн-линии 27.10; живот — две массы через середину до таза
 
@@ -75,7 +75,7 @@ bl $T/griva_massa.py -- "$W/volk/kk.blend" "$W/volk/kkgm.blend" $GRIVA
 bl $T/shov_kuska.py -- "$W/volk/kkgm.blend" "$W/volk/kkgm.blend" --kosti голень,голень.L,стопа,стопа.L --polosa ${SHOV_LAPY:-0.12}
 # полосы корней на тело ключа ст.2 (скилл privyazka-poverhnosti, швы — дизайн-линия 28.10b): хвост ≈0.2H, грива ≈0.2H, H — голова
 bl $T/privyazat_polosu.py -- "$W/volk/kkgm.blend" "$W/volk/kkgm.blend" --kusok @Волк --imya Волк --oblast hvost --polosa ${POL_HV2:-0.05} --vesa 1
-bl $T/privyazat_polosu.py -- "$W/volk/kkgm.blend" "$W/volk/kkgm.blend" --kusok @Волк --imya Волк --oblast griva --polosa ${POL_GR2:-0.05} --vesa 1
+bl $T/privyazat_polosu.py -- "$W/volk/kkgm.blend" "$W/volk/kkgm.blend" --kusok @Волк --imya Волк --oblast griva --polosa ${POL_GR2:-0.05} --vesa 1 --vesa_polosa ${VPOL_GR2:-0.25}
 bl $T/griva_kraj.py -- "$W/volk/kkgm.blend" "$W/volk/kkg.blend" --z_seredina 1.40 --z_pravyj 1.56 --z_levyj 1.52 --x_konec 0.26 --x_maks 0.30
 bl $T/ogranka.py -- "$W/volk/kkg.blend" "$W/volk/o.blend" $OGR
 bl $T/formovka.py -- "$W/volk/o.blend" "$W/volk/f.blend" --sustavy "$W/volk/sustavy.json" --golen 1 --koleno 0 --talia 1 $FORM_GRUD

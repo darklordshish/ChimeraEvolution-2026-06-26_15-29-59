@@ -328,7 +328,7 @@ if opt.get('dyry'):
     # 3. ОКНА (дизайн-линия 28.10: «окно в гриве над плечом — видно фон», «щель между тазом и корнем хвоста»): в каждом ракурсе
     # силуэт всех видимых объектов растрируется (2 мм), фон, не связанный с краем кадра, — окно сквозь фигуру
     from collections import deque
-    okna = []; HH = float(hi_[2] - lo_[2]); PX = 0.002
+    okna, vyemki = [], []; HH = float(hi_[2] - lo_[2]); PX = 0.002
     for nm, ang in (('front', 0), ('profile', 90), ('34', 35), ('back', 180), ('34back', 145)):
         r_ = math.radians(ang); d_ = np.array([math.sin(r_), -math.cos(r_), 0.0]); rt = np.cross(d_, np.array([0, 0, 1.0]))
         T3 = np.array([[np.array(p) for p in t] for t in TRIS]); u = T3 @ rt; v = T3[..., 2]
@@ -346,9 +346,34 @@ if opt.get('dyry'):
             for yy, xx in ((y + 1, x), (y - 1, x), (y, x + 1), (y, x - 1)):
                 if 0 <= yy < H_ and 0 <= xx < W_ and fon[yy, xx] and not vis[yy, xx]: vis[yy, xx] = True; dq.append((yy, xx))
         ok_ = fon & ~vis; seen2 = np.zeros_like(ok_)
-        if opt.get('kadr'):   # карта окон: фигура серая, окна красные
-            rgb = np.ones((H_, W_, 3)); rgb[im] = (0.55, 0.55, 0.55); rgb[ok_] = (0.9, 0.1, 0.1)
+        # 4. ВЫЕМКИ (дизайн-линия, повтор осмотра 28.10c: «клин между концом гривы и плечом, открытый к контуру — красным окном не
+        # отмечен»): узкий фон, открытый наружу, — то, что закрывает морфологическое замыкание силуэта диском радиуса `VR`
+        # (щель уже 2·VR = 6 см), минус окна. Ловит и просветы позы (рука ↔ торс) — их отличают по месту, как окна
+        VR = int(0.03 / PX); yy_, xx_ = np.mgrid[-VR:VR + 1, -VR:VR + 1]; disk = [(a_, b_) for a_, b_ in zip(yy_.ravel(), xx_.ravel()) if a_ * a_ + b_ * b_ <= VR * VR]
+        def sdvig(m, a_, b_, fill):
+            r = np.full_like(m, fill); H2, W2 = m.shape
+            r[max(a_, 0):H2 + min(a_, 0), max(b_, 0):W2 + min(b_, 0)] = m[max(-a_, 0):H2 + min(-a_, 0), max(-b_, 0):W2 + min(-b_, 0)]; return r
+        dil = np.zeros_like(im)
+        for a_, b_ in disk: dil |= sdvig(im, a_, b_, False)
+        clo = np.ones_like(im)
+        for a_, b_ in disk: clo &= sdvig(dil, a_, b_, True)
+        vy_ = clo & fon & vis
+        if opt.get('kadr'):   # карта окон: фигура серая, окна красные, выемки оранжевые
+            rgb = np.ones((H_, W_, 3)); rgb[im] = (0.55, 0.55, 0.55); rgb[ok_] = (0.9, 0.1, 0.1); rgb[vy_] = (1.0, 0.6, 0.1)
             sohranit(opt['kadr'] + '_okna_' + nm + '.png', rgb)
+        seen3 = np.zeros_like(vy_)
+        for y0, x0 in zip(*np.nonzero(vy_)):
+            if seen3[y0, x0]: continue
+            dq = deque([(y0, x0)]); seen3[y0, x0] = True; cl = []
+            while dq:
+                y, x = dq.popleft(); cl.append((y, x))
+                for yy, xx in ((y + 1, x), (y - 1, x), (y, x + 1), (y, x - 1)):
+                    if 0 <= yy < H_ and 0 <= xx < W_ and vy_[yy, xx] and not seen3[yy, xx]: seen3[yy, xx] = True; dq.append((yy, xx))
+            if len(cl) * PX * PX * 1e4 < 2: continue
+            cl = np.array(cl); hgt = (cl[:, 0].max() - cl[:, 0].min() + 1) * PX; wd = (cl[:, 1].max() - cl[:, 1].min() + 1) * PX
+            if v.max() + 0.02 - cl[:, 0].max() * PX < 0.05: continue   # у пола — между стопами, не выемка формы
+            vyemki.append(dict(rakurs=nm, vysota_m=round(float(v.max() + 0.02 - cl[:, 0].mean() * PX), 2), poperek_m=round(float(u0 + cl[:, 1].mean() * PX), 2),
+                               vys_mm=round(hgt * 1000), shir_mm=round(wd * 1000), vys_H=round(hgt / HH, 3), shir_H=round(wd / HH, 3), ploshchad_sm2=round(len(cl) * PX * PX * 1e4, 1)))
         for y0, x0 in zip(*np.nonzero(ok_)):
             if seen2[y0, x0]: continue
             dq = deque([(y0, x0)]); seen2[y0, x0] = True; cl = []
@@ -363,6 +388,9 @@ if opt.get('dyry'):
     otchet['dyry_okna'] = sorted(okna, key=lambda x: -x['ploshchad_sm2'])
     print('ДЫРЫ: окон сквозь фигуру %d' % len(okna))
     for x in otchet['dyry_okna'][:10]: print('ДЫРА окно: %(rakurs)s · высота %(vysota_m).2f · %(vys_mm)d×%(shir_mm)d мм (%(vys_H).2fH×%(shir_H).2fH) · %(ploshchad_sm2).1f см²' % x)
+    otchet['dyry_vyemki'] = sorted(vyemki, key=lambda x: -x['ploshchad_sm2'])
+    print('ДЫРЫ: выемок контура уже 6 см (≥ 2 см²) %d' % len(vyemki))
+    for x in otchet['dyry_vyemki'][:10]: print('ДЫРА выемка: %(rakurs)s · высота %(vysota_m).2f поперёк %(poperek_m).2f · %(vys_mm)d×%(shir_mm)d мм · %(ploshchad_sm2).1f см²' % x)
     otchet['dyry_izanka'] = sorted(pyatna, key=lambda x: -x['ploshchad_sm2'])
     otchet['dyry_kraya'] = sorted(kraya, key=lambda x: -x['razmer_mm'])
     print('ДЫРЫ: изнанка видна — пятен %d (крупных ≥ 2 см² — %d); открытых краёв не на шве — %d' % (
