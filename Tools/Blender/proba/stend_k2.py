@@ -26,7 +26,7 @@
   blender -b --factory-startup -P stend_k2.py -- chelovek_mesh.fbx --pokoj klyuchi/chelovek-pokoj.json
       [--kluch Волк --ves 1 --poza klyuchi/chelovek-volk-poza.json --stupen klyuchi/chelovek-volk-st2.json]
       [--organy Чутьё@Волк:1,Шкура@Волк:1] [--skryt_organy klyuchi/../organy/chelovek.json] [--maski f.png,p.png]
-      [--bez @Волк] [--poza_obj тело.obj] [--kadr префикс] [--otchet отчёт.json]
+      [--bez @Волк] [--st1 0.5] [--kluchi Волк·Руки:0.5] [--poza_obj тело.obj] [--kadr префикс] [--otchet отчёт.json]
 """
 import sys, json, math
 import bpy, bmesh
@@ -65,6 +65,18 @@ ORG = dict((k, float(v)) for k, v in (x.split(':') for x in opt.get('organy', ''
 if opt.get('skryt_organy'):
     for r in json.load(open(opt['skryt_organy'], encoding='utf-8')).get('organy', []):
         if r['object'] in ORG and ORG[r['object']] > 0: skryt |= set(r.get('skryvaet', []))
+# ВЕСА КЛЮЧЕЙ — КАК В ИГРЕ (main f18b93e, 28.10): есть у тела ключ «<КЛЮЧ>1» (тело ступени 1) — вес рисуется ломаной база →
+# <КЛЮЧ>1 → <КЛЮЧ>: на весе ступени 1 (`--st1` 0.5) ровно <КЛЮЧ>1, на 1 ровно <КЛЮЧ>. `--kluchi имя:вес,…` — добавочные ключи
+# (ключи областей «Волк·Руки» поверх тела ступени — проверка перебора при одном органе)
+ST1W = float(opt.get('st1', '0.5')); VES = {}
+if KEY:
+    imena = {kb.name for o in MESH if o.data.shape_keys for kb in o.data.shape_keys.key_blocks}
+    if KEY + '1' in imena:
+        if W <= ST1W: VES[KEY + '1'] = W / ST1W
+        else: VES[KEY + '1'] = (1 - W) / (1 - ST1W); VES[KEY] = (W - ST1W) / (1 - ST1W)
+    else: VES[KEY] = W
+for x in opt.get('kluchi', '').split(','):
+    if x: VES[x.split(':')[0]] = float(x.split(':')[1])
 vid = []
 for o in MESH:
     slot = o.name.split('@')[0] if '@' in o.name and not o.name.startswith('@') else o.name
@@ -74,8 +86,8 @@ for o in MESH:
     if show: vid.append(o)
     if o.data.shape_keys:
         for kb in o.data.shape_keys.key_blocks:
-            kb.value = (W if kb.name == KEY else ORG.get(o.name, 0.0) if kb.name == 'рост' else 0.0)
-otchet['vidno'] = [o.name for o in vid]
+            kb.value = VES.get(kb.name, ORG.get(o.name, 0.0) if kb.name == 'рост' else 0.0)
+otchet['vidno'] = [o.name for o in vid]; otchet['kluchi'] = {k: round(v, 3) for k, v in VES.items() if v}
 
 
 def ramka(p):
