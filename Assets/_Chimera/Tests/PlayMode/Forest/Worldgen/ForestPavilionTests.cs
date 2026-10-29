@@ -131,6 +131,26 @@ namespace Chimera.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator StationLoop_Crevice_IsNotBuriedByGround()
+        {
+            var b = Build(true, true);
+            yield return null;
+
+            Vector2 back = ((Vector2)b.LabNorthDoor - b.LabCenter).normalized;
+            float depth = DomeLabComplex.DepthFor(LabEntrance.Buried);
+            for (int i = 0; i <= 12; i++)
+            {
+                float t = i / 12f;
+                Vector2 p = b.LabCenter +
+                    back * (DomeLabComplex.HalfDepth + DomeLabComplex.CreviceLength * t);
+                float floorY = b.LabNorthDoor.y +
+                    (depth - DomeLabComplex.Plinth) * t;
+                Assert.LessOrEqual(b.SampleGround(p.x, p.y), floorY + 0.6f,
+                    $"поле лежит крышкой над расщелиной на t={t:F2}");
+            }
+        }
+
+        [UnityTest]
         public IEnumerator Geography_Off_IsNoOp()
         {
             var b = Build(false);
