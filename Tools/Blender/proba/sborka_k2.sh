@@ -32,7 +32,7 @@ ORG_GREBEN="${ORG_GREBEN:---sherst 0.3:8 --srez 0.08 --niz 1.42:1.56 --shir 0.13
 ORG_USHI="${ORG_USHI:-}"
 GRIVA="${GRIVA:---dolya 0.7 --glad 3 --prizhim 0.85 --zad 1.1:0.2:0.16}"   # G2: объём гривы цел (IoU 0.679/0.576), шипов меньше; 0.55/4/0.95 — снова срезала
 FORM_GRUD="${FORM_GRUD-}"; RASPRAVIT="${RASPRAVIT-}"   # выкл с 27.10: огранка в позе (shum.py: торс ст.2 5.1°/24 % → 3.4°/14 %, развороты 189 → 171)
-OGR="${OGR:---rezhim massy --ploshchad_massy 0.035 --povorot 20 --linii 1 --sila 0.9 --iter 10 --maks_sdvig 0.02 --zhivot 0.075:1.0:1.13:1.27 --v_poze Docs/models/handoff/klyuchi/chelovek-volk-poza.json}"   # E′ — выбор дизайн-линии 27.10; живот — две массы через середину до таза
+OGR="${OGR:---rezhim massy --ploshchad_massy 0.035 --povorot 20 --linii 1 --sila 0.9 --iter 10 --maks_sdvig 0.02 --zhivot 0.075:1.0:1.13:1.27 --v_poze Docs/models/handoff/klyuchi/chelovek-volk-poza-st1.json}"   # E′ — выбор дизайн-линии 27.10; живот — две массы через середину до таза
 
 if [ -z "${OT_OGRANKI:-}" ]; then
 # ВЕСА ФИНАЛЬНЫЕ ДО СНЯТИЯ КЛЮЧЕЙ (27.10, пункт А): ключ снимается обратным скиннингом — при тех весах, что уйдут в игру
@@ -106,7 +106,7 @@ echo "== Сводка: ключ «Лось» и @Лось, @Волк1, орга�
 bl $T/svesti_klyuchi.py -- "$W/volk/f.blend" "$W/los/kk.blend" Лось "$W/svod.fbx" --cherty @Лось --blend "$W/svod0.blend"
 # ТЕЛО СТ.1 — СВОЙ КЛЮЧ «Волк1» (геймдизайнер 28.10, FEEDBACK-2026-10-28-codex-telo-st1; код игры — main f18b93e: вес ключа рисуется
 # ломаной база → Волк1 → Волк). Ключ подгонки ст.1 — огранка в позе ст.1 (без зоны острого V: он — решение ст.2) и в меш шасси
-OGR_ST1="${OGR_ST1:---rezhim massy --ploshchad_massy 0.035 --povorot 20 --linii 1 --sila 0.6 --iter 10 --maks_sdvig 0.015 --zhivot 0 --v_poze Docs/models/handoff/klyuchi/chelovek-volk-poza-st1.json}"
+OGR_ST1="${OGR_ST1:---rezhim massy --ploshchad_massy 0.035 --povorot 20 --linii 1 --sila 0.6 --iter 10 --maks_sdvig 0.015 --zhivot 0 --v_poze Референсы/работа/модельная/2026-10-29-sdvig-stupenej/poza-st1-atlet.json}"   # поза атлета 28.10 (до сдвига ступеней) — по ней сели органы
 # ноги ст.1 — человеческая опора (дизайн-линия §5 п.4): ключ «Волк1» на ногах ближе к базе
 NOGI_ST1="${NOGI_ST1:---kosti голень:0.5,стопа:0.4,бедро:0.9}"
 bl $T/kluch_blizhe.py -- "$W/st1/k.blend" "$W/st1/kb.blend" --imya Волк1 $NOGI_ST1
@@ -144,10 +144,34 @@ bl $T/zakryt_lozhe.py -- "$W/o5.blend" "$W/o5.blend"
 # ст.1, Волк1-атлет, хвост @Волк1) теперь нужна только органам Чутьё@/Шкура@/Руки@Волк — их полосы сели на прежний «Волк1» до сдвига.
 # Новый «Волк» — по новой ст.2 (лист БВ-1), до неё ст.2 рисуется телом ст.1. SDVIG=0 — прежние ступени
 [ "${SDVIG:-1}" = 1 ] && bl $T/stupen_sdvig.py -- "$W/o5.blend" "$W/o5.blend"
-echo "== Перевязка-страховка, ключи областей, выгрузка"
 KL=Docs/models/handoff/klyuchi
+# НОВАЯ СТ.2 (лист БВ-1, ортопара r2 дизайн-линии 29.10): цель — Hunyuan3D-2mv по трём ракурсам листа (сид 42 — лучший IoU
+# из трёх), рост по тазу 0.95 м, ориентиры сняты по кадрам с сеткой 5 см. Ключ «Волк» и черта @Волк (голова, гребень, кисти,
+# лапы) — из этой цели; шерсть массой (griva_massa) не берётся — гребень на листе острый, а голова в куске взвешена на шею и
+# мялась; прореживание 0.3 (при 0.15 сплющенный в покое загривок склеивался в рёбра ×40–90 в позе). Поза ст.2 —
+# поза этой подгонки (черновик: `Референсы/работа/модельная/2026-10-29-st2-novaya/poza-st2n.json`). ЧЕРНОВИК: включается ST2N=1; по умолчанию выключен — поставка (FBX и позы) пока без новой ст.2, ст.2 рисуется телом ст.1
+if [ "${SDVIG:-1}" = 1 ] && [ "${ST2N:-0}" = 1 ]; then
+echo "== Новая ст.2: подгонка к листу БВ-1, куски, огранка"
+ST2N_CEL="${ST2N_CEL:-$R/oboroten-st2n-cel-2026-10-29}"; mkdir -p "$W/v2"
+[ -z "${OT_OGRANKI:-}" ] && bl $T/podgonka_v_poze.py -- "$W/k2_vesa.blend" "$ST2N_CEL/cel_s42_chist.obj" "$ST2N_CEL/orientiry-celi.json" $SK "$W/v2/k.blend" $VSTR \
+   --poza "$W/v2/poza.json" --sustavy "$W/v2/sustavy.json" --cel_pokoj "$W/v2/cel_pokoj.obj" --ruki_po_kosti 1
+bl $T/kusok_celi.py -- "$W/v2/k.blend" "$W/v2/cel_pokoj.obj" "$W/v2/g.fbx" "$W/v2/g.json" --vesa "$W/v2/cel_pokoj.obj.vesa.json" \
+   --griva_z 1.15 --griva_x 0.15 --hvost_z -1 --lapy_z 0.13 --kisti_z 0.9 --golova_po_vesam 1 --golova_sheya_z 1.5 --dolya ${DOL2:-0.3} \
+   --ushi 1.80:0.06:1.4 --prizhim_d 0.005 --prizhim_k 0.05 --normali 1 --ostrov 300 --blend "$W/v2/kk.blend"
+bl $T/shov_kuska.py -- "$W/v2/kk.blend" "$W/v2/kkg.blend" --kosti голень,голень.L,стопа,стопа.L --polosa 0.12
+bl $T/privyazat_polosu.py -- "$W/v2/kkg.blend" "$W/v2/kkg.blend" --kusok @Волк --imya Волк --oblast griva --polosa 0.05 --vesa 1 --vesa_polosa 0.25
+bl $T/griva_zashit.py -- "$W/v2/kkg.blend" "$W/v2/kkg.blend"
+bl $T/ogranka.py -- "$W/v2/kkg.blend" "$W/v2/o.blend" --rezhim massy --ploshchad_massy 0.035 --povorot 20 --linii 1 --sila 0.9 --iter 10 \
+   --maks_sdvig 0.02 --zhivot 0 --v_poze "$W/v2/poza.json"
+bl $T/formovka.py -- "$W/v2/o.blend" "$W/v2/f.blend" --sustavy "$W/v2/sustavy.json" --golen 1 --koleno 0 --talia 1
+bl $T/svesti_klyuchi.py -- "$W/o5.blend" "$W/v2/f.blend" Волк "$W/svod2.fbx" --blend "$W/o5.blend" --cherty @Волк
+# поза ступени 2 для перевязки — поза этой подгонки (в поставку уходит вместе с FBX, когда ст.2 примут)
+POZA_V="$W/v2/poza.json"
+fi
+echo "== Перевязка-страховка, ключи областей, выгрузка"
+# органы на шаблоне (рост) сели на тело ст.1 — их поза ст.1
 bl $T/vesa_final.py -- "$W/o5.blend" "$W/o6.blend" \
-   --klyuchi "Волк:$KL/chelovek-volk-poza.json,Лось:$KL/chelovek-los-poza.json,Волк1:$KL/chelovek-volk-poza-st1.json" --rost "Волк:$KL/chelovek-volk-poza.json"
+   --klyuchi "Волк:${POZA_V:-$KL/chelovek-volk-poza.json},Лось:$KL/chelovek-los-poza.json,Волк1:$KL/chelovek-volk-poza-st1.json" --rost "Волк:$KL/chelovek-volk-poza-st1.json"
 bl $T/oblasti_k2.py -- "$W/o6.blend" "$W/o7.blend" --klyuchi Волк,Лось
 bl $T/eksport_k2.py -- "$W/o7.blend" "$FBX"
 echo "== готово"

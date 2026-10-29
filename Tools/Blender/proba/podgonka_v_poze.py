@@ -14,7 +14,7 @@
   4. обратно в покой: вершина умножается на обратную матрицу своего скина; результат — форма-ключ `--imya`.
 
   blender -b --factory-startup -P podgonka_v_poze.py -- шасси.blend цель.obj ориентиры_цели.json скелет_шасси.json выход.blend
-      [--imya Волк] [--zhestkost 30,15,8,4] [--normal 0.5] [--maxd 0.25] [--dal 0.12] [--bez голова,Чутьё] [--poza_obj файл.obj] [--poza файл.json] [--sustavy файл.json] [--cel_pokoj файл.obj] [--dop_cel f.obj --dop_lm f.json --dop_pokoj f.obj] [--vstrechnye 1 [--vstr_maxd 0.05|0.25,предплечье:0.05]] [--cel_glad 0|шагов [--cel_glad_obl торс --cel_glad_x 0.2]] [--cel_glad_kol 30:0.14] [--cel_golen 0.4:0.25] [--bez_razvorota 1|0] [--lap_glad 0|шагов]
+      [--imya Волк] [--zhestkost 30,15,8,4] [--normal 0.5] [--maxd 0.25] [--dal 0.12] [--bez голова,Чутьё] [--poza_obj файл.obj] [--poza файл.json] [--sustavy файл.json] [--cel_pokoj файл.obj] [--dop_cel f.obj --dop_lm f.json --dop_pokoj f.obj] [--vstrechnye 1 [--vstr_maxd 0.05|0.25,предплечье:0.05]] [--cel_glad 0|шагов [--cel_glad_obl торс --cel_glad_x 0.2]] [--cel_glad_kol 30:0.14] [--cel_golen 0.4:0.25] [--bez_razvorota 1|0] [--lap_glad 0|шагов] [--ruki_po_kosti 1]
 Ориентиры цели — имена как у `kluch_vida.py` (сустав:head/tail, носок, плюсна_вн/нар…), оси Blender, метры тела.
 """
 import sys, json
@@ -453,6 +453,12 @@ if opt.get('cel_pokoj') or opt.get('dop_pokoj'):
     KDC = kdtree.KDTree(len(KDC_ids))
     for j, k in enumerate(KDC_ids): KDC.insert(Vector(X[k]), j)
     KDC.balance()
+    RPK = opt.get('ruki_po_kosti') == '1'; KDP = {}
+    if RPK:
+        for pn_ in ('плечо', 'плечо.L', 'предплечье', 'предплечье.L'):
+            ids_ = [k for k in range(N) if vpart[k] == pn_]; t_ = kdtree.KDTree(len(ids_))
+            for j, k in enumerate(ids_): t_.insert(Vector(X[k]), j)
+            t_.balance(); KDP[pn_] = (t_, ids_)
     def ves(k):
         ws = {g: w for g, w in W[k].items() if g in skin}
         top = sorted(ws.items(), key=lambda kv: -kv[1])[:4]; tot = sum(w for _, w in top)
@@ -470,6 +476,11 @@ if opt.get('cel_pokoj') or opt.get('dop_pokoj'):
             else:
                 _, k_, d_ = KDX.find(p)
                 if d_ > DAL: k_ = KDC_ids[KDC.find(p)[1]]
+                # `--ruki_po_kosti 1` (29.10, новая ст.2: кисти листа висят у бёдер, когти цели брали вес таза и в позе ступени
+                # тянулись лезвиями к бедру): вершина цели, ближайшая к кости РУКИ цели, — по ближайшей вершине тела той же части
+                if RPK:
+                    pn_ = min(segs, key=lambda s_: seg_d(p, s_[1], s_[2]))[0]
+                    if pn_ in KDP and vpart[k_] != pn_: k_ = KDP[pn_][1][KDP[pn_][0].find(p)[1]]
                 ws = ves(k_)
             key_ = tuple(sorted(ws.items()))
             if key_ not in cache:

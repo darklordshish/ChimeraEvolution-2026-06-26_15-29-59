@@ -64,6 +64,7 @@ if opt.get('stupen'):
 # черта ступени снимает и органы своего слота (`BodyMesh.Place`: stageHides по SlotOf, 29.10 — стенд показывал Чутьё@/Шкура@Волк
 # под головой и гривой ступени, игра их снимает); правило органа (`skryt_organy`) органы не снимает
 skryt_st = set(skryt)
+if opt.get('stupen'): skryt_st |= set(st.get('zamenyaet_cherty', []))   # main c5b0f574: орган снимают hides ∪ replacesTraits
 ORG = dict((k, float(v)) for k, v in (x.split(':') for x in opt.get('organy', '').split(',') if x))
 if opt.get('skryt_organy'):
     for r in json.load(open(opt['skryt_organy'], encoding='utf-8')).get('organy', []):
