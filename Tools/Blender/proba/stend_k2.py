@@ -57,10 +57,13 @@ over = sum(1 for o in MESH for v in o.data.vertices
 otchet['vesa_bolshe_4'] = over
 
 # что видно на ступени
-skryt, cherta = set(), None
+skryt, cherta, skryt_st = set(), None, set()
 BEZ = set(opt['bez'].split(',')) if opt.get('bez') else set()
 if opt.get('stupen'):
     st = json.load(open(opt['stupen'], encoding='utf-8')); cherta = st.get('object'); skryt |= set(st.get('skryvaet', []))
+# черта ступени снимает и органы своего слота (`BodyMesh.Place`: stageHides по SlotOf, 29.10 — стенд показывал Чутьё@/Шкура@Волк
+# под головой и гривой ступени, игра их снимает); правило органа (`skryt_organy`) органы не снимает
+skryt_st = set(skryt)
 ORG = dict((k, float(v)) for k, v in (x.split(':') for x in opt.get('organy', '').split(',') if x))
 if opt.get('skryt_organy'):
     for r in json.load(open(opt['skryt_organy'], encoding='utf-8')).get('organy', []):
@@ -80,7 +83,7 @@ for x in opt.get('kluchi', '').split(','):
 vid = []
 for o in MESH:
     slot = o.name.split('@')[0] if '@' in o.name and not o.name.startswith('@') else o.name
-    show = (o.name == cherta) if o.name.startswith('@') else (o.name in ORG) if '@' in o.name else (o.name not in skryt)
+    show = (o.name == cherta) if o.name.startswith('@') else (o.name in ORG and slot not in skryt_st) if '@' in o.name else (o.name.split('.')[0] not in skryt)
     if o.name in BEZ: show = False   # `--bez @Волк` — кадр без куска (сверка тела под гривой, дизайн-линия 27.10)
     o.hide_render = o.hide_viewport = not show
     if show: vid.append(o)
