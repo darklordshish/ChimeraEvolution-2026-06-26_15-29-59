@@ -4,7 +4,7 @@
 (высота покоя) вверх на `--pol` м доводятся до ближайшей точки цели в покое (`цель.obj`, файл `--cel_pokoj` подгонки) — только наружу
 (тело внутри цели), с весом от 1 у шва до 0 на краю полосы (smoothstep); ниже шва — полностью (тело там под куском).
 
-  blender -b --factory-startup -P telo_k_celi.py -- вход.blend выход.blend цель.obj [--imya Волк] [--kosti бедро,бедро.L] [--z0 0.72] [--pol 0.15]
+  blender -b --factory-startup -P telo_k_celi.py -- вход.blend выход.blend цель.obj [--imya Волк] [--kosti бедро,бедро.L] [--z0 0.72] [--pol 0.15] [--naklon 0.6]
 """
 import sys
 import bpy
@@ -18,7 +18,7 @@ opt = dict(imya='Волк', kosti='бедро,бедро.L', z0='0.72', pol='0.1
 i = 3
 while i < len(a):
     opt[a[i].lstrip('-')] = a[i + 1]; i += 2
-KO = set(opt['kosti'].split(',')); Z0, POL = float(opt['z0']), float(opt['pol'])
+KO = set(opt['kosti'].split(',')); Z0, POL = float(opt['z0']), float(opt['pol']); NK = float(opt.get('naklon', '0'))
 bpy.ops.wm.open_mainfile(filepath=src)
 V, F = [], []
 for ln in open(cel, encoding='utf-8', errors='ignore'):
@@ -40,7 +40,7 @@ for o in bpy.data.objects:
     n_, sd = 0, []
     for v in o.data.vertices:
         if not v.groups or gn[max(v.groups, key=lambda g: g.weight).group] not in KO: continue
-        p = P[v.index]; t = (p.z - Z0) / POL
+        p = P[v.index]; t = (p.z - (Z0 - NK * p.y)) / POL         # `--naklon k` — шов косой, как lapy_naklon куска
         if t >= 1: continue
         w = 1.0 if t <= 0 else 1 - t * t * (3 - 2 * t)
         q, _, _, d = bvh.find_nearest(p)
