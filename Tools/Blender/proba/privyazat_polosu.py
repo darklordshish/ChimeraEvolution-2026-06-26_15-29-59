@@ -11,7 +11,7 @@
   «gorlo» (главная кость голова, ниже её сустава), «vse».
 
   blender -b --factory-startup -P privyazat_polosu.py -- вход.blend выход.blend --kusok @Волк --imya Волк --oblast hvost --polosa 0.05
-      [--koren 0.015] [--otstup 0.002] [--kluch рост] [--vesa 1 [--vesa_polosa 0.25] [--bez_formy 1]] [--glad 6]
+      [--koren 0.015] [--otstup 0.002] [--kluch рост] [--vesa 1 [--vesa_polosa 0.25] [--bez_formy 1]] [--glad 6] [--bez голова,Чутьё]
 """
 import sys
 import bpy
@@ -30,8 +30,11 @@ bpy.ops.wm.open_mainfile(filepath=src)
 o = bpy.data.objects[opt['kusok']]; Mw = o.matrix_world; inv = Mw.inverted()
 T, TF, TW = [], [], []
 KOSTI = {bn.name for x in bpy.data.objects if x.type == 'ARMATURE' for bn in x.data.bones}
+# `--bez голова,Чутьё` (29.10, новая ст.2: «сосульки» по верху спины) — объекты шасси, которые черта ступени снимает: корень гребня
+# садился на скрытую голову человека, а она в позе ниже загривка
+BEZ = set(x for x in opt.get('bez', '').split(',') if x)
 for b in bpy.data.objects:
-    if b.type != 'MESH' or '@' in b.name: continue
+    if b.type != 'MESH' or '@' in b.name or b.name in BEZ: continue
     kb = b.data.shape_keys.key_blocks.get(opt['imya']) if b.data.shape_keys else None
     if kb is None: continue
     gb = {g.index: g.name for g in b.vertex_groups}
