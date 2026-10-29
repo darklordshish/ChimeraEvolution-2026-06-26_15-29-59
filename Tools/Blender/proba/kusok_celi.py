@@ -15,7 +15,7 @@
 
   blender -b --factory-startup -P kusok_celi.py -- ключ.blend цель.obj выход.fbx паспорт.json
       [--imya Волк] [--zazor 0.012] [--zazor_hvost 0.05] [--golova_z 1.50] [--golova_x 0.25] [--griva_z 1.15] [--griva_x 0.42] [--griva_pered_z 1.40] [--hvost_z 1.0] [--hvost_y 0.12] [--hvost_x 9] [--bez_kostej плечо,предплечье] [--kisti_z 0.9 [--kisti_zazor 0.012]] [--hvost_naklon 20] [--hvost_k_osi 0.2] [--ushi 1.80:0.06:1.4] [--golova_po_vesam 1 [--golova_sheya_z 1.5]] [--zakryt 200]
-      [--ostrov 400] [--lapy_z 0.32] [--stupen 2|1 [--st1_y -0.02] [--st1_z 1.62] [--st1_zatylok 0.06] [--st1_verh 1.70] [--st1_hvost 0.65] [--st1_niz 1.30] [--ves1 0.5] [--st1_ushi 1.66:0.06[:-0.04]]] [--prizhim_d 0.06 --prizhim_k 0.35 [--prizhim_verh 1.45]] [--dvustor 1] [--normali 1] [--tselikom 1] [--dolya 0.08] [--shots префикс]
+      [--ostrov 400] [--lapy_z 0.32 [--lapy_naklon 0.6]] [--stupen 2|1 [--st1_y -0.02] [--st1_z 1.62] [--st1_zatylok 0.06] [--st1_verh 1.70] [--st1_hvost 0.65] [--st1_niz 1.30] [--ves1 0.5] [--st1_ushi 1.66:0.06[:-0.04]]] [--prizhim_d 0.06 --prizhim_k 0.35 [--prizhim_verh 1.45]] [--dvustor 1] [--normali 1] [--tselikom 1] [--dolya 0.08] [--shots префикс]
 Вход `ключ.blend` — сохранённый `kluch_vida.py --blend` (меш шасси с ключом и арматурой). Печатает «КУСОК: …».
 """
 import sys, json, os
@@ -108,6 +108,9 @@ for f in bm.faces:
     # `--hvost_x` (21.10, критик r1: хвост начинался на талии и шириной 45 см закрывал ягодицы фартуком) — только у средней линии
     tail = tail and abs(c.x) < float(opt.get('hvost_x', '9'))
     paw = c.z < pz and abs(c.x) > 0.12          # лапы цели ниже скакательного: накрывают стопу шасси «на носке» (у цели лапа длинная, с пальцами)
+    # `--lapy_naklon k` (29.10, критик новой ст.2: «ботфорт — шов горизонтальный и с ребром; вести косо: спереди выше, сзади ниже»):
+    # порог лапы по высоте покоя зависит от глубины — z < lapy_z − k·y (−y — вперёд: спереди выше, сзади ниже)
+    if opt.get('lapy_naklon'): paw = c.z < pz - float(opt['lapy_naklon']) * c.y and abs(c.x) > 0.12
     # КИСТИ (`--kisti_z 0.9`, 21.10, ГеймБосс по листу r8: «кисти — кулаки без когтей»): грани, у которых главная кость по
     # весам `--vesa` — предплечье, ниже запястья покоя К2 (0.90 м) — кисть цели с когтями целиком
     if (KISTI or GPV) and VESA:

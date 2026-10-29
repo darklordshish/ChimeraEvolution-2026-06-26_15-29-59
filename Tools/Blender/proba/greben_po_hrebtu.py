@@ -7,7 +7,7 @@ h затухает от `--h0` до `--h1`. Точка кожи — луч сз�
 барицентрически с треугольника кожи под ним (вершина — тем же весом), шип едет со спиной. Шипы добавляются в кусок `--kusok`.
 
   blender -b --factory-startup -P greben_po_hrebtu.py -- вход.blend выход.blend [--kusok @Волк] [--imya Волк] [--z0 1.36] [--z1 1.15]
-      [--shag 0.035] [--h0 0.05] [--h1 0.015] [--shir 0.5] [--dl 0.9] [--naklon 35] [--bez голова,Чутьё] [--poza поза.json --t 0.0:0.45]
+      [--shag 0.035] [--h0 0.05] [--h1 0.015] [--shir 0.5] [--dl 0.9] [--naklon 35] [--bez голова,Чутьё] [--poza поза.json --t 0.0:0.45] [--ryad 3 --razbros 0.3]
 """
 import sys, math
 import bpy, bmesh
@@ -23,6 +23,7 @@ i = 2
 while i < len(a):
     opt[a[i].lstrip('-')] = a[i + 1]; i += 2
 Z0, Z1, SH, H0, H1, SW, DL, NK = (float(opt[k]) for k in ('z0', 'z1', 'shag', 'h0', 'h1', 'shir', 'dl', 'naklon'))
+RYAD, r_ = int(opt.get('ryad', '1')), float(opt.get('razbros', '0')); RNG = np.random.default_rng(29)
 BEZ = set(opt['bez'].split(','))
 bpy.ops.wm.open_mainfile(filepath=src)
 arm = [o for o in bpy.data.objects if o.type == 'ARMATURE'][0]; KOSTI = {b.name for b in arm.data.bones}
@@ -55,10 +56,10 @@ bm = bmesh.new(); bm.from_mesh(o.data); dl = bm.verts.layers.deform.verify()
 gi = {g.name: g.index for g in o.vertex_groups}
 
 
-def ship(p, n, al, h, ws, M=None):
+def ship(p, n, al, h, ws, M=None, dnk=0.0):
     """шип в точке кожи p (нормаль n, «к голове» al); M — матрица кожи (поза → покой берёт M⁻¹), None — уже в покое"""
     sd = n.cross(al).normalized()
-    apex = p + (n * math.cos(math.radians(NK)) + al * math.sin(math.radians(NK))) * h
+    apex = p + (n * math.cos(math.radians(NK + dnk)) + al * math.sin(math.radians(NK + dnk))) * h
     base = [p + al * (DL * h * 0.5), p - al * (DL * h * 0.5) + sd * (SW * h * 0.5), p - al * (DL * h * 0.5) - sd * (SW * h * 0.5)]
     pts = [q - n * 0.004 for q in base] + [apex]                          # основание чуть под кожей — без щели
     if M is not None:
@@ -113,7 +114,15 @@ if opt.get('poza'):
             for nm, w in TW[k].items(): ws[nm] = ws.get(nm, 0.0) + max(c_, 0) * w
         top = sorted(ws.items(), key=lambda kv: -kv[1])[:4]; sm = sum(w for _, w in top) or 1; ws = {nm: w / sm for nm, w in top}
         h = H0 + (H1 - H0) * (j / max(len(ts) - 1, 1))
-        ship(p, n, al, h, ws, mat(ws)); n_sh += 1
+        if RYAD <= 1:
+            ship(p, n, al, h, ws, mat(ws)); n_sh += 1; continue
+        # ПРЯДИ (`--ryad N --razbros r`, критик n2: «ровная пила — спинной плавник; пряди фактуры шеи, назад по росту шерсти, затухают
+        # от холки»): в каждой точке N прядей рядом поперёк хребта (шаг `--shir`·h), высота и наклон с разбросом ±r (сид постоянный)
+        sd_ = n.cross(al).normalized()
+        for q_ in range(RYAD):
+            off = (q_ - (RYAD - 1) / 2) * SW * h * 0.9
+            hq = h * (1 - r_ * RNG.random()) * (1 - 0.25 * abs(q_ - (RYAD - 1) / 2))
+            ship(p + sd_ * off, n, al, hq, ws, mat(ws), dnk=r_ * 30 * (RNG.random() - 0.5)); n_sh += 1
     print('ГРЕБЕНЬ-ХРЕБЕТ: в позе %s, доли хребта %.2f → %.2f (длина %.2f м)' % (opt['poza'].replace(chr(92), '/').split('/')[-1], t0, t1, L))
 else:
     zs = np.arange(Z0, Z1 - 1e-6, -SH)
