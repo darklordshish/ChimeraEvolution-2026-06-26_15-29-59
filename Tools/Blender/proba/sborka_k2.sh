@@ -156,11 +156,16 @@ ST2N_CEL="${ST2N_CEL:-$R/oboroten-st2n-cel-2026-10-29}"; mkdir -p "$W/v2"
 [ -z "${OT_OGRANKI:-}" ] && bl $T/podgonka_v_poze.py -- "$W/k2_vesa.blend" "$ST2N_CEL/cel_s42_chist.obj" "$ST2N_CEL/orientiry-celi.json" $SK "$W/v2/k.blend" $VSTR \
    --poza "$W/v2/poza.json" --sustavy "$W/v2/sustavy.json" --cel_pokoj "$W/v2/cel_pokoj.obj" --ruki_po_kosti 1
 bl $T/kusok_celi.py -- "$W/v2/k.blend" "$W/v2/cel_pokoj.obj" "$W/v2/g.fbx" "$W/v2/g.json" --vesa "$W/v2/cel_pokoj.obj.vesa.json" \
-   --griva_z 1.15 --griva_x 0.15 --hvost_z -1 --lapy_z 0.13 --kisti_z 0.9 --golova_po_vesam 1 --golova_sheya_z 1.5 --dolya ${DOL2:-0.3} \
-   --ushi 1.80:0.06:1.4 --prizhim_d 0.005 --prizhim_k 0.05 --normali 1 --ostrov 300 --blend "$W/v2/kk.blend"
-bl $T/shov_kuska.py -- "$W/v2/kk.blend" "$W/v2/kkg.blend" --kosti голень,голень.L,стопа,стопа.L --polosa 0.12
-bl $T/privyazat_polosu.py -- "$W/v2/kkg.blend" "$W/v2/kkg.blend" --kusok @Волк --imya Волк --oblast griva --polosa 0.05 --vesa 1 --vesa_polosa 0.25
+   --griva_z 1.15 --griva_x 0.15 --hvost_z -1 --lapy_z 0.72 --kisti_z 0.9 --golova_po_vesam 1 --golova_sheya_z 1.5 --dolya ${DOL2:-0.3} \
+   --ushi 1.80:0.06:1.4 --prizhim_d 0.005 --prizhim_k 0.05 --normali 1 --ostrov 300 --zazor 0.04 --blend "$W/v2/kk.blend"
+# лапа от середины бедра сплошной формой (дизайн-линия, вариант В: шов на середине бедра, а не «сапог» от колена) — кусок ниже
+# lapy_z 0.72 покоя, шов по бедру; гребень — только пряди дальше 4 см от тела (при 1.2 см в него шла кожа спины цели)
+bl $T/shov_kuska.py -- "$W/v2/kk.blend" "$W/v2/kkg.blend" --kosti бедро,бедро.L,голень,голень.L,стопа,стопа.L --polosa 0.12
+bl $T/privyazat_polosu.py -- "$W/v2/kkg.blend" "$W/v2/kkg.blend" --kusok @Волк --imya Волк --oblast griva --polosa 0.05 --bez голова,Чутьё
 bl $T/griva_zashit.py -- "$W/v2/kkg.blend" "$W/v2/kkg.blend"
+# полоса гребня — формой, без весов тела (с --vesa 1 корень гребня висел «сосульками» по верху спины); край головы — на шею
+# (воротник за ушами)
+bl $T/shov_kuska.py -- "$W/v2/kkg.blend" "$W/v2/kkg.blend" --kosti шея,голова --polosa 0.05
 bl $T/ogranka.py -- "$W/v2/kkg.blend" "$W/v2/o.blend" --rezhim massy --ploshchad_massy 0.035 --povorot 20 --linii 1 --sila 0.9 --iter 10 \
    --maks_sdvig 0.02 --zhivot 0 --v_poze "$W/v2/poza.json"
 bl $T/formovka.py -- "$W/v2/o.blend" "$W/v2/f.blend" --sustavy "$W/v2/sustavy.json" --golen 1 --koleno 0 --talia 1
