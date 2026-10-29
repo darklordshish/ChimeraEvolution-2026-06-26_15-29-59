@@ -455,9 +455,9 @@ public class DomeWorld
         surface.collectObjects = CollectObjects.Children;
         surface.useGeometry = NavMeshCollectGeometry.PhysicsColliders;
         surface.overrideVoxelSize = true;
-        surface.voxelSize = 0.35f;
+        surface.voxelSize = cfg.navVoxelSize > 0f ? cfg.navVoxelSize : 0.35f;
         surface.overrideTileSize = true;
-        surface.tileSize = 32;
+        surface.tileSize = Mathf.RoundToInt(cfg.navTileSize > 0f ? cfg.navTileSize : 112f);
         surface.center = Vector3.zero;
         surface.size = new Vector3(cfg.mapDiameter + 400f, 200f, cfg.mapDiameter + 400f);
         surface.BuildNavMesh();

@@ -27,6 +27,15 @@ namespace Chimera.Tests.PlayMode
             cfg = null;
         }
 
+        [Test]
+        public void Components_CountsSeparatedRegions()
+        {
+            var blocked = new bool[5, 5];
+            for (int z = 0; z < 5; z++) blocked[2, z] = true;
+            Assert.AreEqual(2, ForestRouteGraph.Components(blocked),
+                "стена по центру должна дать две компоненты");
+        }
+
         [UnityTest]
         public IEnumerator TwentySeeds_EntryDoorAtrium_AreConnected()
         {
