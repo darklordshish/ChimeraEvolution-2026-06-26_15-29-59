@@ -90,6 +90,7 @@ public class DomeWorld
     float padYaw;
     /// <summary>Площадка прямоугольная (комплекс) или круглая (старый лабиринт/двор A).</summary>
     bool padRect;
+    bool northCrevice;
     NavMeshSurface navSurface;
     readonly List<Material> mats = new List<Material>();
     public IReadOnlyList<Material> Materials => mats;
@@ -122,6 +123,7 @@ public class DomeWorld
 
         Root = root;
         this.cfg = cfg;
+        northCrevice = buildStationLoop && labEntrance == LabEntrance.Buried;
         Hydro = DomeHydro.Build(cfg, 256);
 
         // 1) ВХОД — ДО лаборатории. Ангар (его угол задан сидом) показывает, с какой стороны
@@ -301,6 +303,30 @@ public class DomeWorld
                 float sideW = 1f - Mathf.SmoothStep(0f, 1f,
                     Mathf.InverseLerp(halfRamp, halfRamp + sideBlend, side));
                 return Mathf.Lerp(platformY, rampY, sideW);
+            }
+        }
+
+        // Северная расщелина — такой же вырез в поле, как южный спуск:
+        // без него чанк ложится зелёной крышкой на пол и устье не читается.
+        if (padRect && northCrevice)
+        {
+            float dx = x - LabCenter.x, dz = z - LabCenter.y;
+            float yaw = padYaw * Mathf.Deg2Rad;
+            float c = Mathf.Cos(yaw), s = Mathf.Sin(yaw);
+            float lx = dx * c - dz * s;
+            float lz = dx * s + dz * c;
+            float z0 = DomeLabComplex.HalfDepth;
+            float z1 = z0 + DomeLabComplex.CreviceLength;
+            float half = DomeLabComplex.CreviceWidth * 0.5f;
+            const float sideBlend = 4f;
+            if (Mathf.Abs(lx) <= half + sideBlend && lz >= z0 && lz <= z1)
+            {
+                float northT = Mathf.Clamp01((lz - z0) / DomeLabComplex.CreviceLength);
+                float floorY = platformY + DomeLabComplex.Plinth +
+                    (DomeLabComplex.DepthFor(LabEntrance.Buried) - DomeLabComplex.Plinth) * northT;
+                float sideW = 1f - Mathf.SmoothStep(0f, 1f,
+                    Mathf.InverseLerp(half, half + sideBlend, Mathf.Abs(lx)));
+                return Mathf.Lerp(platformY, floorY, sideW);
             }
         }
 
@@ -714,11 +740,46 @@ public class DomeWorld
                 return Mathf.SmoothStep(0f, 1f, wx * wz);
             };
         }
-        // Вырез меша должен быть не уже выреза поля, иначе холм затягивает
-        // края расщелины и снаружи виден только узкий чёрный слот.
-        float hole = Mathf.Max(6f, Hill.notchRadius + 1f);
-        var mesh = DomeHillMesh.Build(Hill, RawGround, 48, hole, halfX, halfZ,
-            rampCut, SampleGround, rampWeight);
+        // Северная расщелина режется тем же способом, что и южный спуск;
+        // диск вокруг портала больше не нужен — он открывал арену сверху.
+        Func<float, float, bool> cut = rampCut;
+        Func<float, float, float> cutWeight = rampWeight;
+        if (northCrevice)
+        {
+            Func<float, float, bool> creviceCut = (x, z) =>
+            {
+                float dx = x - LabCenter.x, dz = z - LabCenter.y;
+                float lx = dx * Mathf.Cos(padYaw * Mathf.Deg2Rad) -
+                           dz * Mathf.Sin(padYaw * Mathf.Deg2Rad);
+                float lz = dx * Mathf.Sin(padYaw * Mathf.Deg2Rad) +
+                           dz * Mathf.Cos(padYaw * Mathf.Deg2Rad);
+                float z0 = DomeLabComplex.HalfDepth;
+                float z1 = z0 + DomeLabComplex.CreviceLength;
+                return Mathf.Abs(lx) <= DomeLabComplex.CreviceWidth * 0.5f + 4f &&
+                       lz >= z0 && lz <= z1;
+            };
+            Func<float, float, float> creviceWeight = (x, z) =>
+            {
+                float dx = x - LabCenter.x, dz = z - LabCenter.y;
+                float lx = dx * Mathf.Cos(padYaw * Mathf.Deg2Rad) -
+                           dz * Mathf.Sin(padYaw * Mathf.Deg2Rad);
+                float lz = dx * Mathf.Sin(padYaw * Mathf.Deg2Rad) +
+                           dz * Mathf.Cos(padYaw * Mathf.Deg2Rad);
+                float z0 = DomeLabComplex.HalfDepth;
+                float z1 = z0 + DomeLabComplex.CreviceLength;
+                float half = DomeLabComplex.CreviceWidth * 0.5f;
+                float wx = 1f - Mathf.InverseLerp(half, half + 4f, Mathf.Abs(lx));
+                float wz = Mathf.Min(Mathf.InverseLerp(z0 - 2f, z0, lz),
+                    Mathf.InverseLerp(z1 + 2f, z1, lz));
+                return Mathf.SmoothStep(0f, 1f, wx * wz);
+            };
+            cut = (x, z) => (rampCut != null && rampCut(x, z)) || creviceCut(x, z);
+            cutWeight = (x, z) => Mathf.Max(
+                rampWeight != null ? rampWeight(x, z) : 0f,
+                creviceWeight(x, z));
+        }
+        var mesh = DomeHillMesh.Build(Hill, RawGround, 48, 0f, halfX, halfZ,
+            cut, SampleGround, cutWeight);
         if (mesh == null) return;
         Track(mesh);
         // Холм — земля, а не бетон: камень остаётся акцентами у расщелины.
