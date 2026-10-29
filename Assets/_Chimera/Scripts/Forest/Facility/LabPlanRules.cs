@@ -58,6 +58,8 @@ public static class LabPlanRules
         Connected(errors, plan, "hall", "surgery");
         Connected(errors, plan, "hall", "cells");
         Connected(errors, plan, "rest", "lobby");
+        ValidateDoorGeometry(errors, plan, ids);
+        ValidateDepth(errors, plan);
         return errors;
     }
 
@@ -79,4 +81,110 @@ public static class LabPlanRules
             if ((d.from == a && d.to == b) || (d.from == b && d.to == a)) return;
         errors.Add($"нет двери {a}-{b}");
     }
+
+    const float DoorWallGap = 3.2f;
+
+    static void ValidateDoorGeometry(List<string> errors, LabPlan plan, HashSet<string> ids)
+    {
+        foreach (var d in plan.doors)
+        {
+            if (!ids.Contains(d.from) || !ids.Contains(d.to)) continue;
+            var a = plan.Room(d.from);
+            var b = plan.Room(d.to);
+
+            if (d.alongX)
+            {
+                float overlap = Mathf.Min(a.x + a.width * 0.5f, b.x + b.width * 0.5f) -
+                                Mathf.Max(a.x - a.width * 0.5f, b.x - b.width * 0.5f);
+                if (overlap + 0.01f < d.width)
+                    errors.Add($"дверь {d.from}-{d.to}: проём шире общей стены");
+                float gap = Min4(
+                    Mathf.Abs(d.z - (a.z - a.depth * 0.5f)),
+                    Mathf.Abs(d.z - (a.z + a.depth * 0.5f)),
+                    Mathf.Abs(d.z - (b.z - b.depth * 0.5f)),
+                    Mathf.Abs(d.z - (b.z + b.depth * 0.5f)));
+                if (gap > DoorWallGap)
+                    errors.Add($"дверь {d.from}-{d.to}: не на общей стене (зазор {gap:F1} м)");
+            }
+            else
+            {
+                float overlap = Mathf.Min(a.z + a.depth * 0.5f, b.z + b.depth * 0.5f) -
+                                Mathf.Max(a.z - a.depth * 0.5f, b.z - b.depth * 0.5f);
+                if (overlap + 0.01f < d.width)
+                    errors.Add($"дверь {d.from}-{d.to}: проём шире общей стены");
+                float gap = Min4(
+                    Mathf.Abs(d.x - (a.x - a.width * 0.5f)),
+                    Mathf.Abs(d.x - (a.x + a.width * 0.5f)),
+                    Mathf.Abs(d.x - (b.x - b.width * 0.5f)),
+                    Mathf.Abs(d.x - (b.x + b.width * 0.5f)));
+                if (gap > DoorWallGap)
+                    errors.Add($"дверь {d.from}-{d.to}: не на общей стене (зазор {gap:F1} м)");
+            }
+        }
+    }
+
+    static void ValidateDepth(List<string> errors, LabPlan plan)
+    {
+        var depth = new Dictionary<string, int>();
+        depth["lobby"] = 0;
+        var queue = new Queue<string>();
+        queue.Enqueue("lobby");
+        while (queue.Count > 0)
+        {
+            string id = queue.Dequeue();
+            foreach (var d in plan.doors)
+            {
+                string next = d.from == id ? d.to : d.to == id ? d.from : null;
+                if (next == null || depth.ContainsKey(next)) continue;
+                depth[next] = depth[id] + 1;
+                queue.Enqueue(next);
+            }
+        }
+
+        foreach (var id in new[] { "hall", "arena", "surgery", "cells", "rest" })
+            if (!depth.ContainsKey(id))
+                errors.Add($"нет пути от лобби до {id}");
+
+        if (depth.ContainsKey("arena") && depth["arena"] > 2)
+            errors.Add("арена глубже двух дверей от лобби");
+        if (depth.ContainsKey("surgery") && depth["surgery"] > 2)
+            errors.Add("хирургия глубже двух дверей от лобби");
+        if (depth.ContainsKey("cells") && depth["cells"] > 2)
+            errors.Add("клетки глубже двух дверей от лобби");
+
+        if (!depth.ContainsKey("hall")) return;
+        var hallDepth = DepthsFrom(plan, "hall");
+        float sum = 0f;
+        int n = 0;
+        foreach (var r in plan.rooms)
+        {
+            if (r.id == "hall" || !hallDepth.ContainsKey(r.id)) continue;
+            sum += hallDepth[r.id];
+            n++;
+        }
+        if (n > 0 && sum / n > 1.2f + 0.01f)
+            errors.Add($"зал не центр: средняя глубина {sum / n:F2} > 1.2");
+    }
+
+    static Dictionary<string, int> DepthsFrom(LabPlan plan, string root)
+    {
+        var depth = new Dictionary<string, int> { [root] = 0 };
+        var queue = new Queue<string>();
+        queue.Enqueue(root);
+        while (queue.Count > 0)
+        {
+            string id = queue.Dequeue();
+            foreach (var d in plan.doors)
+            {
+                string next = d.from == id ? d.to : d.to == id ? d.from : null;
+                if (next == null || depth.ContainsKey(next)) continue;
+                depth[next] = depth[id] + 1;
+                queue.Enqueue(next);
+            }
+        }
+        return depth;
+    }
+
+    static float Min4(float a, float b, float c, float d) =>
+        Mathf.Min(Mathf.Min(a, b), Mathf.Min(c, d));
 }

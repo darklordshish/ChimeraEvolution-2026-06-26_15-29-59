@@ -13,6 +13,18 @@ namespace Chimera.Tests.EditMode
         }
 
         [Test]
+        public void DoorOffSharedWall_IsReported()
+        {
+            var p = LabPlanFixed.Create();
+            var d = p.doors[0];
+            d.z = 0f; // далеко от стен lobby/hall
+            p.doors[0] = d;
+            var errors = LabPlanRules.Validate(p);
+            Assert.IsTrue(errors.Exists(e => e.Contains("общей стене")),
+                string.Join("\n", errors));
+        }
+
+        [Test]
         public void FixedPlan_MatchesB02Numbers()
         {
             var p = LabPlanFixed.Create();
