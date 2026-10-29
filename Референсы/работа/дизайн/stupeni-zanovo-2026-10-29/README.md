@@ -1,5 +1,50 @@
 # Новая ст.2 оборотня — четыре направления
 
+## Ортопара новой ст.2 — 29.10.2026
+
+![БВ-1 · 45° · мышцы — профиль, анфас, сзади](novaya-st2-orto.png)
+
+Одна принятая фигура «БВ-1 · 45° · мышцы» (третья на `novaya-st2-BV1b.png`) в трёх ортографически заданных видах: **ПРОФИЛЬ влево | АНФАС | СЗАДИ**. Общий масштаб и земля, серый гранёный low-poly, тёмные плавки, гребень на шее, без хвоста — хвост является отдельным органом. Витрина использована только как образец раскладки, её более прямая поза не является целью.
+
+**Чему верить:** профилю как главному ориентиру наклона и выноса головы; анфас — распределению крупных масс поперёк тела: плечевой пояс шире таза, грудь сужается к центру, ноги стоят раздельно, стопы слегка развёрнуты наружу. Кисти свободны и выше колен, голова ниже холки, таз над опорой, ноги пальцеходящие. Виды спереди и сзади дополняют профиль, но не являются отдельно утверждённым новым обликом.
+
+Тонкие горизонтали задают **общие целевые уровни** холки, головы, таза, колена и скакательного. «Голова» в запросе определена как центр глаз, «таз» — центр тазобедренного сочленения, суставные линии — центры суставов, не края мышечных масс. Сзади опущенная голова закрыта верхом спины.
+
+**Ограничения сверки:** финальный PNG открыт после одной корректировки тем же встроенным image_gen. Земля и общий пояс колен согласованы визуально, кисти подняты. Точное совпадение всех ориентиров инструмент не обеспечил: глаза анфас остаются примерно на 20 пикселей ниже линии головы на листе шириной 1942 пикселя; выступы скакательных в профиле примерно на 20 пикселей выше направляющей. Поэтому горизонтали читать как целевые уровни для согласования тела, а не доказательство точной регистрации рисунков. Фронтальные плечевые массы ещё округлее профильного клина; по форме лопатки и груди приоритет у принятого профиля исходного листа. Точные длины костей, оси суставов и мышечные прикрепления с изображения не снимать. Обозначение 45° — имя принятого варианта, не инструментальный замер.
+
+Независимая сверка по `model-critic`: **7/10 как рабочий концепт**, ниже проектного порога готовности 8.5/10. Отмечены округлые фронтальные плечи, разброс скакательных 15–25 пикселей и концов когтей до 25 пикселей между видами. Лист сохранён как рабочий результат; точной согласованной ортопарой для снятия суставов его считать нельзя. Дополнительные проходы после разрешённой одной корректировки не выполнялись.
+
+Встроенный image_gen: первый проход и одна корректировка. Витрина не изменялась. Коммит не создавался.
+
+<details>
+<summary>Запросы image_gen: ортопара БВ-1 · 45° · мышцы</summary>
+
+Первый проход: принятый лист — источник третьей фигуры; витрина — только раскладка.
+
+```text
+Use case: identity-preserve / stylized-concept. Create a production orthographic turnaround sheet of ONE SAME accepted CHIMERA werewolf stage2 character. Input 1 is authoritative anatomy: ONLY THIRD FIGURE labelled "БВ-1 · 45° · мышцы" from novaya-st2-BV1b.png. Ignore its other 3 figures entirely. Input 2 is LAYOUT/style reference only, NOT anatomy or pose (that character is too upright).
+Output a wide white landscape sheet with exactly THREE full bodies in a row: "ПРОФИЛЬ" facing LEFT | "АНФАС" straight front | "СЗАДИ" straight rear. True orthographic camera at identical scale, no perspective or three-quarter. The same frozen pose rotated around vertical axis; do NOT straighten the torso for front/rear! Reproduce source third figure's forward inclined torso about 45 degrees from vertical, high withers, low forward wolf head BELOW withers, tucked abdomen, pelvis over hindfeet, digitigrade bent hindlegs and medium metatarsus. Preserve exact relative vertical heights and proportions from source third figure. The profile is the anchor and must closely match it.
+Flat long scapular wedge from withers toward elbow, no round deltoid ball. Deep narrow canine sternum KEEL with flat sides, no paired human pectoral plates. Strong healthy intact muscle volumes, broad restrained polygon facets, NO protruding ribs/no emaciation/no six pack/no flayed ribbons. Neck ridge mane as source, same muzzle ears nose. Gray faceted low-poly, soft consistent studio light, dark charcoal briefs, black claws, no tail at all (tail is separate organ). Free bent arms forward, clawed dexterous fingers and thumbs, wrists and lowest fingertips ABOVE knee level as in source. No weightbearing arms.
+Front AND rear: same shoulder width, same pelvis width, symmetrical feet turned slightly outward, identical arm abduction and same body depths implied by profile; shoulders broad but animal and planar, pelvis narrower. In rear the lowered forward head is largely OCCLUDED by withers/upper back: do NOT put an upright head above shoulder line to make it visible. Front lowered head in front of chest, maintaining source height. Same knee and hock heights in all 3 images.
+Add five very thin light gray straight horizontal guide lines THROUGH ENTIRE SHEET, aligned to SAME anatomical landmarks in all 3 projections. Small Cyrillic labels in left margin exactly "холка", "голова", "таз", "колено", "скакательный". Define голова line as EYE CENTER (not ear tips); холка at top shoulder/withers below mane spikes; таз at hip joint center; колено at knee center; скакательный at hock joint center. If occluded, guide remains at its true height. Guides must be horizontal not slanted and align with figures rather than arbitrary grid. Shared thin ground baseline at soles. Generous left margin for labels, no clipping. Exact three view titles above columns, no other headings or figures. All figures full body. This is one character in three simultaneous orthographic projections, not three redesigned variants.
+```
+
+Одна корректировка: первый результат и принятый лист.
+
+```text
+Correct this exact orthographic three-view sheet with ONE targeted consistency pass. Second image is authoritative accepted anatomy, ONLY its THIRD figure БВ-1 · 45° · мышцы.
+Keep layout, labels, white background, gray low-poly, dark briefs, no tail, identical scale and ground. Keep current profile torso inclination and source identity. Enforce SAME FROZEN POSE all 3 views.
+1. Raise/bend BOTH ARMS in all views so lowest claw tips end clearly ABOVE knee horizontal guide (about 30 pixels above at this image scale), like accepted reference. Preserve arm lengths, articulate elbows; no hanging below knees.
+2. Align EYE CENTERS in profile and front exactly to "голова" guide. Front eyes now about 20px too low: raise head only by that amount. Keep head below withers; rear head remains occluded.
+3. Align hock centers of all views exactly to "скакательный" guide; profile hocks now too high: raise guide to actual profile hock center, and match front/rear hocks to it. Shared knees/hip/withers and ground stay fixed.
+4. FRONT shoulders currently spherical deltoid caps and paired breast plates: replace with accepted elongated FLAT scapular wedge and single DEEP NARROW STERNAL KEEL, broad continuous flat animal muscles. No oval shoulder groove, no paired pectoral slabs, no sixpack. Do NOT reduce shoulder power. Rear matching long flat scapular planes.
+5. Profile rear leg and near leg must be at SAME knee height and SAME hock height (no stagger in depth vertical position). Straight flat horizontal guides pass true centers. Front/rear same shoulder width, pelvis width, feet turn-out and hand spacing.
+Exact text ПРОФИЛЬ | АНФАС | СЗАДИ and left холка / голова / таз / колено / скакательный. Thin pale guides unobtrusive. Preserve source 45-degree lean and head below withers, not upright. No other changes.
+```
+
+</details>
+
+
 ## БВ-1 · 45° · мышцы — проход 29.10.2026
 
 ![БВ-1: уточнение мускулатуры](novaya-st2-BV1b.png)
@@ -166,3 +211,26 @@ Exact five headings unchanged: НОВАЯ СТ.1 | БВ-1 (было) | БВ-1 ·
 
 </details>
 
+
+## Ортографический лист r2 — сухая масса анфас и сзади
+
+29.10.2026. Исправление по сверке координатора. Исходный `novaya-st2-orto.png` сохранён. Цель — принятая третья фигура «БВ-1 · 45° · мышцы» из `novaya-st2-BV1b.png`; профиль исходной ортопары оставлен опорой без намеренной перерисовки. Перенос генеративный, попиксельная идентичность профиля не гарантируется.
+
+![Ступень 2 — ортографический лист r2](novaya-st2-orto-r2.png)
+
+В анфас и сзади сужен плечевой пояс: визуальное отношение наружной ширины плеч к ширине таза около 1.4 (без кистей и разведённых рук; ориентировочная оценка по изображению, не калибр меша). Убраны круглые дельтовидные шары, широкие грудные пластины и культуристский развал спины. Лопаточная масса вытянута вдоль рёбер плоскими клиньями; грудь узкая поперёк и глубокая в профиле, живот цельный, без кубиков. Руки сухие, с длинными переходами к запястьям. Сохранены серые крупные грани, белый фон, свет, тёмные плавки, подписи, отсутствие хвоста и двуногая опора.
+
+Сверка после открытия финального PNG: плечи умеренно шире таза; отдельных шаров дельт и грудных пластин нет. Сохранены общие горизонтали холки, головы, таза, колена, скакательного и земли. Во второй, единственной корректировке подняты глаза анфас и уточнены уровни суставов. Остаточная неточность порядка нескольких–десяти пикселей у глаз и суставных центров остаётся: лист не является точным ортографическим чертежом. Не выдавать непрерывность направляющих за доказательство полной анатомической регистрации.
+
+**Чему верить:** поджарой поперечной массе анфас и сзади, плоскому плечу, узкой груди, сухим рукам. **При расхождении ракурсов верны принятый профиль и третья фигура BV1b**, а не новая интерпретация спины. Не снимать с листа точные суставные координаты, длины костей и мышечные прикрепления.
+
+Сделано встроенным image_gen: редактирование исходной ортопары с BV1b как анатомическим ориентиром, затем одна корректировка. Витрина не менялась, коммит не создавался.
+
+<details>
+<summary>Задание image_gen для r2</summary>
+
+Первый проход: сохранить левый профиль, весь макет, свет, подписи и направляющие; перерисовать только анфас и спину как того же поджарого зверя. Ширина плеч к тазу 1.3–1.5; убрать шарообразные дельты, гору человеческой трапеции, грудные пластины и кубики. Длинные плоские лопаточные клинья вдоль узкой глубокой грудной клетки, цельная здоровая кожа, сухие руки и длинные сухожилия. Уровни всех ракурсов свести по неизменному профилю.
+
+Единственная корректировка: сохранить достигнутую ширину и профиль; сгладить отдельные плечевые колпаки в плоские косые лопаточные массы; поднять глаза анфас примерно на 20 px к линии головы, уточнить колени и скакательные относительно соответствующих горизонталей. Не менять подписи, фон, свет и землю.
+
+</details>
