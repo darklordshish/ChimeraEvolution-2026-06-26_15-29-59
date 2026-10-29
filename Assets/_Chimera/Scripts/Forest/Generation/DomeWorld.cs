@@ -659,10 +659,59 @@ public class DomeWorld
     /// </summary>
     void BuildStationHill()
     {
-        var mesh = DomeHillMesh.Build(Hill, RawGround, 40, 6f, DomeLabComplex.HalfWidth + 2f, DomeLabComplex.HalfDepth + 2f);
+        // Пятно станции повёрнуто: габарит меша считаем по AABB повёрнутой плиты,
+        // иначе углы выходят за лист и дают отвесную кромку. Запас 4 м выводит
+        // кромку за площадку — там она садится на сырой рельеф, а не висит над полом.
+        float yaw = padYaw * Mathf.Deg2Rad;
+        float c = Mathf.Abs(Mathf.Cos(yaw));
+        float s = Mathf.Abs(Mathf.Sin(yaw));
+        float halfX = DomeLabComplex.HalfWidth * c + DomeLabComplex.HalfDepth * s + 4f;
+        float halfZ = DomeLabComplex.HalfWidth * s + DomeLabComplex.HalfDepth * c + 4f;
+        // Кромка должна дойти туда, где подъём холма уже ноль, иначе лист
+        // обрывается вертикальной стеной на середине склона.
+        float reach = Hill.radius + Hill.blend + 1f;
+        halfX = Mathf.Max(halfX, reach);
+        halfZ = Mathf.Max(halfZ, reach);
+        // Южный спуск — вырез в холме, иначе лист закрывает портал и рампа
+        // выглядит чёрной рамой, торчащей из земли.
+        Func<float, float, bool> rampCut = null;
+        Func<float, float, float> rampWeight = null;
+        if (ResolvedLabEntrance == LabEntrance.Buried ||
+            ResolvedLabEntrance == LabEntrance.Underground)
+        {
+            rampCut = (x, z) =>
+            {
+                float dx = x - LabCenter.x, dz = z - LabCenter.y;
+                float lx = dx * Mathf.Cos(padYaw * Mathf.Deg2Rad) -
+                           dz * Mathf.Sin(padYaw * Mathf.Deg2Rad);
+                float lz = dx * Mathf.Sin(padYaw * Mathf.Deg2Rad) +
+                           dz * Mathf.Cos(padYaw * Mathf.Deg2Rad);
+                float zDoor = -DomeLabComplex.HalfDepth;
+                float zOuter = zDoor - DomeLabComplex.RampLength;
+                return Mathf.Abs(lx) <= DomeLabComplex.RampWidth * 0.5f + 1.2f &&
+                       lz <= zDoor + 1f && lz >= zOuter - 1f;
+            };
+            rampWeight = (x, z) =>
+            {
+                float dx = x - LabCenter.x, dz = z - LabCenter.y;
+                float lx = dx * Mathf.Cos(padYaw * Mathf.Deg2Rad) -
+                           dz * Mathf.Sin(padYaw * Mathf.Deg2Rad);
+                float lz = dx * Mathf.Sin(padYaw * Mathf.Deg2Rad) +
+                           dz * Mathf.Cos(padYaw * Mathf.Deg2Rad);
+                float zDoor = -DomeLabComplex.HalfDepth;
+                float zOuter = zDoor - DomeLabComplex.RampLength;
+                float wx = 1f - Mathf.InverseLerp(DomeLabComplex.RampWidth * 0.5f + 0.6f,
+                    DomeLabComplex.RampWidth * 0.5f + 3.2f, Mathf.Abs(lx));
+                float wz = Mathf.Min(Mathf.InverseLerp(zDoor + 2f, zDoor, lz),
+                    Mathf.InverseLerp(zOuter - 2f, zOuter, lz));
+                return Mathf.SmoothStep(0f, 1f, wx * wz);
+            };
+        }
+        var mesh = DomeHillMesh.Build(Hill, RawGround, 48, 6f, halfX, halfZ, rampCut, SampleGround, rampWeight);
         if (mesh == null) return;
         Track(mesh);
-        Part("StationHill", mesh, Flat(DomePalette.Rock));
+        // Холм — земля, а не бетон: камень остаётся акцентами у расщелины.
+        Part("StationHill", mesh, Flat(DomePalette.Terrain));
     }
 
     void BuildFacility(long seed, bool buildLabComplex, bool buildStationLoop = false)

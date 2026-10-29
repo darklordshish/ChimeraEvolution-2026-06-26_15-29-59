@@ -108,6 +108,29 @@ namespace Chimera.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator StationHill_CoversRotatedPad_AndHasRelief()
+        {
+            var b = Build(true, true);
+            yield return null;
+
+            var hill = GameObject.Find("StationHill");
+            Assert.IsNotNull(hill, "StationHill не построен");
+            var mf = hill.GetComponent<MeshFilter>();
+            Assert.IsNotNull(mf?.sharedMesh, "у StationHill нет меша");
+            var size = mf.sharedMesh.bounds.size;
+            Assert.GreaterOrEqual(size.x, 58f, "холм уже повёрнутой плиты по X");
+            Assert.GreaterOrEqual(size.z, 56f, "холм уже повёрнутой плиты по Z");
+            Assert.Greater(size.y, 5f, "холм плоский: нет подъёма");
+
+            // Старые «каменные столы» Buried не должны возвращаться.
+            Assert.IsNull(GameObject.Find("UndergroundHill"), "UndergroundHill — плоский стол");
+            Assert.IsNull(GameObject.Find("UndergroundHillW"), "UndergroundHillW — плоский стол");
+            Assert.IsNull(GameObject.Find("UndergroundHillE"), "UndergroundHillE — плоский стол");
+            Assert.IsNull(GameObject.Find("UndergroundWingW"), "UndergroundWingW — плоский стол");
+            Assert.IsNull(GameObject.Find("UndergroundWingE"), "UndergroundWingE — плоский стол");
+        }
+
+        [UnityTest]
         public IEnumerator Geography_Off_IsNoOp()
         {
             var b = Build(false);

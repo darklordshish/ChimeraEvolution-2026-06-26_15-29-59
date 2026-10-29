@@ -10,7 +10,9 @@ using UnityEngine;
 public static class DomeHillMesh
 {
     public static Mesh Build(DomeHill.State s, Func<float, float, float> ground,
-        int res = 32, float holeRadius = 6f, float halfX = 0f, float halfZ = 0f)
+        int res = 32, float holeRadius = 6f, float halfX = 0f, float halfZ = 0f,
+        Func<float, float, bool> cut = null, Func<float, float, float> cutGround = null,
+        Func<float, float, float> cutWeight = null)
     {
         if (!s.valid || ground == null) return null;
         res = Mathf.Clamp(res, 8, 64);
@@ -30,10 +32,10 @@ public static class DomeHillMesh
                     InHole(s, x0, z1, holeRadius) || InHole(s, x1, z1, holeRadius))
                     continue;
                 int b = verts.Count;
-                verts.Add(P(ground, s, x0, z0));
-                verts.Add(P(ground, s, x1, z0));
-                verts.Add(P(ground, s, x0, z1));
-                verts.Add(P(ground, s, x1, z1));
+                verts.Add(P(ground, s, x0, z0, cut, cutGround, cutWeight));
+                verts.Add(P(ground, s, x1, z0, cut, cutGround, cutWeight));
+                verts.Add(P(ground, s, x0, z1, cut, cutGround, cutWeight));
+                verts.Add(P(ground, s, x1, z1, cut, cutGround, cutWeight));
                 tris.Add(b); tris.Add(b + 2); tris.Add(b + 1);
                 tris.Add(b + 1); tris.Add(b + 2); tris.Add(b + 3);
             }
@@ -46,9 +48,20 @@ public static class DomeHillMesh
         return mesh;
     }
 
-    static Vector3 P(Func<float, float, float> ground, DomeHill.State s, float x, float z)
+    static Vector3 P(Func<float, float, float> ground, DomeHill.State s, float x, float z,
+        Func<float, float, bool> cut, Func<float, float, float> cutGround,
+        Func<float, float, float> cutWeight)
     {
-        return new Vector3(x, ground(x, z) + DomeHill.Apply(0f, s, x, z) + 0.15f, z);
+        float hillY = ground(x, z) + DomeHill.Apply(0f, s, x, z) + 0.15f;
+        if (cutWeight != null && cutGround != null)
+        {
+            float w = Mathf.Clamp01(cutWeight(x, z));
+            if (w > 0f)
+                return new Vector3(x, Mathf.Lerp(hillY, cutGround(x, z) + 0.15f, w), z);
+        }
+        if (cut != null && cutGround != null && cut(x, z))
+            return new Vector3(x, cutGround(x, z) + 0.15f, z);
+        return new Vector3(x, hillY, z);
     }
 
     static bool InHole(DomeHill.State s, float x, float z, float r)

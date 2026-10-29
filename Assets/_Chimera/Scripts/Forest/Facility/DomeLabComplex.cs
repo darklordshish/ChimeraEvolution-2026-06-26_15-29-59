@@ -586,15 +586,20 @@ public static class DomeLabComplex
         b.AddRock("RampBermE1", 4.4f, 5.6f, 0f, -HalfDepth - 7f);
         b.AddRock("RampBermE2", 3.6f, 5.2f, 0f, -HalfDepth - 16f);
 
-        float zOuter = -HalfDepth - RampLength + 0.6f;
-        b.Add("RampOuterW", Kit.Concrete, 1.1f, 3.4f, 1.4f,
-            -RampWidth * 0.5f - 0.2f, depth, zOuter, true);
-        b.Add("RampOuterE", Kit.Concrete, 1.1f, 3.4f, 1.4f,
-            RampWidth * 0.5f + 0.2f, depth, zOuter, true);
-        b.Add("RampOuterLintel", Kit.Dark, RampWidth + 2.2f, 0.8f, 1.6f,
-            0f, depth + 3.2f, zOuter, true);
-        b.Add("RampOuterCanopy", Kit.Concrete, RampWidth + 2.2f, 0.3f, 2.4f,
-            0f, depth + 3.4f, zOuter - 0.8f, true);
+        // У Buried южный спуск — открытая выемка в холме, без бетонной рамы:
+        // рама на вершине читается воротами на кургане, а не входом в землю.
+        if (!northCrevice)
+        {
+            float zOuter = -HalfDepth - RampLength + 0.6f;
+            b.Add("RampOuterW", Kit.Concrete, 1.1f, 3.4f, 1.4f,
+                -RampWidth * 0.5f - 0.2f, depth, zOuter, true);
+            b.Add("RampOuterE", Kit.Concrete, 1.1f, 3.4f, 1.4f,
+                RampWidth * 0.5f + 0.2f, depth, zOuter, true);
+            b.Add("RampOuterLintel", Kit.Concrete, RampWidth + 2.2f, 0.8f, 1.6f,
+                0f, depth + 3.2f, zOuter, true);
+            b.Add("RampOuterCanopy", Kit.Concrete, RampWidth + 2.2f, 0.3f, 2.4f,
+                0f, depth + 3.4f, zOuter - 0.8f, true);
+        }
 
         if (northCrevice)
         {
@@ -604,22 +609,7 @@ public static class DomeLabComplex
             float roofY = Plinth + RoomHeight + RoofThickness + 0.3f;
             // Рваные каменные всхолмления вместо плоской плиты: крыша — холм,
             // а не бетонный стол. Коллайдеров нет — это только силуэт.
-            b.AddMound("BuriedMoundA", 14f, 4.5f, 14f, -10f, roofY - 1.1f, -8f);
-            b.AddMound("BuriedMoundB", 13f, 4.0f, 15f, 9f, roofY - 1.0f, -7f);
-            b.AddMound("BuriedMoundC", 13f, 5.0f, 13f, -11f, roofY - 1.2f, 9f);
-            b.AddMound("BuriedMoundD", 14f, 4.2f, 14f, 10f, roofY - 1.1f, 9f);
             b.AddMound("BuriedMoundE", 11f, 3.4f, 10f, 0f, roofY - 0.8f, 0f);
-            b.AddMound("BuriedMoundF", 8f, 4.2f, 12f, -18f, roofY - 1.0f, 0f);
-            b.AddMound("BuriedMoundG", 8f, 4.0f, 12f, 18f, roofY - 1.0f, 0f);
-            b.AddMound("BuriedMoundH", 12f, 4.0f, 9f, 0f, roofY - 0.9f, -16f);
-            b.AddMound("BuriedMoundI", 10f, 4.5f, 8f, 0f, roofY - 1.0f, 16f);
-            b.AddMound("BuriedMoundJ", 28f, 5.0f, 16f, 0f, roofY - 1.8f, 0f);
-            b.AddMound("BuriedMoundK", 12f, 4.0f, 8f, -17f, roofY - 1.2f, 0f);
-            b.AddMound("BuriedMoundL", 12f, 4.0f, 8f, 17f, roofY - 1.2f, 0f);
-            b.AddMound("BuriedMoundM", 12f, 4.2f, 10f, -16f, roofY - 1.2f, -14f);
-            b.AddMound("BuriedMoundN", 12f, 4.2f, 10f, 16f, roofY - 1.2f, -14f);
-            b.AddMound("BuriedMoundO", 12f, 4.2f, 10f, -16f, roofY - 1.2f, 14f);
-            b.AddMound("BuriedMoundP", 12f, 4.2f, 10f, 16f, roofY - 1.2f, 14f);
             b.AddRock("BuriedCrownW", 4.2f, -21f, roofY - 1.0f, -17f);
             b.AddRock("BuriedCrownE", 4.4f, 21f, roofY - 1.0f, -17f);
             b.AddRock("BuriedCrownS", 3.8f, -20f, roofY - 0.8f, 17f);
@@ -953,8 +943,17 @@ public static class DomeLabComplex
         {
             var go = new GameObject(name);
             go.transform.SetParent(root, false);
-            go.transform.localPosition = new Vector3(x, y + sy * 0.4f, z);
-            go.transform.localScale = new Vector3(sx, sy, sz);
+            // Не сплюснутый «колпак»: наклон, разброс высоты и посадка в землю.
+            // Иначе широкие икосаэдры сливаются в одну плоскую плиту.
+            float u = Mathf.Abs(Mathf.Sin(x * 12.9898f + z * 78.233f));
+            float v = Mathf.Abs(Mathf.Sin(x * 37.719f + z * 11.135f));
+            float rx = Mathf.Lerp(12f, 28f, u);
+            float rz = Mathf.Lerp(-24f, 24f, v);
+            float ry = Mathf.Lerp(0f, 360f, u * 0.7f + v * 0.3f);
+            float sink = Mathf.Lerp(1.3f, 2.3f, v);
+            go.transform.localPosition = new Vector3(x, y + sy * 0.35f - sink, z);
+            go.transform.localRotation = Quaternion.Euler(rx, ry, rz);
+            go.transform.localScale = new Vector3(sx, sy * 0.58f, sz);
             go.AddComponent<MeshFilter>().sharedMesh = IcoUnit();
             var renderer = go.AddComponent<MeshRenderer>();
             renderer.sharedMaterial = KitMat(Kit.Rock);
