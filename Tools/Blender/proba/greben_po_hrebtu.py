@@ -115,7 +115,7 @@ if opt.get('poza'):
         top = sorted(ws.items(), key=lambda kv: -kv[1])[:4]; sm = sum(w for _, w in top) or 1; ws = {nm: w / sm for nm, w in top}
         h = H0 + (H1 - H0) * (j / max(len(ts) - 1, 1))
         if RYAD <= 1:
-            ship(p, n, al, h, ws, mat(ws)); n_sh += 1; continue
+            ship(p, n, al, h * (1 - r_ * RNG.random()), ws, mat(ws)); n_sh += 1; continue   # `--razbros` — высота ±, ряд не ровный
         # ПРЯДИ (`--ryad N --razbros r`, критик n2: «ровная пила — спинной плавник; пряди фактуры шеи, назад по росту шерсти, затухают
         # от холки»): в каждой точке N прядей рядом поперёк хребта (шаг `--shir`·h), высота и наклон с разбросом ±r (сид постоянный)
         sd_ = n.cross(al).normalized()
