@@ -329,7 +329,27 @@ TS = {}
 if VSTR:
     for pn, fl in fpart.items():
         TS[pn] = (np.array([list(f_.calc_center_median()) for f_ in fl]), np.array([list(f_.normal) for f_ in fl]))
-for s_ in [float(v) for v in opt.get('zhestkost', '30,15,8,4').split(',')]:
+# NICP АМБЕРГА (`--nicp 1`, 29.10, проба А): притяжка — внешним решателем nicp_amberg.py (scipy, вне Blender) вместо цикла ниже:
+# аффинная матрица на вершину, жёсткость по разнице матриц соседей, вес Уэлша вместо порогов; пары — по тем же частям цели.
+# `--nicp_args "…"` — ключи решателя. Поза, пластина и возврат в покой — прежние
+NICP = opt.get('nicp') == '1'
+if NICP:
+    import subprocess, tempfile, os, time
+    PN = sorted(fpart); PI = {pn: j for j, pn in enumerate(PN)}
+    Tc = np.array([list(f_.calc_center_median()) for pn in PN for f_ in fpart[pn]])
+    Tn = np.array([list(f_.normal) for pn in PN for f_ in fpart[pn]])
+    Tp = np.array([PI[pn] for pn in PN for _ in fpart[pn]])
+    Ed = np.array(sorted({(min(k, j), max(k, j)) for k in range(N) for j in nb[k]}))
+    tmp = tempfile.mkdtemp(); fi_, fo_ = os.path.join(tmp, 'vh.npz'), os.path.join(tmp, 'vyh.npz')
+    if opt.get('nicp_vhod'): fi_ = opt['nicp_vhod']
+    np.savez(fi_, X=X, E=Ed, F=FACES, part=np.array([PI.get(vpart[k], -1) for k in range(N)]), free=FREE, T=Tc, TN=Tn, TP=Tp)
+    t_ = time.time()
+    r_ = subprocess.run([opt.get('python', 'C:/ProgramData/anaconda3/python.exe'), os.path.join(os.path.dirname(__file__), 'nicp_amberg.py'), fi_, fo_]
+                        + opt.get('nicp_args', '').split(), capture_output=True, text=True, encoding='utf-8', env=dict(os.environ, PYTHONIOENCODING='utf-8'))
+    print(r_.stdout.strip()); print(r_.stderr.strip()[-2000:])
+    X = np.load(fo_)['Y']; M = np.ones(N)
+    print('ПОДГОНКА: NICP — %.1f с, вывернутых граней %d' % (time.time() - t_, len(razvernuty(X))))
+for s_ in ([] if NICP else [float(v) for v in opt.get('zhestkost', '30,15,8,4').split(',')]):
     for _ in range(2):
         NX = normals(X)
         C = X.copy(); M = np.zeros(N)
