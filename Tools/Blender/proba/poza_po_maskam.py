@@ -18,7 +18,7 @@ from scipy.optimize import minimize
 
 a = sys.argv[1:]
 tn, sk_p, sj_p, pz_p, out_p = a[:5]
-opt = dict(nu='0.002', kosti='стопа,стопа.L,плечо,плечо.L,предплечье,предплечье.L,хребет,шея,голова', nogi_ik='1', lam='0.02',
+opt = dict(stopa='0', nu='0.002', kosti='стопа,стопа.L,плечо,плечо.L,предплечье,предплечье.L,хребет,шея,голова', nogi_ik='1', lam='0.02',
            mu='0.05', vesa='1,1,0.5', predel='30', iter='3')
 i = 5
 while i < len(a):
@@ -108,12 +108,31 @@ BI = [BN.index(n) if n in BN else -1 for n in order]
 act = [j for j, b in enumerate(BI) if b >= 0 and W[:, b].any()]
 
 
-def skin(D2, PH):
-    Y = np.zeros_like(V)
+def skin(D2, PH, Vx=None):
+    Vx = V if Vx is None else Vx; Y = np.zeros_like(Vx)
     for j in act:
         n = order[j]; b = BI[j]; w = W[:, b]; m = w > 0
-        Y[m] += w[m, None] * (PH[n] + (V[m] - RH[b]) @ D2[n].T)
+        Y[m] += w[m, None] * (PH[n] + (Vx[m] - RH[b]) @ D2[n].T)
     return Y
+
+
+# ФОРМА СТОПЫ (`--stopa 1`, 29.10, ГеймБосс: «стопа формой вместе с позой по маскам»; критик: стопа-ласт ~30 % роста против ~18 %):
+# у каждой стопы параметр — длина вдоль её кости покоя, в процентах (0 — как есть, −40 — ×0.6); вершины тела ступени и куска с весом
+# кости стопы сжимаются к скакательному пропорционально весу (только то, что дальше сустава вдоль кости). Тело садится на землю
+# нижней точкой меша (укороченная стопа иначе висела бы)
+NST = 2 if opt['stopa'] == '1' else 0
+SB = {}
+for s_ in ('', '.L'):
+    b = BN.index('стопа' + s_); h = np.array(K['стопа' + s_]['head'], float); t = np.array(K['стопа' + s_]['tail'], float)
+    ax_ = (t - h) / np.linalg.norm(t - h); pr = (V - RH[b]) @ ax_
+    SB[s_] = (b, RH[b], ax_, np.where(pr > 0, pr, 0.0) * W[:, b])
+
+
+def stopa(kk):
+    Vx = V.copy()
+    for s_, k in zip(('', '.L'), kk):
+        b, h, ax_, wp = SB[s_]; Vx += ((k / 100.0) * wp)[:, None] * ax_[None, :]
+    return Vx
 
 
 def norm512(fig):
@@ -163,27 +182,45 @@ def razvoroty(Y, D2):
     return int(((np.einsum('ki,ki->k', Np_, RN) < 0) & ok).sum())
 
 
+def stan(delta):
+    """поза и форма стопы → тело в позе, севшее нижней точкой меша на землю (Z мешa позы r5)"""
+    dp = np.clip(delta[:len(delta) - NST], -PRED, PRED); D2, PH, PT = poza(dp)
+    Vx = stopa(np.clip(delta[len(delta) - NST:], -50, 20)) if NST else V
+    Y = skin(D2, PH, Vx); dzm = ZM0[0] - Y[:, 2].min() if ZM0 else 0.0; Y[:, 2] += dzm
+    sh = np.array([0, 0, dzm]); PH = {n: v + sh for n, v in PH.items()}; PT = {n: v + sh for n, v in PT.items()}
+    return D2, PH, PT, Y, Vx
+
+
+ZM0 = []
 n_ev = [0]
 def f(delta):
-    delta = np.clip(delta, -PRED, PRED); D2, PH, PT = poza(delta); Y = skin(D2, PH); r = mery(Y); n_ev[0] += 1
-    return (sum(VES[k] * (1 - v) for k, v in r.items()) + LAM * float(np.sum((delta / 10) ** 2)) + MU * abs(PT['стопа'][2] - PT['стопа.L'][2]) / 0.01
-            + float(opt['nu']) * razvoroty(Y, D2))
+    D2, PH, PT, Y, Vx = stan(delta); r = mery(Y); n_ev[0] += 1
+    dp = delta[:len(delta) - NST]; ds = delta[len(delta) - NST:]
+    return (sum(VES[k] * (1 - v) for k, v in r.items()) + LAM * float(np.sum((np.clip(dp, -PRED, PRED) / 10) ** 2)) + LAM * float(np.sum((ds / 30) ** 2))
+            + MU * abs(PT['стопа'][2] - PT['стопа.L'][2]) / 0.01 + float(opt['nu']) * razvoroty(Y, D2))
 
 
 t0 = time.time()
-NP = len(KOSTI) + (4 if NIK else 0)
+NP = len(KOSTI) + (4 if NIK else 0) + NST
 x = np.zeros(NP)
 if NIK:   # знак: сдвиг скакательного правой ноги на +5 см назад должен сдвинуть его на +5 см
     for zn in (1.0, -1.0):
         ZN[0] = zn; t_ = np.zeros(NP); t_[len(KOSTI)] = 5.0; _, PHt, _ = poza(t_)
         if abs(PHt['стопа'][1] - PH0['стопа'][1] - 0.05) < 0.01: break
     print('ПОЗА-МАСКИ: знак поворота %+d, проверка сдвига скакательного %.3f м' % (ZN[0], PHt['стопа'][1] - PH0['стопа'][1]))
+ZM0.append(float(skin(*poza(x)[:2])[:, 2].min()))
 r0 = mery(skin(*poza(x)[:2]))
 print('ПОЗА-МАСКИ: до — %s; разворотов %d; функционал %.4f (%.1f с на оценку)' % (', '.join('%s %.3f' % kv for kv in r0.items()), razvoroty(skin(*poza(x)[:2]), poza(x)[0]), f(x), time.time() - t0))
+if opt.get('skan_stopa') and NST:   # `--skan_stopa -40,-20,0` — функционал и меры при длине обеих стоп, поза как есть; без подбора
+    for k in (float(v) for v in opt['skan_stopa'].split(',')):
+        x_ = x.copy(); x_[-2:] = k; D2s, PHs, PTs, Ys, _ = stan(x_); rs = mery(Ys)
+        print('СКАН СТОПЫ %+.0f %%: %s; разворотов %d; функционал %.4f' % (k, ', '.join('%s %.3f' % kv for kv in rs.items()), razvoroty(Ys, D2s), f(x_)))
+    sys.exit(0)
 res = minimize(f, x, method='Powell', options=dict(maxiter=int(opt['iter']), xtol=0.5, ftol=1e-4))
-x = np.clip(res.x, -PRED, PRED); D2, PH, PT = poza(x); r1 = mery(skin(D2, PH))
-print('ПОЗА-МАСКИ: после — %s; разворотов %d; функционал %.4f; оценок %d, %.0f с' % (', '.join('%s %.3f' % kv for kv in r1.items()), razvoroty(skin(D2, PH), D2), f(x), n_ev[0], time.time() - t0))
-print('ПОЗА-МАСКИ: повороты — ' + ', '.join('%s %+.1f°' % (k, v) for k, v in zip(KOSTI, x) if abs(v) > 0.05) + ('; скакательные (dy, dz см) — правый %+.1f %+.1f, левый %+.1f %+.1f' % tuple(x[len(KOSTI):]) if NIK else ''))
+x = res.x.copy(); D2, PH, PT, Y1, Vx1 = stan(x); r1 = mery(Y1)
+print('ПОЗА-МАСКИ: после — %s; разворотов %d; функционал %.4f; оценок %d, %.0f с' % (', '.join('%s %.3f' % kv for kv in r1.items()), razvoroty(Y1, D2), f(x), n_ev[0], time.time() - t0))
+print('ПОЗА-МАСКИ: повороты — ' + ', '.join('%s %+.1f°' % (k, v) for k, v in zip(KOSTI, x) if abs(v) > 0.05) + ('; скакательные (dy, dz см) — правый %+.1f %+.1f, левый %+.1f %+.1f' % tuple(x[len(KOSTI):len(KOSTI) + 4]) if NIK else '')
+      + ('; длина стоп %+.1f %% / %+.1f %%' % tuple(np.clip(x[-2:], -50, 20)) if NST else ''))
 print('ПОЗА-МАСКИ: стопы z %.3f / %.3f; колени y %.3f / %.3f, скакательные y %.3f / %.3f' % (
     PT['стопа'][2], PT['стопа.L'][2], PH['голень'][1], PH['голень.L'][1], PH['стопа'][1], PH['стопа.L'][1]))
 out = []
@@ -191,10 +228,13 @@ for b in pz['bones']:
     n = b['name']; Fm = D2[n] @ frame(K[n])
     out.append(dict(b, head=[round(c, 5) for c in PH[n]], tail=[round(c, 5) for c in PT[n]], z_axis=[round(c, 5) for c in Fm[:, 2]]))
 pz['bones'] = out
-pz['note'] = pz.get('note', '') + '; поза по маскам листа (poza_po_maskam.py): ' + ', '.join('%s %+.1f°' % (k, v) for k, v in zip(KOSTI, x) if abs(v) > 0.05) + ('; скакательные dy/dz см %+.1f %+.1f %+.1f %+.1f' % tuple(x[len(KOSTI):]) if NIK else '')
+pz['note'] = pz.get('note', '') + '; поза по маскам листа (poza_po_maskam.py): ' + ', '.join('%s %+.1f°' % (k, v) for k, v in zip(KOSTI, x) if abs(v) > 0.05) + ('; скакательные dy/dz см %+.1f %+.1f %+.1f %+.1f' % tuple(x[len(KOSTI):len(KOSTI) + 4]) if NIK else '')
+if NST:
+    ks = np.clip(x[-2:], -50, 20); pz['stopa'] = {'стопа': round(1 + ks[0] / 100, 4), 'стопа.L': round(1 + ks[1] / 100, 4)}
+    pz['note'] += '; длина стоп ×%.3f / ×%.3f (форма: stopa_dlina.py)' % tuple(1 + ks / 100)
 json.dump(pz, open(out_p, 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 if opt.get('kadr'):
-    Y = skin(D2, PH)
+    Y = Y1
     for nm, ax, sg in (('front', 0, -1), ('profile', 1, 1)):
         if nm not in M: continue
         s = silujet(Y, ax, sg); m = M[nm]
