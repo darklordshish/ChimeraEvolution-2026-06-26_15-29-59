@@ -184,10 +184,13 @@ public static class BodyMesh
         // ЧЕРТА КЛЮЧА НА СТУПЕНИ: объект `@<ключ>` рисуется только на её ступени и снимает объекты шасси под собой
         var stages = ActiveStages(jointsOf, keys);
         var stageHides = new HashSet<string>(stages.SelectMany(st => st.hides ?? new string[0]));
+        // орган на шаблоне под чертой — по правилу кусков (`MorphBuilder`: `hides ∪ replacesTraits`): черта несёт свои кисти с
+        // когтями, а слот «Руки» она не прячет (это вся рука), а заменяет — `Руки@Волк` торчал из её кисти палочками (29.10)
+        var stageReplaces = new HashSet<string>(stages.SelectMany(st => (st.hides ?? new string[0]).Concat(st.replacesTraits ?? new string[0])));
         // орган на шаблоне снимает свои объекты шасси, только если это записано (`organObjectRules`): уши Чутья заменяют уши
         // человека, а когти Рук садятся поверх своей кисти — объект «Руки» шасси это вся рука с плечом (22.10)
         var organSlots = new HashSet<string>((jointsOf?.organObjectRules ?? new OrganObjectRule[0])
-            .Where(r => r != null && organObjects != null && organObjects.ContainsKey(r.objectName ?? ""))
+            .Where(r => r != null && organObjects != null && organObjects.ContainsKey(r.objectName ?? "") && !stageReplaces.Contains(SlotOf(r.objectName)))
             .SelectMany(r => r.hides ?? new string[0]));
 
         int placed = 0;
@@ -198,6 +201,7 @@ public static class BodyMesh
             if (src.name.StartsWith("@") && !stages.Any(st => st.objectName == src.name)) continue;
             bool organ = IsOrganObject(src.name);
             if (organ && (organObjects == null || !organObjects.ContainsKey(src.name))) continue;
+            if (organ && stageReplaces.Contains(SlotOf(src.name))) continue;
             if (stageHides.Contains(SlotOf(src.name))) continue;
             if (!organ && organSlots.Contains(SlotOf(src.name))) continue;
             // место несёт чужой кусок (химера на меше вида): свой объект этого слота со всеми `слот.что` не ставится
