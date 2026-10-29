@@ -1,5 +1,37 @@
 # Запросы: полные ряды ступеней · 29.10.2026
 
+## Лось r4 — корректировка стойки разворота
+
+Единственный вход — `chelovek-los-r4-razvorot1.png`.
+
+```text
+Refine this gray faceted clay turnaround of two upright moose creatures, two columns and three rows. Keep the top front views' continuous elongated moose breast, tall pointed withers and long thin hanging forelegs. Keep gray clay, white background, soft lighting, dark shorts, slender hands and cloven hooves. Focus the side and three-quarter views on a tall upright pose: the pelvis sits directly over the planted rear hooves, the deep chest rises high above the pelvis, the withers rise high above the chest. Left ST.1: a tall nearly upright trunk, the long line from pelvis up to withers rises at 70 degrees above the ground, making 20 degrees of forward lean from vertical. The head projects forward from this tall rising moose neck. Right ST.2: the line from pelvis up to withers rises at 55 degrees above the ground, making 35 degrees of forward lean from vertical. Its withers are distinctly higher and longer, its neck projects further, its long keel chest is deeper, its rear legs longer and drier. Both profiles balance as tall walking bipeds with chest stacked high over the hips, arms hanging toward the knees. Moose coat forms one continuous narrow hanging breast with a softly convex front and long sloping withers-to-foreleg contours. Left antlers small and short, right antlers broad and palmate. Top row both look straight at camera, middle row strict left profile, bottom row left three-quarter with head and trunk turned together. Preserve the distinct narrow moose-shaped front silhouettes through the turnaround. Keep all six figures complete at matching scale within each stage and ample white margins.
+```
+
+## Лось r4 — разворот после второй пробы
+
+Входы: 1 — `chelovek-los-r4-proba2.png`; 2 — `chelovek-los-r4-ref-st3.png`; 3 — `../ChimeraEvolution/Референсы/витрина/человек-лось/тело.png`. Генерируются только две средние колонки. Ст.0 и ст.3 возвращаются пиксельно из r2 при сборке.
+
+```text
+Stylized low-poly gray clay creature turnaround sheet on pure white, soft even studio lighting. Two columns and three rows, six complete figures. Left column ST.1; right column ST.2. Top row straight FRONT, middle row strict LEFT PROFILE facing left, bottom row THREE-QUARTER facing left. Image 1 supplies the exact creature identity and the tall tent-shaped withers flowing into a forward neck, continuous elongated moose breast and thin hanging forelegs. Image 2 supplies pure moose clay coat and planes. Image 3 supplies side silhouette balance and forward lean of the two middle upright stages. Render the same creature at each angle, same scale between its views, feet on each row's shared ground line. A moose risen onto its rear legs, carrying its complete heavy moose front high. Narrow tall pointed withers like a steep roof behind the head. Forelegs emerge along its low sides and hang as long tapering sticks ending in slender hands with dark hoof fingertips. Chest is a single deep narrow moose keel, continuous softly convex coat-covered front, long in side view and slim head-on. Its lower end blends into a short tapered belly above dark charcoal short pants. Coarse short coat expressed through large clay facets. Long slim rear thighs and long twig-like shins, cloven hooves. Moose head, long overhanging muzzle, large ears and dewlap. ST.1: small short branching antlers, moderate withers ridge, torso 20 degrees forward from vertical. ST.2: wide palmate antlers, much higher and longer withers ridge, neck projecting further forward, torso 35 degrees forward from vertical, longer deeper chest and longer drier legs. The trunk and leg proportions show the progression in every view. The two front figures both look directly at camera. Three-quarter figures turn both head and trunk together. Figures occupy generous white cells with ample margin around antlers and hooves.
+```
+
+## chelovek-los-r3 · редактирование принятого тела · 30.10.2026
+
+Инструмент: встроенный image_gen, редактирование локальных изображений. Один исходный проход и одна корректировка. Все входы открыты перед использованием.
+
+Первый вход — цель редактирования: `../ChimeraEvolution/Референсы/витрина/человек-лось/тело.png`; второй — `chelovek-los-r2.png`, только крайние колонки и композиция.
+
+```text
+Use case: precise-object-edit / identity-preserve. IMAGE 1 IS THE ACTUAL EDIT TARGET: accepted CHIMERA body sheet. Do not redraw or reinvent these bodies. IMAGE 2 supplies ONLY endpoint columns and final grid convention. Edit image1 in place into a 4-column 3-row progression sheet. Columns ST.0 human, ST.1, ST.2, ST.3 moose; rows FRONT, LEFT PROFILE, THREE QUARTER. For middle columns use EXACT image1 column "НОВАЯ СТ.1" and "СТ.2 · УМЕРЕННО": first two rows WITHOUT ORGANS are LOCKED BODY ANATOMY. Preserve their existing shoulder contour, hump contour and height, neck base and projection, chest outline, waist, arms, shorts, pelvis, knee bend, dry legs and pose. Paint organs OVER these existing bodies, changing only head and feet: moose head with long muzzle mouth jaw, broad nose nostrils, eyes and large moose ears (Mouth and Senses), small immature antlers on stage1 and full palmate antlers stage2; cloven hooves replacing human feet. Keep hands as original body unless existing dark hoof tips. No human head remains. Do NOT enlarge shoulders into round deltoids, do NOT add abs or paired pectoral plates. The accepted body surface and broad facets must remain. Stage2 already has higher hump, deeper chest, more forward neck and leaner lower body than stage1: KEEP those differences independently of antlers. For row3 rotate these SAME bodies to a coherent left-facing three-quarter view, keeping their distinct anatomy; add same organs. Do not use body anatomy from image2 middle columns. Final endpoint columns stage0 and stage3 all three views come unchanged from image2. White background, same soft light, muted warm gray low-poly faceted surface, dark shorts, full figures. Compact antlers fit within cells, nothing clipped. This is a local organ overlay on accepted anatomy, NOT fresh body generation. Prioritize preserving accepted bare body silhouette over making a generic attractive humanoid.
+```
+
+Единственная корректировка: вход 1 — выход первого прохода, вход 2 — принятое тело, вход 3 — r2.
+
+```text
+undefined
+```
+
 ## Корректировки по сверке координатора · 30.10.2026
 
 Встроенный image_gen, по одному вызову на каждый r2. Последующих генераций нет.
@@ -105,4 +137,20 @@ Use case: stylized-concept. CHIMERA production concept sheet, grayscale faceted 
 undefined
 ```
 
+
+# Лось r4 · 30.10.2026 · утвердительный образ
+
+Инструмент: встроенный image_gen. Пробы: вход 1 — `chelovek-los-r4-ref-st3.png`, пиксельная вырезка колонки ст.3 из r2 (x=1130..1535, y=38..1023); вход 2 — `../ChimeraEvolution/Референсы/витрина/человек-лось/тело.png`. Средние фигуры r2 в генератор не передаются.
+
+## Проба 1 — анфас двух ступеней
+
+```text
+Stylized low-poly clay creature sheet, pure white background, gray faceted planes, soft studio lighting. Two full-length figures side by side, straight front view, shared ground line. Left: Stage 1. Right: Stage 2. A moose that has risen onto its hind legs and walks upright: the heavy front of a moose carried high. Image 1 supplies the moose's withers, chest, coat and long tapering limbs. Image 2 supplies the upright stance and forward lean of the two middle profile silhouettes. The shoulders form a tall tent-shaped withers ridge flowing straight into a thick forward neck, like the roof of a steep narrow tent. Long thin forelimbs hang down the sides of a deep narrow keel-shaped chest. The front surface is one continuous long faceted egg tapering toward the waist, covered in coarse short coat suggested by broad facets. Slender hands with dark hoof-like fingertips. Long lean thighs, long dry shins with visible tendons, cloven hooves. Moose head with a long overhanging muzzle, large ears and a dewlap. Dark charcoal shorts. Stage 1: small antlers, moderate high withers, torso tilted about 20 degrees forward, slim upright silhouette. Stage 2: wide palmate antlers, withers higher and longer, neck further forward, torso tilted about 35 degrees, legs longer and drier, chest longer and narrower. The two stages show clearly different trunk silhouettes and limb proportions. Both figures face the camera directly, both feet fully visible. Small labels 'ST.1' and 'ST.2' above the figures.
+```
+
+## Проба 2 — усиление образа поднявшегося лося
+
+```text
+Stylized low-poly clay creature study, white background, gray faceted clay, soft even lighting. Two upright moose creatures in straight front view, full length side by side. Image 1 is the primary shape reference: its pure moose front assembly lifted upright onto the rear pair of legs. Image 2 supplies the forward lean and long-legged upright balance from the two middle side views. Carry the complete moose withers, moose neck, moose coat and moose breast together as one tall hanging teardrop. The high narrow pointed withers rise behind the head like a steep roof; the sides descend in long straight slopes into pencil-thin hanging forelegs. A single slim elongated pear-shaped breast hangs centrally between those forelegs, its front a continuous gently convex fur-covered surface, its lowest tip reaching the waist. The forelegs emerge low along the sides of this hanging moose breast and continue as long tapering sticks to small slender hands with dark hoof fingertips. The outline reads as a narrow tall moose seen head-on, lifted onto long stilt-like rear legs. Clay facets suggest a continuous short coarse coat over the entire trunk. Rear thighs long and slim, shins long and twig-like, cloven hooves. Dark short pants at the small pelvis. Moose muzzle long and drooping, large ears, hanging dewlap. Left ST.1: small antlers, moderate withers roof, trunk leaning forward 20 degrees. Right ST.2: broad palmate antlers, much taller and longer withers roof, a longer hanging breast and forward neck, lean of 35 degrees, longer thinner legs. Trunk width remains slim at both stages, with stage 2 distinctly taller and more elongated through the trunk. Both look directly toward the camera. Shared ground line and camera scale.
+```
 
