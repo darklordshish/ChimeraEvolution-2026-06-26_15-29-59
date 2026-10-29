@@ -160,7 +160,7 @@ ST2N_CEL="${ST2N_CEL:-$R/oboroten-st2n-cel-2026-10-29}"; mkdir -p "$W/v2"
 { [ -z "${OT_OGRANKI:-}" ] || [ -n "${ST2N_PODG-}" ]; } && bl $T/podgonka_v_poze.py -- "$W/k2_vesa.blend" "$W/v2/cel.obj" "$W/v2/orientiry.json" $SK "$W/v2/k.blend" $VSTR \
    --poza "$W/v2/poza.json" --sustavy "$W/v2/sustavy.json" --cel_pokoj "$W/v2/cel_pokoj.obj" --ruki_po_kosti 1
 bl $T/kusok_celi.py -- "$W/v2/k.blend" "$W/v2/cel_pokoj.obj" "$W/v2/g.fbx" "$W/v2/g.json" --vesa "$W/v2/cel_pokoj.obj.vesa.json" \
-   --griva_z 1.15 --griva_x 0.15 --hvost_z -1 --lapy_z 0.72 --kisti_z 0.9 --golova_po_vesam 1 --golova_sheya_z 1.5 --dolya ${DOL2:-0.3} \
+   --griva_z 1.15 --griva_x 0.08 --hvost_z -1 --lapy_z 0.72 --kisti_z 0.9 --golova_po_vesam 1 --golova_sheya_z 1.5 --dolya ${DOL2:-0.3} \
    --ushi 1.80:0.06:1.4 --prizhim_d 0.005 --prizhim_k 0.05 --normali 1 --ostrov 300 --zazor 0.02 --blend "$W/v2/kk.blend"
 # бедро тела над швом лапы — до цели (критик п.1: на шве толстая цель встречала тонкое тело)
 bl $T/telo_k_celi.py -- "$W/v2/kk.blend" "$W/v2/kk.blend" "$W/v2/cel_pokoj.obj" --z0 0.72 --pol 0.15
@@ -170,6 +170,8 @@ bl $T/telo_k_celi.py -- "$W/v2/kk.blend" "$W/v2/kk.blend" "$W/v2/cel_pokoj.obj" 
 bl $T/kusok_ogrubit.py -- "$W/v2/kk.blend" "$W/v2/kk.blend" --kosti бедро,голень,стопа --dolya 0.35
 # ШАГ ПО ГЛУБИНЕ (критик п.3): ноги ±12 см вперёд-назад обе на земле, руки −12°/+8° — профиль 0.658 → 0.759, анфас 0.817 → 0.813
 "$PY" $T/poza_shag.py "$W/v2/poza.json" "$W/v2/sustavy.json" "$W/v2/poza_st.json" 0.12 -0.12 "плечо.L:-12,плечо:8"
+# гребень ±8 см от средней линии (критик n3: «корона» — полоса гребня ±15 см закрывала уши и сзади читалась шапкой; ±8: IoU тот же,
+# ±6: профиль 0.788 → 0.783)
 # лапа от середины бедра сплошной формой (дизайн-линия, вариант В: шов на середине бедра, а не «сапог» от колена) — кусок ниже
 # lapy_z 0.72 покоя, шов по бедру; гребень — пряди дальше 2 см от тела (при 1.2 см в него шла кожа спины цели, при 4 см под гребнем сзади оставалась тёмная щель)
 bl $T/shov_kuska.py -- "$W/v2/kk.blend" "$W/v2/kkg.blend" --kosti бедро,бедро.L,голень,голень.L,стопа,стопа.L --polosa 0.12
