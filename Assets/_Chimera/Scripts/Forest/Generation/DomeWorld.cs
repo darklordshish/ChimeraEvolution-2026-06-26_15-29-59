@@ -188,6 +188,24 @@ public class DomeWorld
         if (buildRavines)
             Ravines = DomeRavines.Build(cfg, seed, LabCenter, entryXZ, Hydro,
                 DomeRockRing.InnerRadius(cfg));
+
+        // Место станции ищется по сырому полю (до террасы/каньона/оврагов).
+        // После географии сверяем его с финальным полем: если оно выше,
+        // поднимаем площадку, чтобы станция не оказалась под землёй.
+        if (buildLabComplex)
+        {
+            float finalGround = TerrainGround(LabCenter.x, LabCenter.y);
+            if (Mathf.Abs(finalGround - site.groundY) > 0.5f)
+                Debug.LogWarning($"[Forest] место станции: сырое поле {site.groundY:F1} м, " +
+                                 $"финальное {finalGround:F1} м — площадка скорректирована");
+            if (ResolvedLabEntrance == LabEntrance.Underground ||
+                ResolvedLabEntrance == LabEntrance.Buried)
+                platformY = Mathf.Max(finalGround - DomeLabComplex.DepthFor(ResolvedLabEntrance),
+                    Hydro.lakeLevel + 0.5f);
+            else
+                platformY = Mathf.Max(finalGround, Hydro.lakeLevel + 0.5f);
+        }
+
         if (buildStationHill)
         {
             float yaw = padYaw * Mathf.Deg2Rad;
@@ -266,6 +284,16 @@ public class DomeWorld
     /// <summary>Сырое поле без площадки/рампы/оврагов — только для диагностики.</summary>
     public float RawGround(float x, float z) =>
         cfg != null && Hydro != null ? DomeHydro.SampleHydro(cfg, Hydro, x, z) : 0f;
+
+    /// <summary>Поле без площадки станции и без холма: сырое + терраса/каньон/овраги.</summary>
+    float TerrainGround(float x, float z)
+    {
+        float raw = RawGround(x, z);
+        raw = DomeTerrace.Apply(raw, Terrace, x, z);
+        raw = DomeCanyon.Apply(raw, Canyon, x, z, Hydro.lakeLevel);
+        raw = DomeRavines.Apply(raw, Ravines, x, z, Hydro.lakeLevel);
+        return raw;
+    }
 
     public float RingGround(float x, float z) =>
         DomeSlope.RingField(cfg, x, z, SampleGround);
