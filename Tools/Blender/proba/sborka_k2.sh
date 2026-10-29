@@ -153,17 +153,21 @@ KL=Docs/models/handoff/klyuchi
 if [ "${SDVIG:-1}" = 1 ] && [ "${ST2N:-0}" = 1 ]; then
 echo "== Новая ст.2: подгонка к листу БВ-1, куски, огранка"
 ST2N_CEL="${ST2N_CEL:-$R/oboroten-st2n-cel-2026-10-29}"; mkdir -p "$W/v2"
-[ -z "${OT_OGRANKI:-}" ] && bl $T/podgonka_v_poze.py -- "$W/k2_vesa.blend" "$ST2N_CEL/cel_s42_chist.obj" "$ST2N_CEL/orientiry-celi.json" $SK "$W/v2/k.blend" $VSTR \
+# стопа цели круче и короче (критик п.2: плюсна ~27° против 55–60° у листа, стопа в 1.7 раза длиннее) — cel_stopa.py ×0.55 по
+# глубине ниже скакательного; IoU цели профиль 0.687 → 0.692, но тела — хуже (×0.55: 0.761 → 0.724, ×0.75: 0.732) — по умолчанию
+# выключено (×1.0)
+"$PY" $T/cel_stopa.py "$ST2N_CEL/cel_s42_chist.obj" "$ST2N_CEL/orientiry-celi.json" "$W/v2/cel.obj" "$W/v2/orientiry.json" --k ${STOPA_K:-1.0} | tail -1
+{ [ -z "${OT_OGRANKI:-}" ] || [ -n "${ST2N_PODG-}" ]; } && bl $T/podgonka_v_poze.py -- "$W/k2_vesa.blend" "$W/v2/cel.obj" "$W/v2/orientiry.json" $SK "$W/v2/k.blend" $VSTR \
    --poza "$W/v2/poza.json" --sustavy "$W/v2/sustavy.json" --cel_pokoj "$W/v2/cel_pokoj.obj" --ruki_po_kosti 1
 bl $T/kusok_celi.py -- "$W/v2/k.blend" "$W/v2/cel_pokoj.obj" "$W/v2/g.fbx" "$W/v2/g.json" --vesa "$W/v2/cel_pokoj.obj.vesa.json" \
    --griva_z 1.15 --griva_x 0.15 --hvost_z -1 --lapy_z 0.72 --kisti_z 0.9 --golova_po_vesam 1 --golova_sheya_z 1.5 --dolya ${DOL2:-0.3} \
-   --ushi 1.80:0.06:1.4 --prizhim_d 0.005 --prizhim_k 0.05 --normali 1 --ostrov 300 --zazor 0.04 --blend "$W/v2/kk.blend"
+   --ushi 1.80:0.06:1.4 --prizhim_d 0.005 --prizhim_k 0.05 --normali 1 --ostrov 300 --zazor 0.02 --blend "$W/v2/kk.blend"
 # бедро тела над швом лапы — до цели (критик п.1: на шве толстая цель встречала тонкое тело)
 bl $T/telo_k_celi.py -- "$W/v2/kk.blend" "$W/v2/kk.blend" "$W/v2/cel_pokoj.obj" --z0 0.72 --pol 0.15
 # ШАГ ПО ГЛУБИНЕ (критик п.3): ноги ±12 см вперёд-назад обе на земле, руки −12°/+8° — профиль 0.658 → 0.759, анфас 0.817 → 0.813
 "$PY" $T/poza_shag.py "$W/v2/poza.json" "$W/v2/sustavy.json" "$W/v2/poza_st.json" 0.12 -0.12 "плечо.L:-12,плечо:8"
 # лапа от середины бедра сплошной формой (дизайн-линия, вариант В: шов на середине бедра, а не «сапог» от колена) — кусок ниже
-# lapy_z 0.72 покоя, шов по бедру; гребень — только пряди дальше 4 см от тела (при 1.2 см в него шла кожа спины цели)
+# lapy_z 0.72 покоя, шов по бедру; гребень — пряди дальше 2 см от тела (при 1.2 см в него шла кожа спины цели, при 4 см под гребнем сзади оставалась тёмная щель)
 bl $T/shov_kuska.py -- "$W/v2/kk.blend" "$W/v2/kkg.blend" --kosti бедро,бедро.L,голень,голень.L,стопа,стопа.L --polosa 0.12
 bl $T/privyazat_polosu.py -- "$W/v2/kkg.blend" "$W/v2/kkg.blend" --kusok @Волк --imya Волк --oblast griva --polosa 0.05 --bez голова,Чутьё
 bl $T/griva_zashit.py -- "$W/v2/kkg.blend" "$W/v2/kkg.blend"
