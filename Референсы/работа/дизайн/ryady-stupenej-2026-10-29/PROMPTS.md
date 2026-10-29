@@ -1,5 +1,31 @@
 # Запросы: полные ряды ступеней · 29.10.2026
 
+## Корректировки по сверке координатора · 30.10.2026
+
+Встроенный image_gen, по одному вызову на каждый r2. Последующих генераций нет.
+Все четыре входных изображения открыты перед вызовами. Генераторные выходы 1536×1024.
+После генерации собраны разрешённые колонки с неизменными исходными областями;
+это сохранение ст.0/ст.3, а не ещё один генеративный проход. Подробности и дефекты — README.
+
+### chelovek-los-r2.png
+
+Вход 1 (цель редактирования): `chelovek-los.png` в этой папке.
+Вход 2 (анатомический референс): `../ChimeraEvolution/Референсы/витрина/человек-лось/тело.png`.
+
+```text
+Use case: precise-object-edit. Edit IMAGE 1 CHIMERA moose progression sheet. IMAGE 2 is authoritative anatomical body r3 reference, NOT a replacement layout. Keep the entire first and fourth columns ST.0 and ST.3 absolutely unchanged, same pixels if possible. Keep layout, labels, background, lighting, scale, all 3 camera rows FRONT / LEFT PROFILE / THREE QUARTER. Change ONLY middle two columns stages1 and2: replace human bodybuilder anatomy with the animal musculature in image2. Eliminate paired pectoral plates, sixpack abs, spherical deltoids and bulky human thighs/calves. Narrow deep elongated rib cage, continuous smooth elongated animal muscle masses rendered in broad low-poly facets, withers hump ABOVE scapulae, neck emerging forward from hump, light pelvis, long dry lean legs. Stage1 moderate hump and forward neck with long lean legs. Stage2 visibly stronger and higher scapular hump, longer forward neck projection, deeper narrower chest and even drier longer-looking legs, moderate progression like reference r3 not exaggerated monster. This distinction MUST be visible in naked body silhouette in ALL THREE VIEWS independently of antler size. Front and threequarter especially must be animal torso, no fitness human chest or abs. Preserve moose heads muzzle ears antlers, hand hoof tips and cloven feet on both stages, dark shorts, bipedal stance. Image2 lower middle columns show profile WITH organs; use that body silhouette. No changes to endpoint columns, no extra figures. Single corrective pass.
+```
+
+### chelovek-zmeya-r2.png
+
+Вход 1 (цель редактирования): `chelovek-zmeya.png` в этой папке.
+Вход 2 (тело и внешний облик органов): `../ChimeraEvolution/Референсы/витрина/человек-змея/тело.png`.
+
+```text
+Use case: precise-object-edit. IMAGE1 is target CHIMERA human-snake progression sheet. IMAGE2 is supporting snake r3 anatomy and external organ reference. Edit ONLY stage1, second column, all THREE views (front, left profile, threequarter). Add missing external organs: replace human head with an unmistakable elongated SNAKE HEAD and snake mouth/jaws, like bottom row 'С ОРГАНАМИ' in IMAGE2 (especially variant A). Snake eyes, elongated reptile muzzle, snake jaw silhouette, no human ears or human nose. Add visible subtle gray overlapping SCALES of Skin over head, neck, torso, arms and legs, small coherent scales following anatomy, not armor plates. Keep healthy slender long bipedal body of image1 or slightly closer to reference A/C: smooth elongated muscle masses, long narrow torso and legs, soft S profile neck forward chest back pelvis forward; narrow shoulders without shoulder shelf. Shoulder-joint width / hip-joint width target <=1.10; neck-side sweep toward shoulder target 30–35 degrees from horizontal when readable; prioritize adding organs without distorting body. Keep human hands feet and dark shorts. Absolutely NO tail, rattle, extra limbs or internal organs on stage1. Do not add standalone organs. Preserve first stage0 column, third unreachable stage2 column and fourth pure-snake stage3 column EXACTLY UNCHANGED, including every figure and all text and grid. Same original 1536x1024 layout composition scale white background grayscale lighting. Only second column may change. Single corrective pass.
+```
+
+
 Инструмент: встроенный image_gen; по одной первичной генерации и одной корректировке на лист. Источники прочитаны из соседней рабочей папки ChimeraEvolution, без изменения витрины. Все входные изображения открыты перед генерацией.
 
 ## oboroten
