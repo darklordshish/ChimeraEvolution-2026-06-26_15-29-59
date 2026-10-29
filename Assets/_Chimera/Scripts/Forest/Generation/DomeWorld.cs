@@ -783,7 +783,10 @@ public class DomeWorld
         if (mesh == null) return;
         Track(mesh);
         // Холм — земля, а не бетон: камень остаётся акцентами у расщелины.
-        Part("StationHill", mesh, Flat(DomePalette.Terrain));
+        // Двусторонний: из зала видно земляной потолок, а не небо через backface.
+        var hillMat = Flat(DomePalette.Terrain);
+        hillMat.SetFloat("_Cull", 0f);
+        Part("StationHill", mesh, hillMat);
     }
 
     void BuildFacility(long seed, bool buildLabComplex, bool buildStationLoop = false)
