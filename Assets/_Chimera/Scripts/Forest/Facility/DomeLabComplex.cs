@@ -629,9 +629,8 @@ public static class DomeLabComplex
                 -CreviceWidth * 0.5f - 0.55f, Plinth + 1.4f, cz, true);
             b.Add("CreviceWallE", Kit.Rock, 1.1f, 3.4f, CreviceLength,
                 CreviceWidth * 0.5f + 0.55f, Plinth + 1.4f, cz, true);
-            b.AddRock("CreviceMouthW", 4.2f, -3.2f, depth - 0.2f, z1 + 0.8f);
-            b.AddRock("CreviceMouthE", 3.8f, 3.1f, depth - 0.2f, z1 + 0.8f);
-            b.AddRock("CreviceBrow", 4.5f, 0f, depth + 1.4f, z1 + 1.6f);
+            b.AddRock("CreviceMouthW", 1.4f, -3.4f, depth - 0.2f, z1 + 0.8f);
+            b.AddRock("CreviceMouthE", 1.2f, 3.3f, depth - 0.2f, z1 + 0.8f);
             b.Light("LabLight_Crevice", new Vector3(0f, depth + 1.8f, z1 - 0.8f),
                 9f, 0.85f, DomePalette.LabCold);
 

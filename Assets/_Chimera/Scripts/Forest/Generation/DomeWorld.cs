@@ -288,12 +288,19 @@ public class DomeWorld
             float lz = dx * s + dz * c;
             float zDoor = -DomeLabComplex.HalfDepth;
             float zOuter = zDoor - DomeLabComplex.RampLength;
-            if (Mathf.Abs(lx) <= DomeLabComplex.RampWidth * 0.5f &&
-                lz <= zDoor && lz >= zOuter)
+            // Борта спуска — не отвесная ступенька: на крупной клетке чанка
+            // она читается зубом terrain. Плавно уводим рампу в площадку.
+            float halfRamp = DomeLabComplex.RampWidth * 0.5f;
+            float side = Mathf.Abs(lx);
+            const float sideBlend = 5f;
+            if (side <= halfRamp + sideBlend && lz <= zDoor && lz >= zOuter)
             {
                 float rampT = Mathf.Clamp01((zDoor - lz) / DomeLabComplex.RampLength);
-                return Mathf.Lerp(platformY, platformY +
+                float rampY = Mathf.Lerp(platformY, platformY +
                     DomeLabComplex.DepthFor(ResolvedLabEntrance), rampT);
+                float sideW = 1f - Mathf.SmoothStep(0f, 1f,
+                    Mathf.InverseLerp(halfRamp, halfRamp + sideBlend, side));
+                return Mathf.Lerp(platformY, rampY, sideW);
             }
         }
 
@@ -707,7 +714,11 @@ public class DomeWorld
                 return Mathf.SmoothStep(0f, 1f, wx * wz);
             };
         }
-        var mesh = DomeHillMesh.Build(Hill, RawGround, 48, 6f, halfX, halfZ, rampCut, SampleGround, rampWeight);
+        // Вырез меша должен быть не уже выреза поля, иначе холм затягивает
+        // края расщелины и снаружи виден только узкий чёрный слот.
+        float hole = Mathf.Max(6f, Hill.notchRadius + 1f);
+        var mesh = DomeHillMesh.Build(Hill, RawGround, 48, hole, halfX, halfZ,
+            rampCut, SampleGround, rampWeight);
         if (mesh == null) return;
         Track(mesh);
         // Холм — земля, а не бетон: камень остаётся акцентами у расщелины.
