@@ -60,7 +60,9 @@ public static class DomeLabComplex
         public LabStyle style;
         /// <summary>Портал с фасада, координаты поля (как <c>DomeWorld.Entry</c>).</summary>
         public Vector3 door;
-        /// <summary>Северный выход петли A; default, если дверь не включена.</summary>
+        /// <summary>Точка внутри зала: цель маршрута Entry → LabDoor → LabAtrium.</summary>
+        public Vector3 atrium;
+        /// <summary>Северная дверь A; default, если проёма нет.</summary>
         public Vector3 northDoor;
         /// <summary>Все детали, включая внешнюю оболочку стиля.</summary>
         public int parts;
@@ -172,6 +174,7 @@ public static class DomeLabComplex
             style = style,
             entrance = entrance,
             door = DoorPoint(center, groundY, yawDeg),
+            atrium = new Vector3(center.x, groundY + Plinth + 1.7f, center.y),
             northDoor = northDoor && style == LabStyle.Bastion
                 ? NorthDoorPoint(center, groundY, yawDeg) : default,
             berm = style == LabStyle.InSlope,

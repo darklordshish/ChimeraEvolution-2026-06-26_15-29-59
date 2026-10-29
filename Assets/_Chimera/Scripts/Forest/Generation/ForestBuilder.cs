@@ -143,6 +143,7 @@ public class ForestBuilder : MonoBehaviour
     public Vector2 LabCenter => world != null ? world.LabCenter : Vector2.zero;
     /// <summary>Портал комплекса B0.1 в координатах поля (как Entry); default у старого лабиринта.</summary>
     public Vector3 LabDoor => world != null ? world.LabDoor : default;
+    public Vector3 LabAtrium => world != null ? world.LabAtrium : default;
     public Vector3 LabNorthDoor => world != null ? world.LabNorthDoor : default;
     /// <summary>Какой стиль комплекс получил на самом деле (Auto разрешён в один из двух).</summary>
     public LabStyle ResolvedLabStyle => world != null ? world.ResolvedLabStyle : labStyle;

@@ -52,6 +52,7 @@ public class DomeWorld
     public Vector2 LabCenter { get; private set; }
     /// <summary>Портал комплекса (координаты поля); default у старого лабиринта.</summary>
     public Vector3 LabDoor { get; private set; }
+    public Vector3 LabAtrium { get; private set; }
     /// <summary>Северный выход станции для петли A; default — нет двери.</summary>
     public Vector3 LabNorthDoor { get; private set; }
     /// <summary>Подход к лаборатории мокрый: у комплекса построен настил.</summary>
@@ -490,6 +491,7 @@ public class DomeWorld
         LabPlan = null;
         LabCenter = Vector2.zero;
         LabDoor = default;
+        LabAtrium = default;
         LabNorthDoor = default;
         LabWetApproach = false;
         ResolvedLabStyle = LabStyle.Bastion;
@@ -825,6 +827,7 @@ public class DomeWorld
                 ResolvedLabStyle, ResolvedLabEntrance, LabWetApproach, LabPlan, buildStationLoop);
             DomeLabDamage.Apply(LabComplex, seed, 1, LabPlan);
             LabDoor = LabComplex.door;
+            LabAtrium = LabComplex.atrium;
             LabNorthDoor = LabComplex.northDoor;
             Facility = null;
             return;
@@ -844,6 +847,7 @@ public class DomeWorld
         DomeFacilityPlacer.Build(Root, Facility, ground);
         LabComplex = null;
         LabDoor = default;
+        LabAtrium = default;
         LabNorthDoor = default;
     }
 

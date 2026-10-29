@@ -108,6 +108,27 @@ namespace Chimera.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator LabDoor_To_Atrium_IsComplete()
+        {
+            var b = Build(true, true);
+            yield return null;
+
+            Assert.AreNotEqual(Vector3.zero, b.LabAtrium, "LabAtrium не выставлен");
+            Assert.IsTrue(NavMesh.SamplePosition(b.Entry, out var entryHit, 20f, NavMesh.AllAreas),
+                "Entry не на NavMesh");
+            Assert.IsTrue(NavMesh.SamplePosition(b.LabDoor, out var doorHit, 20f, NavMesh.AllAreas),
+                "LabDoor не на NavMesh");
+            Assert.IsTrue(NavMesh.SamplePosition(b.LabAtrium, out var atriumHit, 20f, NavMesh.AllAreas),
+                "LabAtrium не на NavMesh");
+
+            var path = new NavMeshPath();
+            Assert.IsTrue(NavMesh.CalculatePath(doorHit.position, atriumHit.position,
+                NavMesh.AllAreas, path), "путь LabDoor → LabAtrium не посчитан");
+            Assert.AreEqual(NavMeshPathStatus.PathComplete, path.status,
+                "LabDoor → LabAtrium не полный");
+        }
+
+        [UnityTest]
         public IEnumerator StationHill_CoversRotatedPad_AndHasRelief()
         {
             var b = Build(true, true);
