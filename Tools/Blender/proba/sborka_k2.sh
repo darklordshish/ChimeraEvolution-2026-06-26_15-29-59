@@ -7,7 +7,7 @@
 set -euo pipefail
 K2="$1"; W="$2"; FBX="$3"
 B="/c/Program Files/Blender Foundation/Blender 5.2/blender.exe"
-T=Tools/Blender/proba; SK=Docs/models/rig/chelovek-skelet.json
+PY="${PY:-/c/ProgramData/anaconda3/python.exe}"; T=Tools/Blender/proba; SK=Docs/models/rig/chelovek-skelet.json
 R="C:/Users/semion/Documents/Chimera_game/_refs-local/эксперименты"
 TELO="$R/oboroten-telo-st2-2026-10-21"; KOL="$R/oboroten-st2-cel-2026-10-20"; LOS="$R/los-st2-cel-2026-10-21"; ST1="$R/oboroten-st1-cel-2026-10-22"
 # CEL_TELO — цель голого тела ст.2 (по умолчанию $TELO/cel_A_norm.obj); подменяется целью с вклеенным торсом (vkleit_tors.py),
@@ -158,6 +158,10 @@ ST2N_CEL="${ST2N_CEL:-$R/oboroten-st2n-cel-2026-10-29}"; mkdir -p "$W/v2"
 bl $T/kusok_celi.py -- "$W/v2/k.blend" "$W/v2/cel_pokoj.obj" "$W/v2/g.fbx" "$W/v2/g.json" --vesa "$W/v2/cel_pokoj.obj.vesa.json" \
    --griva_z 1.15 --griva_x 0.15 --hvost_z -1 --lapy_z 0.72 --kisti_z 0.9 --golova_po_vesam 1 --golova_sheya_z 1.5 --dolya ${DOL2:-0.3} \
    --ushi 1.80:0.06:1.4 --prizhim_d 0.005 --prizhim_k 0.05 --normali 1 --ostrov 300 --zazor 0.04 --blend "$W/v2/kk.blend"
+# бедро тела над швом лапы — до цели (критик п.1: на шве толстая цель встречала тонкое тело)
+bl $T/telo_k_celi.py -- "$W/v2/kk.blend" "$W/v2/kk.blend" "$W/v2/cel_pokoj.obj" --z0 0.72 --pol 0.15
+# ШАГ ПО ГЛУБИНЕ (критик п.3): ноги ±12 см вперёд-назад обе на земле, руки −12°/+8° — профиль 0.658 → 0.759, анфас 0.817 → 0.813
+"$PY" $T/poza_shag.py "$W/v2/poza.json" "$W/v2/sustavy.json" "$W/v2/poza_st.json" 0.12 -0.12 "плечо.L:-12,плечо:8"
 # лапа от середины бедра сплошной формой (дизайн-линия, вариант В: шов на середине бедра, а не «сапог» от колена) — кусок ниже
 # lapy_z 0.72 покоя, шов по бедру; гребень — только пряди дальше 4 см от тела (при 1.2 см в него шла кожа спины цели)
 bl $T/shov_kuska.py -- "$W/v2/kk.blend" "$W/v2/kkg.blend" --kosti бедро,бедро.L,голень,голень.L,стопа,стопа.L --polosa 0.12
@@ -167,11 +171,11 @@ bl $T/griva_zashit.py -- "$W/v2/kkg.blend" "$W/v2/kkg.blend"
 # (воротник за ушами)
 bl $T/shov_kuska.py -- "$W/v2/kkg.blend" "$W/v2/kkg.blend" --kosti шея,голова --polosa 0.05
 bl $T/ogranka.py -- "$W/v2/kkg.blend" "$W/v2/o.blend" --rezhim massy --ploshchad_massy 0.035 --povorot 20 --linii 1 --sila 0.9 --iter 10 \
-   --maks_sdvig 0.02 --zhivot 0 --v_poze "$W/v2/poza.json"
+   --maks_sdvig 0.02 --zhivot 0 --v_poze "$W/v2/poza.json"   # огранка в позе цели: в позе шага хуже (0.809/0.752, развороты 249 против 0.813/0.761, 208)
 bl $T/formovka.py -- "$W/v2/o.blend" "$W/v2/f.blend" --sustavy "$W/v2/sustavy.json" --golen 1 --koleno 0 --talia 1
 bl $T/svesti_klyuchi.py -- "$W/o5.blend" "$W/v2/f.blend" Волк "$W/svod2.fbx" --blend "$W/o5.blend" --cherty @Волк
 # поза ступени 2 для перевязки — поза этой подгонки (в поставку уходит вместе с FBX, когда ст.2 примут)
-POZA_V="$W/v2/poza.json"
+POZA_V="$W/v2/poza_st.json"
 fi
 echo "== Перевязка-страховка, ключи областей, выгрузка"
 # органы на шаблоне (рост) сели на тело ст.1 — их поза ст.1
