@@ -134,7 +134,7 @@
   - `Assets/Settings/*`, `Assets/_Chimera/Prefabs/*`, `ProjectSettings/*` — производные, похоже от прогонов Unity в
     этой папке, в том числе моих: мне они не нужны;
   - `Docs/superpowers/plans/2026-09-04-paradigma-modeli-himery.md` — отличается только BOM;
-  - лесные `Docs/superpowers/specs/2026-09-19-forest-s9-big-bunker.md`, `Docs/Диаграммы/Лес/Кадры/Купол-проба-зеленый.png`,
+  - лесные `Docs/superpowers/specs/2026-09-19-forest-s9-big-bunker.md`, `Docs/Диаграммы/Лес/Кадры/12-старый-купол-24.09/Купол-проба-зеленый.png`,
     `Docs/ОБЗОР_2026-09-18.md`, `Assets/_Chimera/Data/Forest/Flora.meta`.
 
 ## 6. Для сведения
