@@ -26,6 +26,15 @@ using UnityEngine;
 public static class DomeLabSite
 {
     /// <summary>Найденное место. <c>found = false</c> — годного пятна нет вовсе (смени сид).</summary>
+    public struct Margins
+    {
+        public float dry;
+        public float slope;
+        public float relief;
+        public float river;
+        public float min;
+    }
+
     public struct Spot
     {
         public bool found;
@@ -48,8 +57,9 @@ public static class DomeLabSite
         /// <summary>Верх пятна: на нём стоит плита (не ниже воды).</summary>
         public float groundY;
         public float distanceToEntry;
-        /// <summary>Перепад по пятну (м) — запас до порога 2 м, печатается в лог.</summary>
+        /// <summary>Перепад по пятну (м) — рабочая оценка 2 м, смотрится в лог.</summary>
         public float relief;
+        public Margins margins;
         public string note;
     }
 
@@ -93,7 +103,7 @@ public static class DomeLabSite
     /// </summary>
     public static Spot Find(DomeGenConfigSO cfg, long seed, Vector2 entry, DomeHydro.State hydro,
         LabStyle requested, float minDistance, LabEntrance entrance = LabEntrance.Rock,
-        int attempts = 512)
+        int attempts = 512, bool preferBest = false, bool lattice = false)
     {
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
         if (hydro == null) throw new ArgumentNullException(nameof(hydro));
@@ -105,8 +115,11 @@ public static class DomeLabSite
         // 1) честный порог в своей полосе; 2) без порога — самое далёкое сухое пятно.
         foreach (var style in Order(requested))
         {
-            var exact = Search(cfg, seed, entry, hydro, ground, rin, style, entrance, minDistance, attempts,
-                keepFarthest: false, requireDryApproach: true, wetApproach: false);
+            var exact = lattice
+                ? SearchLattice(cfg, entry, hydro, ground, rin, style, entrance, minDistance,
+                    requireDryApproach: true, wetApproach: false)
+                : Search(cfg, seed, entry, hydro, ground, rin, style, entrance, minDistance, attempts,
+                    keepFarthest: false, requireDryApproach: true, wetApproach: false, preferBest: preferBest);
             if (exact.found) return exact;
         }
 
@@ -115,7 +128,7 @@ public static class DomeLabSite
         foreach (var style in Order(requested))
         {
             var relaxed = Search(cfg, seed, entry, hydro, ground, rin, style, entrance, 0f, attempts,
-                keepFarthest: true, requireDryApproach: true, wetApproach: false);
+                keepFarthest: true, requireDryApproach: true, wetApproach: false, preferBest: preferBest);
             if (!relaxed.found) continue;
             if (relaxed.distanceToEntry > bestDist)
             {
@@ -137,7 +150,7 @@ public static class DomeLabSite
         foreach (var style in Order(requested))
         {
             var wet = Search(cfg, seed, entry, hydro, ground, rin, style, entrance, 0f, attempts,
-                keepFarthest: true, requireDryApproach: false, wetApproach: true);
+                keepFarthest: true, requireDryApproach: false, wetApproach: true, preferBest: preferBest);
             if (!wet.found) continue;
             if (wet.distanceToEntry > bestDist)
             {
@@ -178,9 +191,41 @@ public static class DomeLabSite
         }
     }
 
+    static Spot SearchLattice(DomeGenConfigSO cfg, Vector2 entry, DomeHydro.State hydro,
+        Func<float, float, float> ground, float rin, LabStyle style, LabEntrance entrance,
+        float minDistance, bool requireDryApproach, bool wetApproach)
+    {
+        Spot best = default;
+        foreach (float step in new[] { 40f, 20f, 10f })
+        {
+            int n = Mathf.CeilToInt(2f * rin / step);
+            for (int ix = -n; ix <= n; ix++)
+                for (int iz = -n; iz <= n; iz++)
+                {
+                    Vector2 p = new Vector2(ix * step, iz * step);
+                    float r = p.magnitude;
+                    if (r > rin) continue;
+                    if (style == LabStyle.InSlope &&
+                        (r < rin - RingBandInner || r > rin - RingBandOuter)) continue;
+                    if (style == LabStyle.Bastion && r > rin - BastionInset) continue;
+                    float dist = Vector2.Distance(p, entry);
+                    if (dist < minDistance) continue;
+                    if (!Accept(cfg, hydro, ground, p, entry, style, entrance, requireDryApproach,
+                            out float groundY, out float relief, out Margins margins))
+                        continue;
+                    var spot = Make(p, entry, style, entrance, groundY, relief, dist, wetApproach, false);
+                    spot.margins = margins;
+                    if (!best.found || margins.min > best.margins.min) best = spot;
+                }
+            if (best.found) return best;
+        }
+        return best;
+    }
+
     static Spot Search(DomeGenConfigSO cfg, long seed, Vector2 entry, DomeHydro.State hydro,
         Func<float, float, float> ground, float rin, LabStyle style, LabEntrance entrance,
-        float minDistance, int attempts, bool keepFarthest, bool requireDryApproach, bool wetApproach)
+        float minDistance, int attempts, bool keepFarthest, bool requireDryApproach, bool wetApproach,
+        bool preferBest)
     {
         Spot best = default;
         float bestDist = float.NegativeInfinity;
@@ -190,11 +235,16 @@ public static class DomeLabSite
             float dist = Vector2.Distance(p, entry);
             if (dist < minDistance) continue;
             if (!Accept(cfg, hydro, ground, p, entry, style, entrance, requireDryApproach,
-                    out float groundY, out float relief))
+                    out float groundY, out float relief, out Margins margins))
                 continue;
             var spot = Make(p, entry, style, entrance, groundY, relief, dist, wetApproach, false);
-            if (!keepFarthest) return spot;
-            if (dist > bestDist)
+            spot.margins = margins;
+            if (!keepFarthest && !preferBest) return spot;
+            if (preferBest)
+            {
+                if (!best.found || margins.min > best.margins.min) best = spot;
+            }
+            else if (dist > bestDist)
             {
                 bestDist = dist;
                 best = spot;
@@ -230,40 +280,41 @@ public static class DomeLabSite
     /// </summary>
     static bool Accept(DomeGenConfigSO cfg, DomeHydro.State hydro, Func<float, float, float> ground,
         Vector2 p, Vector2 entry, LabStyle style, LabEntrance entrance, bool requireDryApproach,
-        out float groundY, out float relief)
+        out float groundY, out float relief, out Margins margins)
     {
         groundY = 0f;
         relief = 0f;
+        margins = default;
         float yaw = YawAwayFromEntry(p, entry);
 
-        // Русло под плитой: SampleHydro его вырезает, и «сухо» по уровню озера его не ловит.
+        float minRiver = float.MaxValue;
         for (int i = 0; i < hydro.riverPts.Count; i++)
         {
             float dx = hydro.riverPts[i].x - p.x;
             float dz = hydro.riverPts[i].y - p.y;
-            if (dx * dx + dz * dz < RiverClearance * RiverClearance) return false;
+            float d = Mathf.Sqrt(dx * dx + dz * dz);
+            if (d < minRiver) minRiver = d;
         }
+        if (minRiver < RiverClearance) return false;
 
         float lake = hydro.lakeLevel;
         float min = float.MaxValue, max = float.MinValue;
+        float maxSlope = 0f;
         for (int k = 0; k < PadSamples.Length; k++)
         {
-            // InSlope спиной стоит в скале: задняя половина пятна — не «пол»,
-            // её накрывает берма. Проверяем центр, фронт и бока.
             if (style == LabStyle.InSlope && PadSamples[k].y > 0f) continue;
             Vector2 q = PadPoint(p, yaw, PadSamples[k]);
             float h = ground(q.x, q.y);
             if (h < lake + DryMargin) return false;
-            if (DomeSlope.SlopeAtS(cfg, q.x, q.y, ground) >= MaxSlopeDegrees) return false;
+            float slope = DomeSlope.SlopeAtS(cfg, q.x, q.y, ground);
+            if (slope >= MaxSlopeDegrees) return false;
+            if (slope > maxSlope) maxSlope = slope;
             if (h < min) min = h;
             if (h > max) max = h;
         }
         relief = max - min;
         if (relief > MaxRelief) return false;
 
-        // Подход перед дверью — часть места: в B0.1 он оказался в воде, и «сухое пятно»
-        // этого не поймало. Полоса идёт от фасада (−Z кадра) наружу, центр и края.
-        // В запасном «мокром» проходе её пропускаем и строим настил.
         if (requireDryApproach)
         {
             float approachLength = (entrance == LabEntrance.Underground ||
@@ -281,11 +332,13 @@ public static class DomeLabSite
             }
         }
 
-        // Плита стоит на ВЕРХНЕЙ точке пятна: иначе угол повиснет над землёй, а не наоборот.
         groundY = max;
-
-        // InSlope сзади накрыт бермой/скалой — это его оболочка, а не «пол».
-        // Поэтому отдельного запрета «кольцо выше пола» здесь нет.
+        margins.dry = min - (lake + DryMargin);
+        margins.slope = MaxSlopeDegrees - maxSlope;
+        margins.relief = MaxRelief - relief;
+        margins.river = minRiver - RiverClearance;
+        margins.min = Mathf.Min(margins.dry, margins.slope,
+            Mathf.Min(margins.relief, margins.river));
         return true;
     }
 

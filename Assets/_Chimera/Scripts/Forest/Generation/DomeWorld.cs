@@ -144,7 +144,7 @@ public class DomeWorld
         if (buildLabComplex)
         {
             site = DomeLabSite.Find(cfg, seed, entryXZ, Hydro, labStyle, minDistance,
-                ResolvedLabEntrance);
+                ResolvedLabEntrance, preferBest: buildStationLoop, lattice: buildStationLoop);
             if (!site.found)
             {
                 Debug.LogError($"[Forest] лаборатории нет места: {site.note} — остаётся старый лабиринт");
