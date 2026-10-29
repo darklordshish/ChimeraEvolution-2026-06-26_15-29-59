@@ -53,6 +53,8 @@ public class DomeWorld
     /// <summary>Портал комплекса (координаты поля); default у старого лабиринта.</summary>
     public Vector3 LabDoor { get; private set; }
     public Vector3 LabAtrium { get; private set; }
+    public SamplingContract Contract { get; private set; }
+    public GenTrace Trace { get; private set; }
     /// <summary>Северный выход станции для петли A; default — нет двери.</summary>
     public Vector3 LabNorthDoor { get; private set; }
     /// <summary>Подход к лаборатории мокрый: у комплекса построен настил.</summary>
@@ -125,7 +127,10 @@ public class DomeWorld
         Root = root;
         this.cfg = cfg;
         northCrevice = buildStationLoop && labEntrance == LabEntrance.Buried;
+        Contract = SamplingContract.From(cfg, terrainQuads);
+        Trace = new GenTrace();
         Hydro = DomeHydro.Build(cfg, 256);
+        Trace.Add("hydro", 1, Hydro != null ? 1 : 0);
 
         // 1) ВХОД — ДО лаборатории. Ангар (его угол задан сидом) показывает, с какой стороны
         //    света вход; сама точка — у подножия кольца внутри чаши. Ни площадки, ни корпусов
@@ -149,6 +154,7 @@ public class DomeWorld
 
         if (buildLabComplex)
         {
+            Trace.Add("site", 1, 1, site.note);
             LabCenter = site.center;
             ResolvedLabStyle = site.style;
             LabWetApproach = site.wetApproach;
@@ -189,6 +195,9 @@ public class DomeWorld
         if (buildRavines)
             Ravines = DomeRavines.Build(cfg, seed, LabCenter, entryXZ, Hydro,
                 DomeRockRing.InnerRadius(cfg));
+        Trace.Add("terrace", 1, Terrace.valid ? 1 : 0);
+        Trace.Add("canyon", 1, Canyon.valid ? 1 : 0);
+        Trace.Add("ravines", Ravines.Count, Ravines.Count);
 
         // Место станции ищется по сырому полю (до террасы/каньона/оврагов).
         // После географии сверяем его с финальным полем: если оно выше,
@@ -216,6 +225,7 @@ public class DomeWorld
         }
 
         BuildChunks(terrainQuads);
+        Trace.Add("chunks", Chunks, Chunks);
         BuildRockRing();
         BuildWater();
         BuildMouthsAndNests(seed);
@@ -511,6 +521,8 @@ public class DomeWorld
         FallenTrees = 0;
         VisualNests = 0;
         platformY = 0f;
+        Contract = default;
+        Trace = null;
         cfg = null;
     }
 
@@ -826,6 +838,7 @@ public class DomeWorld
             LabComplex = DomeLabComplex.Build(Root, LabCenter, platformY, padYaw,
                 ResolvedLabStyle, ResolvedLabEntrance, LabWetApproach, LabPlan, buildStationLoop);
             DomeLabDamage.Apply(LabComplex, seed, 1, LabPlan);
+            Trace.Add("lab", LabComplex.parts, LabComplex.parts, LabComplex.planTemplate);
             LabDoor = LabComplex.door;
             LabAtrium = LabComplex.atrium;
             LabNorthDoor = LabComplex.northDoor;

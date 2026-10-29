@@ -145,6 +145,10 @@ public class ForestBuilder : MonoBehaviour
     public Vector3 LabDoor => world != null ? world.LabDoor : default;
     public Vector3 LabAtrium => world != null ? world.LabAtrium : default;
     public Vector3 LabNorthDoor => world != null ? world.LabNorthDoor : default;
+    public SamplingContract Contract => world != null ? world.Contract : default;
+    public GenTrace Trace => world != null ? world.Trace : null;
+    public ulong Fingerprint { get; private set; }
+    public string FingerprintHex => WorldFingerprint.Hex(Fingerprint);
     /// <summary>Какой стиль комплекс получил на самом деле (Auto разрешён в один из двух).</summary>
     public LabStyle ResolvedLabStyle => world != null ? world.ResolvedLabStyle : labStyle;
     public LabEntrance ResolvedLabEntrance => world != null ? world.ResolvedLabEntrance : labEntrance;
@@ -270,6 +274,7 @@ public class ForestBuilder : MonoBehaviour
         SpawnPlayer();
 
         BuildLairs();
+        Fingerprint = WorldFingerprint.Compute(this);
         SetupClimate();
 
         int parts = world.Facility != null ? world.Facility.parts.Count
@@ -488,6 +493,7 @@ public class ForestBuilder : MonoBehaviour
     /// </summary>
     public void Clear()
     {
+        Fingerprint = 0UL;
         // Порядок важен: тик → живые → адреса → мир.
         // 1) autoTick off: следующий Update не должен Tick-нуть по снесённым сайтам.
         // 2) ClearSpawned: рождённые звери НЕ дети корня мира (префаб/фабрика кладут их
