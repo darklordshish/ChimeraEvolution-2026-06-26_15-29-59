@@ -1,0 +1,122 @@
+{
+  "proba1": [
+    {
+      "stage": 1,
+      "hip": [
+        540,
+        523
+      ],
+      "withers": [
+        460,
+        198
+      ],
+      "knee": [
+        535,
+        655
+      ],
+      "hand": [
+        470,
+        691
+      ],
+      "support": [
+        427,
+        600
+      ],
+      "ground": 938,
+      "angle_deg": 13.83,
+      "fingertips_below_knee_px": 36,
+      "hand_height_px": 247,
+      "mid_thigh_y": 589.0,
+      "hip_above_support": true
+    },
+    {
+      "stage": 2,
+      "hip": [
+        1286,
+        523
+      ],
+      "withers": [
+        1131,
+        163
+      ],
+      "knee": [
+        1285,
+        655
+      ],
+      "hand": [
+        1194,
+        701
+      ],
+      "support": [
+        1149,
+        1365
+      ],
+      "ground": 938,
+      "angle_deg": 23.29,
+      "fingertips_below_knee_px": 46,
+      "hand_height_px": 237,
+      "mid_thigh_y": 589.0,
+      "hip_above_support": true
+    }
+  ],
+  "korrekciya": [
+    {
+      "stage": 1,
+      "hip": [
+        540,
+        523
+      ],
+      "withers": [
+        460,
+        198
+      ],
+      "knee": [
+        535,
+        655
+      ],
+      "hand": [
+        470,
+        687
+      ],
+      "support": [
+        427,
+        600
+      ],
+      "ground": 938,
+      "angle_deg": 13.83,
+      "fingertips_below_knee_px": 32,
+      "hand_height_px": 251,
+      "mid_thigh_y": 589.0,
+      "hip_above_support": true
+    },
+    {
+      "stage": 2,
+      "hip": [
+        1286,
+        523
+      ],
+      "withers": [
+        1131,
+        163
+      ],
+      "knee": [
+        1285,
+        655
+      ],
+      "hand": [
+        1180,
+        698
+      ],
+      "support": [
+        1149,
+        1365
+      ],
+      "ground": 938,
+      "angle_deg": 23.29,
+      "fingertips_below_knee_px": 43,
+      "hand_height_px": 240,
+      "mid_thigh_y": 589.0,
+      "hip_above_support": true
+    }
+  ]
+}

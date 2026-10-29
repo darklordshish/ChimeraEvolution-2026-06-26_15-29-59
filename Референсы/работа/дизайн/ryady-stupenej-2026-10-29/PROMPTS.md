@@ -200,3 +200,33 @@ Anatomy and balance: tall thoracic spinous processes form the steep withers; the
 ST.1: moderate withers, small antlers. A tall trunk whose hip-to-withers line leans 18 degrees from vertical. Hands finish at the middle of the thighs: each entire hand rests beside the upper half of the thigh, its fingertips halfway between hip joint and knee. Compact hanging forelimbs fit the distance between low ribs and mid-thigh.
 ST.2: broad palmate antlers, taller longer withers, longer forward neck and a deep elongated keel chest. A strongly diagonal rising trunk: hip-to-withers line leans 35 degrees from vertical, 55 degrees above the ground. Picture a solid inclined column anchored at the upright pelvis: for every 100 units of rise above the hip, the withers advance 70 units toward the muzzle. The withers stand far forward of the hip and high above it. The rear leg column stays beneath the hip, the hip joint's plumb line falls through the middle of the hoof contact. The pelvis and load-bearing hind legs form a steady grounded pedestal for the diagonal trunk; the neck rises from that inclined trunk, supporting the head. Hands finish just ABOVE the knees, fingertips distinctly above kneecaps. The two stages have visibly different hand levels and visibly different trunk inclinations. The hind legs stand long and extended, knees softly unlocked, weight settled over the planted hoof soles. Three-quarter row rotates these same corrected poses and heads together toward the viewer, preserving each stage's lean and hand level.
 ```
+
+
+# Лось r7 · 30.10.2026 · поза r6 + тело r5/r2
+
+Встроенный image_gen, редактирование по опорным изображениям. Одна проба двух профилей и одна корректировка. Полный лист не собран: критерии не пройдены.
+
+## Проба
+
+Вход 1 (редактируемая база): `chelovek-los-r6-korrekciya.png`; вход 2: `chelovek-los-r5.png` (анфас ст.1/ст.2); вход 3: `chelovek-los-r2.png` (правая колонка чистого лося). Переданы полные листы с указанием нужных областей. Выход: `chelovek-los-r7-proba1.png`.
+
+```text
+Use case: precise-object-edit.
+Create one trial containing only two left-profile full-body figures, stage 1 on the left and stage 2 on the right, white background, the faceted taupe rendering and soft light of the inputs.
+Image 1 is the edit target: its TOP ROW profiles supply the exact poses, balance, pelvis placement over the planted hooves, legs, heads, antlers, shorts and scale. Image 2 supplies the body surface, narrow chest, coat and thin forelimbs from the TOP ROW stage 1 and stage 2 front views. Image 3 supplies the pure moose in the RIGHT COLUMN as the body-shape reference.
+Edit the chest and hanging forelimbs of the two image 1 profiles. The forelimbs are the thin dry forelegs of a moose, straight and lean like the moose legs in image 3 and the slender limbs in image 2, flowing as slender continuous tapered forms into small slender hands. The shoulder silhouette flows upward into the neck hump, matching image 2. The chest is the same narrow deep keel as in image 2 and the pure moose in image 3, flowing smoothly back into a taut belly. The body surface and coat follow image 2.
+Stage 1 has a gently forward leaning torso about 18 degrees from vertical and the pelvis balanced directly above the hooves, with slender fingertips at mid-thigh height.
+Stage 2 has the strongly forward leaning torso of image 1, about 32 degrees from vertical, with the pelvis balanced above the hooves, and slender fingertips slightly above knee height.
+Keep the image 1 pose and all its head, antler, leg, hoof, shorts and pelvis shapes. Preserve the distinct larger hump and antlers of stage 2. Present the two edited profiles at generous inspection size on a shared ground line.
+```
+
+## Единственная корректировка
+
+Вход 1 (редактируемая база): `chelovek-los-r7-proba1.png`; вход 2: `chelovek-los-r5.png` (анфас ст.1/ст.2); вход 3: `chelovek-los-r2.png` (правая колонка чистого лося). Переданы полные листы с указанием нужных областей. Выход: `chelovek-los-r7-korrekciya.png`.
+
+```text
+Use case: precise-object-edit. One targeted correction of image 1, the two-profile trial. Image 2 is the authoritative moose body reference: its TOP ROW middle two figures define the continuous neck-to-hump silhouette, the narrow keel chest and the dry slender hanging forelimbs. Image 3 is the authoritative pure moose reference in its RIGHT COLUMN.
+Replace the chest and both hanging forelimbs on each trial figure with the actual moose-like shapes from these references. Think of the pure moose front legs in image 3 lifted clear of the ground, ending in little slender hands. Each forelimb is a thin straight dry taper throughout its visible length, emerging smoothly from the high neck hump as in image 2. The silhouette is one continuous long slope from the hump into these fine slender moose forelegs. The deep narrow keel of the chest has the sleek firm outline of the pure moose in image 3, and sweeps smoothly upward into the belly beside the shorts.
+For the LEFT stage 1 figure, the very lowest fingertip is level with the midpoint between the shorts hem and the knee, approximately y=590 on this 1536x1024 canvas. For the RIGHT stage 2 figure, the very lowest fingertip is just ABOVE the knee, approximately y=630. Keep the little hands slender and proportionate.
+The standing body remains balanced with the pelvis above the planted hooves. Preserve the existing pelvis, shorts, legs, hooves, heads, antlers, ground line, rendering and light. Stage 1 torso leans 18 degrees forward from vertical; stage 2 torso leans 32 degrees forward from vertical. Produce the same two full left profiles on white, at the same scale and positions as image 1.
+```
