@@ -2,12 +2,22 @@
   "kluch": "Волк",
   "object": "@Волк1",
   "step": 1,
-  "skryvaet": [],
-  "zamenyaet_cherty": [
-    "Шкура",
-    "Хвост"
+  "skryvaet": [
+    "голова",
+    "Чутьё",
+    "Шкура"
   ],
-  "tris": 1732,
-  "note": "черта ключа «Волк» на ступени 1 — хвост из цели колонки ст.1 листа (дугой назад, к средней линии). Уши, гребень гривы и когти — органы на шаблоне (Чутьё@Волк, Шкура@Волк, Руки@Волк, растут формой «рост» по доле волка, на ст.1 полные); zamenyaet_cherty — прежние черты волчьего меша, которые на ст.1 не ставятся",
-  "generator": "Tools/Blender/proba/kusok_celi.py --stupen 1 --ves1 1.0 --st1_ushi 1.66:0.06 --st1_niz 1.20 --st1_verh 1.90 --griva_x 0.25 --hvost_x 0.45 --hvost_z 0.95 --hvost_y 0.05 --lapy_z -1 --ostrov 300 --prizhim_d 0.005 --prizhim_k 0.05 --bez_kostej предплечье,голень,стопа --dolya 0.12 --normali 1"
+  "zamenyaet_cherty": [
+    "голова",
+    "Пасть",
+    "Пасть.полость",
+    "Пасть.зубы",
+    "Шкура",
+    "Хвост",
+    "Руки",
+    "Ноги"
+  ],
+  "tris": 9822,
+  "note": "29.10 СДВИГ СТУПЕНЕЙ: черта ступени 1 — прежняя черта ступени 2 (кусок @Волк переименован в @Волк1, stupen_sdvig.py); прежний хвост ст.1 и органы-гребень ст.1 уходят. Её запись: черта ключа «Волк» на ступени 2 — куски самих целей: голова, воротник-грива, хвост — из цели колонки ст.2, переведённой в позу голого тела; кисти и лапы с когтями — из цели голого тела (витрина/оборотень/тело.png); в метрах шасси на весе 1, скиннится к костям шасси (podgonka_v_poze.py --cel_pokoj/--dop_cel → kusok_celi.py --vesa → slit_kuski.py)",
+  "generator": "Tools/Blender/proba/kusok_celi.py --bez_kostej предплечье,голень,стопа --blend C:/Temp/claude/C--Users-semion-Documents-Chimera-game-ChimeraEvolution-modeli/53623ae4-97d2-450f-a7bb-396e65699af4/scratchpad/pt/kk_m_z400.blend --dolya 0.1 --dvustor 1 --golova_x 0.25 --golova_z 9 --griva_x 0.28 --griva_z 1.15 --hvost_naklon 12 --hvost_x 0.15 --hvost_y 0.12 --hvost_z 0.95 --imya Волк --lapy_z -1 --ostrov 800 --prizhim_d 0.005 --prizhim_k 0.05 --prizhim_verh 9 --st1_hvost 0.65 --st1_niz 1.30 --st1_verh 1.70 --st1_y -0.02 --st1_z 1.62 --st1_zatylok 0.06 --ushi 1.90:0.06:1.6 --vesa C:/Temp/claude/C--Users-semion-Documents-Chimera-game-ChimeraEvolution-modeli/53623ae4-97d2-450f-a7bb-396e65699af4/scratchpad/pt/kol_pokoj.obj.vesa.json --zakryt 400 --zazor 0.012 --zazor_hvost 0.05"
 }
