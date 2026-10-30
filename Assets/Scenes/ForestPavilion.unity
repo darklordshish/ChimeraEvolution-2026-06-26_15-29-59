@@ -641,6 +641,7 @@ MonoBehaviour:
   seed: 1337
   randomSeed: 0
   mapDiameter: 2000
+  treeCount: 1500
   chunkSize: 250
   terrainQuads: 48
   buildOnAwake: 1

@@ -28,6 +28,8 @@ public class ForestBuilder : MonoBehaviour
 
     [Header("Размер (аналог arenaSide: один параметр масштабирует всё)")]
     public float mapDiameter = 2000f;
+    [Tooltip("0 = старые 700; иначе целевое число деревьев на стенд")]
+    public int treeCount = 0;
 
     // Сетка чанков начинается в −D/2 и шагает на chunkSize, поэтому chunkSize ОБЯЗАН
     // делить диаметр: при Ø400 и 250 внутри чаши остаётся дыра, а чанк торчит за кольцо.
@@ -208,6 +210,7 @@ public class ForestBuilder : MonoBehaviour
         ownedConfig.randomSeed = false;
         ownedConfig.mapDiameter = mapDiameter;
         ownedConfig.chunkSize = ResolveChunkSize(mapDiameter);
+        ownedConfig.treeCount = treeCount > 0 ? treeCount : 0;
 
         var issues = DomeGenRules.CheckConfig(ownedConfig);
         if (issues.Count > 0)

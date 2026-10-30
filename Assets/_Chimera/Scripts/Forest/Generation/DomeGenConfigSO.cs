@@ -28,6 +28,8 @@ public class DomeGenConfigSO : ScriptableObject
 
     [Header("Плотности (s10d): цели выводятся формулой, не числом")]
     public float treeDensityPerM2 = 0.03f;
+    /// <summary>0 = старые 700; иначе целевое число деревьев на стенд.</summary>
+    public int treeCount = 0;
     public float forestFraction = 0.55f;
 
     [Header("NavMesh: ТОЛЬКО тайлами (моно-бейк на Ø2000 запрещён)")]

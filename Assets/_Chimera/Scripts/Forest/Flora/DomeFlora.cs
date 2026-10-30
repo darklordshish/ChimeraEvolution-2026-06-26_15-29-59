@@ -309,7 +309,8 @@ public static class DomeFlora
         var rockMatF = Flat(DomePalette.Rock, false);
 
         // Деревья: точки те же (соль 111, 700 запрос), меняются порода/посадка/цвет.
-        var trees = Scatter(seed, 111, 700, d, 10f, ground);
+        int treeTarget = cfg.treeCount > 0 ? cfg.treeCount : 700;
+        var trees = Scatter(seed, 111, treeTarget, d, 10f, ground);
         int k = 0, deadIndex = 0;
         foreach (var p0 in trees)
         {
