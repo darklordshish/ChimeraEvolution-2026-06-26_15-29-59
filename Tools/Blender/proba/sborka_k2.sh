@@ -157,8 +157,11 @@ ST2N_CEL="${ST2N_CEL:-$R/oboroten-st2n-cel-2026-10-29}"; mkdir -p "$W/v2"
 # глубине ниже скакательного; IoU цели профиль 0.687 → 0.692, но тела — хуже (×0.55: 0.761 → 0.724, ×0.75: 0.732) — по умолчанию
 # выключено (×1.0)
 "$PY" $T/cel_stopa.py "$ST2N_CEL/cel_s42_chist.obj" "$ST2N_CEL/orientiry-celi.json" "$W/v2/cel.obj" "$W/v2/orientiry.json" --k ${STOPA_K:-1.0} | tail -1
+# сглаживание цели у колен (критик n4–n5: «линия сзади на бедре» — она в самой цели: поперечная складка над коленом, где начинается
+# масса голени; тот же приём, что у прежней ст.2). Проба r10: --cel_glad_kol 60:0.2 — 0.835/0.814 → 0.824/0.806, развороты 196 → 240: по
+# умолчанию выключено (CEL_KOL2)
 { [ -z "${OT_OGRANKI:-}" ] || [ -n "${ST2N_PODG-}" ]; } && bl $T/podgonka_v_poze.py -- "$W/k2_vesa.blend" "$W/v2/cel.obj" "$W/v2/orientiry.json" $SK "$W/v2/k.blend" $VSTR \
-   --poza "$W/v2/poza.json" --sustavy "$W/v2/sustavy.json" --cel_pokoj "$W/v2/cel_pokoj.obj" --ruki_po_kosti 1
+   --poza "$W/v2/poza.json" --sustavy "$W/v2/sustavy.json" --cel_pokoj "$W/v2/cel_pokoj.obj" --ruki_po_kosti 1 ${CEL_KOL2-}
 bl $T/kusok_celi.py -- "$W/v2/k.blend" "$W/v2/cel_pokoj.obj" "$W/v2/g.fbx" "$W/v2/g.json" --vesa "$W/v2/cel_pokoj.obj.vesa.json" \
    --griva_z 1.15 --griva_x 0.08 --hvost_z -1 --lapy_z -1 --kisti_z 0.9 --golova_po_vesam 1 --golova_sheya_z 1.5 --dolya ${DOL2:-0.3} \
    --ushi 1.80:0.06:1.4 --prizhim_d 0.005 --prizhim_k 0.05 --normali 1 --ostrov 300 --zazor 0.02 --blend "$W/v2/kk.blend"
