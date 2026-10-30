@@ -14,7 +14,7 @@
      на ступени 2 вида-ключа, снимает `skryvaet`, черты `zamenyaet_cherty` не ставит).
 
   blender -b --factory-startup -P kusok_celi.py -- ключ.blend цель.obj выход.fbx паспорт.json
-      [--imya Волк] [--zazor 0.012] [--zazor_hvost 0.05] [--golova_z 1.50] [--golova_x 0.25] [--griva_z 1.15] [--griva_x 0.42] [--griva_pered_z 1.40] [--hvost_z 1.0] [--hvost_y 0.12] [--hvost_x 9] [--bez_kostej плечо,предплечье] [--kisti_z 0.9 [--kisti_zazor 0.012]] [--hvost_naklon 20] [--hvost_k_osi 0.2] [--ushi 1.80:0.06:1.4] [--golova_po_vesam 1 [--golova_sheya_z 1.5]] [--zakryt 200]
+      [--imya Волк] [--zazor 0.012] [--zazor_hvost 0.05] [--golova_z 1.50] [--golova_x 0.25] [--griva_z 1.15] [--griva_x 0.42 [--griva_x_verh 1.65:0.04]] [--korona 1.62:0.12:0.04] [--griva_pered_z 1.40] [--hvost_z 1.0] [--hvost_y 0.12] [--hvost_x 9] [--bez_kostej плечо,предплечье] [--kisti_z 0.9 [--kisti_zazor 0.012]] [--hvost_naklon 20] [--hvost_k_osi 0.2] [--ushi 1.80:0.06:1.4] [--golova_po_vesam 1 [--golova_sheya_z 1.5]] [--zakryt 200]
       [--ostrov 400] [--lapy_z 0.32 [--lapy_naklon 0.6]] [--stupen 2|1 [--st1_y -0.02] [--st1_z 1.62] [--st1_zatylok 0.06] [--st1_verh 1.70] [--st1_hvost 0.65] [--st1_niz 1.30] [--ves1 0.5] [--st1_ushi 1.66:0.06[:-0.04]]] [--prizhim_d 0.06 --prizhim_k 0.35 [--prizhim_verh 1.45]] [--dvustor 1] [--normali 1] [--tselikom 1] [--dolya 0.08] [--shots префикс]
 Вход `ключ.blend` — сохранённый `kluch_vida.py --blend` (меш шасси с ключом и арматурой). Печатает «КУСОК: …».
 """
@@ -101,6 +101,11 @@ for f in bm.faces:
     d = bvh.find_nearest(c)[3]
     head = c.z > gz and abs(c.x) < float(opt['golova_x'])     # у лося рога — до 0.6 м от средней линии
     mane = c.z > mz and abs(c.x) < mx and d > gap
+    # `--griva_x_verh z:x` (30.10, критик n4: «сзади над затылком ком с плоским верхом и тремя зубцами — нужен веер»): выше высоты покоя z
+    # гребень уже (|x| < x) — над теменем остаётся средняя полоса прядей, уши сзади открыты
+    if opt.get('griva_x_verh'):
+        zv_, xv_ = (float(v) for v in opt['griva_x_verh'].split(':'))
+        if c.z > zv_ and abs(c.x) >= xv_: mane = False
     # `--griva_pered_z`: спереди (впереди тела, y < −0.03) грива — только выше этой высоты покоя (критик ряда: «нагрудник» шерсти
     # до пояса закрывал грудь; у r13 воротник кончается на ключицах)
     if mane and c.y < -0.03 and c.z < float(opt.get('griva_pered_z', '0')): mane = False
@@ -125,6 +130,11 @@ for f in bm.faces:
         # `--golova_sheya_z`: и грани с главной костью «шея» выше этой высоты покоя — затылок цели взвешен на шею, а шов шеи К2
         # с головой (край 1.55–1.59 м) ниже затылка цели: без них между швом и куском светился фон
         if GPV: head = gl_ == 'голова' or (gl_ == 'шея' and c.z > float(opt.get('golova_sheya_z', '9')))
+    # `--korona z:y:x` (30.10, критик n4: «сзади над затылком ком с плоским верхом и зубцами — нужен веер»): гребень цели на затылке
+    # взвешен на голову и идёт в кусок головой; позади черепа (выше z, дальше y назад) остаётся только средняя полоса |x| < x
+    if opt.get('korona') and head:
+        kz_, ky_, kx_ = (float(v) for v in opt['korona'].split(':'))
+        if c.z > kz_ and c.y > ky_ and abs(c.x) >= kx_: head = False
     if STEP < 2:
         # ст.1 (лист, колонка 2): голова человеческая, стопа ещё не лапа; грива — за головой и по спине, спереди лицо открыто
         head = False; paw = paw if KISTI else False     # когти кисти (`--kisti_z`) — и на ступени 1 (органы на шаблоне)
