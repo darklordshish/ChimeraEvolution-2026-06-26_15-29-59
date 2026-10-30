@@ -258,6 +258,21 @@ namespace Chimera.Tests.PlayMode
             Assert.AreEqual("bsp", b.LabComplex.planTemplate, "BSP-план: шаблон");
             Assert.AreNotEqual(Vector3.zero, b.LabDoor, "BSP-план: LabDoor");
             Assert.AreNotEqual(Vector3.zero, b.LabAtrium, "BSP-план: LabAtrium");
+
+            Assert.IsTrue(NavMesh.SamplePosition(b.LabAtrium, out var from, 20f, NavMesh.AllAreas),
+                "BSP-план: зал не на NavMesh");
+            foreach (var id in new[] { "arena", "surgery", "cells", "rest", "lobby" })
+            {
+                var room = b.LabPlan.Room(id);
+                var target = new Vector3(room.x, b.LabAtrium.y, room.z);
+                Assert.IsTrue(NavMesh.SamplePosition(target, out var hit, 20f, NavMesh.AllAreas),
+                    $"BSP-план: {id} не на NavMesh");
+                var path = new NavMeshPath();
+                Assert.IsTrue(NavMesh.CalculatePath(from.position, hit.position, NavMesh.AllAreas, path),
+                    $"BSP-план: путь в {id} не посчитан");
+                Assert.AreEqual(NavMeshPathStatus.PathComplete, path.status,
+                    $"BSP-план: путь в {id} не полный");
+            }
         }
         [UnityTest]
         public IEnumerator MirrorPlan_SwapsSurgeryAndCells()

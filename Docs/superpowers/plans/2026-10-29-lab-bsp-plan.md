@@ -13,10 +13,10 @@
 
 ## P3b.2 — геометрия из плана
 
-- [ ] `DomeLabComplex` для `version>=2` строит стены/проёмы из `plan.rooms`/`plan.doors`.
-- [ ] `DomeLabDamage` и мебель читают комнаты плана, а не жёсткие ±16/17.5.
-- [ ] `LabDoor`/`LabAtrium` — из плана.
-- [ ] Кадры и NavMesh: все функции достижимы.
+- [x] `DomeLabComplex` для `version>=2` строит стены/проёмы из `plan.rooms`/`plan.doors`.
+- [x] `DomeLabDamage` и мебель читают комнаты плана, а не жёсткие ±16/17.5.
+- [x] `LabDoor`/`LabAtrium` — из плана.
+- [x] Кадры и NavMesh: все функции достижимы.
 
 ## Проверки
 

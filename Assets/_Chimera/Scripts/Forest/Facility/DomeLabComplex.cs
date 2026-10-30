@@ -193,16 +193,26 @@ public static class DomeLabComplex
         int flip = plan.Room("surgery").x > 0f ? -1 : 1;
         var b = new Builder(root.transform);
         BuildPlate(b);
-        BuildShell(b, flip, northDoor && style == LabStyle.Bastion);
-        BuildRoofs(b, entrance == LabEntrance.Buried);
-        BuildBeams(b, flip);
-        BuildHall(b);
-        BuildSurgery(b, flip, plan);
-        BuildCells(b, flip, plan);
-        BuildRest(b);
-        BuildEntryLobby(b);
-        BuildCeilingFixtures(b, flip);
-        result.lights = BuildLights(b, flip);
+        if (plan.version >= 2)
+        {
+            BuildPlanInterior(b, plan, northDoor && style == LabStyle.Bastion);
+            BuildRoofs(b, entrance == LabEntrance.Buried);
+            BuildBeams(b, flip);
+            result.lights = BuildLights(b, flip);
+        }
+        else
+        {
+            BuildShell(b, flip, northDoor && style == LabStyle.Bastion);
+            BuildRoofs(b, entrance == LabEntrance.Buried);
+            BuildBeams(b, flip);
+            BuildHall(b);
+            BuildSurgery(b, flip, plan);
+            BuildCells(b, flip, plan);
+            BuildRest(b);
+            BuildEntryLobby(b);
+            BuildCeilingFixtures(b, flip);
+            result.lights = BuildLights(b, flip);
+        }
 
         // Всё, что выше, — ОДИН интерьер. Ниже — только внешняя оболочка стиля.
         result.interiorParts = b.parts;
@@ -248,6 +258,73 @@ public static class DomeLabComplex
             0f, Plinth - PlateThickness, 0f, true);
     }
 
+    static void BuildPlanInterior(Builder b, LabPlan plan, bool northDoor)
+    {
+        // Версия 2: внешняя оболочка и комнаты читаются из плана, а не из констант.
+        float y0 = Plinth;
+        b.WallRun(true, -HalfDepth, -HalfWidth, HalfWidth, y0, RoomHeight,
+            Kit.Concrete, 0f, PortalWidth);
+        b.WallRun(true, HalfDepth, -HalfWidth, HalfWidth, y0, RoomHeight,
+            Kit.Concrete, 0f, northDoor ? PortalWidth : 0f);
+        b.WallRun(false, -HalfWidth, -HalfDepth, HalfDepth, y0, RoomHeight,
+            Kit.Concrete, 0f, 0f);
+        b.WallRun(false, HalfWidth, -HalfDepth, HalfDepth, y0, RoomHeight,
+            Kit.Concrete, 0f, 0f);
+
+        foreach (var room in plan.rooms)
+        {
+            BuildPlanRoomWalls(b, plan, room);
+            BuildPlanRoomFurniture(b, room);
+        }
+    }
+
+    static void BuildPlanRoomWalls(Builder b, LabPlan plan, LabRoom r)
+    {
+        float x0 = r.x - r.width * 0.5f, x1 = r.x + r.width * 0.5f;
+        float z0 = r.z - r.depth * 0.5f, z1 = r.z + r.depth * 0.5f;
+        float y0 = Plinth;
+        if (z1 < HalfDepth - 0.01f)
+            WallWithDoor(b, plan, r.id, true, z1, x0, x1, y0);
+        if (z0 > -HalfDepth + 0.01f)
+            WallWithDoor(b, plan, r.id, true, z0, x0, x1, y0);
+        if (x1 < HalfWidth - 0.01f)
+            WallWithDoor(b, plan, r.id, false, x1, z0, z1, y0);
+        if (x0 > -HalfWidth + 0.01f)
+            WallWithDoor(b, plan, r.id, false, x0, z0, z1, y0);
+    }
+
+    static void WallWithDoor(Builder b, LabPlan plan, string roomId, bool alongX,
+        float at, float from, float to, float y0)
+    {
+        float doorAt = 0f, doorWidth = 0f;
+        foreach (var d in plan.doors)
+        {
+            if (d.from != roomId && d.to != roomId) continue;
+            if (d.alongX != alongX) continue;
+            float normal = alongX ? d.z : d.x;
+            float along = alongX ? d.x : d.z;
+            // Дверь BSP стоит в коридорном зазоре между комнатами; режем
+            // ближайшую стену комнаты, а не только совпадающую по координате.
+            if (Mathf.Abs(normal - at) > 4f) continue;
+            if (along < from || along > to) continue;
+            doorAt = along;
+            doorWidth = d.width;
+            break;
+        }
+        b.WallRun(alongX, at, from, to, y0, RoomHeight, Kit.Wall, doorAt, doorWidth);
+    }
+
+    static void BuildPlanRoomFurniture(Builder b, LabRoom r)
+    {
+        if (r.function == LabFunction.Surgery)
+            b.Add("PlanSurgeryTable", Kit.Metal, 2.2f, 0.8f, 1.1f, r.x, Plinth, r.z, true);
+        else if (r.function == LabFunction.Cells)
+            b.Add("PlanCellBench", Kit.ConcreteDark, 1.2f, 0.45f, 2.2f, r.x, Plinth, r.z, true);
+        else if (r.function == LabFunction.Rest)
+            b.Add("PlanRestBench", Kit.Olive, 2.0f, 0.45f, 1.0f, r.x, Plinth, r.z, true);
+        else if (r.function == LabFunction.Lobby)
+            b.Add("PlanLobbyDesk", Kit.ConcreteDark, 2.4f, 0.75f, 1.1f, r.x, Plinth, r.z, true);
+    }
     static void BuildShell(Builder b, int flip, bool northDoor = false)
     {
         float y0 = Plinth;
