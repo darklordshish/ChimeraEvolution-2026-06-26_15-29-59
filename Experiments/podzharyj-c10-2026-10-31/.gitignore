@@ -1,0 +1,11 @@
+*
+!.gitignore
+!*.py
+!README.md
+!run.ps1
+!c9.blend
+!c13.blend
+!c13.fbx
+!c13*.json
+!baseline.json
+!c9-raised.json

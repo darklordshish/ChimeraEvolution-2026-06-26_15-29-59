@@ -1,0 +1,404 @@
+{
+  "fbx": "C:/Users/semion/Documents/Chimera_game/ChimeraEvolution-codex/Experiments/podzharyj-c10-2026-10-31/c9.fbx",
+  "kluch": "Поджарый",
+  "ves": 1.0,
+  "poza": null,
+  "vesa_bolshe_4": 0,
+  "vidno": [
+    "Ноги",
+    "Руки",
+    "Сердце",
+    "Чутьё",
+    "голова",
+    "хребет",
+    "шея"
+  ],
+  "kluchi": {
+    "Поджарый": 1.0
+  },
+  "diagnostic_pose": "Both shoulders abducted 70 degrees in world Y; not a game animation",
+  "razvorot_klyucha": 0,
+  "razvorot_v_poze": 10,
+  "skladka_v_poze": 10,
+  "szhatie_v_poze": 0,
+  "obekty": {
+    "Ноги": {
+      "granej": 1684,
+      "razvorot": 0,
+      "razvorot_v_poze": 0,
+      "skladka": 0,
+      "szhatie": 0
+    },
+    "Руки": {
+      "granej": 1036,
+      "razvorot": 0,
+      "razvorot_v_poze": 7,
+      "skladka": 7,
+      "szhatie": 0
+    },
+    "Сердце": {
+      "granej": 221,
+      "razvorot": 0,
+      "razvorot_v_poze": 2,
+      "skladka": 2,
+      "szhatie": 0
+    },
+    "Чутьё": {
+      "granej": 160,
+      "razvorot": 0,
+      "razvorot_v_poze": 0,
+      "skladka": 0,
+      "szhatie": 0
+    },
+    "голова": {
+      "granej": 788,
+      "razvorot": 0,
+      "razvorot_v_poze": 0,
+      "skladka": 0,
+      "szhatie": 0
+    },
+    "хребет": {
+      "granej": 375,
+      "razvorot": 0,
+      "razvorot_v_poze": 1,
+      "skladka": 1,
+      "szhatie": 0
+    },
+    "шея": {
+      "granej": 1474,
+      "razvorot": 0,
+      "razvorot_v_poze": 0,
+      "skladka": 0,
+      "szhatie": 0
+    }
+  },
+  "shov_vershin": 187,
+  "shov_razoshlos_1mm": 0,
+  "shov_maks_mm": 0.0,
+  "zazor_mm": {},
+  "dyry_okna": [
+    {
+      "rakurs": "front",
+      "vysota_m": 1.33,
+      "poperek_m": 0.79,
+      "vys_mm": 20,
+      "shir_mm": 26,
+      "vys_H": 0.011,
+      "shir_H": 0.014,
+      "ploshchad_sm2": 1.5
+    },
+    {
+      "rakurs": "back",
+      "vysota_m": 1.33,
+      "poperek_m": -0.79,
+      "vys_mm": 20,
+      "shir_mm": 26,
+      "vys_H": 0.011,
+      "shir_H": 0.014,
+      "ploshchad_sm2": 1.5
+    },
+    {
+      "rakurs": "back",
+      "vysota_m": 1.33,
+      "poperek_m": 0.8,
+      "vys_mm": 20,
+      "shir_mm": 24,
+      "vys_H": 0.011,
+      "shir_H": 0.013,
+      "ploshchad_sm2": 1.2
+    }
+  ],
+  "dyry_vyemki": [
+    {
+      "rakurs": "profile",
+      "vysota_m": 1.44,
+      "poperek_m": -0.15,
+      "vys_mm": 140,
+      "shir_mm": 24,
+      "vys_H": 0.076,
+      "shir_H": 0.013,
+      "ploshchad_sm2": 29.7
+    },
+    {
+      "rakurs": "34",
+      "vysota_m": 0.71,
+      "poperek_m": 0.01,
+      "vys_mm": 82,
+      "shir_mm": 52,
+      "vys_H": 0.044,
+      "shir_H": 0.028,
+      "ploshchad_sm2": 19.0
+    },
+    {
+      "rakurs": "front",
+      "vysota_m": 0.79,
+      "poperek_m": -0.0,
+      "vys_mm": 74,
+      "shir_mm": 52,
+      "vys_H": 0.04,
+      "shir_H": 0.028,
+      "ploshchad_sm2": 18.5
+    },
+    {
+      "rakurs": "back",
+      "vysota_m": 0.79,
+      "poperek_m": -0.0,
+      "vys_mm": 72,
+      "shir_mm": 52,
+      "vys_H": 0.039,
+      "shir_H": 0.028,
+      "ploshchad_sm2": 18.4
+    },
+    {
+      "rakurs": "34back",
+      "vysota_m": 0.71,
+      "poperek_m": 0.01,
+      "vys_mm": 82,
+      "shir_mm": 52,
+      "vys_H": 0.044,
+      "shir_H": 0.028,
+      "ploshchad_sm2": 18.1
+    },
+    {
+      "rakurs": "profile",
+      "vysota_m": 1.86,
+      "poperek_m": 0.03,
+      "vys_mm": 26,
+      "shir_mm": 68,
+      "vys_H": 0.014,
+      "shir_H": 0.037,
+      "ploshchad_sm2": 11.5
+    },
+    {
+      "rakurs": "34back",
+      "vysota_m": 1.86,
+      "poperek_m": 0.02,
+      "vys_mm": 26,
+      "shir_mm": 68,
+      "vys_H": 0.014,
+      "shir_H": 0.037,
+      "ploshchad_sm2": 11.3
+    },
+    {
+      "rakurs": "34",
+      "vysota_m": 1.86,
+      "poperek_m": 0.02,
+      "vys_mm": 26,
+      "shir_mm": 64,
+      "vys_H": 0.014,
+      "shir_H": 0.035,
+      "ploshchad_sm2": 10.7
+    },
+    {
+      "rakurs": "front",
+      "vysota_m": 1.86,
+      "poperek_m": -0.0,
+      "vys_mm": 26,
+      "shir_mm": 60,
+      "vys_H": 0.014,
+      "shir_H": 0.032,
+      "ploshchad_sm2": 9.5
+    },
+    {
+      "rakurs": "back",
+      "vysota_m": 1.86,
+      "poperek_m": -0.0,
+      "vys_mm": 26,
+      "shir_mm": 60,
+      "vys_H": 0.014,
+      "shir_H": 0.032,
+      "ploshchad_sm2": 9.5
+    },
+    {
+      "rakurs": "34back",
+      "vysota_m": 1.33,
+      "poperek_m": -0.7,
+      "vys_mm": 40,
+      "shir_mm": 24,
+      "vys_H": 0.022,
+      "shir_H": 0.013,
+      "ploshchad_sm2": 6.6
+    },
+    {
+      "rakurs": "34",
+      "vysota_m": 1.33,
+      "poperek_m": -0.7,
+      "vys_mm": 36,
+      "shir_mm": 24,
+      "vys_H": 0.019,
+      "shir_H": 0.013,
+      "ploshchad_sm2": 5.8
+    },
+    {
+      "rakurs": "profile",
+      "vysota_m": 1.62,
+      "poperek_m": 0.08,
+      "vys_mm": 26,
+      "shir_mm": 34,
+      "vys_H": 0.014,
+      "shir_H": 0.018,
+      "ploshchad_sm2": 3.8
+    },
+    {
+      "rakurs": "back",
+      "vysota_m": 1.31,
+      "poperek_m": 0.88,
+      "vys_mm": 28,
+      "shir_mm": 26,
+      "vys_H": 0.015,
+      "shir_H": 0.014,
+      "ploshchad_sm2": 3.5
+    },
+    {
+      "rakurs": "front",
+      "vysota_m": 1.31,
+      "poperek_m": -0.88,
+      "vys_mm": 28,
+      "shir_mm": 26,
+      "vys_H": 0.015,
+      "shir_H": 0.014,
+      "ploshchad_sm2": 3.4
+    },
+    {
+      "rakurs": "back",
+      "vysota_m": 1.31,
+      "poperek_m": -0.88,
+      "vys_mm": 26,
+      "shir_mm": 26,
+      "vys_H": 0.014,
+      "shir_H": 0.014,
+      "ploshchad_sm2": 3.0
+    },
+    {
+      "rakurs": "34",
+      "vysota_m": 1.31,
+      "poperek_m": 0.7,
+      "vys_mm": 20,
+      "shir_mm": 26,
+      "vys_H": 0.011,
+      "shir_H": 0.014,
+      "ploshchad_sm2": 2.7
+    },
+    {
+      "rakurs": "front",
+      "vysota_m": 1.31,
+      "poperek_m": 0.88,
+      "vys_mm": 24,
+      "shir_mm": 24,
+      "vys_H": 0.013,
+      "shir_H": 0.013,
+      "ploshchad_sm2": 2.5
+    },
+    {
+      "rakurs": "front",
+      "vysota_m": 1.31,
+      "poperek_m": -0.8,
+      "vys_mm": 36,
+      "shir_mm": 30,
+      "vys_H": 0.019,
+      "shir_H": 0.016,
+      "ploshchad_sm2": 2.4
+    },
+    {
+      "rakurs": "front",
+      "vysota_m": 1.67,
+      "poperek_m": -0.07,
+      "vys_mm": 36,
+      "shir_mm": 10,
+      "vys_H": 0.019,
+      "shir_H": 0.005,
+      "ploshchad_sm2": 2.1
+    }
+  ],
+  "dyry_izanka": [
+    {
+      "rakurs": "profile",
+      "obekt": "голова",
+      "vysota_m": 1.69,
+      "x_m": 0.07,
+      "razmer_mm": 40,
+      "ploshchad_sm2": 4.0
+    },
+    {
+      "rakurs": "profile",
+      "obekt": "голова",
+      "vysota_m": 1.73,
+      "x_m": 0.07,
+      "razmer_mm": 25,
+      "ploshchad_sm2": 2.2
+    },
+    {
+      "rakurs": "34back",
+      "obekt": "голова",
+      "vysota_m": 1.69,
+      "x_m": 0.07,
+      "razmer_mm": 25,
+      "ploshchad_sm2": 2.0
+    },
+    {
+      "rakurs": "34",
+      "obekt": "голова",
+      "vysota_m": 1.69,
+      "x_m": 0.07,
+      "razmer_mm": 15,
+      "ploshchad_sm2": 1.5
+    },
+    {
+      "rakurs": "front",
+      "obekt": "Чутьё",
+      "vysota_m": 1.71,
+      "x_m": -0.07,
+      "razmer_mm": 15,
+      "ploshchad_sm2": 1.0
+    },
+    {
+      "rakurs": "34back",
+      "obekt": "голова",
+      "vysota_m": 1.71,
+      "x_m": 0.07,
+      "razmer_mm": 10,
+      "ploshchad_sm2": 0.7
+    },
+    {
+      "rakurs": "front",
+      "obekt": "голова",
+      "vysota_m": 1.73,
+      "x_m": 0.07,
+      "razmer_mm": 5,
+      "ploshchad_sm2": 0.5
+    },
+    {
+      "rakurs": "34",
+      "obekt": "голова",
+      "vysota_m": 1.72,
+      "x_m": 0.07,
+      "razmer_mm": 9,
+      "ploshchad_sm2": 0.5
+    },
+    {
+      "rakurs": "34",
+      "obekt": "голова",
+      "vysota_m": 1.74,
+      "x_m": 0.07,
+      "razmer_mm": 5,
+      "ploshchad_sm2": 0.5
+    },
+    {
+      "rakurs": "back",
+      "obekt": "Чутьё",
+      "vysota_m": 1.7,
+      "x_m": 0.07,
+      "razmer_mm": 5,
+      "ploshchad_sm2": 0.5
+    },
+    {
+      "rakurs": "34back",
+      "obekt": "голова",
+      "vysota_m": 1.73,
+      "x_m": 0.07,
+      "razmer_mm": 5,
+      "ploshchad_sm2": 0.5
+    }
+  ],
+  "dyry_kraya": []
+}

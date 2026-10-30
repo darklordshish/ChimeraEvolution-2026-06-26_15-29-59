@@ -1,0 +1,15 @@
+{
+  "source_commit": "7f5cace73444bc140c9b6522b846f6020f91df64",
+  "branch": "codex/podzharyj-c10",
+  "source_snapshot": "kc9e.blend (Claude c9)",
+  "files": {
+    "c9.blend": "fcef5d27686cf9182b0366b5b9c6a58385a5f9c3ec39ded8400dff8238a571c0",
+    "c13.blend": "e2505d2bda6eee9f85f46f4c10ad516841f1b225e736ab56f615c5d184bfbf09",
+    "c13.fbx": "6220ce239c59fd04542e7be7ddaa68bd788324c676d11d10350604e3226c9af9",
+    "refine_c10.py": "8589cb29c57602472b409d55ca532db379111d33f9bea9ffa719d591658bafa3",
+    "pose_guard.py": "1cec6806a49f5390ec790c10a915c7ba9f5f741ea3c794e2df6f7f45e8633467",
+    "build_c13.py": "9858d68b59b4fc87f5a60d28aee71ef236dbeb0b18e4a868a222b8f4d6f98524",
+    "stend_k2.py": "83a1bae75e8ae0c20045922b2a06ca12df2ca0e29fee8547cf6ac9d814d83d84",
+    "eksport_k2.py": "e1ec0643b47ae307d0aeefc54d59a96702400accbb4ef07fd73d4225e9bef98f"
+  }
+}
