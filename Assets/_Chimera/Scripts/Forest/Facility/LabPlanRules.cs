@@ -71,8 +71,31 @@ public static class LabPlanRules
             errors.Add($"нет комнаты {id}");
             return;
         }
+        if (plan.version >= 2)
+        {
+            RequireRange(errors, id, r, w, d);
+            return;
+        }
         if (Mathf.Abs(r.width - w) > 0.01f || Mathf.Abs(r.depth - d) > 0.01f)
-            errors.Add($"комната {id}: {r.width}×{r.depth}, нужно {w}×{d}");
+            errors.Add($"комната {id}: {r.width}×{r.depth}, ожидалось {w}×{d}");
+    }
+
+    static void RequireRange(List<string> errors, string id, LabRoom r, float w, float d)
+    {
+        float minW, maxW, minD, maxD;
+        switch (id)
+        {
+            case "hall": minW = 12f; maxW = 16f; minD = 12f; maxD = 16f; break;
+            case "arena": minW = 40f; maxW = 46f; minD = 6f; maxD = 10f; break;
+            case "surgery":
+            case "cells": minW = 10f; maxW = 16f; minD = 14f; maxD = 22f; break;
+            case "rest":
+            case "lobby": minW = 16f; maxW = 30f; minD = 6f; maxD = 10f; break;
+            default: minW = w; maxW = w; minD = d; maxD = d; break;
+        }
+        if (r.width < minW - 0.01f || r.width > maxW + 0.01f ||
+            r.depth < minD - 0.01f || r.depth > maxD + 0.01f)
+            errors.Add($"комната {id}: {r.width}×{r.depth} вне диапазона v2");
     }
 
     static void Connected(List<string> errors, LabPlan plan, string a, string b)

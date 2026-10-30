@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
@@ -248,6 +248,17 @@ namespace Chimera.Tests.PlayMode
                 "дверь стоит внизу спуска, а не на верхней площадке");
         }
 
+        [UnityTest]
+        public IEnumerator BspPlan_Builds_AndKeepsAddresses()
+        {
+            var b = BuildLab(LabStyle.Bastion, seed: 9, plan: true, planVersion: 2);
+            yield return null;
+
+            Assert.IsNotNull(b.LabComplex, "BSP-план: комплекс не собран");
+            Assert.AreEqual("bsp", b.LabComplex.planTemplate, "BSP-план: шаблон");
+            Assert.AreNotEqual(Vector3.zero, b.LabDoor, "BSP-план: LabDoor");
+            Assert.AreNotEqual(Vector3.zero, b.LabAtrium, "BSP-план: LabAtrium");
+        }
         [UnityTest]
         public IEnumerator MirrorPlan_SwapsSurgeryAndCells()
         {

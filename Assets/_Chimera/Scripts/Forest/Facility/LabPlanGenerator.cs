@@ -9,6 +9,18 @@ public static class LabPlanGenerator
 {
     public static LabPlan Generate(long seed, int version, LabEntrance entrance, LabStyle style)
     {
+        if (version >= 2)
+        {
+            var bsp = LabPlanBsp.Create(seed, version);
+            var bspErrors = LabPlanRules.Validate(bsp);
+            if (bspErrors.Count == 0) return bsp;
+            var fallback = LabPlanFixed.Create();
+            fallback.version = version;
+            fallback.fallback = true;
+            fallback.note = "fallback bsp: " + string.Join("; ", bspErrors);
+            return fallback;
+        }
+
         var plan = LabPlanFixed.Create();
         plan.version = version;
         plan.template = "fixed";
