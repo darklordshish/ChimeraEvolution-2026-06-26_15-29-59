@@ -1,7 +1,7 @@
 # Рецензия на топ решений по форме (DeepSeek)
 
 30.10.2026 · независимый рецензент. Прочитаны: запрос, `01-plan-svodnyj.md`, `02-top10.md`, отчёт
-`Docs/research/reports/Осмысленная форма существ.md`, `CLAUDE.md`, `СТАТУС.md`, `CONSTRUCTOR_GUIDE.md`,
+`Docs/reports/Осмысленная форма существ.md`, `CLAUDE.md`, `СТАТУС.md`, `CONSTRUCTOR_GUIDE.md`,
 спеки 27.09 / 21.10 / 21.10-organ, код `GlobalLayer`, `BodyMesh`, `PlayerController`, `CameraFollow`.
 Код проверен; r11 глазами, игровые кадры, лицензии и внешние первоисточники — не проверены, это помечено.
 
