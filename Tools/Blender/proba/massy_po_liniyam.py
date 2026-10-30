@@ -7,6 +7,7 @@
 Масса (`--massy файл.json`, список):
   {"imya": "лопатка", "vid": "back"|"front", "x": [|x|0, |x|1], "z": [z0, z1], "sdvig": +0.02 (м, по нормали; − — внутрь),
    "granicy": [{"liniya": 6, "storona": "nizhe"|"vyshe"|"snaruzhi"|"vnutri"}, …],   # резкая граница по линии
+               (или {"tochki": [[|x|, z], …], "storona": …} — своя ломаная там, где линии листа нет: паховая V под шортами)
    "spad": {"os": "x"|"z", "ot": a, "do": b}}                                            # плавный спад к нулю по оси (вне линий);
                                                                                           # список спадов — веса перемножаются
    или {"imya": "поясница", …, "ploskost": 1}  — область выпрямляется в плоскость (взвешенные МНК), без сдвига.
@@ -79,8 +80,8 @@ for m in M:
     vid = m.get('vid', 'back'); sel = (X[:, 1] > 0.0) if vid == 'back' else (X[:, 1] < 0.0) if vid == 'front' else np.ones(N, bool)   # 'vse' — обе стороны (предплечье)
     sel &= (AX >= m['x'][0]) & (AX <= m['x'][1]) & (X[:, 2] >= m['z'][0]) & (X[:, 2] <= m['z'][1]) & ~FIX
     for g in m.get('granicy', []):
-        L = lomanaya(g['liniya'], vid)
-        if L is None or len(L) < 2: print('МАССЫ: %s — линии %d нет' % (m['imya'], g['liniya'])); continue
+        L = np.array(g['tochki'], float) if 'tochki' in g else lomanaya(g['liniya'], vid)
+        if L is None or len(L) < 2: print('МАССЫ: %s — линии %s нет' % (m['imya'], g.get('liniya'))); continue
         if g['storona'] in ('nizhe', 'vyshe'):
             o_ = np.argsort(L[:, 0]); zl = np.interp(AX, L[o_, 0], L[o_, 1], left=np.nan, right=np.nan)
             ok = (X[:, 2] < zl) if g['storona'] == 'nizhe' else (X[:, 2] > zl)
