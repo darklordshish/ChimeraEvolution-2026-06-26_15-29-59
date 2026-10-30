@@ -82,7 +82,13 @@ d_ = LT['таз:head'] - AW @ root.head
 root.matrix = Matrix.Translation(AW.inverted().to_3x3() @ d_) @ root.matrix
 bpy.context.view_layer.update()
 n_rot = 0
-for bn in order:
+# БЕЗ ПОЗЫ (`--bez_pozy 1`, 30.10, поджарый человек): цель стоит в позе покоя шасси (ориентиры — суставы рига К2), поворачивать
+# нечего. Шаг позы считает хребет костью «таз → шея» (так у зверей), а у человека хребет — отрезок 1.07–1.26 м: корень
+# уезжал на 12 см, лопатка — на 17 см вверх, и обратный скиннинг смешанных весов ронял трапецию на 9 см («капюшон» шеи).
+# Скин тогда тоже единичный (ниже): цепь «на длинах цели» по той же причине взяла бы хребет «таз → шея»
+BEZ_POZY = opt.get('bez_pozy') == '1'
+if BEZ_POZY: root.matrix_basis = Matrix.Identity(4)
+for bn in ([] if BEZ_POZY else order):
     td = tgt_dir(bn)
     if td is None: continue
     pb = arm.pose.bones[bn]
@@ -231,6 +237,7 @@ n = len(S_); Kk = np.linalg.norm(S_[:, None] - S_[None], axis=2) + 1e-4 * np.eye
 Pm = np.hstack([np.ones((n, 1)), S_]); A = np.zeros((n + 4, n + 4)); A[:n, :n] = Kk; A[:n, n:] = Pm; A[n:, :n] = Pm.T
 Bm = np.zeros((n + 4, 3)); Bm[:n] = D_; Wt = np.linalg.solve(A, Bm)
 X = np.linalg.norm(Pa[:, None] - S_[None], axis=2) @ Wt[:n] + np.hstack([np.ones((N, 1)), Pa]) @ Wt[n:]
+if BEZ_POZY: X = Pa.copy()     # и пластины нет: она тянула бы хребет 1.07 → 0.95 и 1.26 → 1.44
 
 DAL = float(opt['dal'])
 # РАЗМЕТКА ЦЕЛИ ПО ТЕЛУ В ПОЗЕ: грань берёт часть ближайшей вершины шасси (после позы и пластины). По ближайшей КОСТИ
@@ -244,7 +251,8 @@ fpart = {}
 for f_ in bm.faces:
     c_ = f_.calc_center_median(); co_, k_, d_ = KD.find(c_)
     # голова цели — кусок (черта ступени), к ней тело не тянется: грань, ближайшая к кости «голова» цели, не в счёт
-    if min(segs, key=lambda s_: seg_d(c_, s_[1], s_[2]))[0] == 'голова': continue
+    # (`--golova_cel 1`, 30.10, поджарый человек: голова цели — сама форма, не кусок; без неё шея садилась под замороженную голову ступенькой)
+    if opt.get('golova_cel') != '1' and min(segs, key=lambda s_: seg_d(c_, s_[1], s_[2]))[0] == 'голова': continue
     if d_ <= DAL and vpart[k_]: fpart.setdefault(vpart[k_], []).append(f_)
 BVH = {}
 for pn, fl in fpart.items():
@@ -451,6 +459,7 @@ print('ЦЕПЬ: длины цели, прямая кинематика игры
 # скин — как в игре: кость в позе = голова цепи цели PH, поворот D, привязка — покой К2 (без этого форма в покое снималась
 # цепью на длинах К2 и в игре съезжала бы на разницу длин)
 skin = {bn: (Matrix.Translation(PH[bn]) @ D[bn].to_4x4() @ Matrix.Translation(-(AW @ arm.pose.bones[bn].bone.head_local))) for bn in order}
+if BEZ_POZY: skin = {bn: Matrix.Identity(4) for bn in order}
 if opt.get('proverka', '0') == '1':     # проверка туда-обратно — на той же цепи К2, которой тело ставилось в позу
     skin = {pb.name: (AW @ pb.matrix @ pb.bone.matrix_local.inverted() @ AW.inverted()) for pb in arm.pose.bones}
 REST = np.zeros_like(X)
