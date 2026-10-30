@@ -17,9 +17,12 @@ for o in bpy.data.objects:
     bpy.context.view_layer.objects.active=o; o.select_set(True)
     bpy.ops.object.mode_set(mode='EDIT'); bm=bmesh.from_edit_mesh(o.data)
     kraj={v for v in bm.verts if any(e.is_boundary for e in v.link_edges)}
+    # линии перелома (`linii_k2.py`, атрибут ребра `перелом`) — их вершины не схлопываются: ребро между массами остаётся
+    al = bm.edges.layers.int.get('перелом')
+    if al is not None: kraj |= {v for e in bm.edges if e[al] > 0 for v in e.verts}
     for f in bm.faces: f.select_set(not any(v in kraj for v in f.verts))
     bmesh.update_edit_mesh(o.data)
-    bpy.ops.mesh.decimate(ratio=R)
+    if R < 1: bpy.ops.mesh.decimate(ratio=R)
     bpy.ops.mesh.select_all(action='SELECT'); bpy.ops.mesh.quads_convert_to_tris()
     bpy.ops.object.mode_set(mode='OBJECT')
     bpy.ops.object.vertex_group_limit_total(group_select_mode='ALL', limit=4)
