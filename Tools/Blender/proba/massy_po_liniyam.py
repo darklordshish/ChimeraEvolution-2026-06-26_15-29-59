@@ -71,12 +71,12 @@ Nv = normali(X); AX = np.abs(X[:, 0]); D = np.zeros_like(X)
 
 def lomanaya(lid, vid):
     """точки линии на нужной стороне тела (спина y > 0, перед y < 0) в осях (|x|, z)"""
-    ids = [k for k in LP.get(lid, ()) if (X[k, 1] > -0.02 if vid == 'back' else X[k, 1] < 0.02)]
+    ids = [k for k in LP.get(lid, ()) if (X[k, 1] > -0.02 if vid == 'back' else X[k, 1] < 0.02 if vid == 'front' else True)]
     return np.array([[AX[k], X[k, 2]] for k in ids]) if ids else None
 
 
 for m in M:
-    vid = m.get('vid', 'back'); sel = (X[:, 1] > 0.0) if vid == 'back' else (X[:, 1] < 0.0)
+    vid = m.get('vid', 'back'); sel = (X[:, 1] > 0.0) if vid == 'back' else (X[:, 1] < 0.0) if vid == 'front' else np.ones(N, bool)   # 'vse' — обе стороны (предплечье)
     sel &= (AX >= m['x'][0]) & (AX <= m['x'][1]) & (X[:, 2] >= m['z'][0]) & (X[:, 2] <= m['z'][1]) & ~FIX
     for g in m.get('granicy', []):
         L = lomanaya(g['liniya'], vid)
