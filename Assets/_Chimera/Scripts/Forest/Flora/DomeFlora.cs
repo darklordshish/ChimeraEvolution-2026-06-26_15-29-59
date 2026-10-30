@@ -27,6 +27,8 @@ public static class DomeFlora
         public int grass;
         public int ferns;
         public int rocks;
+        public float crownArea;
+        public float crownCover;
     }
 
     /// <summary>
@@ -99,6 +101,18 @@ public static class DomeFlora
         roll -= umbrella;
         if (roll < dead) return FloraKind.DeadHook;
         return FloraKind.BirchTree;
+    }
+
+    static float CrownRadius(FloraKind kind)
+    {
+        switch (kind)
+        {
+            case FloraKind.PikeTree: return 4.0f;
+            case FloraKind.UmbrellaTree: return 4.2f;
+            case FloraKind.SpruceTree: return 3.6f;
+            case FloraKind.DeadHook: return 2.4f;
+            default: return 3.2f;
+        }
     }
 
     static readonly Dictionary<string, Mesh> meshes = new Dictionary<string, Mesh>();
@@ -331,6 +345,8 @@ public static class DomeFlora
         {
             var p = TreeScale(p0);
             var kind = KindFor(seed, k, p0.pos.y - lakeY);
+            float crown = CrownRadius(kind) * p.scale;
+            counts.crownArea += Mathf.PI * crown * crown;
             var rot = TreeRotation(seed, k, p.rotY);
             var trunkMat = BarkFor(seed, k, kind, barkBrown, barkGrey, barkBirch);
             var leafMat = LeafFor(seed, k, kind, leafMid, leafDark, leafCold);
@@ -424,6 +440,9 @@ public static class DomeFlora
             k++;
         }
         counts.trees = trees.Count;
+        counts.crownCover = d > 0f
+            ? counts.crownArea / (Mathf.PI * (d * 0.5f) * (d * 0.5f))
+            : 0f;
 
         // Подлесок: на СТЕНДЕ (Ø≤600) — пятна 20–30 м + вырубка, между пятнами пусто;
         // на большом мире (Ø2000 A/C) — прежний равномерный путь, чтобы не «сломать A/C»

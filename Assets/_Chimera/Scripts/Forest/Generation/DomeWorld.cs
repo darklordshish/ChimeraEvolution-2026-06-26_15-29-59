@@ -84,6 +84,7 @@ public class DomeWorld
     public Vector3 Entry { get; private set; }
     public int Chunks { get; private set; }
     public int Trees { get; private set; }
+    public float CrownCover { get; private set; }
     public float PlatformY => platformY;
     public float MapDiameter => cfg != null ? cfg.mapDiameter : 0f;
 
@@ -274,7 +275,8 @@ public class DomeWorld
         // Вырубка гасит деревья; подлесок живёт в R12/R14 и пятнах, но не под плитой
         // комплекса (12 см плиты — трава торчала бы в зале).
         Func<float, float, bool> undergrowthExclude = (x, z) => labPad(x, z) || InsideRamp(x, z);
-        Trees = DomeFlora.Build(Root, cfg, Hydro, seed, SampleGround, clearing, undergrowthExclude);
+        Trees = DomeFlora.Build(Root, cfg, Hydro, seed, SampleGround, clearing, undergrowthExclude, out var flora);
+        CrownCover = flora.crownCover;
         if (Ravines.Count > 0)
         {
             DomeRavines.BuildWalls(Root, Ravines, SampleGround,
@@ -514,6 +516,7 @@ public class DomeWorld
         Entry = default;
         Chunks = 0;
         Trees = 0;
+        CrownCover = 0f;
         Ravines = new List<DomeRavines.Ravine>();
         Terrace = default;
         Canyon = default;

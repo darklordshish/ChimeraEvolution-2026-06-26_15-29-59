@@ -133,6 +133,7 @@ public class ForestBuilder : MonoBehaviour
     public LairSite NestSite => world != null ? world.NestSite : null;
     public int Chunks => world != null ? world.Chunks : 0;
     public int Trees => world != null ? world.Trees : 0;
+    public float CrownCover => world != null ? world.CrownCover : 0f;
     public int Ravines => world != null ? world.Ravines.Count : 0;
     public IReadOnlyList<DomeRavines.Ravine> RavineList =>
         world != null ? world.Ravines : new List<DomeRavines.Ravine>();
