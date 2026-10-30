@@ -7,7 +7,7 @@ h затухает от `--h0` до `--h1`. Точка кожи — луч сз�
 барицентрически с треугольника кожи под ним (вершина — тем же весом), шип едет со спиной. Шипы добавляются в кусок `--kusok`.
 
   blender -b --factory-startup -P greben_po_hrebtu.py -- вход.blend выход.blend [--kusok @Волк] [--imya Волк] [--z0 1.36] [--z1 1.15]
-      [--shag 0.035] [--h0 0.05] [--h1 0.015] [--shir 0.5] [--dl 0.9] [--naklon 35] [--bez голова,Чутьё] [--poza поза.json --t 0.0:0.45] [--ryad 3 --razbros 0.3]
+      [--shag 0.035] [--h0 0.05] [--h1 0.015] [--shir 0.5] [--dl 0.9] [--naklon 35] [--bez голова,Чутьё] [--poza поза.json --t 0.0:0.45] [--ryad 3 --razbros 0.3] [--put шея:таз]
 """
 import sys, math
 import bpy, bmesh
@@ -95,7 +95,8 @@ if opt.get('poza'):
         return sum((S[nm] * (w / s_) for nm, w in ws.items() if nm in S), np.zeros((4, 4))) if s_ else np.eye(4)
     TP = [Vector((mat(TW[k]) @ np.r_[list(T[k]), 1])[:3]) for k in range(len(T))]
     bvhp = BVHTree.FromPolygons(TP, TF)
-    A, Bp = Vector(PZ['шея']['head']), Vector(PZ['таз']['head']); s_ = (Bp - A).normalized()
+    # `--put шея:голова` — путь по костям (веер на затылке); по умолчанию хребет «шея → таз»
+    ka_, kb_ = opt.get('put', 'шея:таз').split(':'); A, Bp = Vector(PZ[ka_]['head']), Vector(PZ[kb_]['head']); s_ = (Bp - A).normalized()
     b = Vector((0, s_.z, -s_.y));  b = b if (b.y + b.z) > 0 else -b       # от живота: назад и вверх
     t0, t1 = (float(v) for v in opt.get('t', '0.0:0.45').split(':')); L = (Bp - A).length
     ts = np.arange(t0, t1 + 1e-6, SH / L)

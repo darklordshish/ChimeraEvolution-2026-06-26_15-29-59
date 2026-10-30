@@ -18,7 +18,7 @@ from scipy.optimize import minimize
 
 a = sys.argv[1:]
 tn, sk_p, sj_p, pz_p, out_p = a[:5]
-opt = dict(spina='0', stopa='0', nu='0.002', kosti='стопа,стопа.L,плечо,плечо.L,предплечье,предплечье.L,хребет,шея,голова', nogi_ik='1', lam='0.02',
+opt = dict(ruki='0', spina='0', stopa='0', nu='0.002', kosti='стопа,стопа.L,плечо,плечо.L,предплечье,предплечье.L,хребет,шея,голова', nogi_ik='1', lam='0.02',
            mu='0.05', vesa='1,1,0.5', predel='30', iter='3')
 i = 5
 while i < len(a):
@@ -147,6 +147,23 @@ def spina(a_, Vx):
     return Vx + np.outer(WSP * a_ / 100.0, [0.0, 1.0, 0.0])
 
 
+# МАССА РУК (`--ruki 1`, 30.10, критик n4: «рука — ровная труба»; ГеймБосс: «массу руки — по витрине, маской, а не по словам критика;
+# лист даёт трубу — оставить трубу»): два параметра — радиальная толщина плеча и предплечья (%, общие для обеих рук); вершины с весом
+# кости сдвигаются от её оси в покое пропорционально весу. Применение к бленду — ruki_massa.py
+NRU = 2 if opt['ruki'] == '1' else 0
+RU = []
+for kn in ('плечо', 'плечо.L', 'предплечье', 'предплечье.L'):
+    if kn not in BN: continue
+    b_ = BN.index(kn); h_ = np.array(K[kn]['head'], float); t_ = np.array(K[kn]['tail'], float); u_ = (t_ - h_) / np.linalg.norm(t_ - h_)
+    R_ = V - h_ - np.outer((V - h_) @ u_, u_)
+    RU.append((0 if kn.startswith('плечо') else 1, W[:, b_][:, None] * R_))
+
+
+def ruki(kk, Vx):
+    for j, wr_ in RU: Vx = Vx + wr_ * (kk[j] / 100.0)
+    return Vx
+
+
 def norm512(fig):
     ys, xs = np.where(fig); fig = fig[ys.min():ys.max() + 1, xs.min():xs.max() + 1]
     h, w = fig.shape; side = int(max(h, w) * 1.1); c = np.zeros((side, side), bool)
@@ -196,9 +213,10 @@ def razvoroty(Y, D2):
 
 def stan(delta):
     """поза и форма стопы → тело в позе, севшее нижней точкой меша на землю (Z мешa позы r5)"""
-    nf = NST + NSP; dp = np.clip(delta[:len(delta) - nf], -PRED, PRED); D2, PH, PT = poza(dp)
-    Vx = stopa(np.clip(delta[len(delta) - nf:len(delta) - NSP], -50, 20)) if NST else V
-    if NSP: Vx = spina(float(np.clip(delta[-1], -5, 10)), Vx)
+    nf = NST + NSP + NRU; dp = np.clip(delta[:len(delta) - nf], -PRED, PRED); D2, PH, PT = poza(dp)
+    Vx = stopa(np.clip(delta[len(delta) - nf:len(delta) - nf + NST], -50, 20)) if NST else V
+    if NSP: Vx = spina(float(np.clip(delta[len(delta) - NRU - 1], -5, 10)), Vx)
+    if NRU: Vx = ruki(np.clip(delta[len(delta) - NRU:], -30, 30), Vx)
     Y = skin(D2, PH, Vx); dzm = ZM0[0] - Y[:, 2].min() if ZM0 else 0.0; Y[:, 2] += dzm
     sh = np.array([0, 0, dzm]); PH = {n: v + sh for n, v in PH.items()}; PT = {n: v + sh for n, v in PT.items()}
     return D2, PH, PT, Y, Vx
@@ -208,13 +226,13 @@ ZM0 = []
 n_ev = [0]
 def f(delta):
     D2, PH, PT, Y, Vx = stan(delta); r = mery(Y); n_ev[0] += 1
-    dp = delta[:len(delta) - NST - NSP]; ds = delta[len(delta) - NST - NSP:]
+    dp = delta[:len(delta) - NST - NSP - NRU]; ds = delta[len(delta) - NST - NSP - NRU:]
     return (sum(VES[k] * (1 - v) for k, v in r.items()) + LAM * float(np.sum((np.clip(dp, -PRED, PRED) / 10) ** 2)) + LAM * float(np.sum((ds / 30) ** 2))
             + MU * abs(PT['стопа'][2] - PT['стопа.L'][2]) / 0.01 + float(opt['nu']) * razvoroty(Y, D2))
 
 
 t0 = time.time()
-NP = len(KOSTI) + (4 if NIK else 0) + NST + NSP
+NP = len(KOSTI) + (4 if NIK else 0) + NST + NSP + NRU
 x = np.zeros(NP)
 if NIK:   # знак: сдвиг скакательного правой ноги на +5 см назад должен сдвинуть его на +5 см
     for zn in (1.0, -1.0):
@@ -224,6 +242,11 @@ if NIK:   # знак: сдвиг скакательного правой ног�
 ZM0.append(float(skin(*poza(x)[:2])[:, 2].min()))
 r0 = mery(skin(*poza(x)[:2]))
 print('ПОЗА-МАСКИ: до — %s; разворотов %d; функционал %.4f (%.1f с на оценку)' % (', '.join('%s %.3f' % kv for kv in r0.items()), razvoroty(skin(*poza(x)[:2]), poza(x)[0]), f(x), time.time() - t0))
+if opt.get('skan_ruki') and NRU:   # `--skan_ruki плечо:предплечье,…` (проценты) — меры при толщине рук, поза как есть
+    for pr_ in opt['skan_ruki'].split(','):
+        a1, a2 = (float(v) for v in pr_.split(':')); x_ = x.copy(); x_[-2:] = (a1, a2); D2s, PHs, PTs, Ys, _ = stan(x_); rs = mery(Ys)
+        print('СКАН РУК плечо %+.0f %% предплечье %+.0f %%: %s; разворотов %d' % (a1, a2, ', '.join('%s %.3f' % kv for kv in rs.items()), razvoroty(Ys, D2s)))
+    sys.exit(0)
 if opt.get('skan_spina') and NSP:   # `--skan_spina 0,2,4` — меры при полноте спины, поза как есть
     for k in (float(v) for v in opt['skan_spina'].split(',')):
         x_ = x.copy(); x_[-1] = k; D2s, PHs, PTs, Ys, _ = stan(x_); rs = mery(Ys)
@@ -239,7 +262,8 @@ x = res.x.copy(); D2, PH, PT, Y1, Vx1 = stan(x); r1 = mery(Y1)
 print('ПОЗА-МАСКИ: после — %s; разворотов %d; функционал %.4f; оценок %d, %.0f с' % (', '.join('%s %.3f' % kv for kv in r1.items()), razvoroty(Y1, D2), f(x), n_ev[0], time.time() - t0))
 print('ПОЗА-МАСКИ: повороты — ' + ', '.join('%s %+.1f°' % (k, v) for k, v in zip(KOSTI, x) if abs(v) > 0.05) + ('; скакательные (dy, dz см) — правый %+.1f %+.1f, левый %+.1f %+.1f' % tuple(x[len(KOSTI):len(KOSTI) + 4]) if NIK else '')
       + ('; длина стоп %+.1f %% / %+.1f %%' % tuple(np.clip(x[len(x) - NSP - 2:len(x) - NSP], -50, 20)) if NST else '')
-      + ('; спина %+.2f см' % float(np.clip(x[-1], -5, 10)) if NSP else ''))
+      + ('; спина %+.2f см' % float(np.clip(x[len(x) - NRU - 1], -5, 10)) if NSP else '')
+      + ('; руки: плечо %+.1f %%, предплечье %+.1f %%' % tuple(np.clip(x[-2:], -30, 30)) if NRU else ''))
 print('ПОЗА-МАСКИ: стопы z %.3f / %.3f; колени y %.3f / %.3f, скакательные y %.3f / %.3f' % (
     PT['стопа'][2], PT['стопа.L'][2], PH['голень'][1], PH['голень.L'][1], PH['стопа'][1], PH['стопа.L'][1]))
 out = []
@@ -248,8 +272,11 @@ for b in pz['bones']:
     out.append(dict(b, head=[round(c, 5) for c in PH[n]], tail=[round(c, 5) for c in PT[n]], z_axis=[round(c, 5) for c in Fm[:, 2]]))
 pz['bones'] = out
 pz['note'] = pz.get('note', '') + '; поза по маскам листа (poza_po_maskam.py): ' + ', '.join('%s %+.1f°' % (k, v) for k, v in zip(KOSTI, x) if abs(v) > 0.05) + ('; скакательные dy/dz см %+.1f %+.1f %+.1f %+.1f' % tuple(x[len(KOSTI):len(KOSTI) + 4]) if NIK else '')
+if NRU:
+    rk_ = np.clip(x[-2:], -30, 30); pz['ruki_proc'] = {'плечо': round(float(rk_[0]), 2), 'предплечье': round(float(rk_[1]), 2)}
+    pz['note'] += '; руки: плечо %+.1f %%, предплечье %+.1f %% (форма: ruki_massa.py)' % tuple(rk_)
 if NSP:
-    pz['spina_sm'] = round(float(np.clip(x[-1], -5, 10)), 3); pz['note'] += '; спина %+.2f см (форма: spina_massa.py)' % pz['spina_sm']
+    pz['spina_sm'] = round(float(np.clip(x[len(x) - NRU - 1], -5, 10)), 3); pz['note'] += '; спина %+.2f см (форма: spina_massa.py)' % pz['spina_sm']
 if NST:
     ks = np.clip(x[len(x) - NSP - 2:len(x) - NSP], -50, 20); pz['stopa'] = {'стопа': round(1 + ks[0] / 100, 4), 'стопа.L': round(1 + ks[1] / 100, 4)}
     pz['note'] += '; длина стоп ×%.3f / ×%.3f (форма: stopa_dlina.py)' % tuple(1 + ks / 100)
