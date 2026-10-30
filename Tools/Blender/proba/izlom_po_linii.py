@@ -11,7 +11,9 @@
 Тело сшито по общим вершинам объектов. Правится форма-ключ `--imya` (и база, если база = ключ после `prorezhivanie.py`).
 
   blender -b вход.blend --factory-startup -P izlom_po_linii.py -- выход.blend [--imya Поджарый] [--linii 1] [--radius 0.05]
-      [--sila 1] [--maks 0.015] [--min_ugol 4] [--prohody 2] [--bez шея — линии этих объектов не ломаются]
+      [--sila 1] [--maks 0.015] [--min_ugol 4] [--prohody 2] [--bez шея — линии этих объектов не ломаются] [--shvy 1 — ломать и у швов между объектами]
+      [--vpadina 0.004 --vp_ugol 8 — где угол сторон меньше vp_ugol°, вершина линии утапливается по нормали: на плоской спине сторонам
+       нечему пересечься, а граница массы — впадина между двумя выпуклостями]
 """
 import sys, math
 import bpy, bmesh
@@ -59,7 +61,7 @@ for (x, y), c in kraj_cnt.items():
     if c == 1: FIX[x] = FIX[y] = True
 # у неподвижного края и его соседей излом не ставится: сосед ехал, край стоял — карманы у кольца на талии и на затылке
 # и у швов МЕЖДУ объектами (кольцо «Сердце»–«хребет» на талии: карманы у его вершин)
-SHOV = {k for (x, y), c in kraj_cnt.items() if c > 1 for k in (x, y)}
+SHOV = {k for (x, y), c in kraj_cnt.items() if c > 1 for k in (x, y)} if opt.get('shvy') != '1' else set()   # общие вершины едут во всех объектах разом
 BLIZ = set(np.nonzero(FIX)[0]) | SHOV | {w for v in set(np.nonzero(FIX)[0]) | SHOV for w in nb[v]} | BEZV
 LV = sorted({v for e in LE for v in e}); lnb = {v: [w for w in nb[v] if tuple(sorted((v, w))) in LE] for v in LV}
 print('ИЗЛОМ: рёбер линий %d, вершин линий %d, неподвижных %d' % (len(LE), len(LV), int(FIX.sum())))
@@ -109,6 +111,14 @@ for pr in range(int(opt['prohody'])):
         if nA @ Nv[v] < 0: nA = -nA
         if nB @ Nv[v] < 0: nB = -nB
         ug = math.degrees(math.acos(np.clip(nA @ nB, -1, 1)))
+        VP = float(opt.get('vpadina', '0'))
+        if VP > 0 and ug < float(opt.get('vp_ugol', '8')):
+            acc[v] += 4 * (-Nv[v] * VP); wsum[v] += 4; n_iz += 1
+            for k, u in enumerate(ids):
+                if u in BLIZ: continue
+                n_ = nA if A_[k] else nB; c_ = cA if A_[k] else cB
+                acc[u] += w_[k] * (-(((X[u] - c_) @ n_) * n_)); wsum[u] += w_[k]
+            continue
         if ug < MINU: continue
         # ближайшая к v точка прямой пересечения плоскостей
         dl = np.cross(nA, nB); M = np.array([nA, nB, dl]); rhs = np.array([nA @ cA, nB @ cB, dl @ X[v]])
