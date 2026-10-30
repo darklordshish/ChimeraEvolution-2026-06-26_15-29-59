@@ -2,6 +2,8 @@
 по листу в шортах, и подогнанное тело повторяло пояс шорт валиком. Форма-ключ `--imya` в полосе высот покоя `--z z0:z1`
 сглаживается Таубином (`--shagi` проходов, λ 0.5 / μ −0.53) с весом, плавно спадающим к краям полосы на `--kraj` м; общие вершины
 объектов — одна точка, открытые края (кольца швов) неподвижны. Вне полосы форма не меняется.
+`--tochki "x,y,z,r;…"` (31.10, критик c7–c8: клин у ости, щель на Г1, «клюв» под грудной — устойчивые места в 5–10 граней) — вместо
+полосы круги в проекции (x, z): вес спадает от центра к радиусу r (м); y — только сторона (+1 спина, −1 перед).
 
   blender -b вход.blend --factory-startup -P glad_polosa.py -- выход.blend [--imya Поджарый] [--z 0.98:1.16] [--kraj 0.04] [--shagi 10] [--ob Сердце,хребет — двигаются только вершины этих объектов; общие с другими стоят]
 """
@@ -46,6 +48,11 @@ for o in OBJ:
 NB = [list(s) for s in nb]
 Z = X[:, 2]
 Wt = np.clip(np.minimum(Z - z0, z1 - Z) / KR, 0, 1); Wt = Wt * Wt * (3 - 2 * Wt)
+if opt.get('tochki'):
+    Wt = np.zeros(len(X))
+    for t_ in opt['tochki'].split(';'):
+        cx, cy, cz, r_ = (float(q) for q in t_.split(','))
+        d_ = np.hypot(X[:, 0] - cx, X[:, 2] - cz); w_ = np.clip(1 - d_ / r_, 0, 1) * (np.sign(X[:, 1]) == np.sign(cy)); Wt = np.maximum(Wt, w_ * w_ * (3 - 2 * w_))
 kraj_tela = np.array([(FIX[k] is True and len(NB[k]) < 4) or FIX[k] == 'чужая' for k in range(len(X))])
 Wt[kraj_tela] = 0
 X0 = X.copy()
@@ -56,5 +63,5 @@ for o in OBJ:
     kb = o.data.shape_keys.key_blocks[opt['imya']]; iw = o.matrix_world.inverted()
     for vi in range(len(o.data.vertices)): kb.data[vi].co = iw @ __import__('mathutils').Vector(X[vm[(o.name, vi)]])
 d = np.linalg.norm(X - X0, axis=1)
-print('ГЛАДЬ: полоса %.2f–%.2f м, вершин с весом > 0.5: %d, сдвиг средн %.4f, макс %.4f м' % (z0, z1, int((Wt > 0.5).sum()), d[Wt > 0].mean(), d.max()))
+print('ГЛАДЬ: ' + ('шары %s' % opt['tochki'] if opt.get('tochki') else '') + ' полоса %.2f–%.2f м, вершин с весом > 0.5: %d, сдвиг средн %.4f, макс %.4f м' % (z0, z1, int((Wt > 0.5).sum()), d[Wt > 0].mean(), d.max()))
 bpy.ops.wm.save_as_mainfile(filepath=out)
