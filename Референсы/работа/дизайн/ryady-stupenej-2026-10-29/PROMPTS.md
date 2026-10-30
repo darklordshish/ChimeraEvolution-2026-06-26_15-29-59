@@ -230,3 +230,50 @@ Replace the chest and both hanging forelimbs on each trial figure with the actua
 For the LEFT stage 1 figure, the very lowest fingertip is level with the midpoint between the shorts hem and the knee, approximately y=590 on this 1536x1024 canvas. For the RIGHT stage 2 figure, the very lowest fingertip is just ABOVE the knee, approximately y=630. Keep the little hands slender and proportionate.
 The standing body remains balanced with the pelvis above the planted hooves. Preserve the existing pelvis, shorts, legs, hooves, heads, antlers, ground line, rendering and light. Stage 1 torso leans 18 degrees forward from vertical; stage 2 torso leans 32 degrees forward from vertical. Produce the same two full left profiles on white, at the same scale and positions as image 1.
 ```
+
+
+# Лось r8 · 30.10.2026 · редактирование по ролям источников
+
+Встроенный image_gen, режим правки, одна проба и одна корректировка. Вырезки подготовлены `prepare-r8.py`; кроп и равномерное увеличение PIL — подготовка входов, не перерисовка фигур.
+
+## Проба
+
+Порядок приложений:
+
+1. `r8-input-pose.png` — объект правки, профили без органов из `../ChimeraEvolution/Референсы/витрина/человек-лось/тело.png`.
+2. `r8-input-organs.png` — вставки головы/ушей/рогов и копыт из витринного `ступени.png` (r2); тела ст.1/ст.2 не приложены.
+3. `r8-input-upper.png` — анфас ст.1/ст.2 r5: верх, киль, сухие конечности.
+4. `r8-input-balance.png` — нижняя часть r6-proba1, только отношение таза к копытам.
+5. `los-istochniki-r8.png` — главная карта ролей координатора.
+
+Выход: `chelovek-los-r8-proba1.png`.
+
+```text
+Use case: compositing. Edit image 1, the two existing left-facing standing profiles. Preserve their standing pose, bent legs, pelvis locations and ground contacts while dressing their existing shapes with the moose surface and organ inserts. White studio background, warm gray faceted low-poly material and the existing soft light. Output two large full-length profiles side by side, ST.1 left and ST.2 right.
+
+INPUT ROLES:
+Image 1, labeled EDIT TARGET / POSE ONLY, is the actual edit target, cropped directly from telo.png. Its silhouettes, leg bends, lowered dangling tips, and pelvis-over-feet stance anchor the edit. Stage 1 pelvis-to-withers axis leans forward 15–20 degrees from vertical; stage 2 leans forward 35 degrees. Keep the pelvis vertically over the planted hoof contacts.
+Image 2, labeled INSERT, supplies stage-specific long moose muzzle, ears, small branching antlers at stage 1, large palmate antlers at stage 2, and dark cloven hoof inserts.
+Image 3, labeled SURFACE, supplies the moose upper shape: a tall withers ridge flowing continuously into the neck, a narrow deep keel tapering into a tucked belly, and hanging thin dry moose legs. The two dangling appendages have the simple slender continuous outline of thin dry moose legs, smooth taper from the upper attachment to the dark tips. Their tips end beside the thigh at stage 1 and just above the knee at stage 2. Match those heights while preserving the pose.
+Image 4, labeled CHECK ONLY, supplies the pelvis-over-planted-hooves relationship exclusively.
+Image 5 is the coordinator's source-role board and explains the source hierarchy.
+
+Compose by local surface replacement on image 1: fit the head and hoof inserts, reshape the surface into the moose ridge and keel from image 3, and retain the existing two-legged standing gesture. Stage 2 carries the stronger forward lean. Keep all four ground contacts and the dangling appendages clearly visible.
+```
+
+## Единственная корректировка
+
+Порядок: проба r8 (объект правки), вырезка позы, органы r2, верх r5, равновесие r6. Все пять изображений подписаны ролью в запросе. Общий лист источников не приложен повторно: лимит инструмента пять входов. Первоначальный вызов с шестью входами отклонён валидатором до генерации; после удаления шестого входа выполнен один корректирующий проход.
+
+Выход: `chelovek-los-r8-korrekciya.png`.
+
+```text
+Use case: compositing. One corrective surface edit of image 1, the two-profile trial. Keep the two planted standing figures, pelvis centers, bent supporting legs, hoof contacts, soft light, white backdrop and gray faceted material.
+
+INPUT ROLES: Image 1 = EDIT TARGET, current trial. Image 2 = POSE AUTHORITY, cropped telo.png profiles. Image 3 = ORGAN INSERTS, stage-specific r2 heads, ears, antlers and hooves. Image 4 = SURFACE AUTHORITY, r5 moose upper shapes and thin dry hanging legs. Image 5 = BALANCE CHECK ONLY, pelvis over hoof contact span.
+
+Make the following corrections together as a local collage-like replacement of the upper surfaces. On the left ST.1 keep pelvis near (520,535) in the 1448x1086 trial; put the peak of the withers near (416,215), for an 18-degree pelvis-to-withers lean. The dangling dark tips end near y=590, beside mid-thigh. Use the small branching stage-1 antlers from image 3.
+On the right ST.2 keep pelvis near (1260,540), and bring the withers peak forward to about (1035,220), giving a 35-degree pelvis-to-withers lean. Let the moose head follow that inclined neck. The dangling dark tips end near y=640, just above the knee near y=690. Supporting legs remain planted under the pelvis. Use the broad palmate stage-2 antlers from image 3.
+
+Fit the r5 moose upper surface onto those inclined shapes: an uninterrupted rising withers-to-neck ridge, a deep narrow blade-like chest keel, the lower edge sweeping directly up into the tucked waist. Each hanging appendage has the silhouette of a thin dry moose leg: a long slender stick, almost constant narrow width, gently tapering to short dark tips. Its upper connection continues the slope of the moose withers as one flowing surface. Match the r5 slim hanging shapes using the specified shorter reach. Keep all four hoof contacts visible and retain the existing picture scale.
+```
