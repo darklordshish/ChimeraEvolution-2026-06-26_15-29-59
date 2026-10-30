@@ -4,7 +4,9 @@
 поворачивает; объём держится (огранка проекцией на плоскости срезала выпуклость: IoU 0.903 → 0.85–0.88). Остальные ключи
 интерполируются; веса — 4 кости с перенормировкой.
 
-  blender -b шасси.blend --factory-startup -P prorezhivanie.py -- выход.blend Поджарый Сердце,хребет,Руки 0.33
+  blender -b шасси.blend --factory-startup -P prorezhivanie.py -- выход.blend Поджарый Сердце,хребет,Руки 0.33 [gruppa]
+  `gruppa` (30.10): прореживаются и грани у края — пояс мелких треугольников под кольцом «Сердце»–«хребет» бликовал складкой; вершины
+  края и линий держит группа с весом 1000 (decimate use_vertex_group, инверсия), проверка — краевые вершины на месте.
 """
 import bpy, bmesh, sys
 a=sys.argv[sys.argv.index('--')+1:]; out, KEY, OB, R = a[0], a[1], a[2].split(','), float(a[3])
@@ -21,10 +23,17 @@ for o in bpy.data.objects:
     al = bm.edges.layers.int.get('перелом')
     if al is not None: kraj |= {v for e in bm.edges if e[al] > 0 for v in e.verts}
     for f in bm.faces: f.select_set(not any(v in kraj for v in f.verts))
-    bmesh.update_edit_mesh(o.data)
-    if R < 1: bpy.ops.mesh.decimate(ratio=R)
+    GR = len(a) > 4 and a[4] == 'gruppa'
+    if GR:
+        g = o.vertex_groups.new(name='~держать'); idx = [v.index for v in kraj]; o.vertex_groups.active = g
+        bpy.ops.object.mode_set(mode='OBJECT'); g.add(idx, 1.0, 'REPLACE'); bpy.ops.object.mode_set(mode='EDIT')
+        bpy.ops.mesh.select_all(action='SELECT')
+    else:
+        bmesh.update_edit_mesh(o.data)
+    if R < 1: bpy.ops.mesh.decimate(ratio=R, use_vertex_group=GR, vertex_group_factor=1000 if GR else 1, invert_vertex_group=GR)
     bpy.ops.mesh.select_all(action='SELECT'); bpy.ops.mesh.quads_convert_to_tris()
     bpy.ops.object.mode_set(mode='OBJECT')
+    if GR: o.vertex_groups.remove(o.vertex_groups['~держать'])
     bpy.ops.object.vertex_group_limit_total(group_select_mode='ALL', limit=4)
     bpy.ops.object.vertex_group_normalize_all(group_select_mode='ALL', lock_active=False)
     print('D',o.name,n0,'→',len(o.data.polygons))
