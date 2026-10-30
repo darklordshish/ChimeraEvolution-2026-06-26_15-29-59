@@ -310,6 +310,21 @@ public static class DomeFlora
 
         // Деревья: точки те же (соль 111, 700 запрос), меняются порода/посадка/цвет.
         int treeTarget = cfg.treeCount > 0 ? cfg.treeCount : 700;
+
+        // Пятна леса/поляны: низкочастотный fBm поверх общего пола.
+        if (cfg.patchyFlora)
+        {
+            var patchBase = ground;
+            float threshold = Mathf.Lerp(-0.35f, 0.15f, cfg.forestFraction);
+            ground = (x, z) =>
+            {
+                var g = patchBase(x, z);
+                if (!g.Item2) return g;
+                float n = ValueNoise2D.Fbm(seed + 9111L, x * 0.0025f, z * 0.0025f, 3);
+                return (g.Item1, n > threshold);
+            };
+        }
+
         var trees = Scatter(seed, 111, treeTarget, d, 10f, ground);
         int k = 0, deadIndex = 0;
         foreach (var p0 in trees)

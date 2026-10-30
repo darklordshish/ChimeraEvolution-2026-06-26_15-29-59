@@ -30,6 +30,8 @@ public class DomeGenConfigSO : ScriptableObject
     public float treeDensityPerM2 = 0.03f;
     /// <summary>0 = старые 700; иначе целевое число деревьев на стенд.</summary>
     public int treeCount = 0;
+    /// <summary>Пятна леса/поляны по низкочастотному fBm; выключено для A/C.</summary>
+    public bool patchyFlora = false;
     public float forestFraction = 0.55f;
 
     [Header("NavMesh: ТОЛЬКО тайлами (моно-бейк на Ø2000 запрещён)")]
