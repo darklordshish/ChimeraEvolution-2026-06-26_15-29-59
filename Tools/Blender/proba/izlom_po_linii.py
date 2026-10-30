@@ -14,6 +14,11 @@
       [--sila 1] [--maks 0.015] [--min_ugol 4] [--prohody 2] [--bez шея — линии этих объектов не ломаются] [--shvy 1 — ломать и у швов между объектами]
       [--vpadina 0.004 --vp_ugol 8 — где угол сторон меньше vp_ugol°, вершина линии утапливается по нормали: на плоской спине сторонам
        нечему пересечься, а граница массы — впадина между двумя выпуклостями]
+      [--ugly 6:28,7:15,5:15,8:38,2:18,3:28,4:20 — УГОЛ ПО ЛИНИИ (критик c4: «спину по анатомии, не по реконструкции» — у цели спина
+       плоская): номер — код линии (`перелом_линия` от linii_k2.py: Г6 → 6, В2 → 102); где плоскости сторон сходятся под меньшим
+       углом, каждая разворачивается вокруг оси линии через её вершину НАРУЖУ на половину недостающего — выпуклое ребро между
+       массами; соседи ложатся на развёрнутые плоскости, вершина линии стоит; где угол уже не меньше цели — вершина не трогается]
+      [--relax 4 — после изломов Таубин по сдвинутым вершинам НЕ на линиях: мятые кристаллы между линиями (c5b) уходят, рёбра остаются]
 """
 import sys, math
 import bpy, bmesh
@@ -43,14 +48,17 @@ for j, (o, vi, p) in enumerate(flat):
         if rep[jj] is None: rep[jj] = u
 vm = {(o.name, vi): rep[j] for j, (o, vi, _) in enumerate(flat)}
 X = np.array(X); N = len(X)
-nb = [set() for _ in range(N)]; F = []; kraj_cnt = {}; LE = set(); BEZV = set()
+nb = [set() for _ in range(N)]; F = []; kraj_cnt = {}; LE = set(); BEZV = set(); LID = {}
 for o in OBJ:
-    bm = bmesh.new(); bm.from_mesh(o.data); al = bm.edges.layers.int.get('перелом')
+    bm = bmesh.new(); bm.from_mesh(o.data); al = bm.edges.layers.int.get('перелом'); ai = bm.edges.layers.int.get('перелом_линия')
     for e in bm.edges:
         x, y = vm[(o.name, e.verts[0].index)], vm[(o.name, e.verts[1].index)]; nb[x].add(y); nb[y].add(x)
         if e.is_boundary:
             key = tuple(sorted((x, y))); kraj_cnt[key] = kraj_cnt.get(key, 0) + 1
-        if al is not None and e[al] >= (2 if LIN == 2 else 1): LE.add(tuple(sorted((x, y))))
+        if al is not None and e[al] >= (2 if LIN == 2 else 1):
+            LE.add(tuple(sorted((x, y))))
+            if ai is not None and e[ai]:
+                for q in (x, y): LID.setdefault(q, []).append(e[ai])
     for f in bm.faces: F.append([vm[(o.name, v.index)] for v in f.verts])
     if o.name in set(opt['bez'].split(',')):
         for v in bm.verts: BEZV.add(vm[(o.name, v.index)])
@@ -81,11 +89,14 @@ def ploskost(P, w):
 
 
 import heapq
-X0 = X.copy()
+X0 = X.copy(); MOVED = np.zeros(N, bool)
 for pr in range(int(opt['prohody'])):
     Nv = normali(X); acc = np.zeros_like(X); wsum = np.zeros(N); n_iz = 0
     for v in LV:
         if v in BLIZ or len(lnb[v]) < 2: continue      # конец цепочки: направление линии не определено — карманы у концов
+        lid_v = max(set(LID.get(v, [0])), key=LID.get(v, [0]).count)
+        # не через СВОЮ линию (на лопатке Г4–Г7 идут тесно: стоп на любой линии оставлял 0–5 соседей)
+        svoya = lambda w: w in lnb and max(set(LID.get(w, [0])), key=LID.get(w, [0]).count) == lid_v
         # направление линии: через соседей по линии
         ends = [X[w] for w in lnb[v]]
         t = (ends[-1] - ends[0]) if len(ends) > 1 else (ends[0] - X[v])
@@ -99,9 +110,9 @@ for pr in range(int(opt['prohody'])):
                 nd = d + float(np.linalg.norm(X[w] - X[u]))
                 if nd > R or nd >= dist.get(w, 9): continue
                 dist[w] = nd
-                if w in lnb and w != v: continue
+                if svoya(w) and w != v: continue
                 heapq.heappush(pq, (nd, w))
-        ids = [u for u in dist if u != v and u not in lnb]
+        ids = [u for u in dist if u != v and not svoya(u)]
         if len(ids) < 6: continue
         P = X[ids]; d_ = np.array([dist[u] for u in ids]); sg = (P - X[v]) @ s_
         A_, B_ = sg > 0, sg < 0
@@ -111,6 +122,22 @@ for pr in range(int(opt['prohody'])):
         if nA @ Nv[v] < 0: nA = -nA
         if nB @ Nv[v] < 0: nB = -nB
         ug = math.degrees(math.acos(np.clip(nA @ nB, -1, 1)))
+        UG = dict((int(k), float(u_)) for k, u_ in (x_.split(':') for x_ in opt['ugly'].split(','))) if opt.get('ugly') else {}
+        lid = lid_v
+        if lid in UG and ug >= UG[lid]: continue      # угол уже есть — не острить дальше (иначе мятые кристаллы: 58°, 87°)
+        if lid in UG and ug < UG[lid]:
+            de = math.radians(UG[lid] - ug) / 2
+            def rot(n_, ang):
+                return n_ * math.cos(ang) + np.cross(t, n_) * math.sin(ang) + t * (t @ n_) * (1 - math.cos(ang))
+            # наружу: нормали сторон расходятся (скалярное произведение убывает)
+            sg_ = 1.0 if rot(nA, de) @ rot(nB, -de) < rot(nA, -de) @ rot(nB, de) else -1.0
+            nA2, nB2 = rot(nA, sg_ * de), rot(nB, -sg_ * de)
+            for k, u in enumerate(ids):
+                if u in BLIZ: continue
+                n_ = nA2 if A_[k] else nB2
+                acc[u] += w_[k] * (-(((X[u] - X[v]) @ n_) * n_)); wsum[u] += w_[k]
+            n_iz += 1
+            continue
         VP = float(opt.get('vpadina', '0'))
         if VP > 0 and ug < float(opt.get('vp_ugol', '8')):
             acc[v] += 4 * (-Nv[v] * VP); wsum[v] += 4; n_iz += 1
@@ -132,8 +159,15 @@ for pr in range(int(opt['prohody'])):
     m = wsum > 0
     D = np.zeros_like(X); D[m] = acc[m] / wsum[m][:, None] * S
     ln = np.linalg.norm(D, axis=1); D *= np.minimum(1, MX / np.maximum(ln, 1e-12))[:, None]
-    X = X + D
+    X = X + D; MOVED |= m
     print('ИЗЛОМ: проход %d — изломов %d, сдвинуто вершин %d, сдвиг средн %.4f, макс %.4f м' % (pr + 1, n_iz, int(m.sum()), ln[m].mean() if m.any() else 0, min(ln.max(), MX)))
+RLX = int(opt.get('relax', '0'))
+if RLX:
+    LS = set(LV); Wr = np.array([1.0 if (MOVED[k] and k not in LS and not FIX[k]) else 0.0 for k in range(N)]); NBl = [list(s_) for s_ in nb]
+    for _ in range(RLX):
+        for lam in (0.5, -0.53):
+            Lp = np.array([X[n_].mean(0) - X[k] if n_ else np.zeros(3) for k, n_ in enumerate(NBl)]); X = X + lam * Wr[:, None] * Lp
+    print('ИЗЛОМ: разглажено вершин между линиями %d (%d проходов Таубина)' % (int(Wr.sum()), RLX))
 for o in OBJ:
     kb = o.data.shape_keys.key_blocks[opt['imya']]; iw = o.matrix_world.inverted(); same = all((kb.data[k].co - o.data.vertices[k].co).length < 1e-6 for k in range(len(o.data.vertices)))
     for vi in range(len(o.data.vertices)):

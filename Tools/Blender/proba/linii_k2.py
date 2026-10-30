@@ -119,6 +119,7 @@ def put(u, w, lim):
 
 
 REB = {}            # ребро (u, w) → сорт (2 Г / 1 В)
+REB_ID = {}         # ребро → номер линии по коду имени (Г6 → 6, В2 → 102): атрибут `перелом_линия`, для излома с углом по линии
 CEL = {}            # вершина → точки линии рядом (для сдвига)
 stat = {}
 for vid in opt['vidy'].split(','):
@@ -134,6 +135,7 @@ for vid in opt['vidy'].split(','):
                 if pth is None: continue
                 for x_, y_ in zip(pth, pth[1:]):
                     e = (min(x_, y_), max(x_, y_)); REB[e] = max(REB.get(e, 0), sort); n_reb += 1
+                    kod = ln['imya'].split()[0]; REB_ID.setdefault(e, (100 if kod[0] == 'В' else 0) + int(''.join(c for c in kod[1:] if c.isdigit()) or 0))
                 for v in pth: CEL.setdefault(v, []).append(poly)
             st = stat.setdefault(ln['imya'], [0, 0]); st[0] += 1; st[1] += n_reb
 print('ЛИНИИ: ' + ', '.join('%s %d прох. %d рёбер' % (k, v[0], v[1]) for k, v in sorted(stat.items())))
@@ -177,6 +179,8 @@ for o in OBJ:
         vals.append(REB.get((min(x_, y_), max(x_, y_)), 0))
     at.data.foreach_set('value', vals)
     for ed, s_ in zip(o.data.edges, vals): ed.use_edge_sharp = s_ == 2
+    ai = o.data.attributes.get('перелом_линия') or o.data.attributes.new('перелом_линия', 'INT', 'EDGE')
+    ai.data.foreach_set('value', [REB_ID.get((min(vmap[(o.name, ed.vertices[0])], vmap[(o.name, ed.vertices[1])]), max(vmap[(o.name, ed.vertices[0])], vmap[(o.name, ed.vertices[1])])), 0) for ed in o.data.edges])
 otchet = dict(reber_G=sum(1 for s_ in REB.values() if s_ == 2), reber_V=sum(1 for s_ in REB.values() if s_ == 1),
               vershin_sdvinuto=len(sdv), sdvig_sred_mm=round(float(np.mean(sdv)) * 1000, 2) if sdv else 0,
               sdvig_maks_mm=round(max(sdv, default=0) * 1000, 2), ne_sdvinuto_razvorot=ostalos, linii=stat)
