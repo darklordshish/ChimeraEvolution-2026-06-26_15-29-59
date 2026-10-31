@@ -14,6 +14,12 @@ public static class ForestSpace
         public float radius;
     }
 
+    public struct Corridor
+    {
+        public Vector2 a;
+        public Vector2 b;
+        public float width;
+    }
     public static List<Clearing> Build(DomeGenConfigSO cfg, long seed,
         Func<float, float, float> ground, Vector3 entry, Vector2 labCenter,
         DomeHydro.State hydro, int want = 5, float radius = 30f)
@@ -44,6 +50,43 @@ public static class ForestSpace
             list.Add(new Clearing { center = p, radius = radius });
         }
         return list;
+    }
+
+    public static List<Corridor> BuildCorridors(IReadOnlyList<Clearing> clearings,
+        float width = 16f)
+    {
+        var list = new List<Corridor>();
+        if (clearings == null || clearings.Count < 2) return list;
+        for (int i = 1; i < clearings.Count; i++)
+        {
+            int best = -1; float bestD = float.MaxValue;
+            for (int j = 0; j < i; j++)
+            {
+                float d = Vector2.Distance(clearings[i].center, clearings[j].center);
+                if (d < bestD) { bestD = d; best = j; }
+            }
+            if (best >= 0)
+                list.Add(new Corridor { a = clearings[best].center, b = clearings[i].center, width = width });
+        }
+        return list;
+    }
+
+    public static bool ContainsCorridor(IReadOnlyList<Corridor> corridors,
+        float x, float z, float margin = 1f)
+    {
+        if (corridors == null) return false;
+        Vector2 p = new Vector2(x, z);
+        for (int i = 0; i < corridors.Count; i++)
+        {
+            var c = corridors[i];
+            Vector2 ab = c.b - c.a;
+            float len2 = ab.sqrMagnitude;
+            float t = len2 < 1e-6f ? 0f : Mathf.Clamp01(Vector2.Dot(p - c.a, ab) / len2);
+            Vector2 closest = c.a + ab * t;
+            float r = c.width * 0.5f + margin;
+            if ((p - closest).sqrMagnitude < r * r) return true;
+        }
+        return false;
     }
 
     public static bool Contains(IReadOnlyList<Clearing> clearings,
