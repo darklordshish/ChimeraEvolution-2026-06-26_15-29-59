@@ -1,0 +1,6 @@
+{
+  "passed": false,
+  "exit_code": 1,
+  "stdout": "",
+  "stderr": "Traceback (most recent call last):\n  File \"C:\\Users\\semion\\Documents\\Chimera_game\\ChimeraEvolution-codex\\Experiments\\shoulder-support-2026-10-31\\check_result.py\", line 15, in <module>\n    assert sum(x['folds'] for x in c)<=.75*sum(x['folds'] for x in b), 'Less than 25% fold reduction'\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: Less than 25% fold reduction\n"
+}

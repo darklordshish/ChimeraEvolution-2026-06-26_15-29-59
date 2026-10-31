@@ -1,0 +1,9 @@
+{
+  "errors": [],
+  "neutral_max_delta_m": 1.2036781326982014e-07,
+  "invalid_weights": 0,
+  "max_influences": 4,
+  "original_bones": 51,
+  "candidate_bones": 53,
+  "triangles": 5738
+}

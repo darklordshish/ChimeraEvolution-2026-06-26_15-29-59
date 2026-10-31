@@ -1,0 +1,16 @@
+{
+  "source": "Experiments/podzharyj-c10-2026-10-31/c13.blend",
+  "config": {
+    "strength": 0.65,
+    "follow": 0.2,
+    "offset": 0
+  },
+  "new_bones": [
+    "опора_подмышки",
+    "опора_подмышки.L"
+  ],
+  "changed_vertex_records": 473,
+  "neutral_geometry_delta_m": 0,
+  "max_influences": 4,
+  "warning": "Other species keys have unchanged coordinates but changed skinning: must be revalidated/rebound before any production use."
+}
