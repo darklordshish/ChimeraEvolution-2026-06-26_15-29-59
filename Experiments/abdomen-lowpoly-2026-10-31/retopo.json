@@ -1,0 +1,16 @@
+{
+  "source": "shoulder-local-2026-10-31/candidate.blend",
+  "source_patch_faces": 64,
+  "boundary_vertices": 20,
+  "old_heart_vertices": 135,
+  "new_heart_vertices": 213,
+  "new_patch_faces": 220,
+  "heart_triangles_before": 221,
+  "heart_triangles_after": 377,
+  "all_keys": [
+    "Basis",
+    "Поджарый",
+    "Поджарый·ПодъёмПлеч"
+  ],
+  "note": "Local topology changed. Outside vertices/keys/weights preserved. Interior keys interpolated, need revalidation. Previous fixed-count criterion not met; explicit local-density alternative."
+}

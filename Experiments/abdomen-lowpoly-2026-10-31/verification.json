@@ -1,0 +1,8 @@
+{
+  "errors": [],
+  "source_triangles": 5738,
+  "candidate_triangles": 5894,
+  "outside_heart_vertices_verified": 110,
+  "bones": 53,
+  "note": "Only neutral lean-body candidate verified. Resampled PSD and new topology require motion review."
+}
