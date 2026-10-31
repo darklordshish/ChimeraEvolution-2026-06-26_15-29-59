@@ -41,6 +41,7 @@ namespace Chimera.Tests.PlayMode
             builder.buildLabComplex = stationLoop;
             builder.buildStationLoop = stationLoop;
             builder.buildStationHill = stationLoop;
+            builder.patchyFlora = stationLoop;
             builder.labEntrance = stationLoop ? LabEntrance.Buried : LabEntrance.Rock;
             builder.buildLabPlan = stationLoop;
             builder.labStyle = LabStyle.Bastion;
@@ -149,6 +150,21 @@ namespace Chimera.Tests.PlayMode
             Assert.IsNull(GameObject.Find("UndergroundHillE"), "UndergroundHillE — плоский стол");
             Assert.IsNull(GameObject.Find("UndergroundWingW"), "UndergroundWingW — плоский стол");
             Assert.IsNull(GameObject.Find("UndergroundWingE"), "UndergroundWingE — плоский стол");
+        }
+
+        [UnityTest]
+        public IEnumerator Clearings_ArePresent_AndDry()
+        {
+            var b = Build(true, true);
+            yield return null;
+
+            Assert.GreaterOrEqual(b.Clearings.Count, 4, "полян-арен меньше четырёх");
+            Assert.LessOrEqual(b.Clearings.Count, 6, "полян-арен больше шести");
+            foreach (var c in b.Clearings)
+            {
+                float h = b.SampleGround(c.center.x, c.center.y);
+                Assert.Greater(h, b.Hydro.lakeLevel + 0.5f, "поляна в воде");
+            }
         }
 
         [UnityTest]
