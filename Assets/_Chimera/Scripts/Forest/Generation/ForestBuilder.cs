@@ -134,6 +134,7 @@ public class ForestBuilder : MonoBehaviour
     public int Chunks => world != null ? world.Chunks : 0;
     public int Trees => world != null ? world.Trees : 0;
     public int TreeColliders => world != null ? world.TreeColliders : 0;
+    public int CoverPodsBuilt => world != null ? world.CoverPodsBuilt : 0;
     public float CrownCover => world != null ? world.CrownCover : 0f;
     public IReadOnlyList<ForestSpace.Clearing> Clearings => world != null ? world.Clearings : new List<ForestSpace.Clearing>();
     public IReadOnlyList<ForestSpace.Corridor> Corridors => world != null ? world.Corridors : new List<ForestSpace.Corridor>();

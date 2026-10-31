@@ -24,6 +24,7 @@ public static class DomeFlora
     {
         public int trees;
         public int treeColliders;
+        public int coverPods;
         public int bushes;
         public int grass;
         public int ferns;
@@ -282,16 +283,18 @@ public static class DomeFlora
     /// </summary>
     public static int Build(GameObject root, DomeGenConfigSO cfg, DomeHydro.State hydro, long seed,
         Func<float, float, float> groundOverride = null, Func<float, float, bool> exclude = null,
-        Func<float, float, bool> undergrowthExclude = null, Func<float, float, bool> colliderNear = null)
+        Func<float, float, bool> undergrowthExclude = null, Func<float, float, bool> colliderNear = null,
+        IReadOnlyList<ForestSpace.CoverPod> coverPods = null)
     {
-        return Build(root, cfg, hydro, seed, groundOverride, exclude, undergrowthExclude, out _, colliderNear);
+        return Build(root, cfg, hydro, seed, groundOverride, exclude, undergrowthExclude, out _, colliderNear, coverPods);
     }
 
     /// <summary>Та же сборка + счётчики бюджетов (И2) наружу.</summary>
     public static int Build(GameObject root, DomeGenConfigSO cfg, DomeHydro.State hydro, long seed,
         Func<float, float, float> groundOverride, Func<float, float, bool> exclude,
         Func<float, float, bool> undergrowthExclude, out BuildCounts counts,
-        Func<float, float, bool> colliderNear = null)
+        Func<float, float, bool> colliderNear = null,
+        IReadOnlyList<ForestSpace.CoverPod> coverPods = null)
     {
         if (root == null) throw new ArgumentNullException(nameof(root));
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
@@ -525,6 +528,30 @@ public static class DomeFlora
             ri++;
         }
         counts.rocks = ri;
+        int pi = 0;
+        if (coverPods != null)
+        {
+            foreach (var pod in coverPods)
+            {
+                float h = baseGround(pod.center.x, pod.center.y);
+                if (h < lakeY + 0.5f) continue;
+                bool log = SeededHash.ToFloat01(SeededHash.Hash(seed, 9701, pi)) < 0.45f;
+                if (log)
+                {
+                    var rot = Quaternion.Euler(0f, SeededHash.ToFloat01(SeededHash.Hash(seed, 9702, pi)) * 360f, 90f);
+                    Part(root.transform, Kit("dcoverLog", () => FloraMeshKit.Trunk(0.35f, 0.15f, 4.5f)),
+                        barkGrey, new Vector3(pod.center.x, h + 0.35f, pod.center.y), rot, 1f);
+                }
+                else
+                {
+                    Part(root.transform, Kit("dcoverRock", () => FloraMeshKit.Slab(2.4f, 1.2f, 1.8f)),
+                        rockMatF, new Vector3(pod.center.x, h - 0.2f, pod.center.y),
+                        Quaternion.Euler(0f, SeededHash.ToFloat01(SeededHash.Hash(seed, 9703, pi)) * 360f, 0f), 1f);
+                }
+                pi++;
+            }
+        }
+        counts.coverPods = pi;
 
         Debug.Log($"[Forest] флора купола: деревья {counts.trees}, кусты {counts.bushes}, " +
                   $"трава {counts.grass}, папоротники {counts.ferns}, скалы {counts.rocks}");

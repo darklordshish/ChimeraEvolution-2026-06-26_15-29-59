@@ -193,6 +193,8 @@ namespace Chimera.Tests.PlayMode
             yield return null;
 
             Assert.GreaterOrEqual(b.CoverPods.Count, 20, "укрытий меньше двадцати");
+            Assert.GreaterOrEqual(b.CoverPodsBuilt, 20, "геометрии укрытий меньше двадцати");
+            Assert.LessOrEqual(b.CoverPodsBuilt, 30, "геометрии укрытий больше тридцати");
             Assert.LessOrEqual(b.CoverPods.Count, 30, "укрытий больше тридцати");
             foreach (var p in b.CoverPods)
                 Assert.Greater(b.SampleGround(p.center.x, p.center.y),
