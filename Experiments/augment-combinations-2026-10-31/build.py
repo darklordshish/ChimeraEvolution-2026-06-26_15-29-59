@@ -1,0 +1,65 @@
+import bpy,json,numpy as np
+from pathlib import Path
+from mathutils import Vector,Matrix
+root=Path(__file__).resolve().parent
+bpy.ops.wm.open_mainfile(filepath=str(root/'hedgehog.blend'))
+arm=next(o for o in bpy.data.objects if o.type=='ARMATURE')
+body=[o for o in bpy.data.objects if o.type=='MESH' and o.name not in ('иглы','игломёт')]
+def snapshot():return {o.name:{k.name:np.array([p.co[:] for p in k.data]) for k in o.data.shape_keys.key_blocks} for o in body}
+before=snapshot()
+bpy.data.objects['иглы'].name='Шкура@Ёж';bpy.data.objects['игломёт'].name='Игломёт@Ёж'
+# Barycentric sampling can create >4 influences on new spikes. Finalize these
+# new weights before any motion target; neutral geometry is unchanged.
+spikes=bpy.data.objects['Шкура@Ёж'];limited=0
+for v in spikes.data.vertices:
+    ws=[(g.group,g.weight) for g in v.groups if spikes.vertex_groups[g.group].name in arm.data.bones and g.weight>0]
+    if len(ws)<=4:continue
+    limited+=1;keep=sorted(ws,key=lambda p:-p[1])[:4];total=sum(w for _,w in keep)
+    for group,_ in ws:spikes.vertex_groups[group].remove([v.index])
+    for group,w in keep:spikes.vertex_groups[group].add([v.index],w/total,'REPLACE')
+existing=set(bpy.data.objects)
+bpy.ops.import_scene.fbx(filepath=str(root/'donor-human.fbx'),axis_forward='-Z',axis_up='Y',automatic_bone_orientation=False)
+added=set(bpy.data.objects)-existing;donorarm=next(o for o in added if o.type=='ARMATURE')
+bone_error=max(max(abs((arm.matrix_world@b.matrix_local)[i][j]-(donorarm.matrix_world@donorarm.data.bones[b.name].matrix_local)[i][j]) for i in range(4) for j in range(4)) for b in arm.data.bones if b.name in donorarm.data.bones)
+assert bone_error<1e-4,('incompatible donor rest rig',bone_error)
+wolfnames={'Руки@Волк','Чутьё@Волк','Шкура@Волк'}
+for o in list(added):
+    if o.name in wolfnames:
+        mw=o.matrix_world.copy();o.parent=arm;o.matrix_world=mw
+        for mod in o.modifiers:
+            if mod.type=='ARMATURE':mod.object=arm
+    else:bpy.data.objects.remove(o,do_unlink=True)
+assert wolfnames<=set(bpy.data.objects.keys())
+existing=set(bpy.data.objects)
+bpy.ops.import_scene.fbx(filepath=str(root/'donor-moose.fbx'),axis_forward='-Z',axis_up='Y',automatic_bone_orientation=False)
+added=set(bpy.data.objects)-existing
+horn=next(o for o in added if o.type=='MESH' and o.name.split('.')[0]=='Рога')
+dg=bpy.context.evaluated_depsgraph_get();ev=horn.evaluated_get(dg);mesh=ev.to_mesh()
+rv=[ev.matrix_world@v.co for v in mesh.vertices];rf=[list(f.vertices) for f in mesh.polygons];ev.to_mesh_clear()
+for o in list(added):bpy.data.objects.remove(o,do_unlink=True)
+donor=json.loads((root/'horn-donor.json').read_text(encoding='utf-8'))['seam'];host=json.loads((root/'horn-host.json').read_text(encoding='utf-8'))['seam']
+def frame(ax,up):
+    f=ax.normalized();r=up.cross(f).normalized();u=f.cross(r);return Matrix((r,u,f)).transposed()
+U=lambda q:Vector((-q.x,q.z,-q.y));Bk=lambda q:Vector((-q.x,-q.z,q.y))
+k=max(host['ellipse_m'][i]/donor['ellipse_m'][i] for i in (0,1));allv=[];allf=[]
+for side in (1,-1):
+    M=lambda v:Vector((-v.x,v.y,v.z)) if side<0 else v
+    dc,da,du,hc,ha,hu=[M(Vector(x)) for x in (donor['center_m'],donor['axis_out'],donor['up'],host['center_m'],host['axis_out'],host['up'])]
+    rot=frame(ha,hu)@frame(da,du).inverted();keep=[i for i,p in enumerate(rv) if U(p).x*donor['center_m'][0]>0];idx={i:len(allv)+j for j,i in enumerate(keep)}
+    allv.extend(Bk(hc+rot@(M(U(rv[i]))-dc)*k) for i in keep)
+    allf.extend([[idx[i] for i in f] for f in rf if all(i in idx for i in f)])
+me=bpy.data.meshes.new('Рога@Лось');me.from_pydata(allv,[],allf);ob=bpy.data.objects.new('Рога@Лось',me);bpy.context.scene.collection.objects.link(ob)
+ob.parent=arm;vg=ob.vertex_groups.new(name='голова');vg.add(list(range(len(me.vertices))),1,'REPLACE');mod=ob.modifiers.new('Armature','ARMATURE');mod.object=arm
+after=snapshot();assert all(np.array_equal(v,after[n][key]) for n,keys in before.items() for key,v in keys.items())
+for o in body:
+    for key in o.data.shape_keys.key_blocks:key.value=1 if key.name=='Поджарый' else 0
+for o in bpy.data.objects:
+    if o.type=='MESH' and '@' in o.name and o.data.shape_keys:
+        for key in o.data.shape_keys.key_blocks:key.value=1 if key.name=='рост' else 0
+bpy.ops.wm.save_as_mainfile(filepath=str(root/'combinations.blend'))
+organs={}
+for o in bpy.data.objects:
+    if o.type=='MESH' and '@' in o.name:
+        organs[o.name]=dict(triangles=sum(len(f.vertices)-2 for f in o.data.polygons),vertices=len(o.data.vertices),over4_weights=sum(sum(g.weight>0 and o.vertex_groups[g.group].name in arm.data.bones for g in v.groups)>4 for v in o.data.vertices))
+report=dict(body_unchanged=True,body_triangles=sum(len(f.vertices)-2 for o in body for f in o.data.polygons),donor_bone_rest_max_error=bone_error,horn_scale=k,generated_spike_vertices_limited_to4=limited,organs=organs,warning='Static full-growth endpoint preview; no affinity, price or game-builder validation. Hedgehog organs regenerated by existing project layout. No stage traits or body morphs enabled.')
+(root/'build.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8');print('BUILD',report)

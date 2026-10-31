@@ -1,0 +1,15 @@
+{
+  "errors": [],
+  "body_meshes_unchanged": [
+    "Ноги",
+    "Руки",
+    "Сердце",
+    "Чутьё",
+    "голова",
+    "хребет",
+    "шея"
+  ],
+  "bones": 53,
+  "visual_cases": 6,
+  "note": "Checks asset preservation, weights and duplicate visual slots only. Not gameplay legality, growth-envelope or collision validation."
+}
