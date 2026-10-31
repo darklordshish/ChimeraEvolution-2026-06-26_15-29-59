@@ -285,9 +285,10 @@ public static class DomeFlora
     public static int Build(GameObject root, DomeGenConfigSO cfg, DomeHydro.State hydro, long seed,
         Func<float, float, float> groundOverride = null, Func<float, float, bool> exclude = null,
         Func<float, float, bool> undergrowthExclude = null, Func<float, float, bool> colliderNear = null,
-        IReadOnlyList<ForestSpace.CoverPod> coverPods = null)
+        IReadOnlyList<ForestSpace.CoverPod> coverPods = null,
+        Func<float, float, bool> edgeNear = null)
     {
-        return Build(root, cfg, hydro, seed, groundOverride, exclude, undergrowthExclude, out _, colliderNear, coverPods);
+        return Build(root, cfg, hydro, seed, groundOverride, exclude, undergrowthExclude, out _, colliderNear, coverPods, edgeNear);
     }
 
     /// <summary>Та же сборка + счётчики бюджетов (И2) наружу.</summary>
@@ -295,7 +296,8 @@ public static class DomeFlora
         Func<float, float, float> groundOverride, Func<float, float, bool> exclude,
         Func<float, float, bool> undergrowthExclude, out BuildCounts counts,
         Func<float, float, bool> colliderNear = null,
-        IReadOnlyList<ForestSpace.CoverPod> coverPods = null)
+        IReadOnlyList<ForestSpace.CoverPod> coverPods = null,
+        Func<float, float, bool> edgeNear = null)
     {
         if (root == null) throw new ArgumentNullException(nameof(root));
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
@@ -351,6 +353,18 @@ public static class DomeFlora
             };
         }
 
+        if (edgeNear != null)
+        {
+            var baseTreeGround = ground;
+            ground = (x, z) =>
+            {
+                var g = baseTreeGround(x, z);
+                if (!g.Item2 || edgeNear(x, z)) return g;
+                float r = SeededHash.ToFloat01(
+                    SeededHash.Hash(seed, 9801 + (int)(x * 7f), (int)(z * 7f)));
+                return (g.Item1, r < 0.34f);
+            };
+        }
         var trees = Scatter(seed, 111, treeTarget, d, 10f, ground);
         int k = 0, deadIndex = 0, colliderCount = 0;
         foreach (var p0 in trees)

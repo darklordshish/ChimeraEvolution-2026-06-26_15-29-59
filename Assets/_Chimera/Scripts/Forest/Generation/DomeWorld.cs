@@ -288,7 +288,8 @@ public class DomeWorld
         // комплекса (12 см плиты — трава торчала бы в зале).
         Func<float, float, bool> undergrowthExclude = (x, z) => labPad(x, z) || InsideRamp(x, z);
         Trees = DomeFlora.Build(Root, cfg, Hydro, seed, SampleGround, clearing, undergrowthExclude, out var flora,
-            (x, z) => ForestSpace.Near(Clearings, Corridors, x, z, 12f), CoverPods);
+            (x, z) => ForestSpace.Near(Clearings, Corridors, x, z, 12f), CoverPods,
+            (x, z) => ForestSpace.Near(Clearings, Corridors, x, z, 20f));
         TreeColliders = flora.treeColliders;
         CoverPodsBuilt = flora.coverPods;
         TreeColliderPositions = flora.treeColliderPositions ?? new List<Vector3>();
