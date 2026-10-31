@@ -212,6 +212,28 @@ namespace Chimera.Tests.PlayMode
             Assert.LessOrEqual(b.TreeColliders, 500, "коллайдеров стволов больше пятисот");
         }
         [UnityTest]
+        public IEnumerator Sight_ArenaClear_TrunksBlock()
+        {
+            var b = Build(true, true);
+            yield return null;
+
+            Assert.Greater(b.TreeColliderPositions.Count, 0, "нет стволов-коллайдеров");
+            foreach (var c in b.Clearings)
+            {
+                float h = b.SampleGround(c.center.x, c.center.y);
+                Vector3 center = new Vector3(c.center.x, h + 1.6f, c.center.y);
+                Vector3 a = center + new Vector3(-10f, 0f, 0f);
+                Vector3 d = center + new Vector3(10f, 0f, 0f);
+                Assert.IsFalse(ForestSight.TrunksBlock(a, d, b.TreeColliderPositions), "ствол в арене");
+            }
+
+            Vector3 t = b.TreeColliderPositions[0];
+            Vector3 left = new Vector3(t.x - 3f, t.y + 1.6f, t.z);
+            Vector3 right = new Vector3(t.x + 3f, t.y + 1.6f, t.z);
+            Assert.IsTrue(ForestSight.TrunksBlock(left, right, b.TreeColliderPositions),
+                "ствол не рвёт луч");
+        }
+        [UnityTest]
         public IEnumerator StationLoop_Crevice_IsNotBuriedByGround()
         {
             var b = Build(true, true);

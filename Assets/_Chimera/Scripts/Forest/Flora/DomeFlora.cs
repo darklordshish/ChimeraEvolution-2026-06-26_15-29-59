@@ -25,6 +25,7 @@ public static class DomeFlora
         public int trees;
         public int treeColliders;
         public int coverPods;
+        public List<Vector3> treeColliderPositions;
         public int bushes;
         public int grass;
         public int ferns;
@@ -300,6 +301,7 @@ public static class DomeFlora
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
         if (hydro == null) throw new ArgumentNullException(nameof(hydro));
         counts = default;
+        counts.treeColliderPositions = new List<Vector3>();
         float d = cfg.mapDiameter;
         float lakeY = hydro.lakeLevel;
         Func<float, float, float> baseGround = groundOverride
@@ -449,7 +451,11 @@ public static class DomeFlora
                     Kit($"droot{spread}/{ribs}", () => FloraMeshKit.AshRoots(spread, ribs)),
                     trunkMat, p.pos - Vector3.up * 0.08f, Quaternion.Euler(0f, p.rotY, 0f), p.scale);
             }
-            if (wantCollider && kind != FloraKind.DeadHook) colliderCount++;
+            if (wantCollider && kind != FloraKind.DeadHook)
+            {
+                colliderCount++;
+                counts.treeColliderPositions.Add(p.pos);
+            }
             k++;
         }
         counts.treeColliders = colliderCount;
