@@ -174,8 +174,7 @@ namespace Chimera.Tests.PlayMode
             var b = Build(true, true);
             yield return null;
 
-            Assert.AreEqual(Mathf.Max(0, b.Clearings.Count - 1), b.Corridors.Count,
-                "коридоров должно быть на один меньше полян");
+            Assert.GreaterOrEqual(b.Corridors.Count, b.Clearings.Count, "коридоров меньше, чем полян: у арены не два выхода");
             foreach (var c in b.Corridors)
             {
                 Assert.GreaterOrEqual(c.width, 16f, "коридор уже 16 м");
@@ -185,6 +184,9 @@ namespace Chimera.Tests.PlayMode
                 Assert.IsTrue(ForestSpace.ContainsCorridor(b.Corridors, mid.x, mid.y),
                     "середина коридора не попадает в разметку");
             }
+            for (int i = 0; i < b.Clearings.Count; i++)
+                Assert.GreaterOrEqual(ForestSpace.Exits(b.Clearings, b.Corridors, i), 2,
+                    $"у арены {i} меньше двух выходов");
         }
         [UnityTest]
         public IEnumerator CoverPods_ArePresent_AndDry()

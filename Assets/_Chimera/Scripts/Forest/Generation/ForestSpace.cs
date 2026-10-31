@@ -99,6 +99,8 @@ public static class ForestSpace
     {
         var list = new List<Corridor>();
         if (clearings == null || clearings.Count < 2) return list;
+
+        // Сначала цепь по ближайшему соседу — связность.
         for (int i = 1; i < clearings.Count; i++)
         {
             int best = -1; float bestD = float.MaxValue;
@@ -110,9 +112,48 @@ public static class ForestSpace
             if (best >= 0)
                 list.Add(new Corridor { a = clearings[best].center, b = clearings[i].center, width = width });
         }
+
+        // Каждой арене — минимум два выхода: листья цепи замыкаются на ближайшую арену.
+        for (int i = 0; i < clearings.Count; i++)
+        {
+            while (Exits(clearings, list, i) < 2)
+            {
+                int best = -1; float bestD = float.MaxValue;
+                for (int j = 0; j < clearings.Count; j++)
+                {
+                    if (i == j || Connected(list, clearings[i].center, clearings[j].center)) continue;
+                    float d = Vector2.Distance(clearings[i].center, clearings[j].center);
+                    if (d < bestD) { bestD = d; best = j; }
+                }
+                if (best < 0) break;
+                list.Add(new Corridor { a = clearings[i].center, b = clearings[best].center, width = width });
+            }
+        }
         return list;
     }
 
+    public static int Exits(IReadOnlyList<Clearing> clearings,
+        IReadOnlyList<Corridor> corridors, int index)
+    {
+        if (clearings == null || corridors == null || index < 0 || index >= clearings.Count)
+            return 0;
+        Vector2 c = clearings[index].center;
+        int n = 0;
+        foreach (var cor in corridors)
+            if ((cor.a - c).sqrMagnitude < 0.25f || (cor.b - c).sqrMagnitude < 0.25f) n++;
+        return n;
+    }
+
+    static bool Connected(IReadOnlyList<Corridor> corridors, Vector2 a, Vector2 b)
+    {
+        foreach (var c in corridors)
+        {
+            bool ab = (c.a - a).sqrMagnitude < 0.25f && (c.b - b).sqrMagnitude < 0.25f;
+            bool ba = (c.a - b).sqrMagnitude < 0.25f && (c.b - a).sqrMagnitude < 0.25f;
+            if (ab || ba) return true;
+        }
+        return false;
+    }
     public static bool Near(IReadOnlyList<Clearing> clearings,
         IReadOnlyList<Corridor> corridors, float x, float z, float margin = 12f)
     {
