@@ -113,6 +113,12 @@ public static class ForestSpace
         return list;
     }
 
+    public static bool Near(IReadOnlyList<Clearing> clearings,
+        IReadOnlyList<Corridor> corridors, float x, float z, float margin = 12f)
+    {
+        return Contains(clearings, x, z, margin)
+            || ContainsCorridor(corridors, x, z, margin);
+    }
     public static bool ContainsCorridor(IReadOnlyList<Corridor> corridors,
         float x, float z, float margin = 1f)
     {

@@ -84,6 +84,7 @@ public class DomeWorld
     public Vector3 Entry { get; private set; }
     public int Chunks { get; private set; }
     public int Trees { get; private set; }
+    public int TreeColliders { get; private set; }
     public float CrownCover { get; private set; }
     public IReadOnlyList<ForestSpace.Clearing> Clearings { get; private set; } = new List<ForestSpace.Clearing>();
     public IReadOnlyList<ForestSpace.Corridor> Corridors { get; private set; } = new List<ForestSpace.Corridor>();
@@ -284,7 +285,9 @@ public class DomeWorld
         // Вырубка гасит деревья; подлесок живёт в R12/R14 и пятнах, но не под плитой
         // комплекса (12 см плиты — трава торчала бы в зале).
         Func<float, float, bool> undergrowthExclude = (x, z) => labPad(x, z) || InsideRamp(x, z);
-        Trees = DomeFlora.Build(Root, cfg, Hydro, seed, SampleGround, clearing, undergrowthExclude, out var flora);
+        Trees = DomeFlora.Build(Root, cfg, Hydro, seed, SampleGround, clearing, undergrowthExclude, out var flora,
+            (x, z) => ForestSpace.Near(Clearings, Corridors, x, z, 12f));
+        TreeColliders = flora.treeColliders;
         CrownCover = flora.crownCover;
         if (Ravines.Count > 0)
         {
@@ -525,6 +528,7 @@ public class DomeWorld
         Entry = default;
         Chunks = 0;
         Trees = 0;
+        TreeColliders = 0;
         CrownCover = 0f;
         Clearings = new List<ForestSpace.Clearing>();
         Corridors = new List<ForestSpace.Corridor>();

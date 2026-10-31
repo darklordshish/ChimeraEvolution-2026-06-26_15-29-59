@@ -23,6 +23,7 @@ public static class DomeFlora
     public struct BuildCounts
     {
         public int trees;
+        public int treeColliders;
         public int bushes;
         public int grass;
         public int ferns;
@@ -160,14 +161,19 @@ public static class DomeFlora
     /// а не остаётся висеть в центре.
     /// </summary>
     static void Tree(Transform root, Pt p, Quaternion rot, Mesh trunkMesh, Material trunkMat,
-        Mesh crownMesh, Material leafMat, float crownLift)
+        Mesh crownMesh, Material leafMat, float crownLift, bool collider = false)
     {
-        Part(root, trunkMesh, trunkMat, p.pos - rot * Vector3.up * 0.3f, rot, p.scale);
-        // Крона едет вместе с масштабом дерева: иначе на scale 1.12 ствол обгоняет
-        // крону (у пики h 15.5 против lift 8.6 + крона 6.9).
+        var trunk = Part(root, trunkMesh, trunkMat, p.pos - rot * Vector3.up * 0.3f, rot, p.scale);
+        if (collider)
+        {
+            var cap = trunk.AddComponent<CapsuleCollider>();
+            cap.center = new Vector3(0f, 7f, 0f);
+            cap.height = 14f;
+            cap.radius = 0.45f;
+        }
+        // крона висит по оси ствола, чтобы при наклоне не отрывалась
         Part(root, crownMesh, leafMat, p.pos + rot * Vector3.up * (crownLift * p.scale), rot, p.scale);
     }
-
     /// <summary>
     /// Дерево 12–18 м: разброс scatter (0.8–1.3) сжат в 0.90–1.12; номинальные высоты
     /// подобраны так, чтобы и комель (−0.3 м), и верхний край не выводили за коридор.
@@ -276,15 +282,16 @@ public static class DomeFlora
     /// </summary>
     public static int Build(GameObject root, DomeGenConfigSO cfg, DomeHydro.State hydro, long seed,
         Func<float, float, float> groundOverride = null, Func<float, float, bool> exclude = null,
-        Func<float, float, bool> undergrowthExclude = null)
+        Func<float, float, bool> undergrowthExclude = null, Func<float, float, bool> colliderNear = null)
     {
-        return Build(root, cfg, hydro, seed, groundOverride, exclude, undergrowthExclude, out _);
+        return Build(root, cfg, hydro, seed, groundOverride, exclude, undergrowthExclude, out _, colliderNear);
     }
 
     /// <summary>Та же сборка + счётчики бюджетов (И2) наружу.</summary>
     public static int Build(GameObject root, DomeGenConfigSO cfg, DomeHydro.State hydro, long seed,
         Func<float, float, float> groundOverride, Func<float, float, bool> exclude,
-        Func<float, float, bool> undergrowthExclude, out BuildCounts counts)
+        Func<float, float, bool> undergrowthExclude, out BuildCounts counts,
+        Func<float, float, bool> colliderNear = null)
     {
         if (root == null) throw new ArgumentNullException(nameof(root));
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
@@ -340,7 +347,7 @@ public static class DomeFlora
         }
 
         var trees = Scatter(seed, 111, treeTarget, d, 10f, ground);
-        int k = 0, deadIndex = 0;
+        int k = 0, deadIndex = 0, colliderCount = 0;
         foreach (var p0 in trees)
         {
             var p = TreeScale(p0);
@@ -351,6 +358,8 @@ public static class DomeFlora
             var trunkMat = BarkFor(seed, k, kind, barkBrown, barkGrey, barkBirch);
             var leafMat = LeafFor(seed, k, kind, leafMid, leafDark, leafCold);
             bool fallen = false;
+            bool wantCollider = cfg.patchyFlora && colliderCount < 500 &&
+                ((colliderNear != null && colliderNear(p.pos.x, p.pos.z)) || k % 4 == 0);
 
             if (kind == FloraKind.PikeTree)
             {
@@ -359,7 +368,7 @@ public static class DomeFlora
                     Kit("dtrunk0.52/0.28/15.5", () => FloraMeshKit.Trunk(0.52f, 0.28f, 15.5f)),
                     trunkMat,
                     Kit("dbroad4.0x6.9", () => FloraMeshKit.BroadleafCrown(4.0f, 6.9f)),
-                    leafMat, 8.6f);
+                    leafMat, 8.6f, wantCollider);
             }
             else if (kind == FloraKind.UmbrellaTree)
             {
@@ -368,7 +377,7 @@ public static class DomeFlora
                     Kit("dtrunk0.60/0.38/7.5", () => FloraMeshKit.Trunk(0.60f, 0.38f, 7.5f)),
                     trunkMat,
                     Kit("dbroad4.2x9.6", () => FloraMeshKit.BroadleafCrown(4.2f, 9.6f)),
-                    leafMat, 4.0f);
+                    leafMat, 4.0f, wantCollider);
             }
             else if (kind == FloraKind.SpruceTree)
             {
@@ -379,7 +388,7 @@ public static class DomeFlora
                         Kit("dtrunk0.48/0.14/15.4", () => FloraMeshKit.Trunk(0.48f, 0.14f, 15.4f)),
                         trunkMat,
                         Kit("dspruce3.6x12.6", () => FloraMeshKit.SpruceCrown(3.6f, 12.6f)),
-                        leafMat, 2.5f);
+                        leafMat, 2.5f, wantCollider);
                 }
                 else
                 {
@@ -387,7 +396,7 @@ public static class DomeFlora
                         Kit("dtrunk0.42/0.12/15.0", () => FloraMeshKit.Trunk(0.42f, 0.12f, 15.0f)),
                         trunkMat,
                         Kit("dpine3.3x12.5", () => FloraMeshKit.PineCrown(3.3f, 12.5f)),
-                        leafMat, 2.6f);
+                        leafMat, 2.6f, wantCollider);
                 }
             }
             else if (kind == FloraKind.BirchTree)
@@ -397,7 +406,7 @@ public static class DomeFlora
                     Kit("dtrunk0.18/0.09/15.0", () => FloraMeshKit.Trunk(0.18f, 0.09f, 15.0f)),
                     trunkMat,
                     Kit("dbirch2.2x4.8", () => FloraMeshKit.BirchCrown(2.2f, 4.8f)),
-                    leafMat, 10.8f);
+                    leafMat, 10.8f, wantCollider);
             }
             else // DeadHook
             {
@@ -437,8 +446,10 @@ public static class DomeFlora
                     Kit($"droot{spread}/{ribs}", () => FloraMeshKit.AshRoots(spread, ribs)),
                     trunkMat, p.pos - Vector3.up * 0.08f, Quaternion.Euler(0f, p.rotY, 0f), p.scale);
             }
+            if (wantCollider && kind != FloraKind.DeadHook) colliderCount++;
             k++;
         }
+        counts.treeColliders = colliderCount;
         counts.trees = trees.Count;
         counts.crownCover = d > 0f
             ? counts.crownArea / (Mathf.PI * (d * 0.5f) * (d * 0.5f))

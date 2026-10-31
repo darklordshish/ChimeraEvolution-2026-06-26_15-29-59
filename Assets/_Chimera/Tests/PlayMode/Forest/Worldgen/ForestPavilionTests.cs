@@ -42,6 +42,7 @@ namespace Chimera.Tests.PlayMode
             builder.buildStationLoop = stationLoop;
             builder.buildStationHill = stationLoop;
             builder.patchyFlora = stationLoop;
+            builder.treeCount = stationLoop ? 1500 : 700;
             builder.labEntrance = stationLoop ? LabEntrance.Buried : LabEntrance.Rock;
             builder.buildLabPlan = stationLoop;
             builder.labStyle = LabStyle.Bastion;
@@ -196,6 +197,15 @@ namespace Chimera.Tests.PlayMode
             foreach (var p in b.CoverPods)
                 Assert.Greater(b.SampleGround(p.center.x, p.center.y),
                     b.Hydro.lakeLevel + 0.5f, "укрытие в воде");
+        }
+        [UnityTest]
+        public IEnumerator TreeColliders_ArePresent()
+        {
+            var b = Build(true, true);
+            yield return null;
+
+            Assert.GreaterOrEqual(b.TreeColliders, 300, "коллайдеров стволов меньше трёхсот");
+            Assert.LessOrEqual(b.TreeColliders, 500, "коллайдеров стволов больше пятисот");
         }
         [UnityTest]
         public IEnumerator StationLoop_Crevice_IsNotBuriedByGround()
