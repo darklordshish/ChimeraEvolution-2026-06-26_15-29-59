@@ -136,6 +136,7 @@ public class ForestBuilder : MonoBehaviour
     public float CrownCover => world != null ? world.CrownCover : 0f;
     public IReadOnlyList<ForestSpace.Clearing> Clearings => world != null ? world.Clearings : new List<ForestSpace.Clearing>();
     public IReadOnlyList<ForestSpace.Corridor> Corridors => world != null ? world.Corridors : new List<ForestSpace.Corridor>();
+    public IReadOnlyList<ForestSpace.CoverPod> CoverPods => world != null ? world.CoverPods : new List<ForestSpace.CoverPod>();
     public int Ravines => world != null ? world.Ravines.Count : 0;
     public IReadOnlyList<DomeRavines.Ravine> RavineList =>
         world != null ? world.Ravines : new List<DomeRavines.Ravine>();

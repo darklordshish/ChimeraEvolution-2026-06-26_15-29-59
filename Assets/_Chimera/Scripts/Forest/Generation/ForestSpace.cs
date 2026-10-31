@@ -52,6 +52,48 @@ public static class ForestSpace
         return list;
     }
 
+    public struct CoverPod
+    {
+        public Vector2 center;
+        public float radius;
+    }
+
+    public static List<CoverPod> BuildCoverPods(IReadOnlyList<Clearing> clearings,
+        IReadOnlyList<Corridor> corridors, long seed,
+        Func<float, float, float> ground = null, float waterLevel = float.NegativeInfinity,
+        int want = 24)
+    {
+        var list = new List<CoverPod>();
+        if (clearings == null) return list;
+        for (int i = 0; i < clearings.Count && list.Count < want; i++)
+        {
+            for (int k = 0; k < 6 && list.Count < want; k++)
+            {
+                float a = (k / 6f + SeededHash.ToFloat01(SeededHash.Hash(seed, 9601, i * 6 + k)) * 0.08f) * Mathf.PI * 2f;
+                float r = clearings[i].radius + 6f;
+                Vector2 cp = clearings[i].center + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * r;
+                if (ground != null && ground(cp.x, cp.y) < waterLevel + 0.5f) continue;
+                list.Add(new CoverPod { center = cp, radius = 2.5f });
+            }
+        }
+        if (corridors != null)
+        {
+            for (int i = 0; i < corridors.Count && list.Count < want; i++)
+            {
+                var c = corridors[i];
+                Vector2 dir = (c.b - c.a).normalized;
+                Vector2 side = new Vector2(-dir.y, dir.x);
+                for (int k = 0; k < 2 && list.Count < want; k++)
+                {
+                    float t = 0.35f + k * 0.3f;
+                    Vector2 p = Vector2.Lerp(c.a, c.b, t) + side * (c.width * 0.5f + 5f);
+                    if (ground != null && ground(p.x, p.y) < waterLevel + 0.5f) continue;
+                    list.Add(new CoverPod { center = p, radius = 2.5f });
+                }
+            }
+        }
+        return list;
+    }
     public static List<Corridor> BuildCorridors(IReadOnlyList<Clearing> clearings,
         float width = 16f)
     {

@@ -87,6 +87,7 @@ public class DomeWorld
     public float CrownCover { get; private set; }
     public IReadOnlyList<ForestSpace.Clearing> Clearings { get; private set; } = new List<ForestSpace.Clearing>();
     public IReadOnlyList<ForestSpace.Corridor> Corridors { get; private set; } = new List<ForestSpace.Corridor>();
+    public IReadOnlyList<ForestSpace.CoverPod> CoverPods { get; private set; } = new List<ForestSpace.CoverPod>();
     public float PlatformY => platformY;
     public float MapDiameter => cfg != null ? cfg.mapDiameter : 0f;
 
@@ -258,6 +259,7 @@ public class DomeWorld
         if (cfg.patchyFlora)
             Clearings = ForestSpace.Build(cfg, seed, SampleGround, Entry, LabCenter, Hydro);
             Corridors = ForestSpace.BuildCorridors(Clearings, 16f);
+            CoverPods = ForestSpace.BuildCoverPods(Clearings, Corridors, seed, SampleGround, Hydro.lakeLevel);
 
         // Вход — не чаща: вокруг Entry оставляем поляну R12, иначе игрок рождается
         // в стволе и не видит ни входа, ни леса. Пятно комплекса тоже не засаживаем:
@@ -526,6 +528,7 @@ public class DomeWorld
         CrownCover = 0f;
         Clearings = new List<ForestSpace.Clearing>();
         Corridors = new List<ForestSpace.Corridor>();
+        CoverPods = new List<ForestSpace.CoverPod>();
         Ravines = new List<DomeRavines.Ravine>();
         Terrace = default;
         Canyon = default;

@@ -186,6 +186,18 @@ namespace Chimera.Tests.PlayMode
             }
         }
         [UnityTest]
+        public IEnumerator CoverPods_ArePresent_AndDry()
+        {
+            var b = Build(true, true);
+            yield return null;
+
+            Assert.GreaterOrEqual(b.CoverPods.Count, 20, "укрытий меньше двадцати");
+            Assert.LessOrEqual(b.CoverPods.Count, 30, "укрытий больше тридцати");
+            foreach (var p in b.CoverPods)
+                Assert.Greater(b.SampleGround(p.center.x, p.center.y),
+                    b.Hydro.lakeLevel + 0.5f, "укрытие в воде");
+        }
+        [UnityTest]
         public IEnumerator StationLoop_Crevice_IsNotBuriedByGround()
         {
             var b = Build(true, true);
