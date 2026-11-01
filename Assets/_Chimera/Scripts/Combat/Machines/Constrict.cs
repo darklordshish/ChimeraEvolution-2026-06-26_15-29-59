@@ -72,6 +72,7 @@ public class Constrict : MonoBehaviour, IOrganAbility
     public bool Begin(Health victim, IGrabber grabOwner = null)
     {
         if (!Ready || victim == null || Holding) return false;
+        if (!CombatReach.CanHit(transform, victim.transform)) return false;
         held = victim;
         owner = grabOwner;
         victim.TryGetComponent(out heldPlayer);

@@ -115,7 +115,7 @@ public class ChimeraAlphaPsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         // ЗАМАХ ЗАХВАТА идёт: цель ушла или подошёл второй чужой — сорван; дотянул — хватаем
         if (grabWindupEnd >= 0f)
         {
-            if (Grip == null || dist > Grip.GrabRange || OthersNear()) CancelGrabWindup();
+            if (Grip == null || dist > Grip.GrabRange || OthersNear() || !CombatReach.CanHit(transform, targetHealth.transform)) CancelGrabWindup();
             else if (Time.time >= grabWindupEnd)
             {
                 CancelGrabWindup();
@@ -130,7 +130,7 @@ public class ChimeraAlphaPsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         if (Time.time >= nextAttackTime)
         {
             // ЗАХВАТ ПО ВОЗМОЖНОСТИ: запись есть, перезарядка прошла, цель в досягаемости и она ОДНА
-            if (Grip != null && Grip.Ready && dist <= Grip.GrabRange && !OthersNear())
+            if (Grip != null && Grip.Ready && dist <= Grip.GrabRange && !OthersNear() && CombatReach.CanHit(transform, targetHealth.transform))
             {
                 grabWindupEnd = Time.time + Grip.WindupTime;
                 if (TryGetComponent<Telegraph>(out var cue)) cue.Set(true, TelegraphColors.Grab, intent: true);

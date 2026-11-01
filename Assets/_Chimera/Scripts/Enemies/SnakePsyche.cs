@@ -589,7 +589,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
             if (dist <= bite.Range)
             {
                 // в упор: обвить (обхват) либо простой ядовитый укус
-                if (constrictM.Ready && Random.value < grabChance) { BeginGrabWindup(); Settle(Vector3.zero); return; }
+                if (constrictM.Ready && Random.value < grabChance && CombatReach.CanHit(transform, targetHealth.transform)) { BeginGrabWindup(); Settle(Vector3.zero); return; }
                 if (bite.TryUse()) activeAbility = bite;
                 Settle(Vector3.zero); return;
             }
@@ -703,7 +703,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         float d = to.magnitude;
         Face(d > 0.001f ? to / d : transform.forward);
 
-        if (d > bite.Range * 1.2f) { windingUp = false; telegraph.Clear(); nextAttackTime = Time.time + 0.3f; }
+        if (d > bite.Range * 1.2f || !CombatReach.CanHit(transform, targetHealth.transform)) { windingUp = false; telegraph.Clear(); nextAttackTime = Time.time + 0.3f; }
         else if (Time.time >= windupEnd) { windingUp = false; StartConstrict(); }
         Settle(Vector3.zero);
     }
@@ -718,6 +718,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     void StartConstrict()
     {
         // вся механика хвата (стадии/Massive-кап/слоу жертвы-игрока/Grabbed/гонка вырывания) — в машине
+        if (targetHealth == null || !CombatReach.CanHit(transform, targetHealth.transform)) return;
         constricting = constrictM.Begin(targetHealth, this);
         if (!constricting) return;
         shownStage = 1;
