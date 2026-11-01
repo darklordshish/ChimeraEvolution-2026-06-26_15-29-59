@@ -77,6 +77,7 @@ public class PlayerConstrict : MonoBehaviour, IAbility, IOrganAbility
         foreach (var hp in TargetScan.Healths(transform.position, data.grabRange, transform))
         {
             if (hp.GetComponent<Stagger>() == null) continue; // обхват держит через стан — цель должна его уметь
+            if (!CombatReach.CanHit(transform, hp.transform)) continue; // не хватать сквозь стену/ярус
             float d = (hp.transform.position - transform.position).sqrMagnitude;
             if (d < bestDist) { bestDist = d; best = hp; }
         }

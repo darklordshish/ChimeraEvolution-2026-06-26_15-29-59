@@ -46,7 +46,7 @@ public class PlayerAntler : MonoBehaviour, IAbility, IOrganAbility
         int gored = 0;
         foreach (var hp in TargetScan.Healths(transform.position, data.range + ScanPad, transform))
         {
-            if (!InCone(hp.transform.position)) continue;
+            if (!CombatReach.InMelee(transform, hp.transform, data.range, data.halfAngle)) continue;
             blow.Deliver(hit, hp); // вспышка+стаггер, откидывание, кровь; эрозия по кину — внутри Hit.Apply
             gored++;
         }
