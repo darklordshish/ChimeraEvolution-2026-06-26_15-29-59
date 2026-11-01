@@ -136,6 +136,7 @@ public class ForestBuilder : MonoBehaviour
     public int TreeColliders => world != null ? world.TreeColliders : 0;
     public int CoverPodsBuilt => world != null ? world.CoverPodsBuilt : 0;
     public int ArenaEdges => world != null ? world.ArenaEdges : 0;
+    public int ReliefHills => world != null ? world.ReliefHills : 0;
     public IReadOnlyList<Vector3> TreeColliderPositions => world != null ? world.TreeColliderPositions : new List<Vector3>();
     public float CrownCover => world != null ? world.CrownCover : 0f;
     public IReadOnlyList<ForestSpace.Clearing> Clearings => world != null ? world.Clearings : new List<ForestSpace.Clearing>();

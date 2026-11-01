@@ -87,6 +87,8 @@ public class DomeWorld
     public int TreeColliders { get; private set; }
     public int CoverPodsBuilt { get; private set; }
     public int ArenaEdges { get; private set; }
+    public DomeRelief.State Relief { get; private set; }
+    public int ReliefHills => Relief != null ? Relief.hills.Count : 0;
     public IReadOnlyList<Vector3> TreeColliderPositions { get; private set; } = new List<Vector3>();
     public float CrownCover { get; private set; }
     public IReadOnlyList<ForestSpace.Clearing> Clearings { get; private set; } = new List<ForestSpace.Clearing>();
@@ -235,6 +237,8 @@ public class DomeWorld
             Hill = DomeHill.Build(cfg, seed, LabCenter, north, 9f);
         }
 
+        if (cfg.patchyFlora)
+            Relief = DomeRelief.Build(cfg, seed, LabCenter, entryXZ, Hydro, Terrace, Canyon, Ravines);
         BuildChunks(terrainQuads);
         Trace.Add("chunks", Chunks, Chunks);
         BuildRockRing();
@@ -267,7 +271,7 @@ public class DomeWorld
         // подами строились ВСЕГДА, даже когда разметка полян выключена (A/C).
         if (cfg.patchyFlora)
         {
-            Clearings = ForestSpace.Build(cfg, seed, SampleGround, Entry, LabCenter, Hydro);
+            Clearings = ForestSpace.Build(cfg, seed, BaseGround, Entry, LabCenter, Hydro);
             Corridors = ForestSpace.BuildCorridors(Clearings, 16f);
             // Поды не ставятся на плиту станции, у входа и у двери: укрытие в стене
             // бункера — не укрытие, а дырка в геометрии.
@@ -351,6 +355,12 @@ public class DomeWorld
         DomeSlope.RingField(cfg, x, z, SampleGround);
 
     public float SampleGround(float x, float z)
+    {
+        if (cfg == null || Hydro == null) return 0f;
+        return DomeRelief.Apply(Relief, BaseGround(x, z), x, z);
+    }
+
+    float BaseGround(float x, float z)
     {
         if (cfg == null || Hydro == null) return 0f;
         float raw = DomeHydro.SampleHydro(cfg, Hydro, x, z);
@@ -558,6 +568,7 @@ public class DomeWorld
         TreeColliders = 0;
         CoverPodsBuilt = 0;
         ArenaEdges = 0;
+        Relief = null;
         TreeColliderPositions = new List<Vector3>();
         CrownCover = 0f;
         Clearings = new List<ForestSpace.Clearing>();

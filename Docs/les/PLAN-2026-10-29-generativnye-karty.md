@@ -52,6 +52,8 @@ A/C/B0 не меняются без `worldVersion` и отдельного пр�
 
 ## P5 — эрозия
 
+- [x] **P5-lite (01.11):** `DomeRelief` — 3 холма 8–15 м и 1 гряда 20–35 м, только `patchyFlora`; A/C без рельефа. Сторож `ForestPavilionTests.Relief_IsPresent`; PlayMode 170/170.
+
 - [ ] Офлайн-прототип (Anaconda), метрика до/после.
 - [ ] В рантайм — только thermal erosion, если метрика оправдает.
 

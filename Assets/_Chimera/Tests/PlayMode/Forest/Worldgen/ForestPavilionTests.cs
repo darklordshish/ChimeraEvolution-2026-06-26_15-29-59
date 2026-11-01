@@ -243,6 +243,23 @@ namespace Chimera.Tests.PlayMode
             Assert.GreaterOrEqual(b.ArenaEdges, 20, "у арен нет физической кромки");
         }
         [UnityTest]
+        public IEnumerator Relief_IsPresent()
+        {
+            var b = Build(true, true);
+            yield return null;
+
+            Assert.GreaterOrEqual(b.ReliefHills, 3, "локальных холмов меньше трёх");
+            float min = float.MaxValue, max = float.MinValue;
+            for (int iz = -8; iz <= 8; iz++)
+                for (int ix = -8; ix <= 8; ix++)
+                {
+                    float h = b.SampleGround(ix * 90f, iz * 90f);
+                    min = Mathf.Min(min, h);
+                    max = Mathf.Max(max, h);
+                }
+            Assert.Greater(max - min, 5f, "перепад рельефа на карте меньше 5 м");
+        }
+        [UnityTest]
         public IEnumerator StationLoop_Crevice_IsNotBuriedByGround()
         {
             var b = Build(true, true);
