@@ -111,6 +111,31 @@ public static class PavilionShot
 
     /// <summary>Один из режимов: CanyonTop | Canyon3_4 | CascadePool | CascadeLip | Lake.</summary>
     /// <summary>Сверху на первую арену B-lite: поляна, коридор, поды.</summary>
+    /// <summary>Арена B-lite в 3/4: дорожки, кромка, поды.</summary>
+    public static string Arena3_4()
+    {
+        var problem = Attach();
+        if (problem != null) return problem;
+        if (builder.Clearings == null || builder.Clearings.Count == 0)
+            return "no clearings";
+        var c = builder.Clearings[0];
+        float h = builder.SampleGround(c.center.x, c.center.y);
+        var go = GameObject.Find("ArenaCam");
+        if (go == null) go = new GameObject("ArenaCam");
+        go.tag = "Untagged";
+        var camera = go.GetComponent<Camera>();
+        if (camera == null) camera = go.AddComponent<Camera>();
+        camera.enabled = true;
+        camera.orthographic = false;
+        camera.fieldOfView = 55f;
+        camera.nearClipPlane = 0.3f;
+        camera.farClipPlane = 3000f;
+        camera.clearFlags = CameraClearFlags.Skybox;
+        Vector3 center = new Vector3(c.center.x, h + 2f, c.center.y);
+        go.transform.position = center + new Vector3(-55f, 32f, -55f);
+        go.transform.LookAt(center);
+        return $"arena 3/4 {c.center} r={c.radius}";
+    }
     public static string Arena()
     {
         var problem = Attach();
