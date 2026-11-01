@@ -16,6 +16,7 @@ public class NavLocomotion : MonoBehaviour
 {
     [SerializeField] float pathInterval = 0.2f;   // как часто пересчитывать путь
     [SerializeField] float pathDirectRange = 5f;  // ближе — идём напрямую, без пафайндинга
+    [SerializeField] float pathTargetMove = 1f;   // цель сдвинулась — путь пересчитать раньше интервала
 
     [Header("Плавность хода (анти-тряска)")]
     [SerializeField] float accel = 18f;           // как быстро скорость догоняет заданную (м/с²); меньше = вальяжнее
@@ -25,6 +26,7 @@ public class NavLocomotion : MonoBehaviour
     NavMeshPath navPath;
     float nextPathTime;
     Vector3 cachedNavDir;
+    Vector3 cachedPathTarget;
     Vector3 wanderTarget;
     float nextWanderTime;
 
@@ -81,9 +83,10 @@ public class NavLocomotion : MonoBehaviour
         if (flat.sqrMagnitude < pathDirectRange * pathDirectRange)
             return flat.sqrMagnitude > 0.01f ? flat.normalized : transform.forward;
 
-        if (Time.time >= nextPathTime)
+        if (Time.time >= nextPathTime || (dest - cachedPathTarget).sqrMagnitude > pathTargetMove * pathTargetMove)
         {
             nextPathTime = Time.time + pathInterval;
+            cachedPathTarget = dest;
             cachedNavDir = Compute(dest);
         }
         return cachedNavDir;

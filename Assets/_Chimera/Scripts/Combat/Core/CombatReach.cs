@@ -24,6 +24,7 @@ public static class CombatReach
 
     // Допуск на рассинхрон кадров/склона: луч не должен считаться стеной, если до цели меньше этого.
     const float WallEpsilon = 0.05f;
+    static readonly RaycastHit[] hitBuffer = new RaycastHit[32];
 
     /// <summary>ЧИСТАЯ математика конуса в плоскости XZ: цель в радиусе и в полуугле вперёд.
     /// Вынесена отдельно, чтобы сторожить инвариант тестом без физики и сцены.</summary>
@@ -84,14 +85,14 @@ public static class CombatReach
 
         // Ignore Raycast — служебный слой (камера им же пользуется). Всё остальное — мир.
         int mask = ~LayerMask.GetMask("Ignore Raycast");
-        var hits = Physics.RaycastAll(from, delta / dist, dist, mask, QueryTriggerInteraction.Ignore);
-        for (int i = 0; i < hits.Length; i++)
+        int count = Physics.RaycastNonAlloc(from, delta / dist, hitBuffer, dist, mask, QueryTriggerInteraction.Ignore);
+        for (int i = 0; i < count; i++)
         {
-            var col = hits[i].collider;
+            var col = hitBuffer[i].collider;
             if (col == null || col.isTrigger) continue;
             if (IsPartOf(col.transform, self) || IsPartOf(col.transform, target)) continue;
             if (col.GetComponentInParent<Health>() != null) continue; // живое тело — не стена
-            if (hits[i].distance < dist - WallEpsilon) return true;   // что-то раньше цели
+            if (hitBuffer[i].distance < dist - WallEpsilon) return true;   // что-то раньше цели
         }
         return false;
     }
