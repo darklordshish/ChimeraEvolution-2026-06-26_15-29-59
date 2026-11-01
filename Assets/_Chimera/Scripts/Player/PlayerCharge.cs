@@ -56,6 +56,7 @@ public class PlayerCharge : MonoBehaviour, IOrganAbility
         {
             Vector3 to = hp.transform.position - transform.position; to.y = 0f;
             if (to.sqrMagnitude > data.hitRadius * data.hitRadius) continue; // радиус удара — по центрам, как у NPC
+            if (!CombatReach.CanHit(transform, hp.transform, 1f)) continue;  // сквозь стену/ярус таран не сносит
             if (!goredThisDash.Add(hp)) continue;                           // раз за рывок (память живёт весь дэш)
             blow.Deliver(hit, hp); // урон (вспышка+стаггер) + снос с дороги; эрозия по кину — внутри Hit.Apply
             if (cam != null) cam.Shake(0.14f, shake);

@@ -340,6 +340,7 @@ public class ForestBuilder : MonoBehaviour
                         : world.SpawnPoint;
         // Вход — это портал; стоять В нём нельзя (камера внутри косяка). Игрок
         // появляется на 6 м в чашу от входа, лицом к лесу; портал остаётся за спиной.
+        Vector3? faceDir = null;
         if (spawnAtEntry && playerSpawn == null)
         {
             Vector2 inward = -new Vector2(basePos.x, basePos.z);
@@ -347,6 +348,9 @@ public class ForestBuilder : MonoBehaviour
             {
                 inward.Normalize();
                 basePos += new Vector3(inward.x, 0f, inward.y) * 6f;
+                // Комментарий обещал «лицом к лесу» — теперь это ещё и выполнено:
+                // камера/тело не смотрят в скалу за спиной.
+                faceDir = new Vector3(inward.x, 0f, inward.y);
             }
         }
         Vector3 target = new Vector3(basePos.x, world.SampleGround(basePos.x, basePos.z) + 1f, basePos.z);
@@ -368,6 +372,9 @@ public class ForestBuilder : MonoBehaviour
 
         if (controller != null) controller.enabled = false;
         targetTransform.position = target;
+        // Спавн у входа: тело и камера смотрят в чашу, а не в скалу за спиной.
+        if (faceDir.HasValue)
+            targetTransform.rotation = Quaternion.LookRotation(faceDir.Value, Vector3.up);
         if (controller != null) controller.enabled = true;
     }
 

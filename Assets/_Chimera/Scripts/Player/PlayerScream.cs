@@ -50,6 +50,11 @@ public class PlayerScream : MonoBehaviour, IAbility, IOrganAbility
         if (bleed == null && !TryGetComponent(out bleed)) bleed = gameObject.AddComponent<Bleed>();
         bleed.AddStack();
 
+        // ЯРОСТЬ — СУТЬ КЛИЧА, поэтому и её заводим сами. Раньше у нетронутого игрока компонента Rage
+        // не было, Sustain молча выходил — клич брал кровь и звучал, но ярости не давал вовсе. Теперь
+        // статус появляется на первом крике; у холоднокровного Enrage сам откажет (это его иммунитет).
+        if (rage == null && !TryGetComponent(out rage)) rage = gameObject.AddComponent<Rage>();
+
         if (noiseSrc == null) TryGetComponent(out noiseSrc);
         if (noiseSrc != null) noiseSrc.Spike(1f, 1f, TelegraphColors.RageTint); // тон крика — цвет ярости
 

@@ -29,13 +29,13 @@ public class AntlerAbility : WindupAbility, IOrganAbility
 
     protected override AbilityRun OnTick()
     {
-        float dist = DistToTarget();
-        bool inCone = Vector3.Angle(transform.forward, DirToTarget()) <= data.halfAngle;
+        // конус рогов + вертикаль + стена: рога не протыкают скалу и не достают на другой ярус
+        bool inReach = TargetInCone(data.range, data.halfAngle);
 
         // ФАЗА ЗАМАХА: цель вышла из зоны или из конуса — лось ПЕРЕДУМАЛ, замах сорван.
         if (Time.time < windupEnd)
         {
-            if (!(dist <= data.range && inCone)) return AbilityRun.Cancelled;
+            if (!inReach) return AbilityRun.Cancelled;
             SettleInPlace();
             return AbilityRun.Running;
         }
@@ -44,7 +44,7 @@ public class AntlerAbility : WindupAbility, IOrganAbility
         // и это ПРОМАХ, а не отмена. Разница не косметическая: отмена возвращает лося в готовность драться
         // и уворот ничего игроку не даёт, а промах оставляет зверя раскрытым — ровно та награда за тайминг,
         // ради которой уворот и существует. Прежняя проверка стояла ДО этой развилки и била по обеим фазам
-        if (dist <= data.range && inCone && targetHealth != null)
+        if (inReach && targetHealth != null)
         {
             // единый паёк рогов (см. MeleeBlow) — тот же удар льёт и игрок; мощь NPC масштабирует урон
             var blow = new MeleeBlow { Damage = data.damage, KnockForce = data.knockForce, BleedStacks = data.bleedStacks };

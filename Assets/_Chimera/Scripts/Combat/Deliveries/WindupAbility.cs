@@ -189,4 +189,14 @@ public abstract class WindupAbility : MonoBehaviour, IAbility, IAbilityCarrier
         Vector3 d = target.position - transform.position; d.y = 0f;
         return d.magnitude;
     }
+
+    /// <summary>ДОСТАЁТ ЛИ ПРИЁМ ДО ЦЕЛИ: горизонтальный конус записи + вертикаль + отсутствие стены.
+    /// Общее правило ближнего боя (<see cref="CombatReach"/>). Дальние доставки (залп, наскок) его не
+    /// зовут: у них своя траектория, и стена — дело снаряда, а не выбора цели.</summary>
+    protected bool TargetInCone(float range, float halfAngle, float verticalSlack = 0f) =>
+        target != null && CombatReach.InMelee(transform, target, range, halfAngle, verticalSlack);
+
+    /// <summary>Контактная проверка без конуса (радиусные приёмы): вертикаль + стена.</summary>
+    protected bool ContactReach(float verticalSlack = 0f) =>
+        target != null && CombatReach.CanHit(transform, target, verticalSlack);
 }

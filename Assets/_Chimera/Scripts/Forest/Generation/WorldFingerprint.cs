@@ -30,6 +30,34 @@ public static class WorldFingerprint
         Mix(ref h, b.Lairs != null ? b.Lairs.Count : 0);
         Mix(ref h, b.ResolvedSeed);
 
+        // B-lite: разметка пространства — часть мира, а не украшение. Тот же сид с другой
+        // разметкой (поляны/коридоры/поды/дорожки) обязан дать другой отпечаток.
+        Mix(ref h, ForestSpace.LayoutVersion);
+        Mix(ref h, b.patchyFlora ? 1 : 0);
+        Mix(ref h, b.Clearings != null ? b.Clearings.Count : 0);
+        if (b.Clearings != null)
+            foreach (var c in b.Clearings)
+            {
+                Mix(ref h, Q(c.center.x)); Mix(ref h, Q(c.center.y));
+                Mix(ref h, Q(c.radius));
+            }
+        Mix(ref h, b.Corridors != null ? b.Corridors.Count : 0);
+        if (b.Corridors != null)
+            foreach (var c in b.Corridors)
+            {
+                Mix(ref h, Q(c.a.x)); Mix(ref h, Q(c.a.y));
+                Mix(ref h, Q(c.b.x)); Mix(ref h, Q(c.b.y));
+                Mix(ref h, Q(c.width));
+            }
+        Mix(ref h, b.CoverPods != null ? b.CoverPods.Count : 0);
+        if (b.CoverPods != null)
+            foreach (var p in b.CoverPods)
+            {
+                Mix(ref h, Q(p.center.x)); Mix(ref h, Q(p.center.y));
+                Mix(ref h, Q(p.radius));
+            }
+        Mix(ref h, b.CoverPodsBuilt);
+
         if (b.Hydro != null)
         {
             Mix(ref h, Q(b.Hydro.lakeCenter.x));

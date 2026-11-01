@@ -96,7 +96,10 @@ public class BossChimeraSpawner : MonoBehaviour
             hp.onDeath.AddListener(() => { if (current == body) { current = null; nextSpawn = Time.time + respawnDelay; } });
         current = body;
 
-        var dom = body.MostKin(out var tier);
+        // Подпись — ПРО ТУ ЖЕ психику, что повешена: диспатч берёт доминанту только от порога PsycheDispatch,
+        // иначе лог «доминанта Волк (Weak)» рядом с химерой-альфой читался бы как расхождение.
+        var any = body.MostKin(out var tier);
+        var dom = tier >= PsycheDispatch.PsycheTier ? any : null;
         Debug.Log($"{name}: доминанта {(dom != null ? $"{dom.speciesName} ({tier})" : "нет — истинная химера")} · " +
                   $"HP {(hp != null ? hp.Max : 0)} · {ChimeraFactory.Describe(body)}", body);
         return body;

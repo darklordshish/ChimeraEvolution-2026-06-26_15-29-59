@@ -202,6 +202,60 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &228177203
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 228177205}
+  - component: {fileID: 228177204}
+  m_Layer: 0
+  m_Name: Evolution
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &228177204
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 228177203}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c574bc246f9743042b6b8dedda400aad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Chimera.Runtime::EvolutionConfig
+  allSpecies:
+  - {fileID: 11400000, guid: 0b9f3325f2a7256489e3375ccca88401, type: 2}
+  - {fileID: 11400000, guid: 0c6b11574869a6b44a321162414452d6, type: 2}
+  - {fileID: 11400000, guid: dab52963bf459da4b934b85751aeac96, type: 2}
+  - {fileID: 11400000, guid: 7da515edc0cffd54d8872e9a26ca33e1, type: 2}
+  - {fileID: 11400000, guid: f8bb6d7567aed7e4f878f0b59a0ea030, type: 2}
+  evolveNpc: 1
+  startAffinity: 1
+  chimerizeMultiplier: 1
+  verboseLog: 1
+--- !u!4 &228177205
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 228177203}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1024955154
 GameObject:
   m_ObjectHideFlags: 0
@@ -416,6 +470,8 @@ MonoBehaviour:
   dashRipSelfDamage: 5
   lookSensitivity: 0.1
   gamepadYawSpeed: 180
+  fallProbeRange: 250
+  voidFallDepth: 15
 --- !u!143 &1024955166
 CharacterController:
   m_ObjectHideFlags: 0
@@ -641,6 +697,8 @@ MonoBehaviour:
   seed: 1337
   randomSeed: 0
   mapDiameter: 2000
+  treeCount: 0
+  patchyFlora: 0
   chunkSize: 250
   terrainQuads: 16
   buildOnAwake: 1
@@ -648,8 +706,23 @@ MonoBehaviour:
   playerSpawn: {fileID: 0}
   spawnAtEntry: 0
   buildAsh: 1
+  buildRavines: 0
+  buildTerrace: 0
+  buildCanyon: 0
+  buildStationLoop: 0
+  buildStationHill: 0
   buildLabComplex: 0
+  buildLabPlan: 0
+  labPlanVersion: 1
+  buildClimate: 0
+  climateWeather: 0
+  climateTimeMinutes: 10
+  climateTimeScale: 0.016666668
+  climateAutoWeather: 0
+  climateChangeMinutes: 8
+  climateBlendSeconds: 20
   labStyle: 0
+  labEntrance: 0
   minLabDistance: 150
   speciesPool:
   - {fileID: 11400000, guid: dab52963bf459da4b934b85751aeac96, type: 2}
@@ -699,6 +772,52 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1532378592}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1569055562
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1569055564}
+  - component: {fileID: 1569055563}
+  m_Layer: 0
+  m_Name: ChimeraSlotReward
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1569055563
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1569055562}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9885a78feae35544f8f13641967e2dec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Chimera.Runtime::ChimeraSlotReward
+  triggerAffinity: 100
+  slotsToGrant: 1
+--- !u!4 &1569055564
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1569055562}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -799,3 +918,5 @@ SceneRoots:
   - {fileID: 1532378595}
   - {fileID: 1024955155}
   - {fileID: 1469435676}
+  - {fileID: 228177205}
+  - {fileID: 1569055564}

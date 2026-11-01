@@ -43,4 +43,39 @@ public static class ForestSight
         }
         return false;
     }
+
+    /// <summary>
+    /// Укрытия-поды тоже рвут луч: это бревно или плита с коллайдером, а не декорация.
+    /// Радиус пода — из <see cref="ForestSpace.CoverPod.radius"/>; высота укрытия 1.8 м.
+    /// </summary>
+    public static bool CoverBlocks(Vector3 a, Vector3 b,
+        IReadOnlyList<ForestSpace.CoverPod> pods, float coverHeight = 1.8f)
+    {
+        if (pods == null || pods.Count == 0) return false;
+        float minY = Mathf.Min(a.y, b.y);
+        float maxY = Mathf.Max(a.y, b.y);
+        Vector2 a2 = new Vector2(a.x, a.z);
+        Vector2 b2 = new Vector2(b.x, b.z);
+        Vector2 ab = b2 - a2;
+        float len2 = ab.sqrMagnitude;
+        for (int i = 0; i < pods.Count; i++)
+        {
+            float x = pods[i].center.x;
+            float z = pods[i].center.y;
+            float y = pods[i].groundY;
+            if (maxY < y || minY > y + coverHeight) continue;
+            Vector2 p = new Vector2(x, z);
+            float u = len2 < 1e-6f ? 0f : Mathf.Clamp01(Vector2.Dot(p - a2, ab) / len2);
+            float r = pods[i].radius;
+            if ((p - (a2 + ab * u)).sqrMagnitude < r * r) return true;
+        }
+        return false;
+    }
+
+    /// <summary>Луч рвётся любым твёрдым объектом леса: стволом или подом-укрытием.</summary>
+    public static bool Blocks(Vector3 a, Vector3 b,
+        IReadOnlyList<Vector3> trunks, IReadOnlyList<ForestSpace.CoverPod> pods = null)
+    {
+        return TrunksBlock(a, b, trunks) || CoverBlocks(a, b, pods);
+    }
 }

@@ -33,19 +33,19 @@ public class LimbStrikeAbility : WindupAbility, IOrganAbility
 
     protected override AbilityRun OnTick()
     {
-        float dist = DistToTarget();
-        bool inCone = Vector3.Angle(transform.forward, DirToTarget()) <= data.halfAngle;
+        // конус записи + вертикаль + стена: удар конечностью не проходит сквозь укрытие и на другой ярус
+        bool inReach = TargetInCone(data.range, data.halfAngle);
 
         // ФАЗА ЗАМАХА: цель ушла — передумал, замах сорван (см. WindupAbility.InWindup)
         if (Time.time < windupEnd)
         {
-            if (!(dist <= data.range && inCone)) return AbilityRun.Cancelled;
+            if (!inReach) return AbilityRun.Cancelled;
             SettleInPlace();
             return AbilityRun.Running;
         }
 
         // КАДР УДАРА: приём закоммичен и бьёт туда, куда заведён. Ушёл вовремя — промах, а не отмена
-        if (dist <= data.range && inCone && targetHealth != null)
+        if (inReach && targetHealth != null)
         {
             var blow = new MeleeBlow { Damage = data.damage, KnockForce = data.knockForce, BleedStacks = data.bleedStacks };
             blow.Deliver(new Hit(ownHealth, transform.position), targetHealth, DamageMult);

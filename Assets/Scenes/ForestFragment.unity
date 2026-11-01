@@ -202,6 +202,52 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &818858681
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 818858683}
+  - component: {fileID: 818858682}
+  m_Layer: 0
+  m_Name: ChimeraSlotReward
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &818858682
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 818858681}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9885a78feae35544f8f13641967e2dec, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Chimera.Runtime::ChimeraSlotReward
+  triggerAffinity: 100
+  slotsToGrant: 1
+--- !u!4 &818858683
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 818858681}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1024955154
 GameObject:
   m_ObjectHideFlags: 0
@@ -416,6 +462,8 @@ MonoBehaviour:
   dashRipSelfDamage: 5
   lookSensitivity: 0.1
   gamepadYawSpeed: 180
+  fallProbeRange: 250
+  voidFallDepth: 15
 --- !u!143 &1024955166
 CharacterController:
   m_ObjectHideFlags: 0
@@ -441,6 +489,60 @@ CharacterController:
   m_SkinWidth: 0.08
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!1 &1346202670
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1346202672}
+  - component: {fileID: 1346202671}
+  m_Layer: 0
+  m_Name: Evolution
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1346202671
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1346202670}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c574bc246f9743042b6b8dedda400aad, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Chimera.Runtime::EvolutionConfig
+  allSpecies:
+  - {fileID: 11400000, guid: 0b9f3325f2a7256489e3375ccca88401, type: 2}
+  - {fileID: 11400000, guid: 0c6b11574869a6b44a321162414452d6, type: 2}
+  - {fileID: 11400000, guid: dab52963bf459da4b934b85751aeac96, type: 2}
+  - {fileID: 11400000, guid: 7da515edc0cffd54d8872e9a26ca33e1, type: 2}
+  - {fileID: 11400000, guid: f8bb6d7567aed7e4f878f0b59a0ea030, type: 2}
+  evolveNpc: 1
+  startAffinity: 1
+  chimerizeMultiplier: 1
+  verboseLog: 1
+--- !u!4 &1346202672
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1346202670}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1469435671
 GameObject:
   m_ObjectHideFlags: 0
@@ -641,6 +743,8 @@ MonoBehaviour:
   seed: 9
   randomSeed: 0
   mapDiameter: 400
+  treeCount: 0
+  patchyFlora: 0
   chunkSize: 100
   terrainQuads: 24
   buildOnAwake: 1
@@ -649,6 +753,10 @@ MonoBehaviour:
   spawnAtEntry: 1
   buildAsh: 1
   buildRavines: 1
+  buildTerrace: 0
+  buildCanyon: 0
+  buildStationLoop: 0
+  buildStationHill: 0
   buildLabComplex: 1
   buildLabPlan: 1
   labPlanVersion: 1
@@ -809,3 +917,5 @@ SceneRoots:
   - {fileID: 1532378595}
   - {fileID: 1024955155}
   - {fileID: 1469435676}
+  - {fileID: 1346202672}
+  - {fileID: 818858683}

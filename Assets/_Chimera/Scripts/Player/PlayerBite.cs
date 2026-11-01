@@ -58,7 +58,8 @@ public class PlayerBite : MonoBehaviour, IAbility, IOrganAbility
         int bitten = 0;
         foreach (var hp in TargetScan.Healths(transform.position, data.range + ScanPad, transform))
         {
-            if (!InCone(hp.transform.position)) continue;
+            // конус записи + вертикаль + стена — как у укуса NPC: сквозь укрытие и на другой ярус не кусаем
+            if (!CombatReach.InMelee(transform, hp.transform, data.range, data.halfAngle)) continue;
             blow.Deliver(hit, hp); // эрозия по кину — внутри Hit.Apply
             bitten++;
         }
@@ -68,13 +69,6 @@ public class PlayerBite : MonoBehaviour, IAbility, IOrganAbility
             if (cam != null) cam.Shake(0.12f, shake);
             Hitstop.Do(0.05f);
         }
-    }
-
-    bool InCone(Vector3 point)
-    {
-        Vector3 to = point - transform.position; to.y = 0f;
-        if (to.sqrMagnitude > data.range * data.range) return false;
-        return to.sqrMagnitude < 0.0001f || Vector3.Angle(transform.forward, to) <= data.halfAngle;
     }
 
     void OnDrawGizmos()

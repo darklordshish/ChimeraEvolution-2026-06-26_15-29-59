@@ -30,7 +30,8 @@ public class Telegraph : MonoBehaviour
     // КЛЫКИ НАМЕРЕННО ВНЕ СПИСКА: белый оскал — акцент, он должен читаться на любой эмоции
     static bool IsHeadName(string n) =>
         n == "Head" || n == "Muzzle" || n == "Nose" || n == "Jaw" || n.StartsWith("Ear")
-        || n == "голова" || n == "Пасть" || n == "уши" || n == "глаза"; // МОРФ-части именуются по СОКЕТУ (имя = Organ.slot) — эмоции красят их же
+        || n == "голова" || n == "Пасть" || n == "уши" || n == "глаза"
+        || n == "нос" || n == "морда" || n == "челюсть" || n == "зубы"; // морф-части и куски головы: имена совпадают с PlayerController.IsOwnFace
 
     void Awake()
     {
@@ -153,6 +154,10 @@ public class Telegraph : MonoBehaviour
     }
 
     public bool IsShowing => active; // «существо сейчас что-то телеграфирует» = раскрыто (сигнал для камуфляжа)
+
+    /// <summary>Показан ли ЗАМАХ (намерение), а не статус-покраска. Нужен статусам вроде StunTint:
+    /// снимая свой цвет, они не должны гасить чужой свежий замах. См. StunTint.Update.</summary>
+    public bool IsIntentShowing => active && activeIntent;
 
     // s3c: ПУЛЬС-АКЦЕНТ (не обводка — честное имя): временная модуляция первого канала.
     // Armed — SetPulse, работает только на активном ЗАМАХЕ (intent): статусы не пульсируют.

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AI;
 
 /// <summary>
 /// Хук спавнера логовищ: очередь сайта → живые звери через ChimeraFactory.
@@ -31,6 +32,9 @@ public class ForestSpawner : MonoBehaviour
     /// <summary>Земля в МИРОВЫХ (x,z) → мировой Y. null — берём Y логова (поведение до среза C).</summary>
     Func<float, float, float> groundSampler;
 
+    // Радиусы поиска проходимой точки: сначала рядом с точкой рождения, потом — у самого адреса логова.
+    const float NavSnapRadius = 2f;
+
     int spawnCounter;
 
     /// <summary>
@@ -41,8 +45,23 @@ public class ForestSpawner : MonoBehaviour
     /// </summary>
     readonly List<CreatureBody> spawned = new List<CreatureBody>();
 
-    /// <summary>Сколько тел спавнер родил и ещё не убрал (наблюдателям и тестам).</summary>
-    public int SpawnedCount => spawned.Count;
+    // Префаб змеи проверен и негоден (нет тела/цепи/здоровья) — второй раз не Instantiate-им,
+    // иначе каждая попытка рождала бы пустую копию, а очередь не тратилась бы: бесконечный поток.
+    bool prefabBroken;
+
+    // Внятное предупреждение о пуле — ОДИН раз на вид, а не каждый тик.
+    readonly HashSet<string> warnedMissingSpecies = new HashSet<string>();
+
+    /// <summary>Сколько тел спавнер родил и ещё не убрал (наблюдателям и тестам). Мёртвые не считаются:
+    /// тело с нулевым HP — уже не жилец, его снимает `Health.destroyOnDeath`, а учёт логова ведёт `ReportDeath`.</summary>
+    public int SpawnedCount
+    {
+        get
+        {
+            PruneDead();
+            return spawned.Count;
+        }
+    }
 
     /// <summary>Последний рождённый (для тестов и наблюдателей; прошлого не храним).</summary>
     public CreatureBody lastSpawn { get; private set; }
@@ -53,6 +72,9 @@ public class ForestSpawner : MonoBehaviour
         registry = reg;
         speciesPool = pool;
         groundSampler = ground;
+        spawnCounter = 0;     // новый мир — новый детерминированный ряд точек рождения
+        prefabBroken = false; // префаб могли пересобрать/переназначить
+        warnedMissingSpecies.Clear();
     }
 
     void Update()
@@ -79,15 +101,38 @@ public class ForestSpawner : MonoBehaviour
         if (!site.spawnEnabled) return false;
         if (site.population + site.ReservedCount >= site.capacity) return false; // крыша занята телами
         if (site.IsExhausted) return false;
-        SpeciesSO species = FindSpecies(site.speciesName);
-        if (species == null) return false;
+
+        bool usePrefab = snakePrefab != null && site.speciesName == "Змея";
+        SpeciesSO species = null;
+        if (usePrefab)
+        {
+            // Сломанный префаб: один внятный лог и НИ ОДНОГО Instantiate — очередь просто ждёт починки.
+            if (!SnakePrefabReady()) return false;
+        }
+        else
+        {
+            species = FindSpecies(site.speciesName);
+            if (species == null) { WarnMissingSpecies(site.speciesName); return false; }
+        }
+
         Vector3 pos = SpawnPos(site);
         CreatureBody body;
-        if (snakePrefab != null && site.speciesName == "Змея")
+        if (usePrefab)
         {
             // Цепь змеи живёт в префабе; фабрика её не собирает (см. поле snakePrefab).
+            // Корень ставим по НИЗУ капсулы: префабы держат его на земле, но считаем, а не верим.
+            pos.y -= CapsuleBottom(snakePrefab);
             var go = UnityEngine.Object.Instantiate(snakePrefab, pos, Quaternion.identity);
             body = go.GetComponent<CreatureBody>();
+            if (body == null)
+            {
+                // Проверка была выше — сюда можно попасть, только если префаб подменили на лету.
+                Kill(go);
+                prefabBroken = true;
+                Debug.LogWarning($"ForestSpawner: у snakePrefab «{snakePrefab.name}» пропало тело — копия снесена, " +
+                                 "место не рожает (иначе поток пустых Instantiate).", this);
+                return false;
+            }
         }
         else
         {
@@ -125,20 +170,20 @@ public class ForestSpawner : MonoBehaviour
         var doomed = new List<CreatureBody>(spawned);
         spawned.Clear();
         lastSpawn = null;
+        spawnCounter = 0; // следующий мир начнёт ряд точек рождения с нуля
 
         foreach (var body in doomed)
         {
             if (body == null) continue;              // уже снесён кем-то (смерть, чужой Clear)
             GameObject go = body.gameObject;
             if (go == null) continue;                // ...или ушёл вместе с родителем
-            go.SetActive(false);                     // гоча: гасим сразу — с этого кадра тело не тикает
-            if (Application.isPlaying) UnityEngine.Object.Destroy(go);
-            else UnityEngine.Object.DestroyImmediate(go);
+            Kill(go);
         }
     }
 
     void OnSpawnedDeath(LairSite home, CreatureBody body)
     {
+        spawned.Remove(body); // мёртвый не жилец: SpawnedCount не должен его считать
         if (home == null || body == null) return;
         home.ReportDeath();
         Vector3 deathPos = body.transform.position;
@@ -151,6 +196,23 @@ public class ForestSpawner : MonoBehaviour
         }
     }
 
+    /// <summary>Снять из списка всё, что уже мертво или снесено, не дожидаясь смерти с колбэком
+    /// (снесли чужим Destroy, выключили объект). Список только сокращается.</summary>
+    void PruneDead()
+    {
+        for (int i = spawned.Count - 1; i >= 0; i--)
+        {
+            var b = spawned[i];
+            if (b == null) { spawned.RemoveAt(i); continue; }
+            var hp = b.GetComponent<Health>();
+            if (hp != null && hp.Current > 0) continue; // живой
+            spawned.RemoveAt(i);
+        }
+    }
+
+    /// <summary>Точка рождения: детерминированный разброс по сиду + Земля из семплера + ПРОХОДИМАЯ точка.
+    /// Навмеш испечён → ставим зверя на него (в скале/на круче логова он бы застрял); навмеша рядом нет
+    /// (стенд/тест без бейка) → доверяем земле, как до среза C.</summary>
     Vector3 SpawnPos(LairSite site)
     {
         float angle = SeededHash.ToFloat01(SeededHash.Hash(spawnCounter, 1, 7)) * Mathf.PI * 2f;
@@ -162,7 +224,67 @@ public class ForestSpawner : MonoBehaviour
         float z = c.z + Mathf.Sin(angle) * radius;
         // Y логова — только запасной путь: на склоне кольца он врёт (зверь в воздухе/в скале).
         float y = groundSampler != null ? groundSampler(x, z) : c.y;
-        return new Vector3(x, y, z);
+        var pos = new Vector3(x, y, z);
+
+        NavMeshHit hit;
+        if (NavMesh.SamplePosition(pos, out hit, NavSnapRadius, NavMesh.AllAreas))
+            return Grounded(hit.position);
+        // Точка в камне/на круче: берём ближайшую проходимую у самого адреса логова (его уже отодвинули в чашу).
+        if (NavMesh.SamplePosition(c, out hit, Mathf.Max(site.spawnRadius * 2f, NavSnapRadius * 2f), NavMesh.AllAreas))
+            return Grounded(hit.position);
+        return pos;
+    }
+
+    Vector3 Grounded(Vector3 p)
+    {
+        if (groundSampler == null) return p;
+        p.y = groundSampler(p.x, p.z);
+        return p;
+    }
+    /// <summary>Низ капсулы относительно корня (м). Префабы держат его на земле (`center` = полвысоты),
+    /// но считаем, а не верим: корень ставим так, чтобы низ капсулы лёг на землю.</summary>
+    static float CapsuleBottom(GameObject prefab)
+    {
+        var cc = prefab != null ? prefab.GetComponent<CharacterController>() : null;
+        return cc != null ? cc.center.y - cc.height * 0.5f : 0f;
+    }
+
+    /// <summary>Префаб змеи годен, если в нём есть тело, цепь и здоровье. Негодный префаб — ОДИН лог и
+    /// отказ рожать: поток пустых копий хуже, чем пустое логово (и оба видны в консоли).</summary>
+    bool SnakePrefabReady()
+    {
+        if (prefabBroken) return false;
+        if (snakePrefab == null) return false;
+
+        bool ok = snakePrefab.TryGetComponent<CreatureBody>(out _)
+               && snakePrefab.TryGetComponent<SnakeBodyChain>(out _)
+               && snakePrefab.TryGetComponent<Health>(out _);
+        if (ok) return true;
+
+        prefabBroken = true;
+        Debug.LogWarning(
+            $"ForestSpawner: snakePrefab «{snakePrefab.name}» негоден — нет CreatureBody/SnakeBodyChain/Health. " +
+            "Змеи из логовищ рожаться не будут (иначе каждая попытка плодила бы пустые копии). " +
+            "Пересобери префаб: Chimera → Создать префаб Змеи.", this);
+        return false;
+    }
+
+    /// <summary>Вид логова нечем родить: его нет в пуле, и snakePrefab не назначен. Предупреждение — один раз
+    /// на вид (иначе каждый тик спамил бы консоль), и в нём назван ОБА выхода: пул и `snakePrefab`.</summary>
+    void WarnMissingSpecies(string species)
+    {
+        if (!warnedMissingSpecies.Add(species)) return;
+        Debug.LogWarning(
+            $"ForestSpawner: вида «{species}» нет в speciesPool, а snakePrefab не назначен — логово не может родить. " +
+            "Добавь вид в ForestBuilder.speciesPool или назначь snakePrefab (готовый префаб с телом и цепью).", this);
+    }
+
+    static void Kill(GameObject go)
+    {
+        if (go == null) return;
+        go.SetActive(false); // гоча: гасим сразу — с этого кадра тело не тикает
+        if (Application.isPlaying) UnityEngine.Object.Destroy(go);
+        else UnityEngine.Object.DestroyImmediate(go);
     }
 
     SpeciesSO FindSpecies(string speciesName)

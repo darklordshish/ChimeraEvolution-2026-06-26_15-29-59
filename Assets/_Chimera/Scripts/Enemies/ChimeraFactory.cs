@@ -10,13 +10,22 @@ using UnityEngine;
 /// вервольфом: флаг «всё надето с рождения» жил мимо конструктора и отсекал его от морфа).</summary>
 public static class ChimeraFactory
 {
+    /// <summary>ПРИРОДНАЯ ОСОБЬ — экспрессия NPC, рождённого составом. У префабов это сериализованное поле
+    /// (волк 0.45, змея/лось/ёж 0.5); у фабричного тела его не было вовсе — 0 означает «все звериные бонусы
+    /// выключены», и `Power` был нулём. Тюнинг вида можно передать явно параметром `expression`.</summary>
+    public const float NaturalExpression = 0.5f;
+
     /// <summary>Родить химеру. Порядок значим и выстрадан тестбедом:
     /// CC и Health — ДО тела (его Awake их ищет), `beforeBody` — ДО доставок (укус кэширует ярость в Awake),
-    /// состав — после `Configure` (слоты строятся из шасси и доноров), психика — после состава (MostKin валиден).</summary>
+    /// состав — после `Configure` (слоты строятся из шасси и доноров), психика — после состава (MostKin валиден).
+    /// `Configure` ставит и платформу эволюции (доноры/родство/Metamorph) — её Awake пропускает: шасси в этот
+    /// момент ещё null.</summary>
     /// <param name="beforeBody">то, что должно существовать раньше доставок и тела (модуль боссовости, ярость)</param>
     /// <param name="compose">состав — ТОЛЬКО через публичный API конструктора</param>
+    /// <param name="expression">экспрессия особи (0 — природная, <see cref="NaturalExpression"/>)</param>
     public static CreatureBody Spawn(SpeciesSO chassis, SpeciesSO[] donors, Vector3 position, string name,
-                                     Action<GameObject> beforeBody = null, Action<CreatureBody> compose = null)
+                                     Action<GameObject> beforeBody = null, Action<CreatureBody> compose = null,
+                                     float expression = NaturalExpression)
     {
         if (chassis == null) { Debug.LogWarning($"ChimeraFactory: у «{name}» нет шасси — рожать нечего"); return null; }
 
@@ -25,7 +34,9 @@ public static class ChimeraFactory
         go.transform.position = position;   // ДО CharacterController: заданное после он перебивает (гоча проекта)
         if (go.TryGetComponent<Collider>(out var col)) UnityEngine.Object.Destroy(col);
         var cc = go.AddComponent<CharacterController>();
-        cc.height = 1f; cc.radius = 0.5f; cc.center = Vector3.zero; // центр капсулы = центр меш-сферы
+        // КОРЕНЬ — НА ЗЕМЛЕ: низ капсулы = низ корня (как у префабов: центр = полвысоты). Было center = 0,
+        // то есть половина капсулы под землёй — спавнер ставил корень на землю, и тело рождалось полузаглублённым.
+        cc.height = 1f; cc.radius = 0.5f; cc.center = new Vector3(0f, 0.5f, 0f);
         go.AddComponent<Health>();          // Max задаст тело в Recompute
 
         beforeBody?.Invoke(go);
@@ -33,14 +44,20 @@ public static class ChimeraFactory
         // ДОСТАВКИ заводит тело по записям органов (провизия в Recompute) — уже после beforeBody, ярость им видна.
         // Гарантийного укуса нет: альфа бьёт тем, что дало тело (Arsenal), а без записей удара — только сближается
         var body = go.AddComponent<CreatureBody>();
-        body.Configure(chassis, donors, tintFromComposition: true);
+        // ЭКСПРЕССИЯ — ДО Configure: у префаба это сериализованное поле, у фабричного тела его не было,
+        // и `Power` (мощь носителя для порогов психик) приходил нулём. 0 — «не задано»: подставляем природную.
+        body.Configure(chassis, donors, tintFromComposition: true,
+                       newExpression: expression > 0f ? expression : NaturalExpression);
         // ЭКОНОМИКА ПУЛА — ИГРОКУ, А НЕ РОЖДЁННОМУ СОСТАВОМ. Холодная химера родится с родством 0 → без скидки
-        // звериные органы не влезают в пул, и все Install молча отваливаются: тело вышло бы чистым
+        // звериные органы не влезают в пул, и все Install молча отваливались: тело вышло бы чистым
         body.ExpandPool(9999);
 
         compose?.Invoke(body);
 
-        PsycheDispatch.Attach(body);
+        // МЕТАМОРФОЗА МОГЛА УЖЕ ПОВЕСИТЬ ПСИХИКУ: с платформой эволюции тело ре-диспатчит на смену доминанты,
+        // а компоновка её двигает. Второй Attach дал бы ДВА модуля (Destroy отложен до конца кадра) —
+        // двойные атаки и двойной расход. Поэтому добираем только пустое.
+        if (!PsycheDispatch.HasPsyche(body)) PsycheDispatch.Attach(body);
 
         // ЗАГЛУШКУ ДОЛОЙ, ЕСЛИ МОРФ ЧТО-ТО ПОСТРОИЛ. Шар остаётся честным признаком «у этого шасси нет плана
         // мест» (синтетика в тестах), а не украшением поверх настоящего тела

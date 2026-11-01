@@ -61,6 +61,7 @@ public class ChargeAbility : WindupAbility, IOrganAbility
             if (ownBody == null) TryGetComponent(out ownBody);
             foreach (var hp in TargetScan.Healths(transform.position, data.plowRadius, transform))
             {
+                if (!CombatReach.CanHit(transform, hp.transform, 1f)) continue; // сквозь стену/ярус не пропахиваем
                 if (!plowedThisCharge.Add(hp)) continue; // каждого задеваем раз за таран (цель — тоже, её удар часто мажет)
                 var vb = hp.GetComponent<CreatureBody>();
                 bool kin = ownBody != null && vb != null && CreatureBody.Regard(ownBody, vb) != KinTier.None;
@@ -77,7 +78,8 @@ public class ChargeAbility : WindupAbility, IOrganAbility
 
         // финальный удар — только если пропашка цель ещё не задела (дедуп: `Add` вернёт false, если уже плужена).
         // Так цель гарантированно получает урон (обычно от пропашки), а полный отброс/стаггер — когда доехал в упор
-        if (!hit && targetHealth != null && DistToTarget() <= data.hitRadius && plowedThisCharge.Add(targetHealth))
+        if (!hit && targetHealth != null && DistToTarget() <= data.hitRadius
+            && ContactReach(1f) && plowedThisCharge.Add(targetHealth))
         {
             hit = true;
             float run = (transform.position - chargeStart).magnitude; // метры разбега = импульс туши

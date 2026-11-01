@@ -8,6 +8,12 @@ using UnityEngine;
 /// </summary>
 public static class ForestSpace
 {
+    /// <summary>
+    /// Версия разметки B-lite (поляны, коридоры, поды, дорожки). Входит в отпечаток мира:
+    /// правила разметки меняются — меняется и версия, и «тот же сид» не выдаёт другой B-lite.
+    /// </summary>
+    public const int LayoutVersion = 1;
+
     public struct Clearing
     {
         public Vector2 center;
@@ -56,43 +62,130 @@ public static class ForestSpace
     {
         public Vector2 center;
         public float radius;
+        /// <summary>Высота земли под подом: нужна детектору видимости, чтобы не сравнивать с нулём.</summary>
+        public float groundY;
     }
 
+    /// <summary>
+    /// Поды-укрытия: по одному от каждой группы (арена / коридор) за проход, пока не
+    /// кончится бюджет. Раньше арены выбирали все 24 пода (6 на каждую), и коридоры
+    /// оставались пустыми, а пятая арена могла не получить ни одного. Кандидаты
+    /// проверяются на воду, пятно станции/вход (exclude) и минимальный зазор между подами.
+    /// </summary>
     public static List<CoverPod> BuildCoverPods(IReadOnlyList<Clearing> clearings,
         IReadOnlyList<Corridor> corridors, long seed,
         Func<float, float, float> ground = null, float waterLevel = float.NegativeInfinity,
-        int want = 24)
+        int want = 24, Func<float, float, bool> exclude = null)
     {
         var list = new List<CoverPod>();
-        if (clearings == null) return list;
-        for (int i = 0; i < clearings.Count && list.Count < want; i++)
+        int nc = clearings != null ? clearings.Count : 0;
+        int nr = corridors != null ? corridors.Count : 0;
+        if (nc + nr == 0 || want <= 0) return list;
+
+        // Кандидаты по группам: арена и коридор — равноправные группы раздачи.
+        var groups = new List<List<Vector2>>(nc + nr);
+        for (int i = 0; i < nc; i++)
         {
-            for (int k = 0; k < 6 && list.Count < want; k++)
+            var g = new List<Vector2>(8);
+            for (int k = 0; k < 8; k++)
             {
-                float a = (k / 6f + SeededHash.ToFloat01(SeededHash.Hash(seed, 9601, i * 6 + k)) * 0.08f) * Mathf.PI * 2f;
+                float a = (k / 8f + SeededHash.ToFloat01(
+                    SeededHash.Hash(seed, 9601, i * 8 + k)) * 0.08f) * Mathf.PI * 2f;
                 float r = clearings[i].radius + 6f;
-                Vector2 cp = clearings[i].center + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * r;
-                if (ground != null && ground(cp.x, cp.y) < waterLevel + 0.5f) continue;
-                list.Add(new CoverPod { center = cp, radius = 2.5f });
+                Vector2 p = clearings[i].center + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * r;
+                if (!PodSpotOk(p, ground, waterLevel, exclude, clearings)) continue;
+                g.Add(p);
             }
+            groups.Add(g);
         }
-        if (corridors != null)
+        for (int i = 0; i < nr; i++)
         {
-            for (int i = 0; i < corridors.Count && list.Count < want; i++)
+            var g = new List<Vector2>(8);
+            var c = corridors[i];
+            Vector2 dir = (c.b - c.a).normalized;
+            Vector2 side = new Vector2(-dir.y, dir.x);
+            for (int k = 0; k < 4; k++)
             {
-                var c = corridors[i];
-                Vector2 dir = (c.b - c.a).normalized;
-                Vector2 side = new Vector2(-dir.y, dir.x);
-                for (int k = 0; k < 2 && list.Count < want; k++)
+                float t = 0.2f + k * 0.2f;
+                Vector2 mid = Vector2.Lerp(c.a, c.b, t);
+                for (int s = -1; s <= 1; s += 2)
                 {
-                    float t = 0.35f + k * 0.3f;
-                    Vector2 p = Vector2.Lerp(c.a, c.b, t) + side * (c.width * 0.5f + 5f);
-                    if (ground != null && ground(p.x, p.y) < waterLevel + 0.5f) continue;
-                    list.Add(new CoverPod { center = p, radius = 2.5f });
+                    Vector2 p = mid + side * (c.width * 0.5f + 5f) * s;
+                    if (!PodSpotOk(p, ground, waterLevel, exclude, clearings)) continue;
+                    g.Add(p);
+                }
+            }
+            groups.Add(g);
+        }
+
+        // Круговая раздача: арена без пода и коридор без пода — не «порядок обхода», а ошибка.
+        var cursor = new int[groups.Count];
+        bool progress = true;
+        while (list.Count < want && progress)
+        {
+            progress = false;
+            for (int g = 0; g < groups.Count && list.Count < want; g++)
+            {
+                var cand = groups[g];
+                while (cursor[g] < cand.Count)
+                {
+                    Vector2 p = cand[cursor[g]++];
+                    if (TooClose(list, p, 8f)) continue;
+                    list.Add(new CoverPod { center = p, radius = 2.5f, groundY = ground != null ? ground(p.x, p.y) : 0f });
+                    progress = true;
+                    break;
                 }
             }
         }
+        // Хвост: круговая раздача могла упереться в минимальный зазор — добираем
+        // из тех же кандидатов с меньшим зазором, чтобы бюджет не просел.
+        if (list.Count < want)
+        {
+            for (int g = 0; g < groups.Count && list.Count < want; g++)
+                foreach (var p in groups[g])
+                {
+                    if (list.Count >= want) break;
+                    if (TooClose(list, p, 4f)) continue;
+                    list.Add(new CoverPod { center = p, radius = 2.5f, groundY = ground != null ? ground(p.x, p.y) : 0f });
+                }
+        }
         return list;
+    }
+
+    static bool PodSpotOk(Vector2 p, Func<float, float, float> ground, float waterLevel,
+        Func<float, float, bool> exclude, IReadOnlyList<Clearing> clearings)
+    {
+        if (exclude != null && exclude(p.x, p.y)) return false;
+        // Поды не ставятся внутрь арены: там должно быть пусто под бой.
+        if (Contains(clearings, p.x, p.y, 0f)) return false;
+        if (ground != null && ground(p.x, p.y) < waterLevel + 0.5f) return false;
+        return true;
+    }
+
+    static bool TooClose(IReadOnlyList<CoverPod> pods, Vector2 p, float minDist)
+    {
+        float r2 = minDist * minDist;
+        for (int i = 0; i < pods.Count; i++)
+        {
+            float dx = pods[i].center.x - p.x;
+            float dz = pods[i].center.y - p.y;
+            if (dx * dx + dz * dz < r2) return true;
+        }
+        return false;
+    }
+
+    /// <summary>Точка рядом с подом-укрытием: туда не ставится дерево (иначе ствол в укрытии).</summary>
+    public static bool NearPods(IReadOnlyList<CoverPod> pods, float x, float z, float margin = 2f)
+    {
+        if (pods == null) return false;
+        for (int i = 0; i < pods.Count; i++)
+        {
+            float dx = pods[i].center.x - x;
+            float dz = pods[i].center.y - z;
+            float r = pods[i].radius + margin;
+            if (dx * dx + dz * dz < r * r) return true;
+        }
+        return false;
     }
     public static List<Corridor> BuildCorridors(IReadOnlyList<Clearing> clearings,
         float width = 16f)

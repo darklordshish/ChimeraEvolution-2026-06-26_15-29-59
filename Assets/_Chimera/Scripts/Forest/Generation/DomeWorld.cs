@@ -95,6 +95,8 @@ public class DomeWorld
     public float MapDiameter => cfg != null ? cfg.mapDiameter : 0f;
 
     DomeGenConfigSO cfg;
+    /// <summary>Квадов на чанк в собранной сетке: дорожка садится на ТУ ЖЕ поверхность.</summary>
+    int chunkQuads;
     float platformY;
     /// <summary>Кадр площадки под комплекс: поворот плиты (у старого лабиринта не работает).</summary>
     float padYaw;
@@ -133,6 +135,7 @@ public class DomeWorld
 
         Root = root;
         this.cfg = cfg;
+        chunkQuads = Mathf.Clamp(terrainQuads, 4, 128);
         northCrevice = buildStationLoop && labEntrance == LabEntrance.Buried;
         Contract = SamplingContract.From(cfg, terrainQuads);
         Trace = new GenTrace();
@@ -259,10 +262,22 @@ public class DomeWorld
         SpawnPoint = new Vector3(LabCenter.x, spawnGround + 1f, LabCenter.y);
 
         BuildEntry(buildEntry, entryXZ);
+        // B-lite — только при patchyFlora. Раньше скобки отсутствовали, и коридоры с
+        // подами строились ВСЕГДА, даже когда разметка полян выключена (A/C).
         if (cfg.patchyFlora)
+        {
             Clearings = ForestSpace.Build(cfg, seed, SampleGround, Entry, LabCenter, Hydro);
             Corridors = ForestSpace.BuildCorridors(Clearings, 16f);
-            CoverPods = ForestSpace.BuildCoverPods(Clearings, Corridors, seed, SampleGround, Hydro.lakeLevel);
+            // Поды не ставятся на плиту станции, у входа и у двери: укрытие в стене
+            // бункера — не укрытие, а дырка в геометрии.
+            CoverPods = ForestSpace.BuildCoverPods(Clearings, Corridors, seed, SampleGround,
+                Hydro.lakeLevel, 24, (x, z) =>
+                    (LabComplex != null && InsideLabPad(x, z, 3.5f)) ||
+                    InsideRamp(x, z) ||
+                    Vector2.Distance(new Vector2(x, z), new Vector2(Entry.x, Entry.z)) < 12f ||
+                    (LabComplex != null &&
+                     Vector2.Distance(new Vector2(x, z), new Vector2(LabDoor.x, LabDoor.z)) < 14f));
+        }
 
         // Вход — не чаща: вокруг Entry оставляем поляну R12, иначе игрок рождается
         // в стволе и не видит ни входа, ни леса. Пятно комплекса тоже не засаживаем:
@@ -275,6 +290,9 @@ public class DomeWorld
             if (DomeRavines.Contains(Ravines, x, z, 1.2f)) return true;
             if (ForestSpace.Contains(Clearings, x, z, 1f)) return true;
             if (ForestSpace.ContainsCorridor(Corridors, x, z, 1f)) return true;
+            // Под-укрытие — не место для ствола: дерево внутри пода ломает и укрытие,
+            // и коллайдер. Зазор 3 м — чтобы крона не накрывала под.
+            if (ForestSpace.NearPods(CoverPods, x, z, 3f)) return true;
             if (LabComplex == null) return false;
             if (labPad(x, z)) return true;
             // Перед LabDoor — спокойный участок: дверь видна целиком, деревья
@@ -548,6 +566,7 @@ public class DomeWorld
         FallenTrees = 0;
         VisualNests = 0;
         platformY = 0f;
+        chunkQuads = 0;
         Contract = default;
         Trace = null;
         cfg = null;
@@ -568,9 +587,58 @@ public class DomeWorld
     void BuildSpacePaths()
     {
         if (Corridors == null || Corridors.Count == 0) return;
-        var mesh = DomeSpacePaths.Build(Corridors, SampleGround);
+        // Дорожка не заходит в арену (там центр боя), не ложится на плиту станции,
+        // не идёт через вход и дверь: лента обрезается по этим адресам.
+        Func<float, float, bool> exclude = (x, z) =>
+            (LabComplex != null && InsideLabPad(x, z, 3.5f)) ||
+            InsideRamp(x, z) ||
+            Vector2.Distance(new Vector2(x, z), new Vector2(Entry.x, Entry.z)) < 12f ||
+            (LabComplex != null &&
+             Vector2.Distance(new Vector2(x, z), new Vector2(LabDoor.x, LabDoor.z)) < 14f);
+        var mesh = DomeSpacePaths.Build(Corridors, SampleGround, 6f, Clearings, exclude, RenderedGround);
         Track(mesh);
         Part("SpacePaths", mesh, Flat(DomePalette.Path));
+    }
+
+    /// <summary>
+    /// Высота НАРИСОВАННОГО чанка, а не аналитического поля: чанк — крупная сетка,
+    /// и между её вершинами плоскость выше/ниже <see cref="SampleGround"/>. Дорожка,
+    /// посаженная на аналитику, «клюётся» террейном. Повторяем треугольники чанка
+    /// (p00,p11,p10) и (p00,p01,p11) с той же диагональю — лента ложится ровно.
+    /// </summary>
+    float RenderedGround(float x, float z)
+    {
+        if (cfg == null) return 0f;
+        float chunk = cfg.chunkSize;
+        if (chunk <= 0f) return SampleGround(x, z);
+        float half = cfg.mapDiameter * 0.5f;
+        int cx = Mathf.FloorToInt((x + half) / chunk);
+        int cz = Mathf.FloorToInt((z + half) / chunk);
+        // Квадратные углы сетки за кольцом не строятся — там поверхности нет.
+        float centerX = -half + (cx + 0.5f) * chunk;
+        float centerZ = -half + (cz + 0.5f) * chunk;
+        if (new Vector2(centerX, centerZ).magnitude > half) return SampleGround(x, z);
+
+        float x0 = -half + cx * chunk;
+        float z0 = -half + cz * chunk;
+        int res = Mathf.Clamp(chunkQuads, 4, 128);
+        float step = chunk / res;
+        float fx = Mathf.Clamp((x - x0) / step, 0f, res - 1e-4f);
+        float fz = Mathf.Clamp((z - z0) / step, 0f, res - 1e-4f);
+        int ix = Mathf.FloorToInt(fx);
+        int iz = Mathf.FloorToInt(fz);
+        float u = fx - ix;
+        float v = fz - iz;
+        float xa = x0 + ix * step, xb = xa + step;
+        float za = z0 + iz * step, zb = za + step;
+        float h00 = SampleGround(xa, za);
+        float h10 = SampleGround(xb, za);
+        float h01 = SampleGround(xa, zb);
+        float h11 = SampleGround(xb, zb);
+        // Диагональ p00–p11: v ≤ u — нижний треугольник, иначе верхний.
+        if (v <= u)
+            return h00 + (h10 - h00) * u + (h11 - h10) * v;
+        return h00 + (h01 - h00) * v + (h11 - h01) * u;
     }
     void BuildChunks(int terrainQuads)
     {

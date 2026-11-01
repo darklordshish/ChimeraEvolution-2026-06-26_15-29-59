@@ -197,6 +197,53 @@ public static class DomeFlora
         return Quaternion.Euler(Mathf.Cos(a) * ang, rotY, Mathf.Sin(a) * ang);
     }
 
+    /// <summary>
+    /// Выбрать до <paramref name="budget"/> стволов-коллайдеров. Приоритет — кромки арен
+    /// и коридоров (<paramref name="near"/>): именно там ствол должен быть твёрдым, а не
+    /// «первые 500 по обходу». Остаток добирается равномерно по списку, чтобы лимит не
+    /// съедали случайные деревья и каждая арена получила свои. Сухостой не считается:
+    /// у него нет ствола-капсулы (лежащий/сломанный).
+    /// </summary>
+    static bool[] PickTreeColliders(DomeGenConfigSO cfg, List<Pt> trees, FloraKind[] kinds,
+        Func<float, float, bool> near, int budget)
+    {
+        var solid = new bool[trees.Count];
+        if (!cfg.patchyFlora || trees.Count == 0 || budget <= 0) return solid;
+
+        var nearIdx = new List<int>();
+        if (near != null)
+            for (int i = 0; i < trees.Count; i++)
+                if (kinds[i] != FloraKind.DeadHook && near(trees[i].pos.x, trees[i].pos.z))
+                    nearIdx.Add(i);
+
+        int used = 0;
+        if (nearIdx.Count >= budget)
+        {
+            // Близких больше бюджета — берём их равномерно по списку, а не первые подряд.
+            for (int j = 0; j < budget; j++)
+            {
+                int idx = nearIdx[Mathf.RoundToInt(j * (nearIdx.Count - 1f) / Mathf.Max(1, budget - 1))];
+                solid[idx] = true;
+            }
+            return solid;
+        }
+        foreach (int idx in nearIdx) { solid[idx] = true; used++; }
+
+        int need = budget - used;
+        if (need <= 0) return solid;
+        var rest = new List<int>(trees.Count - used);
+        for (int i = 0; i < trees.Count; i++)
+            if (!solid[i] && kinds[i] != FloraKind.DeadHook) rest.Add(i);
+        if (rest.Count == 0) return solid;
+        need = Mathf.Min(need, rest.Count);
+        for (int j = 0; j < need; j++)
+        {
+            int idx = rest[Mathf.RoundToInt(j * (rest.Count - 1f) / Mathf.Max(1, need - 1))];
+            solid[idx] = true;
+        }
+        return solid;
+    }
+
     static Material BarkFor(long seed, int k, FloraKind kind,
         Material brown, Material grey, Material birch)
     {
@@ -233,7 +280,10 @@ public static class DomeFlora
                 float ang = (i + 0.5f) / want * Mathf.PI * 2f
                     + (SeededHash.ToFloat01(SeededHash.Hash(seed, 706, salt)) - 0.5f) * 0.5f;
                 float rad = d * (0.10f + SeededHash.ToFloat01(SeededHash.Hash(seed, 706, salt + 5000)) * 0.30f);
-                float pr = 24f + SeededHash.ToFloat01(SeededHash.Hash(seed, 706, salt + 10000)) * 6f;
+                // Радиус пятна растёт вместе с миром: на Ø400 это прежние 24–30 м,
+                // на Ø2000 — 120–150 м, иначе десяток пятен терялся бы в 2 км.
+                float pr = d * (0.06f + SeededHash.ToFloat01(
+                    SeededHash.Hash(seed, 706, salt + 10000)) * 0.015f);
                 float cx = Mathf.Cos(ang) * rad, cz = Mathf.Sin(ang) * rad;
                 if (new Vector2(cx, cz).magnitude + pr > d * 0.5f - 8f) continue;
                 if (exclude != null && exclude(cx, cz)) continue;
@@ -366,20 +416,25 @@ public static class DomeFlora
             };
         }
         var trees = Scatter(seed, 111, treeTarget, d, 10f, ground);
+        // Порода считается один раз: и посадке, и выбору твёрдых стволов нужен один k.
+        var kinds = new FloraKind[trees.Count];
+        for (int i = 0; i < trees.Count; i++)
+            kinds[i] = KindFor(seed, i, trees[i].pos.y - lakeY);
+        // Бюджет тот же (500 сверху, 300 снизу — сторож), меняется только выбор:
+        // приоритет у кромок арен/коридоров, остаток — равномерно, не «первые по обходу».
+        bool[] solid = PickTreeColliders(cfg, trees, kinds, colliderNear, 500);
         int k = 0, deadIndex = 0, colliderCount = 0;
         foreach (var p0 in trees)
         {
             var p = TreeScale(p0);
-            var kind = KindFor(seed, k, p0.pos.y - lakeY);
+            var kind = kinds[k];
             float crown = CrownRadius(kind) * p.scale;
             counts.crownArea += Mathf.PI * crown * crown;
             var rot = TreeRotation(seed, k, p.rotY);
             var trunkMat = BarkFor(seed, k, kind, barkBrown, barkGrey, barkBirch);
             var leafMat = LeafFor(seed, k, kind, leafMid, leafDark, leafCold);
             bool fallen = false;
-            bool wantCollider = cfg.patchyFlora && colliderCount < 500 &&
-                ((colliderNear != null && colliderNear(p.pos.x, p.pos.z)) || k % 4 == 0);
-
+            bool wantCollider = solid[k];
             if (kind == FloraKind.PikeTree)
             {
                 // Широколист: ствол 15.5 м, крона шире и ниже (r 4.0, lift 8.6).
@@ -478,10 +533,11 @@ public static class DomeFlora
             ? counts.crownArea / (Mathf.PI * (d * 0.5f) * (d * 0.5f))
             : 0f;
 
-        // Подлесок: на СТЕНДЕ (Ø≤600) — пятна 20–30 м + вырубка, между пятнами пусто;
-        // на большом мире (Ø2000 A/C) — прежний равномерный путь, чтобы не «сломать A/C»
-        // десятком пятен на 2 км. Бюджеты не растут ни там, ни там.
-        bool patchy = d <= 600f;
+        // Подлесок пятнами: на СТЕНДЕ (Ø≤600, B0/B1.1) — как было; на большом мире —
+        // только когда включена пятнистая флора (B-lite). У A/C (Ø2000, patchyFlora false)
+        // остаётся прежний равномерный путь. На Ø2000 пятна масштабируются радиусом
+        // (UndergrowthPatches), а не числом. Бюджеты не растут.
+        bool patchy = d <= 600f || cfg.patchyFlora;
         var patches = patchy
             ? UndergrowthPatches(seed, d, exclude, undergrowthExclude, groundRaw)
             : new List<(Vector2 c, float r)>();
@@ -559,14 +615,23 @@ public static class DomeFlora
                 if (log)
                 {
                     var rot = Quaternion.Euler(0f, SeededHash.ToFloat01(SeededHash.Hash(seed, 9702, pi)) * 360f, 90f);
-                    Part(root.transform, Kit("dcoverLog", () => FloraMeshKit.Trunk(0.35f, 0.15f, 4.5f)),
+                    var go = Part(root.transform, Kit("dcoverLog", () => FloraMeshKit.Trunk(0.35f, 0.15f, 4.5f)),
                         barkGrey, new Vector3(pod.center.x, h + 0.35f, pod.center.y), rot, 1f);
+                    // Укрытие — твёрдое: ствол-коллайдер вдоль бревна (Trunk растёт от 0 до 4.5).
+                    var cap = go.AddComponent<CapsuleCollider>();
+                    cap.center = new Vector3(0f, 2.25f, 0f);
+                    cap.height = 4.5f;
+                    cap.radius = 0.35f;
                 }
                 else
                 {
-                    Part(root.transform, Kit("dcoverRock", () => FloraMeshKit.Slab(2.4f, 1.2f, 1.8f)),
+                    var go = Part(root.transform, Kit("dcoverRock", () => FloraMeshKit.Slab(2.4f, 1.2f, 1.8f)),
                         rockMatF, new Vector3(pod.center.x, h - 0.2f, pod.center.y),
                         Quaternion.Euler(0f, SeededHash.ToFloat01(SeededHash.Hash(seed, 9703, pi)) * 360f, 0f), 1f);
+                    // Slab(sx,sy,sz) — полуразмеры: плита 4.8×1.2×3.6 м.
+                    var box = go.AddComponent<BoxCollider>();
+                    box.center = new Vector3(0f, 0.6f, 0f);
+                    box.size = new Vector3(4.8f, 1.2f, 3.6f);
                 }
                 pi++;
             }

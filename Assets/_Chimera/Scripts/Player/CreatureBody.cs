@@ -85,6 +85,7 @@ public partial class CreatureBody : MonoBehaviour
 
     void Awake()
     {
+        awakeRan = true; // компонент живёт в мире (в EditMode-стенде Awake не зовётся — см. InitEvolution)
         // тело не предполагает игрока: берём тех потребителей, какие есть на объекте
         TryGetComponent(out attack);
         TryGetComponent(out move);
@@ -122,29 +123,17 @@ public partial class CreatureBody : MonoBehaviour
         TryGetComponent(out camoComp);
 
         // ЭВОЛЮЦИЯ: NPC встаёт на платформу «тело=данные» как игрок — все ветки-доноры + стартовое родство +
-        // цвет по составу. Родство — ЕДИНАЯ ось (>0 → ветка доступна). Ставим ДО BuildSlots, чтобы слоты
-        // собрались со всеми вариантами. Игрока (move != null) не трогаем — у него donors назначены сборкой
-        if (move == null && chassis != null)
-        {
-            var evoCfg = EvolutionConfig.Instance;
-            if (evoCfg != null && evoCfg.EvolveNpc && evoCfg.AllSpecies != null && evoCfg.AllSpecies.Length > 0)
-            {
-                donors = evoCfg.AllSpecies;                       // все виды — потенциальные доноры (родные надеты → чистый вид)
-                tintComposition = true;                           // цвет по составу (развязка Telegraph.Rebase готова)
-                foreach (var sp in evoCfg.AllSpecies)
-                    if (sp != null && sp != chassis) SetAffinity(sp.speciesName, evoCfg.StartAffinity); // стартовое родство чужим
-                if (GetComponent<Metamorph>() == null) gameObject.AddComponent<Metamorph>(); // ре-диспатч психики при сдвиге доминанты
-            }
-        }
+        // цвет по составу + слушатель метаморфозы. ОДИН вход на оба пути рождения: здесь (префаб, шасси уже есть)
+        // и в `Configure` (тело, рождённое составом, — Awake застаёт его БЕЗ шасси). Ставим ДО BuildSlots,
+        // чтобы слоты собрались со всеми вариантами. Игрока (move != null) не трогаем — у него donors от сборки
+        InitEvolution();
 
         BuildSlots();
 
         // РОДСТВО — УБИЙЦЕ: на нашу смерть кредитуем ТОГО, КТО УБИЛ (см. CreditKiller)
         if (health != null) health.onDeath.AddListener(CreditKiller);
 
-        // каждое существо рождается с полным родством к СВОЕМУ шасси (волк уверен в своей волчности;
-        // мета-шкала человечности игрока — потом, при социальном слое)
-        if (chassis != null) SetAffinity(chassis.speciesName, AffinityCap);
+        // каждое существо рождается с полным родством к СВОЕМУ шасси (ставит InitEvolution — один вход)
         if (move != null) PlayerBody = this;
 
         // ЦВЕТ — ЧЕРЕЗ МИКШЕР СЛОЁВ. Прежде тут собирался массив рендереров с исключениями ПО ИМЕНАМ
@@ -166,12 +155,19 @@ public partial class CreatureBody : MonoBehaviour
 
     /// <summary>РАНТАЙМ-СБОРКА (тест-химера / будущая стохастическая химеризация NPC): задать шасси+доноров и
     /// пересобрать. Обычные тела конфигурятся сериализацией (префаб/бутстрап); это — для рождённых на лету.
-    /// tintFromComposition — красить тело смесью тинтов состава (заглушка-сфера без Telegraph, как тело игрока).</summary>
-    public void Configure(SpeciesSO newChassis, SpeciesSO[] newDonors, bool tintFromComposition = false)
+    /// tintFromComposition — красить тело смесью тинтов состава (заглушка-сфера без Telegraph, как тело игрока).
+    /// newExpression — природная экспрессия вида: у префаба это сериализованное поле, у рождённого составом его
+    /// задаёт фабрика (0 — не трогать: у игрока 0 значит «авто, кривая родства»).</summary>
+    public void Configure(SpeciesSO newChassis, SpeciesSO[] newDonors, bool tintFromComposition = false, float newExpression = 0f)
     {
         chassis = newChassis;
         donors = newDonors;
         tintComposition = tintFromComposition;
+        if (newExpression > 0f) expression = newExpression;
+        // ШАССИ ПРИХОДИТ ПОСЛЕ AWAKE: у рождённого составом тела Awake застаёт chassis == null и платформу
+        // эволюции пропускает. Ставим её здесь — иначе фабричный NPC живёт без Metamorph (психика не
+        // перевешивается при сдвиге доминанты) и без стартового родства (Power = 0).
+        InitEvolution();
         BuildSlots();
         Recompute();
     }
@@ -442,10 +438,10 @@ public partial class CreatureBody : MonoBehaviour
             scentTrail.Configure(new Color(comp.r, comp.g, comp.b, 0.65f), move != null);
         }
 
-        // МЕТАМОРФОЗА: целевой модуль психики = доминанта, если она уверенна (Medium+, гистерезис), ИНАЧЕ null
-        // (размытие в истинную химеру → альфа). Сменился целевой модуль → сигнал. Первый Recompute — без метаморфозы.
-        var dom = MostKin(out var domTier);
-        var targetDom = domTier >= KinTier.Medium ? dom : null; // Medium+ → видовой модуль; иначе (None/размытие) → химера-альфа
+        // МЕТАМОРФОЗА: целевой модуль психики = доминанта, если она ДОСТАТОЧНО СВОЯ (порог — один на весь
+        // проект, живёт в PsycheDispatch: им же пользуется первичный диспатч), ИНАЧЕ null (химера-альфа).
+        // Сменился целевой модуль → сигнал. Первый Recompute — без метаморфозы.
+        var targetDom = PsycheDispatch.Dominant(this);
         if (!dominantInit) { dominantInit = true; lastDominant = targetDom; }
         else if (targetDom != lastDominant)
         {

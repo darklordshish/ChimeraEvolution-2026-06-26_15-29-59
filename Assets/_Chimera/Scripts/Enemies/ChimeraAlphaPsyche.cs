@@ -240,7 +240,10 @@ public class ChimeraAlphaPsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         return !(ob != null && body != null && CreatureBody.Regard(body, ob) >= KinTier.Weak); // СВОИХ (кого Я признаю по составу) пропускаю
     }
 
-    // ближайший НЕ-кин (кого Я не признаю своим по составу). Истинная химера размыта → не признаёт никого → бьёт всех
+    // ближайший НЕ-кин (кого Я не признаю своим по составу). Истинная химера размыта → не признаёт никого → бьёт всех.
+    // СТЕНА — НЕ ЦЕЛЬ: у альфы нет профиля чувств, её радиус-скан — это «увидел», а увидеть сквозь скалу нельзя.
+    // Проверяем прямой луч только при ВЫБОРЕ цели; уже выбранную не бросаем из-за угла — иначе погоня рвётся на
+    // каждом дереве. Запах/тепло как обходной канал для альфы — развилка (сейчас каналов у неё нет вовсе).
     void Retarget()
     {
         int hits = Physics.OverlapSphereNonAlloc(transform.position, ScanRadius, scanHits, ~0, QueryTriggerInteraction.Ignore);
@@ -249,6 +252,7 @@ public class ChimeraAlphaPsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         {
             var other = scanHits[i].GetComponentInParent<Health>();
             if (!IsHostile(other)) continue;
+            if (!Perception.HasLineOfSight(transform.position, other.transform, transform)) continue;
             float d = (other.transform.position - transform.position).sqrMagnitude;
             if (d < best) { best = d; bestT = other.transform; bestH = other; }
         }

@@ -23,7 +23,18 @@ public class StunTint : MonoBehaviour
     void Update()
     {
         bool stunned = stagger.IsStunned;
-        if (stunned && !telegraph.IsShowing) { telegraph.Set(true, TelegraphColors.Stunned); painting = true; }
-        else if (!stunned && painting) { telegraph.Clear(); painting = false; }
+        if (stunned)
+        {
+            // Если уже показан ЗАМАХ — не затираем его статусом: приём важнее фона, а окно реакции
+            // у игрока одно. Если статус уже наш — просто держим.
+            if (!telegraph.IsIntentShowing) { telegraph.Set(true, TelegraphColors.Stunned); painting = true; }
+        }
+        else if (painting)
+        {
+            painting = false;
+            // Снимаем ТОЛЬКО свою статусную покраску. Новый замах, начавшийся во время стана,
+            // не наш — его гасить нельзя (прежний код гасил и его: Clear() поверх чужого телеграфа).
+            if (!telegraph.IsIntentShowing) telegraph.Clear();
+        }
     }
 }

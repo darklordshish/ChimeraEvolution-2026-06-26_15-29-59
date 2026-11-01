@@ -40,9 +40,17 @@ public class PlayerKick : MonoBehaviour, IAbility, IOrganAbility
         var hit = new Hit(ownHealth, transform.position); // источник нужен раскрытию призрака
         var blow = new MeleeBlow { Damage = data.damage, KnockForce = data.knockForce }; // единый паёк (см. MeleeBlow)
         var targets = TargetScan.Healths(KickCenter(), data.radius, transform);
-        foreach (var hp in targets) blow.Deliver(hit, hp); // лёгкий урон (вспышка+сбив) + отталкивание; эрозия — внутри Hit.Apply
+        int kicked = 0;
+        foreach (var hp in targets)
+        {
+            // СФЕРА ПИНКА остаётся сферой, но сквозь стену и на другой ярус нога не достаёт:
+            // танцующий на скале враг не должен получать пинок в пустоту.
+            if (!CombatReach.CanHit(transform, hp.transform, 1f)) continue;
+            blow.Deliver(hit, hp); // лёгкий урон (вспышка+сбив) + отталкивание; эрозия — внутри Hit.Apply
+            kicked++;
+        }
 
-        if (targets.Count > 0 && cam != null) cam.Shake(0.16f, shake);
+        if (kicked > 0 && cam != null) cam.Shake(0.16f, shake);
     }
 
     Vector3 KickCenter() => transform.position + transform.forward * data.reach + Vector3.up * -0.2f; // нога ниже пояса (корень — центр капсулы)
