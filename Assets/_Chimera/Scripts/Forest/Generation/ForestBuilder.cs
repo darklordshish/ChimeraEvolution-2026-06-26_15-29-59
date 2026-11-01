@@ -434,7 +434,7 @@ public class ForestBuilder : MonoBehaviour
         spawner = GetComponent<ForestSpawner>();
         if (spawner == null) spawner = gameObject.AddComponent<ForestSpawner>();
         spawner.snakePrefab = snakePrefab;
-        spawner.Configure(lairRegistry, speciesPool, GroundAtWorld);
+        spawner.Configure(lairRegistry, speciesPool, SpawnGroundAtWorld);
         spawner.autoTick = true;
 
         if (speciesPool == null || speciesPool.Count == 0)
@@ -497,6 +497,15 @@ public class ForestBuilder : MonoBehaviour
     /// а поле мира считает в координатах корня — потому переводим туда и обратно.
     /// Высота — верхняя из скалы кольца и поля (см. гнёзда): не ниже видимой поверхности.
     /// </summary>
+    /// <summary>Высота для точки рождения: только пол поля, без скальной полки кольца.</summary>
+    float SpawnGroundAtWorld(float x, float z)
+    {
+        if (world == null || world.Root == null) return 0f;
+        var root = world.Root.transform;
+        Vector3 local = root.InverseTransformPoint(new Vector3(x, 0f, z));
+        float y = world.SampleGround(local.x, local.z);
+        return root.TransformPoint(new Vector3(local.x, y, local.z)).y;
+    }
     float GroundAtWorld(float x, float z)
     {
         if (world == null || world.Root == null || ownedConfig == null) return 0f;

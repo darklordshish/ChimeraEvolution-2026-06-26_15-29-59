@@ -29,7 +29,7 @@ A/C/B0 не меняются без `worldVersion` и отдельного пр�
 - [x] Индекс русла вместо линейного поиска.
 - [x] `ForestRouteGraph` с зазором (distance transform) и компонентами.
 - [x] NavMesh берёт `navVoxelSize`/`navTileSize` из `DomeGenConfigSO`.
-- [~] `NavParityTests`: route graph ↔ NavMesh, расхождение — записанный долг (route graph и NavMesh проверены отдельно; прямой `Entry → LabDoor` в NavMesh остаётся `PathPartial`).
+- [~] `NavParityTests`: route graph ↔ NavMesh, расхождение — записанный долг (route graph и NavMesh проверены отдельно; прямой `Entry → LabDoor` в NavMesh теперь `PathComplete`; parity route graph ↔ NavMesh остаётся долгом).
 
 ## P2 — станция
 
