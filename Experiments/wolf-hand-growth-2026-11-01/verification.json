@@ -1,0 +1,65 @@
+{
+  "errors": [],
+  "body_unchanged": true,
+  "rows": [
+    {
+      "pose": "rest",
+      "share": 0,
+      "root_anchor_max_mm": 1.5000369352158138,
+      "tip_length_min_m": 0.0009999337571962262,
+      "tip_length_max_m": 0.0010000754502007222
+    },
+    {
+      "pose": "rest",
+      "share": 0.18,
+      "root_anchor_max_mm": 1.5000244433899474,
+      "tip_length_min_m": 0.008514187403605458,
+      "tip_length_max_m": 0.010141384608312124
+    },
+    {
+      "pose": "rest",
+      "share": 0.35,
+      "root_anchor_max_mm": 1.5000399694515727,
+      "tip_length_min_m": 0.01571095989586512,
+      "tip_length_max_m": 0.01887681448687775
+    },
+    {
+      "pose": "rest",
+      "share": 0.6,
+      "root_anchor_max_mm": 1.5000399694515727,
+      "tip_length_min_m": 0.026300777799842055,
+      "tip_length_max_m": 0.03172839072522987
+    },
+    {
+      "pose": "forearm35",
+      "share": 0,
+      "root_anchor_max_mm": 1.5000644571585118,
+      "tip_length_min_m": 0.0009999337571962262,
+      "tip_length_max_m": 0.001000045753534487
+    },
+    {
+      "pose": "forearm35",
+      "share": 0.18,
+      "root_anchor_max_mm": 1.5000620272048057,
+      "tip_length_min_m": 0.008514174585066096,
+      "tip_length_max_m": 0.010141381783344115
+    },
+    {
+      "pose": "forearm35",
+      "share": 0.35,
+      "root_anchor_max_mm": 1.5000399694515727,
+      "tip_length_min_m": 0.015710955603019484,
+      "tip_length_max_m": 0.01887681448687775
+    },
+    {
+      "pose": "forearm35",
+      "share": 0.6,
+      "root_anchor_max_mm": 1.5000439007154125,
+      "tip_length_min_m": 0.02630083018928511,
+      "tip_length_max_m": 0.03172839072522987
+    }
+  ],
+  "claws": 10,
+  "triangles": 300,
+  "note": "Root-to-anchor check on original template, including one forearm rotation. Not finger articulation, self-intersection detection or acceptance of lean-template transfer."
+}

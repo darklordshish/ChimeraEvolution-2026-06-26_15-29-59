@@ -1,0 +1,33 @@
+{
+  "rows": [
+    {
+      "variant": "palm",
+      "share": 0,
+      "growth": 0.0,
+      "region": 0.0,
+      "global_stage": 0
+    },
+    {
+      "variant": "palm",
+      "share": 0.18,
+      "growth": 0.2769230769230769,
+      "region": 0.21176470588235294,
+      "global_stage": 0
+    },
+    {
+      "variant": "palm",
+      "share": 0.35,
+      "growth": 0.5384615384615384,
+      "region": 0.4117647058823529,
+      "global_stage": 0
+    },
+    {
+      "variant": "palm",
+      "share": 0.6,
+      "growth": 0.923076923076923,
+      "region": 0.7058823529411765,
+      "global_stage": 0
+    }
+  ],
+  "note": "Weights reproduce source BodyMesh formulas for an isolated parametric share below WeakAt; no inventory/budget or full game simulation."
+}

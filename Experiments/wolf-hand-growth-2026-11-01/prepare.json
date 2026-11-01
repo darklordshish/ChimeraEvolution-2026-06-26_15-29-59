@@ -1,0 +1,10 @@
+{
+  "source_fbx": "augment-combinations-2026-10-31/donor-human.fbx",
+  "regional_key": "Волк·Руки",
+  "projection_max_m": 0.05091799050569534,
+  "projection_p95_m": 0.038412404805421824,
+  "projection_mean_m": 0.012535212299310594,
+  "nonzero_delta_vertices": 189,
+  "max_regional_delta_m": 0.20007358050034513,
+  "warning": "Transferred regional key is an experimental approximation, not original game data. Original FBX row is the unmodified control. No global stage or growth scaling applied to geometry here."
+}
