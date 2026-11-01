@@ -163,16 +163,10 @@ public static class DomeFlora
     /// а не остаётся висеть в центре.
     /// </summary>
     static void Tree(Transform root, Pt p, Quaternion rot, Mesh trunkMesh, Material trunkMat,
-        Mesh crownMesh, Material leafMat, float crownLift, bool collider = false)
+        Mesh crownMesh, Material leafMat, float crownLift, bool collider = false, float colliderRadius = 0.45f)
     {
         var trunk = Part(root, trunkMesh, trunkMat, p.pos - rot * Vector3.up * 0.3f, rot, p.scale);
-        if (collider)
-        {
-            var cap = trunk.AddComponent<CapsuleCollider>();
-            cap.center = new Vector3(0f, 7f, 0f);
-            cap.height = 14f;
-            cap.radius = 0.45f;
-        }
+        if (collider) AddTrunkCollider(trunk, colliderRadius);
         // крона висит по оси ствола, чтобы при наклоне не отрывалась
         Part(root, crownMesh, leafMat, p.pos + rot * Vector3.up * (crownLift * p.scale), rot, p.scale);
     }
@@ -181,6 +175,13 @@ public static class DomeFlora
     /// подобраны так, чтобы и комель (−0.3 м), и верхний край не выводили за коридор.
     /// Кусты/трава сохраняют свой масштаб.
     /// </summary>
+    static void AddTrunkCollider(GameObject trunk, float radius)
+    {
+        var cap = trunk.AddComponent<CapsuleCollider>();
+        cap.center = new Vector3(0f, 7f, 0f);
+        cap.height = 14f;
+        cap.radius = radius;
+    }
     static Pt TreeScale(Pt p)
     {
         p.scale = Mathf.Lerp(0.90f, 1.12f, Mathf.InverseLerp(0.8f, 1.3f, p.scale));
@@ -422,7 +423,6 @@ public static class DomeFlora
             kinds[i] = KindFor(seed, i, trees[i].pos.y - lakeY);
         // Бюджет тот же (500 сверху, 300 снизу — сторож), меняется только выбор:
         // приоритет у кромок арен/коридоров, остаток — равномерно, не «первые по обходу».
-        bool[] solid = PickTreeColliders(cfg, trees, kinds, colliderNear, 500);
         int k = 0, deadIndex = 0, colliderCount = 0;
         foreach (var p0 in trees)
         {
@@ -434,7 +434,7 @@ public static class DomeFlora
             var trunkMat = BarkFor(seed, k, kind, barkBrown, barkGrey, barkBirch);
             var leafMat = LeafFor(seed, k, kind, leafMid, leafDark, leafCold);
             bool fallen = false;
-            bool wantCollider = solid[k];
+            bool wantCollider = cfg.patchyFlora;
             if (kind == FloraKind.PikeTree)
             {
                 // Широколист: ствол 15.5 м, крона шире и ниже (r 4.0, lift 8.6).
@@ -442,7 +442,7 @@ public static class DomeFlora
                     Kit("dtrunk0.52/0.28/15.5", () => FloraMeshKit.Trunk(0.52f, 0.28f, 15.5f)),
                     trunkMat,
                     Kit("dbroad4.0x6.9", () => FloraMeshKit.BroadleafCrown(4.0f, 6.9f)),
-                    leafMat, 8.6f, wantCollider);
+                    leafMat, 8.6f, wantCollider, 0.52f);
             }
             else if (kind == FloraKind.UmbrellaTree)
             {
@@ -451,7 +451,7 @@ public static class DomeFlora
                     Kit("dtrunk0.60/0.38/7.5", () => FloraMeshKit.Trunk(0.60f, 0.38f, 7.5f)),
                     trunkMat,
                     Kit("dbroad4.2x9.6", () => FloraMeshKit.BroadleafCrown(4.2f, 9.6f)),
-                    leafMat, 4.0f, wantCollider);
+                    leafMat, 4.0f, wantCollider, 0.60f);
             }
             else if (kind == FloraKind.SpruceTree)
             {
@@ -462,7 +462,7 @@ public static class DomeFlora
                         Kit("dtrunk0.48/0.14/15.4", () => FloraMeshKit.Trunk(0.48f, 0.14f, 15.4f)),
                         trunkMat,
                         Kit("dspruce3.6x12.6", () => FloraMeshKit.SpruceCrown(3.6f, 12.6f)),
-                        leafMat, 2.5f, wantCollider);
+                        leafMat, 2.5f, wantCollider, 0.48f);
                 }
                 else
                 {
@@ -470,7 +470,7 @@ public static class DomeFlora
                         Kit("dtrunk0.42/0.12/15.0", () => FloraMeshKit.Trunk(0.42f, 0.12f, 15.0f)),
                         trunkMat,
                         Kit("dpine3.3x12.5", () => FloraMeshKit.PineCrown(3.3f, 12.5f)),
-                        leafMat, 2.6f, wantCollider);
+                        leafMat, 2.6f, wantCollider, 0.42f);
                 }
             }
             else if (kind == FloraKind.BirchTree)
@@ -480,7 +480,7 @@ public static class DomeFlora
                     Kit("dtrunk0.18/0.09/15.0", () => FloraMeshKit.Trunk(0.18f, 0.09f, 15.0f)),
                     trunkMat,
                     Kit("dbirch2.2x4.8", () => FloraMeshKit.BirchCrown(2.2f, 4.8f)),
-                    leafMat, 10.8f, wantCollider);
+                    leafMat, 10.8f, wantCollider, 0.18f);
             }
             else // DeadHook
             {
@@ -504,9 +504,15 @@ public static class DomeFlora
                 }
                 else
                 {
-                    Part(root.transform,
+                    var snag = Part(root.transform,
                         Kit("dsnag0.40/0.10/14.5/2.6", () => FloraMeshKit.Snag(0.40f, 0.10f, 14.5f, 2.6f)),
                         barkGrey, p.pos - rot * Vector3.up * 0.3f, rot, p.scale);
+                    if (cfg.patchyFlora)
+                    {
+                        AddTrunkCollider(snag, 0.40f);
+                        colliderCount++;
+                        counts.treeColliderPositions.Add(p.pos);
+                    }
                 }
                 deadIndex++;
             }

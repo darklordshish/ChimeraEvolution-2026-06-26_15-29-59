@@ -209,8 +209,8 @@ namespace Chimera.Tests.PlayMode
             var b = Build(true, true);
             yield return null;
 
-            Assert.GreaterOrEqual(b.TreeColliders, 300, "коллайдеров стволов меньше трёхсот");
-            Assert.LessOrEqual(b.TreeColliders, 500, "коллайдеров стволов больше пятисот");
+            Assert.GreaterOrEqual(b.TreeColliders, 1200, "коллайдеров стволов меньше 1200 — не все стволы твёрдые");
+            Assert.LessOrEqual(b.TreeColliders, 1600, "коллайдеров стволов больше 1600 — проверь, не задвоены ли стволы");
         }
         [UnityTest]
         public IEnumerator Sight_ArenaClear_TrunksBlock()
