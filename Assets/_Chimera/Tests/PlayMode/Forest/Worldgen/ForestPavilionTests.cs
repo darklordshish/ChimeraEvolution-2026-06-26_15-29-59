@@ -235,6 +235,14 @@ namespace Chimera.Tests.PlayMode
                 "ствол не рвёт луч");
         }
         [UnityTest]
+        public IEnumerator ArenaEdges_AreBuilt()
+        {
+            var b = Build(true, true);
+            yield return null;
+
+            Assert.GreaterOrEqual(b.ArenaEdges, 20, "у арен нет физической кромки");
+        }
+        [UnityTest]
         public IEnumerator StationLoop_Crevice_IsNotBuriedByGround()
         {
             var b = Build(true, true);

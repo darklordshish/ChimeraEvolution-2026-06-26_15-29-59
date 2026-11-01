@@ -86,6 +86,7 @@ public class DomeWorld
     public int Trees { get; private set; }
     public int TreeColliders { get; private set; }
     public int CoverPodsBuilt { get; private set; }
+    public int ArenaEdges { get; private set; }
     public IReadOnlyList<Vector3> TreeColliderPositions { get; private set; } = new List<Vector3>();
     public float CrownCover { get; private set; }
     public IReadOnlyList<ForestSpace.Clearing> Clearings { get; private set; } = new List<ForestSpace.Clearing>();
@@ -311,6 +312,8 @@ public class DomeWorld
         TreeColliders = flora.treeColliders;
         CoverPodsBuilt = flora.coverPods;
         BuildSpacePaths();
+        ArenaEdges = DomeArenaEdge.Build(Root, Clearings, Corridors, SampleGround,
+            Flat(DomePalette.Rock), Flat(DomePalette.Bark), seed);
         TreeColliderPositions = flora.treeColliderPositions ?? new List<Vector3>();
         CrownCover = flora.crownCover;
         if (Ravines.Count > 0)
@@ -554,6 +557,7 @@ public class DomeWorld
         Trees = 0;
         TreeColliders = 0;
         CoverPodsBuilt = 0;
+        ArenaEdges = 0;
         TreeColliderPositions = new List<Vector3>();
         CrownCover = 0f;
         Clearings = new List<ForestSpace.Clearing>();
