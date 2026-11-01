@@ -10,6 +10,59 @@ public class DomeGenConfigSO : ScriptableObject
     [Header("Версия (смена алгоритма = смена version)")]
     public int version = 1;
 
+    // S1 (2026-11-01): у ПОЛЯ своя версия. 0/1 — v1 бит-в-бит (A/C/B0),
+    // 2 — три полосы H0. `version` остаётся солью v1 и не переиспользуется:
+    // иначе смена полос сдвинула бы A/C. 0 приходит у старых ассетов/сцен
+    // (гоча нового сериализованного поля) и читается как v1.
+    [Header("Версия поля: 0 = не настроено = v1, 2 = полосы H0 (S1)")]
+    public int worldVersion = 0;
+
+    [Header("Полосы H0 v2: метры на Ø2000, масштабируются D/2000")]
+    public float macroLambda = 1600f;
+    [Tooltip("Полный перепад P, м (амплитуда A = P/2)")]
+    public float macroAmplitude = 56f;
+    [Range(0, 4)] public int macroOctaves = 2;
+    [Range(0f, 0.12f)] public float macroWarp = 0.10f;
+
+    public float mesoLambda = 450f;
+    public float mesoAmplitude = 36f;
+    [Range(0, 4)] public int mesoOctaves = 3;
+    [Range(0f, 0.12f)] public float mesoWarp = 0.10f;
+    [Tooltip("Ridged только на мезо и только под маской (S1 §3.2)")]
+    public bool mesoRidged = true;
+
+    public float microLambda = 90f;
+    public float microAmplitude = 6f;
+    [Range(0, 4)] public int microOctaves = 2;
+    [Range(0f, 0.12f)] public float microWarp = 0.08f;
+
+    [Header("Классы уклона S1 §11: ходьба ≤ walk, стена > maxSlopeDegrees")]
+    public float walkMaxDegrees = DefaultWalkMaxDegrees;
+
+    /// <summary>Граница «проходимо» по S1 §11.3; 0 в поле = «не настроено».</summary>
+    public const float DefaultWalkMaxDegrees = 22f;
+
+    /// <summary>Первая (и по умолчанию действующая) версия поля.</summary>
+    public const int FirstWorldVersion = 1;
+
+    // ЕДИНСТВЕННАЯ точка правила «0 → v1». Зовут оба входа: <see cref="WorldVersion"/>
+    // на конфиге и <see cref="ForestBuilder.WorldVersion"/> в сцене; своего `> 0 ? : 1`
+    // больше нигде нет, иначе два поля дадут две трактовки одного нуля.
+    /// <summary>Разрешить версию поля: 0/отрицательное = «не настроено» = v1.</summary>
+    public static int ResolveWorldVersion(int rawVersion)
+    {
+        return rawVersion > 0 ? rawVersion : FirstWorldVersion;
+    }
+
+    /// <summary>0 в поле = «не настроено» = v1: новое поле у старой сцены приходит нулём.</summary>
+    public int WorldVersion => ResolveWorldVersion(worldVersion);
+
+    /// <summary>0 в поле = «не настроено» → 22 (гоча нового сериализованного поля).</summary>
+    public float WalkMaxDegrees => walkMaxDegrees > 0f ? walkMaxDegrees : DefaultWalkMaxDegrees;
+
+    /// <summary>Граница стены = существующий предел флоры; второго литерала 35 нет.</summary>
+    public float WallMinDegrees => maxSlopeDegrees > 0f ? maxSlopeDegrees : DefaultWallMinDegrees;
+
     [Header("Размер: один параметр масштабирует всё (формулы — DomeGenRules)")]
     public float mapDiameter = 2000f;
     public float chunkSize = 250f;
@@ -21,7 +74,9 @@ public class DomeGenConfigSO : ScriptableObject
     public float warpStrength = 6f;
     public float baseFrequency = 0.02f;
     public float amplitude = 6f;
-    public float maxSlopeDegrees = 35f;
+    public float maxSlopeDegrees = DefaultWallMinDegrees;
+    /// <summary>Граница «стена» по S1 §11.3 — она же предел флоры (35).</summary>
+    public const float DefaultWallMinDegrees = 35f;
 
     [Header("Вода (s10b): пока ЗАГЛУШКА числом, как в s8")]
     public float waterLevel = -1.5f;
@@ -57,6 +112,20 @@ public class DomeGenConfigSO : ScriptableObject
         baseFrequency = Mathf.Max(baseFrequency, 0.0001f);
         amplitude = Mathf.Max(amplitude, 0f);
         maxSlopeDegrees = Mathf.Clamp(maxSlopeDegrees, 1f, 60f);
+        if (walkMaxDegrees > 0f) walkMaxDegrees = Mathf.Clamp(walkMaxDegrees, 1f, 60f);
+        if (worldVersion < 0) worldVersion = 0;
+        macroLambda = Mathf.Max(macroLambda, 1f);
+        mesoLambda = Mathf.Max(mesoLambda, 1f);
+        microLambda = Mathf.Max(microLambda, 1f);
+        macroAmplitude = Mathf.Max(macroAmplitude, 0f);
+        mesoAmplitude = Mathf.Max(mesoAmplitude, 0f);
+        microAmplitude = Mathf.Max(microAmplitude, 0f);
+        macroOctaves = Mathf.Clamp(macroOctaves, 0, 4);
+        mesoOctaves = Mathf.Clamp(mesoOctaves, 0, 4);
+        microOctaves = Mathf.Clamp(microOctaves, 0, 4);
+        macroWarp = Mathf.Clamp(macroWarp, 0f, 0.12f);
+        mesoWarp = Mathf.Clamp(mesoWarp, 0f, 0.12f);
+        microWarp = Mathf.Clamp(microWarp, 0f, 0.12f);
         treeDensityPerM2 = Mathf.Max(treeDensityPerM2, 0f);
         forestFraction = Mathf.Clamp01(forestFraction);
         navVoxelSize = Mathf.Clamp(navVoxelSize, 0.05f, 1f);

@@ -143,7 +143,20 @@ public class DomeWorld
         chunkQuads = Mathf.Clamp(terrainQuads, 4, 128);
         northCrevice = buildStationLoop && labEntrance == LabEntrance.Buried;
         Contract = SamplingContract.From(cfg, terrainQuads);
+        // S1 §12 (P0-6): v2 объявлен только на профиле Ø2000/48. На прочих разрешениях
+        // поле не запрещено математически, но не объявлено — говорим вслух, а не молчим.
+        if (cfg.WorldVersion >= 2 && !SamplingContract.BandProfileSupported(cfg.mapDiameter, terrainQuads))
+            Debug.LogWarning(
+                $"[Forest] поле v2 при Ø{cfg.mapDiameter} и terrainQuads={terrainQuads}: " +
+                $"объявленный профиль — Ø{SamplingContract.BandProfileDiameter}, " +
+                $"≥{SamplingContract.BandProfileMinQuads} квадов; λ_min={Contract.lambdaMin:F1} " +
+                $"против 4·meshStep={4f * Contract.meshStep:F1}");
         Trace = new GenTrace();
+        Trace.Add("height", 1, 1,
+            $"worldVersion={cfg.WorldVersion} field={(cfg.WorldVersion >= 2 ? "bands" : "v1")} " +
+            $"lambdaMin={Contract.lambdaMin:F1} meshStep={Contract.meshStep:F2}");
+        Trace.Add("classes", 0, 0,
+            $"walk<={Contract.walkMaxDegrees:F0} climb<={Contract.wallMinDegrees:F0} eps={Contract.classEpsilon:F1}");
         Hydro = DomeHydro.Build(cfg, 256);
         Trace.Add("hydro", 1, Hydro != null ? 1 : 0);
 
@@ -359,7 +372,7 @@ public class DomeWorld
     public float SampleGround(float x, float z)
     {
         if (cfg == null || Hydro == null) return 0f;
-        return DomeRelief.Apply(Relief, BaseGround(x, z), x, z);
+        return DomeRelief.Apply(Relief, BaseGround(x, z), x, z, cfg.WorldVersion);
     }
 
     float BaseGround(float x, float z)

@@ -125,16 +125,18 @@ namespace Chimera.Tests.EditMode
         }
 
         /// <summary>
-        /// S0 НЕ вводит worldVersion: сейчас версию поля задаёт только <c>DomeGenConfigSO.version</c>.
-        /// Фиксируем факт v1, чтобы S1 менял его осознанно, а не «по дороге».
+        /// S0 фиксирует v1 и после S1: <c>worldVersion</c> в старой сцене приходит нулём,
+        /// а ноль обязан означать «не настроено → v1», не новую соль.
         /// </summary>
         [Test]
-        public void WorldVersion_IsV1()
+        public void WorldVersion_IsV1_ZeroMeansDefault()
         {
             var cfg = Config(1337L);
             try
             {
                 Assert.AreEqual(1, cfg.version, $"{CapturedAt}: версия поля уже не v1");
+                Assert.AreEqual(0, cfg.worldVersion, $"{CapturedAt}: worldVersion в старой сцене обязан быть 0");
+                Assert.AreEqual(1, cfg.WorldVersion, $"{CapturedAt}: 0 = не настроено → v1");
             }
             finally
             {

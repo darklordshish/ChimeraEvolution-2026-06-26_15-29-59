@@ -84,6 +84,32 @@ public static class DomeRelief
         return state;
     }
 
+    /// <summary>
+    /// Форма из P5-lite холма (S1 §3.1): гряда — КАПСУЛА, а не <c>max(along,across)</c>
+    /// (max даёт излом на диагоналях, капсула C¹ вне отрезка).
+    /// </summary>
+    public static DomeForm ToForm(Hill hill)
+    {
+        if (hill.ridge)
+            return DomeForms.Capsule(hill.center, hill.axis, hill.halfLength,
+                hill.halfWidth * 2f, hill.height, DomeFormSign.Lift, "Ridge");
+        return DomeForms.Disc(hill.center, hill.radius * 2f, hill.height,
+            DomeFormSign.Lift, "Hill");
+    }
+
+    /// <summary>
+    /// Оператор форм S1: v1 — прежний P5-lite (бит-в-бит), v2 — сумма форм
+    /// <c>H = H0 + Σ s·H_i·φ(u)</c> с профилем <c>S(1−u)</c>.
+    /// </summary>
+    public static float Apply(State state, float h, float x, float z, int worldVersion)
+    {
+        if (state == null || state.hills == null) return h;
+        if (worldVersion < 2) return Apply(state, h, x, z);
+        for (int i = 0; i < state.hills.Count; i++)
+            h = DomeForms.Apply(ToForm(state.hills[i]), h, x, z);
+        return h;
+    }
+
     public static float Apply(State state, float h, float x, float z)
     {
         if (state == null || state.hills == null) return h;

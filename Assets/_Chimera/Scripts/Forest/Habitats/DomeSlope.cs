@@ -31,14 +31,16 @@ public static class DomeSlope
         return SlopeAtS(cfg, x, z, (ax, az) => DomeHeightField.SampleHeight(cfg, ax, az));
     }
 
+    /// <summary>
+    /// Единственная линейка класса уклона (S1 §11.3): ε = <see cref="SlopeClasses.ClassEpsilon"/>.
+    /// Тело — <see cref="SlopeClasses.SlopeAt"/>: второй реализации разности нет, иначе
+    /// класс зависел бы от того, каким кодом его померили.
+    /// </summary>
     public static float SlopeAtS(DomeGenConfigSO cfg, float x, float z, Func<float, float, float> height)
     {
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
         if (height == null) throw new ArgumentNullException(nameof(height));
-        const float e = 1f;
-        float gx = (height(x + e, z) - height(x - e, z)) / (2f * e);
-        float gz = (height(x, z + e) - height(x, z - e)) / (2f * e);
-        return Mathf.Atan(Mathf.Sqrt(gx * gx + gz * gz)) * Mathf.Rad2Deg;
+        return SlopeClasses.SlopeAt(cfg, x, z, height, SlopeClasses.ClassEpsilon);
     }
 
     /// <summary>Направление downhill (куда смотрит устье).</summary>

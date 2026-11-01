@@ -49,6 +49,12 @@ public class ForestBuilder : MonoBehaviour
     [Header("Версия формулы отпечатка: 0 = v1 (старые сцены)")]
     public int fingerprintVersion = 0;
 
+    // S1: у ПОЛЯ своя версия, отдельно от версии отпечатка и `cfg.version`.
+    // 0 приходит у старой сцены (гоча нового сериализованного поля) и читается как v1;
+    // 2 — три полосы H0. A/C/B0 остаются v1 (0 в поле), `ForestPavilion` переключит шаг 8.
+    [Header("Версия поля: 0 = не настроено = v1, 2 = полосы H0 (S1)")]
+    public int worldVersion = 0;
+
     [Header("Сборка при старте (выключить — соберёшь Build() вручную)")]
     public bool buildOnAwake = true;
 
@@ -186,6 +192,12 @@ public class ForestBuilder : MonoBehaviour
     /// действующая v1 (<see cref="WorldFingerprint.Version"/>), а не версия 0.
     /// </summary>
     public int FingerprintVersion => fingerprintVersion > 0 ? fingerprintVersion : WorldFingerprint.Version;
+    /// <summary>
+    /// Версия поля S1: 0 в поле сцены = «не настроено» → v1. Трактовка нуля —
+    /// одна на проект (<see cref="DomeGenConfigSO.ResolveWorldVersion"/>), не своя.
+    /// Не путать с <see cref="FingerprintVersion"/> и <c>cfg.version</c>: у поля своя соль.
+    /// </summary>
+    public int WorldVersion => DomeGenConfigSO.ResolveWorldVersion(worldVersion);
     /// <summary>Сколько устьев нашло поле (адреса логовищ, не тела).</summary>
     public int MouthCount => world != null ? world.Mouths.Count : 0;
     /// <summary>Сколько гнёзд нашло поле (адреса логовищ, не тела).</summary>
@@ -240,6 +252,7 @@ public class ForestBuilder : MonoBehaviour
         ownedConfig = config != null ? Instantiate(config) : ScriptableObject.CreateInstance<DomeGenConfigSO>();
         ownedConfig.randomSeed = false;
         ownedConfig.mapDiameter = mapDiameter;
+        ownedConfig.worldVersion = WorldVersion;
         ownedConfig.chunkSize = ResolveChunkSize(mapDiameter);
         ownedConfig.treeCount = treeCount > 0 ? treeCount : 0;
         ownedConfig.patchyFlora = patchyFlora;
@@ -248,6 +261,19 @@ public class ForestBuilder : MonoBehaviour
         if (issues.Count > 0)
         {
             Debug.LogError($"[Forest] конфиг купола не сходится: {string.Join("; ", issues)}");
+            DestroyOwnedConfig();
+            return;
+        }
+
+        // S1 §12 (P0-6): полосы H0 объявлены ТОЛЬКО для Ø2000 при terrainQuads ≥ 48.
+        // Ниже этого разрешения самая короткая волна микро-полосы уходит под 4·meshStep
+        // и поле алиасит — молча собирать такой мир нельзя.
+        if (WorldVersion >= 2 && !SamplingContract.BandProfileSupported(mapDiameter, terrainQuads))
+        {
+            Debug.LogError(
+                $"[Forest] worldVersion={WorldVersion} при Ø{mapDiameter} и terrainQuads={terrainQuads}: " +
+                $"полосы H0 требуют Ø{SamplingContract.BandProfileDiameter} и ≥" +
+                $"{SamplingContract.BandProfileMinQuads} квадов на чанк — сборка отменена");
             DestroyOwnedConfig();
             return;
         }

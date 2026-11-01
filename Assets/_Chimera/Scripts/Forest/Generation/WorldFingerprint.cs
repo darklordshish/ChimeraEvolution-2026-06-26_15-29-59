@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -79,7 +80,56 @@ public static class WorldFingerprint
             MixString(ref h, b.LabPlan.template);
             Mix(ref h, b.LabPlan.version);
         }
+
+        // S1: поле v2 и его формы — часть мира, как разметка B-lite. Входит в отпечаток
+        // ТОЛЬКО при worldVersion > 1: правило живёт в одном месте — в MixRelief, —
+        // поэтому v1-профили сохраняют замороженный отпечаток S0 бит-в-бит.
+        h = MixRelief(h, b.WorldVersion, FormsOf(b.Relief),
+            b.Contract.walkMaxDegrees, b.Contract.wallMinDegrees, b.Contract.classEpsilon);
         return h;
+    }
+
+    /// <summary>Формы рельефа как список; null, если рельефа нет (v1-профили).</summary>
+    public static List<DomeForm> FormsOf(DomeRelief.State relief)
+    {
+        if (relief == null || relief.hills == null) return null;
+        var forms = new List<DomeForm>(relief.hills.Count);
+        foreach (var hill in relief.hills) forms.Add(DomeRelief.ToForm(hill));
+        return forms;
+    }
+
+    /// <summary>
+    /// S1 §6.2 <c>Fingerprint_IncludesRelief</c>: версия поля, границы классов и список
+    /// форм обязаны менять отпечаток. Смена порога меняет разметку мира так же, как высота.
+    /// <para>
+    /// P0-2: при <paramref name="worldVersion"/> ≤ 1 функция — ТОЖДЕСТВО. Так S0-константы
+    /// A/C/B0/Pavilion не могут сдвинуться от появления полей v2 в коде, и отдельного
+    /// поднятия <see cref="Version"/> для этого не требуется.
+    /// </para>
+    /// </summary>
+    public static ulong MixRelief(ulong h, int worldVersion, IReadOnlyList<DomeForm> forms,
+        float walkMaxDegrees, float wallMinDegrees, float classEpsilon = 0f)
+    {
+        if (worldVersion <= 1) return h;
+        Mix(ref h, worldVersion);
+        Mix(ref h, Q(walkMaxDegrees));
+        Mix(ref h, Q(wallMinDegrees));
+        if (classEpsilon > 0f) Mix(ref h, Q(classEpsilon));
+        if (forms != null)
+            foreach (var f in forms)
+                MixForm(ref h, f);
+        return h;
+    }
+
+    static void MixForm(ref ulong h, DomeForm f)
+    {
+        MixString(ref h, f.name);
+        Mix(ref h, (int)f.sign);
+        Mix(ref h, (int)f.kind);
+        Mix(ref h, Q(f.center.x)); Mix(ref h, Q(f.center.y));
+        Mix(ref h, Q(f.axis.x)); Mix(ref h, Q(f.axis.y));
+        Mix(ref h, Q(f.halfLength));
+        Mix(ref h, Q(f.diameter)); Mix(ref h, Q(f.crest)); Mix(ref h, Q(f.height));
     }
 
     public static string Hex(ulong value) => value.ToString("x16");

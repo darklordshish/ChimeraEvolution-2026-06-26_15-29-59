@@ -146,6 +146,8 @@ namespace Chimera.Tests.EditMode
             Assert.AreEqual(0, b.fingerprintVersion, $"{b.gameObject.scene.path}: fingerprintVersion (0 = «не настроено»)");
             Assert.AreEqual(WorldFingerprint.Version, b.FingerprintVersion,
                 $"{b.gameObject.scene.path}: 0 читается как действующая v1");
+            Assert.AreEqual(0, b.worldVersion, $"{b.gameObject.scene.path}: worldVersion (0 = «не настроено»)");
+            Assert.AreEqual(1, b.WorldVersion, $"{b.gameObject.scene.path}: 0 = не настроено → v1");
 
             var cfg = b.config != null ? b.config : ScriptableObject.CreateInstance<DomeGenConfigSO>();
             try
