@@ -15,6 +15,8 @@ public static class DomePalette
     public static readonly Color Bark = new Color(0.35f, 0.25f, 0.18f);
     public static readonly Color Crown = new Color(0.24f, 0.38f, 0.20f);
     public static readonly Color Owl = new Color(0.55f, 0.52f, 0.47f);
+    /// <summary>Вытоптанная земля дорожек B-lite: теплее травы, но не бетон.</summary>
+    public static readonly Color Path = new Color(0.46f, 0.42f, 0.28f);
 
     // Лаборатория-полубункер (B0.1): оболочка комплекса и его свет — один набор цвета,
     // чтобы плита, стены и портал не разъезжались по оттенку между билдерами.

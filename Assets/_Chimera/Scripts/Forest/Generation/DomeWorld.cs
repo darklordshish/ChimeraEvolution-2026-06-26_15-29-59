@@ -292,6 +292,7 @@ public class DomeWorld
             (x, z) => ForestSpace.Near(Clearings, Corridors, x, z, 20f));
         TreeColliders = flora.treeColliders;
         CoverPodsBuilt = flora.coverPods;
+        BuildSpacePaths();
         TreeColliderPositions = flora.treeColliderPositions ?? new List<Vector3>();
         CrownCover = flora.crownCover;
         if (Ravines.Count > 0)
@@ -564,6 +565,13 @@ public class DomeWorld
         navSurface = null;
     }
 
+    void BuildSpacePaths()
+    {
+        if (Corridors == null || Corridors.Count == 0) return;
+        var mesh = DomeSpacePaths.Build(Corridors, SampleGround);
+        Track(mesh);
+        Part("SpacePaths", mesh, Flat(DomePalette.Path));
+    }
     void BuildChunks(int terrainQuads)
     {
         var mat = Flat(DomePalette.Terrain);

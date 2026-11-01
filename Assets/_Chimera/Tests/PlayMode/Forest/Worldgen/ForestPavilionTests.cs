@@ -184,6 +184,7 @@ namespace Chimera.Tests.PlayMode
                 Assert.IsTrue(ForestSpace.ContainsCorridor(b.Corridors, mid.x, mid.y),
                     "середина коридора не попадает в разметку");
             }
+            Assert.IsNotNull(GameObject.Find("SpacePaths"), "дорожки коридоров не построены");
             for (int i = 0; i < b.Clearings.Count; i++)
                 Assert.GreaterOrEqual(ForestSpace.Exits(b.Clearings, b.Corridors, i), 2,
                     $"у арены {i} меньше двух выходов");
