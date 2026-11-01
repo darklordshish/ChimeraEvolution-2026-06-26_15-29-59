@@ -6,6 +6,13 @@ using UnityEngine;
 /// </summary>
 public static class WorldFingerprint
 {
+    /// <summary>
+    /// Версия формулы отпечатка. Меняется ТОЛЬКО вместе с новыми эталонными
+    /// константами (S0/S1): иначе «тот же сид — тот же мир» перестаёт что-либо
+    /// доказывать. v1 — формула, замороженная 2026-11-01 на HEAD 961f854d.
+    /// </summary>
+    public const int Version = 1;
+
     const ulong FnvOffset = 14695981039346656037UL;
     const ulong FnvPrime = 1099511628211UL;
 
@@ -13,6 +20,7 @@ public static class WorldFingerprint
     {
         if (b == null) return 0UL;
         ulong h = FnvOffset;
+        Mix(ref h, b.FingerprintVersion); // 0 в сцене → v1, а не «версия 0»
         int n = 32;
         float d = Mathf.Max(1f, b.mapDiameter);
         for (int iz = 0; iz < n; iz++)
@@ -32,8 +40,10 @@ public static class WorldFingerprint
 
         // B-lite: разметка пространства — часть мира, а не украшение. Тот же сид с другой
         // разметкой (поляны/коридоры/поды/дорожки) обязан дать другой отпечаток.
-        Mix(ref h, ForestSpace.LayoutVersion);
+        // ВЕРСИЯ РАЗМЕТКИ ВХОДИТ В ОТПЕЧАТОК ТОЛЬКО ТАМ, ГДЕ РАЗМЕТКА ЖИВЁТ: A/C/B0
+        // (patchyFlora = false) не должны «поехать» от будущего подъёма LayoutVersion.
         Mix(ref h, b.patchyFlora ? 1 : 0);
+        Mix(ref h, b.patchyFlora ? ForestSpace.LayoutVersion : 0);
         Mix(ref h, b.Clearings != null ? b.Clearings.Count : 0);
         if (b.Clearings != null)
             foreach (var c in b.Clearings)

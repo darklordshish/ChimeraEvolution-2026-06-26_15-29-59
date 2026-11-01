@@ -43,6 +43,12 @@ public class ForestBuilder : MonoBehaviour
     [Header("Рельеф: квадов на чанк (16 — превью-редколесье)")]
     public int terrainQuads = 16;
 
+    // 0 = «не настроено» = v1: новое сериализованное поле у старой сцены приходит нулём
+    // (гоча проекта), и это НЕ должно означать «версия 0». Меняется только вместе
+    // с новыми эталонными константами; см. WorldFingerprint.Version.
+    [Header("Версия формулы отпечатка: 0 = v1 (старые сцены)")]
+    public int fingerprintVersion = 0;
+
     [Header("Сборка при старте (выключить — соберёшь Build() вручную)")]
     public bool buildOnAwake = true;
 
@@ -171,6 +177,19 @@ public class ForestBuilder : MonoBehaviour
     public LabPlan LabPlan => world != null ? world.LabPlan : null;
     public float SampleGround(float x, float z) => world != null ? world.SampleGround(x, z) : 0f;
     public float RawGround(float x, float z) => world != null ? world.RawGround(x, z) : 0f;
+    /// <summary>Высота площадки станции/двора (низ плиты) в координатах поля.</summary>
+    public float PlatformY => world != null ? world.PlatformY : 0f;
+    /// <summary>Поворот площадки станции (градусы); у старого лабиринта A/C — 0.</summary>
+    public float PadYaw => world != null ? world.PadYaw : 0f;
+    /// <summary>
+    /// Версия формулы отпечатка, которой собран мир. Ноль в поле — «не настроено» →
+    /// действующая v1 (<see cref="WorldFingerprint.Version"/>), а не версия 0.
+    /// </summary>
+    public int FingerprintVersion => fingerprintVersion > 0 ? fingerprintVersion : WorldFingerprint.Version;
+    /// <summary>Сколько устьев нашло поле (адреса логовищ, не тела).</summary>
+    public int MouthCount => world != null ? world.Mouths.Count : 0;
+    /// <summary>Сколько гнёзд нашло поле (адреса логовищ, не тела).</summary>
+    public int NestCount => world != null ? world.Nests.Count : 0;
 
     /// <summary>Логова этого мира в порядке постановки: змеиные, затем совиное — ровно то, что в реестре.</summary>
     public IReadOnlyList<LairSite> Lairs => lairs;

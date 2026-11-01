@@ -95,6 +95,8 @@ public class DomeWorld
     public IReadOnlyList<ForestSpace.Corridor> Corridors { get; private set; } = new List<ForestSpace.Corridor>();
     public IReadOnlyList<ForestSpace.CoverPod> CoverPods { get; private set; } = new List<ForestSpace.CoverPod>();
     public float PlatformY => platformY;
+    /// <summary>Поворот площадки станции (градусы); у старого лабиринта A/C — 0.</summary>
+    public float PadYaw => padYaw;
     public float MapDiameter => cfg != null ? cfg.mapDiameter : 0f;
 
     DomeGenConfigSO cfg;

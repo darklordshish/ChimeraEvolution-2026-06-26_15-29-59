@@ -36,7 +36,9 @@ namespace Chimera.Tests.PlayMode
             builder = host.AddComponent<ForestBuilder>();
             builder.buildOnAwake = false;
             builder.randomSeed = false;
-            builder.seed = 4;
+            // B0 — сид 9: это профиль сцены ForestFragment (B0.2/B0.3). Сид 4 —
+            // исторический «подтопленный» вариант и в базлайн не входит.
+            builder.seed = 9;
             builder.mapDiameter = 400f;
             builder.chunkSize = 100f;
             builder.terrainQuads = 24;
@@ -59,7 +61,7 @@ namespace Chimera.Tests.PlayMode
             yield return null;
 
             Assert.AreEqual(12, b.Chunks, "Ø400/chunk 100: 4×4 минус четыре угловых чанка");
-            Assert.That(b.Trees, Is.InRange(450, 700), "бюджет деревьев Ø400/сид 4 не раздут");
+            Assert.That(b.Trees, Is.InRange(400, 600), "бюджет деревьев Ø400/сид 9 не раздут");
             Assert.IsTrue(b.BuiltRoot != null, "корень мира собран");
             Assert.IsNull(b.NestSite, "B0 без филина: совиного гнезда нет");
             Assert.AreEqual(Vector2.zero, b.Ash.pos, "B0 без ясеня: Ash остаётся default");
