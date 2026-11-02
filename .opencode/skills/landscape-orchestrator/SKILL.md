@@ -20,6 +20,10 @@ One phase at a time. **No code starts until the phase spec is reviewed and its g
 | S4 erosion/roads | general + forest-warden | bake cache + roads from base; M15/M16 |
 | S5 verification | tester | G0–G8; 20 seeds; L3 left to designer |
 
+## Unity console
+
+Every agent that touches Unity **must first read `.opencode/skills/chimera-unity/SKILL.md`**. The editor is controlled only through `unity command` / `unity status` / `unity command editor_status`; do not hand-edit scenes or assets, do not restart Unity mid-build, and do not use `--no-verify`. Headless: start the batch editor without `-quit`, confirm `editor_status=ready`, then run tests/captures.
+
 ## Agent ownership
 
 - **haskell-categorizer** — S1 math: `H0`, bands, signed forms, H/D, curvature.

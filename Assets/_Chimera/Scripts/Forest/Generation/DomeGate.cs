@@ -59,12 +59,12 @@ public static class DomeGate
             gate.transform.rotation = Quaternion.Euler(0f, spot.yawDeg, 0f);
 
             const float openingHalf = 3.4f; // проём 6.8 м
-            var post = FloraMeshKit.Slab(0.2f, 1.5f, 0.2f); // 0.4 × 3.0 × 0.4
+            var post = FloraMeshKit.Slab(0.2f, 3.0f, 0.2f); // 0.4 × 3.0 × 0.4, от земли
             track?.Add(post);
             Part(gate.transform, "GatePostL", post, postMat,
-                new Vector3(-(openingHalf + 0.2f), 1.5f, 0f));
+                new Vector3(-(openingHalf + 0.2f), 0f, 0f));
             Part(gate.transform, "GatePostR", post, postMat,
-                new Vector3(openingHalf + 0.2f, 1.5f, 0f));
+                new Vector3(openingHalf + 0.2f, 0f, 0f));
 
             var lintel = FloraMeshKit.Slab(3.2f, 0.15f, 0.2f); // 6.4 × 0.3 × 0.4
             track?.Add(lintel);
