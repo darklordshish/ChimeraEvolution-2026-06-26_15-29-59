@@ -23,9 +23,13 @@ public static class DomeRelief
         public int RidgeCount;
     }
 
+    /// <param name="masks">
+    /// S3 §3.3: проверка по ГАБАРИТУ, а не по центру. <c>null</c> — исторический путь v1
+    /// (центровые расстояния), которым собраны A/C/B0/Pavilion; v2 передаёт набор масок.
+    /// </param>
     public static State Build(DomeGenConfigSO cfg, long seed, Vector2 labCenter, Vector2 entry,
         DomeHydro.State hydro, DomeTerrace.State terrace, DomeCanyon.State canyon,
-        IReadOnlyList<DomeRavines.Ravine> ravines)
+        IReadOnlyList<DomeRavines.Ravine> ravines, DomeMasks masks = null)
     {
         var state = new State();
         if (cfg == null || hydro == null) return state;
@@ -39,18 +43,23 @@ public static class DomeRelief
                 float r = Mathf.Lerp(rin * 0.22f, rin * 0.76f,
                     SeededHash.ToFloat01(SeededHash.Hash(seed, 9952, salt)));
                 Vector2 p = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * r;
-                if (Vector2.Distance(p, entry) < 85f) continue;
-                if (Vector2.Distance(p, labCenter) < 70f) continue;
-                if (DomeHydro.SampleHydro(cfg, hydro, p.x, p.y) < hydro.lakeLevel + 0.8f) continue;
-                if (DomeCanyon.Contains(canyon, p.x, p.y)) continue;
-                if (DomeRavines.Contains(ravines, p.x, p.y, 1.5f)) continue;
-                if (terrace.valid && Vector2.Distance(p, terrace.center) < terrace.radius + 30f) continue;
-                state.hills.Add(new Hill
+                float radius = 42f + SeededHash.ToFloat01(SeededHash.Hash(seed, 9953, salt)) * 28f;
+                float height = 8f + SeededHash.ToFloat01(SeededHash.Hash(seed, 9954, salt)) * 7f;
+                var hill = new Hill { center = p, radius = radius, height = height };
+                if (masks != null)
                 {
-                    center = p,
-                    radius = 42f + SeededHash.ToFloat01(SeededHash.Hash(seed, 9953, salt)) * 28f,
-                    height = 8f + SeededHash.ToFloat01(SeededHash.Hash(seed, 9954, salt)) * 7f,
-                });
+                    if (masks.BlocksForm(ToForm(hill))) continue;
+                }
+                else
+                {
+                    if (Vector2.Distance(p, entry) < 85f) continue;
+                    if (Vector2.Distance(p, labCenter) < 70f) continue;
+                    if (DomeCanyon.Contains(canyon, p.x, p.y)) continue;
+                    if (DomeRavines.Contains(ravines, p.x, p.y, 1.5f)) continue;
+                    if (terrace.valid && Vector2.Distance(p, terrace.center) < terrace.radius + 30f) continue;
+                }
+                if (DomeHydro.SampleHydro(cfg, hydro, p.x, p.y) < hydro.lakeLevel + 0.8f) continue;
+                state.hills.Add(hill);
                 break;
             }
         }
@@ -62,14 +71,8 @@ public static class DomeRelief
             float r = Mathf.Lerp(rin * 0.25f, rin * 0.70f,
                 SeededHash.ToFloat01(SeededHash.Hash(seed, 9962, salt)));
             Vector2 p = new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * r;
-            if (Vector2.Distance(p, entry) < 110f) continue;
-            if (Vector2.Distance(p, labCenter) < 80f) continue;
-            if (DomeHydro.SampleHydro(cfg, hydro, p.x, p.y) < hydro.lakeLevel + 1.5f) continue;
-            if (DomeCanyon.Contains(canyon, p.x, p.y)) continue;
-            if (DomeRavines.Contains(ravines, p.x, p.y, 2f)) continue;
-            if (terrace.valid && Vector2.Distance(p, terrace.center) < terrace.radius + 35f) continue;
             float axisAngle = SeededHash.ToFloat01(SeededHash.Hash(seed, 9963, salt)) * Mathf.PI;
-            state.hills.Add(new Hill
+            var ridge = new Hill
             {
                 center = p,
                 ridge = true,
@@ -77,7 +80,21 @@ public static class DomeRelief
                 halfLength = 45f + SeededHash.ToFloat01(SeededHash.Hash(seed, 9964, salt)) * 25f,
                 halfWidth = 12.5f + SeededHash.ToFloat01(SeededHash.Hash(seed, 9965, salt)) * 5f,
                 height = 20f + SeededHash.ToFloat01(SeededHash.Hash(seed, 9966, salt)) * 15f,
-            });
+            };
+            if (masks != null)
+            {
+                if (masks.BlocksForm(ToForm(ridge))) continue;
+            }
+            else
+            {
+                if (Vector2.Distance(p, entry) < 110f) continue;
+                if (Vector2.Distance(p, labCenter) < 80f) continue;
+                if (DomeCanyon.Contains(canyon, p.x, p.y)) continue;
+                if (DomeRavines.Contains(ravines, p.x, p.y, 2f)) continue;
+                if (terrace.valid && Vector2.Distance(p, terrace.center) < terrace.radius + 35f) continue;
+            }
+            if (DomeHydro.SampleHydro(cfg, hydro, p.x, p.y) < hydro.lakeLevel + 1.5f) continue;
+            state.hills.Add(ridge);
             state.RidgeCount = 1;
             break;
         }

@@ -9,8 +9,8 @@ public static class DomeArenaEdge
 {
     static readonly Dictionary<string, Mesh> meshes = new Dictionary<string, Mesh>();
 
-    public static int Build(GameObject root, IReadOnlyList<ForestSpace.Clearing> clearings,
-        IReadOnlyList<ForestSpace.Corridor> corridors, System.Func<float, float, float> ground,
+    public static int Build(GameObject root, IReadOnlyList<ForestSpace.Zone> clearings,
+        IReadOnlyList<ForestSpace.Link> corridors, System.Func<float, float, float> ground,
         Material rock, Material bark, long seed)
     {
         if (root == null || clearings == null || ground == null) return 0;
@@ -18,7 +18,7 @@ public static class DomeArenaEdge
         for (int ci = 0; ci < clearings.Count; ci++)
         {
             var c = clearings[ci];
-            var local = new List<ForestSpace.Corridor>();
+            var local = new List<ForestSpace.Link>();
             if (corridors != null)
                 foreach (var cor in corridors)
                     if ((cor.a - c.center).sqrMagnitude < 1f || (cor.b - c.center).sqrMagnitude < 1f)
@@ -48,7 +48,7 @@ public static class DomeArenaEdge
         return count;
     }
 
-    static bool NearCorridor(IReadOnlyList<ForestSpace.Corridor> corridors, Vector2 p, float gap)
+    static bool NearCorridor(IReadOnlyList<ForestSpace.Link> corridors, Vector2 p, float gap)
     {
         if (corridors == null) return false;
         foreach (var c in corridors)

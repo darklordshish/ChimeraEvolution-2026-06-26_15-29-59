@@ -17,8 +17,12 @@ public static class DomeRavines
         public float rim;
     }
 
+    /// <param name="masks">
+    /// S3 §3.3: овраг проверяется ГАБАРИТОМ (капсула центр±полуось), а не центром.
+    /// <c>null</c> — исторический путь v1 (A/C/B0/Pavilion).
+    /// </param>
     public static List<Ravine> Build(DomeGenConfigSO cfg, long seed, Vector2 labCenter,
-        Vector2 entry, DomeHydro.State hydro, float rin, int count = 3)
+        Vector2 entry, DomeHydro.State hydro, float rin, int count = 3, DomeMasks masks = null)
     {
         var list = new List<Ravine>();
         if (cfg == null || hydro == null) return list;
@@ -48,6 +52,17 @@ public static class DomeRavines
                     SeededHash.ToFloat01(SeededHash.Hash(seed, 7304, salt)));
                 float depth = Mathf.Lerp(4f, 6f,
                     SeededHash.ToFloat01(SeededHash.Hash(seed, 7305, salt)));
+                float angleDeg = SeededHash.ToFloat01(SeededHash.Hash(seed, 7306, salt)) * 180f;
+                // S3 §3.3: весь габарит оврага (центр ± полуось вдоль angleDeg) не задевает
+                // станцию/вход/воду/кольцо/зоны — проверка пересечением, а не центром.
+                if (masks != null)
+                {
+                    float ar = angleDeg * Mathf.Deg2Rad;
+                    var dir = new Vector2(Mathf.Cos(ar), Mathf.Sin(ar));
+                    float half = Mathf.Max(0f, length * 0.5f - width);
+                    var foot = DomeFootprint.Capsule(p - dir * half, p + dir * half, width + 2.2f);
+                    if (masks.BlocksForm(foot)) continue;
+                }
                 // Тело оврага не должно залезать в кольцо/русло даже концом.
                 if (p.magnitude + length * 0.5f > rin - 24f) continue;
                 bool nearRiver = false;
@@ -76,7 +91,7 @@ public static class DomeRavines
                     best = new Ravine
                     {
                         center = p,
-                        angleDeg = SeededHash.ToFloat01(SeededHash.Hash(seed, 7306, salt)) * 180f,
+                        angleDeg = angleDeg,
                         length = length,
                         width = width,
                         depth = depth,

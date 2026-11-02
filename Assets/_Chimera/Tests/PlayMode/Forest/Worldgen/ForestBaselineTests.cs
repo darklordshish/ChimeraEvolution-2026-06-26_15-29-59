@@ -190,9 +190,9 @@ namespace Chimera.Tests.PlayMode
         static ulong SpaceHash(ForestBuilder b)
         {
             ulong h = 14695981039346656037UL;
-            foreach (var c in b.Clearings)
+            foreach (var c in b.Zones)
             { MixQ(ref h, c.center.x); MixQ(ref h, c.center.y); MixQ(ref h, c.radius); }
-            foreach (var c in b.Corridors)
+            foreach (var c in b.Links)
             {
                 MixQ(ref h, c.a.x); MixQ(ref h, c.a.y);
                 MixQ(ref h, c.b.x); MixQ(ref h, c.b.y);
@@ -282,8 +282,8 @@ namespace Chimera.Tests.PlayMode
             AssertVec(b.Ash.pos, new Vector2(-385.4167f, -93.75f), "A: ясень");
             Assert.AreEqual(-0.91421f, b.Ash.groundY, 1e-4f, "A: высота ясеня");
 
-            Assert.AreEqual(0, b.Clearings.Count, "A: разметка выключена — полян нет");
-            Assert.AreEqual(0, b.Corridors.Count, "A: коридоров нет");
+            Assert.AreEqual(0, b.Zones.Count, "A: разметка выключена — полян нет");
+            Assert.AreEqual(0, b.Links.Count, "A: коридоров нет");
             Assert.AreEqual(0, b.CoverPods.Count, "A: подов нет");
             Assert.AreEqual(SpaceHashEmpty, SpaceHash(b), "A: пустая разметка");
             Assert.AreEqual(AddressHashA, AddressHash(b), $"{CapturedAt}: адреса A изменились");
@@ -351,8 +351,8 @@ namespace Chimera.Tests.PlayMode
             AssertVec(b.Ash.pos, new Vector2(43.75f, -39.5833f), "B0: ясень");
             Assert.AreEqual(-0.30601f, b.Ash.groundY, 1e-4f, "B0: высота ясеня");
 
-            Assert.AreEqual(0, b.Clearings.Count, "B0: разметка выключена — полян нет");
-            Assert.AreEqual(0, b.Corridors.Count, "B0: коридоров нет");
+            Assert.AreEqual(0, b.Zones.Count, "B0: разметка выключена — полян нет");
+            Assert.AreEqual(0, b.Links.Count, "B0: коридоров нет");
             Assert.AreEqual(0, b.CoverPods.Count, "B0: подов нет");
             Assert.AreEqual(SpaceHashEmpty, SpaceHash(b), "B0: пустая разметка");
             Assert.AreEqual(AddressHashB0, AddressHash(b), $"{CapturedAt}: адреса B0 изменились");
@@ -424,8 +424,8 @@ namespace Chimera.Tests.PlayMode
             AssertVec(b.Ash.pos, new Vector2(10.4167f, -364.5833f), "Pavilion: ясень");
             Assert.AreEqual(0.58188f, b.Ash.groundY, 1e-4f, "Pavilion: высота ясеня");
 
-            Assert.AreEqual(5, b.Clearings.Count, "Pavilion: открытые зоны");
-            Assert.AreEqual(6, b.Corridors.Count, "Pavilion: коридоры");
+            Assert.AreEqual(5, b.Zones.Count, "Pavilion: открытые зоны");
+            Assert.AreEqual(6, b.Links.Count, "Pavilion: коридоры");
             Assert.AreEqual(24, b.CoverPods.Count, "Pavilion: поды");
             Assert.AreEqual(SpaceHashPavilion, SpaceHash(b), $"{CapturedAt}: координаты разметки Pavilion изменились");
             Assert.AreEqual(AddressHashPavilion, AddressHash(b), $"{CapturedAt}: адреса Pavilion изменились");

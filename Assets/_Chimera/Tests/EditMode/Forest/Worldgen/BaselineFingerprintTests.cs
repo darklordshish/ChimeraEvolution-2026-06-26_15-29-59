@@ -144,12 +144,21 @@ namespace Chimera.Tests.EditMode
             }
         }
 
-        /// <summary>Разметка B-lite входит в отпечаток мира — её версия тоже заморожена.</summary>
+        /// <summary>
+        /// S3: действующая разметка — открытые зоны (v2), историческая B-lite — v1.
+        /// Отпечатки A/C/B0/Pavilion берут ИМЕННО замороженную 1, поэтому подъём
+        /// LayoutVersion не может их сдвинуть (это проверяют высотные/фингерпринт-тесты).
+        /// </summary>
         [Test]
-        public void SpaceLayoutVersion_IsV1()
+        public void SpaceLayoutVersion_S3IsTwo_LegacyIsOne()
         {
-            Assert.AreEqual(1, ForestSpace.LayoutVersion,
-                $"{CapturedAt}: версия разметки пространства изменилась — отпечатки A/C/B0/Pavilion сдвинутся");
+            Assert.AreEqual(1, ForestSpace.LegacyLayoutVersion,
+                $"{CapturedAt}: замороженная версия B-lite изменилась");
+            Assert.AreEqual(2, ForestSpace.LayoutVersion,
+                "S3: разметка открытых зон — версия 2");
+            Assert.AreEqual(1, ForestSpace.LayoutFor(1), "worldVersion 1 → историческая B-lite");
+            Assert.AreEqual(1, ForestSpace.LayoutFor(0), "0 читается как v1");
+            Assert.AreEqual(2, ForestSpace.LayoutFor(2), "worldVersion 2 → открытые зоны");
         }
 
         /// <summary>

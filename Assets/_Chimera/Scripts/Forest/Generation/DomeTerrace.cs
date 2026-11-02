@@ -61,8 +61,12 @@ public static class DomeTerrace
     /// терраса читается уровнем рельефа, а не случайным бугром.
     /// Если годного нет — valid=false (слой молчит, мир не ломается).
     /// </summary>
+    /// <param name="masks">
+    /// S3 §3.3: пятно террасы (ровная часть + борт) проверяется габаритом против
+    /// станции/входа/воды/кольца. <c>null</c> — исторический путь v1 (A/C/B0/Pavilion).
+    /// </param>
     public static State Build(DomeGenConfigSO cfg, long seed, Vector2 labCenter,
-        Vector2 entry, DomeHydro.State hydro, float rin)
+        Vector2 entry, DomeHydro.State hydro, float rin, DomeMasks masks = null)
     {
         State none = default;
         if (cfg == null || hydro == null) return none;
@@ -107,7 +111,9 @@ public static class DomeTerrace
                     if (x * x + z * z > maxCenter * maxCenter) continue;
                     var c = new Vector2(x, z);
 
-                    // Защищённые зоны считаются по ПОЛНОМУ пятну (ровная часть + борт).
+                    // S3 §3.3: пересечение габаритов, а не расстояние до центров.
+                    if (masks != null && masks.BlocksForm(DomeFootprint.Circle(c, reach))) continue;
+                    // Прежние центровые запасы остаются для v1 и как грубый запас для v2.
                     if (Vector2.Distance(c, entry) < reach + EntryKeep) continue;
                     if (Vector2.Distance(c, labCenter) < reach + LabKeep) continue;
 

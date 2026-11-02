@@ -12,7 +12,7 @@ public static class DomeHillMesh
     public static Mesh Build(DomeHill.State s, Func<float, float, float> ground,
         int res = 32, float holeRadius = 6f, float halfX = 0f, float halfZ = 0f,
         Func<float, float, bool> cut = null, Func<float, float, float> cutGround = null,
-        Func<float, float, float> cutWeight = null)
+        Func<float, float, float> cutWeight = null, bool hillInGround = false)
     {
         if (!s.valid || ground == null) return null;
         res = Mathf.Clamp(res, 8, 64);
@@ -32,10 +32,10 @@ public static class DomeHillMesh
                     InHole(s, x0, z1, holeRadius) || InHole(s, x1, z1, holeRadius))
                     continue;
                 int b = verts.Count;
-                verts.Add(P(ground, s, x0, z0, cut, cutGround, cutWeight));
-                verts.Add(P(ground, s, x1, z0, cut, cutGround, cutWeight));
-                verts.Add(P(ground, s, x0, z1, cut, cutGround, cutWeight));
-                verts.Add(P(ground, s, x1, z1, cut, cutGround, cutWeight));
+                verts.Add(P(ground, s, x0, z0, cut, cutGround, cutWeight, hillInGround));
+                verts.Add(P(ground, s, x1, z0, cut, cutGround, cutWeight, hillInGround));
+                verts.Add(P(ground, s, x0, z1, cut, cutGround, cutWeight, hillInGround));
+                verts.Add(P(ground, s, x1, z1, cut, cutGround, cutWeight, hillInGround));
                 tris.Add(b); tris.Add(b + 2); tris.Add(b + 1);
                 tris.Add(b + 1); tris.Add(b + 2); tris.Add(b + 3);
             }
@@ -50,9 +50,10 @@ public static class DomeHillMesh
 
     static Vector3 P(Func<float, float, float> ground, DomeHill.State s, float x, float z,
         Func<float, float, bool> cut, Func<float, float, float> cutGround,
-        Func<float, float, float> cutWeight)
+        Func<float, float, float> cutWeight, bool hillInGround)
     {
-        float hillY = ground(x, z) + DomeHill.Apply(0f, s, x, z) + 0.15f;
+        float hillY = ground(x, z) +
+            (hillInGround ? 0f : DomeHill.Apply(0f, s, x, z)) + 0.15f;
         if (cutWeight != null && cutGround != null)
         {
             float w = Mathf.Clamp01(cutWeight(x, z));

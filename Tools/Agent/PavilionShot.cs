@@ -116,9 +116,9 @@ public static class PavilionShot
     {
         var problem = Attach();
         if (problem != null) return problem;
-        if (builder.Clearings == null || builder.Clearings.Count == 0)
+        if (builder.Zones == null || builder.Zones.Count == 0)
             return "no clearings";
-        var c = builder.Clearings[0];
+        var c = builder.Zones[0];
         float h = builder.SampleGround(c.center.x, c.center.y);
         var go = GameObject.Find("ArenaCam");
         if (go == null) go = new GameObject("ArenaCam");
@@ -140,9 +140,9 @@ public static class PavilionShot
     {
         var problem = Attach();
         if (problem != null) return problem;
-        if (builder.Clearings == null || builder.Clearings.Count == 0)
+        if (builder.Zones == null || builder.Zones.Count == 0)
             return "no clearings";
-        var c = builder.Clearings[0];
+        var c = builder.Zones[0];
         float h = builder.SampleGround(c.center.x, c.center.y);
         var go = GameObject.Find("ArenaCam");
         if (go == null) go = new GameObject("ArenaCam");
@@ -157,8 +157,8 @@ public static class PavilionShot
         camera.clearFlags = CameraClearFlags.Skybox;
         go.transform.position = new Vector3(c.center.x, h + 180f, c.center.y);
         go.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
-        return $"arena {c.center} r={c.radius} clearings={builder.Clearings.Count} " +
-               $"corridors={builder.Corridors.Count} pods={builder.CoverPodsBuilt}";
+        return $"arena {c.center} r={c.radius} clearings={builder.Zones.Count} " +
+               $"corridors={builder.Links.Count} pods={builder.CoverPodsBuilt}";
     }
     public static string Shot(string mode)
     {

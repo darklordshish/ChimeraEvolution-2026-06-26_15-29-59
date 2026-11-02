@@ -15,6 +15,12 @@ public static class DomeHill
         public float blend;
         public Vector2 notch;
         public float notchRadius;
+        /// <summary>
+        /// Дополнительные вырезы (S3 §3.2): рампа, расщелина, подход. Маска станции
+        /// под плитой намеренно НЕ режет холм — плато поднимает и пятно, а площадка
+        /// последним blend'ом выравнивает плиту. Режутся только проходы.
+        /// </summary>
+        public System.Func<float, float, bool> hole;
         public bool valid;
     }
 
@@ -30,7 +36,8 @@ public static class DomeHill
     const float BlendMax = 18f;
 
     public static State Build(DomeGenConfigSO cfg, long seed, Vector2 labCenter,
-        Vector2 notch = default, float notchRadius = 0f)
+        Vector2 notch = default, float notchRadius = 0f,
+        System.Func<float, float, bool> hole = null)
     {
         var none = default(State);
         if (cfg == null) return none;
@@ -45,6 +52,7 @@ public static class DomeHill
             blend = b,
             notch = notch,
             notchRadius = Mathf.Max(0f, notchRadius),
+            hole = hole,
             valid = true,
         };
     }
@@ -56,6 +64,7 @@ public static class DomeHill
     public static float Apply(float raw, State s, float x, float z)
     {
         if (!s.valid) return raw;
+        if (s.hole != null && s.hole(x, z)) return raw;
         if (s.notchRadius > 0f)
         {
             float nx = x - s.notch.x;

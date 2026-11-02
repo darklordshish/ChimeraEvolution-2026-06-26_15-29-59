@@ -15,9 +15,9 @@ public static class DomeSpacePaths
     /// <summary>Малый подъём: лента садится на нарисованный чанк, а не на аналитику.</summary>
     const float Lift = 0.12f;
 
-    public static Mesh Build(IReadOnlyList<ForestSpace.Corridor> corridors,
+    public static Mesh Build(IReadOnlyList<ForestSpace.Link> corridors,
         Func<float, float, float> ground, float width = 6f,
-        IReadOnlyList<ForestSpace.Clearing> clearings = null,
+        IReadOnlyList<ForestSpace.Zone> zones = null,
         Func<float, float, bool> exclude = null,
         Func<float, float, float> surface = null)
     {
@@ -42,7 +42,7 @@ public static class DomeSpacePaths
                 Vector2 p1 = Vector2.Lerp(cor.a, cor.b, (i + 1) / (float)steps);
                 // Ряд режется, если попал в арену, пятно станции или у входа:
                 // так дорожка не идёт через центр боя и не ложится на бункер.
-                if (!RowActive(p0, clearings, exclude) || !RowActive(p1, clearings, exclude))
+                if (!RowActive(p0, zones, exclude) || !RowActive(p1, zones, exclude))
                     continue;
                 int baseIndex = verts.Count;
                 for (int r = 0; r < 2; r++)
@@ -76,10 +76,10 @@ public static class DomeSpacePaths
         return mesh;
     }
 
-    static bool RowActive(Vector2 p, IReadOnlyList<ForestSpace.Clearing> clearings,
+    static bool RowActive(Vector2 p, IReadOnlyList<ForestSpace.Zone> zones,
         Func<float, float, bool> exclude)
     {
-        if (ForestSpace.Contains(clearings, p.x, p.y, 0f)) return false;
+        if (ForestSpace.Contains(zones, p.x, p.y, 0f)) return false;
         if (exclude != null && exclude(p.x, p.y)) return false;
         return true;
     }

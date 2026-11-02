@@ -81,6 +81,19 @@ public class DomeGenConfigSO : ScriptableObject
     [Header("Вода (s10b): пока ЗАГЛУШКА числом, как в s8")]
     public float waterLevel = -1.5f;
 
+    // S3 (2026-11-01): P5-lite — СВОЙ слой формы, а не часть B-lite. Пока сцена
+    // `ForestPavilion` не получила флаг явно (это S1 шаг 8), v1 обязан остаться
+    // бит-в-бит: там действует историческая связка `patchyFlora → рельеф`.
+    [Header("Рельеф формы (S3): отдельный слой; 0 у старой сцены = историческая связка с patchyFlora")]
+    public bool buildRelief = false;
+
+    /// <summary>
+    /// Включён ли слой рельефа. Для v1 — история (patchyFlora), чтобы отпечаток
+    /// Pavilion не поехал до S1 шага 8; для v2 — только явный <see cref="buildRelief"/>.
+    /// Двух источников нет: решение в одном свойстве.
+    /// </summary>
+    public bool ReliefEnabled => buildRelief || (WorldVersion <= 1 && patchyFlora);
+
     [Header("Плотности (s10d): цели выводятся формулой, не числом")]
     public float treeDensityPerM2 = 0.03f;
     /// <summary>0 = старые 700; иначе целевое число деревьев на стенд.</summary>

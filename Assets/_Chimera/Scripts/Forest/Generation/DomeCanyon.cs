@@ -71,8 +71,13 @@ public static class DomeCanyon
     /// вызывающий обязан трактовать это как «каньона нет», а не как ошибку.
     /// </para>
     /// </summary>
+    /// <param name="masks">
+    /// S3 §3.3: тело каньона (полилиния + полуширина) проверяется габаритом против
+    /// станции/входа/воды/кольца. <c>null</c> — исторический путь v1 (A/C/B0).
+    /// </param>
     public static State Build(DomeGenConfigSO cfg, long seed, DomeHydro.State hydro,
-        Vector2 entry, Vector2 labCenter, float rin, DomeTerrace.State terrace = default)
+        Vector2 entry, Vector2 labCenter, float rin, DomeTerrace.State terrace = default,
+        DomeMasks masks = null)
     {
         var none = new State { valid = false };
         if (cfg == null || hydro == null) return none;
@@ -150,6 +155,10 @@ public static class DomeCanyon
             float drop = DomeHydro.SampleHydro(cfg, hydro, lip.x, lip.y)
                        - DomeHydro.SampleHydro(cfg, hydro, mouth.x, mouth.y);
             if (!anchored && drop < 0f) continue;
+
+            if (masks != null && masks.BlocksForm(DomeFootprint.Capsule(
+                    axis[0], axis[axis.Count - 1], halfWidth + 12f)))
+                continue;
 
             float poolOffset = Mathf.Min(poolRadius * 1.4f, length * 0.3f);
             Vector2 pool = PointAtDistance(axis, length - poolOffset);

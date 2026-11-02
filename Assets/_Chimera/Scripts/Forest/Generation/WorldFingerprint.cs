@@ -44,17 +44,23 @@ public static class WorldFingerprint
         // ВЕРСИЯ РАЗМЕТКИ ВХОДИТ В ОТПЕЧАТОК ТОЛЬКО ТАМ, ГДЕ РАЗМЕТКА ЖИВЁТ: A/C/B0
         // (patchyFlora = false) не должны «поехать» от будущего подъёма LayoutVersion.
         Mix(ref h, b.patchyFlora ? 1 : 0);
-        Mix(ref h, b.patchyFlora ? ForestSpace.LayoutVersion : 0);
-        Mix(ref h, b.Clearings != null ? b.Clearings.Count : 0);
-        if (b.Clearings != null)
-            foreach (var c in b.Clearings)
+        // Версия разметки: v1 — замороженная B-lite, v2 — открытые зоны S3. Для A/C/B0
+        // (разметка выключена) версия не входит вовсе, поэтому старые отпечатки целы.
+        int layout = b.patchyFlora ? ForestSpace.LayoutFor(b.WorldVersion) : 0;
+        Mix(ref h, layout);
+        Mix(ref h, b.Zones != null ? b.Zones.Count : 0);
+        if (b.Zones != null)
+            foreach (var c in b.Zones)
             {
                 Mix(ref h, Q(c.center.x)); Mix(ref h, Q(c.center.y));
                 Mix(ref h, Q(c.radius));
+                // Поворот зоны — часть v2-разметки; в v1 его нет, и отпечаток B-lite
+                // обязан остаться побитово прежним.
+                if (layout >= ForestSpace.LayoutVersion) Mix(ref h, Q(c.yawDeg));
             }
-        Mix(ref h, b.Corridors != null ? b.Corridors.Count : 0);
-        if (b.Corridors != null)
-            foreach (var c in b.Corridors)
+        Mix(ref h, b.Links != null ? b.Links.Count : 0);
+        if (b.Links != null)
+            foreach (var c in b.Links)
             {
                 Mix(ref h, Q(c.a.x)); Mix(ref h, Q(c.a.y));
                 Mix(ref h, Q(c.b.x)); Mix(ref h, Q(c.b.y));

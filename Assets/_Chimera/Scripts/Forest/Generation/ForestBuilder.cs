@@ -32,6 +32,10 @@ public class ForestBuilder : MonoBehaviour
     public int treeCount = 0;
     [Tooltip("Пятна леса/поляны; A/C по умолчанию выключены")]
     public bool patchyFlora = false;
+    // S3: слой рельефа отдельно от разметки. 0 у старой сцены — историческая связка
+    // (patchyFlora) сохраняет Pavilion v1 бит-в-бит; v2 включает только явный флаг.
+    [Tooltip("Рельеф формы (P5-lite) отдельным флагом; A/C/B0 — выключено")]
+    public bool buildRelief = false;
 
     // Сетка чанков начинается в −D/2 и шагает на chunkSize, поэтому chunkSize ОБЯЗАН
     // делить диаметр: при Ø400 и 250 внутри чаши остаётся дыра, а чанк торчит за кольцо.
@@ -152,8 +156,15 @@ public class ForestBuilder : MonoBehaviour
     public DomeRelief.State Relief => world != null ? world.Relief : null;
     public IReadOnlyList<Vector3> TreeColliderPositions => world != null ? world.TreeColliderPositions : new List<Vector3>();
     public float CrownCover => world != null ? world.CrownCover : 0f;
-    public IReadOnlyList<ForestSpace.Clearing> Clearings => world != null ? world.Clearings : new List<ForestSpace.Clearing>();
-    public IReadOnlyList<ForestSpace.Corridor> Corridors => world != null ? world.Corridors : new List<ForestSpace.Corridor>();
+    /// <summary>Открытые зоны S3 (прогалины экосистемы, не арены).</summary>
+    public IReadOnlyList<ForestSpace.Zone> Zones => world != null ? world.Zones : new List<ForestSpace.Zone>();
+    /// <summary>Связи 16 м между зонами (лесные проходы).</summary>
+    public IReadOnlyList<ForestSpace.Link> Links => world != null ? world.Links : new List<ForestSpace.Link>();
+    public IReadOnlyList<ForestSpace.Zone> Commons => world != null ? world.Commons : new List<ForestSpace.Zone>();
+    public IReadOnlyList<ForestSpace.Zone> Waterholes => world != null ? world.Waterholes : new List<ForestSpace.Zone>();
+    public IReadOnlyList<DomeShell.Spot> Shells => world != null ? world.Shells : new List<DomeShell.Spot>();
+    public IReadOnlyList<DomeGate.Spot> Gates => world != null ? world.Gates : new List<DomeGate.Spot>();
+    public ForestPoiRegistry Pois => world != null ? world.Pois : new ForestPoiRegistry();
     public IReadOnlyList<ForestSpace.CoverPod> CoverPods => world != null ? world.CoverPods : new List<ForestSpace.CoverPod>();
     public int Ravines => world != null ? world.Ravines.Count : 0;
     public IReadOnlyList<DomeRavines.Ravine> RavineList =>
@@ -183,6 +194,16 @@ public class ForestBuilder : MonoBehaviour
     public LabPlan LabPlan => world != null ? world.LabPlan : null;
     public float SampleGround(float x, float z) => world != null ? world.SampleGround(x, z) : 0f;
     public float RawGround(float x, float z) => world != null ? world.RawGround(x, z) : 0f;
+    /// <summary>Поле + скальное кольцо: одна функция для устьев/гнёзд/ясеня (S3 §7).</summary>
+    public float RingGround(float x, float z) => world != null ? world.RingGround(x, z) : 0f;
+    /// <summary>S3: форма без площадки — вход POI и эрозии (S4).</summary>
+    public float ShapeGround(float x, float z) => world != null ? world.ShapeGround(x, z) : 0f;
+    /// <summary>S3: <c>Shape0 = PreErosion</c>.</summary>
+    public float Shape0(float x, float z) => world != null ? world.Shape0(x, z) : 0f;
+    /// <summary>Единственный пол мира (порядок слоёв) — для детекторов.</summary>
+    public DomeTerrain Terrain => world != null ? world.Terrain : null;
+    /// <summary>Маски габаритов S3 (null у v1).</summary>
+    public DomeMasks Masks => world != null ? world.Masks : null;
     /// <summary>Высота площадки станции/двора (низ плиты) в координатах поля.</summary>
     public float PlatformY => world != null ? world.PlatformY : 0f;
     /// <summary>Поворот площадки станции (градусы); у старого лабиринта A/C — 0.</summary>
@@ -256,6 +277,7 @@ public class ForestBuilder : MonoBehaviour
         ownedConfig.chunkSize = ResolveChunkSize(mapDiameter);
         ownedConfig.treeCount = treeCount > 0 ? treeCount : 0;
         ownedConfig.patchyFlora = patchyFlora;
+        ownedConfig.buildRelief = buildRelief;
 
         var issues = DomeGenRules.CheckConfig(ownedConfig);
         if (issues.Count > 0)

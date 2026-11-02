@@ -154,14 +154,14 @@ namespace Chimera.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator Clearings_ArePresent_AndDry()
+        public IEnumerator Zones_ArePresent_AndDry()
         {
             var b = Build(true, true);
             yield return null;
 
-            Assert.GreaterOrEqual(b.Clearings.Count, 4, "полян-арен меньше четырёх");
-            Assert.LessOrEqual(b.Clearings.Count, 6, "полян-арен больше шести");
-            foreach (var c in b.Clearings)
+            Assert.GreaterOrEqual(b.Zones.Count, 4, "полян-арен меньше четырёх");
+            Assert.LessOrEqual(b.Zones.Count, 6, "полян-арен больше шести");
+            foreach (var c in b.Zones)
             {
                 float h = b.SampleGround(c.center.x, c.center.y);
                 Assert.Greater(h, b.Hydro.lakeLevel + 0.5f, "поляна в воде");
@@ -169,24 +169,24 @@ namespace Chimera.Tests.PlayMode
         }
 
         [UnityTest]
-        public IEnumerator Corridors_ConnectClearings_AndAreDry()
+        public IEnumerator Links_ConnectZones_AndAreDry()
         {
             var b = Build(true, true);
             yield return null;
 
-            Assert.GreaterOrEqual(b.Corridors.Count, b.Clearings.Count, "коридоров меньше, чем полян: у арены не два выхода");
-            foreach (var c in b.Corridors)
+            Assert.GreaterOrEqual(b.Links.Count, b.Zones.Count, "коридоров меньше, чем полян: у арены не два выхода");
+            foreach (var c in b.Links)
             {
                 Assert.GreaterOrEqual(c.width, 16f, "коридор уже 16 м");
                 Vector2 mid = (c.a + c.b) * 0.5f;
                 Assert.Greater(b.SampleGround(mid.x, mid.y), b.Hydro.lakeLevel + 0.5f,
                     "коридор в воде");
-                Assert.IsTrue(ForestSpace.ContainsCorridor(b.Corridors, mid.x, mid.y),
+                Assert.IsTrue(ForestSpace.ContainsLink(b.Links, mid.x, mid.y),
                     "середина коридора не попадает в разметку");
             }
             Assert.IsNotNull(GameObject.Find("SpacePaths"), "дорожки коридоров не построены");
-            for (int i = 0; i < b.Clearings.Count; i++)
-                Assert.GreaterOrEqual(ForestSpace.Exits(b.Clearings, b.Corridors, i), 2,
+            for (int i = 0; i < b.Zones.Count; i++)
+                Assert.GreaterOrEqual(ForestSpace.Exits(b.Zones, b.Links, i), 2,
                     $"у арены {i} меньше двух выходов");
         }
         [UnityTest]
@@ -219,7 +219,7 @@ namespace Chimera.Tests.PlayMode
             yield return null;
 
             Assert.Greater(b.TreeColliderPositions.Count, 0, "нет стволов-коллайдеров");
-            foreach (var c in b.Clearings)
+            foreach (var c in b.Zones)
             {
                 float h = b.SampleGround(c.center.x, c.center.y);
                 Vector3 center = new Vector3(c.center.x, h + 1.6f, c.center.y);
@@ -235,7 +235,7 @@ namespace Chimera.Tests.PlayMode
                 "ствол не рвёт луч");
         }
         [UnityTest]
-        public IEnumerator ArenaEdges_AreBuilt()
+        public IEnumerator Legacy_ArenaEdges_AreBuilt_OnV1()
         {
             var b = Build(true, true);
             yield return null;
