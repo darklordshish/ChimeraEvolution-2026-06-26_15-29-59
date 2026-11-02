@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -19,7 +20,7 @@ public static class DomeChunkMesh
 
     /// <summary>Тот же чанк, но высоты — произвольным семплером (гидрология с вырезом).</summary>
     public static Mesh BuildChunkMesh(DomeGenConfigSO cfg, int cx, int cz, int quadsPerSide,
-        Func<float, float, float> sampler)
+        Func<float, float, float> sampler, bool slopeBands = false, long seed = 0)
     {
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
         if (sampler == null) throw new ArgumentNullException(nameof(sampler));
@@ -49,6 +50,24 @@ public static class DomeChunkMesh
         var mesh = new Mesh { name = $"DomeChunk_{cx}_{cz}" };
         mesh.vertices = verts;
         mesh.triangles = tris;
+        if (slopeBands)
+        {
+            // S2 §4: 5 полос склона; шум ±2° уже в DomeSlopeBands.
+            var bands = new List<int>[5];
+            for (int b = 0; b < bands.Length; b++) bands[b] = new List<int>();
+            for (int i = 0; i < tris.Length; i += 3)
+            {
+                Vector3 c = (verts[tris[i]] + verts[tris[i + 1]] + verts[tris[i + 2]]) / 3f;
+                float slope = SlopeClasses.SlopeAt(cfg, c.x, c.z, sampler,
+                    SlopeClasses.ClassEpsilon);
+                int band = DomeSlopeBands.Index(slope, c.x, c.z, seed);
+                bands[band].Add(tris[i]);
+                bands[band].Add(tris[i + 1]);
+                bands[band].Add(tris[i + 2]);
+            }
+            mesh.subMeshCount = 5;
+            for (int b = 0; b < 5; b++) mesh.SetTriangles(bands[b], b, false);
+        }
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
         return mesh;

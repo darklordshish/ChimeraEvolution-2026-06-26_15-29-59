@@ -154,6 +154,13 @@ public class ForestBuilder : MonoBehaviour
     public int ArenaEdges => world != null ? world.ArenaEdges : 0;
     public int ReliefHills => world != null ? world.ReliefHills : 0;
     public DomeRelief.State Relief => world != null ? world.Relief : null;
+    /// <summary>S2: композиция v2 (null у v1).</summary>
+    public DomeComposition.State Composition => world != null ? world.Composition : null;
+    /// <summary>Формы композиции для отпечатка; пусто — берётся старая ветка Relief.</summary>
+    public IReadOnlyList<DomeForm> CompositionForms =>
+        world != null && world.Composition != null
+            ? world.Composition.forms
+            : (IReadOnlyList<DomeForm>)null;
     public IReadOnlyList<Vector3> TreeColliderPositions => world != null ? world.TreeColliderPositions : new List<Vector3>();
     public float CrownCover => world != null ? world.CrownCover : 0f;
     /// <summary>Открытые зоны S3 (прогалины экосистемы, не арены).</summary>

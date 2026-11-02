@@ -90,7 +90,9 @@ public static class WorldFingerprint
         // S1: поле v2 и его формы — часть мира, как разметка B-lite. Входит в отпечаток
         // ТОЛЬКО при worldVersion > 1: правило живёт в одном месте — в MixRelief, —
         // поэтому v1-профили сохраняют замороженный отпечаток S0 бит-в-бит.
-        h = MixRelief(h, b.WorldVersion, FormsOf(b.Relief),
+        // v2: формы S2; v1: старый P5-lite (FormsOf). Для v1 MixRelief — тождество.
+        h = MixRelief(h, b.WorldVersion,
+            b.CompositionForms != null ? b.CompositionForms : FormsOf(b.Relief),
             b.Contract.walkMaxDegrees, b.Contract.wallMinDegrees, b.Contract.classEpsilon);
         return h;
     }

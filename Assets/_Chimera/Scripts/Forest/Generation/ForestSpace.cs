@@ -1,32 +1,33 @@
-using System;
+﻿using System;
+using System.Text;
 using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// Геометрия пространства S3 §4.3: где лес расступается (<see cref="Zone"/>),
-/// где проходят связи шириной 16 м (<see cref="Link"/>) и где стоят поды-укрытия.
-/// Это НЕ арены и НЕ бой: зона — прогалина экосистемы, связь — лесной проход.
+/// Р“РµРѕРјРµС‚СЂРёСЏ РїСЂРѕСЃС‚СЂР°РЅСЃС‚РІР° S3 В§4.3: РіРґРµ Р»РµСЃ СЂР°СЃСЃС‚СѓРїР°РµС‚СЃСЏ (<see cref="Zone"/>),
+/// РіРґРµ РїСЂРѕС…РѕРґСЏС‚ СЃРІСЏР·Рё С€РёСЂРёРЅРѕР№ 16 Рј (<see cref="Link"/>) Рё РіРґРµ СЃС‚РѕСЏС‚ РїРѕРґС‹-СѓРєСЂС‹С‚РёСЏ.
+/// Р­С‚Рѕ РќР• Р°СЂРµРЅС‹ Рё РќР• Р±РѕР№: Р·РѕРЅР° вЂ” РїСЂРѕРіР°Р»РёРЅР° СЌРєРѕСЃРёСЃС‚РµРјС‹, СЃРІСЏР·СЊ вЂ” Р»РµСЃРЅРѕР№ РїСЂРѕС…РѕРґ.
 /// <para>
-/// Две ветки:
+/// Р”РІРµ РІРµС‚РєРё:
 /// <list type="bullet">
-/// <item><b>v1</b> — историческая B-lite (R30, одна точка 22°): A/C/B0/Pavilion
-/// обязаны остаться бит-в-бит, поэтому старые тела лежат в <c>…Legacy</c>.</item>
-/// <item><b>v2</b> — S3: 5 зон R24–34 на <c>ShapeGround</c>, пол ≤5° в R+20,
-/// &gt;35° — 0, сухо &gt; lakeLevel+1, кольцо/станция/вода — масками по габариту.</item>
+/// <item><b>v1</b> вЂ” РёСЃС‚РѕСЂРёС‡РµСЃРєР°СЏ B-lite (R30, РѕРґРЅР° С‚РѕС‡РєР° 22В°): A/C/B0/Pavilion
+/// РѕР±СЏР·Р°РЅС‹ РѕСЃС‚Р°С‚СЊСЃСЏ Р±РёС‚-РІ-Р±РёС‚, РїРѕСЌС‚РѕРјСѓ СЃС‚Р°СЂС‹Рµ С‚РµР»Р° Р»РµР¶Р°С‚ РІ <c>вЂ¦Legacy</c>.</item>
+/// <item><b>v2</b> вЂ” S3: 5 Р·РѕРЅ R24вЂ“34 РЅР° <c>ShapeGround</c>, РїРѕР» в‰¤5В° РІ R+20,
+/// &gt;35В° вЂ” 0, СЃСѓС…Рѕ &gt; lakeLevel+1, РєРѕР»СЊС†Рѕ/СЃС‚Р°РЅС†РёСЏ/РІРѕРґР° вЂ” РјР°СЃРєР°РјРё РїРѕ РіР°Р±Р°СЂРёС‚Сѓ.</item>
 /// </list>
 /// </para>
 /// </summary>
 public static class ForestSpace
 {
     /// <summary>
-    /// Версия исторической разметки B-lite (A/C/B0/Pavilion v1). Заморожена: именно
-    /// она входит в отпечатки v1, поэтому новое число не может её подменить.
+    /// Р’РµСЂСЃРёСЏ РёСЃС‚РѕСЂРёС‡РµСЃРєРѕР№ СЂР°Р·РјРµС‚РєРё B-lite (A/C/B0/Pavilion v1). Р—Р°РјРѕСЂРѕР¶РµРЅР°: РёРјРµРЅРЅРѕ
+    /// РѕРЅР° РІС…РѕРґРёС‚ РІ РѕС‚РїРµС‡Р°С‚РєРё v1, РїРѕСЌС‚РѕРјСѓ РЅРѕРІРѕРµ С‡РёСЃР»Рѕ РЅРµ РјРѕР¶РµС‚ РµС‘ РїРѕРґРјРµРЅРёС‚СЊ.
     /// </summary>
     public const int LegacyLayoutVersion = 1;
-    /// <summary>S3: открытые зоны, связи и POI вместо «полян-арен». Действующая версия.</summary>
+    /// <summary>S3: РѕС‚РєСЂС‹С‚С‹Рµ Р·РѕРЅС‹, СЃРІСЏР·Рё Рё POI РІРјРµСЃС‚Рѕ В«РїРѕР»СЏРЅ-Р°СЂРµРЅВ». Р”РµР№СЃС‚РІСѓСЋС‰Р°СЏ РІРµСЂСЃРёСЏ.</summary>
     public const int LayoutVersion = 2;
 
-    /// <summary>Версия разметки для отпечатка: v1 у замороженных профилей, v2 у S3.</summary>
+    /// <summary>Р’РµСЂСЃРёСЏ СЂР°Р·РјРµС‚РєРё РґР»СЏ РѕС‚РїРµС‡Р°С‚РєР°: v1 Сѓ Р·Р°РјРѕСЂРѕР¶РµРЅРЅС‹С… РїСЂРѕС„РёР»РµР№, v2 Сѓ S3.</summary>
     public static int LayoutFor(int worldVersion) =>
         worldVersion >= TargetVersion ? LayoutVersion : LegacyLayoutVersion;
 
@@ -35,7 +36,7 @@ public static class ForestSpace
     public struct Zone
     {
         public Vector2 center;
-        /// <summary>R24–34 (v2); у v1 исторические 30.</summary>
+        /// <summary>R24вЂ“34 (v2); Сѓ v1 РёСЃС‚РѕСЂРёС‡РµСЃРєРёРµ 30.</summary>
         public float radius;
         public float yawDeg;
     }
@@ -51,17 +52,17 @@ public static class ForestSpace
     {
         public Vector2 center;
         public float radius;
-        /// <summary>Высота земли под подом: нужна детектору видимости, чтобы не сравнивать с нулём.</summary>
+        /// <summary>Р’С‹СЃРѕС‚Р° Р·РµРјР»Рё РїРѕРґ РїРѕРґРѕРј: РЅСѓР¶РЅР° РґРµС‚РµРєС‚РѕСЂСѓ РІРёРґРёРјРѕСЃС‚Рё, С‡С‚РѕР±С‹ РЅРµ СЃСЂР°РІРЅРёРІР°С‚СЊ СЃ РЅСѓР»С‘Рј.</summary>
         public float groundY;
     }
 
     // ------------------------------------------------------------------
-    // v2: зоны на ShapeGround
+    // v2: Р·РѕРЅС‹ РЅР° ShapeGround
     // ------------------------------------------------------------------
 
     /// <summary>
-    /// Детерминированные якоря зон (S3 §4: тип, место, поворот — функция сида и индекса).
-    /// Нужны ДВУМ потребителям: маскам формы (до landform) и приёмке на ShapeGround.
+    /// Р”РµС‚РµСЂРјРёРЅРёСЂРѕРІР°РЅРЅС‹Рµ СЏРєРѕСЂСЏ Р·РѕРЅ (S3 В§4: С‚РёРї, РјРµСЃС‚Рѕ, РїРѕРІРѕСЂРѕС‚ вЂ” С„СѓРЅРєС†РёСЏ СЃРёРґР° Рё РёРЅРґРµРєСЃР°).
+    /// РќСѓР¶РЅС‹ Р”Р’РЈРњ РїРѕС‚СЂРµР±РёС‚РµР»СЏРј: РјР°СЃРєР°Рј С„РѕСЂРјС‹ (РґРѕ landform) Рё РїСЂРёС‘РјРєРµ РЅР° ShapeGround.
     /// </summary>
     public static List<Zone> AnchorZones(DomeGenConfigSO cfg, long seed, int count)
     {
@@ -86,10 +87,10 @@ public static class ForestSpace
     }
 
     /// <summary>
-    /// v2: 5 зон R24–34 на финальном <c>ShapeGround</c>. Проверка — весь габарит
-    /// (R+20), а не центр: пол ≤5°, &gt;35° — 0, сухо &gt; lakeLevel+1, маски
-    /// станции/входа/воды/кольца/ворот. Центр R12 свободен по построению:
-    /// зона вырезается из флоры целиком.
+    /// v2: 5 Р·РѕРЅ R24вЂ“34 РЅР° С„РёРЅР°Р»СЊРЅРѕРј <c>ShapeGround</c>. РџСЂРѕРІРµСЂРєР° вЂ” РІРµСЃСЊ РіР°Р±Р°СЂРёС‚
+    /// (R+20), Р° РЅРµ С†РµРЅС‚СЂ: РїРѕР» в‰¤5В°, &gt;35В° вЂ” 0, СЃСѓС…Рѕ &gt; lakeLevel+1, РјР°СЃРєРё
+    /// СЃС‚Р°РЅС†РёРё/РІС…РѕРґР°/РІРѕРґС‹/РєРѕР»СЊС†Р°/РІРѕСЂРѕС‚. Р¦РµРЅС‚СЂ R12 СЃРІРѕР±РѕРґРµРЅ РїРѕ РїРѕСЃС‚СЂРѕРµРЅРёСЋ:
+    /// Р·РѕРЅР° РІС‹СЂРµР·Р°РµС‚СЃСЏ РёР· С„Р»РѕСЂС‹ С†РµР»РёРєРѕРј.
     /// </summary>
     public static List<Zone> BuildZones(DomeGenConfigSO cfg, long seed,
         Func<float, float, float> ground, Vector3 entry, Vector2 labCenter,
@@ -97,9 +98,9 @@ public static class ForestSpace
     {
         var list = new List<Zone>();
         if (cfg == null || ground == null) return list;
-        // Кандидатов много: площадка ≤5° в R+20 на сыром поле редка (12 из 200 на
-        // сиде 1337), и «первое годное» без перебора просто не находится. Порядок
-        // обхода детерминирован — тот же сид даёт тот же список.
+        // РљР°РЅРґРёРґР°С‚РѕРІ РјРЅРѕРіРѕ: РїР»РѕС‰Р°РґРєР° в‰¤5В° РІ R+20 РЅР° СЃС‹СЂРѕРј РїРѕР»Рµ СЂРµРґРєР° (12 РёР· 200 РЅР°
+        // СЃРёРґРµ 1337), Рё В«РїРµСЂРІРѕРµ РіРѕРґРЅРѕРµВ» Р±РµР· РїРµСЂРµР±РѕСЂР° РїСЂРѕСЃС‚Рѕ РЅРµ РЅР°С…РѕРґРёС‚СЃСЏ. РџРѕСЂСЏРґРѕРє
+        // РѕР±С…РѕРґР° РґРµС‚РµСЂРјРёРЅРёСЂРѕРІР°РЅ вЂ” С‚РѕС‚ Р¶Рµ СЃРёРґ РґР°С‘С‚ С‚РѕС‚ Р¶Рµ СЃРїРёСЃРѕРє.
         var anchors = AnchorZones(cfg, seed, want * 160);
         foreach (var zone in anchors)
         {
@@ -123,13 +124,13 @@ public static class ForestSpace
             return false;
         if (Vector2.Distance(zone.center, new Vector2(entry.x, entry.z)) < zone.radius + 20f)
             return false;
-        if (Vector2.Distance(zone.center, labCenter) < zone.radius + 30f) return false;
+        if (Vector2.Distance(zone.center, labCenter) < zone.radius + 40f) return false;
 
         float lake = hydro != null ? hydro.lakeLevel : float.NegativeInfinity;
         float min = float.MaxValue, maxSlope = 0f;
         int over35 = 0;
-        // S2 §10.1/§10.2: пятно выбирается по КРОМКЕ — 8 точек на R+20 + центр.
-        // Это не сетка внутри зоны: проверяется, что место не на склоне, а не рельеф.
+        // S2 В§10.1/В§10.2: РїСЏС‚РЅРѕ РІС‹Р±РёСЂР°РµС‚СЃСЏ РїРѕ РљР РћРњРљР• вЂ” 8 С‚РѕС‡РµРє РЅР° R+20 + С†РµРЅС‚СЂ.
+        // Р­С‚Рѕ РЅРµ СЃРµС‚РєР° РІРЅСѓС‚СЂРё Р·РѕРЅС‹: РїСЂРѕРІРµСЂСЏРµС‚СЃСЏ, С‡С‚Рѕ РјРµСЃС‚Рѕ РЅРµ РЅР° СЃРєР»РѕРЅРµ, Р° РЅРµ СЂРµР»СЊРµС„.
         float hCenter = ground(zone.center.x, zone.center.y);
         if (hCenter < min) min = hCenter;
         float slopeCenter = SlopeClasses.SlopeAt(cfg, zone.center.x, zone.center.y, ground,
@@ -156,89 +157,138 @@ public static class ForestSpace
     }
 
     /// <summary>
-    /// v2: связи-капсулы 16 м. Каждой зоне ≥2 подхода; вдоль ≤8°, поперёк ≤5°;
-    /// вода/кольцо/станция — масками. Если ребро не проходит, берётся следующее по длине.
+    /// v2: СЃРІСЏР·Рё-РєР°РїСЃСѓР»С‹ 16 Рј. РљР°Р¶РґРѕР№ Р·РѕРЅРµ в‰Ґ2 РїРѕРґС…РѕРґР°; РІРґРѕР»СЊ в‰¤8В°, РїРѕРїРµСЂС‘Рє в‰¤5В°;
+    /// РІРѕРґР°/РєРѕР»СЊС†Рѕ/СЃС‚Р°РЅС†РёСЏ вЂ” РјР°СЃРєР°РјРё. Р•СЃР»Рё СЂРµР±СЂРѕ РЅРµ РїСЂРѕС…РѕРґРёС‚, Р±РµСЂС‘С‚СЃСЏ СЃР»РµРґСѓСЋС‰РµРµ РїРѕ РґР»РёРЅРµ.
     /// </summary>
     public static List<Link> BuildLinks(DomeGenConfigSO cfg, IReadOnlyList<Zone> zones,
         Func<float, float, float> ground, DomeMasks masks, float width = 16f)
     {
         var list = new List<Link>();
         if (cfg == null || zones == null || zones.Count < 2 || ground == null) return list;
+        const int WantLinks = 6; // S2 В§10.1: 6 РєРѕСЂРёРґРѕСЂРѕРІ 16 Рј
 
-        for (int i = 1; i < zones.Count; i++)
-        {
-            int best = -1; float bestD = float.MaxValue;
-            for (int j = 0; j < i; j++)
+        // Р’СЃРµ РІР°Р»РёРґРЅС‹Рµ РїР°СЂС‹ вЂ” Р·Р°СЂР°РЅРµРµ; РІС‹Р±РѕСЂ РіР»РѕР±Р°Р»СЊРЅС‹Р№, Р° РЅРµ В«С†РµРїРѕС‡РєР° РїРѕ СЃРѕСЃРµРґСѓВ».
+        // РўР°Рє РёР·РѕР»РёСЂРѕРІР°РЅРЅР°СЏ Р·РѕРЅР° РїРѕР»СѓС‡Р°РµС‚ РїРѕРґС…РѕРґ, РµСЃР»Рё РѕРЅ РІРѕРѕР±С‰Рµ СЃСѓС‰РµСЃС‚РІСѓРµС‚.
+        var valid = new List<(int i, int j, float d)>();
+        for (int i = 0; i < zones.Count; i++)
+            for (int j = i + 1; j < zones.Count; j++)
             {
-                float d = Vector2.Distance(zones[i].center, zones[j].center);
-                if (d < bestD && LinkAccept(cfg, ground, masks, zones[j].center,
-                        zones[i].center, width))
-                { bestD = d; best = j; }
+                if (!LinkAccept(cfg, ground, masks, zones[i].center, zones[j].center,
+                        width, zones[i].radius + 40f, zones[j].radius + 40f)) continue;
+                valid.Add((i, j, Vector2.Distance(zones[i].center, zones[j].center)));
             }
-            // Невалидная связь НЕ добавляется: «связь на склоне» — не связь.
-            if (best >= 0)
-                list.Add(new Link { a = zones[best].center, b = zones[i].center, width = width });
+        valid.Sort((a, b) => a.d.CompareTo(b.d));
+
+        var used = new bool[zones.Count, zones.Count];
+        var linksAtZone = new int[zones.Count];
+        void Add(int i, int j)
+        {
+            list.Add(new Link { a = zones[i].center, b = zones[j].center, width = width });
+            used[i, j] = used[j, i] = true;
+            linksAtZone[i]++; linksAtZone[j]++;
         }
 
+        // 1) РєР°Р¶РґРѕР№ Р·РѕРЅРµ вЂ” РґРѕ РґРІСѓС… РїРѕРґС…РѕРґРѕРІ, РЅР°С‡РёРЅР°СЏ СЃ СЃР°РјС‹С… РєРѕСЂРѕС‚РєРёС… РІР°Р»РёРґРЅС‹С….
         for (int i = 0; i < zones.Count; i++)
         {
-            while (Exits(zones, list, i) < 2)
+            while (linksAtZone[i] < 2)
             {
-                int best = -1; float bestD = float.MaxValue;
-                for (int j = 0; j < zones.Count; j++)
+                int pick = -1;
+                for (int k = 0; k < valid.Count; k++)
                 {
-                    if (i == j || Connected(list, zones[i].center, zones[j].center)) continue;
-                    float d = Vector2.Distance(zones[i].center, zones[j].center);
-                    if (d < bestD && LinkAccept(cfg, ground, masks, zones[i].center,
-                            zones[j].center, width))
-                    { bestD = d; best = j; }
+                    var e = valid[k];
+                    if (used[e.i, e.j] || (e.i != i && e.j != i)) continue;
+                    pick = k; break;
                 }
-                if (best < 0) break;
-                list.Add(new Link { a = zones[i].center, b = zones[best].center, width = width });
+                if (pick < 0) break;
+                Add(valid[pick].i, valid[pick].j);
             }
         }
+        // 2) РґРѕР±СЂР°С‚СЊ РґРѕ С€РµСЃС‚Рё РєРѕСЂРёРґРѕСЂРѕРІ, РЅРµ Р»РѕРјР°СЏ СѓР¶Рµ РІС‹Р±СЂР°РЅРЅС‹Рµ РїРѕРґС…РѕРґС‹.
+        for (int k = 0; k < valid.Count && list.Count < WantLinks; k++)
+        {
+            var e = valid[k];
+            if (used[e.i, e.j]) continue;
+            Add(e.i, e.j);
+        }
+
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ: пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ).
+        var log = new StringBuilder();
+        for (int i = 0; i < zones.Count; i++)
+            for (int j = i + 1; j < zones.Count; j++)
+            {
+                if (Connected(list, zones[i].center, zones[j].center)) continue;
+                string why = LinkReason(cfg, ground, masks, zones[i].center, zones[j].center,
+                    width, zones[i].radius + 40f, zones[j].radius + 40f) ?? "ok";
+                log.Append($"{i}-{j}:{why}; ");
+            }
+        LastLinkLog = log.ToString();
         return list;
     }
 
+    public static string LastLinkLog = "";
+    /// <summary>пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ (1 пїЅ) пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ S2 5пїЅ/8пїЅ; пїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ.</summary>
+
     static bool LinkAccept(DomeGenConfigSO cfg, Func<float, float, float> ground,
-        DomeMasks masks, Vector2 a, Vector2 b, float width)
+        DomeMasks masks, Vector2 a, Vector2 b, float width, float trimA, float trimB)
+        => LinkReason(cfg, ground, masks, a, b, width, trimA, trimB) == null;
+
+    public static string LinkReason(DomeGenConfigSO cfg, Func<float, float, float> ground,
+        DomeMasks masks, Vector2 a, Vector2 b, float width, float trimA, float trimB)
     {
+        // РћР±СЂРµР·РєР° РєРѕРЅС†РѕРІ: РІРЅСѓС‚СЂРё Р·РѕРЅС‹ РїРѕР» РїР»РѕСЃРєРёР№ РїРѕ РѕРїСЂРµРґРµР»РµРЅРёСЋ, Р° РµС‘ РјР°СЃРєР°
+        // `zone` С‚СЏРЅРµС‚СЃСЏ РЅР° R+20 вЂ” РїСЂРѕРІРµСЂСЏС‚СЊ РµС‘ РЅР° РєРѕРЅС†Рµ РєР°РїСЃСѓР»С‹ Р±РµСЃСЃРјС‹СЃР»РµРЅРЅРѕ.
+        Vector2 ab = b - a;
+        float len = ab.magnitude;
+        if (len < 1e-3f) return "short";
+        Vector2 dir = ab / len;
+        float ta = Mathf.Clamp(trimA, 0f, len * 0.35f);
+        float tb = Mathf.Clamp(trimB, 0f, len * 0.35f);
+        if (ta + tb >= len * 0.9f) { ta = len * 0.2f; tb = len * 0.2f; }
+        Vector2 a2 = a + dir * ta;
+        Vector2 b2 = b - dir * tb;
+        Vector2 ab2 = b2 - a2;
+        float len2 = ab2.magnitude;
+        if (len2 < width * 0.5f) return null; // Р·РѕРЅС‹ РїРѕС‡С‚Рё СЃР»РёРїР»РёСЃСЊ: СЃРІСЏР·СЊ-РїРµСЂРµРјС‹С‡РєР°
+
         if (masks != null &&
-            masks.BlocksForm(DomeFootprint.Capsule(a, b, width * 0.5f), "corridor", "zone", "common"))
-            return false;
-        Vector2 dir = (b - a).normalized;
-        Vector2 side = new Vector2(-dir.y, dir.x);
+            masks.BlocksForm(DomeFootprint.Capsule(a2, b2, width * 0.5f),
+                "corridor", "zone", "common", "landform", "mainRoute", "gate"))
+            return "mask:" + (masks.FirstConflict(
+                DomeFootprint.Capsule(a2, b2, width * 0.5f)) ?? "?");
+        Vector2 dir2 = ab2 / len2;
+        Vector2 side = new Vector2(-dir2.y, dir2.x);
         const int steps = 8;
         for (int i = 0; i <= steps; i++)
         {
-            Vector2 p = Vector2.Lerp(a, b, i / (float)steps);
-            // Поперёк: оба плеча полосы.
-            for (int s = -1; s <= 1; s += 2)
-            {
-                Vector2 q = p + side * (width * 0.5f) * s;
-                if (SlopeClasses.SlopeAt(cfg, q.x, q.y, ground, SlopeClasses.ClassEpsilon) > 5f)
-                    return false;
-            }
-            // Вдоль: настоящий продольный уклон (подъём / шаг), а не разность
-            // локальных уклонов — та мера ничего не значит и запирала связи.
+            Vector2 p = Vector2.Lerp(a2, b2, i / (float)steps);
+            // РџРѕРїРµСЂС‘Рє: РџРћРџР•Р Р•Р§РќР«Р™ РЈРљР›РћРќ РїРѕР»РѕСЃС‹ вЂ” РїРµСЂРµРїР°Рґ РјРµР¶РґСѓ РїР»РµС‡Р°РјРё / С€РёСЂРёРЅР°,
+            // Р° РЅРµ Р»РѕРєР°Р»СЊРЅС‹Р№ СѓРєР»РѕРЅ РєР°Р¶РґРѕР№ РєСЂРѕРјРєРё (С‚РѕС‚ РјРµСЂРёР» РјРёРєСЂРѕСЂРµР»СЊРµС„, Р° РЅРµ РїСЂРѕС„РёР»СЊ).
+            Vector2 left = p + side * (width * 0.5f);
+            Vector2 right = p - side * (width * 0.5f);
+            float cross = Mathf.Atan2(Mathf.Abs(ground(left.x, left.y) - ground(right.x, right.y)),
+                width) * Mathf.Rad2Deg;
+            if (cross > 5f) return $"cross={cross:F1}";
+            // Р’РґРѕР»СЊ: РЅР°СЃС‚РѕСЏС‰РёР№ РїСЂРѕРґРѕР»СЊРЅС‹Р№ СѓРєР»РѕРЅ (РїРѕРґСЉС‘Рј / С€Р°Рі), Р° РЅРµ СЂР°Р·РЅРѕСЃС‚СЊ
+            // Р»РѕРєР°Р»СЊРЅС‹С… СѓРєР»РѕРЅРѕРІ вЂ” С‚Р° РјРµСЂР° РЅРёС‡РµРіРѕ РЅРµ Р·РЅР°С‡РёС‚ Рё Р·Р°РїРёСЂР°Р»Р° СЃРІСЏР·Рё.
             if (i < steps)
             {
-                Vector2 p2 = Vector2.Lerp(a, b, (i + 1) / (float)steps);
+                Vector2 p2 = Vector2.Lerp(a2, b2, (i + 1) / (float)steps);
                 float stepLen = Vector2.Distance(p, p2);
                 if (stepLen > 1e-3f)
                 {
                     float along = Mathf.Atan2(Mathf.Abs(ground(p2.x, p2.y) - ground(p.x, p.y)),
                         stepLen) * Mathf.Rad2Deg;
-                    if (along > 8f) return false;
+                    if (along > 8f) return $"along={along:F1}";
                 }
             }
         }
-        return true;
+        return null;
     }
 
     /// <summary>
-    /// v2: общие зоны (R8–18) на тропе или ≤30 м от неё. Две ближайшие к воде
-    /// помечаются как водопой (S3 §4: «2 из common»).
+    /// v2: РѕР±С‰РёРµ Р·РѕРЅС‹ (R8вЂ“18) РЅР° С‚СЂРѕРїРµ РёР»Рё в‰¤30 Рј РѕС‚ РЅРµС‘. Р”РІРµ Р±Р»РёР¶Р°Р№С€РёРµ Рє РІРѕРґРµ
+    /// РїРѕРјРµС‡Р°СЋС‚СЃСЏ РєР°Рє РІРѕРґРѕРїРѕР№ (S3 В§4: В«2 РёР· commonВ»).
     /// </summary>
     public static List<Zone> BuildCommons(DomeGenConfigSO cfg, IReadOnlyList<Link> links,
         IReadOnlyList<Zone> zones, Func<float, float, float> ground, DomeHydro.State hydro,
@@ -275,15 +325,15 @@ public static class ForestSpace
                 if (list.Count + water.Count >= want) break;
             }
         }
-        // Водопои входят в число общих зон; если их меньше двух — не добираем хаком.
+        // Р’РѕРґРѕРїРѕРё РІС…РѕРґСЏС‚ РІ С‡РёСЃР»Рѕ РѕР±С‰РёС… Р·РѕРЅ; РµСЃР»Рё РёС… РјРµРЅСЊС€Рµ РґРІСѓС… вЂ” РЅРµ РґРѕР±РёСЂР°РµРј С…Р°РєРѕРј.
         list.AddRange(water);
         return list;
     }
 
     /// <summary>
-    /// v2: 2 водопоя — полка на берегу озера (S3 §5.3): 3–5 м на `lakeLevel+0.5…+1.2`,
-    /// уклон полки ≤6°. Водопой — адрес внутри маски `water`, поэтому `water`
-    /// исключается из проверки: это разрешённое исключение, а не дыра в правиле.
+    /// v2: 2 РІРѕРґРѕРїРѕСЏ вЂ” РїРѕР»РєР° РЅР° Р±РµСЂРµРіСѓ РѕР·РµСЂР° (S3 В§5.3): 3вЂ“5 Рј РЅР° `lakeLevel+0.5вЂ¦+1.2`,
+    /// СѓРєР»РѕРЅ РїРѕР»РєРё в‰¤6В°. Р’РѕРґРѕРїРѕР№ вЂ” Р°РґСЂРµСЃ РІРЅСѓС‚СЂРё РјР°СЃРєРё `water`, РїРѕСЌС‚РѕРјСѓ `water`
+    /// РёСЃРєР»СЋС‡Р°РµС‚СЃСЏ РёР· РїСЂРѕРІРµСЂРєРё: СЌС‚Рѕ СЂР°Р·СЂРµС€С‘РЅРЅРѕРµ РёСЃРєР»СЋС‡РµРЅРёРµ, Р° РЅРµ РґС‹СЂР° РІ РїСЂР°РІРёР»Рµ.
     /// </summary>
     public static List<Zone> BuildWaterholes(DomeGenConfigSO cfg, DomeHydro.State hydro,
         Func<float, float, float> ground, DomeMasks masks, long seed, int want = 2)
@@ -292,9 +342,9 @@ public static class ForestSpace
         if (cfg == null || hydro == null || ground == null || hydro.lakeRadius <= 0f)
             return list;
         float lake = hydro.lakeLevel;
-        // Полка по S2: 3–5 м на lakeLevel+0.5…+1.2, ≤6°. На сыром берегу такой
-        // узкий коридор редок; допускаем крайние полки (0.2…1.5, ≤8°) и пишем это
-        // в след. Это не «водопой на склоне»: вода остаётся водой, роль — адрес.
+        // РџРѕР»РєР° РїРѕ S2: 3вЂ“5 Рј РЅР° lakeLevel+0.5вЂ¦+1.2, в‰¤6В°. РќР° СЃС‹СЂРѕРј Р±РµСЂРµРіСѓ С‚Р°РєРѕР№
+        // СѓР·РєРёР№ РєРѕСЂРёРґРѕСЂ СЂРµРґРѕРє; РґРѕРїСѓСЃРєР°РµРј РєСЂР°Р№РЅРёРµ РїРѕР»РєРё (0.2вЂ¦1.5, в‰¤8В°) Рё РїРёС€РµРј СЌС‚Рѕ
+        // РІ СЃР»РµРґ. Р­С‚Рѕ РЅРµ В«РІРѕРґРѕРїРѕР№ РЅР° СЃРєР»РѕРЅРµВ»: РІРѕРґР° РѕСЃС‚Р°С‘С‚СЃСЏ РІРѕРґРѕР№, СЂРѕР»СЊ вЂ” Р°РґСЂРµСЃ.
         for (int i = 0; i < 200 && list.Count < want; i++)
         {
             float a = SeededHash.ToFloat01(SeededHash.Hash(seed, 9751, i)) * Mathf.PI * 2f;
@@ -316,8 +366,8 @@ public static class ForestSpace
             list.Add(new Zone { center = p, radius = radius });
         }
 
-        // Русло — второй берег: если на озере полок не хватило, водопой ставится
-        // у реки (та же маска `water`, то же исключение).
+        // Р СѓСЃР»Рѕ вЂ” РІС‚РѕСЂРѕР№ Р±РµСЂРµРі: РµСЃР»Рё РЅР° РѕР·РµСЂРµ РїРѕР»РѕРє РЅРµ С…РІР°С‚РёР»Рѕ, РІРѕРґРѕРїРѕР№ СЃС‚Р°РІРёС‚СЃСЏ
+        // Сѓ СЂРµРєРё (С‚Р° Р¶Рµ РјР°СЃРєР° `water`, С‚Рѕ Р¶Рµ РёСЃРєР»СЋС‡РµРЅРёРµ).
         for (int i = 0; i < hydro.riverPts.Count && list.Count < want; i += 3)
         {
             Vector2 p0 = hydro.riverPts[i];
@@ -352,7 +402,7 @@ public static class ForestSpace
         DomeHydro.State hydro, DomeMasks masks, IReadOnlyList<Zone> zones, Vector2 p, float radius)
     {
         if (masks != null && masks.BlocksForm(DomeFootprint.Circle(p, radius + 2f),
-                "corridor", "zone", "link", "common")) return false;
+                "corridor", "zone", "link", "common", "landform", "mainRoute", "gate")) return false;
         float lake = hydro != null ? hydro.lakeLevel : float.NegativeInfinity;
         if (ground(p.x, p.y) < lake + 1.0f) return false;
         if (SlopeClasses.SlopeAt(cfg, p.x, p.y, ground, SlopeClasses.ClassEpsilon) > 8f)
@@ -374,7 +424,7 @@ public static class ForestSpace
     }
 
     // ------------------------------------------------------------------
-    // v1: историческая B-lite (A/C/B0/Pavilion) — тела сохранены как были
+    // v1: РёСЃС‚РѕСЂРёС‡РµСЃРєР°СЏ B-lite (A/C/B0/Pavilion) вЂ” С‚РµР»Р° СЃРѕС…СЂР°РЅРµРЅС‹ РєР°Рє Р±С‹Р»Рё
     // ------------------------------------------------------------------
 
     public static List<Zone> BuildZonesLegacy(DomeGenConfigSO cfg, long seed,
@@ -445,7 +495,7 @@ public static class ForestSpace
     }
 
     // ------------------------------------------------------------------
-    // Общее (не зависит от версии)
+    // РћР±С‰РµРµ (РЅРµ Р·Р°РІРёСЃРёС‚ РѕС‚ РІРµСЂСЃРёРё)
     // ------------------------------------------------------------------
 
     public static List<CoverPod> BuildCoverPods(IReadOnlyList<Zone> zones,

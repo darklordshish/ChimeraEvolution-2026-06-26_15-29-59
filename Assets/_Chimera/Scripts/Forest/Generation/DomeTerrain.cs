@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -37,6 +38,8 @@ public sealed class DomeTerrain
     public DomeCanyon.State canyon;
     public DomeRavines.Ravine[] ravines;
     public DomeRelief.State relief;
+    /// <summary>S2: семь форм композиции (v2). v1 остаётся на <see cref="relief"/>.</summary>
+    public DomeComposition.State composition;
     public DomeHill.State hill;
     public int worldVersion = 1;
 
@@ -49,6 +52,29 @@ public sealed class DomeTerrain
     public float platformY;
     public LabEntrance entrance;
     public bool northCrevice;
+
+    /// <summary>
+    /// S2 §1.1 fallback: локальная насыпь/выемка коридора, когда валидного места нет.
+    /// Это НЕ второй пол: полоса лежит в ShapeGround, её видят чанки/NavMesh/флора.
+    /// </summary>
+    public struct CorridorPad
+    {
+        public Vector2 a;
+        public Vector2 b;
+        public float halfWidth;
+        public float blend;
+        public float y;
+    }
+    public List<CorridorPad> corridorPads = new List<CorridorPad>();
+
+    public void AddCorridorPad(Vector2 a, Vector2 b, float width, float y, float blend)
+    {
+        corridorPads.Add(new CorridorPad
+        {
+            a = a, b = b, halfWidth = Mathf.Max(1f, width * 0.5f),
+            blend = Mathf.Max(0f, blend), y = y,
+        });
+    }
 
     /// <summary>v2: целевой порядок S3. v1: исторический (площадка до landform).</summary>
     public bool TargetOrder => worldVersion >= TargetOrderVersion;
@@ -71,8 +97,12 @@ public sealed class DomeTerrain
         float h = Layers(x, z);
         if (TargetOrder)
         {
-            // Целевой порядок: широкое (landform) → местное (hill).
-            h = DomeRelief.Apply(relief, h, x, z, worldVersion);
+            // Целевой порядок: широкое (landform S2) → местное (hill).
+            // v2 читает DomeComposition; DomeRelief остаётся исторической веткой v1
+            // и запасным путём, если композиция не строилась.
+            h = composition != null
+                ? DomeComposition.Apply(composition, h, x, z)
+                : DomeRelief.Apply(relief, h, x, z, worldVersion);
             h = DomeHill.Apply(h, hill, x, z);
         }
         else
@@ -89,7 +119,25 @@ public sealed class DomeTerrain
     /// считаются только на <c>ShapeGround</c> и не могут «переехать» после эрозии:
     /// маски, которые эрозия обязана уважать, — <see cref="DomeMasks.ErosionKeeps"/>.
     /// </summary>
-    public float ShapeGround(float x, float z) => Shape0(x, z);
+    public float ShapeGround(float x, float z)
+    {
+        float h = Shape0(x, z);
+        if (!TargetOrder || corridorPads.Count == 0) return h;
+        for (int i = 0; i < corridorPads.Count; i++)
+        {
+            var pad = corridorPads[i];
+            float d = DomeFootprint.DistanceToSegment(new Vector2(x, z), pad.a, pad.b);
+            if (d <= pad.halfWidth) return pad.y;
+            float outer = pad.halfWidth + pad.blend;
+            if (d < outer && pad.blend > 1e-3f)
+            {
+                float t = (d - pad.halfWidth) / pad.blend;
+                t = t * t * (3f - 2f * t);
+                h = Mathf.Lerp(pad.y, h, t);
+            }
+        }
+        return h;
+    }
 
     /// <summary>Финальный пол: площадка/рампа/щель — ПОСЛЕДНИЙ Blend.</summary>
     public float SampleGround(float x, float z)

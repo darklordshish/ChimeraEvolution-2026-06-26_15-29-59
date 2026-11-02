@@ -92,7 +92,11 @@ public struct DomeForm
                 Vector2 a = axis.sqrMagnitude > 1e-8f ? axis.normalized : Vector2.right;
                 float along = Mathf.Clamp(Vector2.Dot(d, a), -halfLength, halfLength);
                 Vector2 nearest = a * along;
-                return (d - nearest).magnitude / Run;
+                // Бровка капсулы — плоская полоса поперёк оси шириной crest:
+                // S2 §1.2 задаёт «бровка 24» у гряды и «дно 90×10» у ложбины.
+                // При crest = 0 это прежняя капсула бит-в-бит (P5-lite).
+                float flat = Mathf.Max(0f, crest) * 0.5f;
+                return Mathf.Max(0f, (d - nearest).magnitude - flat) / Run;
             }
             case DomeFormKind.Canyon:
             {

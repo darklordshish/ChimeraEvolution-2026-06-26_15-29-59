@@ -127,9 +127,16 @@ namespace Chimera.Tests.PlayMode
             for (int i = 0; i < b.Zones.Count; i++)
                 minExits = Mathf.Min(minExits, ForestSpace.Exits(b.Zones, b.Links, i));
             if (b.Zones.Count == 0) minExits = 0;
-            string facts = $"зон {b.Zones.Count} (план 4–6), связей {b.Links.Count}, " +
-                $"min подходов {minExits}, общих {b.Commons.Count}, водопоев {b.Waterholes.Count}, " +
-                $"остовов {b.Shells.Count}, ворот {b.Gates.Count}";
+            string comp = "";
+            if (b.Composition != null)
+                foreach (var p in b.Composition.declared)
+                    comp += $"{p.name}:{(p.applied ? "+" : "(" + p.note + ")")} ";
+            string linkLog = ForestSpace.LastLinkLog ?? "";
+            if (linkLog.Length > 260) linkLog = linkLog.Substring(0, 260);
+            string facts = $"links[{linkLog}], зон {b.Zones.Count} (план 4–6), " +
+                $"связей {b.Links.Count}, min подходов {minExits}, общих {b.Commons.Count}, " +
+                $"водопоев {b.Waterholes.Count}, остовов {b.Shells.Count}, ворот {b.Gates.Count}, " +
+                $"S2[{comp}]";
 
             foreach (var z in b.Zones)
             {
@@ -192,7 +199,7 @@ namespace Chimera.Tests.PlayMode
             // Связи/общие/водопои: невалидная связь не добавляется (P0.2), поэтому
             // на S1-поле их может быть меньше плана. Это записанный отказ S2/S4,
             // а не повод подделать связь или ослабить порог.
-            int commonsTotal = b.Commons.Count + b.Waterholes.Count;
+            int commonsTotal = b.Commons.Count;
             bool linksOk = minExits >= 2;
             bool commonsOk = commonsTotal >= 4 && commonsTotal <= 6;
             bool waterOk = b.Waterholes.Count == 2;
@@ -201,6 +208,7 @@ namespace Chimera.Tests.PlayMode
                     "S3 links/common gate не пройден: " + facts +
                     ". Связи только валидные (P0.2); план требует ≥2 подходов, 4–6 общих, " +
                     "2 водопоя. Причина — S1-поле без композиции/коридоров S2–S4. Долг S2/S4.");
+            Assert.Pass($"S3: {facts}");
         }
 
         [UnityTest]
@@ -208,6 +216,41 @@ namespace Chimera.Tests.PlayMode
         {
             var b = BuildV2();
             yield return null;
+
+            // S2: композиция построена и лежит в поле.
+            Assert.IsNotNull(b.Composition, "S2 DomeComposition не построена на v2");
+            Assert.AreEqual(DomeComposition.DeclaredRoles, b.Composition.declared.Count,
+                "объявлено семь ролей S2 §1.2");
+            int appliedForms = 0;
+            bool plateauApplied = false;
+            foreach (var p in b.Composition.declared)
+            {
+                if (p.applied) appliedForms++;
+                if (p.role == DomeComposition.Role.StationPlateau) plateauApplied = p.applied;
+            }
+            string compDetails = "";
+            foreach (var p0 in b.Composition.declared)
+                compDetails += $"\n{p0.name}: {(p0.applied ? "OK" : "NO")} {p0.note}";
+            Assert.AreEqual(4, appliedForms, "применено меньше четырёх форм S2: " +
+                b.Composition.note + compDetails);
+            Assert.IsFalse(plateauApplied, "плато станции — шаг 5 (DomeHill)");
+            foreach (var f in b.Composition.forms)
+            {
+                Assert.LessOrEqual(f.Aspect, 0.135f + 1e-4f,
+                    $"{f.name}: H/D > 0,135");
+                Assert.LessOrEqual(f.MaxSlopeDegrees, 22f + 1e-3f,
+                    $"{f.name}: max|∇H| > 22°");
+            }
+            Assert.IsNotNull(b.Terrain.composition, "Terrain не видит композицию");
+
+            // P0.5: полосы склона v2 реально подключены к чанку (5 сабмешей и материалов).
+            MeshFilter chunk = null;
+            foreach (var mf in b.BuiltRoot.GetComponentsInChildren<MeshFilter>())
+                if (mf.name.StartsWith("Chunk_")) { chunk = mf; break; }
+            Assert.IsNotNull(chunk, "чанк не найден");
+            Assert.AreEqual(5, chunk.sharedMesh.subMeshCount, "у чанка v2 не 5 полос склона");
+            Assert.AreEqual(5, chunk.GetComponent<MeshRenderer>().sharedMaterials.Length,
+                "у чанка v2 не 5 материалов полос");
 
             var masks = b.Masks;
             Assert.IsNotNull(masks, "на v2 маски обязаны существовать");

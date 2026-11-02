@@ -29,7 +29,7 @@ public sealed class DomeMasks
     public static readonly string[] FormProtected =
     {
         "station", "entry", "gate", "ramp", "water", "mainRoute", "corridor",
-        "zone", "shell", "common", "ash", "lair", "terrace", "canyon", "ravine",
+        "zone", "shell", "common", "ash", "lair", "terrace", "canyon", "ravine", "landform",
     };
 
     /// <summary>
@@ -111,6 +111,15 @@ public sealed class DomeMasks
         return false;
     }
 
+    /// <summary>Имя первой маски, в которую попал габарит (диагностика отказа формы).</summary>
+    public string FirstConflict(DomeFootprint foot)
+    {
+        if (OverlapsRing(foot)) return "ring";
+        foreach (var m in masks)
+            if (DomeFootprints.Overlaps(m.foot, foot)) return m.name;
+        return null;
+    }
+
     /// <summary>Запрет формы: любая защищённая маска или кольцо.</summary>
     public bool BlocksForm(DomeFootprint foot) => OverlapsRing(foot) || OverlapsAny(foot, FormProtected);
 
@@ -139,8 +148,9 @@ public sealed class DomeMasks
         if (f.kind == DomeFormKind.Capsule || f.kind == DomeFormKind.Canyon)
         {
             Vector2 axis = f.axis.sqrMagnitude > 1e-8f ? f.axis.normalized : Vector2.right;
+            // Радиус = полуширина по подошве: бровка (crest) входит в носитель.
             return DomeFootprint.Capsule(f.center - axis * f.halfLength,
-                f.center + axis * f.halfLength, f.Run);
+                f.center + axis * f.halfLength, f.Run + f.crest * 0.5f);
         }
         return DomeFootprint.Circle(f.center, f.diameter * 0.5f);
     }

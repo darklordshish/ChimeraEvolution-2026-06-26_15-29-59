@@ -8,6 +8,9 @@ using UnityEngine;
 public static class DomePalette
 {
     public static readonly Color Terrain = new Color(0.32f, 0.44f, 0.26f);
+    // S2 §4: полосы склона. Границы — градусы, не проценты.
+    public static readonly Color Turf = new Color(0.40f, 0.42f, 0.24f);
+    public static readonly Color Scree = new Color(0.42f, 0.40f, 0.34f);
     public static readonly Color Rock = new Color(0.50f, 0.50f, 0.50f);
     public static readonly Color Water = new Color(0.20f, 0.45f, 0.60f);
     public static readonly Color Dark = new Color(0.14f, 0.15f, 0.16f);

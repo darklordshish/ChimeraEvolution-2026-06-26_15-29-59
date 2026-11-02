@@ -96,6 +96,8 @@ public class DomeWorld
     public int CoverPodsBuilt { get; private set; }
     public int ArenaEdges { get; private set; }
     public DomeRelief.State Relief { get; private set; }
+    /// <summary>S2: композиция v2 (семь ролей; плато станции — шаг 5).</summary>
+    public DomeComposition.State Composition { get; private set; }
     public int ReliefHills => Relief != null ? Relief.hills.Count : 0;
     public IReadOnlyList<Vector3> TreeColliderPositions { get; private set; } = new List<Vector3>();
     public float CrownCover { get; private set; }
@@ -286,7 +288,49 @@ public class DomeWorld
             // Построенные формы — тоже keep-out для зон: иначе зона встанет на террасу.
             masks = AddFormsToMasks(masks, Terrace, Canyon, Ravines);
 
-            // S3 §3.2, фаза 1: предварительные якоря зон/связей известны ДО landform —
+            // S2 §7: landform НЕ получает открытые зоны на вход — он знает только
+            // станцию/вход/воду/кольцо/маршрут/ворота. Поэтому композиция строится
+            // ДО предварительных зон, а не после них.
+            if (cfg.ReliefEnabled)
+            {
+                Vector3 door = site.found ? site.door
+                    : new Vector3(LabCenter.x, 0f, LabCenter.y);
+                // Реальные якоря S2 §1.1: предварительные ясень/логова считаются
+                // ДО формы (на том же предварительном поле), иначе форма их накроет.
+                Vector2? ashAnchor = null;
+                try
+                {
+                    bool standLab = LabCenter.sqrMagnitude > 0.01f;
+                    float ashScale = standLab ? DomeAshSite.ScaleFor(cfg) : 1f;
+                    var ashSpot = DomeAshSite.FindSpot(cfg, seed, LabCenter, Hydro, 96,
+                        ashScale, standLab, null, (x, z) => Terrain.Shape0(x, z), masks);
+                    ashAnchor = ashSpot.pos;
+                }
+                catch { /* ясеня нет — форма его не ждёт */ }
+                var lairAnchors = new List<Vector2>();
+                var preMouths = DomeSlope.FindMouths(cfg, 3, 96, RingGround);
+                foreach (var m in preMouths) lairAnchors.Add(m.pos);
+                foreach (var n in DomeSlope.FindNests(cfg, seed, preMouths, 2, RingGround))
+                    lairAnchors.Add(n.pos);
+
+                Composition = DomeComposition.Build(cfg, seed, entryXZ, door, LabCenter,
+                    Hydro, masks, (x, z) => Terrain.Shape0(x, z), ashAnchor, lairAnchors);
+                string compSkips = "";
+                foreach (var p in Composition.declared)
+                    if (!p.applied) compSkips += $"{p.name}: {p.note}; ";
+                Trace.Add("composition", DomeComposition.DeclaredRoles,
+                    Composition.forms.Count, Composition.note + " | " + compSkips);
+            }
+            Terrain.composition = Composition;
+            Terrain.relief = Relief; // v2: композиция вместо P5-lite; Relief остаётся v1
+
+            // Формы композиции — keep-out для зон/связей/общих (две стороны §3.2):
+            // место выбирается на ShapeGround и не встаёт на форму.
+            if (Composition != null)
+                foreach (var f in Composition.forms)
+                    masks.Add("landform", DomeMasks.ToFootprint(f));
+
+            // S3 §3.2, фаза 1: предварительные якоря зон/связей известны ДО hill —
             // из них строятся маски `zone`/`corridor`/`common`, и форма в них не входит.
             // ФИНАЛЬНЫЕ зоны считаются позже, на ShapeGround (после hill и слота эрозии):
             // приёмка места не имеет права смотреть на поле, которого не будет.
@@ -309,14 +353,8 @@ public class DomeWorld
                     masks.Add("common", DomeFootprint.Circle(w.center, w.radius + 2f));
                 Trace.Add("zones.pre", preZones.Count, preZones.Count,
                     $"связей {preLinks.Count}, общих {preCommons.Count}, водопоев {preWater.Count} " +
-                    "(маски для landform; финальные — на ShapeGround)");
+                    "(маски для hill; финальные — на ShapeGround)");
             }
-
-            // Целевой порядок S3: landform → hill → ShapeGround → platformY → pad.
-            if (cfg.ReliefEnabled)
-                Relief = DomeRelief.Build(cfg, seed, LabCenter, entryXZ, Hydro, Terrace, Canyon,
-                    Ravines, masks);
-            Terrain.relief = Relief;
 
             if (buildStationHill)
             {
@@ -438,6 +476,44 @@ public class DomeWorld
                 Zones = ForestSpace.BuildZones(cfg, seed, finalGround, Entry, LabCenter,
                     Hydro, masks, 5);
                 Links = ForestSpace.BuildLinks(cfg, Zones, finalGround, masks, 16f);
+
+                // S2 §1.1: места нет — S3 кладёт локальный пад коридора (не второй пол:
+                // полоса входит в ShapeGround). Пад только для пар, заблокированных
+                // УКЛОНОМ; водa/кольцо/станция — по-прежнему «нельзя».
+                var padded = new HashSet<long>();
+                for (int pass = 0; pass < 6; pass++)
+                {
+                    if (Links.Count >= 6 && MinExits(Zones, Links) >= 2) break;
+                    int bi = -1, bj = -1; float bd = float.MaxValue;
+                    for (int i = 0; i < Zones.Count; i++)
+                        for (int j = i + 1; j < Zones.Count; j++)
+                        {
+                            if (HasLink(Links, Zones[i].center, Zones[j].center)) continue;
+                            long key = (long)i * 1000 + j;
+                            if (padded.Contains(key)) continue;
+                            string why = ForestSpace.LinkReason(cfg, finalGround, masks,
+                                Zones[i].center, Zones[j].center, 16f,
+                                Zones[i].radius + 40f, Zones[j].radius + 40f);
+                            if (why == null || why.StartsWith("mask")) continue;
+                            float d = Vector2.Distance(Zones[i].center, Zones[j].center);
+                            if (d < bd) { bd = d; bi = i; bj = j; }
+                        }
+                    if (bi < 0) break;
+                    Vector2 pa = Zones[bi].center, pb = Zones[bj].center;
+                    Vector2 dir = (pb - pa).normalized;
+                    Vector2 ea = pa + dir * (Zones[bi].radius + 40f);
+                    Vector2 eb = pb - dir * (Zones[bj].radius + 40f);
+                    if (Vector2.Distance(ea, eb) < 20f) { padded.Add((long)bi * 1000 + bj); continue; }
+                    if (!PadClear(Zones, bi, bj, ea, eb, masks))
+                    { padded.Add((long)bi * 1000 + bj); continue; }
+                    float y = 0.5f * (ShapeGround(ea.x, ea.y) + ShapeGround(eb.x, eb.y));
+                    Terrain.AddCorridorPad(ea, eb, 20f, y, 10f);
+                    padded.Add((long)bi * 1000 + bj);
+                    Links = ForestSpace.BuildLinks(cfg, Zones, finalGround, masks, 16f);
+                    Trace.Add("link.pad", 1, 1,
+                        $"{bi}-{bj}: насыпь коридора 16 м, y={y:F1}");
+                }
+
                 Waterholes = ForestSpace.BuildWaterholes(cfg, Hydro, finalGround, masks, seed, 2);
                 Commons = ForestSpace.BuildCommons(cfg, Links, Zones, finalGround, Hydro,
                     masks, seed, 4);
@@ -459,8 +535,7 @@ public class DomeWorld
                         water.Add(commons[best]);
                         commons.RemoveAt(best);
                     }
-                    Commons = commons;
-                    Waterholes = water;
+                    Waterholes = water; // ������� � ���� ����� ����, ���� ���� ������� � Commons
                 }
                 Trace.Add("zones", Zones.Count, Zones.Count,
                     $"ShapeGround: связей {Links.Count}, общих {Commons.Count}, " +
@@ -776,13 +851,15 @@ public class DomeWorld
                 Mathf.Max(shell.halfWidth, shell.halfDepth), shell.yawDeg, shell.groundY,
                 shell.zone);
 
-        foreach (var w in Waterholes)
-            Pois.Add(ForestPoiKind.Waterhole, "waterhole", w.center, w.radius, w.yawDeg,
-                ground(w.center.x, w.center.y));
-
         foreach (var c in Commons)
-            Pois.Add(ForestPoiKind.Common, "common", c.center, c.radius, c.yawDeg,
+        {
+            bool water = false;
+            foreach (var w in Waterholes)
+                if (Vector2.Distance(c.center, w.center) < 0.5f) { water = true; break; }
+            Pois.Add(water ? ForestPoiKind.Waterhole : ForestPoiKind.Common,
+                water ? "waterhole" : "common", c.center, c.radius, c.yawDeg,
                 ground(c.center.x, c.center.y));
+        }
 
         foreach (var link in Links)
         {
@@ -803,6 +880,39 @@ public class DomeWorld
         foreach (var nest in Nests)
             Pois.Add(ForestPoiKind.Lair, "lair_nest", nest.pos, 25f, 0f,
                 RingGround(nest.pos.x, nest.pos.y));
+    }
+
+    static int MinExits(IReadOnlyList<ForestSpace.Zone> zones,
+        IReadOnlyList<ForestSpace.Link> links)
+    {
+        int min = int.MaxValue;
+        for (int i = 0; i < zones.Count; i++)
+            min = Mathf.Min(min, ForestSpace.Exits(zones, links, i));
+        return zones.Count == 0 ? 0 : min;
+    }
+
+    /// <summary>Пад коридора не идёт через чужую зону и не лезет в воду/кольцо/станцию.</summary>
+    static bool PadClear(IReadOnlyList<ForestSpace.Zone> zones, int i, int j,
+        Vector2 a, Vector2 b, DomeMasks masks)
+    {
+        for (int k = 0; k < zones.Count; k++)
+        {
+            if (k == i || k == j) continue;
+            float d = DomeFootprint.DistanceToSegment(zones[k].center, a, b);
+            if (d < zones[k].radius + 20f + 10f) return false;
+        }
+        if (masks != null &&
+            masks.BlocksForm(DomeFootprint.Capsule(a, b, 10f),
+                "corridor", "zone", "common", "landform", "mainRoute", "gate"))
+            return false;
+        return true;
+    }
+
+    static bool HasLink(IReadOnlyList<ForestSpace.Link> links, Vector2 a, Vector2 b)
+    {
+        foreach (var l in links)
+            if ((l.a - a).sqrMagnitude < 0.25f && (l.b - b).sqrMagnitude < 0.25f) return true;
+        return false;
     }
 
     /// <summary>Расстояние до ближайшего уреза воды: озеро/русло. Для роли водопоя.</summary>
@@ -926,6 +1036,7 @@ public class DomeWorld
         CoverPodsBuilt = 0;
         ArenaEdges = 0;
         Relief = null;
+        Composition = null;
         TreeColliderPositions = new List<Vector3>();
         CrownCover = 0f;
         Zones = new List<ForestSpace.Zone>();
@@ -1020,6 +1131,17 @@ public class DomeWorld
     void BuildChunks(int terrainQuads)
     {
         var mat = Flat(DomePalette.Terrain);
+        // S2 §4: материал по полосе уклона — только v2; v1 остаётся одним Terrain.
+        Material[] slopeMats = Terrain.TargetOrder
+            ? new[]
+            {
+                mat,
+                Flat(DomePalette.Turf),
+                Flat(DomePalette.Scree),
+                Flat(DomePalette.Rock),
+                Flat(DomePalette.Rock * 0.85f),
+            }
+            : null;
         int n = DomeGenRules.ChunkCount(cfg);
         float half = cfg.mapDiameter * 0.5f;
         int built = 0;
@@ -1032,9 +1154,12 @@ public class DomeWorld
                 float centerX = -half + (cx + 0.5f) * cfg.chunkSize;
                 float centerZ = -half + (cz + 0.5f) * cfg.chunkSize;
                 if (new Vector2(centerX, centerZ).magnitude > half) continue;
-                var mesh = DomeChunkMesh.BuildChunkMesh(cfg, cx, cz, terrainQuads, SampleGround);
+                var mesh = DomeChunkMesh.BuildChunkMesh(cfg, cx, cz, terrainQuads,
+                    SampleGround, Terrain.TargetOrder, cfg.seed);
                 Track(mesh);
                 var go = Part($"Chunk_{cx}_{cz}", mesh, mat);
+                if (slopeMats != null)
+                    go.GetComponent<MeshRenderer>().sharedMaterials = slopeMats;
                 var collider = go.AddComponent<MeshCollider>();
                 collider.sharedMesh = mesh;
                 built++;
