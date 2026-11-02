@@ -29,7 +29,7 @@ namespace Chimera.Tests.PlayMode
             host = null;
         }
 
-        ForestBuilder BuildV2()
+        ForestBuilder BuildV2(bool erosion = false, bool hydraulic = false)
         {
             host = new GameObject("~TerrainStationProbe");
             host.SetActive(false);
@@ -42,6 +42,12 @@ namespace Chimera.Tests.PlayMode
             builder.terrainQuads = 48;
             builder.worldVersion = 2;
             builder.buildRelief = true;
+            builder.buildThermalErosion = erosion;
+            builder.buildHydraulicErosion = hydraulic;
+            builder.erosionCacheDir = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "chimera-s4-test");
+            builder.erosionResolution = hydraulic ? 64 : 0;
+            builder.erosionDrops = hydraulic ? 2000 : 0;
+            builder.erosionSteps = hydraulic ? 12 : 0;
             builder.patchyFlora = true;
             builder.treeCount = 1;
             builder.buildAsh = false;
@@ -209,6 +215,76 @@ namespace Chimera.Tests.PlayMode
                     ". Связи только валидные (P0.2); план требует ≥2 подходов, 4–6 общих, " +
                     "2 водопоя. Причина — S1-поле без композиции/коридоров S2–S4. Долг S2/S4.");
             Assert.Pass($"S3: {facts}");
+        }
+
+        [UnityTest]
+        public IEnumerator V2_Erosion_And_Roads_AreBuilt()
+        {
+            var b = BuildV2(erosion: true);
+            yield return null;
+
+            Assert.IsNotNull(b.Erosion, "эрозия не собрана");
+            Assert.IsNotNull(b.Terrain.erosion, "Terrain не видит эрозию");
+            Assert.AreNotEqual(0UL, b.Erosion.deltaSum, "дельта эрозии нулевая");
+            Assert.IsNotNull(b.Roads, "сеть дорог не собрана");
+            Assert.Greater(b.Roads.roads.Count, 0, "дорог нет: " + b.Roads.note);
+            Assert.IsNotNull(GameObject.Find("ForestRoads"), "меш дорог не построен");
+            Assert.GreaterOrEqual(b.Roads.length, 2000f, "сеть дорог короче 2 км");
+            Assert.LessOrEqual(b.Roads.length, 4000f, "сеть дорог длиннее 4 км: " + b.Roads.length);
+            foreach (var road in b.Roads.roads)
+                foreach (var p in road.points)
+                {
+                    if (Vector2.Distance(p, new Vector2(b.LabDoor.x, b.LabDoor.z)) < 30f) continue;
+                    Assert.IsFalse(b.Masks.ContainsPoint(p, "water"), "дорога в воде");
+                    Assert.IsFalse(b.Masks.ContainsPoint(p, "station"), "дорога в станции");
+                    Assert.IsFalse(b.Masks.OverlapsRing(DomeFootprint.Circle(p, 2f)),
+                        "дорога в кольце");
+                }
+            Assert.Pass($"S4: erosion {b.Erosion.resolution}² sum={b.Erosion.deltaSum:x16}, " +
+                $"roads {b.Roads.roads.Count}, {b.Roads.length:F0} м, loops {b.Roads.loops}");
+        }
+
+        [UnityTest]
+        public IEnumerator V2_Erosion_KeepsProtectedForms()
+        {
+            var b = BuildV2(erosion: true);
+            yield return null;
+            Assert.IsNotNull(b.Erosion, "эрозия не собрана");
+            string[] names = { "water", "terrace", "canyon", "landform" };
+            foreach (string name in names)
+            {
+                if (!b.Masks.TryGet(name, out var foot)) continue;
+                Vector2[] pts = { foot.a, foot.b, (foot.a + foot.b) * 0.5f };
+                foreach (var p in pts)
+                    Assert.AreEqual(b.Shape0(p.x, p.y), b.ShapeGround(p.x, p.y), 0.01f,
+                        $"эрозия тронула {name} в ({p.x:F0};{p.y:F0})");
+            }
+            Assert.AreEqual(b.Shape0(b.LabCenter.x, b.LabCenter.y),
+                b.ShapeGround(b.LabCenter.x, b.LabCenter.y), 0.01f,
+                "эрозия тронула холм станции");
+            Assert.AreEqual(b.PlatformY, b.SampleGround(b.LabCenter.x, b.LabCenter.y), 0.05f,
+                "площадка не последняя над эрозией");
+            Assert.Pass("ErosionKeeps: вода/терраса/каньон/landform/холм — delta 0");
+        }
+
+        [UnityTest]
+        public IEnumerator V2_Hydraulic_IsBuilt_AndCacheHit()
+        {
+            var b = BuildV2(erosion: true, hydraulic: true);
+            yield return null;
+            Assert.IsNotNull(b.Erosion, "гидро не собрано");
+            Assert.IsTrue(b.Erosion.hydraulic, "гидро=missing: " + b.Erosion.hydraulicStatus);
+            Assert.IsTrue(b.Erosion.hydraulicStatus == "baked" ||
+                          b.Erosion.hydraulicStatus == "cache",
+                "статус гидро: " + b.Erosion.hydraulicStatus);
+            ulong first = b.Erosion.deltaSum;
+            b.Clear();
+            b.Build();
+            yield return null;
+            Assert.IsTrue(b.Erosion.hydraulicStatus == "cache",
+                "второй запуск не попал в кеш: " + b.Erosion.hydraulicStatus);
+            Assert.AreEqual(first, b.Erosion.deltaSum, "кеш и свежая дельта разошлись");
+            Assert.Pass($"hydraulic {b.Erosion.hydraulicStatus}, sum={first:x16}");
         }
 
         [UnityTest]

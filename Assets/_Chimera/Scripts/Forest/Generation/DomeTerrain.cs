@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -40,6 +40,8 @@ public sealed class DomeTerrain
     public DomeRelief.State relief;
     /// <summary>S2: семь форм композиции (v2). v1 остаётся на <see cref="relief"/>.</summary>
     public DomeComposition.State composition;
+    /// <summary>S4: ������ ������; null � ���� ��������.</summary>
+    public DomeErosion.State erosion;
     public DomeHill.State hill;
     public int worldVersion = 1;
 
@@ -122,6 +124,8 @@ public sealed class DomeTerrain
     public float ShapeGround(float x, float z)
     {
         float h = Shape0(x, z);
+        // S4: слот [erosion] — гидро+тепловая дельта; площадка/рампа/щель ниже.
+        if (TargetOrder && erosion != null) h = DomeErosion.Apply(erosion, h, x, z);
         if (!TargetOrder || corridorPads.Count == 0) return h;
         for (int i = 0; i < corridorPads.Count; i++)
         {

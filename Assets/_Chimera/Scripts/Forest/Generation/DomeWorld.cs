@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Unity.AI.Navigation;
 using UnityEngine;
@@ -98,6 +98,8 @@ public class DomeWorld
     public DomeRelief.State Relief { get; private set; }
     /// <summary>S2: композиция v2 (семь ролей; плато станции — шаг 5).</summary>
     public DomeComposition.State Composition { get; private set; }
+    /// <summary>S4: ������ ������ (null � ����� ���������).</summary>
+    public DomeErosion.State Erosion { get; private set; }
     public int ReliefHills => Relief != null ? Relief.hills.Count : 0;
     public IReadOnlyList<Vector3> TreeColliderPositions { get; private set; } = new List<Vector3>();
     public float CrownCover { get; private set; }
@@ -111,6 +113,8 @@ public class DomeWorld
     public IReadOnlyList<DomeShell.Spot> Shells { get; private set; } = new List<DomeShell.Spot>();
     public IReadOnlyList<DomeGate.Spot> Gates { get; private set; } = new List<DomeGate.Spot>();
     public ForestPoiRegistry Pois { get; } = new ForestPoiRegistry();
+    /// <summary>S4 P6: ���� ����� v2 (null � ���������/��� POI).</summary>
+    public ForestRoadNetwork Roads { get; private set; }
     public IReadOnlyList<ForestSpace.CoverPod> CoverPods { get; private set; } = new List<ForestSpace.CoverPod>();
     public float PlatformY => platformY;
     /// <summary>Поворот площадки станции (градусы); у старого лабиринта A/C — 0.</summary>
@@ -373,6 +377,27 @@ public class DomeWorld
             }
             Terrain.hill = Hill;
 
+            // S4: слот [erosion] — гидро(Shape0) → тепловая(hydro). Вход строго Shape0,
+            // маска — только формы ДО эрозии (DomeMasks.ErosionKeeps) + кольцо как домен.
+            if (cfg.buildThermalErosion || cfg.buildHydraulicErosion)
+            {
+                Func<float, float, bool> erosionMask = (x, z) =>
+                {
+                    if (new Vector2(x, z).magnitude > DomeRockRing.InnerRadius(cfg)) return true;
+                    if (masks != null)
+                        foreach (var name in DomeMasks.ErosionKeeps)
+                            if (masks.ContainsPoint(new Vector2(x, z), name)) return true;
+                    return DomeHill.Contains(Hill, x, z, 0f);
+                };
+                Erosion = DomeErosion.Build(cfg, (x, z) => Terrain.Shape0(x, z),
+                    erosionMask, seed);
+                Terrain.erosion = Erosion;
+                Trace.Add("erosion", 1, 1,
+                    $"hydro={Erosion.hydraulicStatus} t={Erosion.hydraulicSeconds:F2}s " +
+                    $"thermal={cfg.buildThermalErosion} res={Erosion.resolution} " +
+                    $"sum={Erosion.deltaSum:x16}");
+            }
+
             // platformY — ВЫХОД формы, а не вход: читаем финальный ShapeGround в центре
             // уже найденного пятна. Площадка ниже применится последним blend'ом.
             if (buildLabComplex)
@@ -550,6 +575,12 @@ public class DomeWorld
                 Shells = DomeShell.Build(Root, Zones, Links, zoneGround,
                     Flat(DomePalette.ConcreteDark), Flat(DomePalette.Rock), seed, meshes, 2);
                 BuildPoisV2(zoneGround);
+                Roads = ForestRoads.Build(cfg, Pois.All, ShapeGround, Hydro, masks, seed);
+                var roadMesh = DomeRoadMesh.Build(Roads, RenderedGround);
+                Track(roadMesh);
+                Part("ForestRoads", roadMesh, Flat(DomePalette.Path));
+                Trace.Add("roads", Pois.All.Count, Roads.roads.Count,
+                    $"{Roads.note}; ����� {Roads.length:F0} �, ������ {Roads.loops}");
             }
 
             Func<float, float, float> podGround = target
@@ -589,6 +620,7 @@ public class DomeWorld
                        : ForestSpace.Contains(Zones, x, z, 1f)) return true;
             // v2: полоса связи 28 м (16 + 2×6), значит запас 6 м к полуширине 8.
             if (ForestSpace.ContainsLink(Links, x, z, target ? 6f : 1f)) return true;
+            if (target && ForestRoads.Near(Roads, x, z, 1.5f)) return true;
             if (ForestSpace.NearPods(CoverPods, x, z, 3f)) return true;
             if (target)
             {
@@ -828,6 +860,7 @@ public class DomeWorld
     void BuildPoisV2(Func<float, float, float> ground)
     {
         Pois.Clear();
+        Roads = null;
         if (LabComplex != null)
             Pois.Add(ForestPoiKind.Base, "base", new Vector2(LabDoor.x, LabDoor.z),
                 LabRadius, padYaw, LabDoor.y);
@@ -1037,6 +1070,7 @@ public class DomeWorld
         ArenaEdges = 0;
         Relief = null;
         Composition = null;
+        Erosion = null;
         TreeColliderPositions = new List<Vector3>();
         CrownCover = 0f;
         Zones = new List<ForestSpace.Zone>();
@@ -1046,6 +1080,7 @@ public class DomeWorld
         Shells = new List<DomeShell.Spot>();
         Gates = new List<DomeGate.Spot>();
         Pois.Clear();
+        Roads = null;
         CoverPods = new List<ForestSpace.CoverPod>();
         Ravines = new List<DomeRavines.Ravine>();
         Terrace = default;

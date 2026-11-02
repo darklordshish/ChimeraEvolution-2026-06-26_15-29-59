@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -94,6 +94,22 @@ public static class WorldFingerprint
         h = MixRelief(h, b.WorldVersion,
             b.CompositionForms != null ? b.CompositionForms : FormsOf(b.Relief),
             b.Contract.walkMaxDegrees, b.Contract.wallMinDegrees, b.Contract.classEpsilon);
+        // S4: версия эрозии, сумма дельты и дороги — часть v2-мира.
+        if (b.WorldVersion > 1)
+        {
+            var e = b.Erosion;
+            Mix(ref h, e != null ? e.erosionVersion : 0);
+            if (e != null) MixULong(ref h, e.deltaSum);
+            var r = b.Roads;
+            Mix(ref h, r != null ? r.roads.Count : 0);
+            if (r != null)
+            {
+                Mix(ref h, Q(r.length));
+                foreach (var road in r.roads)
+                    foreach (var p in road.points)
+                    { Mix(ref h, Q(p.x)); Mix(ref h, Q(p.y)); }
+            }
+        }
         return h;
     }
 
@@ -143,6 +159,11 @@ public static class WorldFingerprint
     public static string Hex(ulong value) => value.ToString("x16");
 
     static int Q(float v) => Mathf.RoundToInt(v * 1000f);
+
+    static void MixULong(ref ulong h, ulong v)
+    {
+        h ^= v + 0x9E3779B97F4A7C15UL + (h << 6) + (h >> 2);
+    }
 
     static void Mix(ref ulong h, int v)
     {

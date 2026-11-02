@@ -37,6 +37,15 @@ public class ForestBuilder : MonoBehaviour
     [Tooltip("Рельеф формы (P5-lite) отдельным флагом; A/C/B0 — выключено")]
     public bool buildRelief = false;
 
+    [Header("Эрозия S4 (v2): тепловая + гидро-запекание")]
+    public bool buildThermalErosion = false;
+    public bool buildHydraulicErosion = false;
+    public int erosionVersion = 1;
+    public string erosionCacheDir = "";
+    public int erosionResolution = 0;
+    public int erosionDrops = 0;
+    public int erosionSteps = 0;
+
     // Сетка чанков начинается в −D/2 и шагает на chunkSize, поэтому chunkSize ОБЯЗАН
     // делить диаметр: при Ø400 и 250 внутри чаши остаётся дыра, а чанк торчит за кольцо.
     // Ноль — «не настроено»: новое сериализованное поле у компонента из сцены приходит
@@ -157,6 +166,9 @@ public class ForestBuilder : MonoBehaviour
     /// <summary>S2: композиция v2 (null у v1).</summary>
     public DomeComposition.State Composition => world != null ? world.Composition : null;
     /// <summary>Формы композиции для отпечатка; пусто — берётся старая ветка Relief.</summary>
+    public DomeErosion.State Erosion => world != null ? world.Erosion : null;
+    public ForestRoadNetwork Roads => world != null ? world.Roads : null;
+
     public IReadOnlyList<DomeForm> CompositionForms =>
         world != null && world.Composition != null
             ? world.Composition.forms
@@ -285,6 +297,13 @@ public class ForestBuilder : MonoBehaviour
         ownedConfig.treeCount = treeCount > 0 ? treeCount : 0;
         ownedConfig.patchyFlora = patchyFlora;
         ownedConfig.buildRelief = buildRelief;
+        ownedConfig.buildThermalErosion = buildThermalErosion;
+        ownedConfig.buildHydraulicErosion = buildHydraulicErosion;
+        ownedConfig.erosionVersion = erosionVersion;
+        DomeErosion.CacheDir = erosionCacheDir;
+        if (erosionResolution > 0) ownedConfig.erosionResolution = erosionResolution;
+        if (erosionDrops > 0) ownedConfig.hydroDrops = erosionDrops;
+        if (erosionSteps > 0) ownedConfig.hydroSteps = erosionSteps;
 
         var issues = DomeGenRules.CheckConfig(ownedConfig);
         if (issues.Count > 0)
