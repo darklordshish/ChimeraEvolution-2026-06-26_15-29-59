@@ -68,13 +68,16 @@ public static class ForestRoads
         int n = nodes.Count;
         var cost = new float[n, n];
         var path = new List<Vector2>[n, n];
-        for (int i = 0; i < n; i++)
+        // Пары независимы: Path читает общую сетку и пишет только свои ячейки.
+        System.Threading.Tasks.Parallel.For(0, n, i =>
+        {
             for (int j = i + 1; j < n; j++)
             {
                 var p = Path(nodes[i].pos, nodes[j].pos, ground, grid, out float c);
                 cost[i, j] = cost[j, i] = c;
                 path[i, j] = path[j, i] = p;
             }
+        });
 
         var inTree = new bool[n];
         var best = new float[n];
@@ -164,14 +167,21 @@ public static class ForestRoads
             blocked = new bool[n * n],
             height = new float[n * n],
         };
-        for (int z = 0; z < n; z++)
+        // Клетки независимы: блокировки и высоты читают мир, но не пишут в него.
+        // Параллель по строкам снимает 5.4 с BuildGrid, порядок и числа те же.
+        System.Threading.Tasks.Parallel.For(0, n, z =>
+        {
             for (int x = 0; x < n; x++)
             {
                 float wx = g.origin + x * Cell;
                 float wz = g.origin + z * Cell;
-                g.height[z * n + x] = ground(wx, wz);
-                g.blocked[z * n + x] = Blocked(wx, wz, hydro, masks, basePos);
+                bool blocked = Blocked(wx, wz, hydro, masks, basePos);
+                g.blocked[z * n + x] = blocked;
+                // Высоту blocked-клетки не семплим: A* в неё не заходит, а SampleGround
+                // в v2 дорогой (эрозия/композиция/пады).
+                if (!blocked) g.height[z * n + x] = ground(wx, wz);
             }
+        });
         return g;
     }
 
@@ -227,7 +237,10 @@ public static class ForestRoads
         while (i < pts.Count - 1)
         {
             int far = i + 1;
-            for (int j = pts.Count - 1; j > i + 1; j--)
+            // Сглаживание смотрит вперёд не дальше 64 клеток (256 м): полный O(n²)
+            // по 250-точечной ленте стоил 1.5 с на 28 пар, а выигрыш дальше — тот же.
+            int limit = Mathf.Min(pts.Count - 1, i + 64);
+            for (int j = limit; j > i + 1; j--)
                 if (LineClear(pts[i], pts[j], g, ground)) { far = j; break; }
             outp.Add(pts[far]);
             i = far;
@@ -311,7 +324,10 @@ public static class ForestRoads
                 dist[ni] = nd; prev[ni] = cur;
                 float hx = Mathf.Abs(g.origin + nx * Cell - b.x);
                 float hz = Mathf.Abs(g.origin + nz * Cell - b.y);
-                heap.Push(nd + (hx + hz) * 0.01f, ni);
+                // Октильная нижняя оценка: без неё A* почти Dijkstra и обходит 250k
+                // клеток на каждую из 28 пар POI — 13.7 с на сборку.
+                float h = Mathf.Max(hx, hz) + 0.41421356f * Mathf.Min(hx, hz);
+                heap.Push(nd + h, ni);
             }
         }
         if (!closed[t]) return null;

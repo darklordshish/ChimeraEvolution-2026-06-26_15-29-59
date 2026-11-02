@@ -841,6 +841,8 @@ public static class ForestLandscapeMetrics
         public float localDensityPerKm2;
         public float globalDensityPerKm2;
         public float crownCover;
+        /// <summary>M14: крона внутри пятен, а не по всему диску (глобальная — отчёт).</summary>
+        public float localCrownCover;
         public int trunksInForbidden;
         public string note;
     }
@@ -855,7 +857,7 @@ public static class ForestLandscapeMetrics
     public static PatchResult Patches(IReadOnlyList<Vector3> trunks, float radius,
         IReadOnlyList<ForestSpace.Zone> zones, IReadOnlyList<Vector2> poiAxes,
         DomeHydro.State hydro, Func<float, float, float> ground, DomeGenConfigSO cfg,
-        float crownCover)
+        float crownCover, int totalTrees = 0)
     {
         var r = new PatchResult { crownCover = crownCover };
         if (trunks == null || ground == null || cfg == null) return r;
@@ -922,6 +924,16 @@ public static class ForestLandscapeMetrics
         r.patchAreaShare = diskKm2 > 0 ? (float)(patchKm2 / diskKm2) : 0f;
         r.localDensityPerKm2 = patchKm2 > 0 ? (float)(patchTrees / patchKm2) : 0f;
         r.globalDensityPerKm2 = diskKm2 > 0 ? (float)(trunks.Count / diskKm2) : 0f;
+        // Средняя крона — из глобального покрова и ОБЩЕГО числа деревьев, не из
+        // списка стволов с коллайдерами (сухостой в него не входит).
+        int crowns = totalTrees > 0 ? totalTrees : trunks.Count;
+        // crownCover считается по диску карты Ø mapDiameter, а не по rin: иначе
+        // средняя крона занижается на площадь кольца (13 % превращались в 11.6 %).
+        double mapKm2 = Mathf.PI * (cfg.mapDiameter * 0.5f) * (cfg.mapDiameter * 0.5f) / 1_000_000f;
+        double avgCrownM2 = crowns > 0 ? crownCover * mapKm2 * 1_000_000f / crowns : 0;
+        r.localCrownCover = patchKm2 > 0
+            ? (float)(patchTrees * avgCrownM2 / 1_000_000f / patchKm2)
+            : 0f;
 
         // Запреты: зоны, осевые (R12), вода, >35°.
         foreach (var t in trunks)

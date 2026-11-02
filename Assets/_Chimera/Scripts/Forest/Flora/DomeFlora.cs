@@ -37,6 +37,71 @@ public static class DomeFlora
     }
 
     /// <summary>
+    /// Скаттер пятен: кандидаты берутся из ячеек, где fBm уже прошёл порог.
+    /// Обычный Scatter бросает точки по всему диску и 98 % отбрасывает — на 4k
+    /// целей это 100k дорогих SampleGround. Здесь те же пятна, но без слепых попыток.
+    /// </summary>
+    static List<Pt> ScatterForest(long seed, int salt, int count, float diameter,
+        float minDist, Func<float, float, (float h, bool ok)> sample, float threshold)
+    {
+        var pts = new List<Pt>();
+        if (count <= 0 || diameter <= 0f || minDist <= 0f) return pts;
+        float cell = 25f;
+        int n = Mathf.CeilToInt(diameter / cell);
+        float origin = -n * cell * 0.5f;
+        var cells = new List<Vector2>();
+        for (int iz = 0; iz < n; iz++)
+            for (int ix = 0; ix < n; ix++)
+            {
+                float x = origin + (ix + 0.5f) * cell;
+                float z = origin + (iz + 0.5f) * cell;
+                if (x * x + z * z > diameter * diameter * 0.25f) continue;
+                float noise = ValueNoise2D.Fbm(seed + 9111L, x * 0.0025f, z * 0.0025f, 3);
+                if (noise > threshold) cells.Add(new Vector2(x, z));
+            }
+        if (cells.Count == 0)
+            return Scatter(seed, salt, count, diameter, minDist, sample);
+
+        var grid = new Dictionary<(int, int), List<Vector2>>();
+        int maxAttempts = count * 12 + 200;
+        int attempts = 0, i = 0;
+        while (pts.Count < count && attempts < maxAttempts)
+        {
+            attempts++;
+            int ci = (int)(SeededHash.Hash(seed + salt, i, 6) % (uint)cells.Count);
+            Vector2 c = cells[ci];
+            float x = c.x + (SeededHash.ToFloat01(SeededHash.Hash(seed + salt, i, 1)) - 0.5f) * cell;
+            float z = c.y + (SeededHash.ToFloat01(SeededHash.Hash(seed + salt, i, 2)) - 0.5f) * cell;
+            i++;
+            if (x * x + z * z > diameter * diameter * 0.25f) continue;
+            var (h, ok) = sample(x, z);
+            if (!ok) continue;
+            int cx = Mathf.FloorToInt(x / minDist), cz = Mathf.FloorToInt(z / minDist);
+            bool clash = false;
+            for (int ax = cx - 1; ax <= cx + 1 && !clash; ax++)
+                for (int az = cz - 1; az <= cz + 1 && !clash; az++)
+                {
+                    if (!grid.TryGetValue((ax, az), out var list)) continue;
+                    foreach (var q in list)
+                    {
+                        float dx = q.x - x, dz = q.y - z;
+                        if (dx * dx + dz * dz < minDist * minDist) { clash = true; break; }
+                    }
+                }
+            if (clash) continue;
+            if (!grid.TryGetValue((cx, cz), out var own)) grid[(cx, cz)] = own = new List<Vector2>();
+            own.Add(new Vector2(x, z));
+            pts.Add(new Pt
+            {
+                pos = new Vector3(x, h, z),
+                scale = 0.8f + SeededHash.ToFloat01(SeededHash.Hash(seed + salt, i, 3)) * 0.5f,
+                rotY = SeededHash.ToFloat01(SeededHash.Hash(seed + salt, i, 4)) * 360f,
+            });
+        }
+        return pts;
+    }
+
+    /// <summary>
     /// Скаттер: sample(x,z) отдаёт (высота, годен). Чистая логика — тесты на синтетике.
     /// </summary>
     public static List<Pt> Scatter(long seed, int salt, int count, float diameter,
@@ -121,6 +186,7 @@ public static class DomeFlora
     }
 
     static readonly Dictionary<string, Mesh> meshes = new Dictionary<string, Mesh>();
+    static readonly List<Mesh> batchMeshes = new List<Mesh>();
     static readonly List<Material> mats = new List<Material>();
 
     static Mesh Kit(string key, Func<Mesh> build)
@@ -157,6 +223,34 @@ public static class DomeFlora
         renderer.sharedMaterial = mat;
         renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         return go;
+    }
+
+    /// <summary>
+    /// Подлесок одинакового меша/материала — одним мешем: 2.8k GameObject'ов
+    /// давали 2.1 с и лишние draw calls. Деревья не батчатся: у них коллайдеры.
+    /// </summary>
+    static void Batch(Transform root, string name, Mesh source, Material mat,
+        List<(Vector3 pos, Quaternion rot, float scale)> items)
+    {
+        if (items == null || items.Count == 0) return;
+        var combines = new CombineInstance[items.Count];
+        for (int i = 0; i < items.Count; i++)
+        {
+            var it = items[i];
+            combines[i].mesh = source;
+            combines[i].transform = Matrix4x4.TRS(it.pos, it.rot, Vector3.one * it.scale);
+        }
+        var mesh = new Mesh { name = "DomeFlora_" + name };
+        mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+        mesh.CombineMeshes(combines, true, true);
+        mesh.RecalculateBounds();
+        batchMeshes.Add(mesh);
+        var go = new GameObject("DomeFlora_" + name);
+        go.transform.SetParent(root, false);
+        go.AddComponent<MeshFilter>().sharedMesh = mesh;
+        var renderer = go.AddComponent<MeshRenderer>();
+        renderer.sharedMaterial = mat;
+        renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
     }
 
     /// <summary>
@@ -357,8 +451,13 @@ public static class DomeFlora
         if (hydro == null) throw new ArgumentNullException(nameof(hydro));
         counts = default;
         counts.treeColliderPositions = new List<Vector3>();
+        var floraWatch = System.Diagnostics.Stopwatch.StartNew();
         float d = cfg.mapDiameter;
         float lakeY = hydro.lakeLevel;
+        float us = Mathf.Clamp(cfg.undergrowthScale, 0.05f, 2f);
+        int U(int n) => Mathf.Max(1, Mathf.RoundToInt(n * us));
+        // Батчинг подлеска — только v2; v1 оставляет по GameObject'у на куст/траву.
+        bool batchUnder = cfg.WorldVersion >= 2;
         Func<float, float, float> baseGround = groundOverride
             ?? ((x, z) => DomeHydro.SampleHydro(cfg, hydro, x, z));
 
@@ -396,13 +495,17 @@ public static class DomeFlora
         if (cfg.patchyFlora)
         {
             var patchBase = ground;
-            float threshold = Mathf.Lerp(-0.35f, 0.15f, cfg.forestFraction);
+            float threshold = cfg.forestThreshold > -900f
+                ? cfg.forestThreshold
+                : Mathf.Lerp(-0.35f, 0.15f, cfg.forestFraction);
             ground = (x, z) =>
             {
-                var g = patchBase(x, z);
-                if (!g.Item2) return g;
+                // Сначала дешёвая маска пятна: 93 % попыток отсекаются здесь, и только
+                // прошедшие платят за SampleGround + уклон + исключения. Точки те же,
+                // что при обратном порядке (высота отброшенной точки не используется).
                 float n = ValueNoise2D.Fbm(seed + 9111L, x * 0.0025f, z * 0.0025f, 3);
-                return (g.Item1, n > threshold);
+                if (n <= threshold) return (0f, false);
+                return patchBase(x, z);
             };
         }
 
@@ -418,7 +521,9 @@ public static class DomeFlora
                 return (g.Item1, r < 0.34f);
             };
         }
-        var trees = Scatter(seed, 111, treeTarget, d, 10f, ground);
+        var trees = cfg.forestThreshold > -900f
+            ? ScatterForest(seed, 111, treeTarget, d, 10f, ground, cfg.forestThreshold)
+            : Scatter(seed, 111, treeTarget, d, 10f, ground);
         // Порода считается один раз: и посадке, и выбору твёрдых стволов нужен один k.
         var kinds = new FloraKind[trees.Count];
         for (int i = 0; i < trees.Count; i++)
@@ -541,6 +646,7 @@ public static class DomeFlora
         counts.crownCover = d > 0f
             ? counts.crownArea / (Mathf.PI * (d * 0.5f) * (d * 0.5f))
             : 0f;
+        long treeMs = floraWatch.ElapsedMilliseconds;
 
         // Подлесок пятнами: на СТЕНДЕ (Ø≤600, B0/B1.1) — как было; на большом мире —
         // только когда включена пятнистая флора (B-lite). У A/C (Ø2000, patchyFlora false)
@@ -561,30 +667,46 @@ public static class DomeFlora
             : ground; // старый путь: равномерно, вырубка гасит и подлесок
 
         int bi = 0;
-        foreach (var p in Scatter(seed, 133, 400, d, 4f, underGround))
+        var bushItems = new List<(Vector3, Quaternion, float)>[8];
+        for (int i = 0; i < bushItems.Length; i++) bushItems[i] = new List<(Vector3, Quaternion, float)>();
+        foreach (var p in Scatter(seed, 133, U(400), d, 4f, underGround))
         {
             int lobes = 3 + Mathf.Clamp(
                 (int)(SeededHash.ToFloat01(SeededHash.Hash(seed, 708, bi)) * 5f), 0, 4);
-            Part(root.transform,
-                Kit($"dbushNest{lobes}", () => FloraMeshKit.BushNest(0.7f, lobes)),
-                leafDark, p);
+            bushItems[lobes].Add((p.pos, Quaternion.Euler(0f, p.rotY, 0f), p.scale));
             bi++;
+        }
+        for (int i = 0; i < bushItems.Length; i++)
+        {
+            var mesh = Kit($"dbushNest{i}", () => FloraMeshKit.BushNest(0.7f, i));
+            if (batchUnder)
+                Batch(root.transform, "bush" + i, mesh, leafDark, bushItems[i]);
+            else
+                foreach (var it in bushItems[i])
+                    Part(root.transform, mesh, leafDark, it.Item1, it.Item2, it.Item3);
         }
         counts.bushes = bi;
 
         int gi = 0;
         var tuft = Kit("dtuft", () => FloraMeshKit.GrassTuft(0.12f, 0.7f));
-        foreach (var p in Scatter(seed, 144, 2000, d, 1.5f, underGround))
+        var grassItems = new List<(Vector3, Quaternion, float)>();
+        foreach (var p in Scatter(seed, 144, U(2000), d, 1.5f, underGround))
         {
-            Part(root.transform, tuft, grassMat, p);
+            grassItems.Add((p.pos, Quaternion.Euler(0f, p.rotY, 0f), p.scale));
             gi++;
         }
+        if (batchUnder)
+            Batch(root.transform, "grass", tuft, grassMat, grassItems);
+        else
+            foreach (var it in grassItems)
+                Part(root.transform, tuft, grassMat, it.Item1, it.Item2, it.Item3);
         counts.grass = gi;
 
         // Папоротник — у воды и у комлей деревьев; у воды живёт и вне пятен.
         int fi = 0;
         var fern = Kit("dfern", () => FloraMeshKit.Fern(0.8f, 0.5f, 0.08f));
-        foreach (var p in Scatter(seed, 155, 250, d, 2f, (x, z) =>
+        var fernItems = new List<(Vector3, Quaternion, float)>();
+        foreach (var p in Scatter(seed, 155, U(250), d, 2f, (x, z) =>
         {
             var (h, ok) = patchy ? groundRaw(x, z) : ground(x, z);
             if (!ok) return (h, false);
@@ -596,22 +718,34 @@ public static class DomeFlora
             return (h, true);
         }))
         {
-            Part(root.transform, fern, grassMat, p);
+            fernItems.Add((p.pos, Quaternion.Euler(0f, p.rotY, 0f), p.scale));
             fi++;
         }
+        if (batchUnder)
+            Batch(root.transform, "fern", fern, grassMat, fernItems);
+        else
+            foreach (var it in fernItems)
+                Part(root.transform, fern, grassMat, it.Item1, it.Item2, it.Item3);
         counts.ferns = fi;
 
         int ri = 0;
-        foreach (var p in Scatter(seed, 166, 120, d, 6f, (x, z) =>
+        var rockItems = new List<(Vector3, Quaternion, float)>();
+        foreach (var p in Scatter(seed, 166, U(120), d, 6f, (x, z) =>
         {
             float h = baseGround(x, z);
             if (h < lakeY || DomeSlope.SlopeAtS(cfg, x, z, baseGround) < 20f) return (h, false);
             return (h, true);
         }))
         {
-            Part(root.transform, Kit("dslab", () => FloraMeshKit.Slab(0.9f, 0.5f, 0.7f)), rockMatF, p);
+            rockItems.Add((p.pos, Quaternion.Euler(0f, p.rotY, 0f), p.scale));
             ri++;
         }
+        var rockMesh = Kit("dslab", () => FloraMeshKit.Slab(0.9f, 0.5f, 0.7f));
+        if (batchUnder)
+            Batch(root.transform, "rock", rockMesh, rockMatF, rockItems);
+        else
+            foreach (var it in rockItems)
+                Part(root.transform, rockMesh, rockMatF, it.Item1, it.Item2, it.Item3);
         counts.rocks = ri;
         int pi = 0;
         if (coverPods != null)
@@ -667,6 +801,9 @@ public static class DomeFlora
         foreach (var mesh in meshes.Values)
             if (mesh != null) Destroy(mesh, immediate);
         meshes.Clear();
+        foreach (var mesh in batchMeshes)
+            if (mesh != null) Destroy(mesh, immediate);
+        batchMeshes.Clear();
     }
 
     static void Destroy(UnityEngine.Object obj, bool immediate)

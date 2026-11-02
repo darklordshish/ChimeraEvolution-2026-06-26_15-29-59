@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -29,15 +29,27 @@ public static class DomeChunkMesh
         float x0 = -half + cx * cfg.chunkSize;
         float z0 = -half + cz * cfg.chunkSize;
         float step = cfg.chunkSize / res;
+        // Высоты вершин считаются ОДИН раз: четыре угла на квад давали 9216
+        // SampleGround на чанк (52 чанка — 12 с); сетка (res+1)² — 2401.
+        var heights = new float[(res + 1) * (res + 1)];
+        // Строки сетки независимы; SampleGround — чистая функция. Это 125k сэмплов
+        // на мир (52 чанка), параллель по строкам снимает ~2 с.
+        System.Threading.Tasks.Parallel.For(0, res + 1, iz =>
+        {
+            for (int ix = 0; ix <= res; ix++)
+                heights[iz * (res + 1) + ix] = sampler(x0 + ix * step, z0 + iz * step);
+        });
+        Vector3 P(int ix, int iz) =>
+            new Vector3(x0 + ix * step, heights[iz * (res + 1) + ix], z0 + iz * step);
         var verts = new Vector3[res * res * 6];
         int v = 0;
         for (int iz = 0; iz < res; iz++)
             for (int ix = 0; ix < res; ix++)
             {
-                Vector3 p00 = Point(sampler, x0 + ix * step, z0 + iz * step);
-                Vector3 p10 = Point(sampler, x0 + (ix + 1) * step, z0 + iz * step);
-                Vector3 p01 = Point(sampler, x0 + ix * step, z0 + (iz + 1) * step);
-                Vector3 p11 = Point(sampler, x0 + (ix + 1) * step, z0 + (iz + 1) * step);
+                Vector3 p00 = P(ix, iz);
+                Vector3 p10 = P(ix + 1, iz);
+                Vector3 p01 = P(ix, iz + 1);
+                Vector3 p11 = P(ix + 1, iz + 1);
                 verts[v++] = p00;
                 verts[v++] = p11;
                 verts[v++] = p10;
@@ -57,10 +69,13 @@ public static class DomeChunkMesh
             for (int b = 0; b < bands.Length; b++) bands[b] = new List<int>();
             for (int i = 0; i < tris.Length; i += 3)
             {
-                Vector3 c = (verts[tris[i]] + verts[tris[i + 1]] + verts[tris[i + 2]]) / 3f;
-                float slope = SlopeClasses.SlopeAt(cfg, c.x, c.z, sampler,
-                    SlopeClasses.ClassEpsilon);
-                int band = DomeSlopeBands.Index(slope, c.x, c.z, seed);
+                Vector3 a = verts[tris[i]], b = verts[tris[i + 1]], c = verts[tris[i + 2]];
+                // Уклон грани из её же нормали: поле уже в вершинах, четыре повторных
+                // SampleGround на каждый треугольник давали 33 с на 52 чанка.
+                Vector3 n = Vector3.Cross(b - a, c - a).normalized;
+                float slope = Mathf.Acos(Mathf.Clamp(Mathf.Abs(n.y), 0f, 1f)) * Mathf.Rad2Deg;
+                Vector3 mid = (a + b + c) / 3f;
+                int band = DomeSlopeBands.Index(slope, mid.x, mid.z, seed);
                 bands[band].Add(tris[i]);
                 bands[band].Add(tris[i + 1]);
                 bands[band].Add(tris[i + 2]);
@@ -73,8 +88,4 @@ public static class DomeChunkMesh
         return mesh;
     }
 
-    static Vector3 Point(Func<float, float, float> sampler, float x, float z)
-    {
-        return new Vector3(x, sampler(x, z), z);
-    }
 }

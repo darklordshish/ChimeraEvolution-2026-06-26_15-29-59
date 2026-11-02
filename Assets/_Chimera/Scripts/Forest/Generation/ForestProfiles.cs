@@ -69,8 +69,11 @@ public static class ForestProfiles
         b.buildRelief = true;
         b.buildThermalErosion = erosion;
         b.buildHydraulicErosion = erosion;
-        b.erosionVersion = 2;
-        b.erosionResolution = 512;
+        b.erosionVersion = 3;
+        b.erosionResolution = 128;
+        b.undergrowthScale = 0.10f;
+        b.forestThreshold = 0.10f;
+        b.treeCount = 2000;
         b.erosionDrops = 96000;
         b.erosionSteps = 40;
         return b;

@@ -32,6 +32,12 @@ public class ForestBuilder : MonoBehaviour
     public int treeCount = 0;
     [Tooltip("Пятна леса/поляны; A/C по умолчанию выключены")]
     public bool patchyFlora = false;
+    [Tooltip("Множитель подлеска; 0 = исторические бюджеты (v1), v2 задаёт явно")]
+    public float undergrowthScale = 0f;
+    [Tooltip("Доля леса fBm; 0 = исторические 0.55 (v1), v2 задаёт пятнами")]
+    public float forestFraction = 0f;
+    [Tooltip("Явный порог fBm для v2; -999 = историческая формула")]
+    public float forestThreshold = -999f;
     // S3: слой рельефа отдельно от разметки. 0 у старой сцены — историческая связка
     // (patchyFlora) сохраняет Pavilion v1 бит-в-бит; v2 включает только явный флаг.
     [Tooltip("Рельеф формы (P5-lite) отдельным флагом; A/C/B0 — выключено")]
@@ -298,6 +304,9 @@ public class ForestBuilder : MonoBehaviour
         ownedConfig.chunkSize = ResolveChunkSize(mapDiameter);
         ownedConfig.treeCount = treeCount > 0 ? treeCount : 0;
         ownedConfig.patchyFlora = patchyFlora;
+        ownedConfig.undergrowthScale = undergrowthScale > 0f ? undergrowthScale : 1f;
+        if (forestFraction > 0f) ownedConfig.forestFraction = forestFraction;
+        if (forestThreshold > -900f) ownedConfig.forestThreshold = forestThreshold;
         ownedConfig.buildRelief = buildRelief;
         ownedConfig.buildThermalErosion = buildThermalErosion;
         ownedConfig.buildHydraulicErosion = buildHydraulicErosion;

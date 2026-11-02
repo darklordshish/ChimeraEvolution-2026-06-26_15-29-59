@@ -79,7 +79,7 @@ public static class ForestLandscapeReport
 
         var poiAxes = PoiAxes(b);
         snap.Patches = ForestLandscapeMetrics.Patches(b.TreeColliderPositions, rin,
-            b.Zones, poiAxes, b.Hydro, ground, cfg, b.CrownCover);
+            b.Zones, poiAxes, b.Hydro, ground, cfg, b.CrownCover, b.Trees);
         snap.Roads = ForestLandscapeMetrics.Roads(b.Roads, b.Pois.All, ground, cfg);
         snap.Water = ForestLandscapeMetrics.WaterLairs(LairPositions(b), b.Waterholes,
             b.CoverPods, b.Hydro, ground, cfg, rin);

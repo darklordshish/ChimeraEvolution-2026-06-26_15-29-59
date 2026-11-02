@@ -112,6 +112,28 @@ public sealed class DomeMasks
         return false;
     }
 
+    /// <summary>
+    /// Горячий путь дорог: без `params`-массива и `Array.IndexOf` на каждую клетку
+    /// сетки 4 м (262k вызовов × маски давали 8.7 с только на BuildGrid).
+    /// </summary>
+    public bool ContainsPoint(Vector2 p, string n1)
+    {
+        foreach (var m in masks)
+            if (m.name == n1 && m.foot.Contains(p)) return true;
+        return false;
+    }
+
+    public bool ContainsPoint(Vector2 p, string n1, string n2, string n3, string n4, string n5)
+    {
+        foreach (var m in masks)
+        {
+            if (m.name != n1 && m.name != n2 && m.name != n3 && m.name != n4 && m.name != n5)
+                continue;
+            if (m.foot.Contains(p)) return true;
+        }
+        return false;
+    }
+
     /// <summary>РРјСЏ РїРµСЂРІРѕР№ РјР°СЃРєРё, РІ РєРѕС‚РѕСЂСѓСЋ РїРѕРїР°Р» РіР°Р±Р°СЂРёС‚ (РґРёР°РіРЅРѕСЃС‚РёРєР° РѕС‚РєР°Р·Р° С„РѕСЂРјС‹).</summary>
     public string FirstConflict(DomeFootprint foot)
     {

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Unity.AI.Navigation;
 using UnityEngine;
@@ -265,7 +265,6 @@ public class DomeWorld
             ? BuildMasks(cfg, seed, Hydro, LabCenter, padYaw, padRect, ResolvedLabEntrance,
                 entryXZ, site.found ? site.door : Vector3.zero, northCrevice)
             : null;
-
         if (buildTerrace)
             Terrace = DomeTerrace.Build(cfg, seed, LabCenter, entryXZ, Hydro,
                 DomeRockRing.InnerRadius(cfg), masks);
@@ -592,7 +591,7 @@ public class DomeWorld
                 Track(roadMesh);
                 Part("ForestRoads", roadMesh, Flat(DomePalette.Path));
                 Trace.Add("roads", Pois.All.Count, Roads.roads.Count,
-                    $"{Roads.note}; ����� {Roads.length:F0} �, ������ {Roads.loops}");
+                    $"{Roads.note}; длина {Roads.length:F0} м, петель {Roads.loops}");
             }
 
             if (target) EnsureChunks();
@@ -634,6 +633,16 @@ public class DomeWorld
             // v2: полоса связи 28 м (16 + 2×6), значит запас 6 м к полуширине 8.
             if (ForestSpace.ContainsLink(Links, x, z, target ? 6f : 1f)) return true;
             if (target && ForestRoads.Near(Roads, x, z, 1.5f)) return true;
+            if (target && Hydro != null)
+            {
+                // M14: 0 стволов на воде; Patches режет R+2, значит флора тоже.
+                if (Vector2.Distance(new Vector2(x, z), Hydro.lakeCenter) <
+                    Hydro.lakeRadius + 2f) return true;
+                for (int i = 1; i < Hydro.riverPts.Count; i++)
+                    if (DomeFootprint.DistanceToSegment(new Vector2(x, z),
+                            Hydro.riverPts[i - 1], Hydro.riverPts[i]) <
+                        Hydro.riverHalfWidth + 2f) return true;
+            }
             if (ForestSpace.NearPods(CoverPods, x, z, 3f)) return true;
             if (target)
             {

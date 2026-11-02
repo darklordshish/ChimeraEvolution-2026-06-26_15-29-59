@@ -122,6 +122,11 @@ public class DomeGenConfigSO : ScriptableObject
     /// <summary>РџСЏС‚РЅР° Р»РµСЃР°/РїРѕР»СЏРЅС‹ РїРѕ РЅРёР·РєРѕС‡Р°СЃС‚РѕС‚РЅРѕРјСѓ fBm; РІС‹РєР»СЋС‡РµРЅРѕ РґР»СЏ A/C.</summary>
     public bool patchyFlora = false;
     public float forestFraction = 0.55f;
+    /// <summary>Явный порог fBm для пятен v2; −999 — историческая формула forestFraction.</summary>
+    public float forestThreshold = -999f;
+    /// <summary>Множитель подлеска (S5 G8): 1 — исторические бюджеты; v2 берёт меньше,
+    /// потому что 2.8k GameObject'ов подлеска стоили 2.1 с сборки.</summary>
+    public float undergrowthScale = 1f;
 
     [Header("NavMesh: РўРћР›Р¬РљРћ С‚Р°Р№Р»Р°РјРё (РјРѕРЅРѕ-Р±РµР№Рє РЅР° Г2000 Р·Р°РїСЂРµС‰С‘РЅ)")]
     public float navVoxelSize = 0.35f;
