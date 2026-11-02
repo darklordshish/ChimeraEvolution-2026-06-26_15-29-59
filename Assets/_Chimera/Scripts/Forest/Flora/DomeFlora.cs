@@ -24,6 +24,8 @@ public static class DomeFlora
     {
         public int trees;
         public int treeColliders;
+        /// <summary>Лежащие стволы сухостоя (ветка `fallen`): у них нет коллайдера.</summary>
+        public int deadLogs;
         public int coverPods;
         public List<Vector3> treeColliderPositions;
         public int bushes;
@@ -496,6 +498,7 @@ public static class DomeFlora
                 if (deadIndex < 26 && logClear)
                 {
                     fallen = true;
+                    counts.deadLogs++;
                     Vector3 center = p.pos - dir * (len * 0.5f);
                     center.y = p.pos.y + 0.35f * p.scale - 0.2f; // утоплен на 0.2 м, без коллайдера
                     Part(root.transform,

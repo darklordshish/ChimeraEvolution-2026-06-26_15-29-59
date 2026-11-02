@@ -1,11 +1,11 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 
 namespace Chimera.Tests.EditMode
 {
     /// <summary>
-    /// S2 §1.2: семь форм, `H/D = H/(D−бровка)`, `max|∇H| ≤ 22°`, якоря
+    /// S2 §1.2: семь форм + сухие выемки и полосы лазания S5 G1/G2, `H/D = H/(D−бровка)`, `max|∇H| ≤ 22°`, якоря
     /// `Entry → LabDoor`, запреты через маски S3. Синтетика без мира: проверяются
     /// данные композиции и её размещение, а не чанки.
     /// </summary>
@@ -63,7 +63,7 @@ namespace Chimera.Tests.EditMode
         }
 
         [Test]
-        public void DeclaresSevenRoles_AndDefersStationPlateau()
+        public void DeclaresRoles_AndDefersStationPlateau()
         {
             var st = Build(1337L, out _, out _, out _, out _);
             Assert.AreEqual(DomeComposition.DeclaredRoles, st.declared.Count,
@@ -98,12 +98,13 @@ namespace Chimera.Tests.EditMode
             }
             // Семь заявленных H/D из §1.2 (для отчёта): гряда/мысы/чаша/ложбина/седло.
             Assert.AreEqual(0.109f, DomeComposition.Ridge().Aspect, 0.004f, "гряда H/D");
-            Assert.AreEqual(0.095f, DomeComposition.CapeA().Aspect, 0.004f, "мыс A H/D");
-            Assert.AreEqual(0.102f, DomeComposition.CapeB().Aspect, 0.004f, "мыс B H/D");
-            Assert.AreEqual(0.089f, DomeComposition.Bowl().Aspect, 0.004f, "чаша H/D");
+            Assert.AreEqual(0.131f, DomeComposition.CapeA().Aspect, 0.004f, "мыс A H/D (полоса лазания)");
+            Assert.AreEqual(0.131f, DomeComposition.CapeB().Aspect, 0.004f, "мыс B H/D (полоса лазания)");
+            Assert.AreEqual(0.067f, DomeComposition.Bowl().Aspect, 0.004f, "чаша H/D (мельче, шире)");
             Assert.AreEqual(0.060f, DomeComposition.Hollow().Aspect, 0.004f, "ложбина H/D");
-            Assert.AreEqual(0.118f, DomeComposition.SaddleShoulder().Aspect, 0.004f,
-                "плечи ворот H/D");
+            Assert.AreEqual(0.131f, DomeComposition.SaddleShoulder().Aspect, 0.004f,
+                "плечи ворот H/D (полоса лазания)");
+            Assert.AreEqual(0.086f, DomeComposition.BasinC().Aspect, 0.004f, "котловина H/D");
             Assert.AreEqual(0.108f, DomeComposition.StationPlateau().Aspect, 0.004f,
                 "плато станции H/D");
         }

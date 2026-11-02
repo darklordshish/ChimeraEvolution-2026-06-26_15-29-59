@@ -1,10 +1,15 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
 /// S2 §1.2: семь форм композиции, поставленных ОТ ЯКОРЕЙ (<c>Entry → LabDoor</c>),
 /// а не по соли. Каждая форма — примитив S1 (<see cref="DomeForm"/>): бровка/подошва
 /// и <c>H/D ≤ 0,135</c>; выше 22° не создаётся.
+/// <para>
+/// S5 G1/G2 добавили к семи формам: четыре <b>сухие выемки</b> (баланс P/N объёмом,
+/// не подкруткой метрики) и <b>полосы лазания</b> на бровках плеч ворот — своя форма
+/// у каждой ≤22°, в сумме с плечом борт попадает в 22–35° (S2 §10.5), стены не создаются.
+/// </para>
 /// <para>
 /// Это замена случайного P5-lite (<see cref="DomeRelief"/>) для v2. v1 остаётся на
 /// старом P5-lite бит-в-бит; сюда он не заходит.
@@ -26,6 +31,11 @@ public static class DomeComposition
         Bowl = 4,
         Hollow = 5,
         Saddle = 6,
+        /// <summary>S5 G2: выемка на высоком борту (баланс P/N объёмом).</summary>
+        BasinC = 7,
+        BasinS = 8,
+        BasinE = 9,
+        BasinW = 10,
     }
 
     public struct Placed
@@ -45,9 +55,13 @@ public static class DomeComposition
         /// <summary>Все семь ролей: применённые и отклонённые с причиной.</summary>
         public List<Placed> declared = new List<Placed>();
         public string note;
+        /// <summary>Какая сторона v выбрана (отражение раскладки). Диагностика/отчёт S5.</summary>
+        public bool flipped;
+        /// <summary>Ось u (Entry → LabDoor) и v выбранной раскладки — для карты и проб.</summary>
+        public Vector2 origin, uAxis, vAxis;
     }
 
-    public const int DeclaredRoles = 7;
+    public const int DeclaredRoles = 11;
 
     /// <summary>Заявленные числа S2 §1.2: D, бровка, H (для отчёта и тестов).</summary>
     public static DomeForm Ridge() =>
@@ -55,27 +69,36 @@ public static class DomeComposition
             DomeFormSign.Lift);
 
     public static DomeForm CapeA() =>
-        DomeForms.Plateau(Vector2.zero, 202f, 34f, 16f, DomeFormSign.Lift, "Мыс A");
+        DomeForms.Plateau(Vector2.zero, 202f, 34f, 22f, DomeFormSign.Lift, "Мыс A");
 
     public static DomeForm CapeB() =>
-        DomeForms.Plateau(Vector2.zero, 166f, 29f, 14f, DomeFormSign.Lift, "Мыс B");
+        DomeForms.Plateau(Vector2.zero, 166f, 29f, 18f, DomeFormSign.Lift, "Мыс B");
 
     public static DomeForm StationPlateau() =>
         DomeForms.Plateau(Vector2.zero, 137f, 62f, 8f, DomeFormSign.Lift, "Плато станции");
 
     public static DomeForm Bowl() =>
-        DomeForms.Plateau(Vector2.zero, 156f, 44f, 10f, DomeFormSign.Carve, "Чаша");
+        DomeForms.Plateau(Vector2.zero, 200f, 50f, 10f, DomeFormSign.Carve, "Чаша");
+
+    /// <summary>S5 G2: сухие выемки на высоком борту — баланс P/N объёмом (не подкрутка метрики).</summary>
+    public static DomeForm BasinC() => Basin("Котловина С");
+    public static DomeForm BasinS() => Basin("Котловина Ю");
+    public static DomeForm BasinE() => Basin("Котловина В");
+    public static DomeForm BasinW() => Basin("Котловина З");
+
+    static DomeForm Basin(string name) =>
+        DomeForms.Plateau(Vector2.zero, 200f, 60f, 12f, DomeFormSign.Carve, name);
 
     public static DomeForm Hollow() =>
         CrestCapsule("Ложбина", Vector2.zero, Vector2.right, 105f, 60f, 10f, 3f,
             DomeFormSign.Carve);
 
     public static DomeForm SaddleShoulder() =>
-        CrestCapsule("Плечо ворот", Vector2.zero, Vector2.up, 60f, 114f, 12f, 12f,
+        CrestCapsule("Плечо ворот", Vector2.zero, Vector2.up, 60f, 114f, 12f, 13.4f,
             DomeFormSign.Lift);
 
     public static DomeForm SaddleNotch() =>
-        CrestCapsule("Проход ворот", Vector2.zero, Vector2.right, 60f, 70f, 17f, 6f,
+        CrestCapsule("Проход ворот", Vector2.zero, Vector2.right, 60f, 90f, 17f, 6f,
             DomeFormSign.Carve);
 
     /// <summary>
@@ -124,6 +147,10 @@ public static class DomeComposition
             ? new Vector2(uAxis.y, -uAxis.x)
             : new Vector2(-uAxis.y, uAxis.x);
         Vector2 At(float u, float v) => entry + uAxis * u + vAxis * v;
+        state.flipped = flipV;
+        state.origin = entry;
+        state.uAxis = uAxis;
+        state.vAxis = vAxis;
 
         float lake = hydro != null ? hydro.lakeLevel : float.NegativeInfinity;
         System.Func<DomeFootprint, bool> forbidden = MakeForbidden(entry, labCenter, hydro, ash, lairs);
@@ -145,7 +172,7 @@ public static class DomeComposition
         Place(state, "Мыс A", Role.CapeA, At(430f, 230f), shifts, scales, masks,
             lake, ground, vAxis, false, (c, s) =>
             {
-                var f = DomeForms.Plateau(c, 202f * s, 34f * s, 16f * s,
+                var f = DomeForms.Plateau(c, 202f * s, 34f * s, 22f * s,
                     DomeFormSign.Lift, "Мыс A");
                 return new[] { f };
             });
@@ -154,7 +181,7 @@ public static class DomeComposition
         Place(state, "Мыс B", Role.CapeB, At(690f, -180f), shifts, scales, masks,
             lake, ground, vAxis, false, (c, s) =>
             {
-                var f = DomeForms.Plateau(c, 166f * s, 29f * s, 14f * s,
+                var f = DomeForms.Plateau(c, 166f * s, 29f * s, 18f * s,
                     DomeFormSign.Lift, "Мыс B");
                 return new[] { f };
             });
@@ -169,11 +196,12 @@ public static class DomeComposition
                    "здесь не строим, иначе плато и холм сложатся",
         });
 
-        // 5. Чаша сухая: D 156, дно R22 (crest 44), H 10 выемки.
+        // 5. Чаша сухая: шире и мельче — дно остаётся выше воды, объём растёт
+        //    площадью, а не глубиной (дно чаши обязано быть сухим, S2 §1.1).
         Place(state, "Чаша", Role.Bowl, At(600f, 430f), shifts, scales, masks,
             lake, ground, vAxis, true, (c, s) =>
             {
-                var f = DomeForms.Plateau(c, 156f * s, 44f * s, 10f * s,
+                var f = DomeForms.Plateau(c, 200f * s, 50f * s, 10f * s,
                     DomeFormSign.Carve, "Чаша");
                 return new[] { f };
             });
@@ -193,19 +221,43 @@ public static class DomeComposition
                 return new[] { f };
             });
 
-        // 7. Седло-ворота: два плеча (плато 114, бровка 12, H 12) и проход 17 м, H 6.
+        // 7. Седло-ворота: два плеча (плато 114, бровка 12, H 13.4) и проход 17 м, H 6.
         Place(state, "Седло-ворота", Role.Saddle, At(840f, 170f), shifts, scales, masks,
             lake, ground, vAxis, false, (c, s) =>
             {
                 float gapHalf = (17f * s) * 0.5f + 57f * s;
                 var left = CrestCapsule("Плечо ворот L", c + vAxis * gapHalf, vAxis,
-                    60f * s, 114f * s, 12f * s, 12f * s, DomeFormSign.Lift);
+                    60f * s, 114f * s, 12f * s, 13.4f * s, DomeFormSign.Lift);
                 var right = CrestCapsule("Плечо ворот R", c - vAxis * gapHalf, vAxis,
-                    60f * s, 114f * s, 12f * s, 12f * s, DomeFormSign.Lift);
+                    60f * s, 114f * s, 12f * s, 13.4f * s, DomeFormSign.Lift);
+                // Проход 17 м остаётся, но борт шире: излом ≤2° (S5 G2) и объём
+                // выемки растёт без второй «стены» (S2 §10.5).
                 var notch = CrestCapsule("Проход ворот", c, uAxis,
-                    60f * s, 70f * s, 17f * s, 6f * s, DomeFormSign.Carve);
-                return new[] { left, right, notch };
+                    60f * s, 90f * s, 17f * s, 6f * s, DomeFormSign.Carve);
+                // S2 §10.5, G1: лазаемая полоса на бровке плеча. Своя форма ≤22°
+                // (H/D 0.057), но в сумме с плечом её борт попадает в 22–35° —
+                // полоса, а не стена: >35° не создаётся.
+                var bandL = CrestCapsule("Полоса лазания L", c + vAxis * gapHalf, vAxis,
+                    50f * s, 70f * s, 0f, 4f * s, DomeFormSign.Lift);
+                var bandR = CrestCapsule("Полоса лазания R", c - vAxis * gapHalf, vAxis,
+                    50f * s, 70f * s, 0f, 4f * s, DomeFormSign.Lift);
+                return new[] { left, right, notch, bandL, bandR };
             });
+
+        // 8–11. Сухие выемки на высоком борту: форма, а не подкрутка P/N.
+        //    Все — «выемка/чаша» из S2 §1.2; следующие — запас, если первая
+        //    упирается в маску/воду. Дно выше lakeLevel + 2.5 (проверка Place).
+        Place(state, "Котловина С", Role.BasinC, At(750f, 250f), shifts, scales, masks,
+            lake, ground, vAxis, true, (c, s) => new[] { BasinAt("Котловина С", c, s) });
+
+        Place(state, "Котловина Ю", Role.BasinS, At(800f, 100f), shifts, scales, masks,
+            lake, ground, vAxis, true, (c, s) => new[] { BasinAt("Котловина Ю", c, s) });
+
+        Place(state, "Котловина В", Role.BasinE, At(1000f, 350f), shifts, scales, masks,
+            lake, ground, vAxis, true, (c, s) => new[] { BasinAt("Котловина В", c, s) });
+
+        Place(state, "Котловина З", Role.BasinW, At(650f, 200f), shifts, scales, masks,
+            lake, ground, vAxis, true, (c, s) => new[] { BasinAt("Котловина З", c, s) });
 
         int applied = 0;
         foreach (var p in state.declared) if (p.applied) applied++;
@@ -276,6 +328,10 @@ public static class DomeComposition
             return "anchor";
         };
     }
+
+    /// <summary>Сухая выемка S5 G2: широкая и неглубокая — дно выше воды, объём площадью.</summary>
+    static DomeForm BasinAt(string name, Vector2 center, float s) =>
+        DomeForms.Plateau(center, 200f * s, 60f * s, 12f * s, DomeFormSign.Carve, name);
 
     static DomeForm CrestCapsule(string name, Vector2 center, Vector2 axis, float halfLength,
         float diameter, float crest, float height, DomeFormSign sign)

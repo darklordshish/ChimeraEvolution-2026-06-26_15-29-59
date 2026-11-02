@@ -159,6 +159,8 @@ public class ForestBuilder : MonoBehaviour
     public int Chunks => world != null ? world.Chunks : 0;
     public int Trees => world != null ? world.Trees : 0;
     public int TreeColliders => world != null ? world.TreeColliders : 0;
+    /// <summary>Лежащие стволы сухостоя: у них коллайдера нет (`TreeColliders == Trees − DeadLogs`).</summary>
+    public int DeadLogs => world != null ? world.DeadLogs : 0;
     public int CoverPodsBuilt => world != null ? world.CoverPodsBuilt : 0;
     public int ArenaEdges => world != null ? world.ArenaEdges : 0;
     public int ReliefHills => world != null ? world.ReliefHills : 0;

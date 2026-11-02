@@ -1,0 +1,17 @@
+﻿seed=1337 worldVersion=2 quads=48 mesh=5.208 fingerprint=c855549fda866de4
+chunks=52 trees=1500 colliders=1474 deadLogs=26 lairs=10 build=62.764s
+M1 slope(field) p50=5,80 p95=17,98 p99=28,10 ≤22=97,52% 22-35=2,11% >35=0,37% | slope(mesh 5,82/17,88/27,99) ≤22=97,59% 22-35=2,06% >35=0,36% | maxForm=21,5°
+M2 E=0.744 M3 meso=76.147% (83/109) M3b local=62.022%
+M4 H/D: Мыс A H/D=0.131 21.448°; Мыс B H/D=0.131 21.512°; Чаша H/D=0.067 11.31°; Плечо ворот L H/D=0.131 21.51°; Плечо ворот R H/D=0.131 21.51°; Проход ворот H/D=0.082 13.851°; Полоса лазания L H/D=0.057 9.728°; Полоса лазания R H/D=0.057 9.728°; Котловина С H/D=0.086 14.421°; Котловина Ю H/D=0.086 14.421°; Котловина З H/D=0.086 14.421°; 
+M4b P/N=1.117 P=5,221E+005 N=4,674E+005
+M5 seams=1.717° minR=31.282 м
+M6 edge=100% fieldP50=148 м
+M7 zones=5 six=5 corridor=96×56 м
+M8 zones=5 smooth=5 approaches=5 noTrunks=5 cover=5 widthP10=33.025 widthP50=65.041
+M9 lairs=10 dry=10 ring=10 waterP50=616.318 waterMax=902.079 spread=3.62
+M9b waterholes=2 approaches=7 cover=0 ford=0.9 bank=9.008 width=20.736
+M13 climb=2.112% wall=0.372% faces=20 len=5.05 ledges=7256/96 bypass=True
+M14 patches=2 area=0.752% local=2050/км² global=554.335/км² crown=2.101% forbidden=0
+M15 roads built=True pois=8 components=1 loops=1 len=3.138 p95=10.633 widthP10=4 fords=0
+M16 key=1337_2_2_512 status=off bake=0 hash=f16374e5f3f6dc92 res=512
+M11 renderers=6450 tris=485424 colliders=1474/1474

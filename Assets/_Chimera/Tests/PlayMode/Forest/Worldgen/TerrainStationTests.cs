@@ -307,7 +307,9 @@ namespace Chimera.Tests.PlayMode
             string compDetails = "";
             foreach (var p0 in b.Composition.declared)
                 compDetails += $"\n{p0.name}: {(p0.applied ? "OK" : "NO")} {p0.note}";
-            Assert.AreEqual(4, appliedForms, "применено меньше четырёх форм S2: " +
+            // S2 §1.2: состав вырос (S5 G2 — выемки и полосы лазания). Держим
+            // нижнюю границу «форм встало достаточно», а не снимок числа ролей.
+            Assert.GreaterOrEqual(appliedForms, 5, "применено меньше пяти форм S2: " +
                 b.Composition.note + compDetails);
             Assert.IsFalse(plateauApplied, "плато станции — шаг 5 (DomeHill)");
             foreach (var f in b.Composition.forms)

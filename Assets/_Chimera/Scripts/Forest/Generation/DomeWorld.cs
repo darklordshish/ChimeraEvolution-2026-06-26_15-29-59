@@ -93,12 +93,14 @@ public class DomeWorld
     public int Chunks { get; private set; }
     public int Trees { get; private set; }
     public int TreeColliders { get; private set; }
+    /// <summary>Лежащие стволы сухостоя: у них нет коллайдера (S5 §5.3).</summary>
+    public int DeadLogs { get; private set; }
     public int CoverPodsBuilt { get; private set; }
     public int ArenaEdges { get; private set; }
     public DomeRelief.State Relief { get; private set; }
     /// <summary>S2: композиция v2 (семь ролей; плато станции — шаг 5).</summary>
     public DomeComposition.State Composition { get; private set; }
-    /// <summary>S4: ������ ������ (null � ����� ���������).</summary>
+    /// <summary>S4: ������ ������ (null � ����� ���������).</summary>
     public DomeErosion.State Erosion { get; private set; }
     public int ReliefHills => Relief != null ? Relief.hills.Count : 0;
     public IReadOnlyList<Vector3> TreeColliderPositions { get; private set; } = new List<Vector3>();
@@ -113,7 +115,7 @@ public class DomeWorld
     public IReadOnlyList<DomeShell.Spot> Shells { get; private set; } = new List<DomeShell.Spot>();
     public IReadOnlyList<DomeGate.Spot> Gates { get; private set; } = new List<DomeGate.Spot>();
     public ForestPoiRegistry Pois { get; } = new ForestPoiRegistry();
-    /// <summary>S4 P6: ���� ����� v2 (null � ���������/��� POI).</summary>
+    /// <summary>S4 P6: ���� ����� v2 (null � ���������/��� POI).</summary>
     public ForestRoadNetwork Roads { get; private set; }
     public IReadOnlyList<ForestSpace.CoverPod> CoverPods { get; private set; } = new List<ForestSpace.CoverPod>();
     public float PlatformY => platformY;
@@ -447,8 +449,7 @@ public class DomeWorld
 
         Terrain.platformY = platformY;
         Terrain.padEnabled = true;
-        BuildChunks(terrainQuads);
-        Trace.Add("chunks", Chunks, Chunks);
+        if (!Terrain.TargetOrder) EnsureChunks();
         BuildRockRing();
         BuildWater();
         BuildMouthsAndNests(seed);
@@ -478,6 +479,16 @@ public class DomeWorld
         // B-lite — только при patchyFlora. Раньше скобки отсутствовали, и коридоры с
         // подами строились ВСЕГДА, даже когда разметка полян выключена (A/C).
         bool target = Terrain.TargetOrder;
+        // v2: пады коридоров добавляются ПОСЛЕ зон/связей (S2 §1.1), то есть меняют
+        // ShapeGround/SampleGround. Меши чанков и NavMesh обязаны читать уже финальный
+        // пол, иначе G0 видит на 1.4 м ниже поле до пада. v1 строит чанки на прежнем
+        // месте — A/C/B0/Pavilion остаются бит-в-бит.
+        void EnsureChunks()
+        {
+            if (Chunks != 0) return;
+            BuildChunks(terrainQuads);
+            Trace.Add("chunks", Chunks, Chunks);
+        }
         // P0.2: зоны, связи, поды и POI читают ОДИН пол прохода — ShapeGround.
         // v1 (A/C/B0/Pavilion) остаётся на историческом BaseGround/SampleGround
         // бит-в-бит; второй правды для v2 нет.
@@ -539,6 +550,7 @@ public class DomeWorld
                         $"{bi}-{bj}: насыпь коридора 16 м, y={y:F1}");
                 }
 
+                EnsureChunks();
                 Waterholes = ForestSpace.BuildWaterholes(cfg, Hydro, finalGround, masks, seed, 2);
                 Commons = ForestSpace.BuildCommons(cfg, Links, Zones, finalGround, Hydro,
                     masks, seed, 4);
@@ -580,9 +592,10 @@ public class DomeWorld
                 Track(roadMesh);
                 Part("ForestRoads", roadMesh, Flat(DomePalette.Path));
                 Trace.Add("roads", Pois.All.Count, Roads.roads.Count,
-                    $"{Roads.note}; ����� {Roads.length:F0} �, ������ {Roads.loops}");
+                    $"{Roads.note}; ����� {Roads.length:F0} �, ������ {Roads.loops}");
             }
 
+            if (target) EnsureChunks();
             Func<float, float, float> podGround = target
                 ? (Func<float, float, float>)ShapeGround
                 : SampleGround;
@@ -643,6 +656,7 @@ public class DomeWorld
             (x, z) => ForestSpace.Near(Zones, Links, x, z, 12f), CoverPods,
             (x, z) => ForestSpace.Near(Zones, Links, x, z, 20f));
         TreeColliders = flora.treeColliders;
+        DeadLogs = flora.deadLogs;
         CoverPodsBuilt = flora.coverPods;
         // P0.4: лента дорожек v1 обязана читать SampleGround (как исторически),
         // а не BaseGround: BaseGround — внутренний шаг формы, наружу он не выходит.
@@ -1066,6 +1080,7 @@ public class DomeWorld
         Chunks = 0;
         Trees = 0;
         TreeColliders = 0;
+        DeadLogs = 0;
         CoverPodsBuilt = 0;
         ArenaEdges = 0;
         Relief = null;

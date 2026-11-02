@@ -28,6 +28,10 @@ public static class ForestRoads
 {
     const float Cell = 4f;
     const int MaxGrid = 512;
+    /// <summary>Продольный уклон дороги: S4 §5.2 — длительно ≤12°, коротко ≤18°/20 м.
+    /// Первый срез держит 12° на шаге сетки (без выемки/насыпи); 18° здесь не нужен,
+    /// пока least-cost находит обход — иначе G4 p95 не сойдётся.</summary>
+    const float MaxGrade = 12f;
 
     sealed class RoadGrid
     {
@@ -177,8 +181,11 @@ public static class ForestRoads
         if (masks != null)
         {
             if (masks.OverlapsRing(DomeFootprint.Circle(p, 3f))) return true;
-            if (masks.ContainsPoint(p, "water", "terrace", "canyon", "ravine")) return true;
-            // База — LabDoor у станции: 30 м вокруг неё дорога имеет право быть.\n            if (Vector2.Distance(p, basePos) > 30f && masks.ContainsPoint(p, "station"))\n                return true;
+            // S4 §5.1: дорога не идёт через воду/террасу/каньон/овраги/landform.
+            if (masks.ContainsPoint(p, "water", "terrace", "canyon", "ravine", "landform")) return true;
+            // База — LabDoor у станции: 30 м вокруг неё дорога имеет право быть.
+            if (Vector2.Distance(p, basePos) > 30f && masks.ContainsPoint(p, "station"))
+                return true;
         }
         if (hydro != null)
         {
@@ -255,7 +262,7 @@ public static class ForestRoads
             if (i > 0)
             {
                 float grade = Mathf.Atan2(Mathf.Abs(h - prev), len / steps) * Mathf.Rad2Deg;
-                if (grade > 18f) return false;
+                if (grade > MaxGrade) return false;
             }
             prev = h;
         }
@@ -295,9 +302,10 @@ public static class ForestRoads
                 float hn = g.height[ni];
                 float step = Cell * (k < 4 ? 1f : 1.41421356f);
                 float slope = Mathf.Atan2(Mathf.Abs(hn - hc), step) * Mathf.Rad2Deg;
-                if (slope > 30f) continue;
-                float costStep = step * (1f + 0.08f * Mathf.Pow(slope, 1.5f) +
-                    (slope > 22f ? 2f : 0f));
+                if (slope > MaxGrade) continue;
+                // 12° — жёсткий допуск S4, но к самому потолку путь дороже: least-cost
+                // предпочитает пологий обход, а не держится у границы.
+                float costStep = step * (1f + 0.25f * Mathf.Pow(slope / MaxGrade, 4f));
                 float nd = dist[cur] + costStep;
                 if (nd >= dist[ni]) continue;
                 dist[ni] = nd; prev[ni] = cur;
@@ -333,7 +341,7 @@ public static class ForestRoads
                     int x = cx + dx, z = cz + dz;
                     if (x < 0 || z < 0 || x >= n || z >= n) continue;
                     int i = z * n + x;
-                    if (!g.blocked[i] || r <= 1) return i;
+                    if (!g.blocked[i]) return i;
                 }
         return -1;
     }
@@ -354,8 +362,8 @@ public static class ForestRoads
             if (i > 0)
             {
                 float grade = Mathf.Atan2(Mathf.Abs(h - prev), len / steps) * Mathf.Rad2Deg;
-                if (grade > 18f) return null;
-                sum += (len / steps) * (1f + 0.08f * Mathf.Pow(grade, 1.5f));
+                if (grade > MaxGrade) return null;
+                sum += (len / steps) * (1f + 0.25f * Mathf.Pow(grade / MaxGrade, 4f));
             }
             pts.Add(p); prev = h;
         }
