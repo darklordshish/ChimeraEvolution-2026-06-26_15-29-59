@@ -98,7 +98,8 @@ for ob_ in OBL:
         kd.balance()
         mapv = {}; nov = []
         for j, ol in enumerate(ov):
-            if not ol: sys.exit('ГРАНИ: триангуляция добавила точку (ограничения пересекаются) в %s' % ob_['imya'])
+            if not ol:      # ограничения пересеклись: точка пересечения ложится на поверхность
+                nov.append((j, (vs[j][0], vs[j][1], 0.0))); print('ГРАНИ: %s — пересечение ограничений в (%.3f, %.3f)' % (ob_['imya'], vs[j][0], vs[j][1])); continue
             q = ol[0]
             if q < len(vg): mapv[j] = vg[q]
             else: nov.append((j, P[q - len(vg)]))
@@ -106,7 +107,7 @@ for ob_ in OBL:
         bmesh.ops.delete(bm, geom=ubr, context='FACES_ONLY')
         bmesh.ops.delete(bm, geom=[v for v in vnutr if v.is_valid], context='VERTS')
         for j, (x, z, dy) in nov:
-            if ob_.get('abs'): p = Vector((x, dy, z))
+            if ob_.get('abs') and dy != 0.0: p = Vector((x, dy, z))
             else:
                 h = bvh.ray_cast(Vector((x, ysg * 1.0, z)), Vector((0, -ysg, 0)))
                 if h[0] is None: sys.exit('ГРАНИ: луч мимо тела (%.3f, %.3f)' % (x, z))

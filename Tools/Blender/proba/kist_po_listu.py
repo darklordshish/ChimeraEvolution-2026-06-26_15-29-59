@@ -78,7 +78,7 @@ for side in (-1, 1):     # −1: правая (x < 0)
     def ug(v):
         r_ = W_(v) - c; return math.atan2(r_.dot(w), r_.dot(nn))
     # ладонь: (доля вниз м, полу-ширина по w, полу-толщина по n, сдвиг по w, сдвиг по n)
-    RY = [(0.028, 0.037, 0.027, 0.002, 0.0), (0.062, 0.049, 0.027, 0.003, -0.003), (0.095, 0.050, 0.020, 0.0, 0.0)]
+    RY = [(0.026, 0.033, 0.024, 0.002, 0.0), (0.060, 0.045, 0.025, 0.003, -0.003), (0.095, 0.048, 0.020, 0.0, 0.0)]
     prev_r = ring; rows = []
     for dz, hw, ht, sw, sn in RY:
         row = []
@@ -109,10 +109,9 @@ for side in (-1, 1):     # −1: правая (x < 0)
             p = p + dv_ * L
             if j >= 1:
                 ca_, sa_ = math.cos(ug_), math.sin(ug_); dv_ = (dv_ * ca_ + ax.cross(dv_) * sa_).normalized()
-        tip = nv(p - dv_ * 0.004)
         for ra, rb in zip(rings, rings[1:]):
             for k in range(4): face([ra[k], ra[(k + 1) % 4], rb[(k + 1) % 4], rb[k]])
-        for k in range(4): face([rings[-1][k], rings[-1][(k + 1) % 4], tip])
+        face(rings[-1])     # торец тупой: острия блестели шипами в анфас (критик r4)
         face(rings[0][::-1])
 
     bend = w   # ось сгиба — поперёк ладони: пальцы сгибаются к ладони (−n)
@@ -122,11 +121,11 @@ for side in (-1, 1):     # −1: правая (x < 0)
     for ofs_w, seg, th in PAL:
         base = c + d * 0.086 + w * ofs_w + nn * 0.002
         dr = (d + w * (ofs_w * 0.25) - nn * 0.12).normalized()
-        truba(base, dr, bend * sgn, list(seg), (th, th, th * 0.93, th * 0.85), (th * 0.95, th * 0.95, th * 0.88, th * 0.78), math.radians(16))
+        truba(base, dr, bend * sgn, list(seg), (th, th, th * 0.96, th * 0.92), (th * 0.95, th * 0.95, th * 0.92, th * 0.85), math.radians(16))
     # большой: от бугра вперёд-вниз-внутрь, под углом к ладони
     bb = c + d * 0.045 + w * 0.040 - nn * 0.016
     dr = (d * 0.90 + w * 0.30 - nn * 0.32).normalized()
-    truba(bb, dr, (dr.cross(nn)).normalized(), [0.036, 0.028, 0.024], (0.0150, 0.0150, 0.0125, 0.0105), (0.0135, 0.0135, 0.0110, 0.0095), math.radians(12))
+    truba(bb, dr, (dr.cross(nn)).normalized(), [0.034, 0.028, 0.024], (0.0175, 0.0175, 0.0140, 0.0120), (0.0150, 0.0150, 0.0125, 0.0105), math.radians(12))
     bm.normal_update(); bm.to_mesh(o.data); bm.free(); o.data.update()
 bm = bmesh.new(); bm.from_mesh(o.data); bmesh.ops.triangulate(bm, faces=[f for f in bm.faces if len(f.verts) > 3]); nt = len(bm.faces); bmesh.ops.recalc_face_normals(bm, faces=bm.faces); bm.to_mesh(o.data); bm.free(); o.data.update()
 bm = bmesh.new(); bm.from_mesh(o.data); kr = [e for e in bm.edges if e.is_boundary and abs((Mw @ e.verts[0].co).x) > 0.2 and (Mw @ e.verts[0].co).z < 1.2]; bm.free()
