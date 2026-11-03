@@ -29,7 +29,7 @@ namespace Chimera.Tests.PlayMode
             host = null;
         }
 
-        ForestBuilder BuildV2(bool erosion = false, bool hydraulic = false)
+        ForestBuilder BuildV2(bool erosion = false, bool hydraulic = false, LabEntrance entrance = LabEntrance.Buried)
         {
             host = new GameObject("~TerrainStationProbe");
             host.SetActive(false);
@@ -58,7 +58,7 @@ namespace Chimera.Tests.PlayMode
             builder.buildStationLoop = true;
             builder.buildStationHill = true;
             builder.buildLabPlan = false;
-            builder.labEntrance = LabEntrance.Buried;
+            builder.labEntrance = entrance;
             builder.labStyle = LabStyle.Bastion;
             builder.minLabDistance = 150f;
             builder.spawnAtEntry = true;
@@ -220,7 +220,7 @@ namespace Chimera.Tests.PlayMode
         [UnityTest]
         public IEnumerator V2_Erosion_And_Roads_AreBuilt()
         {
-            var b = BuildV2(erosion: true);
+            var b = BuildV2(erosion: true, entrance: LabEntrance.Rock);
             yield return null;
 
             Assert.IsNotNull(b.Erosion, "эрозия не собрана");

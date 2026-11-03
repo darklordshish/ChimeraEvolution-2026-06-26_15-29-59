@@ -1554,14 +1554,19 @@ public class DomeWorld
         if (skyMat.HasProperty("_Center")) skyMat.SetVector("_Center", vaultCenter);
         else skyMat.color = new Color(0.55f, 0.70f, 0.88f);
         mats.Add(skyMat);
-        var vault = DomeVault.BuildVaultMesh(rv, 128, 24);
+        // v2: свод/звёзды чуть грубее — это фон, а сборка G8 упиралась в 12 с.
+        // v1 остаётся 128×24, чтобы A/C/B0/Pavilion были прежними.
+        int vaultRings = Terrain.TargetOrder ? 96 : 128;
+        int vaultSegments = Terrain.TargetOrder ? 16 : 24;
+        var vault = DomeVault.BuildVaultMesh(rv, vaultRings, vaultSegments);
         Track(vault);
         Part("Vault", vault, skyMat);
 
         var starMat = new Material(starShader != null ? starShader : Shader.Find("Universal Render Pipeline/Unlit"));
         if (starMat.HasProperty("_Level")) starMat.SetFloat("_Level", 0f);
         mats.Add(starMat);
-        var stars = DomeStars.BuildStarMesh(seed, 400, vaultCenter, rv * 0.985f, rv * 0.004f);
+        var stars = DomeStars.BuildStarMesh(seed, Terrain.TargetOrder ? 300 : 400,
+            vaultCenter, rv * 0.985f, rv * 0.004f);
         Track(stars);
         Part("Stars", stars, starMat);
 

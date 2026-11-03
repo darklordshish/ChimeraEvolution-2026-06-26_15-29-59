@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Text;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -26,7 +27,11 @@ public static class G7Shot
     static ForestBuilder B;
     static Transform Root;
     static Camera Cam;
+    static Vector3 LastTarget;
+    static string LastHeight = "ground";
     static readonly CultureInfo Inv = CultureInfo.InvariantCulture;
+    const string MetadataFile =
+        "Docs/Диаграммы/Лес/Кадры/15-G7/G7-метаданные.txt";
 
     // ------------------------------------------------------------------
     // Шаг 2: v2-профиль и сборка
@@ -164,14 +169,10 @@ public static class G7Shot
     {
         var problem = Attach();
         if (problem != null) return problem;
-        var podPositions = new List<Vector2>();
-        if (B.CoverPods != null)
-            foreach (var p in B.CoverPods) podPositions.Add(p.center);
-
         int paths = 0, edges = 0, pods = 0, roads = 0, gates = 0, shells = 0;
         foreach (var go in SceneObjects())
         {
-            string kind = PoiKind(go, podPositions);
+            string kind = B.PoiKind(go);
             if (kind == null) continue;
             go.SetActive(on);
             switch (kind)
@@ -186,27 +187,6 @@ public static class G7Shot
         }
         return (on ? "shown" : "hidden") + $": SpacePaths={paths} ArenaEdge={edges} " +
                $"CoverPods={pods} ForestRoads={roads} LevelGate={gates} LabShell={shells}";
-    }
-
-    static string PoiKind(GameObject go, List<Vector2> podPositions)
-    {
-        string n = go.name;
-        if (n == "SpacePaths") return "SpacePaths";
-        if (n == "ArenaEdge") return "ArenaEdge";
-        if (n == "ForestRoads") return "ForestRoads";
-        if (n.StartsWith("LevelGate", StringComparison.Ordinal)) return "LevelGate";
-        if (n.StartsWith("LabShell", StringComparison.Ordinal)) return "LabShell";
-        // Поды — объекты DomeFlora с ОБЩИМ именем и общим мешем ("Trunk"/"Slab"):
-        // ни имя объекта, ни имя меша их не различают. Узнаём по адресу из
-        // CoverPods (сборка кладёт объект ровно в центр пода).
-        if (n == "DomeFlora" && podPositions.Count > 0)
-        {
-            Vector3 wp = go.transform.position;
-            var xz = new Vector2(wp.x, wp.z);
-            foreach (var pp in podPositions)
-                if ((xz - pp).sqrMagnitude < 0.25f) return "CoverPod";
-        }
-        return null;
     }
 
     static IEnumerable<GameObject> SceneObjects()
@@ -234,6 +214,7 @@ public static class G7Shot
 
         float h = height == "00" ? 1.6f : height == "50" ? 50f : height == "100" ? 100f : -1f;
         if (h < 0f) return "height must be 00|50|100";
+        LastHeight = height;
 
         Vector2 zone;
         float radius;
@@ -409,6 +390,7 @@ public static class G7Shot
         EnsureCamera();
         float maxGround = B.SampleGround(0f, 0f);
         Vector3 target = Field(0f, maxGround, 0f);
+        LastTarget = target;
         // ВЫШЕ купола нельзя: свод (радиус 1.4×Ø/2, апекс ~700 м) закрывает вид
         // сверху чёрным диском. Камера — ПОД сводом.
         Vector3 pos = target + Vector3.up * 240f;
@@ -590,6 +572,7 @@ public static class G7Shot
 
     static void Place(Vector3 pos, Vector3 target, float fov)
     {
+        LastTarget = target;
         var cam = EnsureCamera();
         cam.orthographic = false;
         cam.fieldOfView = fov;
@@ -598,6 +581,7 @@ public static class G7Shot
 
     static string PlaceClear(string label, Vector3 target, Vector3 desired, float radius)
     {
+        LastTarget = target;
         var cam = EnsureCamera();
         float dist = Vector3.Distance(target, desired);
         float step = Mathf.Max(4f, dist * 0.10f);
@@ -647,6 +631,150 @@ public static class G7Shot
     static string FogLine() =>
         $"fog={RenderSettings.fog} density={RenderSettings.fogDensity.ToString("0.000000", Inv)} " +
         $"mode={RenderSettings.fogMode} color={RenderSettings.fogColor}";
+
+    // ------------------------------------------------------------------
+    // Шаг 0: подпись кадра, высотный хэш и pixel diff
+    // ------------------------------------------------------------------
+
+    /// <summary>Хэш SampleGround в 100 точках — «тот же мир» без пересборки.</summary>
+    public static string GroundHash100()
+    {
+        var problem = Attach();
+        if (problem != null) return problem;
+        ulong h = 14695981039346656037UL;
+        int n = 0;
+        for (int iz = 0; iz < 10; iz++)
+            for (int ix = 0; ix < 10; ix++)
+            {
+                float x = Mathf.Lerp(-900f, 900f, ix / 9f);
+                float z = Mathf.Lerp(-900f, 900f, iz / 9f);
+                MixQ(ref h, B.SampleGround(x, z));
+                n++;
+            }
+        return $"hash={h:x16} points={n}";
+    }
+
+    /// <summary>Пиксельная разница A/B (PNG): средняя, максимум и доля >1 уровня.</summary>
+    public static string PixelDiff(string aPath, string bPath)
+    {
+        string a = Resolve(aPath), b = Resolve(bPath);
+        if (!File.Exists(a) || !File.Exists(b)) return "missing";
+        var ta = new Texture2D(2, 2);
+        var tb = new Texture2D(2, 2);
+        try
+        {
+            if (!ta.LoadImage(File.ReadAllBytes(a)) || !tb.LoadImage(File.ReadAllBytes(b)))
+                return "decode-failed";
+            if (ta.width != tb.width || ta.height != tb.height)
+                return $"size-mismatch {ta.width}x{ta.height}/{tb.width}x{tb.height}";
+            var pa = ta.GetPixels32();
+            var pb = tb.GetPixels32();
+            double sum = 0;
+            int max = 0, changed = 0;
+            for (int i = 0; i < pa.Length; i++)
+            {
+                int d = (Mathf.Abs(pa[i].r - pb[i].r) + Mathf.Abs(pa[i].g - pb[i].g) +
+                         Mathf.Abs(pa[i].b - pb[i].b)) / 3;
+                sum += d;
+                if (d > max) max = d;
+                if (d > 1) changed++;
+            }
+            return $"mean={sum / pa.Length:F3} max={max} changed>1%={100.0 * changed / pa.Length:F2}";
+        }
+        finally
+        {
+            UnityEngine.Object.DestroyImmediate(ta);
+            UnityEngine.Object.DestroyImmediate(tb);
+        }
+    }
+
+    /// <summary>
+    /// Записать шесть подписей базовых A/B 0/50/100. Один вызов — чтобы камера,
+    /// высота и pixel diff были сняты с одного и того же мира.
+    /// </summary>
+    public static string WriteAbBaseline()
+    {
+        var problem = Attach();
+        if (problem != null) return problem;
+        if (B.BuiltRoot == null) return "world not built";
+        const string dir = "Docs/Диаграммы/Лес/Кадры/15-G7/";
+        string d00 = PixelDiff(dir + "G7-A-00.png", dir + "G7-B-00.png");
+        string d50 = PixelDiff(dir + "G7-A-50.png", dir + "G7-B-50.png");
+        string d100 = PixelDiff(dir + "G7-A-100.png", dir + "G7-B-100.png");
+        const string hiddenA = "SpacePaths,ArenaEdge,ForestRoads,LevelGate,LabShell,CoverPod";
+        View00();
+        WriteMetadata("G7-A-00", "G7-A-00.png",
+            "A: только POI скрыт; сектор/направление с Entry (1.6 м)", d00, hiddenA);
+        WriteMetadata("G7-B-00", "G7-B-00.png",
+            "B: тот же мир с POI; сравнение сектора/направления", d00, "none");
+        View50();
+        WriteMetadata("G7-A-50", "G7-A-50.png",
+            "A: только POI скрыт; сектор/направление с Entry (50 м)", d50, hiddenA);
+        WriteMetadata("G7-B-50", "G7-B-50.png",
+            "B: тот же мир с POI; сравнение сектора/направления", d50, "none");
+        View100();
+        WriteMetadata("G7-A-100", "G7-A-100.png",
+            "A: только POI скрыт; сектор/направление с Entry (100 м)", d100, hiddenA);
+        WriteMetadata("G7-B-100", "G7-B-100.png",
+            "B: тот же мир с POI; сравнение сектора/направления", d100, "none");
+        return "metadata written: 6 A/B frames";
+    }
+
+    /// <summary>Дописать подпись кадра в G7-метаданные.txt (рядом с кадрами).</summary>
+    public static string WriteMetadata(string label, string image, string proves,
+        string pixelDiff = "pending", string hidden = null)
+    {
+        var problem = Attach();
+        if (problem != null) return problem;
+        var cam = EnsureCamera();
+        string file = Resolve(MetadataFile);
+        Directory.CreateDirectory(Path.GetDirectoryName(file));
+        var sb = new StringBuilder();
+        sb.AppendLine("---");
+        sb.AppendLine($"frame={label}");
+        sb.AppendLine($"image={image}");
+        sb.AppendLine($"seed={B.seed}");
+        sb.AppendLine($"worldVersion={B.WorldVersion}");
+        sb.AppendLine("treeVersion=absent");
+        sb.AppendLine("path=absent");
+        sb.AppendLine("scheme=absent");
+        sb.AppendLine("signature=absent");
+        sb.AppendLine($"profile=terrainQuads={B.terrainQuads},treeCount={B.treeCount}," +
+                      $"patchyFlora={B.patchyFlora},buildRelief={B.buildRelief}," +
+                      $"buildTerrace={B.buildTerrace},buildCanyon={B.buildCanyon}," +
+                      $"buildAsh={B.buildAsh},buildLabComplex={B.buildLabComplex}," +
+                      $"labEntrance={B.labEntrance},buildStationLoop={B.buildStationLoop};" +
+                      $"contract=meshStep {B.Contract.meshStep:F5},slopeEps {B.Contract.slopeEpsilon:F2}," +
+                      $"routeCell {B.Contract.routeCell:F2},navVoxel {B.Contract.navVoxel:F2};" +
+                      $"platformY={B.PlatformY:F2};platformY+Plinth={B.PlatformY + DomeLabComplex.Plinth:F2}");
+        sb.AppendLine($"camera=pos=({cam.transform.position.x:F2};{cam.transform.position.y:F2};" +
+                      $"{cam.transform.position.z:F2}),target=({LastTarget.x:F2};{LastTarget.y:F2};" +
+                      $"{LastTarget.z:F2}),yaw={cam.transform.eulerAngles.y:F1}," +
+                      $"pitch={cam.transform.eulerAngles.x:F1},fov={cam.fieldOfView:F1}");
+        sb.AppendLine($"height={LastHeight}");
+        sb.AppendLine("time=10.5,weather=Clear,timeScale=0");
+        sb.AppendLine($"fog={FogLine()}");
+        sb.AppendLine("hidden=" + (string.IsNullOrEmpty(hidden)
+            ? string.Join(",", ForestBuilder.PoiWhitelist)
+            : hidden));
+        sb.AppendLine($"pixelDiff={pixelDiff}");
+        sb.AppendLine($"proves={proves}");
+        File.AppendAllText(file, sb.ToString());
+        return $"metadata appended: {MetadataFile} ({label})";
+    }
+
+    static string Resolve(string path)
+    {
+        if (Path.IsPathRooted(path)) return path;
+        return Path.GetFullPath(Path.Combine(Application.dataPath, "..", path));
+    }
+
+    static void MixQ(ref ulong h, float v)
+    {
+        uint u = BitConverter.ToUInt32(BitConverter.GetBytes(v), 0);
+        h ^= u;
+        h *= 1099511628211UL;
+    }
 
     // ------------------------------------------------------------------
     // Мелочи

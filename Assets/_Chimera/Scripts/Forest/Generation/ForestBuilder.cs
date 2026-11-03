@@ -160,8 +160,45 @@ public class ForestBuilder : MonoBehaviour
     /// <summary>Порог B0.1: лаборатория не ближе стольких метров к входу.</summary>
     const float DefaultMinLabDistance = 150f;
 
+    /// <summary>
+    /// G7 шаг 0: единственный список логических POI-слоёв. Его читают и
+    /// <see cref="PoiKind"/>, и `G7Shot`, и `G7ParityTests`; второго перечня нет.
+    /// `LabShell` — остов лаборатории (S3 §4.2), тоже POI.
+    /// </summary>
+    public static readonly string[] PoiWhitelist =
+    {
+        "SpacePaths", "ArenaEdge", "ForestRoads", "LevelGate", "LabShell", "CoverPod",
+    };
+
     public int ResolvedSeed { get; private set; }
     public GameObject BuiltRoot { get; private set; }
+
+    public static bool IsPoiKind(string kind) =>
+        !string.IsNullOrEmpty(kind) && Array.IndexOf(PoiWhitelist, kind) >= 0;
+
+    /// <summary>
+    /// Логический POI-слой объекта: имя/префикс, а поды — по адресу из
+    /// <see cref="CoverPods"/> (у них общее имя `DomeFlora`). null — не POI.
+    /// </summary>
+    public string PoiKind(GameObject go)
+    {
+        if (go == null) return null;
+        string n = go.name;
+        string kind = null;
+        if (n == "SpacePaths") kind = "SpacePaths";
+        else if (n == "ArenaEdge") kind = "ArenaEdge";
+        else if (n == "ForestRoads") kind = "ForestRoads";
+        else if (n.StartsWith("LevelGate", StringComparison.Ordinal)) kind = "LevelGate";
+        else if (n.StartsWith("LabShell", StringComparison.Ordinal)) kind = "LabShell";
+        else if (n == "DomeFlora" && CoverPods != null && CoverPods.Count > 0)
+        {
+            Vector3 wp = go.transform.position;
+            var xz = new Vector2(wp.x, wp.z);
+            foreach (var pod in CoverPods)
+                if ((xz - pod.center).sqrMagnitude < 0.25f) { kind = "CoverPod"; break; }
+        }
+        return IsPoiKind(kind) ? kind : null;
+    }
     public DomeHydro.State Hydro => world != null ? world.Hydro : null;
     public DomeFacilityLayout.Facility Facility => world != null ? world.Facility : null;
     public DomeAshSite.AshSpot Ash => world != null ? world.Ash : default;

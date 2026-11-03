@@ -71,7 +71,7 @@ public static class ForestProfiles
         b.buildHydraulicErosion = erosion;
         b.erosionVersion = 3;
         b.erosionResolution = 128;
-        b.undergrowthScale = 0.10f;
+        b.undergrowthScale = 0.05f;
         b.forestThreshold = 0.20f;
         b.treeCount = 2000;
         b.treeDensityTarget = 3120f;
