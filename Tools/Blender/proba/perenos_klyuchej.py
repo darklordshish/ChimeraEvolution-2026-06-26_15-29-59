@@ -12,7 +12,10 @@
   построению, значит здесь мерится прямая проекция, и как вторая строка — мост через саму новую базу (i → новая база → ключ);
   `pokrytie` — от вершин ключа источника до поверхности нового ключа (дыры и схлопнутые места видны здесь);
   `vyvoroty` — грани нового ключа, чья нормаль смотрит против поверхности ключа источника в этой точке (> 90°).
-Всё по объектам и отдельно кисть (`Руки`, z < `--z_kist`).
+Всё по объектам и отдельно кисть (`Руки`, z < `--z_kist`). Вывороты разделены: `skladka` — ключ источника и сам вывернут здесь относительно своей базы
+(законная складка); `shchepka` — грань меньше 2 см²; `nastoyashchie` — остальные.
+`--kist_zhestko Z` (03.11): кисть новой базы (`Руки`, z < Z) построена заново и от моста ушла: она идёт своей формой — база + смещение ключа источника в
+ближайшей точке моста, переход от цели к смещению 3 см над запястьем. Общие вершины объектов после всего сводятся к одной цели, иначе шов открывается.
 
   blender -b новая.blend --factory-startup -P perenos_klyuchej.py -- выход.blend источник.fbx мост.blend [--klyuchi Волк,Волк1,Лось,…|vse]
       [--most_kluch Поджарый] [--rezhim abs] [--kontrol 1] [--z_kist 0.98] [--otchet файл.json]
@@ -116,6 +119,11 @@ for nm, o in NEW.items():
         if opt['rezhim'] == 'delta':
             R0, _ = perenos(V, M_['K'], T, Bs); R = V + (R - R0)
         tri3 = lambda x: [round(float(x.mean()) * 1000, 1), round(float(np.percentile(x, 95)) * 1000, 1), round(float(x.max()) * 1000, 1)]
+        if opt.get('kist_zhestko') and nm == 'Руки':
+            # кисть своей формой: база + смещение ключа источника в ближайшей точке моста; пальцы остаются раздельными, запястье сходится (жёсткий Procrustes давал остаток 30 мм и отрыв)
+            ZW = float(opt['kist_zhestko']); R0_, _ = perenos(V, M_['K'], T, M_['K'])
+            Rd = V + (R - R0_); t_ = np.clip((ZW + 0.03 - V[:, 2]) / 0.03, 0, 1)[:, None] * (np.abs(V[:, 0]) > 0.18)[:, None]; t_ = t_ * t_ * (3 - 2 * t_)
+            R = R * (1 - t_) + Rd * t_
         Tn = tris(o); zk = M_['K'][:, 2] < ZK if nm == 'Руки' else np.zeros(len(Kl), bool)
         rec = dict(ob=nm, kluch=kn, most_mm=tri3(dm))
         def mery(Rx, tag):
@@ -125,12 +133,16 @@ for nm, o in NEW.items():
                 loc, _, fi, _ = bn.find_nearest(Vector(p_)); t_ = Tn[fi]; w_ = _bary(np.array(loc), V[t_[0]], V[t_[1]], V[t_[2]])
                 er[k_] = np.linalg.norm(w_[0] * Rx[t_[0]] + w_[1] * Rx[t_[1]] + w_[2] * Rx[t_[2]] - Kl[k_])
             bk = bvh_of(Rx, Tn); po = np.array([bk.find_nearest(Vector(p_))[3] for p_ in Kl])
-            bo = bvh_of(Kl, T); fl = 0
+            bo = bvh_of(Kl, T); fl = dict(skladka=0, shchepka=0, nastoyashchie=0); mesta = []
             for t_ in Tn:
-                c_ = Rx[t_].mean(0); n_new = np.cross(Rx[t_[1]] - Rx[t_[0]], Rx[t_[2]] - Rx[t_[0]])
-                _, n_old, _, _ = bo.find_nearest(Vector(c_))
-                if np.linalg.norm(n_new) > 1e-12 and n_new @ np.array(n_old) < 0: fl += 1
-            rec[tag] = dict(sootv_mm=tri3(er), pokrytie_mm=tri3(po), vyvoroty=fl)
+                c_ = Rx[t_].mean(0); nn_ = np.cross(Rx[t_[1]] - Rx[t_[0]], Rx[t_[2]] - Rx[t_[0]]); ar = np.linalg.norm(nn_) / 2
+                _, n_old, fo, _ = bo.find_nearest(Vector(c_))
+                if ar > 1e-10 and nn_ @ np.array(n_old) < 0:
+                    to = T[fo]; n_s0 = np.cross(Bs[to[1]] - Bs[to[0]], Bs[to[2]] - Bs[to[0]]); n_s1 = np.cross(Kl[to[1]] - Kl[to[0]], Kl[to[2]] - Kl[to[0]])
+                    if n_s0 @ n_s1 < 0: fl['skladka'] += 1
+                    elif ar < 2e-4: fl['shchepka'] += 1
+                    else: fl['nastoyashchie'] += 1; mesta.append([round(float(q), 3) for q in c_])
+            rec[tag] = dict(sootv_mm=tri3(er), pokrytie_mm=tri3(po), vyvoroty=fl, mesta=mesta[:12])
             if zk.any(): rec[tag]['kist'] = dict(sootv_mm=tri3(er[zk]), pokrytie_mm=tri3(po[zk]))
         mery(R, 'most')
         if opt['kontrol'] == '1':
@@ -138,5 +150,20 @@ for nm, o in NEW.items():
         print('ПЕРЕНОС: ' + json.dumps(rec, ensure_ascii=False)); vse.append(rec)
         kb = o.data.shape_keys.key_blocks.get(kn) or o.shape_key_add(name=kn, from_mix=False); kb.data.foreach_set('co', R.ravel())
         kb.value = 0.0
+# ШВЫ: общие вершины объектов (одно место в покое) получали цель от своего объекта; шов раскрывался — сводим к средней
+for kn in {r['kluch'] for r in vse}:
+    pts = {}
+    for nm, o in NEW.items():
+        kb = o.data.shape_keys.key_blocks.get(kn) if o.data.shape_keys else None
+        bb = o.data.shape_keys.key_blocks.get(opt['most_kluch']) if o.data.shape_keys else None
+        if kb is None or bb is None: continue
+        for vi in range(len(kb.data)): pts.setdefault(tuple(np.round(np.array(bb.data[vi].co), 4)), []).append((kb, vi))
+    n_sv = 0; mx = 0.0
+    for lst in pts.values():
+        if len(lst) < 2: continue
+        c_ = np.mean([np.array(k_.data[i_].co) for k_, i_ in lst], axis=0); n_sv += 1
+        for k_, i_ in lst:
+            mx = max(mx, float(np.linalg.norm(np.array(k_.data[i_].co) - c_))); k_.data[i_].co = c_
+    print('ПЕРЕНОС: %s — швов сведено точек %d, макс сдвиг %.1f мм' % (kn, n_sv, mx * 1000))
 if opt.get('otchet'): json.dump(vse, open(opt['otchet'], 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 bpy.ops.wm.save_as_mainfile(filepath=out)
