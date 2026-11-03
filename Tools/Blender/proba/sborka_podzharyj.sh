@@ -15,7 +15,10 @@ b $W/r9g.blend glad_polosa.py $W/r9h.blend --tochki "0,1,1.33,0.13" --shagi 10 -
 b $W/r9h.blend grani_oblasti.py $W/r9m.blend --oblasti $D/grani-spina.json | L ГРАНИ
 b $W/r9m.blend grani_oblasti.py $W/r9i.blend --oblasti $D/grani-pered.json | L ГРАНИ
 b $W/r9i.blend grani_oblasti.py $W/r9j.blend --oblasti $D/grani-lico.json | L ГРАНИ
-b $W/r9j.blend glad_polosa.py $W/r9k.blend --z 1.50:1.62 --kraj 0.03 --shagi 6 --ob шея | L "^XX"
+b $W/r9j.blend glad_polosa.py $W/r9n.blend --z 1.53:1.61 --kraj 0.02 --shagi 14 --ob шея | L "^XX"
+b $W/r9n.blend massy_po_liniyam.py $W/r9o.blend --massy $D/massy-koleno.json | L МАССЫ
+b $W/r9o.blend korpus_po_profilyu.py $W/r9k.blend --mera $W/pm6.json --tablica $W/korpus_t.json | L КОРПУС
+b $W/kmost5.blend korpus_po_profilyu.py $W/kmost9.blend --tablica_iz $W/korpus_t.json | L "^XX"
 "$B" -b --factory-startup --python-exit-code 1 -P $T/zakryt_lozhe.py -- $W/r9k.blend $W/r9l.blend 2>&1 | L "^XX"
 b $W/r9l.blend chistka_shcherbin.py $W/kr9.blend --ugol 70 --radius 0.05 --shagi 2 --ob Сердце,хребет,Руки --z 1.0:1.58 | L "ЩЕРБИНЫ"
 st r9; grep -E "ДЫРА изнанка" $W/pr9.log | head -4 | cut -c1-100

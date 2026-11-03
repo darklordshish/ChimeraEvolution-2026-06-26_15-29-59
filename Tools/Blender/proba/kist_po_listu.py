@@ -78,7 +78,7 @@ for side in (-1, 1):     # −1: правая (x < 0)
     def ug(v):
         r_ = W_(v) - c; return math.atan2(r_.dot(w), r_.dot(nn))
     # ладонь: (доля вниз м, полу-ширина по w, полу-толщина по n, сдвиг по w, сдвиг по n)
-    RY = [(0.026, 0.033, 0.024, 0.002, 0.0), (0.060, 0.045, 0.025, 0.003, -0.003), (0.095, 0.048, 0.020, 0.0, 0.0)]
+    RY = [(0.026, 0.033, 0.024, 0.002, 0.0), (0.060, 0.045, 0.025, 0.003, -0.003), (0.092, 0.046, 0.016, 0.0, 0.0)]
     prev_r = ring; rows = []
     for dz, hw, ht, sw, sn in RY:
         row = []
@@ -113,7 +113,7 @@ for side in (-1, 1):     # −1: правая (x < 0)
             for k in range(4): face([ra[k], ra[(k + 1) % 4], rb[(k + 1) % 4], rb[k]])
         # кончик скосом (критик r5: плоские торцы читались чёрными обрубками): кольцо меньше и дальше по оси, сдвинуто к ладони, потом торец
         k_r = rings[-1]; c_r = sum((Mw @ v.co for v in k_r), Vector()) / 4; ax2 = bend_ax.normalized().cross(dv_).normalized()
-        tip = [bm.verts.new(iw @ (c_r + (Mw @ v.co - c_r) * 0.55 + dv_ * 0.007 + ax2 * 0.002)) for v in k_r]
+        tip = [bm.verts.new(iw @ (c_r + (Mw @ v.co - c_r) * 0.72 + dv_ * 0.005 + ax2 * 0.0015)) for v in k_r]
         for t_ in tip:
             for k in keys: t_[sh[k]] = t_.co + dk[k]
             for g, x in wt.items(): t_[dv][g] = x
@@ -131,7 +131,7 @@ for side in (-1, 1):     # −1: правая (x < 0)
         truba(base, dr, bend * sgn, list(seg), (th, th, th * 0.96, th * 0.92), (th * 0.95, th * 0.95, th * 0.92, th * 0.85), math.radians(20))
     # большой: от бугра вперёд-вниз-внутрь, под углом к ладони
     bb = c + d * 0.045 + w * 0.040 - nn * 0.016
-    dr = (d * 0.90 + w * 0.30 - nn * 0.32).normalized()
+    dr = (d * 0.86 + w * 0.42 - nn * 0.28).normalized()
     truba(bb, dr, (dr.cross(nn)).normalized(), [0.034, 0.028, 0.024], (0.0175, 0.0175, 0.0140, 0.0120), (0.0170, 0.0170, 0.0135, 0.0110), math.radians(12))
     bm.normal_update(); bm.to_mesh(o.data); bm.free(); o.data.update()
 bm = bmesh.new(); bm.from_mesh(o.data); bmesh.ops.triangulate(bm, faces=[f for f in bm.faces if len(f.verts) > 3]); nt = len(bm.faces); bmesh.ops.recalc_face_normals(bm, faces=bm.faces); bm.to_mesh(o.data); bm.free(); o.data.update()
