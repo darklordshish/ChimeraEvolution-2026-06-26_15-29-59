@@ -7,7 +7,7 @@
   4. веса — среднее кольца реза (вся кисть едет с предплечьем); в каждую форму-ключ новые вершины идут с тем же смещением, что среднее кольца
      реза в этом ключе. Рамка: d — вниз вдоль кисти, w — поперёк ладони вперёд (к большому пальцу), n — наружу (тыл). Кисть симметрична.
 
-  blender -b вход.blend --factory-startup -P kist_po_listu.py -- выход.blend [--z 0.96] [--imya Поджарый]
+  blender -b вход.blend --factory-startup -P kist_po_listu.py -- выход.blend [--z 0.96] [--imya Поджарый] [--mash 1.12 — масштаб от запястья] [--naruzhu 0.006 — сдвиг наружу, м]
 """
 import sys, math
 import bpy, bmesh
@@ -16,11 +16,11 @@ from mathutils import Vector
 
 a = sys.argv[sys.argv.index('--') + 1:]
 out = a[0]
-opt = dict(z='0.96', imya='Поджарый')
+opt = dict(z='0.96', imya='Поджарый', mash='1', naruzhu='0')
 i = 1
 while i < len(a):
     opt[a[i].lstrip('-')] = a[i + 1]; i += 2
-ZC = float(opt['z'])
+ZC = float(opt['z']); MS, NR = float(opt['mash']), float(opt['naruzhu'])
 o = bpy.data.objects['Руки']; Mw = o.matrix_world; iw = Mw.inverted()
 keys = [k.name for k in o.data.shape_keys.key_blocks]
 n_v0, n_f0 = len(o.data.vertices), len(o.data.polygons)
@@ -64,6 +64,7 @@ for side in (-1, 1):     # −1: правая (x < 0)
     top = sorted(wt.items(), key=lambda t: -t[1])[:4]; sm = sum(x for _, x in top); wt = {g: x / sm for g, x in top}
 
     def nv(p):
+        r_ = p - c; h_ = r_.dot(d); p = c + r_ * MS + nn * NR * min(1.0, max(h_, 0) / 0.06)
         q = bm.verts.new(iw @ p)
         for k in keys: q[sh[k]] = q.co + dk[k]
         for g, x in wt.items(): q[dv][g] = x
