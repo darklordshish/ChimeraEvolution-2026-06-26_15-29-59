@@ -1,13 +1,13 @@
 """КИСТЬ ПО ЛИСТУ (03.11, критик r2: «четыре пальца слиты в клин, большой висит брусом»; ГеймБосс: в первом лице кисть вплотную). У шаблона К2
 сама форма — кулак-варежка, правками её не получить. Кисть строится заново в объекте `Руки`:
-  1. рез плоскостью запястья (`--z`), нижняя часть удаляется; кольцо реза — край для ладони;
+  1. рез горизонтальной плоскостью запястья (`--z`), нижняя часть удаляется; кольцо реза — край для ладони;
   2. ладонь — кольца из тех же N вершин: запястье → середина (бугор большого пальца с передне-внутренней стороны) → косточки → дно, тыл — одна
      плоскость, косточки — ребро;
   3. пальцы и большой — трубки 4 грани, 3 фаланги с изломом на суставах, основание утоплено в ладонь (закрыто, не видно), длины с листа;
   4. веса — среднее кольца реза (вся кисть едет с предплечьем); в каждую форму-ключ новые вершины идут с тем же смещением, что среднее кольца
      реза в этом ключе. Рамка: d — вниз вдоль кисти, w — поперёк ладони вперёд (к большому пальцу), n — наружу (тыл). Кисть симметрична.
 
-  blender -b вход.blend --factory-startup -P kist_po_listu.py -- выход.blend [--z 0.955] [--imya Поджарый]
+  blender -b вход.blend --factory-startup -P kist_po_listu.py -- выход.blend [--z 0.96] [--imya Поджарый]
 """
 import sys, math
 import bpy, bmesh
@@ -16,7 +16,7 @@ from mathutils import Vector
 
 a = sys.argv[sys.argv.index('--') + 1:]
 out = a[0]
-opt = dict(z='0.955', imya='Поджарый')
+opt = dict(z='0.96', imya='Поджарый')
 i = 1
 while i < len(a):
     opt[a[i].lstrip('-')] = a[i + 1]; i += 2
@@ -24,30 +24,32 @@ ZC = float(opt['z'])
 o = bpy.data.objects['Руки']; Mw = o.matrix_world; iw = Mw.inverted()
 keys = [k.name for k in o.data.shape_keys.key_blocks]
 n_v0, n_f0 = len(o.data.vertices), len(o.data.polygons)
+# рез один на обе руки: горизонтальная плоскость по всему объекту (рез с наклоном по части геометрии снимал грани выше запястья — дыры на предплечье);
+# ниже `--z` у `Руки` только кисти
+bm = bmesh.new(); bm.from_mesh(o.data)
+pl_co = iw @ Vector((0, 0, ZC)); pl_no = (iw.to_3x3() @ Vector((0, 0, -1))).normalized()
+bmesh.ops.bisect_plane(bm, geom=list(bm.verts) + list(bm.edges) + list(bm.faces), plane_co=pl_co, plane_no=pl_no, clear_outer=True, clear_inner=False, dist=1e-5)
+bm.to_mesh(o.data); bm.free(); o.data.update()
 for side in (-1, 1):     # −1: правая (x < 0)
     bm = bmesh.new(); bm.from_mesh(o.data); bm.verts.ensure_lookup_table()
     sh = {k: bm.verts.layers.shape[k] for k in keys}; dv = bm.verts.layers.deform.active
     W_ = lambda v: Mw @ v.co
-    # рез: плоскость запястья поперёк кисти
     d = Vector((side * -0.05, -0.10, -1.0)).normalized()
-    arm = [f for f in bm.faces if all(W_(v).x * side > 0.18 and W_(v).z < ZC + 0.12 for v in f.verts)]
-    near = [v for f in arm for v in f.verts if abs(W_(v).z - ZC) < 0.03]
-    c0 = sum((W_(v) for v in near), Vector()) / len(near)
-    pl_co, pl_no = iw @ c0, (iw.to_3x3() @ d).normalized()
-    r = bmesh.ops.bisect_plane(bm, geom=list({e for f in arm for e in f.edges} | set(arm) | {v for f in arm for v in f.verts}), plane_co=pl_co, plane_no=pl_no, clear_outer=True, clear_inner=False)
-    bm.verts.ensure_lookup_table(); bm.edges.ensure_lookup_table()
-    # кольцо реза: открытые рёбра у плоскости
+    bm.edges.ensure_lookup_table()
+    # кольцо реза: открытые рёбра на плоскости, своя сторона
     on = [e for e in bm.edges if e.is_boundary and all(abs((v.co - pl_co).dot(pl_no)) < 1e-4 and W_(v).x * side > 0.18 for v in e.verts)]
     if not on: sys.exit('КИСТЬ: кольца реза нет')
     adj = {}
     for e in on:
         for v in e.verts: adj.setdefault(v, []).append(e)
+    if any(len(q) != 2 for q in adj.values()): sys.exit('КИСТЬ: кольцо реза ветвится: %s' % sorted({len(q) for q in adj.values()}))
     start = on[0].verts[0]; ring = [start]; prev = None; cur = start
     while True:
         nxt = next((e.other_vert(cur) for e in adj[cur] if e.other_vert(cur) is not prev), None)
         if nxt is None or nxt is start: break
         ring.append(nxt); prev, cur = cur, nxt
     N = len(ring)
+    if N != len(on): sys.exit('КИСТЬ: кольцо реза не одно: обход %d из %d рёбер' % (N, len(on)))
     # рамка
     c = sum((W_(v) for v in ring), Vector()) / N
     nn = Vector((side, 0, 0)); w = d.cross(nn).normalized()
@@ -126,5 +128,6 @@ for side in (-1, 1):     # −1: правая (x < 0)
     truba(bb, dr, (dr.cross(nn)).normalized(), [0.036, 0.028, 0.024], (0.0150, 0.0150, 0.0125, 0.0105), (0.0135, 0.0135, 0.0110, 0.0095), math.radians(12))
     bm.normal_update(); bm.to_mesh(o.data); bm.free(); o.data.update()
 bm = bmesh.new(); bm.from_mesh(o.data); bmesh.ops.triangulate(bm, faces=[f for f in bm.faces if len(f.verts) > 3]); nt = len(bm.faces); bmesh.ops.recalc_face_normals(bm, faces=bm.faces); bm.to_mesh(o.data); bm.free(); o.data.update()
-print('КИСТЬ: Руки — вершин %d → %d, граней %d → %d' % (n_v0, len(o.data.vertices), n_f0, nt))
+bm = bmesh.new(); bm.from_mesh(o.data); kr = [e for e in bm.edges if e.is_boundary and abs((Mw @ e.verts[0].co).x) > 0.2 and (Mw @ e.verts[0].co).z < 1.2]; bm.free()
+print('КИСТЬ: Руки — вершин %d → %d, граней %d → %d, открытых рёбер на руке %d' % (n_v0, len(o.data.vertices), n_f0, nt, len(kr)))
 bpy.ops.wm.save_as_mainfile(filepath=out)
