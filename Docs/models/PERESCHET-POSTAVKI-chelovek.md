@@ -4,16 +4,18 @@
 
 | что | файл | чем | проверено |
 |---|---|---|---|
-| шов головы «основание черепа» | `handoff/cherty/chelovek-golova-kusok.json` | `pasport_shva.py` | кандидат есть, детектор ОК |
-| основание морды | `handoff/chelovek-osnovanie-mordy.json` | по лицу новой базы | нет |
-| уши | `handoff/parts/chelovek-ushi.json` | кусок заново | нет; на FBX поставки детектор уже НЕТ (16 мм) |
-| корень хвоста | `handoff/chelovek-koren-hvosta.json` | на коже новой базы | нет; детектор НЕТ и на поставке |
-| основание рога | `handoff/chelovek-osnovanie-roga.json` | `mesto_rogov.py` | детектор ОК, голова изменилась — перегнать |
-| покой, суставы | `handoff/klyuchi/chelovek-pokoj.json` | `eksport_k2`/`rig_cheloveka` | нет |
-| ключи ступеней | `Волк`, `Волк1`, `Лось` | `perenos_klyuchej.py` через мост | только `Волк`, проба |
-| ключи областей | `Волк·*`, `Лось·*` | `oblasti_k2.py` или мост | нет |
-| органы на шаблоне | `Чутьё@`, `Шкура@`, `Руки@Волк` | `perenos_organov.py`; форму переделать | перенос пробно на r2 |
-| иглы ежа | `Шкура@Ёж`, `Игломёт@Ёж` | `shipy_ezha.py` + `organ_objekt.py` | на К2 |
-| веса | `vesa_final.py` | после формы; кисть — на `предплечье` | нет |
+| шов головы «основание черепа» | `handoff/cherty/chelovek-golova-kusok.json` | `pasport_shva.py` | поставлен, детектор ОК |
+| основание морды | `handoff/chelovek-osnovanie-mordy.json` | прежний: центр от хорды, лицо сдвинулось < 1.5 см | кадром не проверено |
+| уши | `handoff/parts/chelovek-ushi.json` | `pasporta_chelovek.py`, настоящие вершины края | детектор ОК |
+| корень хвоста | `handoff/chelovek-koren-hvosta.json` | `pasporta_chelovek.py`, на коже | детектор ОК |
+| основание рога | `handoff/chelovek-osnovanie-roga.json` | `mesto_rogov.py` | перегнано, детектор ОК |
+| покой, суставы | `handoff/klyuchi/chelovek-pokoj.json` | скелет не менялся, файл прежний | — |
+| ключи ступеней | `Волк`, `Волк1`, `Лось` | `perenos_klyuchej.py` через мост | все три, стенд ниже |
+| ключи областей | `Волк·*`, `Лось·*` | `oblasti_k2.py`, 18 ключей |
+| органы на шаблоне | `Чутьё@`, `Шкура@`, `Руки@Волк` | `perenos_organov.py`; форму переделать | перенесено; форма прежняя, клочья |
+| иглы ежа | `Шкура@Ёж`, `Игломёт@Ёж` | `shipy_ezha.py` + `organ_objekt.py` | в FBX |
+| веса | `vesa_final.py` | перевязка 0.0 мм, нарушений 0 |
 | линии перелома | атрибут `перелом` | на новой топологии не нужны (форма уже в базе) | — |
 | позы | `chelovek-volk-poza*.json` | длины костей прежние | не менялись |
+
+Сборка: `Tools/Blender/proba/sborka_postavka.sh` (база и мост вне git, `_refs-local/…/r2/`). Сварку в Unity проверяет ГеймБосс.

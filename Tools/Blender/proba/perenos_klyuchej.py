@@ -14,8 +14,8 @@
   `vyvoroty` — грани нового ключа, чья нормаль смотрит против поверхности ключа источника в этой точке (> 90°).
 Всё по объектам и отдельно кисть (`Руки`, z < `--z_kist`). Вывороты разделены: `skladka` — ключ источника и сам вывернут здесь относительно своей базы
 (законная складка); `shchepka` — грань меньше 2 см²; `nastoyashchie` — остальные.
-`--kist_zhestko Z` (03.11): кисть новой базы (`Руки`, z < Z) построена заново и от моста ушла: она идёт своей формой — база + смещение ключа источника в
-ближайшей точке моста, переход от цели к смещению 3 см над запястьем. Общие вершины объектов после всего сводятся к одной цели, иначе шов открывается.
+`--kist_zhestko Z` (03.11): кисть новой базы (`Руки`, z < Z) построена заново и от моста ушла: она идёт жёстко — поворот и масштаб с кисти источника, опора на кольцо над запястьем, переход 3 см.
+`--raspravit N` (03.11, стенд: изнанки на ключах больше контроля): крупные грани новой базы садятся на складки формы ключа и переворачиваются. Грань считается перевёрнутой, если её нормаль в ключе смотрит против нормали ближайшей поверхности ключа источника; смещение ключа в её вершинах и их соседях сглаживается (Таубин, N заходов). Остальная форма стоит. Общие вершины объектов после всего сводятся к одной цели, иначе шов открывается.
 
   blender -b новая.blend --factory-startup -P perenos_klyuchej.py -- выход.blend источник.fbx мост.blend [--klyuchi Волк,Волк1,Лось,…|vse]
       [--most_kluch Поджарый] [--rezhim abs] [--kontrol 1] [--z_kist 0.98] [--otchet файл.json]
@@ -120,11 +120,40 @@ for nm, o in NEW.items():
             R0, _ = perenos(V, M_['K'], T, Bs); R = V + (R - R0)
         tri3 = lambda x: [round(float(x.mean()) * 1000, 1), round(float(np.percentile(x, 95)) * 1000, 1), round(float(x.max()) * 1000, 1)]
         if opt.get('kist_zhestko') and nm == 'Руки':
-            # кисть своей формой: база + смещение ключа источника в ближайшей точке моста; пальцы остаются раздельными, запястье сходится (жёсткий Procrustes давал остаток 30 мм и отрыв)
-            ZW = float(opt['kist_zhestko']); R0_, _ = perenos(V, M_['K'], T, M_['K'])
-            Rd = V + (R - R0_); t_ = np.clip((ZW + 0.03 - V[:, 2]) / 0.03, 0, 1)[:, None] * (np.abs(V[:, 0]) > 0.18)[:, None]; t_ = t_ * t_ * (3 - 2 * t_)
-            R = R * (1 - t_) + Rd * t_
-        Tn = tris(o); zk = M_['K'][:, 2] < ZK if nm == 'Руки' else np.zeros(len(Kl), bool)
+            # кисть новой базы идёт жёстко: поворот и масштаб снимаются с кисти источника (Procrustes база → ключ), опора — кольцо над запястьем по цели. Смещения с кулака старой формы переворачивали всю кисть (пятно 20 см²)
+            ZW = float(opt['kist_zhestko'])
+            for sd_ in (-1, 1):
+                hs = (Bs[:, 2] < ZW) & (Bs[:, 0] * sd_ > .18); hn = (V[:, 2] < ZW + .03) & (V[:, 0] * sd_ > .18); ringn = (V[:, 2] > ZW + .005) & (V[:, 2] < ZW + .06) & (V[:, 0] * sd_ > .18)
+                A_, B_ = Bs[hs], Kl[hs]; ca, cb = A_.mean(0), B_.mean(0); U_, S_, Vt_ = np.linalg.svd((A_ - ca).T @ (B_ - cb))
+                Dg = np.diag([1, 1, np.sign(np.linalg.det(Vt_.T @ U_.T))]); Rot = Vt_.T @ Dg @ U_.T; sc = float((S_ * np.diag(Dg)).sum() / max(((A_ - ca) ** 2).sum(), 1e-12))
+                if not ringn.any(): sys.exit('ПЕРЕНОС: нет вершин над запястьем')
+                vw, kw = V[ringn].mean(0), R[ringn].mean(0); Rg = kw + ((V[hn] - vw) * sc) @ Rot.T
+                t_ = np.clip((ZW + .03 - V[hn, 2]) / .03, 0, 1)[:, None]; t_ = t_ * t_ * (3 - 2 * t_); R[hn] = R[hn] * (1 - t_) + Rg * t_
+        Tn = tris(o)
+        if int(opt.get('raspravit', 0)):
+            NB_ = [set() for _ in range(n_)]
+            for t_ in Tn:
+                for a_, b_ in ((0, 1), (1, 2), (2, 0)): NB_[t_[a_]].add(t_[b_]); NB_[t_[b_]].add(t_[a_])
+            NB_ = [list(q) for q in NB_]; bo_ = bvh_of(Kl, T); n_fl0 = None
+            for _ in range(int(opt['raspravit'])):
+                A_ = Rx_ = R; e1 = A_[Tn[:, 1]] - A_[Tn[:, 0]]; e2 = A_[Tn[:, 2]] - A_[Tn[:, 0]]; Nn = np.cross(e1, e2); C_ = A_[Tn].mean(1); fl = []
+                for i_ in range(len(Tn)):
+                    if np.linalg.norm(Nn[i_]) < 1e-10: continue
+                    _, no_, _, _ = bo_.find_nearest(Vector(C_[i_]))
+                    if Nn[i_] @ np.array(no_) < 0: fl.append(i_)
+                if n_fl0 is None: n_fl0 = len(fl)
+                if not fl: break
+                W_ = np.zeros(n_)
+                for i_ in fl:
+                    for v_ in Tn[i_]:
+                        W_[v_] = 1
+                        for q_ in NB_[v_]: W_[q_] = max(W_[q_], .5)
+                D_ = R - V
+                for lam in (.5, -.53):
+                    D_ = D_ + lam * W_[:, None] * np.array([D_[q].mean(0) - D_[k_] if q else np.zeros(3) for k_, q in enumerate(NB_)])
+                R = V + D_
+            print('РАСПРАВЛЕНИЕ: %s · %s — перевёрнуто %s → %d' % (nm, kn, n_fl0, len(fl)))
+        zk = M_['K'][:, 2] < ZK if nm == 'Руки' else np.zeros(len(Kl), bool)
         rec = dict(ob=nm, kluch=kn, most_mm=tri3(dm))
         def mery(Rx, tag):
             # соответствие: i моста → (новая поверхность в покое) → новый ключ; истина — Kl[i]
@@ -148,6 +177,7 @@ for nm, o in NEW.items():
         if opt['kontrol'] == '1':
             Rn, _ = perenos(V, Bs, T, Kl); mery(Rn, 'pryamo')
         print('ПЕРЕНОС: ' + json.dumps(rec, ensure_ascii=False)); vse.append(rec)
+        if not np.isfinite(R).all(): sys.exit('ПЕРЕНОС: %s · %s — NaN' % (nm, kn))
         kb = o.data.shape_keys.key_blocks.get(kn) or o.shape_key_add(name=kn, from_mix=False); kb.data.foreach_set('co', R.ravel())
         kb.value = 0.0
 # ШВЫ: общие вершины объектов (одно место в покое) получали цель от своего объекта; шов раскрывался — сводим к средней
@@ -155,7 +185,7 @@ for kn in {r['kluch'] for r in vse}:
     pts = {}
     for nm, o in NEW.items():
         kb = o.data.shape_keys.key_blocks.get(kn) if o.data.shape_keys else None
-        bb = o.data.shape_keys.key_blocks.get(opt['most_kluch']) if o.data.shape_keys else None
+        bb = (o.data.shape_keys.key_blocks.get(opt['most_kluch']) or o.data.shape_keys.key_blocks[0]) if o.data.shape_keys else None     # после `baza_iz_klyucha.py` база = Basis
         if kb is None or bb is None: continue
         for vi in range(len(kb.data)): pts.setdefault(tuple(np.round(np.array(bb.data[vi].co), 4)), []).append((kb, vi))
     n_sv = 0; mx = 0.0

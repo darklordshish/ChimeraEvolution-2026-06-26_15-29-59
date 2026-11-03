@@ -7,7 +7,7 @@
 Выход: объекты органов с весами из FBX, привязанные к арматуре файла. Опора: база обоих состояний органа считается от одной и той же
 точки кожи — ближайшей к вершине БАЗЫ органа (она прижата к телу), `рост` — смещением от неё же; иначе кончик когтя цеплялся за бедро.
 
-  blender -b новая.blend --factory-startup -P perenos_organov.py -- выход.blend источник.fbx мост.blend [--organy Чутьё@Волк,Шкура@Волк,Руки@Волк] [--most_kluch Поджарый]
+  blender -b новая.blend --factory-startup -P perenos_organov.py -- выход.blend источник.fbx мост.blend [--organy Чутьё@Волк,Шкура@Волк,Руки@Волк] [--most_kluch Поджарый] [--kak_est @Волк1,@Лось — куски черт: они в форме ключа вида, ключ источника не менялся, позиция остаётся]
 """
 import sys
 import bpy
@@ -90,6 +90,18 @@ for nm in ORG:
     if 'рост' in kb: kb['рост'].data.foreach_set('co', Rl.ravel())
     ob.name = nm; ob.data.name = nm
     print('ОРГАН: %s — вершин %d, сдвиг средн %.1f мм, макс %.1f мм' % (nm, len(B0), float(np.mean(sd)) * 1000, float(np.max(sd)) * 1000))
+KE = [q for q in opt.get('kak_est', '').split(',') if q]
+for nm in KE:
+    ob = next((o for o in imp if o.name.split('.')[0] == nm), None)
+    if ob is None: print('ОРГАН: %s — нет в источнике' % nm); continue
+    Mw = ob.matrix_world.copy(); inv = ARM.matrix_world.inverted()
+    Q = [inv @ (Mw @ v.co) for v in ob.data.vertices]
+    ob.parent = ARM; ob.matrix_parent_inverse.identity(); ob.matrix_basis.identity()
+    for m in ob.modifiers:
+        if m.type == 'ARMATURE': m.object = ARM
+    for v, q in zip(ob.data.vertices, Q): v.co = q
+    ob.name = nm; ob.data.name = nm
+    print('ОРГАН: %s — как есть, вершин %d' % (nm, len(Q)))
 for ob in imp:
-    if ob.name not in ORG: bpy.data.objects.remove(ob)
+    if ob.name not in ORG and ob.name not in KE: bpy.data.objects.remove(ob)
 bpy.ops.wm.save_as_mainfile(filepath=out)
