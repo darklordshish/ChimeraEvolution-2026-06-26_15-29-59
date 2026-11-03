@@ -1,0 +1,85 @@
+{
+  "fbx": "Experiments/shoulder-local-2026-10-31/candidate.fbx",
+  "kluch": "Поджарый",
+  "ves": 1.0,
+  "poza": null,
+  "vesa_bolshe_4": 0,
+  "vidno": [
+    "Ноги",
+    "Руки",
+    "Сердце",
+    "Чутьё",
+    "голова",
+    "хребет",
+    "шея"
+  ],
+  "kluchi": {
+    "Поджарый": 1.0
+  },
+  "diagnostic_pose": "Both shoulders abducted 90.0 degrees in world Y; not a game animation",
+  "support_matrix_error": 2.728775143623352e-07,
+  "support_config": {
+    "strength": 0.65,
+    "follow": 0.2,
+    "offset": 0
+  },
+  "razvorot_klyucha": 0,
+  "razvorot_v_poze": 8,
+  "skladka_v_poze": 5,
+  "szhatie_v_poze": 1,
+  "obekty": {
+    "Ноги": {
+      "granej": 1684,
+      "razvorot": 0,
+      "razvorot_v_poze": 0,
+      "skladka": 0,
+      "szhatie": 0
+    },
+    "Руки": {
+      "granej": 1036,
+      "razvorot": 0,
+      "razvorot_v_poze": 5,
+      "skladka": 2,
+      "szhatie": 1
+    },
+    "Сердце": {
+      "granej": 221,
+      "razvorot": 0,
+      "razvorot_v_poze": 2,
+      "skladka": 2,
+      "szhatie": 0
+    },
+    "Чутьё": {
+      "granej": 160,
+      "razvorot": 0,
+      "razvorot_v_poze": 0,
+      "skladka": 0,
+      "szhatie": 0
+    },
+    "голова": {
+      "granej": 788,
+      "razvorot": 0,
+      "razvorot_v_poze": 0,
+      "skladka": 0,
+      "szhatie": 0
+    },
+    "хребет": {
+      "granej": 375,
+      "razvorot": 0,
+      "razvorot_v_poze": 1,
+      "skladka": 1,
+      "szhatie": 0
+    },
+    "шея": {
+      "granej": 1474,
+      "razvorot": 0,
+      "razvorot_v_poze": 0,
+      "skladka": 0,
+      "szhatie": 0
+    }
+  },
+  "shov_vershin": 187,
+  "shov_razoshlos_1mm": 0,
+  "shov_maks_mm": 0.0,
+  "zazor_mm": {}
+}

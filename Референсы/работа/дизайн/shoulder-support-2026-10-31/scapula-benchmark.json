@@ -1,0 +1,384 @@
+{
+  "source": "Experiments/podzharyj-c10-2026-10-31/c13.blend",
+  "neutral_max_delta_m": 0,
+  "baseline": [
+    {
+      "pose": "raise40",
+      "folds": 1,
+      "compressed": 0,
+      "area_p05": 0.7856338165697978,
+      "area_p95": 1.6962792097859252,
+      "seam_max_mm": 0.00021629392596187656
+    },
+    {
+      "pose": "raise70",
+      "folds": 7,
+      "compressed": 0,
+      "area_p05": 0.5870248640296595,
+      "area_p95": 2.1665129892967405,
+      "seam_max_mm": 0.0002161450691135909
+    },
+    {
+      "pose": "raise100",
+      "folds": 14,
+      "compressed": 10,
+      "area_p05": 0.3729194683155869,
+      "area_p95": 2.4774300430235097,
+      "seam_max_mm": 0.00021601916855651306
+    },
+    {
+      "pose": "forward60",
+      "folds": 16,
+      "compressed": 9,
+      "area_p05": 0.5853997959937486,
+      "area_p95": 1.5023779830648964,
+      "seam_max_mm": 0.00021637742722468355
+    },
+    {
+      "pose": "back35",
+      "folds": 5,
+      "compressed": 0,
+      "area_p05": 0.8038699832617794,
+      "area_p95": 1.2857405389639234,
+      "seam_max_mm": 0.00021639234115183897
+    },
+    {
+      "pose": "one_arm70",
+      "folds": 4,
+      "compressed": 0,
+      "area_p05": 0.6962551220781686,
+      "area_p95": 1.4266380676157118,
+      "seam_max_mm": 0.0002164129964588465
+    }
+  ],
+  "candidate": [
+    {
+      "pose": "raise40",
+      "folds": 1,
+      "compressed": 0,
+      "area_p05": 0.7934955621223676,
+      "area_p95": 1.702801413257088,
+      "seam_max_mm": 0.00021633243655935636
+    },
+    {
+      "pose": "raise70",
+      "folds": 7,
+      "compressed": 0,
+      "area_p05": 0.6393264301735375,
+      "area_p95": 2.239986359329829,
+      "seam_max_mm": 0.00021624485711187408
+    },
+    {
+      "pose": "raise100",
+      "folds": 11,
+      "compressed": 1,
+      "area_p05": 0.4692232581106184,
+      "area_p95": 2.5921554667623745,
+      "seam_max_mm": 0.00021615853965228086
+    },
+    {
+      "pose": "forward60",
+      "folds": 19,
+      "compressed": 7,
+      "area_p05": 0.5625048047095144,
+      "area_p95": 1.4915574852399645,
+      "seam_max_mm": 0.00021636775353755353
+    },
+    {
+      "pose": "back35",
+      "folds": 5,
+      "compressed": 0,
+      "area_p05": 0.8129853653986965,
+      "area_p95": 1.3230692702521776,
+      "seam_max_mm": 0.00021639779151279276
+    },
+    {
+      "pose": "one_arm70",
+      "folds": 4,
+      "compressed": 0,
+      "area_p05": 0.7320457571427913,
+      "area_p95": 1.463389236654573,
+      "seam_max_mm": 0.0002164129964588465
+    }
+  ],
+  "selected_ratio": 0.2,
+  "variants": [
+    {
+      "ratio": 0.2,
+      "rows": [
+        {
+          "pose": "raise40",
+          "folds": 1,
+          "compressed": 0,
+          "area_p05": 0.7934955621223676,
+          "area_p95": 1.702801413257088,
+          "seam_max_mm": 0.00021633243655935636
+        },
+        {
+          "pose": "raise70",
+          "folds": 7,
+          "compressed": 0,
+          "area_p05": 0.6393264301735375,
+          "area_p95": 2.239986359329829,
+          "seam_max_mm": 0.00021624485711187408
+        },
+        {
+          "pose": "raise100",
+          "folds": 11,
+          "compressed": 1,
+          "area_p05": 0.4692232581106184,
+          "area_p95": 2.5921554667623745,
+          "seam_max_mm": 0.00021615853965228086
+        },
+        {
+          "pose": "forward60",
+          "folds": 19,
+          "compressed": 7,
+          "area_p05": 0.5625048047095144,
+          "area_p95": 1.4915574852399645,
+          "seam_max_mm": 0.00021636775353755353
+        },
+        {
+          "pose": "back35",
+          "folds": 5,
+          "compressed": 0,
+          "area_p05": 0.8129853653986965,
+          "area_p95": 1.3230692702521776,
+          "seam_max_mm": 0.00021639779151279276
+        },
+        {
+          "pose": "one_arm70",
+          "folds": 4,
+          "compressed": 0,
+          "area_p05": 0.7320457571427913,
+          "area_p95": 1.463389236654573,
+          "seam_max_mm": 0.0002164129964588465
+        }
+      ],
+      "total_folds": 47,
+      "worst_regression": 3
+    },
+    {
+      "ratio": 0.33,
+      "rows": [
+        {
+          "pose": "raise40",
+          "folds": 1,
+          "compressed": 0,
+          "area_p05": 0.7983386142288306,
+          "area_p95": 1.7191426259954445,
+          "seam_max_mm": 0.00021635467827170945
+        },
+        {
+          "pose": "raise70",
+          "folds": 7,
+          "compressed": 0,
+          "area_p05": 0.6595622156383901,
+          "area_p95": 2.2815897518484762,
+          "seam_max_mm": 0.00021628390000291505
+        },
+        {
+          "pose": "raise100",
+          "folds": 11,
+          "compressed": 0,
+          "area_p05": 0.5245559032950338,
+          "area_p95": 2.640561641445751,
+          "seam_max_mm": 0.00021617617167771114
+        },
+        {
+          "pose": "forward60",
+          "folds": 23,
+          "compressed": 7,
+          "area_p05": 0.5440331288023974,
+          "area_p95": 1.4766258403035817,
+          "seam_max_mm": 0.00021636139819306198
+        },
+        {
+          "pose": "back35",
+          "folds": 5,
+          "compressed": 0,
+          "area_p05": 0.8168386075819545,
+          "area_p95": 1.360586141397157,
+          "seam_max_mm": 0.00021640128179053073
+        },
+        {
+          "pose": "one_arm70",
+          "folds": 4,
+          "compressed": 0,
+          "area_p05": 0.7193126489960961,
+          "area_p95": 1.4938620012394523,
+          "seam_max_mm": 0.0002164129964588465
+        }
+      ],
+      "total_folds": 51,
+      "worst_regression": 7
+    },
+    {
+      "ratio": 0.5,
+      "rows": [
+        {
+          "pose": "raise40",
+          "folds": 1,
+          "compressed": 0,
+          "area_p05": 0.8077201983508477,
+          "area_p95": 1.718115362750177,
+          "seam_max_mm": 0.00021638039598998243
+        },
+        {
+          "pose": "raise70",
+          "folds": 7,
+          "compressed": 0,
+          "area_p05": 0.6749627686503497,
+          "area_p95": 2.3414293862928606,
+          "seam_max_mm": 0.00021630347702366533
+        },
+        {
+          "pose": "raise100",
+          "folds": 11,
+          "compressed": 4,
+          "area_p05": 0.5487463373616746,
+          "area_p95": 2.7529155230828843,
+          "seam_max_mm": 0.0002161113599499542
+        },
+        {
+          "pose": "forward60",
+          "folds": 26,
+          "compressed": 4,
+          "area_p05": 0.5027751984397741,
+          "area_p95": 1.4664282319898605,
+          "seam_max_mm": 0.00021635306318755043
+        },
+        {
+          "pose": "back35",
+          "folds": 6,
+          "compressed": 1,
+          "area_p05": 0.8325838338841225,
+          "area_p95": 1.3958045781722965,
+          "seam_max_mm": 0.00021640577107809813
+        },
+        {
+          "pose": "one_arm70",
+          "folds": 4,
+          "compressed": 0,
+          "area_p05": 0.7260321215954588,
+          "area_p95": 1.5123189418533496,
+          "seam_max_mm": 0.0002164129964588465
+        }
+      ],
+      "total_folds": 55,
+      "worst_regression": 10
+    },
+    {
+      "ratio": 0.7,
+      "rows": [
+        {
+          "pose": "raise40",
+          "folds": 2,
+          "compressed": 0,
+          "area_p05": 0.8066083612261868,
+          "area_p95": 1.7165941828980695,
+          "seam_max_mm": 0.00021640570367639002
+        },
+        {
+          "pose": "raise70",
+          "folds": 7,
+          "compressed": 2,
+          "area_p05": 0.6617435918655338,
+          "area_p95": 2.393529794748077,
+          "seam_max_mm": 0.00021628048082711752
+        },
+        {
+          "pose": "raise100",
+          "folds": 24,
+          "compressed": 15,
+          "area_p05": 0.519473220768134,
+          "area_p95": 2.8694148716180545,
+          "seam_max_mm": 0.00021591212020289027
+        },
+        {
+          "pose": "forward60",
+          "folds": 27,
+          "compressed": 8,
+          "area_p05": 0.4943673430096022,
+          "area_p95": 1.479080608847365,
+          "seam_max_mm": 0.00021634330357846008
+        },
+        {
+          "pose": "back35",
+          "folds": 7,
+          "compressed": 1,
+          "area_p05": 0.8391835274578134,
+          "area_p95": 1.4369460213205305,
+          "seam_max_mm": 0.0002164109302052598
+        },
+        {
+          "pose": "one_arm70",
+          "folds": 5,
+          "compressed": 2,
+          "area_p05": 0.7205037847779542,
+          "area_p95": 1.5380615426035888,
+          "seam_max_mm": 0.0002164129964588465
+        }
+      ],
+      "total_folds": 72,
+      "worst_regression": 11
+    }
+  ],
+  "holdout": [
+    {
+      "baseline": {
+        "pose": "raise55",
+        "folds": 4,
+        "compressed": 0,
+        "area_p05": 0.6899470463508955,
+        "area_p95": 1.936801689541349,
+        "seam_max_mm": 0.00021621910278885764
+      },
+      "candidate": {
+        "pose": "raise55",
+        "folds": 3,
+        "compressed": 0,
+        "area_p05": 0.7171912763516075,
+        "area_p95": 1.984721476744497,
+        "seam_max_mm": 0.00021629091537216398
+      }
+    },
+    {
+      "baseline": {
+        "pose": "raise85",
+        "folds": 9,
+        "compressed": 1,
+        "area_p05": 0.47609979147987486,
+        "area_p95": 2.347643900880712,
+        "seam_max_mm": 0.0002160768725130777
+      },
+      "candidate": {
+        "pose": "raise85",
+        "folds": 9,
+        "compressed": 0,
+        "area_p05": 0.5517381856843777,
+        "area_p95": 2.4891855228240467,
+        "seam_max_mm": 0.00021619920671770028
+      }
+    },
+    {
+      "baseline": {
+        "pose": "forward30",
+        "folds": 1,
+        "compressed": 0,
+        "area_p05": 0.7589544914066808,
+        "area_p95": 1.2462074802788423,
+        "seam_max_mm": 0.00021644895246816244
+      },
+      "candidate": {
+        "pose": "forward30",
+        "folds": 2,
+        "compressed": 1,
+        "area_p05": 0.7386969112298701,
+        "area_p95": 1.241233156213613,
+        "seam_max_mm": 0.00021644415842978922
+      }
+    }
+  ],
+  "note": "Scapula motion only; same mesh and weights; PSD off. Geometric test, not gameplay animation."
+}

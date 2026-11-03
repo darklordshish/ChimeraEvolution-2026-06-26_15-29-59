@@ -1,0 +1,26 @@
+{
+  "neutral": "Experiments/podzharyj-c10-2026-10-31/c10b.blend",
+  "correction_target": "Experiments/podzharyj-c10-2026-10-31/c12.blend",
+  "correction_key": "Поджарый·ПодъёмПлеч",
+  "default_weight": 0,
+  "objects": [
+    {
+      "object": "Руки",
+      "vertices": 37,
+      "max_delta_m": 0.029831342987008694,
+      "composition_error_m": 1.862645149230957e-09
+    },
+    {
+      "object": "Сердце",
+      "vertices": 11,
+      "max_delta_m": 0.024018065474457402,
+      "composition_error_m": 4.656612873077393e-10
+    },
+    {
+      "object": "хребет",
+      "vertices": 10,
+      "max_delta_m": 0.029831342987008694,
+      "composition_error_m": 4.656612873077393e-10
+    }
+  ]
+}

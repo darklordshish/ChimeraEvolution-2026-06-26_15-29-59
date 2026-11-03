@@ -1,0 +1,15 @@
+{
+  "input_commit": "ed31e7fe",
+  "files": {
+    "benchmark.py": "5591d6c0d33e7e049ae0fd1f451decb16ca680c88c458c5f3e4c6d55abb2e548",
+    "build_support_rig.py": "04465ac0f166673b7b0d5030d66e8d5ef0997ad6ff894f4b6a9dc248137e7afb",
+    "check_result.py": "8f214dbc97021905d3e52a8f05898b0678d0cc7c3032708afa990ce088d091ab",
+    "helper-weights.npz": "50a07b86323f6380b0dcb023fb439ba6d0287df123a36b4fbab9f0bdd25b5c99",
+    "inspect_rig.py": "0c259e30a1dd822d8d3593075b672f4f0b81f63bd9f11ea77478ec88c73a0b56",
+    "render_probe.py": "905467ce4a8fab7b987ad373ba98db641e109b9ef08eb07a87f8e8d9b43b022a",
+    "support.blend": "294bcd611283084ba7eb26f80bf8c961e8a2d40eba834e74078d2f027d318ce2",
+    "support.fbx": "7bd3acbd3961c3e893efebcd717880609907531c9988a4d1ecfde57592f30271",
+    "support_motion.py": "7f2942e8baa5795286539893a7c2d48c28d4f2e43bd41772d3671765afecb2df",
+    "verify_rig.py": "4645e07e494b3ee3693c282ccc93abb9c5f2955cbd7a94597987de2b8297af11"
+  }
+}

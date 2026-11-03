@@ -1,0 +1,49 @@
+{
+  "cases": [
+    {
+      "id": "00-base",
+      "organs": []
+    },
+    {
+      "id": "01-wolf-hands-ears",
+      "organs": [
+        "Руки@Волк",
+        "Чутьё@Волк"
+      ]
+    },
+    {
+      "id": "02-wolf-three",
+      "organs": [
+        "Руки@Волк",
+        "Чутьё@Волк",
+        "Шкура@Волк"
+      ]
+    },
+    {
+      "id": "03-hedgehog",
+      "organs": [
+        "Шкура@Ёж",
+        "Игломёт@Ёж"
+      ]
+    },
+    {
+      "id": "04-wolf-hedgehog",
+      "organs": [
+        "Руки@Волк",
+        "Чутьё@Волк",
+        "Шкура@Ёж"
+      ]
+    },
+    {
+      "id": "05-mixed-stress",
+      "organs": [
+        "Руки@Волк",
+        "Шкура@Ёж",
+        "Игломёт@Ёж",
+        "Рога@Лось"
+      ]
+    }
+  ],
+  "mode": "Static full-growth endpoint test, no stage morph or gameplay legality claim",
+  "two_sided_organs": true
+}
