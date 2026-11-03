@@ -155,7 +155,7 @@
 
 **Цель:** станция не на склоне, плита не яма, дверь/рампа на месте.
 
-**Файлы:** `DomeWorld.cs:157–166`, `:215–240`, `:264–267`, `:955`; `DomeLabSite.cs:104–181`, `:281–343`; `DomeTerrain.cs`; тесты `StationOnShapeTests.cs` (PlayMode).
+**Файлы:** `DomeWorld.cs:157–166`, `:215–240`, `:264–267`, `:955`; `DomeLabSite.cs:104–181`, `:281–343`; `DomeTerrain.cs`; тесты `TerrainStationTests.cs` (PlayMode).
 
 **Действия:**
 1. `DomeLabSite.Find` получает `Func ground` = **`DomeTerrain.Hydro0`** (`H0 + hydro` = `SampleHydro`; **без terrace/canyon/ravines/landform/hill**); `Accept` остаётся прежним (пятно + подход, `:303–333`). Это и есть «станция на поле формы»: вода уже вырезана, станция не встанет в озеро/русло; финальный `ShapeGround` зависит от её маски, поэтому искать на нём нельзя.
@@ -165,7 +165,7 @@
 5. Вход: XZ прежний (`:796–803`), высота `SampleGround`; маска `entry` не пускает к нему форму.
 6. Проверить запись `+8` vs `+14–18`: `+8` — превышение плато над базовым полем, `+14–18` — абсолютный верх на текущей базе; `platformY` не должен быть ни тем, ни другим.
 
-**Проверка:** `StationOnShapeTests` — 20 сидов: поиск на `Hydro0`, маржи `min ≥ 0` после landform, перепад ≤ 4 м `SampleGround` по пятну, уклон ≤ 20°, плита плоская, `platformY` из `ShapeGround`, отрицательная фикстура «`platformY = Hydro0` → плита ниже плато на 8 м»; `LabDoor_To_Atrium_IsComplete` (`ForestPavilionTests.cs:113–132`); `StationLoop_Crevice_IsNotBuriedByGround` (`:263–280`); `Clear` пуст.
+**Проверка:** `TerrainStationTests` — 20 сидов: поиск на `Hydro0`, маржи `min ≥ 0` после landform, перепад ≤ 4 м `SampleGround` по пятну, уклон ≤ 20°, плита плоская, `platformY` из `ShapeGround`, отрицательная фикстура «`platformY = Hydro0` → плита ниже плато на 8 м»; `LabDoor_To_Atrium_IsComplete` (`ForestPavilionTests.cs:113–132`); `StationLoop_Crevice_IsNotBuriedByGround` (`:263–280`); `Clear` пуст.
 
 **Результат:** станция проходит приёмку на том полу, который строится.
 
