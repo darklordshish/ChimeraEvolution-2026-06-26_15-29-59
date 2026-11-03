@@ -131,8 +131,8 @@ for side in (-1, 1):     # −1: правая (x < 0)
         truba(base, dr, bend * sgn, list(seg), (th, th, th * 0.96, th * 0.92), (th * 0.95, th * 0.95, th * 0.92, th * 0.85), math.radians(20))
     # большой: от бугра вперёд-вниз-внутрь, под углом к ладони
     bb = c + d * 0.045 + w * 0.040 - nn * 0.016
-    dr = (d * 0.86 + w * 0.42 - nn * 0.28).normalized()
-    truba(bb, dr, (dr.cross(nn)).normalized(), [0.034, 0.028, 0.024], (0.0175, 0.0175, 0.0140, 0.0120), (0.0170, 0.0170, 0.0135, 0.0110), math.radians(12))
+    dr = (d * 0.92 + w * 0.28 - nn * 0.20).normalized()
+    truba(bb, dr, (dr.cross(nn)).normalized(), [0.030, 0.026, 0.022], (0.0150, 0.0150, 0.0125, 0.0110), (0.0150, 0.0150, 0.0125, 0.0105), math.radians(12))
     bm.normal_update(); bm.to_mesh(o.data); bm.free(); o.data.update()
 bm = bmesh.new(); bm.from_mesh(o.data); bmesh.ops.triangulate(bm, faces=[f for f in bm.faces if len(f.verts) > 3]); nt = len(bm.faces); bmesh.ops.recalc_face_normals(bm, faces=bm.faces); bm.to_mesh(o.data); bm.free(); o.data.update()
 bm = bmesh.new(); bm.from_mesh(o.data); kr = [e for e in bm.edges if e.is_boundary and abs((Mw @ e.verts[0].co).x) > 0.2 and (Mw @ e.verts[0].co).z < 1.2]; bm.free()
