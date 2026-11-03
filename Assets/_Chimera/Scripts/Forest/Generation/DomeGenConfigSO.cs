@@ -124,6 +124,12 @@ public class DomeGenConfigSO : ScriptableObject
     public float forestFraction = 0.55f;
     /// <summary>Явный порог fBm для пятен v2; −999 — историческая формула forestFraction.</summary>
     public float forestThreshold = -999f;
+    /// <summary>Целевая локальная плотность пятен (дер./км²); 0 — фиксированный treeCount.</summary>
+    public float treeDensityTarget = 0f;
+    /// <summary>Пол числа деревьев v2 (0 — без пола): не даёт крошечному пятну упасть ниже 3000.</summary>
+    public int treeMinCount = 0;
+    /// <summary>Потолок числа деревьев v2 (0 — без потолка): держит верх 3500 и G8.</summary>
+    public int treeMaxCount = 0;
     /// <summary>Множитель подлеска (S5 G8): 1 — исторические бюджеты; v2 берёт меньше,
     /// потому что 2.8k GameObject'ов подлеска стоили 2.1 с сборки.</summary>
     public float undergrowthScale = 1f;

@@ -93,6 +93,7 @@ public class DomeWorld
     public int Chunks { get; private set; }
     public int Trees { get; private set; }
     public int TreeColliders { get; private set; }
+    public float ForestAreaKm2 { get; private set; }
     /// <summary>Лежащие стволы сухостоя: у них нет коллайдера (S5 §5.3).</summary>
     public int DeadLogs { get; private set; }
     public int CoverPodsBuilt { get; private set; }
@@ -665,6 +666,7 @@ public class DomeWorld
             (x, z) => ForestSpace.Near(Zones, Links, x, z, 12f), CoverPods,
             (x, z) => ForestSpace.Near(Zones, Links, x, z, 20f));
         TreeColliders = flora.treeColliders;
+        ForestAreaKm2 = flora.forestAreaKm2;
         DeadLogs = flora.deadLogs;
         CoverPodsBuilt = flora.coverPods;
         // P0.4: лента дорожек v1 обязана читать SampleGround (как исторически),
@@ -1089,6 +1091,7 @@ public class DomeWorld
         Chunks = 0;
         Trees = 0;
         TreeColliders = 0;
+        ForestAreaKm2 = 0f;
         DeadLogs = 0;
         CoverPodsBuilt = 0;
         ArenaEdges = 0;

@@ -275,7 +275,8 @@ namespace Chimera.Tests.PlayMode
                 $"рендереров={snap.Budget.renderers}, тр={snap.Budget.triangles}, " +
                 $"сборка={F(snap.BuildMs / 1000f)} с, " +
                 $"коллайдеры={snap.Budget.colliders}/{snap.Budget.trees - snap.Budget.deadLogs}, " +
-                $"пятен={snap.Patches.patchCount} площадь={F(100f * snap.Patches.patchAreaShare)}%, " +
+                $"пятен={snap.Patches.patchCount} площадь={F(100f * snap.Patches.patchAreaShare)}% " +
+                $"(fBm {F(builder.ForestAreaKm2)} км²), " +
                 $"локально={F(snap.Patches.localDensityPerKm2)}/км² " +
                 $"(глобально {F(snap.Patches.globalDensityPerKm2)}/км²), " +
                 $"крона локально={F(100f * snap.Patches.localCrownCover)}% " +

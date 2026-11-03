@@ -38,6 +38,12 @@ public class ForestBuilder : MonoBehaviour
     public float forestFraction = 0f;
     [Tooltip("Явный порог fBm для v2; -999 = историческая формула")]
     public float forestThreshold = -999f;
+    [Tooltip("Целевая плотность пятен v2, дер./км²; 0 = фиксированный treeCount")]
+    public float treeDensityTarget = 0f;
+    [Tooltip("Пол числа деревьев v2; 0 = без пола")]
+    public int treeMinCount = 0;
+    [Tooltip("Потолок числа деревьев v2; 0 = без потолка")]
+    public int treeMaxCount = 0;
     // S3: слой рельефа отдельно от разметки. 0 у старой сцены — историческая связка
     // (patchyFlora) сохраняет Pavilion v1 бит-в-бит; v2 включает только явный флаг.
     [Tooltip("Рельеф формы (P5-lite) отдельным флагом; A/C/B0 — выключено")]
@@ -165,6 +171,7 @@ public class ForestBuilder : MonoBehaviour
     public int Chunks => world != null ? world.Chunks : 0;
     public int Trees => world != null ? world.Trees : 0;
     public int TreeColliders => world != null ? world.TreeColliders : 0;
+    public float ForestAreaKm2 => world != null ? world.ForestAreaKm2 : 0f;
     /// <summary>Лежащие стволы сухостоя: у них коллайдера нет (`TreeColliders == Trees − DeadLogs`).</summary>
     public int DeadLogs => world != null ? world.DeadLogs : 0;
     public int CoverPodsBuilt => world != null ? world.CoverPodsBuilt : 0;
@@ -307,6 +314,9 @@ public class ForestBuilder : MonoBehaviour
         ownedConfig.undergrowthScale = undergrowthScale > 0f ? undergrowthScale : 1f;
         if (forestFraction > 0f) ownedConfig.forestFraction = forestFraction;
         if (forestThreshold > -900f) ownedConfig.forestThreshold = forestThreshold;
+        if (treeDensityTarget > 0f) ownedConfig.treeDensityTarget = treeDensityTarget;
+        if (treeMinCount > 0) ownedConfig.treeMinCount = treeMinCount;
+        if (treeMaxCount > 0) ownedConfig.treeMaxCount = treeMaxCount;
         ownedConfig.buildRelief = buildRelief;
         ownedConfig.buildThermalErosion = buildThermalErosion;
         ownedConfig.buildHydraulicErosion = buildHydraulicErosion;

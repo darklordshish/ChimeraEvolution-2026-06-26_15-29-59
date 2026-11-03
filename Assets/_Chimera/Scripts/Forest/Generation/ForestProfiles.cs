@@ -72,8 +72,10 @@ public static class ForestProfiles
         b.erosionVersion = 3;
         b.erosionResolution = 128;
         b.undergrowthScale = 0.10f;
-        b.forestThreshold = 0.10f;
+        b.forestThreshold = 0.20f;
         b.treeCount = 2000;
+        b.treeDensityTarget = 3120f;
+        b.treeMinCount = 1500;
         b.erosionDrops = 96000;
         b.erosionSteps = 40;
         return b;

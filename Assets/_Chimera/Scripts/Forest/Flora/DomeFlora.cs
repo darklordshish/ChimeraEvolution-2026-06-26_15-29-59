@@ -34,6 +34,8 @@ public static class DomeFlora
         public int rocks;
         public float crownArea;
         public float crownCover;
+        /// <summary>Площадь пятен fBm (клетки 25 м) — база адаптивного target v2.</summary>
+        public float forestAreaKm2;
     }
 
     /// <summary>
@@ -42,10 +44,12 @@ public static class DomeFlora
     /// целей это 100k дорогих SampleGround. Здесь те же пятна, но без слепых попыток.
     /// </summary>
     static List<Pt> ScatterForest(long seed, int salt, int count, float diameter,
-        float minDist, Func<float, float, (float h, bool ok)> sample, float threshold)
+        float minDist, Func<float, float, (float h, bool ok)> sample, float threshold,
+        float densityTarget, int minCount, int maxCount, out float forestAreaKm2)
     {
         var pts = new List<Pt>();
-        if (count <= 0 || diameter <= 0f || minDist <= 0f) return pts;
+        forestAreaKm2 = 0f;
+        if (diameter <= 0f || minDist <= 0f) return pts;
         float cell = 25f;
         int n = Mathf.CeilToInt(diameter / cell);
         float origin = -n * cell * 0.5f;
@@ -61,6 +65,18 @@ public static class DomeFlora
             }
         if (cells.Count == 0)
             return Scatter(seed, salt, count, diameter, minDist, sample);
+
+        forestAreaKm2 = cells.Count * cell * cell / 1_000_000f;
+        // Адаптивный target: плотность задаётся НА ПЛОЩАДЬ пятна, а не глобальным
+        // числом деревьев. Сид с пятном меньше получает меньше целей — плотность
+        // остаётся 3000–3500, а не падает от сида к сиду.
+        if (densityTarget > 0f)
+            count = Mathf.Clamp(Mathf.RoundToInt(densityTarget * forestAreaKm2), 100, 8000);
+        // Пол и потолок держат хвосты: у сида с крошечным пятном target падает ниже
+        // 3000, у «щедрого» — уезжает выше 3500. Бюджет треугольников тоже.
+        if (minCount > 0) count = Mathf.Max(count, minCount);
+        if (maxCount > 0) count = Mathf.Min(count, maxCount);
+        if (count <= 0) return pts;
 
         var grid = new Dictionary<(int, int), List<Vector2>>();
         int maxAttempts = count * 12 + 200;
@@ -451,7 +467,6 @@ public static class DomeFlora
         if (hydro == null) throw new ArgumentNullException(nameof(hydro));
         counts = default;
         counts.treeColliderPositions = new List<Vector3>();
-        var floraWatch = System.Diagnostics.Stopwatch.StartNew();
         float d = cfg.mapDiameter;
         float lakeY = hydro.lakeLevel;
         float us = Mathf.Clamp(cfg.undergrowthScale, 0.05f, 2f);
@@ -521,9 +536,12 @@ public static class DomeFlora
                 return (g.Item1, r < 0.34f);
             };
         }
+        float forestAreaKm2 = 0f;
         var trees = cfg.forestThreshold > -900f
-            ? ScatterForest(seed, 111, treeTarget, d, 10f, ground, cfg.forestThreshold)
+            ? ScatterForest(seed, 111, treeTarget, d, 10f, ground, cfg.forestThreshold,
+                cfg.treeDensityTarget, cfg.treeMinCount, cfg.treeMaxCount, out forestAreaKm2)
             : Scatter(seed, 111, treeTarget, d, 10f, ground);
+        counts.forestAreaKm2 = forestAreaKm2;
         // Порода считается один раз: и посадке, и выбору твёрдых стволов нужен один k.
         var kinds = new FloraKind[trees.Count];
         for (int i = 0; i < trees.Count; i++)
@@ -646,7 +664,6 @@ public static class DomeFlora
         counts.crownCover = d > 0f
             ? counts.crownArea / (Mathf.PI * (d * 0.5f) * (d * 0.5f))
             : 0f;
-        long treeMs = floraWatch.ElapsedMilliseconds;
 
         // Подлесок пятнами: на СТЕНДЕ (Ø≤600, B0/B1.1) — как было; на большом мире —
         // только когда включена пятнистая флора (B-lite). У A/C (Ø2000, patchyFlora false)
