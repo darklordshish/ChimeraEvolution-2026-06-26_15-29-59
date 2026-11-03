@@ -30,12 +30,13 @@ bvh = BVHTree.FromPolygons(V, F, all_triangles=True)
 keep = set(bpy.data.objects)
 bpy.ops.import_scene.fbx(filepath=P['fbx'], axis_forward='-Z', axis_up='Y', automatic_bone_orientation=False)
 imp = [o for o in bpy.data.objects if o not in keep]
-kl = opt.get('kluch_kuska'); sv, sf = [], []
+kl = opt.get('kluch_kuska'); sv, sf, sb = [], [], []
 for nm_ in P['objects'].values():
     src = next((o for o in imp if o.name.split('.')[0] == nm_), None)
     if src is None: continue
     kb = src.data.shape_keys.key_blocks.get(kl) if kl and src.data.shape_keys else None
     n0 = len(sv); sv += [src.matrix_world @ (kb.data[j].co if kb else src.data.vertices[j].co) for j in range(len(src.data.vertices))]
+    sb += [src.matrix_world @ src.data.vertices[j].co for j in range(len(src.data.vertices))]
     src.data.calc_loop_triangles(); sf += [[n0 + q for q in t.vertices] for t in src.data.loop_triangles]
 for o in imp: bpy.data.objects.remove(o)
 Uv = lambda q: Vector((-q.x, q.z, -q.y)); Bk = lambda u: Vector((-u.x, -u.z, u.y))
@@ -50,7 +51,10 @@ k = float(opt['k']) if opt.get('k') else max(c['ellipse_m'][0] / d['ellipse_m'][
 rot = frame(V3(c['axis_out']), V3(c['up'])) @ frame(V3(d['axis_out']), V3(d['up'])).inverted(); dC, cC = V3(P.get('center_biped_m', d['center_m'])) if kl else V3(d['center_m']), V3(c['center_m'])
 P2 = [Bk(cC + rot @ (Uv(p) - dC) * k) for p in sv]
 me = bpy.data.meshes.new('кусок'); me.from_pydata(P2, [], sf); ob = bpy.data.objects.new('кусок', me); bpy.context.scene.collection.objects.link(ob)
-Rp = [Bk(cC + rot @ (V3(u) - dC) * k) for u in d['ring_m']] if d.get('ring_m') else []; Rc = [Bk(V3(u)) for u in c.get('ring_m', [])]
+# кольцо куска — его настоящие вершины В ФОРМЕ КЛЮЧА: `ring_m` дан на базе, и сравнение его с центром двуногого даёт артефакт, а без ключа совпадение выходит по построению
+Rp = []
+for u in d.get('ring_m', []):
+    q_ = Bk(V3(u)); j_ = min(range(len(sb)), key=lambda t_: (sb[t_] - q_).length); Rp.append(Bk(cC + rot @ (Uv(sv[j_]) - dC) * k)); Rc = [Bk(V3(u)) for u in c.get('ring_m', [])]
 ds = [bvh.find_nearest(p)[3] for p in Rp]; dr = [min((p - q).length for q in Rc) for p in Rp] if Rc else []
 print('ЗАЗОР: k %.3f; кольцо куска → кожа средн %.1f макс %.1f мм%s' % (k, np.mean(ds) * 1000, np.max(ds) * 1000, '; → кольцо носителя средн %.1f макс %.1f мм' % (np.mean(dr) * 1000, np.max(dr) * 1000) if dr else ''))
 sc = bpy.context.scene; sc.render.engine = 'BLENDER_WORKBENCH'; sc.render.resolution_x = 600; sc.render.resolution_y = 700; sc.world = bpy.data.worlds.new('w'); sc.world.color = (.75, .75, .75)
