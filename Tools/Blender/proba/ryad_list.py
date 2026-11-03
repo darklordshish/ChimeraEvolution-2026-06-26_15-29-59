@@ -10,7 +10,7 @@ F = ImageFont.truetype('C:/Windows/Fonts/arial.ttf', 18); Fs = ImageFont.truetyp
 O = {p: json.load(open(os.path.join(IN, p + '.json'), encoding='utf-8')) for p in PR}
 
 
-def podpis(p, o): return '×%.2f · %d тр' % (int(p[1:]) / 100, o['tr']), 'IoU %.3f / %.3f' % (o['iou_front'], o['iou_profile'])
+def podpis(p, o): return ('%s · %d тр' % (p, o['tr']) if p.startswith('r') else 'авто ×%.2f · %d тр' % (int(p[1:]) / 100, o['tr'])), 'IoU %.3f / %.3f' % (o['iou_front'], o['iou_profile'])
 
 
 def list_(ryady, w, h, naz, fnt=F, sh=46):

@@ -126,6 +126,9 @@ for nm, o in NEW.items():
                 hs = (Bs[:, 2] < ZW) & (Bs[:, 0] * sd_ > .18); hn = (V[:, 2] < ZW + .03) & (V[:, 0] * sd_ > .18); ringn = (V[:, 2] > ZW + .005) & (V[:, 2] < ZW + .06) & (V[:, 0] * sd_ > .18)
                 A_, B_ = Bs[hs], Kl[hs]; ca, cb = A_.mean(0), B_.mean(0); U_, S_, Vt_ = np.linalg.svd((A_ - ca).T @ (B_ - cb))
                 Dg = np.diag([1, 1, np.sign(np.linalg.det(Vt_.T @ U_.T))]); Rot = Vt_.T @ Dg @ U_.T; sc = float((S_ * np.diag(Dg)).sum() / max(((A_ - ca) ** 2).sum(), 1e-12))
+                for ok_ in (.10, .15, .20):   # на низком бюджете кольца вершин на предплечье реже окна
+                    if ringn.any(): break
+                    ringn = (V[:, 2] > ZW + .005) & (V[:, 2] < ZW + ok_) & (V[:, 0] * sd_ > .18); print('ПЕРЕНОС: окно над запястьем расширено до %d см' % (ok_ * 100))
                 if not ringn.any(): sys.exit('ПЕРЕНОС: нет вершин над запястьем')
                 vw, kw = V[ringn].mean(0), R[ringn].mean(0); Rg = kw + ((V[hn] - vw) * sc) @ Rot.T
                 t_ = np.clip((ZW + .03 - V[hn, 2]) / .03, 0, 1)[:, None]; t_ = t_ * t_ * (3 - 2 * t_); R[hn] = R[hn] * (1 - t_) + Rg * t_

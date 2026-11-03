@@ -51,6 +51,9 @@ def prorezhivanie(o, kisti, r):
     M = o.matrix_world; Vo = np.array([tuple(M @ v.co) for v in bm.verts])
     for T_, por in ((np.concatenate([tochki(x) for x in vidimye() if x != o]), 2e-4), (KOLCA, 2.5e-3)):
         if len(T_): drz |= set(np.nonzero(np.linalg.norm(Vo[:, None] - T_[None], axis=2).min(1) < por)[0].tolist())
+    if '~опора' in o.vertex_groups:
+        dl = bm.verts.layers.deform.active; gi = o.vertex_groups['~опора'].index
+        drz |= {v.index for v in bm.verts if gi in v[dl]}
     al = bm.edges.layers.int.get('перелом')
     if LIN and al is not None: drz |= {v.index for e in bm.edges if e[al] > 0 for v in e.verts}
     bpy.ops.mesh.select_all(action='DESELECT'); n = 0
@@ -81,7 +84,7 @@ for o in vidimye():
     bm0[o.name] = (sum(1 for f in bm.faces if oblast(o, f, True)), sum(1 for f in bm.faces if oblast(o, f, False))); bm.free()
 Nkg = sum(x[0] for x in bm0.values()); Nt = sum(x[1] for x in bm0.values())
 rb = (CEL - DKG * Nkg) / Nt
-for it in range(4):
+for it in range(0 if opt.get('bez_prorezh') else 4):
     bpy.ops.wm.open_mainfile(filepath=VHOD)
     for o in vidimye():
         prorezhivanie(o, True, DKG); prorezhivanie(o, False, rb)
@@ -96,8 +99,80 @@ for o in vidimye():
     for x in bpy.context.view_layer.objects: x.select_set(False)
     bpy.context.view_layer.objects.active = o; o.select_set(True)
     bpy.ops.object.mode_set(mode='EDIT'); bpy.ops.mesh.select_all(action='SELECT'); bpy.ops.mesh.quads_convert_to_tris(); bpy.ops.object.mode_set(mode='OBJECT')
+    if '~опора' in o.vertex_groups: o.vertex_groups.remove(o.vertex_groups['~опора'])
     bpy.ops.object.vertex_group_limit_total(group_select_mode='ALL', limit=4)
     bpy.ops.object.vertex_group_normalize_all(group_select_mode='ALL', lock_active=False)
+
+
+def ostrye():
+    """острая грань: длинное ребро больше 8 высот при площади от 2 см² — читается шипом, а не плоскостью"""
+    n = 0; pl = 0.0
+    for o in vidimye():
+        bm = bmesh.new(); bm.from_mesh(o.data); bmesh.ops.triangulate(bm, faces=bm.faces[:])
+        for f in bm.faces:
+            s = f.calc_area(); L = max(e.calc_length() for e in f.edges)
+            if s > 2e-4 and L / max(2 * s / L, 1e-6) > 8: n += 1; pl += s
+        bm.free()
+    return n, round(pl * 1e4, 1)
+
+
+def vyvernutye():
+    """рёбра с несогласованным обходом граней: на них граница вывернутого участка"""
+    n = 0
+    for o in vidimye():
+        bm = bmesh.new(); bm.from_mesh(o.data); n += sum(1 for e in bm.edges if len(e.link_faces) == 2 and not e.is_contiguous); bm.free()
+    return n
+
+
+def rebra_po_cepyam():
+    """цепи опорных точек становятся рёбрами поворотом ребра; плоское выравнивается без смены положения вершин: тонкие треугольники на ровном месте уходят"""
+    CH = json.load(open(opt['cepi'], encoding='utf-8')); est = net = 0
+    for o in vidimye():
+        bm = bmesh.new(); bm.from_mesh(o.data); bm.verts.ensure_lookup_table(); V_ = {tuple(round(float(q), 4) for q in o.matrix_world @ v.co): v for v in bm.verts}; derzh = set()
+        for ch in CH:
+            P = [V_.get(tuple(round(q, 4) for q in p)) for p in ch]
+            for u, v in zip(P, P[1:]):
+                if u is None or v is None or u is v: continue
+                e = next((x for x in u.link_edges if x.other_vert(u) is v), None)
+                if e is None:
+                    for f in u.link_faces:
+                        kr = next((x for x in f.edges if u not in x.verts), None)
+                        if kr is not None and len(kr.link_faces) == 2 and v in [q for g in kr.link_faces for q in g.verts] and not kr.is_boundary and kr not in derzh:
+                            r_ = bmesh.ops.rotate_edges(bm, edges=[kr], use_ccw=False)['edges']
+                            if r_ and {u, v} == set(r_[0].verts): e = r_[0]
+                            elif r_: bmesh.ops.rotate_edges(bm, edges=[r_[0]], use_ccw=True)
+                            if e is not None: break
+                if e is None: net += 1
+                else: est += 1; derzh.add(e)
+        bm.normal_update()
+        ploskie = [e for e in bm.edges if len(e.link_faces) == 2 and e not in derzh and e.calc_face_angle(9) < math.radians(12)]
+        if ploskie: bmesh.ops.beautify_fill(bm, faces=bm.faces[:], edges=ploskie, method='ANGLE')
+        bm.to_mesh(o.data); bm.free(); o.data.update()
+    print('РЯД: цепи рёбрами %d, не соединились %d' % (est, net)); return [est, net]
+
+
+def soglasovat():
+    """поворот ребра и нарезка могут вывернуть грань: она не рисуется, в теле видно окно. Обход согласуется внутри острова, а сторона острова — по большинству площади: чистый recalc на открытом объекте выворачивает его наружу целиком"""
+    n = 0
+    for o in vidimye():
+        bm = bmesh.new(); bm.from_mesh(o.data); bm.normal_update(); ost = set(bm.faces)
+        while ost:
+            st = [next(iter(ost))]; ch = set()
+            while st:
+                f_ = st.pop()
+                if f_ in ch: continue
+                ch.add(f_); st += [g for e in f_.edges for g in e.link_faces if g not in ch]
+            ost -= ch; old = {f_: (f_.normal.copy(), f_.calc_area()) for f_ in ch}
+            bmesh.ops.recalc_face_normals(bm, faces=list(ch)); bm.normal_update()
+            if sum(a_ * f_.normal.dot(n_) for f_, (n_, a_) in old.items()) < 0:
+                bmesh.ops.reverse_faces(bm, faces=list(ch)); bm.normal_update()
+            n += sum(1 for f_, (n_, _) in old.items() if f_.normal.dot(n_) < 0)
+        bm.to_mesh(o.data); bm.free(); o.data.update()
+    print('РЯД: согласовано вывернутых граней %d' % n); return n
+
+
+CEPI_OT = rebra_po_cepyam() if opt.get('cepi') else None
+SOGL = soglasovat() if opt.get('cepi') or opt.get('bez_prorezh') else None
 K1 = krai(); sd = []
 for n, A in K0.items():
     B = K1[n]; sd.append(float(np.linalg.norm(A[:, None] - B[None], axis=2).min(1).max()) if len(A) else 0.0)
@@ -149,7 +224,7 @@ def iou(s, m): return float((s & m).sum() / max((s | m).sum(), 1))
 
 mf, mp = opt['maski'].split(','); Mf, Mp = maska(mf), maska(mp); sf, sp = silujet(0, -1), silujet(1, 1)
 If, Ip = iou(sf, Mf), max(iou(sp, Mp), iou(sp[:, ::-1], Mp))
-otch = dict(tr=tr(), cel=CEL, dolya_telo=round(rb, 3), dolya_kg=DKG, linii=LIN, sdvig_kraya_mm=round(max(sd) * 1000, 2), pary_shvov=[PARY0, pary()], iou_front=round(If, 3), iou_profile=round(Ip, 3), obekty={o.name: len(o.data.polygons) for o in vidimye()})
+otch = dict(tr=tr(), cel=CEL, dolya_telo=round(rb, 3), dolya_kg=DKG, linii=LIN, sdvig_kraya_mm=round(max(sd) * 1000, 2), pary_shvov=[PARY0, pary()], ostrye=ostrye(), vyvernutye=vyvernutye(), cepi=CEPI_OT, iou_front=round(If, 3), iou_profile=round(Ip, 3), obekty={o.name: len(o.data.polygons) for o in vidimye()})
 json.dump(otch, open(os.path.join(KADR, PR + '.json'), 'w', encoding='utf-8'), ensure_ascii=False)
 print('РЯД: %s' % json.dumps(otch, ensure_ascii=False))
 
