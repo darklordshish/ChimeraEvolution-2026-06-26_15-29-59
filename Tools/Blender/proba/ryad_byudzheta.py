@@ -172,7 +172,7 @@ def soglasovat():
 
 
 CEPI_OT = rebra_po_cepyam() if opt.get('cepi') else None
-SOGL = soglasovat() if opt.get('cepi') or opt.get('bez_prorezh') else None
+SOGL = soglasovat() if (opt.get('cepi') or opt.get('bez_prorezh')) and not opt.get('bez_sogl') else None
 K1 = krai(); sd = []
 for n, A in K0.items():
     B = K1[n]; sd.append(float(np.linalg.norm(A[:, None] - B[None], axis=2).min(1).max()) if len(A) else 0.0)
