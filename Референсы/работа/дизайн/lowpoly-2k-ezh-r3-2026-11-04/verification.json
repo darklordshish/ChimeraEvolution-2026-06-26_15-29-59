@@ -1,0 +1,118 @@
+{
+  "size": [
+    1619,
+    972
+  ],
+  "edge_pixels": 59469,
+  "unchanged_outside_edges": true,
+  "method": "manual crops; largest connected L<225 component; holes <=12px filled; tight bounding box; uniform scaling to total height 360 including launchers; centered horizontally and ground-aligned; no nonuniform warp; approximate raster masks, possible residual shadow",
+  "overlay_colors": {
+    "blue": "vitrina",
+    "orange": "r3",
+    "dark_gray": "intersection"
+  },
+  "comparisons": [
+    {
+      "view": "FRONT",
+      "reference_crop": [
+        804,
+        77,
+        1169,
+        502
+      ],
+      "candidate_crop": [
+        43,
+        35,
+        378,
+        441
+      ],
+      "iou": 0.838,
+      "width_ratio_equal_total_height": 0.9609,
+      "threshold_sensitivity": {
+        "205": 0.8282,
+        "215": 0.8325,
+        "225": 0.838,
+        "235": 0.67
+      }
+    },
+    {
+      "view": "PROFILE",
+      "reference_crop": [
+        39,
+        76,
+        751,
+        504
+      ],
+      "candidate_crop": [
+        430,
+        26,
+        1064,
+        440
+      ],
+      "iou": 0.8015,
+      "width_ratio_equal_total_height": 0.9251,
+      "threshold_sensitivity": {
+        "205": 0.8064,
+        "215": 0.8034,
+        "225": 0.8015,
+        "235": 0.5675
+      }
+    },
+    {
+      "view": "FRONT 3/4",
+      "reference_crop": [
+        22,
+        565,
+        497,
+        888
+      ],
+      "candidate_crop": [
+        1110,
+        36,
+        1600,
+        441
+      ],
+      "iou": 0.7204,
+      "width_ratio_equal_total_height": 0.8567,
+      "threshold_sensitivity": {
+        "205": 0.7087,
+        "215": 0.714,
+        "225": 0.7204,
+        "235": 0.5885
+      }
+    },
+    {
+      "view": "REAR",
+      "reference_crop": [
+        1260,
+        73,
+        1635,
+        505
+      ],
+      "candidate_crop": [
+        90,
+        501,
+        445,
+        940
+      ],
+      "iou": 0.7644,
+      "width_ratio_equal_total_height": 0.9497,
+      "threshold_sensitivity": {
+        "205": 0.7871,
+        "215": 0.7906,
+        "225": 0.7644,
+        "235": 0.6489
+      }
+    }
+  ],
+  "rear_three_quarter": "no matching view in vitrina",
+  "sha256": {
+    "00-first-pass.png": "b78fedbaf760da5749b49eabb6a34a205c5e081f9d409d079af8e44bfb470729",
+    "01-flat-sheet.png": "4e1b60dfe047707ff39cd73f1d1b955eb725cca00db9e2af44d98b92c9e11e89",
+    "02-edges-sheet.png": "cb60381ff8492e2b668047931d07dfa3c9be2e38a52e548e3fd6417cbcdf43b4",
+    "03-compare-vitrina.png": "1f6c2f28b07a1e7eaf889ceae6bdda779cd983317ea81a6e94277b46c591d20f",
+    "04-silhouette-overlay.png": "25c6422be278a2285d03ddeaa7ba3879e9eb7862bd025439ca6f65090373bc93",
+    "edges-mask.png": "235ed65b77c8e5910d2d06c80f19832d15413f4bfa420623ce6ff33d9365dfb0"
+  },
+  "reference_sha256": "d3866567da61d06c636b31465a669f8d2ec54259ee3dba7187c9b9060df9db8c"
+}
