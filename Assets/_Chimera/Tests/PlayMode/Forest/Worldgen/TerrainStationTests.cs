@@ -29,7 +29,8 @@ namespace Chimera.Tests.PlayMode
             host = null;
         }
 
-        ForestBuilder BuildV2(bool erosion = false, bool hydraulic = false, LabEntrance entrance = LabEntrance.Buried)
+        ForestBuilder BuildV2(bool erosion = false, bool hydraulic = false,
+            LabEntrance entrance = LabEntrance.Auto)
         {
             host = new GameObject("~TerrainStationProbe");
             host.SetActive(false);
@@ -41,6 +42,7 @@ namespace Chimera.Tests.PlayMode
             builder.chunkSize = 250f;
             builder.terrainQuads = 48;
             builder.worldVersion = 2;
+            builder.treeVersion = 2;
             builder.buildRelief = true;
             builder.buildThermalErosion = erosion;
             builder.buildHydraulicErosion = hydraulic;
@@ -56,10 +58,10 @@ namespace Chimera.Tests.PlayMode
             builder.buildCanyon = true;
             builder.buildLabComplex = true;
             builder.buildStationLoop = true;
-            builder.buildStationHill = true;
+            builder.buildStationHill = false; // v2: плато строит landform, не DomeHill
             builder.buildLabPlan = false;
             builder.labEntrance = entrance;
-            builder.labStyle = LabStyle.Bastion;
+            builder.labStyle = LabStyle.Auto;   // v2: не Bastion
             builder.minLabDistance = 150f;
             builder.spawnAtEntry = true;
             builder.speciesPool = new List<SpeciesSO>();
@@ -98,6 +100,12 @@ namespace Chimera.Tests.PlayMode
             Assert.IsNotNull(b.Terrain, "DomeTerrain не создан");
             Assert.IsTrue(b.Terrain.TargetOrder, "worldVersion 2 обязан дать целевой порядок");
             Assert.IsNotNull(b.LabComplex, "комплекс не собран на v2");
+            Assert.IsTrue(b.HasStation, "v2: станция подтверждена внутри stationReserve");
+            Assert.AreNotEqual(LabStyle.Bastion, b.ResolvedLabStyle,
+                "v2: Auto/Bastion не разрешается в Bastion");
+            Assert.That(b.ResolvedLabEntrance, Is.EqualTo(LabEntrance.Rock)
+                .Or.EqualTo(LabEntrance.Underground).Or.EqualTo(LabEntrance.Buried),
+                "v2: Auto разрешается в Rock/Underground/Buried по рельефу");
 
             float depth = DomeLabComplex.DepthFor(b.ResolvedLabEntrance);
             float shape = b.ShapeGround(b.LabCenter.x, b.LabCenter.y);
@@ -112,6 +120,25 @@ namespace Chimera.Tests.PlayMode
             if (expected > b.Hydro.lakeLevel + 0.5f + 0.1f)
                 Assert.AreEqual(depth, shape - b.SampleGround(b.LabCenter.x, b.LabCenter.y), 0.05f,
                     "форма над плитой ровно на DepthFor: подземный вход не «яма»");
+
+            Assert.IsTrue(b.Masks.Has("stationReserve"), "stationReserve — маска до формы");
+            Assert.IsTrue(b.Masks.TryGet("stationReserve", out var reserveFoot),
+                "габарит stationReserve читается");
+            Assert.AreEqual(DomeLabSite.ReserveWidth, reserveFoot.halfWidth * 2f, 0.2f,
+                "stationReserve по низу плато — 144 м");
+            Assert.AreEqual(DomeLabSite.ReserveDepth, reserveFoot.halfDepth * 2f, 0.2f,
+                "stationReserve по низу плато — 129 м");
+            Assert.IsTrue(b.Masks.ContainsPoint(b.LabCenter, "stationReserve"),
+                "станция подтверждена только внутри stationReserve");
+            Assert.IsTrue(b.Masks.Has("station"),
+                "финальная маска station появляется после поиска");
+            float doorChord = Vector2.Distance(
+                new Vector2(b.Entry.x, b.Entry.z), new Vector2(b.LabDoor.x, b.LabDoor.z));
+            Assert.AreEqual(909f, doorChord, 1.5f,
+                "1A: LabDoor — фиксированный якорь на хорде 909 м");
+            Assert.GreaterOrEqual(doorChord, 150f, "LabDoor ≥150 м от Entry");
+            Assert.Greater(Vector2.Distance(new Vector2(b.Entry.x, b.Entry.z), b.LabCenter),
+                150f, "Entry → LabCenter — факт, не порог");
         }
 
         /// <summary>
@@ -250,7 +277,7 @@ namespace Chimera.Tests.PlayMode
             var b = BuildV2(erosion: true);
             yield return null;
             Assert.IsNotNull(b.Erosion, "эрозия не собрана");
-            string[] names = { "water", "terrace", "canyon", "landform" };
+            string[] names = { "water", "terrace", "canyon", "landform", "stationReserve" };
             foreach (string name in names)
             {
                 if (!b.Masks.TryGet(name, out var foot)) continue;
@@ -311,7 +338,9 @@ namespace Chimera.Tests.PlayMode
             // нижнюю границу «форм встало достаточно», а не снимок числа ролей.
             Assert.GreaterOrEqual(appliedForms, 5, "применено меньше пяти форм S2: " +
                 b.Composition.note + compDetails);
-            Assert.IsFalse(plateauApplied, "плато станции — шаг 5 (DomeHill)");
+            Assert.IsTrue(plateauApplied,
+                "G7 шаг 2: плато станции строит landform, а не DomeHill");
+            Assert.IsTrue(b.HasStation, "станция подтверждена на ShapeGround");
             foreach (var f in b.Composition.forms)
             {
                 Assert.LessOrEqual(f.Aspect, 0.135f + 1e-4f,
@@ -340,8 +369,13 @@ namespace Chimera.Tests.PlayMode
             Assert.IsTrue(masks.Has("corridor"), "коридор — маска (P0.7)");
             Assert.IsTrue(masks.Has("zone"), "открытая зона — маска");
             Assert.IsTrue(masks.Has("common"), "общая зона — маска");
-            Assert.IsTrue(masks.Has("ramp"), "рампа — часть маски станции (P0.4)");
-            Assert.IsTrue(masks.Has("crevice"), "расщелина — часть маски станции (P0.4)");
+            // G7 v2: вход Auto разрешается по рельефу; рампа/расщелина есть только
+            // у Underground/Buried и северной петли, а подход к двери — всегда.
+            if (b.ResolvedLabEntrance == LabEntrance.Underground ||
+                b.ResolvedLabEntrance == LabEntrance.Buried)
+                Assert.IsTrue(masks.Has("ramp"), "рампа — часть маски станции (P0.4)");
+            if (b.buildStationLoop && b.ResolvedLabEntrance == LabEntrance.Buried)
+                Assert.IsTrue(masks.Has("crevice"), "расщелина — часть маски станции (P0.4)");
             Assert.IsTrue(masks.Has("approach"), "подход 16/24 м — часть маски станции (P0.4)");
 
             // Ø2000: rin = D/2 − 80 = 920 (DomeRockRing.InnerRadius, но конфиг сцены — не наш).
@@ -363,6 +397,52 @@ namespace Chimera.Tests.PlayMode
             Assert.IsNull(b.Terrain, "Clear обязан снять пол мира");
             Assert.IsNull(b.Masks, "Clear обязан снять маски");
             Assert.AreEqual(0f, b.SampleGround(0f, 0f), 1e-6f, "после Clear высоты нет");
+        }
+
+        /// <summary>
+        /// G7 шаг 2: `!site.found` — терминальное «станции нет», а не скрытый
+        /// дефолт в центр. Резерв остаётся адресом региона, но станция не
+        /// подтверждается и `LabCenter = zero` не подставляется.
+        /// </summary>
+        [Test]
+        public void NoStation_HasNoCenter_NoZeroFallback()
+        {
+            var cfg = ScriptableObject.CreateInstance<DomeGenConfigSO>();
+            cfg.seed = 1337;
+            cfg.randomSeed = false;
+            cfg.mapDiameter = 2000f;
+            cfg.chunkSize = 250f;
+            cfg.version = 1;
+            cfg.worldVersion = 2;
+            var hydro = new DomeHydro.State { lakeLevel = -100f };
+            var wetHydro = new DomeHydro.State { lakeLevel = 100f };
+            try
+            {
+                var entry = new Vector2(-400f, 0f);
+                var reserve = DomeLabSite.Reserve(cfg, 1337L, entry, hydro,
+                    LabStyle.Auto, 150f, LabEntrance.Auto);
+                Assert.IsTrue(reserve.found, "резерв — провизорный адрес, не станция");
+                Assert.IsFalse(reserve.fallback, "в v2 нет запасной точки");
+
+                // Мокрый/непригодный ShapeGround: станции внутри резерва нет.
+                var bad = DomeLabSite.Confirm(cfg, wetHydro, (x, z) => 0f, entry, reserve,
+                    LabStyle.Auto, LabEntrance.Auto);
+                Assert.IsFalse(bad.found, "нет годного пятна — станции нет");
+                Assert.IsFalse(bad.fallback, "v2 не ставит fallback в центр");
+                Assert.AreNotEqual(Vector2.zero, bad.center,
+                    "нет подмены на LabCenter = zero");
+                Assert.That(Vector2.Distance(reserve.center, bad.center), Is.LessThan(0.01f),
+                    "причина возвращается с адресом резерва, а не с нулём");
+                StringAssert.Contains("station=none", bad.note);
+
+                var world = new DomeWorld();
+                Assert.IsFalse(world.HasStation,
+                    "свежий мир без станции не выдаёт HasStation = true");
+            }
+            finally
+            {
+                Object.DestroyImmediate(cfg);
+            }
         }
     }
 }

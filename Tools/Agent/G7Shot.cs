@@ -89,7 +89,7 @@ public static class G7Shot
         B.buildTerrace = true;
         B.buildCanyon = true;
         B.buildStationLoop = true;
-        B.buildStationHill = true;
+        B.buildStationHill = false;
         B.buildLabComplex = true;
         B.buildLabPlan = true;
         B.labPlanVersion = 1;
@@ -98,8 +98,8 @@ public static class G7Shot
         B.climateTimeMinutes = 10.5f;
         B.climateTimeScale = 0f;
         B.climateAutoWeather = false;
-        B.labStyle = LabStyle.Bastion;
-        B.labEntrance = LabEntrance.Rock;
+        B.labStyle = LabStyle.Auto;
+        B.labEntrance = LabEntrance.Auto;
         B.minLabDistance = 150f;
         B.worldVersion = 2;
         B.treeVersion = 2;
@@ -141,6 +141,11 @@ public static class G7Shot
                       $"crown={B.CrownCover * 100f:F1}%");
         sb.AppendLine($"entry={V(B.Entry)} labDoor={V(B.LabDoor)} labCenter={B.LabCenter} " +
                       $"northDoor={V(B.LabNorthDoor)}");
+        float doorChord = Vector2.Distance(
+            new Vector2(B.Entry.x, B.Entry.z), new Vector2(B.LabDoor.x, B.LabDoor.z));
+        sb.AppendLine($"station={B.HasStation} style={B.ResolvedLabStyle} " +
+                      $"entrance={B.ResolvedLabEntrance} doorChord={doorChord:F1} " +
+                      $"centerChord={Vector2.Distance(new Vector2(B.Entry.x, B.Entry.z), B.LabCenter):F1}");
         sb.AppendLine($"zones={B.Zones.Count} links={B.Links.Count} commons={B.Commons.Count} " +
                       $"waterholes={B.Waterholes.Count} pods={B.CoverPodsBuilt} " +
                       $"edges={B.ArenaEdges} shells={B.Shells.Count} gates={B.Gates.Count} " +
@@ -358,8 +363,10 @@ public static class G7Shot
 
     static string Station()
     {
+        if (!B.HasStation) return "station=none";
         Vector3 n = B.LabNorthDoor;
-        if (n == Vector3.zero) return "no north door";
+        if (n == Vector3.zero) n = B.LabDoor;
+        if (n == Vector3.zero) return "no station door";
         Vector3 target = Field(n.x, n.y + 2f, n.z);
         Vector3 desired = Field(n.x, n.y + 12f, n.z + 28f);
         return PlaceClear("station", target, desired, 1.5f);

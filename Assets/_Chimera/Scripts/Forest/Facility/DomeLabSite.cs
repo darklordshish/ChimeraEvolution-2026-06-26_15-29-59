@@ -48,9 +48,9 @@ public static class DomeLabSite
         public Vector2 center;
         /// <summary>Портал с фасада (на плите), в координатах поля.</summary>
         public Vector3 door;
-        /// <summary>Решённый стиль — только Bastion или InSlope, никогда Auto.</summary>
+        /// <summary>Решённый стиль — только Bastion (v1) или InSlope (v2), никогда Auto.</summary>
         public LabStyle style;
-        /// <summary>Тип входа: Rock или Underground.</summary>
+        /// <summary>Тип входа: Rock, Underground или Buried (Auto разрешается по рельефу).</summary>
         public LabEntrance entrance;
         /// <summary>Поворот: локальная +Z смотрит от чаши (в кольцо), фасад −Z — к центру/входу.</summary>
         public float yawDeg;
@@ -83,6 +83,25 @@ public static class DomeLabSite
     public const float ApproachHalfWidth = 4f;
     public const float ApproachStep = 4f;
 
+    /// <summary>
+    /// G7 шаг 2 (1A): центр плато станции — 927 м от `Entry` по хорде; `LabDoor`
+    /// вынесена на 18 м к входу, поэтому хорда двери — 909 м. Это якорь, а не поиск.
+    /// </summary>
+    public const float PlateauCenterChord = 927f;
+    public const float PlateauDoorChord = PlateauCenterChord - DomeLabComplex.HalfDepth;
+
+    /// <summary>
+    /// Провизорный регион станции (`stationReserve`): пятно + blend меряется по верху
+    /// плато 70×55, подход 16/24 м и регион целиком — по низу плато 144×129.
+    /// </summary>
+    public const float ReserveWidth = 144f;
+    public const float ReserveDepth = 129f;
+    public const float PlateauTopWidth = 70f;
+    public const float PlateauTopDepth = 55f;
+
+    /// <summary>v2: сухо выше озера на 1.0 м (S3 §4.1/И4, в v1 исторические 0.5).</summary>
+    public const float DryMarginV2 = 1.0f;
+
     /// <summary>Пятно площадки: центр, четыре угла и середины сторон (в кадре лаборатории).</summary>
     static readonly Vector2[] PadSamples =
     {
@@ -96,6 +115,189 @@ public static class DomeLabSite
         new Vector2(0f, DomeLabComplex.HalfDepth),
         new Vector2(0f, -DomeLabComplex.HalfDepth),
     };
+
+    /// <summary>
+    /// G7 шаг 2: провизорный `stationReserve` — ДО форм. 1A: якорь — точка на хорде
+    /// `Entry → 909 м` (`LabDoor`), центр плато — 927 м. Резерв не задаёт `platformY`,
+    /// не строит геометрию и не является станцией; окончательная приёмка —
+    /// <see cref="Confirm"/> после `ShapeGround`.
+    /// </summary>
+    public static Spot Reserve(DomeGenConfigSO cfg, long seed, Vector2 entry,
+        DomeHydro.State hydro, LabStyle requested, float minDistance, LabEntrance entrance)
+    {
+        if (cfg == null) throw new ArgumentNullException(nameof(cfg));
+        if (hydro == null) throw new ArgumentNullException(nameof(hydro));
+
+        // 1A: якорь — точка на хорде 909/927 м. Направление выбирается детерминированно
+        // ДО форм по тем же критериям места (сухо/уклон/перепад), а не «первое годное
+        // где угодно»: резерв — регион станции, формы его уважают.
+        LabStyle style = ResolveStyle(requested);
+        float rin = DomeRockRing.InnerRadius(cfg);
+        // 1A: старт — северный сектор 90° (направление опорного маршрута 03.11).
+        // Дальше — детерминированный обход по 1.4°, чтобы не ставить станцию в воду.
+        int start = 64;
+        int count = 256;
+
+        for (int i = 0; i < count; i++)
+        {
+            int k = (start + i) % 256;
+            float a = k * Mathf.PI * 2f / 256f;
+            Vector2 center = entry +
+                new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * PlateauCenterChord;
+            // Пятно станции внутри кольца: резерв — регион, но сам комплекс не в стене.
+            if (center.magnitude + DomeLabComplex.PadHalfWidth + 1f > rin)
+                continue;
+            float yaw = YawAwayFromEntry(center, entry);
+            Func<float, float, float> provisional = (x, z) =>
+                ProvisionalGround(cfg, hydro, center, x, z);
+            LabEntrance ent = entrance == LabEntrance.Auto
+                ? ResolveEntrance(cfg, center, yaw, provisional)
+                : entrance;
+            if (!Accept(cfg, hydro, provisional, center, entry, style,
+                    ent == LabEntrance.Auto ? LabEntrance.Underground : ent,
+                    requireDryApproach: true, dryMargin: DryMarginV2,
+                    out float gy, out float relief, out _, out _))
+                continue;
+            var s = Make(center, entry, style, ent, gy, relief,
+                Vector2.Distance(center, entry), false, false);
+            s.note = $"reserve: Entry→center {s.distanceToEntry:F0}, " +
+                     $"LabDoor {Vector2.Distance(new Vector2(s.door.x, s.door.z), entry):F0}, " +
+                     $"style={style}, entrance={ent}";
+            s.margins = default;
+            return s;
+        }
+
+        return new Spot
+        {
+            found = false,
+            note = $"reserve: no dry shoulder at {PlateauCenterChord:F0} м " +
+                   $"(внутри кольца {rin:F0} м)",
+        };
+    }
+
+    /// <summary>
+    /// G7 шаг 2: подтвердить станцию внутри резерва уже на `ShapeGround`.
+    /// Ищется не «самое ровное место», а годное плечо/склон: кандидаты детерминированно
+    /// обходят верх плато. Нет места — `found = false` с причиной; запасной точки
+    /// в центр/напротив входа нет (это v1-поведение, шаг 2 его не трогает).
+    /// </summary>
+    public static Spot Confirm(DomeGenConfigSO cfg, DomeHydro.State hydro,
+        Func<float, float, float> ground, Vector2 entry, Spot reserve,
+        LabStyle style, LabEntrance entrance)
+    {
+        if (cfg == null || hydro == null || ground == null || !reserve.found)
+            return new Spot { found = false, note = "reserve: no candidate" };
+
+        LabStyle resolvedStyle = ResolveStyle(style);
+        float yaw = YawAwayFromEntry(reserve.center, entry);
+        float maxX = Mathf.Max(0f, (PlateauTopWidth - DomeLabComplex.HalfWidth * 2f) * 0.5f);
+        float maxZ = Mathf.Max(0f, (PlateauTopDepth - DomeLabComplex.HalfDepth * 2f) * 0.5f);
+        float[] offsets = { 0f, 0.5f, -0.5f, 1f, -1f };
+        string why = "нет годного пятна на ShapeGround";
+        foreach (float fx in offsets)
+            foreach (float fz in offsets)
+            {
+                Vector2 p = PadPoint(reserve.center, yaw, new Vector2(fx * maxX, fz * maxZ));
+                if (!InReserve(reserve, p)) continue;
+                LabEntrance ent = entrance == LabEntrance.Auto
+                    ? ResolveEntrance(cfg, p, yaw, ground)
+                    : entrance;
+                if (!Accept(cfg, hydro, ground, p, entry, resolvedStyle, ent,
+                        requireDryApproach: true, dryMargin: DryMarginV2,
+                        out float gy, out float relief, out Margins margins, out string reason))
+                {
+                    why = $"кандидат ({p.x:F0};{p.y:F0}): {reason}";
+                    continue;
+                }
+                // ≥150 м по `LabDoor` (при 1A — тавтология, но проверка остаётся).
+                Vector3 door = DomeLabComplex.DoorPoint(p, gy, yaw);
+                if (Vector2.Distance(new Vector2(door.x, door.z), entry) < 150f)
+                {
+                    why = "LabDoor ближе 150 м к Entry";
+                    continue;
+                }
+                var s = Make(p, entry, resolvedStyle, ent, gy, relief,
+                    Vector2.Distance(p, entry), false, false);
+                s.margins = margins;
+                s.note = $"reserve confirmed on ShapeGround: Entry→LabCenter " +
+                         $"{s.distanceToEntry:F0} м, LabDoor " +
+                         $"{Vector2.Distance(new Vector2(s.door.x, s.door.z), entry):F0} м, " +
+                         $"style={resolvedStyle}, entrance={ent}";
+                return s;
+            }
+
+        return new Spot
+        {
+            found = false,
+            center = reserve.center,
+            door = reserve.door,
+            style = resolvedStyle,
+            entrance = entrance == LabEntrance.Auto
+                ? ResolveEntrance(cfg, reserve.center, yaw, ground)
+                : entrance,
+            yawDeg = reserve.yawDeg,
+            distanceToEntry = reserve.distanceToEntry,
+            note = "station=none: " + why,
+        };
+    }
+
+    /// <summary>v2 не строит `Bastion`: Auto и явный Bastion разрешаются в InSlope.</summary>
+    static LabStyle ResolveStyle(LabStyle requested) => LabStyle.InSlope;
+
+    /// <summary>
+    /// Провизорный пол резерва: Hydro0 + плато станции (форма S2 №4) в его центре.
+    /// Так резерв проверяется на том рельефе, который будет построен, а не на сыром.
+    /// </summary>
+    static float ProvisionalGround(DomeGenConfigSO cfg, DomeHydro.State hydro,
+        Vector2 center, float x, float z)
+    {
+        float h = DomeHydro.SampleHydro(cfg, hydro, x, z);
+        var plateau = DomeComposition.StationPlateau();
+        plateau.center = center;
+        float baseH = DomeHydro.SampleHydro(cfg, hydro, center.x, center.y);
+        float dry = hydro.lakeLevel + DryMarginV2 + 0.25f;
+        plateau.height = Mathf.Clamp(dry - baseH, 2.5f, plateau.height);
+        return plateau.Apply(h, x, z);
+    }
+
+    /// <summary>Точка внутри провизорного региона станции (`stationReserve`).</summary>
+    public static bool InReserve(Spot reserve, Vector2 p)    {
+        if (!reserve.found) return false;
+        float dx = p.x - reserve.center.x, dz = p.y - reserve.center.y;
+        float yaw = reserve.yawDeg * Mathf.Deg2Rad;
+        float c = Mathf.Cos(yaw), s = Mathf.Sin(yaw);
+        float lx = dx * c - dz * s;
+        float lz = dx * s + dz * c;
+        return Mathf.Abs(lx) <= ReserveWidth * 0.5f + 0.01f &&
+               Mathf.Abs(lz) <= ReserveDepth * 0.5f + 0.01f;
+    }
+
+    /// <summary>
+    /// `Auto` по рельефу: Buried на крутом/склонном лице, Underground на спуске,
+    /// Rock на скальной толще. Считается по пятну И подходу (24 м), а не по одной точке:
+    /// ровная плита на верху плато иначе всегда давала бы Rock.
+    /// </summary>
+    static LabEntrance ResolveEntrance(DomeGenConfigSO cfg, Vector2 center, float yawDeg,
+        Func<float, float, float> ground)
+    {
+        float maxSlope = 0f;
+        for (int k = 0; k < PadSamples.Length; k++)
+        {
+            Vector2 q = PadPoint(center, yawDeg, PadSamples[k]);
+            maxSlope = Mathf.Max(maxSlope, DomeSlope.SlopeAtS(cfg, q.x, q.y, ground));
+        }
+        const float approach = 24f;
+        for (int d = 0; d <= (int)approach; d += (int)ApproachStep)
+            for (int side = -1; side <= 1; side++)
+            {
+                Vector2 q = PadPoint(center, yawDeg, new Vector2(
+                    side * ApproachHalfWidth, -DomeLabComplex.HalfDepth - d));
+                maxSlope = Mathf.Max(maxSlope, DomeSlope.SlopeAtS(cfg, q.x, q.y, ground));
+            }
+        if (maxSlope > 18f) return LabEntrance.Buried;
+        if (maxSlope > 8f) return LabEntrance.Underground;
+        return LabEntrance.Rock;
+    }
 
     /// <summary>
     /// Найти место. <paramref name="requested"/> = Auto пробует сначала полосу кольца (там комплекс
@@ -211,7 +413,8 @@ public static class DomeLabSite
                     float dist = Vector2.Distance(p, entry);
                     if (dist < minDistance) continue;
                     if (!Accept(cfg, hydro, ground, p, entry, style, entrance, requireDryApproach,
-                            out float groundY, out float relief, out Margins margins))
+                            DryMargin, out float groundY, out float relief, out Margins margins,
+                            out _))
                         continue;
                     var spot = Make(p, entry, style, entrance, groundY, relief, dist, wetApproach, false);
                     spot.margins = margins;
@@ -235,7 +438,8 @@ public static class DomeLabSite
             float dist = Vector2.Distance(p, entry);
             if (dist < minDistance) continue;
             if (!Accept(cfg, hydro, ground, p, entry, style, entrance, requireDryApproach,
-                    out float groundY, out float relief, out Margins margins))
+                    DryMargin, out float groundY, out float relief, out Margins margins,
+                    out _))
                 continue;
             var spot = Make(p, entry, style, entrance, groundY, relief, dist, wetApproach, false);
             spot.margins = margins;
@@ -280,11 +484,12 @@ public static class DomeLabSite
     /// </summary>
     static bool Accept(DomeGenConfigSO cfg, DomeHydro.State hydro, Func<float, float, float> ground,
         Vector2 p, Vector2 entry, LabStyle style, LabEntrance entrance, bool requireDryApproach,
-        out float groundY, out float relief, out Margins margins)
+        float dryMargin, out float groundY, out float relief, out Margins margins, out string why)
     {
         groundY = 0f;
         relief = 0f;
         margins = default;
+        why = null;
         float yaw = YawAwayFromEntry(p, entry);
 
         float minRiver = float.MaxValue;
@@ -295,7 +500,11 @@ public static class DomeLabSite
             float d = Mathf.Sqrt(dx * dx + dz * dz);
             if (d < minRiver) minRiver = d;
         }
-        if (minRiver < RiverClearance) return false;
+        if (minRiver < RiverClearance)
+        {
+            why = $"river {minRiver:F1} < {RiverClearance:F0}";
+            return false;
+        }
 
         float lake = hydro.lakeLevel;
         float min = float.MaxValue, max = float.MinValue;
@@ -305,15 +514,27 @@ public static class DomeLabSite
             if (style == LabStyle.InSlope && PadSamples[k].y > 0f) continue;
             Vector2 q = PadPoint(p, yaw, PadSamples[k]);
             float h = ground(q.x, q.y);
-            if (h < lake + DryMargin) return false;
+            if (h < lake + dryMargin)
+            {
+                why = $"dry {h:F2} < {lake + dryMargin:F2}";
+                return false;
+            }
             float slope = DomeSlope.SlopeAtS(cfg, q.x, q.y, ground);
-            if (slope >= MaxSlopeDegrees) return false;
+            if (slope >= MaxSlopeDegrees)
+            {
+                why = $"slope {slope:F1} ≥ {MaxSlopeDegrees:F0}";
+                return false;
+            }
             if (slope > maxSlope) maxSlope = slope;
             if (h < min) min = h;
             if (h > max) max = h;
         }
         relief = max - min;
-        if (relief > MaxRelief) return false;
+        if (relief > MaxRelief)
+        {
+            why = $"relief {relief:F1} > {MaxRelief:F0}";
+            return false;
+        }
 
         if (requireDryApproach)
         {
@@ -326,14 +547,23 @@ public static class DomeLabSite
                     Vector2 q = PadPoint(p, yaw, new Vector2(
                         side * ApproachHalfWidth, -DomeLabComplex.HalfDepth - d));
                     float h = ground(q.x, q.y);
-                    if (h < lake + DryMargin) return false;
-                    if (DomeSlope.SlopeAtS(cfg, q.x, q.y, ground) >= MaxSlopeDegrees) return false;
+                    if (h < lake + dryMargin)
+                    {
+                        why = $"approach dry {h:F2} < {lake + dryMargin:F2} d={d}";
+                        return false;
+                    }
+                    float slope = DomeSlope.SlopeAtS(cfg, q.x, q.y, ground);
+                    if (slope >= MaxSlopeDegrees)
+                    {
+                        why = $"approach slope {slope:F1} ≥ {MaxSlopeDegrees:F0} d={d}";
+                        return false;
+                    }
                 }
             }
         }
 
         groundY = max;
-        margins.dry = min - (lake + DryMargin);
+        margins.dry = min - (lake + dryMargin);
         margins.slope = MaxSlopeDegrees - maxSlope;
         margins.relief = MaxRelief - relief;
         margins.river = minRiver - RiverClearance;

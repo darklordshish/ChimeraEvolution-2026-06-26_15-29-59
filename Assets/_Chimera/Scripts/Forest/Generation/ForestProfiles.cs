@@ -41,9 +41,9 @@ public static class ForestProfiles
     {
         seed = 1337, diameter = 2000f, chunk = 250f, quads = 48, treeCount = 1500,
         patchy = true, ash = true, spawnAtEntry = true,
-        terrace = true, canyon = true, stationLoop = true, stationHill = true,
-        labComplex = true, labPlan = true, climate = true,
-        style = LabStyle.Bastion, entrance = LabEntrance.Rock,
+            terrace = true, canyon = true, stationLoop = true, stationHill = true,
+            labComplex = true, labPlan = true, climate = true,
+            style = LabStyle.Bastion, entrance = LabEntrance.Rock,
         climateTimeMinutes = 10.5f, climateTimeScale = 0f,
         buildOnAwake = true,
     });
@@ -59,9 +59,9 @@ public static class ForestProfiles
         {
             seed = seed, diameter = 2000f, chunk = 250f, quads = 48, treeCount = 1500,
             patchy = true, ash = true, spawnAtEntry = true,
-            terrace = true, canyon = true, stationLoop = true, stationHill = true,
+            terrace = true, canyon = true, stationLoop = true, stationHill = false,
             labComplex = true, labPlan = true, climate = true,
-            style = LabStyle.Bastion, entrance = LabEntrance.Rock,
+            style = LabStyle.Auto, entrance = LabEntrance.Auto,
             climateTimeMinutes = 10.5f, climateTimeScale = 0f,
             buildOnAwake = false,
         });

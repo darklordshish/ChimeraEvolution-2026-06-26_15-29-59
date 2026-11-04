@@ -256,6 +256,12 @@ public class ForestBuilder : MonoBehaviour
     public Vector2 LabCenter => world != null ? world.LabCenter : Vector2.zero;
     /// <summary>Портал комплекса B0.1 в координатах поля (как Entry); default у старого лабиринта.</summary>
     public Vector3 LabDoor => world != null ? world.LabDoor : default;
+    /// <summary>
+    /// G7 шаг 2: станция подтверждена внутри `stationReserve` (v2) или найдена (v1).
+    /// `false` — терминальное «станции нет»: потребители станции пропускаются,
+    /// `LabCenter` не подменяется нулём как скрытым дефолтом в центр.
+    /// </summary>
+    public bool HasStation => world != null && world.HasStation;
     public Vector3 LabAtrium => world != null ? world.LabAtrium : default;
     public Vector3 LabNorthDoor => world != null ? world.LabNorthDoor : default;
     public SamplingContract Contract => world != null ? world.Contract : default;

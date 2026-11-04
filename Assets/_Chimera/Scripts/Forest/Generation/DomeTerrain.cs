@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -16,9 +16,9 @@ using UnityEngine;
 /// <c>SampleGround = landform(pad(hydro→terrace→canyon→ravines→hill))</c>, то есть
 /// P5-lite применяется ПОСЛЕ площадки. Так A/C/B0/Pavilion v1 не меняют высот.</item>
 /// <item><b>v2</b> — целевой порядок S3: <c>landform → hill → ShapeGround → pad</c>.
-/// Станция ищется на <see cref="Hydro0"/>, <c>platformY</c> читается из
-/// <see cref="ShapeGround"/> уже найденного пятна, а площадка последним blend'ом
-/// ставит плиту на него. Цикла «станция ↔ форма» нет.</item>
+/// Станция ищется <b>после <see cref="ShapeGround"/></b> внутри провизорного
+/// <c>stationReserve</c>; <c>platformY</c> читается из этого же пола уже найденного
+/// пятна, а площадка последним blend'ом ставит плиту на него. Цикла «станция ↔ форма» нет.</item>
 /// </list>
 /// </para>
 /// <para>
@@ -83,7 +83,7 @@ public sealed class DomeTerrain
 
     public bool Valid => cfg != null && hydro != null;
 
-    /// <summary><c>Hydro0 = H0 + hydro</c> — поле, на котором ищется станция.</summary>
+    /// <summary><c>Hydro0 = H0 + hydro</c> — поле до форм (станция на нём НЕ ищется в v2).</summary>
     public float Hydro0(float x, float z) => Valid ? DomeHydro.SampleHydro(cfg, hydro, x, z) : 0f;
 
     /// <summary>Диагностика: это же поле; отдельного «сырого» пола нет.</summary>

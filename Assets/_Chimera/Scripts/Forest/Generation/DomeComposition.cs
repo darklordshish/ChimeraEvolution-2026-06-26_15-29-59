@@ -163,7 +163,9 @@ public static class DomeComposition
         forbiddenNow = forbidden;
         forbiddenWhyNow = MakeForbiddenWhy(entry, labCenter, hydro, ash, lairs);
         var shifts = new[] { 0f, 20f, -20f, 40f, -40f, 60f, -60f, 80f, -80f, 100f, -100f };
-        var scales = new[] { 1f, 0.85f, 0.72f };
+        // 0.82 — рабочий шаг ворот: ниже 0.72 H/D «Седла» даёт C¹-излом >2°
+        // на 1 м (G2 M5), а полный размер не проходит маску ясеня.
+        var scales = new[] { 1f, 0.85f, 0.82f, 0.72f };
 
         // 1. Гряда-силуэт: капсула вдоль v (длина 300), D 245, бровка 24, H 24.
         Place(state, "Гряда-силь", Role.Ridge, At(1150f, 0f), shifts, scales, masks,

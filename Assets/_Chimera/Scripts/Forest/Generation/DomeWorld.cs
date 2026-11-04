@@ -65,6 +65,8 @@ public class DomeWorld
     public GenTrace Trace { get; private set; }
     /// <summary>Северный выход станции для петли A; default — нет двери.</summary>
     public Vector3 LabNorthDoor { get; private set; }
+    /// <summary>G7 шаг 2: станция подтверждена внутри резерва.</summary>
+    public bool HasStation { get; private set; }
     /// <summary>Подход к лаборатории мокрый: у комплекса построен настил.</summary>
     public bool LabWetApproach { get; private set; }
     /// <summary>Решённый вход B0.2: Rock или Underground.</summary>
@@ -99,7 +101,7 @@ public class DomeWorld
     public int CoverPodsBuilt { get; private set; }
     public int ArenaEdges { get; private set; }
     public DomeRelief.State Relief { get; private set; }
-    /// <summary>S2: композиция v2 (семь ролей; плато станции — шаг 5).</summary>
+    /// <summary>S2: композиция v2 (семь ролей; плато станции — форма landform).</summary>
     public DomeComposition.State Composition { get; private set; }
     /// <summary>G7 шаг 1: текущий мир, выраженный планом; null у v1.</summary>
     public MapPlan Plan { get; private set; }
@@ -212,31 +214,40 @@ public class DomeWorld
         ResolvedLabEntrance = labEntrance == LabEntrance.Auto ? LabEntrance.Rock : labEntrance;
 
         // 2) Место лаборатории: B0.1 — поиск по сиду; A/C — двор в центре мира.
-        //    Ищем на Hydro0 = H0 + hydro (DomeHydro.SampleHydro), а НЕ на финальном
-        //    ShapeGround: финальный пол зависит от маски станции. Terrace/canyon/ravines
-        //    получают уже найденный центр как keep-out и в её пятно не входят — цикла нет.
+        //    G7 v2: сначала ТОЛЬКО stationReserve (адрес региона, не плита); финальная
+        //    станция ищется после ShapeGround внутри него. v1 ищет на Hydro0 как раньше.
+        //    Terrace/canyon/ravines получают резерв как keep-out — цикла нет.
         float minDistance = minLabDistance > 0f ? minLabDistance : DefaultMinLabDistance;
         var site = default(DomeLabSite.Spot);
-        if (buildLabComplex)
+        bool wantLab = buildLabComplex;
+        if (wantLab)
         {
-            site = DomeLabSite.Find(cfg, seed, entryXZ, Hydro, labStyle, minDistance,
-                ResolvedLabEntrance, preferBest: buildStationLoop, lattice: buildStationLoop);
+            site = Terrain.TargetOrder
+                ? DomeLabSite.Reserve(cfg, seed, entryXZ, Hydro, labStyle, minDistance,
+                    ResolvedLabEntrance)
+                : DomeLabSite.Find(cfg, seed, entryXZ, Hydro, labStyle, minDistance,
+                    ResolvedLabEntrance, preferBest: buildStationLoop, lattice: buildStationLoop);
             if (!site.found)
             {
-                Debug.LogError($"[Forest] лаборатории нет места: {site.note} — остаётся старый лабиринт");
+                HasStation = false;
                 buildLabComplex = false;
+                Debug.Log("[Forest] станции нет: " + site.note);
+                Trace.Add("station", 0, 0, "station=none: " + site.note);
             }
         }
 
-        if (buildLabComplex)
+        if (wantLab && site.found)
         {
-            Trace.Add("site", 1, 1, $"Hydro0: {site.note}");
+            HasStation = true;
+            ResolvedLabEntrance = site.entrance;
+            Trace.Add("site", 1, 1, $"{(Terrain.TargetOrder ? "reserve" : "Hydro0")}: {site.note}");
             LabCenter = site.center;
             ResolvedLabStyle = site.style;
             LabWetApproach = site.wetApproach;
             padYaw = site.yawDeg;
             padRect = true;
             // Плита стоит на верхней точке пятна (поиск её и вернул): не висит и не режет склон.
+            // В v2 это ещё не platformY: он читается из ShapeGround после формы.
             platformY = Mathf.Max(site.groundY, Hydro.lakeLevel + 0.5f);
             // Подземный вход: пол ниже подхода на перепад рампы; земля над ним — позже.
             if (ResolvedLabEntrance == LabEntrance.Underground ||
@@ -249,7 +260,7 @@ public class DomeWorld
                       $"центр ({site.center.x:F0}; {site.center.y:F0}), перепад {site.relief:F1} м, " +
                       $"площадка {platformY:F1} м, {(site.wetApproach ? "мокрый подход/настил" : "сухой подход")}");
         }
-        else
+        else if (!wantLab || !Terrain.TargetOrder)
         {
             LabCenter = Vector2.zero;
             ResolvedLabStyle = LabStyle.Bastion;
@@ -261,12 +272,15 @@ public class DomeWorld
                 DomeHydro.SampleHydro(cfg, Hydro, 0f, 0f),
                 Hydro.lakeLevel + 0.5f);
         }
+        // wantLab && !site.found — терминальная ветка "станции нет": LabCenter не
+        // переназначается в ноль, станционные шаги ниже пропускаются по HasStation.
 
         // Маски габаритов (S3 §3): известны ДО формы — их читает сама форма.
         // Только для v2: v1 обязан остаться бит-в-бит (центровые проверки как были).
         masks = Terrain.TargetOrder
             ? BuildMasks(cfg, seed, Hydro, LabCenter, padYaw, padRect, ResolvedLabEntrance,
-                entryXZ, site.found ? site.door : Vector3.zero, northCrevice)
+                entryXZ, site.found ? site.door : Vector3.zero, northCrevice,
+                includeStation: false)
             : null;
         if (buildTerrace)
             Terrace = DomeTerrace.Build(cfg, seed, LabCenter, entryXZ, Hydro,
@@ -323,6 +337,44 @@ public class DomeWorld
 
                 Composition = DomeComposition.Build(cfg, seed, entryXZ, door, LabCenter,
                     Hydro, masks, (x, z) => Terrain.Shape0(x, z), ashAnchor, lairAnchors);
+                // G7 шаг 2: плато станции — форма landform внутри резерва, не DomeHill.
+                if (site.found)
+                {
+                    var stationForm = DomeComposition.StationPlateau();
+                    stationForm.center = site.center;
+                    // Плато поднимает пятно только настолько, чтобы оно было сухим;
+                    // H +8 — верхняя граница формы S2, а не обязательная прибавка поверх
+                    // уже высокого плеча. Иначе плато добавляет объём в P/N и гасит >22°.
+                    float baseH = Terrain.Shape0(site.center.x, site.center.y);
+                    float dry = Hydro.lakeLevel + DomeLabSite.DryMarginV2 + 0.25f;
+                    stationForm.height = Mathf.Clamp(dry - baseH, 2.5f, stationForm.height);
+                    Composition.forms.Add(stationForm);
+                    // G7 шаг 2: если плечо уже высокое, плато не поднимает, но станция
+                    // садится ВРЕЗКОЙ (S3 §4.1: Inset). Врезка D150 / верх 70 / до 9 м:
+                    // это станционный пол в склоне, а не новая форма схемы. Она возвращает
+                    // P/N в 0.80–1.20 (S1 §6.2), а её C¹-шаг ≤2° — G2 M5.
+                    float inset = Mathf.Clamp(baseH - dry - 0.5f, 0f, 9.2f);
+                    if (inset > 0.2f)
+                    {
+                        var cut = DomeComposition.StationPlateau();
+                        cut.name = "Врезка станции";
+                        cut.center = site.center;
+                        cut.sign = DomeFormSign.Carve;
+                        cut.height = inset;
+                        cut.diameter = 150f;
+                        cut.crest = 70f;
+                        Composition.forms.Add(cut);
+                    }
+                    for (int i = 0; i < Composition.declared.Count; i++)
+                    {
+                        var p = Composition.declared[i];
+                        if (p.role != DomeComposition.Role.StationPlateau) continue;
+                        p.applied = true;
+                        p.note = $"G7 v2: плато 137×62/H{stationForm.height:F1} " +
+                                 "внутри stationReserve";
+                        Composition.declared[i] = p;
+                    }
+                }
                 string compSkips = "";
                 foreach (var p in Composition.declared)
                     if (!p.applied) compSkips += $"{p.name}: {p.note}; ";
@@ -368,7 +420,7 @@ public class DomeWorld
                     "(маски для hill; финальные — на ShapeGround)");
             }
 
-            if (buildStationHill)
+            if (buildStationHill && !Terrain.TargetOrder)
             {
                 float yaw = padYaw * Mathf.Deg2Rad;
                 Vector2 north = LabCenter + new Vector2(Mathf.Sin(yaw), Mathf.Cos(yaw)) *
@@ -410,6 +462,39 @@ public class DomeWorld
             // уже найденного пятна. Площадка ниже применится последним blend'ом.
             if (buildLabComplex)
             {
+                var confirmed = DomeLabSite.Confirm(cfg, Hydro,
+                    (x, z) => Terrain.ShapeGround(x, z), entryXZ, site,
+                    site.style, site.entrance);
+                if (confirmed.found)
+                {
+                    site = confirmed;
+                    LabCenter = site.center;
+                    LabDoor = site.door;
+                    ResolvedLabStyle = site.style;
+                    ResolvedLabEntrance = site.entrance;
+                    HasStation = true;
+                    // Маска station/ramp/approach — ПОСЛЕ поиска: формы её уже не видят,
+                    // а POI/дороги/поды ниже — видят.
+                    AddStationMasks(masks, LabCenter, padYaw, padRect, ResolvedLabEntrance,
+                        LabDoor, northCrevice);
+                    Terrain.labCenter = LabCenter;
+                    Terrain.padYaw = padYaw;
+                    Terrain.padRect = padRect;
+                    Terrain.entrance = ResolvedLabEntrance;
+                    Terrain.northCrevice = northCrevice;
+                    Trace.Add("station", 1, 1, site.note);
+                }
+                else
+                {
+                    HasStation = false;
+                    buildLabComplex = false;
+                    Trace.Add("station", 0, 0, "station=none: " + confirmed.note);
+                    Debug.Log("[Forest] станция не подтверждена: " + confirmed.note);
+                }
+            }
+
+            if (buildLabComplex)
+            {
                 float shape = Terrain.ShapeGround(LabCenter.x, LabCenter.y);
                 platformY = Mathf.Max(
                     shape - (ResolvedLabEntrance == LabEntrance.Underground ||
@@ -439,7 +524,7 @@ public class DomeWorld
                     platformY = Mathf.Max(finalGround, Hydro.lakeLevel + 0.5f);
             }
 
-            if (buildStationHill)
+            if (buildStationHill && !Terrain.TargetOrder)
             {
                 float yaw = padYaw * Mathf.Deg2Rad;
                 Vector2 north = LabCenter + new Vector2(Mathf.Sin(yaw), Mathf.Cos(yaw)) *
@@ -454,7 +539,9 @@ public class DomeWorld
         }
 
         Terrain.platformY = platformY;
-        Terrain.padEnabled = true;
+        // v2 без станции — без площадки/рампы: станционные шаги пропущены,
+        // а не «плита в центре». v1 сохраняет исторический двор/плиту бит-в-бит.
+        Terrain.padEnabled = !Terrain.TargetOrder || HasStation;
         if (!Terrain.TargetOrder) EnsureChunks();
         BuildRockRing();
         BuildWater();
@@ -472,7 +559,7 @@ public class DomeWorld
                 ? LabPlanGenerator.Generate(seed, labPlanVersion, ResolvedLabEntrance, ResolvedLabStyle)
                 : LabPlanFixed.Create();
         BuildFacility(seed, buildLabComplex, buildStationLoop);
-        if (buildStationHill) BuildStationHill();
+        if (buildStationHill && !Terrain.TargetOrder) BuildStationHill();
 
         // SpawnPoint — двор старого лабиринта или закрытый зал комплекса. У комплекса
         // верх плиты на Plinth выше площадки: игрок встаёт на плиту, а не в её толщу.
@@ -480,6 +567,9 @@ public class DomeWorld
         if (LabComplex != null)
             spawnGround = Mathf.Max(spawnGround, platformY + DomeLabComplex.Plinth);
         SpawnPoint = new Vector3(LabCenter.x, spawnGround + 1f, LabCenter.y);
+        // v2: станции нет — игрок не в «скрытом центре», а у входа.
+        if (Terrain.TargetOrder && !HasStation)
+            SpawnPoint = new Vector3(entryXZ.x, SampleGround(entryXZ.x, entryXZ.y) + 1f, entryXZ.y);
 
         BuildEntry(buildEntry, entryXZ);
         // B-lite — только при patchyFlora. Раньше скобки отсутствовали, и коридоры с
@@ -778,7 +868,7 @@ public class DomeWorld
     /// </summary>
     DomeMasks BuildMasks(DomeGenConfigSO cfg, long seed, DomeHydro.State hydro,
         Vector2 labCenter, float padYawDeg, bool padRect, LabEntrance entrance,
-        Vector2 entry, Vector3 door, bool northCrevice)
+        Vector2 entry, Vector3 door, bool northCrevice, bool includeStation = true)
     {
         var set = new DomeMasks();
         float rin = DomeRockRing.InnerRadius(cfg);
@@ -787,18 +877,74 @@ public class DomeWorld
         // Маска станции = плита + PadBlend + рампа + расщелина + подход 16/24 м
         // (S3 §3.2). Все части — отдельные записи с одним именем «station»:
         // форма обязана уважать каждую, а hill найдёт по ним свои вырезы.
+        // G7 v2: ДО формы станции ещё нет — есть только stationReserve; сама
+        // маска station/ramp/approach появляется ПОСЛЕ поиска (AddStationMasks).
+        if (includeStation)
+            AddStationFootprints(set, labCenter, padYawDeg, padRect, entrance, door, northCrevice);
+        // G7 шаг 2: stationReserve — провизорный регион станции до landform.
+        // Пятно + blend (58×48) меряется по верху плато 70×55; подход 16/24 м
+        // и регион целиком — по низу плато 144×129 (S3 §3.6).
         if (padRect)
-            set.Add("station", DomeFootprint.Obb(labCenter, padYawDeg,
-                DomeLabComplex.PadHalfWidth + DomeLabComplex.PadBlend,
-                DomeLabComplex.PadHalfDepth + DomeLabComplex.PadBlend));
+            set.Add("stationReserve", DomeFootprint.Obb(labCenter, padYawDeg,
+                DomeLabSite.ReserveWidth * 0.5f, DomeLabSite.ReserveDepth * 0.5f));
         else
-            set.Add("station", DomeFootprint.Circle(labCenter, LabRadius + DomeLabComplex.PadBlend));
+            set.Add("stationReserve", DomeFootprint.Circle(labCenter,
+                Mathf.Max(LabRadius, DomeLabSite.ReserveWidth * 0.5f)));
 
         float inwardYaw = entry.sqrMagnitude > 1e-6f
             ? Mathf.Atan2(-entry.x, -entry.y) * Mathf.Rad2Deg
             : 0f;
         set.Add("entry", DomeFootprint.Circle(entry, 12f));
         set.Add("entry", DomeFootprint.Obb(entry, inwardYaw, 4.2f, 1.1f));
+
+        // Главный маршрут известен ДО формы (Entry → дверь резерва); формы его уважают.
+        if (door.sqrMagnitude > 0.01f)
+            set.Add("mainRoute", DomeFootprint.Capsule(entry,
+                new Vector2(door.x, door.z), 30f));
+
+        // Ворота уровня — 2 якоря ДО формы (S3 §3.2): landform их не задевает.
+        foreach (var gate in DomeGate.Anchors(cfg, seed))
+            set.Add("gate", DomeFootprint.Circle(gate.center, 8f));
+
+        // Коридоры связей — 28 м полоса (16 + 2×6 плеч): якоря зон известны заранее,
+        // поэтому landform уважает и их, а не только финальную раскладку.
+        var anchors = ForestSpace.AnchorZones(cfg, seed, 5);
+        foreach (var link in ForestSpace.BuildLinksLegacy(anchors, 28f))
+            set.Add("corridor", DomeFootprint.Capsule(link.a, link.b, 14f));
+
+        if (hydro != null)
+        {
+            if (hydro.lakeRadius > 0f)
+                set.Add("water", DomeFootprint.Circle(hydro.lakeCenter, hydro.lakeRadius + 2f));
+            for (int i = 1; i < hydro.riverPts.Count; i++)
+                set.Add("water", DomeFootprint.Capsule(hydro.riverPts[i - 1], hydro.riverPts[i],
+                    hydro.riverHalfWidth + 2f));
+        }
+
+        return set;
+    }
+
+    /// <summary>
+    /// G7 шаг 2: финальные маски станции — ПОСЛЕ поиска места на ShapeGround.
+    /// Формы этих записей не видят; POI/дороги, идущие позже, — видят.
+    /// </summary>
+    void AddStationMasks(DomeMasks set, Vector2 labCenter, float padYawDeg, bool padRect,
+        LabEntrance entrance, Vector3 door, bool northCrevice)
+    {
+        if (set == null) return;
+        AddStationFootprints(set, labCenter, padYawDeg, padRect, entrance, door, northCrevice);
+    }
+
+    void AddStationFootprints(DomeMasks set, Vector2 labCenter, float padYawDeg, bool padRect,
+        LabEntrance entrance, Vector3 door, bool northCrevice)
+    {
+        // Маска станции = плита + PadBlend + рампа + расщелина + подход 16/24 м.
+        if (padRect)
+            set.Add("station", DomeFootprint.Obb(labCenter, padYawDeg,
+                DomeLabComplex.PadHalfWidth + DomeLabComplex.PadBlend,
+                DomeLabComplex.PadHalfDepth + DomeLabComplex.PadBlend));
+        else
+            set.Add("station", DomeFootprint.Circle(labCenter, LabRadius + DomeLabComplex.PadBlend));
 
         if (padRect && (entrance == LabEntrance.Underground || entrance == LabEntrance.Buried))
         {
@@ -821,7 +967,6 @@ public class DomeWorld
             set.Add("station", crevice);
         }
 
-        // Подход перед дверью: 16 м у скального входа, 24 м у подземного.
         if (door.sqrMagnitude > 0.01f)
         {
             Vector2 doorXZ = new Vector2(door.x, door.z);
@@ -836,29 +981,7 @@ public class DomeWorld
                 set.Add("approach", approach);
                 set.Add("station", approach);
             }
-            set.Add("mainRoute", DomeFootprint.Capsule(entry, doorXZ, 30f));
         }
-
-        // Ворота уровня — 2 якоря ДО формы (S3 §3.2): landform их не задевает.
-        foreach (var gate in DomeGate.Anchors(cfg, seed))
-            set.Add("gate", DomeFootprint.Circle(gate.center, 8f));
-
-        // Коридоры связей — 28 м полоса (16 + 2×6 плеч): якоря зон известны заранее,
-        // поэтому landform уважает и их, а не только финальную раскладку.
-        var anchors = ForestSpace.AnchorZones(cfg, seed, 5);
-        foreach (var link in ForestSpace.BuildLinksLegacy(anchors, 28f))
-            set.Add("corridor", DomeFootprint.Capsule(link.a, link.b, 14f));
-
-        if (hydro != null)
-        {
-            if (hydro.lakeRadius > 0f)
-                set.Add("water", DomeFootprint.Circle(hydro.lakeCenter, hydro.lakeRadius + 2f));
-            for (int i = 1; i < hydro.riverPts.Count; i++)
-                set.Add("water", DomeFootprint.Capsule(hydro.riverPts[i - 1], hydro.riverPts[i],
-                    hydro.riverHalfWidth + 2f));
-        }
-
-        return set;
     }
 
     /// <summary>Добавить уже построенные формы как keep-out для landform (терраса/каньон/овраги).</summary>
@@ -1082,6 +1205,7 @@ public class DomeWorld
         LabComplex = null;
         LabPlan = null;
         LabCenter = Vector2.zero;
+        HasStation = false;
         LabDoor = default;
         LabAtrium = default;
         LabNorthDoor = default;

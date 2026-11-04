@@ -4,6 +4,11 @@ using UnityEngine;
 /// Холм станции: lift-слой вокруг подземного бункера. Не декор и не камни —
 /// высота входит в SampleGround, поэтому чанки, NavMesh и флора видят тот же пол.
 /// Внутри пятна станции площадка/рампа важнее холма (DomeWorld.SampleGround).
+/// <para>
+/// G7 шаг 2: это <b>v1-слой</b>. В v2 станционный подъём не строится: плато станции —
+/// форма S2 №4 («плато станции»), её кладёт `landform`, а `DomeWorld` не зовёт
+/// <see cref="Build"/> при <c>worldVersion &gt;= 2</c>.
+/// </para>
 /// </summary>
 public static class DomeHill
 {
