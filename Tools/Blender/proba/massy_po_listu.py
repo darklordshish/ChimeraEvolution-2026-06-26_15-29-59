@@ -87,8 +87,9 @@ for o in O:
         if o.name in ('голова', 'Чутьё'): wa = wl = 0; h = True
         else: h = False
         sg = 1.0 if p.x >= 0 else -1.0; sx, sy = (0.0, 0.0) if h else smesh(abs(p.x), p.y, p.z, wa, wl)
+        if not h and 1.48 < p.z < 1.57 and abs(p.x) > 0.11: wa_ = max(wa, float(np.clip((p.z - 1.48) / 0.03, 0, 1))); sx, sy = smesh(abs(p.x), p.y, p.z, wa_, wl)   # верхний угол дельты и трапеция идут по листу: на этих высотах вес руки мал
         if not h and 1.57 < p.z < 1.65 and abs(p.x) < 0.11:   # шея по вид.png (срез: диаметр шире на 2.8–3.8 см на z 1.60–1.62)
-            q_ = np.interp(p.z, [1.57, 1.58, 1.60, 1.62, 1.65], [1.0, 0.93, 0.78, 0.81, 1.0]); sx += abs(p.x) * (q_ - 1); sy += (p.y - 0.01) * (0.5 * (q_ - 1))
+            q_ = np.interp(p.z, [1.57, 1.58, 1.60, 1.62, 1.65], [1.0, 0.93, 0.70, 0.81, 1.0]); sx += abs(p.x) * (q_ - 1); sy += (p.y - 0.01) * (0.5 * (q_ - 1))
         kl = (round(p.x, 4), round(p.y, 4), round(p.z, 4)); r_ = S.setdefault(kl, [0.0, 0.0, 0]); r_[0] += sg * sx; r_[1] += sy; r_[2] += 1; zap.append((o, v.index, kl))
 maks = 0
 for o, i, kl in zap:

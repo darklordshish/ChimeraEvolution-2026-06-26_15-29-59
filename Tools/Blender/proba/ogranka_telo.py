@@ -377,6 +377,24 @@ def zapolnit_panel(r, pan, seg, ids, n_):
                 return d1 * d2 < -1e-12 and d3 * d4 < -1e-12
             if any(per(p_, q_) for p_, q_ in S2): re_ += 1; continue
             ed.append((nom[(i_, 1)], nom[(j_, 1)]))
+    # цепь с висячим концом панели не отделяет: конец дотягивается до контура, чтобы панель между цепями замкнулась
+    if opt.get('zamknut') and pan['imya'] != 'низ сзади':   # на ноге сзади дотянутая цепь складывала грань у колена
+        st_ = {}
+        for x_, y_ in ed:
+            st_[x_] = st_.get(x_, 0) + 1; st_[y_] = st_.get(y_, 0) + 1
+        nk_ = len(ids); dz_ = 0
+        for v_, c_ in list(st_.items()):
+            if c_ != 1 or v_ < nk_: continue
+            pv = P2[v_]; pr_ = (P2[0:nk_][0] - pv).length
+            kand = sorted(range(nk_), key=lambda q_: (P2[q_] - pv).length)[:6]
+            for q_ in kand:
+                A1, B1 = pv, P2[q_]
+                def per2(p_, q__):
+                    d1 = (q__ - p_).cross(A1 - p_); d2 = (q__ - p_).cross(B1 - p_); d3 = (B1 - A1).cross(p_ - A1); d4 = (B1 - A1).cross(q__ - A1); return d1 * d2 < -1e-12 and d3 * d4 < -1e-12
+                if (B1 - A1).length > 0.12: break
+                if any(per2(P2[x_], P2[y_]) for x_, y_ in ed if v_ not in (x_, y_) and q_ not in (x_, y_)): continue
+                ed.append((v_, q_)); PLOC.setdefault(r, []).append((loc[v_], loc[q_])); dz_ += 1; break
+        print('ТЕЛО: панель %s: дотянуто концов %d' % (pan['imya'], dz_))
     PLITA = float(opt.get('plita', 0))
     for _pl in range(2):
         ve, _, fa, ov, _, _ = delaunay_2d_cdt(P2, ed, [], 0, 1e-7); T = []; rb_ = reg_bvh(r); pere_ = 0
@@ -548,6 +566,64 @@ if OST > 0:
         n3 = Nv[v] / max(np.linalg.norm(Nv[v]), 1e-12); d_ = (VP[v] - VP[list(so)].mean(0)).dot(n3) * OST; D_[v] = n3 * max(-SDO, min(SDO, d_))
     for v, d_ in D_.items(): VP[v] = VP[v] + d_
     print('ТЕЛО: перепад: углов %d, сдвиг средн %.1f мм' % (len(D_), np.mean([np.linalg.norm(x) for x in D_.values()]) * 1000))
+
+# ПЛОСКОСТЬ ПАНЕЛИ: панель между цепями рёбер — одна масса. Вершины панели едут только по глубине ракурса к плоскостям своих панелей, поэтому контур в анфас не меняется. Мера: разброс нормалей внутри панели (средний угол к средней нормали по площади) и число граней на панель
+PLAN = float(opt.get('plan', 0))
+def podpaneli(r, T_):
+    Zp = {(min(a_, b_), max(a_, b_)) for a_, b_ in PLOC.get(r, ())}; E_ = {}
+    for i_, t in enumerate(T_):
+        for a_, b_ in zip(t, t[1:] + t[:1]): E_.setdefault((min(a_, b_), max(a_, b_)), []).append(i_)
+    so = [[] for _ in T_]
+    for k_, li in E_.items():
+        if len(li) == 2 and k_ not in Zp: so[li[0]].append(li[1]); so[li[1]].append(li[0])
+    vid_ = [False] * len(T_); R_ = []
+    for i_ in range(len(T_)):
+        if vid_[i_]: continue
+        st = [i_]; vid_[i_] = True; c_ = []
+        while st:
+            q = st.pop(); c_.append(q)
+            for w in so[q]:
+                if not vid_[w]: vid_[w] = True; st.append(w)
+        R_.append(c_)
+    return R_
+def mera_pan(metka):
+    Ug = []; Ng = []; Pl = 0
+    for r, T_ in TRI.items():
+        if not PM[REG == r].mean() > 0.5: continue
+        for c_ in podpaneli(r, T_):
+            N_ = []; A_ = []
+            for i_ in c_:
+                n3 = np.cross(VP[T_[i_][1]] - VP[T_[i_][0]], VP[T_[i_][2]] - VP[T_[i_][0]]); s3 = np.linalg.norm(n3)
+                if s3 > 1e-9: N_.append(n3 / s3); A_.append(s3 / 2)
+            if not N_: continue
+            N_ = np.array(N_); A_ = np.array(A_); mn = (N_ * A_[:, None]).sum(0); mn /= max(np.linalg.norm(mn), 1e-12); u_ = np.degrees(np.arccos(np.clip(N_.dot(mn), -1, 1))); Ug.append(float((u_ * A_).sum() / A_.sum())); Ng.append(len(c_)); Pl += 1
+    print('ТЕЛО: панели %s: подпанелей %d, разброс нормалей медиана %.1f°, 90%% %.1f°, граней на подпанель медиана %.0f, макс %d' % (metka, Pl, np.median(Ug), np.percentile(Ug, 90), np.median(Ng), max(Ng)))
+mera_pan('до плоскости')
+if PLAN > 0:
+    LIM = PLAN; Y0 = {}; sum_ = 0; KONT = set()   # контур панели и ось держат контур тела: стоят
+    for r, T_ in TRI.items():
+        if not PM[REG == r].mean() > 0.5: continue
+        E2 = {}
+        for t in T_:
+            for a_, b_ in zip(t, t[1:] + t[:1]): E2[(min(a_, b_), max(a_, b_))] = E2.get((min(a_, b_), max(a_, b_)), 0) + 1
+        KONT |= {q for k_, n_ in E2.items() if n_ == 1 for q in k_}
+    for _it in range(4):
+        Sv = {}
+        for r, T_ in TRI.items():
+            if not PM[REG == r].mean() > 0.5: continue
+            for c_ in podpaneli(r, T_):
+                Vs = sorted({v for i_ in c_ for v in T_[i_]})
+                if len(Vs) < 4: continue
+                N_ = np.array([np.cross(VP[T_[i_][1]] - VP[T_[i_][0]], VP[T_[i_][2]] - VP[T_[i_][0]]) for i_ in c_]); mn = N_.sum(0); mn /= max(np.linalg.norm(mn), 1e-12); Nu_ = N_ / np.maximum(np.linalg.norm(N_, axis=1, keepdims=True), 1e-12)
+                if np.degrees(np.arccos(np.clip(Nu_.dot(mn), -1, 1))).max() > 55 or abs(mn[1]) < 0.35: continue   # панель огибает тело, плоскостью её не сделать
+                Q = VP[Vs]; Aq = np.c_[Q[:, 0], Q[:, 2], np.ones(len(Vs))]; co, *_r = np.linalg.lstsq(Aq, Q[:, 1], rcond=None)
+                ar = sum(np.linalg.norm(np.cross(VP[T_[i_][1]] - VP[T_[i_][0]], VP[T_[i_][2]] - VP[T_[i_][0]])) / 2 for i_ in c_)
+                for v, a_ in zip(Vs, Aq): Sv.setdefault(v, []).append((float(a_.dot(co)), ar))
+        for v, li in Sv.items():
+            if v in KRAJ or v in KONT: continue
+            Y0.setdefault(v, VP[v][1]); yy = sum(a_ * b_ for a_, b_ in li) / sum(b_ for _a, b_ in li); VP[v][1] = Y0[v] + float(np.clip(yy - Y0[v], -LIM, LIM))
+    dd = [abs(VP[v][1] - y_) for v, y_ in Y0.items()]; print('ТЕЛО: к плоскости: вершин %d, сдвиг по глубине медиана %.1f, макс %.1f мм' % (len(dd), np.median(dd) * 1000, max(dd) * 1000))
+    mera_pan('после плоскости')
 
 # ДИАГОНАЛИ: четырёхугольник из двух граней области переворачивается, если так они ближе к одной плоскости (убирает «битое стекло», число граней то же). Рёбра-ограничения панелей и границы областей стоят
 FLIP = float(opt.get('flip', 3))
