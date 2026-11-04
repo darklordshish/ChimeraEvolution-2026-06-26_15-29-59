@@ -469,7 +469,7 @@ for _prox in range(4):
     ubr_ = 0
     for k_, li in Cnt.items():
         if len(li) > 1:
-            for r, t in li[(len(li) % 2):]:
+            for r, t in li[1:]:
                 TRI[r].remove(list(t)); ubr_ += 1
     if ubr_: print('ТЕЛО: дубли граней сняты: %d' % ubr_)
     Rb = {}
@@ -661,6 +661,15 @@ if FLIP > 0:
         if not est: break
     print('ТЕЛО: диагоналей перевёрнуто %d' % npv); mera_pan('после диагоналей')
 
+# ШАГ: вершина вплотную к оси садится на ось, а грань целиком в плоскости оси — внутренняя перепонка между половинами, она снимается
+nsh = 0
+for v in {q for T_ in TRI.values() for t in T_ for q in t}:
+    if 0 < VP[v][0] < 0.007 and (v not in KRAJ or VP[v][2] < 0.95) and VP[v][2] > 0.1: VP[v][0] = 0.0; nsh += 1
+npr = 0
+for r in TRI:
+    n0_ = len(TRI[r]); TRI[r] = [t for t in TRI[r] if not all(abs(VP[q][0]) < 1e-5 for q in t)]; npr += n0_ - len(TRI[r])
+print('ТЕЛО: шаг: вершин на ось %d, перепонок снято %d' % (nsh, npr))
+
 # 7. В ОБЪЕКТЫ: зона уходит из объектов, области — большинству площади
 BOK = {b.name[:-2].split('.')[0] for a_ in bpy.data.objects if a_.type == 'ARMATURE' for b in a_.data.bones if b.name.endswith('.L')}
 ROB = {r: int(np.bincount(FO[REG == r], A[REG == r], len(O)).argmax()) for r in TRI}
@@ -730,11 +739,66 @@ Rk = otkr(); PA = np.array([q[2] for q in Rk]); PB = np.array([q[3] for q in Rk]
 for i_, (k, ei, a_, b_) in enumerate(Rk):
     t_ = np.clip(((Pm[i_] - PA) * d_).sum(1) / np.maximum((d_ * d_).sum(1), 1e-12), 0, 1); D_ = np.linalg.norm(PA + d_ * t_[:, None] - Pm[i_], axis=1); D_[i_] = 9
     if D_.min() > 0.0015 and abs(Pm[i_][0]) > 1e-4 and O[k].name not in ('голова', 'Чутьё'): zap.setdefault(k, []).append(ei)
-for k, li in zap.items():
-    bm = bmesh.new(); bm.from_mesh(O[k].data); bm.edges.ensure_lookup_table(); n0_ = len(bm.faces); bmesh.ops.holes_fill(bm, edges=[bm.edges[i_] for i_ in li], sides=8); print('ТЕЛО: %s: дыра, рёбер %d, граней %d' % (O[k].name, len(li), len(bm.faces) - n0_))
-    if O[k].data.shape_keys:
-        sh = bm.verts.layers.shape.get(O[k].data.shape_keys.key_blocks[0].name)
-        for v in bm.verts: v[sh] = v.co
-    bm.to_mesh(O[k].data); bm.free(); O[k].data.update()
+# петли открытых рёбер идут и через границу объектов: собираются по положению, грань отходит объекту первого ребра
+Kl = lambda p: tuple(np.round(p, 4)); Ad = {}; Ob_ = {}
+for i_, (k, ei, a_, b_) in enumerate(Rk):
+    if ei not in zap.get(k, ()): continue
+    A_k, B_k = Kl(a_), Kl(b_); Ad.setdefault(A_k, []).append(B_k); Ad.setdefault(B_k, []).append(A_k); Ob_[frozenset((A_k, B_k))] = k
+    PK = None
+vz_o = set(); Pet = []
+for st_ in list(Ad):
+    for nx_ in Ad[st_]:
+        if frozenset((st_, nx_)) in vz_o: continue
+        pt = [st_]; pr_, cu = st_, nx_; vz_o.add(frozenset((st_, nx_)))
+        while cu != st_ and len(pt) < 40:
+            pt.append(cu); so_ = [q for q in Ad[cu] if q != pr_ and frozenset((cu, q)) not in vz_o]
+            if not so_: cu = None; break
+            pr_, cu = cu, so_[0]; vz_o.add(frozenset((pt[-1], cu)))
+        if cu == st_ and len(pt) >= 3: Pet.append(pt)
+nz2 = 0
+for pt in Pet:
+    k = Ob_.get(frozenset((pt[0], pt[1])), 0); o = O[k]; M = o.matrix_world; iw = M.inverted(); bm = bmesh.new(); bm.from_mesh(o.data); dl = bm.verts.layers.deform.verify(); sh = bm.verts.layers.shape.get(o.data.shape_keys.key_blocks[0].name) if o.data.shape_keys else None; Id_ = {Kl(np.array(tuple(M @ v.co))): v for v in bm.verts}
+    def vv(q):
+        v = Id_.get(q)
+        if v is not None: return v
+        p_ = Vector(q); v = bm.verts.new(iw @ p_)
+        if sh is not None: v[sh] = iw @ p_
+        sg_ = p_.x < 0
+        for n_, w_ in vesa_v(Vector((abs(p_.x), p_.y, p_.z))).items():
+            if w_ > 1e-4:
+                n2 = (n_[:-2] if n_.endswith('.L') else n_ + '.L') if sg_ and any(b.name == (n_[:-2] if n_.endswith('.L') else n_ + '.L') for a_ in bpy.data.objects if a_.type == 'ARMATURE' for b in a_.data.bones) else n_
+                g = o.vertex_groups.get(n2) or o.vertex_groups.new(name=n2); v[dl][g.index] = w_
+        Id_[q] = v; return v
+    Vs = [vv(q) for q in pt]; bm.verts.index_update()
+    for i_ in range(1, len(Vs) - 1):
+        try:
+            f_ = bm.faces.new([Vs[0], Vs[i_], Vs[i_ + 1]]); f_.normal_update(); c_ = M @ f_.calc_center_median(); n0 = bvh0.find_nearest(Vector((abs(c_.x), c_.y, c_.z)))[1]
+            if (M.to_3x3() @ f_.normal).dot(Vector((n0.x * (-1 if c_.x < 0 else 1), n0.y, n0.z))) < 0: f_.normal_flip()
+            nz2 += 1
+        except ValueError: pass
+    bm.to_mesh(o.data); bm.free(); o.data.update()
+# угол: два открытых ребра из одной вершины, а третье ребро уже есть: одна грань
+def ug_():
+    global nz2
+    for q, so in list(Ad.items()):
+        if len(so) != 2 or len(Ad[so[0]]) != 1 or len(Ad[so[1]]) != 1: continue
+        k = Ob_.get(frozenset((q, so[0])), 0); o = O[k]; M = o.matrix_world; iw = M.inverted(); bm = bmesh.new(); bm.from_mesh(o.data); dl = bm.verts.layers.deform.verify(); sh = bm.verts.layers.shape.get(o.data.shape_keys.key_blocks[0].name) if o.data.shape_keys else None; Id_ = {Kl(np.array(tuple(M @ v.co))): v for v in bm.verts}
+        Vs = []
+        for p_ in (q, so[0], so[1]):
+            v = Id_.get(p_)
+            if v is None:
+                pp_ = Vector(p_); v = bm.verts.new(iw @ pp_)
+                if sh is not None: v[sh] = iw @ pp_
+                nb = min((x for x in bm.verts if x is not v), key=lambda x: (x.co - v.co).length)
+                for gi, w_ in nb[dl].items(): v[dl][gi] = w_
+            Vs.append(v)
+        try:
+            f_ = bm.faces.new(Vs); f_.normal_update(); c_ = M @ f_.calc_center_median(); n0 = bvh0.find_nearest(Vector((abs(c_.x), c_.y, c_.z)))[1]
+            if (M.to_3x3() @ f_.normal).dot(Vector((n0.x * (-1 if c_.x < 0 else 1), n0.y, n0.z))) < 0: f_.normal_flip()
+            nz2 += 1
+        except ValueError: pass
+        bm.to_mesh(o.data); bm.free(); o.data.update()
+ug_()
+print('ТЕЛО: последняя заделка: открытых рёбер %d, петель %d, граней %d' % (sum(len(v) for v in zap.values()), len(Pet), nz2))
 print('ТЕЛО: итог %d тр: %s' % (sum(len(o.data.polygons) for o in O), {o.name: len(o.data.polygons) for o in O}))
 bpy.ops.wm.save_as_mainfile(filepath=OUT)
