@@ -78,9 +78,10 @@ for o in O:
         fl = [f.select for f in v.link_faces]
         if fl and any(fl) and not all(fl): drz.add(v.index)
     bmesh.update_edit_mesh(o.data); bpy.ops.object.mode_set(mode='OBJECT')
-    if n and DKG < 0.999:
+    r_ob = float(opt.get('dolya_g', DKG)) if o.name in ('голова', 'Чутьё') else DKG
+    if n and r_ob < 0.999:
         g = o.vertex_groups.new(name='~держать'); g.add(list(drz), 1.0, 'REPLACE'); o.vertex_groups.active = g
-        bpy.ops.object.mode_set(mode='EDIT'); bpy.ops.mesh.decimate(ratio=DKG, use_vertex_group=True, vertex_group_factor=1000, invert_vertex_group=True); bpy.ops.object.mode_set(mode='OBJECT')
+        bpy.ops.object.mode_set(mode='EDIT'); bpy.ops.mesh.decimate(ratio=r_ob, use_vertex_group=True, vertex_group_factor=1000, invert_vertex_group=True); bpy.ops.object.mode_set(mode='OBJECT')
         o.vertex_groups.remove(o.vertex_groups['~держать'])
 
 # 2. ЗОНА ТЕЛА: сварка и дробление
@@ -573,6 +574,17 @@ for k, o in enumerate(O):
             if ROBT[r][i_] != k: continue
             try: bm.faces.new([vz_(q) for q in t])
             except ValueError: pass
+    # обход согласуется на половине, до отражения: на стыке зоны и кисти встречаются разные источники; сторона острова — по большинству площади
+    bm.normal_update(); ost_ = set(bm.faces)
+    while ost_:
+        st = [next(iter(ost_))]; ch_ = set()
+        while st:
+            f_ = st.pop()
+            if f_ in ch_: continue
+            ch_.add(f_); st += [g_ for e in f_.edges for g_ in e.link_faces if g_ not in ch_]
+        ost_ -= ch_; old_ = {f_: (f_.normal.copy(), f_.calc_area()) for f_ in ch_}
+        bmesh.ops.recalc_face_normals(bm, faces=list(ch_)); bm.normal_update()
+        if sum(a_ * f_.normal.dot(n_) for f_, (n_, a_) in old_.items()) < 0: bmesh.ops.reverse_faces(bm, faces=list(ch_)); bm.normal_update()
     # отражение половины: веса меняются именами .L ↔ без суффикса
     bm.verts.ensure_lookup_table(); st_ = set(bm.verts); fs_ = set(bm.faces); r_ = bmesh.ops.mirror(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], axis='X', merge_dist=2e-4)
     im_ = {g.index: g.name for g in o.vertex_groups}
