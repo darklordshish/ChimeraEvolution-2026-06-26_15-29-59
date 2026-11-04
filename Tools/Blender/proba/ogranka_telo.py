@@ -375,13 +375,24 @@ def zapolnit_panel(r, pan, seg, ids, n_):
                 return d1 * d2 < -1e-12 and d3 * d4 < -1e-12
             if any(per(p_, q_) for p_, q_ in S2): re_ += 1; continue
             ed.append((nom[(i_, 1)], nom[(j_, 1)]))
-    ve, _, fa, ov, _, _ = delaunay_2d_cdt(P2, ed, [], 0, 1e-7); T = []; rb_ = reg_bvh(r); pere_ = 0
-    for f in fa:
-        if any(not ov[q] for q in f): pere_ += 1; continue
-        if not vnutri(sum(ve[q].x for q in f) / 3, sum(ve[q].y for q in f) / 3): continue
-        t3 = [loc[ov[q][0]] for q in f]; A_, B_, C_ = VP[t3]
-        if np.cross(B_ - A_, C_ - A_).dot(np.array(tuple(rb_.find_nearest(Vector((A_ + B_ + C_) / 3))[1]))) < 0: t3 = t3[::-1]
-        T.append(t3)
+    PLITA = float(opt.get('plita', 0))
+    for _pl in range(2):
+        ve, _, fa, ov, _, _ = delaunay_2d_cdt(P2, ed, [], 0, 1e-7); T = []; rb_ = reg_bvh(r); pere_ = 0
+        for f in fa:
+            if any(not ov[q] for q in f): pere_ += 1; continue
+            if not vnutri(sum(ve[q].x for q in f) / 3, sum(ve[q].y for q in f) / 3): continue
+            t3 = [loc[ov[q][0]] for q in f]; A_, B_, C_ = VP[t3]
+            if np.cross(B_ - A_, C_ - A_).dot(np.array(tuple(rb_.find_nearest(Vector((A_ + B_ + C_) / 3))[1]))) < 0: t3 = t3[::-1]
+            T.append(t3)
+        # плиты: большая грань получает вершину на поверхности, геометрия идёт за массой, а не за шумом
+        if _pl == 0 and PLITA > 0:
+            for t3 in T:
+                pp_ = VP[t3]; c2 = pp_.mean(0); uu = (pp_[1] - pp_[0]); vv = (pp_[2] - pp_[0])
+                if np.linalg.norm(np.cross(uu, vv)) / 2 > PLITA * 1e-4:
+                    h = bvh0.ray_cast(Vector((c2[0], ys * 2, c2[2])), Vector((0, -ys, 0)))
+                    if h[0] is not None:
+                        VP = np.vstack([VP, np.array(tuple(h[0]))]); q = len(VP) - 1; PNV.add(q); loc.append(q); P2.append(Vector((c2[0], c2[2])))
+        else: break
     print('ТЕЛО: панель %s: точек %d, отброшено %d, слито %d, рёбер снято %d, контур %d, граней %d, с пересечением %d' % (pan['imya'], len(pan['tochki']), ot, sl_, re_, len(ids), len(T), pere_))
     return T
 

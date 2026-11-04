@@ -224,7 +224,10 @@ def iou(s, m): return float((s & m).sum() / max((s | m).sum(), 1))
 
 mf, mp = opt['maski'].split(','); Mf, Mp = maska(mf), maska(mp); sf, sp = silujet(0, -1), silujet(1, 1)
 If, Ip = iou(sf, Mf), max(iou(sp, Mp), iou(sp[:, ::-1], Mp))
-otch = dict(tr=tr(), cel=CEL, dolya_telo=round(rb, 3), dolya_kg=DKG, linii=LIN, sdvig_kraya_mm=round(max(sd) * 1000, 2), pary_shvov=[PARY0, pary()], ostrye=ostrye(), vyvernutye=vyvernutye(), cepi=CEPI_OT, iou_front=round(If, 3), iou_profile=round(Ip, 3), obekty={o.name: len(o.data.polygons) for o in vidimye()})
+I2 = {}
+if opt.get('maski2'):
+    m2f, m2p = [maska(q) for q in opt['maski2'].split(',')]; I2 = dict(iou2_front=round(iou(sf, m2f), 3), iou2_profile=round(max(iou(sp, m2p), iou(sp[:, ::-1], m2p)), 3))
+otch = dict(tr=tr(), cel=CEL, dolya_telo=round(rb, 3), dolya_kg=DKG, linii=LIN, sdvig_kraya_mm=round(max(sd) * 1000, 2), pary_shvov=[PARY0, pary()], ostrye=ostrye(), vyvernutye=vyvernutye(), cepi=CEPI_OT, iou_front=round(If, 3), iou_profile=round(Ip, 3), **I2, obekty={o.name: len(o.data.polygons) for o in vidimye()})
 json.dump(otch, open(os.path.join(KADR, PR + '.json'), 'w', encoding='utf-8'), ensure_ascii=False)
 print('РЯД: %s' % json.dumps(otch, ensure_ascii=False))
 
@@ -235,7 +238,8 @@ for o in bpy.data.objects:
         vid = '@' not in o.name; o.hide_render = not vid
         if vid:
             o.color = (0.72, 0.66, 0.60, 1)
-            for p in o.data.polygons: p.use_smooth = False
+            for p in o.data.polygons: p.use_smooth = bool(opt.get('gladko'))
+            if opt.get('gladko'): o.data.set_sharp_from_angle(angle=math.radians(float(opt['gladko'])))
 w = sc.display; sc.render.engine = 'BLENDER_WORKBENCH'; w.shading.light = 'STUDIO'; w.shading.color_type = 'OBJECT'; w.shading.show_backface_culling = True; w.shading.show_shadows = False; w.shading.show_cavity = False; w.shading.show_object_outline = False
 sc.world = sc.world or bpy.data.worlds.new('w'); sc.world.color = (0.82, 0.83, 0.84); sc.render.film_transparent = False; sc.render.image_settings.file_format = 'PNG'
 
