@@ -1,0 +1,25 @@
+{
+  "method": "Threshold <210, opening, largest component, closing, fill holes; equal total height including antlers, centered; no warping. Illustrative 3/4 poses differ; no rear 3/4 in vitrina.",
+  "views": [
+    {
+      "view": "FRONT",
+      "silhouette_iou": 0.672,
+      "width_ratio_lowpoly_to_vitrina": 0.8693
+    },
+    {
+      "view": "PROFILE",
+      "silhouette_iou": 0.526,
+      "width_ratio_lowpoly_to_vitrina": 0.6966
+    },
+    {
+      "view": "FRONT 3/4",
+      "silhouette_iou": 0.3398,
+      "width_ratio_lowpoly_to_vitrina": 0.5137
+    },
+    {
+      "view": "BACK",
+      "silhouette_iou": 0.7184,
+      "width_ratio_lowpoly_to_vitrina": 0.8168
+    }
+  ]
+}
