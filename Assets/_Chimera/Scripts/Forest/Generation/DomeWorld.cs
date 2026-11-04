@@ -101,6 +101,8 @@ public class DomeWorld
     public DomeRelief.State Relief { get; private set; }
     /// <summary>S2: композиция v2 (семь ролей; плато станции — шаг 5).</summary>
     public DomeComposition.State Composition { get; private set; }
+    /// <summary>G7 шаг 1: текущий мир, выраженный планом; null у v1.</summary>
+    public MapPlan Plan { get; private set; }
     /// <summary>S4: ������ ������ (null � ����� ���������).</summary>
     public DomeErosion.State Erosion { get; private set; }
     public int ReliefHills => Relief != null ? Relief.hills.Count : 0;
@@ -326,6 +328,10 @@ public class DomeWorld
                     if (!p.applied) compSkips += $"{p.name}: {p.note}; ";
                 Trace.Add("composition", DomeComposition.DeclaredRoles,
                     Composition.forms.Count, Composition.note + " | " + compSkips);
+                Plan = DomeComposition.ToPlan(Composition, cfg, terrainQuads,
+                    buildTerrace, buildCanyon, buildAsh, buildLabComplex);
+                Trace.Add("plan", Plan.nodes.Count, Plan.forms.Count,
+                    $"{Plan.path}; identity={Plan.identity}; signature={Plan.signature}");
             }
             Terrain.composition = Composition;
             Terrain.relief = Relief; // v2: композиция вместо P5-lite; Relief остаётся v1
@@ -1097,6 +1103,7 @@ public class DomeWorld
         ArenaEdges = 0;
         Relief = null;
         Composition = null;
+        Plan = null;
         Erosion = null;
         TreeColliderPositions = new List<Vector3>();
         CrownCover = 0f;
@@ -1556,8 +1563,8 @@ public class DomeWorld
         mats.Add(skyMat);
         // v2: свод/звёзды чуть грубее — это фон, а сборка G8 упиралась в 12 с.
         // v1 остаётся 128×24, чтобы A/C/B0/Pavilion были прежними.
-        int vaultRings = Terrain.TargetOrder ? 96 : 128;
-        int vaultSegments = Terrain.TargetOrder ? 16 : 24;
+        int vaultRings = Terrain.TargetOrder ? 64 : 128;
+        int vaultSegments = Terrain.TargetOrder ? 12 : 24;
         var vault = DomeVault.BuildVaultMesh(rv, vaultRings, vaultSegments);
         Track(vault);
         Part("Vault", vault, skyMat);
@@ -1565,7 +1572,7 @@ public class DomeWorld
         var starMat = new Material(starShader != null ? starShader : Shader.Find("Universal Render Pipeline/Unlit"));
         if (starMat.HasProperty("_Level")) starMat.SetFloat("_Level", 0f);
         mats.Add(starMat);
-        var stars = DomeStars.BuildStarMesh(seed, Terrain.TargetOrder ? 300 : 400,
+        var stars = DomeStars.BuildStarMesh(seed, Terrain.TargetOrder ? 200 : 400,
             vaultCenter, rv * 0.985f, rv * 0.004f);
         Track(stars);
         Part("Stars", stars, starMat);

@@ -79,6 +79,9 @@ public class ForestBuilder : MonoBehaviour
     // 2 — три полосы H0. A/C/B0 остаются v1 (0 в поле), `ForestPavilion` переключит шаг 8.
     [Header("Версия поля: 0 = не настроено = v1, 2 = полосы H0 (S1)")]
     public int worldVersion = 0;
+    /// <summary>G7: 0 = v1 (поля нет), 2 = явный v2-профиль. В ключ эрозии не входит.</summary>
+    public int treeVersion = 0;
+
 
     [Header("Сборка при старте (выключить — соберёшь Build() вручную)")]
     public bool buildOnAwake = true;
@@ -217,6 +220,8 @@ public class ForestBuilder : MonoBehaviour
     public DomeRelief.State Relief => world != null ? world.Relief : null;
     /// <summary>S2: композиция v2 (null у v1).</summary>
     public DomeComposition.State Composition => world != null ? world.Composition : null;
+    /// <summary>G7 шаг 1: план текущего мира; null у v1.</summary>
+    public MapPlan Plan => world != null ? world.Plan : null;
     /// <summary>Формы композиции для отпечатка; пусто — берётся старая ветка Relief.</summary>
     public DomeErosion.State Erosion => world != null ? world.Erosion : null;
     public ForestRoadNetwork Roads => world != null ? world.Roads : null;
@@ -290,6 +295,8 @@ public class ForestBuilder : MonoBehaviour
     /// Не путать с <see cref="FingerprintVersion"/> и <c>cfg.version</c>: у поля своя соль.
     /// </summary>
     public int WorldVersion => DomeGenConfigSO.ResolveWorldVersion(worldVersion);
+    /// <summary>0 читается как v1; явная 2 — только v2-профиль.</summary>
+    public int TreeVersion => treeVersion > 0 ? treeVersion : 0;
     /// <summary>Сколько устьев нашло поле (адреса логовищ, не тела).</summary>
     public int MouthCount => world != null ? world.Mouths.Count : 0;
     /// <summary>Сколько гнёзд нашло поле (адреса логовищ, не тела).</summary>

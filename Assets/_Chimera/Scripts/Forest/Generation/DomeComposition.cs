@@ -109,6 +109,12 @@ public static class DomeComposition
     static System.Func<DomeFootprint, bool> forbiddenNow;
     static System.Func<DomeFootprint, string> forbiddenWhyNow;
 
+    /// <summary>G7 шаг 1: текущая композиция выражается планом, геометрия не меняется.</summary>
+    public static MapPlan ToPlan(State state, DomeGenConfigSO cfg, int terrainQuads = 0,
+        bool buildTerrace = false, bool buildCanyon = false, bool buildAsh = false,
+        bool buildLabComplex = false) =>
+        MapPlan.FromLegacy(state, cfg, terrainQuads, buildTerrace, buildCanyon, buildAsh, buildLabComplex);
+
     public static State Build(DomeGenConfigSO cfg, long seed, Vector2 entry, Vector3 labDoor,
         Vector2 labCenter, DomeHydro.State hydro, DomeMasks masks,
         System.Func<float, float, float> ground, Vector2? ash = null,

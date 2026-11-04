@@ -22,6 +22,7 @@ public static class WorldFingerprint
         if (b == null) return 0UL;
         ulong h = FnvOffset;
         Mix(ref h, b.FingerprintVersion); // 0 в сцене → v1, а не «версия 0»
+        h = MixTreeVersion(h, b.WorldVersion, b.TreeVersion); // G7: только v2
         int n = 32;
         float d = Mathf.Max(1f, b.mapDiameter);
         for (int iz = 0; iz < n; iz++)
@@ -120,6 +121,18 @@ public static class WorldFingerprint
         var forms = new List<DomeForm>(relief.hills.Count);
         foreach (var hill in relief.hills) forms.Add(DomeRelief.ToForm(hill));
         return forms;
+    }
+
+    /// <summary>
+    /// G7 шаг 1: treeVersion входит в отпечаток ТОЛЬКО v2. У v1 (0) — тождество,
+    /// поэтому замороженные хэши A/C/B0/Pavilion не двигаются. Ключ эрозии
+    /// (seed, worldVersion, erosionVersion, resolution) этим не трогается.
+    /// </summary>
+    public static ulong MixTreeVersion(ulong h, int worldVersion, int treeVersion)
+    {
+        if (worldVersion <= 1) return h;
+        Mix(ref h, treeVersion);
+        return h;
     }
 
     /// <summary>

@@ -66,12 +66,13 @@ public static class ForestProfiles
             buildOnAwake = false,
         });
         b.worldVersion = 2;
+        b.treeVersion = 2;
         b.buildRelief = true;
         b.buildThermalErosion = erosion;
         b.buildHydraulicErosion = erosion;
         b.erosionVersion = 3;
         b.erosionResolution = 128;
-        b.undergrowthScale = 0.05f;
+        b.undergrowthScale = 0.01f;
         b.forestThreshold = 0.20f;
         b.treeCount = 2000;
         b.treeDensityTarget = 3120f;
@@ -140,6 +141,7 @@ public static class ForestProfiles
         // Поля, добавленные после сохранения сцены, читаются из инициализатора:
         // у erosionVersion это 1. Паритет это подтверждает на трёх сценах.
         b.erosionVersion = 1;
+        b.treeVersion = 0;
         b.erosionCacheDir = "";
         b.erosionResolution = 0;
         b.erosionDrops = 0;

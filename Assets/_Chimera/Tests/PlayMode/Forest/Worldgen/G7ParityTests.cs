@@ -29,6 +29,9 @@ namespace Chimera.Tests.PlayMode
             host.SetActive(true);
             builder.Build();
             Assert.IsNotNull(builder.BuiltRoot, "A/B: мир не собран");
+            Assert.IsNotNull(builder.Plan, "G7 шаг 1: мир v2 не выразил MapPlan");
+            StringAssert.Contains("plan:", builder.Trace.Text, "в GenTrace нет слоя plan");
+            Assert.AreEqual(2, builder.TreeVersion, "v2-профиль обязан нести treeVersion=2");
             yield return null;
 
             var root = builder.BuiltRoot;

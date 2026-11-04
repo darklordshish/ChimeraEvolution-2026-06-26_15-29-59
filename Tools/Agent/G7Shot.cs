@@ -102,6 +102,7 @@ public static class G7Shot
         B.labEntrance = LabEntrance.Rock;
         B.minLabDistance = 150f;
         B.worldVersion = 2;
+        B.treeVersion = 2;
         B.buildRelief = true;
         B.buildThermalErosion = true;
         B.buildHydraulicErosion = false;

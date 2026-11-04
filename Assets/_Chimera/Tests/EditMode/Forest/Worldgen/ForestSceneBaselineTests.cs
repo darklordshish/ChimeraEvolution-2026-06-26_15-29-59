@@ -148,6 +148,9 @@ namespace Chimera.Tests.EditMode
                 $"{b.gameObject.scene.path}: 0 читается как действующая v1");
             Assert.AreEqual(0, b.worldVersion, $"{b.gameObject.scene.path}: worldVersion (0 = «не настроено»)");
             Assert.AreEqual(1, b.WorldVersion, $"{b.gameObject.scene.path}: 0 = не настроено → v1");
+            // G7 шаг 1: treeVersion — v2-поле. У v1-сцен его нет, и 0 не значит «дерево v0».
+            Assert.AreEqual(0, b.treeVersion, $"{b.gameObject.scene.path}: treeVersion (0 = «не настроено»)");
+            Assert.AreEqual(0, b.TreeVersion, $"{b.gameObject.scene.path}: у v1 дерева нет");
 
             var cfg = b.config != null ? b.config : ScriptableObject.CreateInstance<DomeGenConfigSO>();
             try
