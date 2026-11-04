@@ -335,7 +335,7 @@ for ch, s in zip(CH, PR_CH):
         RS.setdefault(r, []).extend(zip(s, s[1:]))
 
 # 6. ЗАПОЛНЕНИЕ
-TRI = {}; plohie = 0; PNV = set()
+TRI = {}; plohie = 0; PNV = set(); PLOC = {}
 VP0 = [Vector(p) for p in VP]; FV = [[v.index for v in f.verts] for f in bz.faces]
 
 
@@ -370,6 +370,7 @@ def zapolnit_panel(r, pan, seg, ids, n_):
     ed = [(ids.index(x), ids.index(y)) for x, y in seg]; re_ = 0
     for i_, j_ in pan.get('rebra', []):
         if (i_, 1) in nom and (j_, 1) in nom and nom[(i_, 1)] != nom[(j_, 1)]:
+            PLOC.setdefault(r, []).append((loc[nom[(i_, 1)]], loc[nom[(j_, 1)]]))
             A1, B1 = P2[nom[(i_, 1)]], P2[nom[(j_, 1)]]
             def per(p_, q_):   # ребро листа, пересекающее контур области, не идёт: иначе новая вершина и дыра
                 d1 = (q_ - p_).cross(A1 - p_); d2 = (q_ - p_).cross(B1 - p_); d3 = (B1 - A1).cross(p_ - A1); d4 = (B1 - A1).cross(q_ - A1)
@@ -547,6 +548,36 @@ if OST > 0:
         n3 = Nv[v] / max(np.linalg.norm(Nv[v]), 1e-12); d_ = (VP[v] - VP[list(so)].mean(0)).dot(n3) * OST; D_[v] = n3 * max(-SDO, min(SDO, d_))
     for v, d_ in D_.items(): VP[v] = VP[v] + d_
     print('ТЕЛО: перепад: углов %d, сдвиг средн %.1f мм' % (len(D_), np.mean([np.linalg.norm(x) for x in D_.values()]) * 1000))
+
+# ДИАГОНАЛИ: четырёхугольник из двух граней области переворачивается, если так они ближе к одной плоскости (убирает «битое стекло», число граней то же). Рёбра-ограничения панелей и границы областей стоят
+FLIP = float(opt.get('flip', 3))
+if FLIP > 0:
+    Zap = set()
+    for r, T_ in TRI.items():
+        for a_, b_ in PLOC.get(r, ()): Zap.add((min(a_, b_), max(a_, b_)))
+    npv = 0
+    for _pr in range(6):
+        est = 0
+        for r, T_ in TRI.items():
+            Ed = {}
+            for i_, t in enumerate(T_):
+                for a_, b_ in zip(t, t[1:] + t[:1]): Ed.setdefault((min(a_, b_), max(a_, b_)), []).append(i_)
+            for (a_, b_), li in list(Ed.items()):
+                if len(li) != 2 or (a_, b_) in Zap or li[0] == li[1]: continue
+                t1, t2 = T_[li[0]], T_[li[1]]
+                if not (set((a_, b_)) <= set(t1) and set((a_, b_)) <= set(t2)): continue
+                c_ = [q for q in t1 if q not in (a_, b_)][0]; d__ = [q for q in t2 if q not in (a_, b_)][0]
+                if c_ == d__: continue
+                A_, B_, C_, D_ = VP[a_], VP[b_], VP[c_], VP[d__]
+                def nrm(p, q, r_): n = np.cross(q - p, r_ - p); return n / max(np.linalg.norm(n), 1e-12), np.linalg.norm(n)
+                i0 = t1.index(c_); tc = t1[i0:] + t1[:i0]; x_, y_ = tc[1], tc[2]; n1, s1 = nrm(VP[c_], VP[x_], VP[y_]); n2, s2 = nrm(VP[d__], VP[y_], VP[x_]); n3, s3 = nrm(VP[c_], VP[x_], VP[d__]); n4, s4 = nrm(VP[d__], VP[y_], VP[c_])
+                if s3 < 1e-6 or s4 < 1e-6 or n3.dot(n1) < 0.2 or n4.dot(n1) < 0.2: continue
+                if min(s3, s4) / max(s3, s4) < 0.04: continue
+                if math.acos(min(1, n3.dot(n4))) + math.radians(FLIP) < math.acos(min(1, n1.dot(n2))) and tuple(sorted((c_, d__))) not in Ed:
+                    T_[li[0]] = [c_, x_, d__]; T_[li[1]] = [d__, y_, c_]; est += 1; npv += 1; Ed = None; break
+            if Ed is None: pass
+        if not est: break
+    print('ТЕЛО: диагоналей перевёрнуто %d' % npv)
 
 # 7. В ОБЪЕКТЫ: зона уходит из объектов, области — большинству площади
 BOK = {b.name[:-2].split('.')[0] for a_ in bpy.data.objects if a_.type == 'ARMATURE' for b in a_.data.bones if b.name.endswith('.L')}

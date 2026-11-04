@@ -38,7 +38,8 @@ def dlin(sel):
     return f
 
 
-D_tor = gl(gap(col(dv('tor', 1)))); D_ain = gl(gap(col(dv('arm', 0)))); D_aout = gl(gap(col(dv('arm', 1)))); D_s = gl(gap(col(dv('plecho', 1))), 2); L_in = gl(gap(col(dv('leg', 0)))); L_out = gl(gap(col(dv('leg', 1))))
+D_tor = gl(gap(col(dv('tor', 1)))); D_ain = gl(gap(col(dv('arm', 0)))); D_aout = gl(gap(col(dv('arm', 1)))); D_s = gl(gap(col(dv('plecho', 1))), 1); L_in = gl(gap(col(dv('leg', 0)))); L_out = gl(gap(col(dv('leg', 1))))
+AIN_m = gl(gap(col(lambda r: r['telo'][1][0] if 0.92 <= r['z'] < 1.27 and len(r['telo']) >= 2 else NAN))); AOUT_m = gl(gap(col(lambda r: r['telo'][1][1] if 0.92 <= r['z'] < 1.27 and len(r['telo']) >= 2 else NAN)))
 OUTm = gl(gap(col(lambda r: r['telo'][0][1] if 1.27 <= r['z'] < 1.56 else NAN)), 2)
 R_arm = np.clip(gl(gap(col(dlin('arm')))), 0.9, 1.3); R_leg = np.clip(gl(gap(col(dlin('leg')))), 0.9, 1.3)
 def dep(r):
@@ -61,7 +62,7 @@ def smesh(x, y, z, wa, wl):
         if za >= 1.27:
             o_ = max(ZI(OUTm, za), 1e-3); ax = ZI(D_s, za) * min(x / o_, 1.0); ry = 1 + float(np.clip(ZI(D_s, za) / 0.08, -0.05, 0.25))
         else:
-            t_ = 0.5; ax = (1 - t_) * ZI(D_ain, za) + t_ * ZI(D_aout, za); ry = ZI(R_arm, za)
+            a0, a1 = ZI(AIN_m, za), ZI(AOUT_m, za); t_ = float(np.clip((x - a0) / max(a1 - a0, 1e-3), 0, 1)) if z >= 0.92 else 0.5; ax = (1 - t_) * ZI(D_ain, za) + t_ * ZI(D_aout, za); ry = ZI(R_arm, za)   # интервал руки сводится целиком: ширина по листу
         if z < 0.92: ry = 1.0
         ay = (y - 0.03) * (ry - 1)
         sx += wa * ax; sy += wa * ay
@@ -86,6 +87,8 @@ for o in O:
         if o.name in ('голова', 'Чутьё'): wa = wl = 0; h = True
         else: h = False
         sg = 1.0 if p.x >= 0 else -1.0; sx, sy = (0.0, 0.0) if h else smesh(abs(p.x), p.y, p.z, wa, wl)
+        if not h and 1.57 < p.z < 1.65 and abs(p.x) < 0.11:   # шея по вид.png (срез: диаметр шире на 2.8–3.8 см на z 1.60–1.62)
+            q_ = np.interp(p.z, [1.57, 1.58, 1.60, 1.62, 1.65], [1.0, 0.93, 0.78, 0.81, 1.0]); sx += abs(p.x) * (q_ - 1); sy += (p.y - 0.01) * (0.5 * (q_ - 1))
         kl = (round(p.x, 4), round(p.y, 4), round(p.z, 4)); r_ = S.setdefault(kl, [0.0, 0.0, 0]); r_[0] += sg * sx; r_[1] += sy; r_[2] += 1; zap.append((o, v.index, kl))
 maks = 0
 for o, i, kl in zap:
