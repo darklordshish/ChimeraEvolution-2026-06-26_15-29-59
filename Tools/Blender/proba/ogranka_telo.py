@@ -135,7 +135,7 @@ vid = np.where(pro, 2, np.where(N[:, 1] < 0, 0, 1)); L0 = np.where(vid == 0, Lf,
 PAN = json.load(open(opt['paneli'], encoding='utf-8')) if opt.get('paneli') else []
 PMET = 900000
 for i_, p_ in enumerate(PAN):
-    m = (bool(p_.get('konech', 0)) | (~konech)) & (XA <= p_['x_max']) & (XA >= p_.get('x_min', 0)) & (ZA >= p_['z'][0]) & (ZA <= p_['z'][1]) & (N[:, 1] < -0.3 if p_['vid'] == 'front' else N[:, 1] > 0.3) & ((imo != 'Руки') | (not p_.get('konech', 0)))
+    m = (bool(p_.get('konech', 0)) | (~konech)) & (XA <= p_['x_max']) & (XA >= p_.get('x_min', 0)) & (ZA >= p_['z'][0]) & (ZA <= p_['z'][1]) & (N[:, 1] < -0.3 if p_['vid'] == 'front' else (N[:, 1] > 0.3 if p_['vid'] == 'back' else N[:, 0] > 0.45)) & ((imo != 'Руки') | (not p_.get('konech', 0)) | (bool(p_.get('ruki', 0)) & (ZA >= p_.get('ruki_z', 0))))
     METKA[m] = PMET + i_
 PM = METKA >= PMET
 
@@ -348,33 +348,41 @@ def reg_bvh(r):
 def zapolnit_panel(r, pan, seg, ids, n_):
     """панель: контур области + точки листа с обеих сторон; триангуляция в проекции ракурса (x, z), рёбра панели — ограничения"""
     global VP
-    ys = 1.0 if pan['vid'] == 'back' else -1.0; P2 = [Vector((VP[q][0], VP[q][2])) for q in ids]; S2 = [(P2[ids.index(x)], P2[ids.index(y)]) for x, y in seg]
+    ys = 1.0 if pan['vid'] == 'back' else -1.0; PRF = pan['vid'] == 'profile'; ko = 1 if PRF else 0; P2 = [Vector((VP[q][ko], VP[q][2])) for q in ids]; S2 = [(P2[ids.index(x)], P2[ids.index(y)]) for x, y in seg]
     def vnutri(cx, cy):
         c = 0
         for p_, q_ in S2:
             if (p_.y > cy) != (q_.y > cy) and cx < (q_.x - p_.x) * (cy - p_.y) / (q_.y - p_.y) + p_.x: c += 1
         return c % 2 == 1
-    nom = {}; loc = list(ids); ot = 0
+    nom = {}; loc = list(ids); ot = 0; sl_ = 0; BLIZ = float(opt.get('bliz', 0.012))
     for ti, (x, z, dy) in enumerate(pan['tochki']):
         if x == 0:
             v = PC.get((pan['imya'], z))
             if v is None or v not in ids: ot += 1; continue
             nom[(ti, 1)] = ids.index(v); VP[v] = VP[v] + np.array([0, ys * dy, 0]); PNV.add(v); continue
         if not vnutri(x, z): ot += 1; continue
-        h = bvh0.ray_cast(Vector((x, ys * 2, z)), Vector((0, -ys, 0)))
+        h = bvh0.ray_cast(Vector((1.0, x, z)), Vector((-1, 0, 0))) if PRF else bvh0.ray_cast(Vector((x, ys * 2, z)), Vector((0, -ys, 0)))
         if h[0] is None: ot += 1; continue
-        p = np.array(tuple(h[0])) + np.array([0, ys * dy, 0]); VP = np.vstack([VP, p]); q = len(VP) - 1; PNV.add(q); nom[(ti, 1)] = len(loc); loc.append(q); P2.append(Vector((p[0], p[2])))
-    ed = [(ids.index(x), ids.index(y)) for x, y in seg]
+        p2 = Vector((x, z)); bl = min(range(len(P2)), key=lambda q_: (P2[q_] - p2).length)
+        if (P2[bl] - p2).length < BLIZ: nom[(ti, 1)] = bl; sl_ += 1; continue   # точка у контура или у соседней: одна вершина, без щепок
+        p = np.array(tuple(h[0])) + (np.array([dy, 0, 0]) if PRF else np.array([0, ys * dy, 0])); VP = np.vstack([VP, p]); q = len(VP) - 1; PNV.add(q); nom[(ti, 1)] = len(loc); loc.append(q); P2.append(p2)
+    ed = [(ids.index(x), ids.index(y)) for x, y in seg]; re_ = 0
     for i_, j_ in pan.get('rebra', []):
-        if (i_, 1) in nom and (j_, 1) in nom and nom[(i_, 1)] != nom[(j_, 1)]: ed.append((nom[(i_, 1)], nom[(j_, 1)]))
-    ve, _, fa, ov, _, _ = delaunay_2d_cdt(P2, ed, [], 0, 1e-7); T = []; rb_ = reg_bvh(r)
+        if (i_, 1) in nom and (j_, 1) in nom and nom[(i_, 1)] != nom[(j_, 1)]:
+            A1, B1 = P2[nom[(i_, 1)]], P2[nom[(j_, 1)]]
+            def per(p_, q_):   # ребро листа, пересекающее контур области, не идёт: иначе новая вершина и дыра
+                d1 = (q_ - p_).cross(A1 - p_); d2 = (q_ - p_).cross(B1 - p_); d3 = (B1 - A1).cross(p_ - A1); d4 = (B1 - A1).cross(q_ - A1)
+                return d1 * d2 < -1e-12 and d3 * d4 < -1e-12
+            if any(per(p_, q_) for p_, q_ in S2): re_ += 1; continue
+            ed.append((nom[(i_, 1)], nom[(j_, 1)]))
+    ve, _, fa, ov, _, _ = delaunay_2d_cdt(P2, ed, [], 0, 1e-7); T = []; rb_ = reg_bvh(r); pere_ = 0
     for f in fa:
-        if any(not ov[q] for q in f): continue
+        if any(not ov[q] for q in f): pere_ += 1; continue
         if not vnutri(sum(ve[q].x for q in f) / 3, sum(ve[q].y for q in f) / 3): continue
         t3 = [loc[ov[q][0]] for q in f]; A_, B_, C_ = VP[t3]
         if np.cross(B_ - A_, C_ - A_).dot(np.array(tuple(rb_.find_nearest(Vector((A_ + B_ + C_) / 3))[1]))) < 0: t3 = t3[::-1]
         T.append(t3)
-    print('ТЕЛО: панель %s: точек %d, отброшено %d, контур %d, граней %d' % (pan['imya'], len(pan['tochki']), ot, len(ids), len(T)))
+    print('ТЕЛО: панель %s: точек %d, отброшено %d, слито %d, рёбер снято %d, контур %d, граней %d, с пересечением %d' % (pan['imya'], len(pan['tochki']), ot, sl_, re_, len(ids), len(T), pere_))
     return T
 
 
