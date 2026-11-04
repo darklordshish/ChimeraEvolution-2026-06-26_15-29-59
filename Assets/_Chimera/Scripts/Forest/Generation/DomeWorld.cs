@@ -308,7 +308,12 @@ public class DomeWorld
             Ravines = DomeRavines.Build(cfg, seed, LabCenter, entryXZ, Hydro,
                 DomeRockRing.InnerRadius(cfg), 3, masks);
         Trace.Add("terrace", 1, Terrace.valid ? 1 : 0);
-        Trace.Add("canyon", 1, Canyon.valid ? 1 : 0);
+        Trace.Add("canyon", DomeCanyon.Attempts,
+            Canyon.policy == CanyonPolicy.Absent ? 0 : 1,
+            $"{DomeCanyon.PolicyId(Canyon.policy)} · {Canyon.note}");
+        if (Canyon.attempts != null)
+            foreach (string why in Canyon.attempts)
+                Trace.Add("canyon.attempt", 1, 0, why);
         Trace.Add("ravines", Ravines.Count, Ravines.Count);
 
         // Слои формы — в одном месте (DomeTerrain). Сначала заполняем то, что уже есть.

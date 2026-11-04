@@ -56,7 +56,8 @@ public sealed class MapPlan
     /// </summary>
     public static MapPlan FromScheme(DomeComposition.State state, DomeGenConfigSO cfg,
         string scheme, string near, int terrainQuads = 0, bool buildTerrace = false,
-        bool buildCanyon = false, bool buildAsh = false, bool buildLabComplex = false)
+        bool buildCanyon = false, bool buildAsh = false, bool buildLabComplex = false,
+        string canyon = null)
     {
         var p = new MapPlan();
         var par = p.parameters;
@@ -66,7 +67,7 @@ public sealed class MapPlan
             : "current";
         par.near = near;
         par.station = "current";
-        par.canyon = "current";
+        par.canyon = string.IsNullOrEmpty(canyon) ? "current" : canyon;
         par.flipV = state != null && state.flipped;
         FillParams(par, cfg, terrainQuads, buildTerrace, buildCanyon, buildAsh, buildLabComplex);
         p.path = PathOf(par);

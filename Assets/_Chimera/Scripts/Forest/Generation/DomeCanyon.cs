@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
@@ -15,11 +15,23 @@ using UnityEngine;
 /// исток/лип (верх, у плато). <see cref="StreamPath"/> отдаёт её в направлении течения.
 /// </para>
 /// </summary>
+public enum CanyonPolicy
+{
+    Wet = 0,
+    Dry = 1,
+    Absent = 2,
+    Invalid = 3,
+}
+
 public static class DomeCanyon
 {
     public struct State
     {
         public bool valid;
+        public CanyonPolicy policy;
+        /// <summary>Почему каждая попытка не прошла (для GenTrace); пусто у ручных стендов.</summary>
+        public List<string> attempts;
+        public string note;
         public Vector2 mouth;
         public Vector2 lip;
         public List<Vector2> axis;
@@ -51,12 +63,15 @@ public static class DomeCanyon
     public const float RiverClearance = 8f;
     public const float LakeGap = 2f;
 
-    const int Attempts = 192;
+    public const int Attempts = 192;
     const float ShoulderFactor = 1.2f;
     const float EndFadeMeters = 8f;
     const float FloorAboveLake = 0.45f;
 
     /// <summary>Детерминированный бросок: seed + версия cfg + соль + номер попытки.</summary>
+    public static string PolicyId(CanyonPolicy p) =>
+        p == CanyonPolicy.Wet ? "wet" : p == CanyonPolicy.Dry ? "dry" : p == CanyonPolicy.Absent ? "absent" : "invalid";
+
     static float Roll(long seed, int version, int salt, int attempt)
     {
         return SeededHash.ToFloat01(SeededHash.Hash(seed, salt + version * 7919, attempt));
@@ -79,9 +94,11 @@ public static class DomeCanyon
         Vector2 entry, Vector2 labCenter, float rin, DomeTerrace.State terrace = default,
         DomeMasks masks = null)
     {
-        var none = new State { valid = false };
+        var none = new State { valid = false, policy = CanyonPolicy.Invalid, note = "invalid: нет cfg/hydro" };
         if (cfg == null || hydro == null) return none;
-        if (hydro.lakeRadius <= 0f || hydro.riverPts == null) return none;
+        if (hydro.lakeRadius <= 0f || hydro.riverPts == null)
+            return new State { valid = true, policy = CanyonPolicy.Absent,
+                note = "absent: нет озера/русла" };
 
         // 0 = «не настроено»: радиус кольца берём от диаметра карты.
         float radius = rin > 0f ? rin : cfg.mapDiameter * 0.5f;
@@ -100,6 +117,8 @@ public static class DomeCanyon
         bool hasBest = false;
         State best = none;
         float bestScore = float.NegativeInfinity;
+        var failures = new List<string>();
+        void Fail(int a, string why) { failures.Add($"#{a} {why}"); }
 
         for (int attempt = 0; attempt < Attempts; attempt++)
         {
@@ -134,19 +153,21 @@ public static class DomeCanyon
 
             Vector2 lip = axis[axis.Count - 1];
             if (anchored && Vector2.Distance(lip, lipTarget) > terrace.radius * 0.35f)
-                continue;
-            if (!FitsRing(axis, radius)) continue;
-            if (!AvoidsLake(axis, hydro.lakeCenter, lakeR, halfWidth)) continue;
+            { Fail(attempt, "терраса: лип мимо цели"); continue; }
+            if (!FitsRing(axis, radius)) { Fail(attempt, "кольцо"); continue; }
+            if (!AvoidsLake(axis, hydro.lakeCenter, lakeR, halfWidth))
+            { Fail(attempt, "озеро"); continue; }
 
             float entryDist = DistanceToPolyline(axis, entry);
             float labDist = DistanceToPolyline(axis, labCenter);
             float entryClear = entryDist - halfWidth - EntryClearance;
             float labClear = labDist - halfWidth - LabClearance;
-            if (entryClear < 0f || labClear < 0f) continue;
+            if (entryClear < 0f || labClear < 0f)
+            { Fail(attempt, $"вход/станция: entry {entryClear:F1}, lab {labClear:F1}"); continue; }
 
             float riverDist = MinDistanceToPoints(hydro.riverPts, axis);
             float riverClear = riverDist - halfWidth - hydro.riverHalfWidth - RiverClearance;
-            if (riverClear < 0f) continue;
+            if (riverClear < 0f) { Fail(attempt, $"русло {riverClear:F1}"); continue; }
 
             // Исток не ниже устья: поле павильона
             // местами плоское, и требовать «+3 м» значит терять годные сиды (проверено
@@ -154,11 +175,11 @@ public static class DomeCanyon
             // ручья всё равно читаются через SampleGround.
             float drop = DomeHydro.SampleHydro(cfg, hydro, lip.x, lip.y)
                        - DomeHydro.SampleHydro(cfg, hydro, mouth.x, mouth.y);
-            if (!anchored && drop < 0f) continue;
+            if (!anchored && drop < 0f) { Fail(attempt, $"перепад {drop:F1}"); continue; }
 
             if (masks != null && masks.BlocksForm(DomeFootprint.Capsule(
                     axis[0], axis[axis.Count - 1], halfWidth + 12f)))
-                continue;
+            { Fail(attempt, "маска"); continue; }
 
             float poolOffset = Mathf.Min(poolRadius * 1.4f, length * 0.3f);
             Vector2 pool = PointAtDistance(axis, length - poolOffset);
@@ -191,7 +212,16 @@ public static class DomeCanyon
             }
         }
 
-        return hasBest ? best : none;
+        if (hasBest)
+        {
+            best.attempts = failures;
+            best.policy = (SeededHash.Hash(seed, 8120, 1) % 3UL) == 0UL
+                ? CanyonPolicy.Dry : CanyonPolicy.Wet;
+            best.note = $"{best.policy}: attempts={Attempts}, failures={failures.Count}";
+            return best;
+        }
+        return new State { valid = true, policy = CanyonPolicy.Absent, attempts = failures,
+            note = $"absent: attempts={Attempts}, failures={failures.Count}" };
     }
 
     /// <summary>

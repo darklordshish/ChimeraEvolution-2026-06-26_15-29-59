@@ -306,7 +306,7 @@ public static class DomeWaterMesh
             }
         }
 
-        if (!canyon.valid || ground == null) return;
+        if (!canyon.valid || canyon.policy != CanyonPolicy.Wet || ground == null) return;
 
         float lakeLevel = hydro != null ? hydro.lakeLevel : 0f;
         float poolLevel = PoolLevel(canyon, lakeLevel, ground);

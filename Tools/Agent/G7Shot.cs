@@ -319,6 +319,7 @@ public static class G7Shot
     {
         var c = B.Canyon;
         if (!c.valid) return "canyon invalid";
+        if (c.policy == CanyonPolicy.Absent) return "canyon absent";
         Vector2 mid = Mean(c.axis);
         Vector2 d = SafeDir(c.lip - c.mouth);
         Vector2 perp = new Vector2(-d.y, d.x);
@@ -334,6 +335,7 @@ public static class G7Shot
     {
         var c = B.Canyon;
         if (!c.valid) return "canyon invalid";
+        if (c.policy != CanyonPolicy.Wet) return "canyon dry: no waterfall";
         Vector2 d = SafeDir(c.lip - c.mouth);
         Vector2 perp = new Vector2(-d.y, d.x);
         float len = AxisLength(c);
