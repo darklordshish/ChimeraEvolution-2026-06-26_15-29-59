@@ -146,6 +146,8 @@ public static class G7Shot
         sb.AppendLine($"station={B.HasStation} style={B.ResolvedLabStyle} " +
                       $"entrance={B.ResolvedLabEntrance} doorChord={doorChord:F1} " +
                       $"centerChord={Vector2.Distance(new Vector2(B.Entry.x, B.Entry.z), B.LabCenter):F1}");
+        sb.AppendLine($"scheme={B.Scheme} near={B.Near} " +
+                      $"path={(B.Plan != null ? B.Plan.path : "none")}");
         sb.AppendLine($"zones={B.Zones.Count} links={B.Links.Count} commons={B.Commons.Count} " +
                       $"waterholes={B.Waterholes.Count} pods={B.CoverPodsBuilt} " +
                       $"edges={B.ArenaEdges} shells={B.Shells.Count} gates={B.Gates.Count} " +
@@ -744,9 +746,10 @@ public static class G7Shot
         sb.AppendLine($"seed={B.seed}");
         sb.AppendLine($"worldVersion={B.WorldVersion}");
         sb.AppendLine("treeVersion=absent");
-        sb.AppendLine("path=absent");
-        sb.AppendLine("scheme=absent");
-        sb.AppendLine("signature=absent");
+        sb.AppendLine("path=" + (B.Plan != null ? B.Plan.path : "absent"));
+        sb.AppendLine("scheme=" + (B.Scheme ?? "absent"));
+        sb.AppendLine("near=" + (B.Near ?? "absent"));
+        sb.AppendLine("signature=" + (B.Plan != null ? B.Plan.signature : "absent"));
         sb.AppendLine($"profile=terrainQuads={B.terrainQuads},treeCount={B.treeCount}," +
                       $"patchyFlora={B.patchyFlora},buildRelief={B.buildRelief}," +
                       $"buildTerrace={B.buildTerrace},buildCanyon={B.buildCanyon}," +

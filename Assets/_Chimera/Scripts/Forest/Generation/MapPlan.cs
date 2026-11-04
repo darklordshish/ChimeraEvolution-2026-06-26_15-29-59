@@ -41,46 +41,92 @@ public sealed class MapPlan
         par.station = "current";
         par.canyon = "current";
         par.flipV = state != null && state.flipped;
-        if (cfg != null)
+        FillParams(par, cfg, terrainQuads, buildTerrace, buildCanyon, buildAsh, buildLabComplex);
+        p.path = PathOf(par);
+        FillForms(p, state);
+        p.nodes = LegacyNodes(par);
+        p.signature = SignatureOf(p);
+        p.identity = IdentityOf(p);
+        return p;
+    }
+
+    /// <summary>
+    /// G7 шаг 3: план, выбранный деревом схем. Путь называет схему и ветвь `near`;
+    /// герой приходит со схемой, а станция остаётся шагом 2 (не герой).
+    /// </summary>
+    public static MapPlan FromScheme(DomeComposition.State state, DomeGenConfigSO cfg,
+        string scheme, string near, int terrainQuads = 0, bool buildTerrace = false,
+        bool buildCanyon = false, bool buildAsh = false, bool buildLabComplex = false)
+    {
+        var p = new MapPlan();
+        var par = p.parameters;
+        par.scheme = scheme;
+        par.hero = DomeSchemes.Find(scheme) != null
+            ? DomeSchemes.Find(scheme).hero
+            : "current";
+        par.near = near;
+        par.station = "current";
+        par.canyon = "current";
+        par.flipV = state != null && state.flipped;
+        FillParams(par, cfg, terrainQuads, buildTerrace, buildCanyon, buildAsh, buildLabComplex);
+        p.path = PathOf(par);
+        FillForms(p, state);
+        p.nodes = new List<DecisionNode>
         {
-            par.treeCount = cfg.treeCount;
-            par.treeDensityTarget = cfg.treeDensityTarget;
-            par.forestThreshold = cfg.forestThreshold;
-            par.buildRelief = cfg.buildRelief;
-        }
+            DomeSchemes.SchemeNode(),
+            DomeSchemes.NearNode(scheme),
+            new DecisionNode
+            {
+                id = "station", parent = "scheme",
+                variants = { new Variant { id = par.station, fallback = "none" } },
+            },
+            new DecisionNode
+            {
+                id = "canyon", parent = "scheme",
+                variants = { new Variant { id = par.canyon, fallback = "none" } },
+            },
+        };
+        p.signature = SignatureOf(p);
+        p.identity = IdentityOf(p);
+        return p;
+    }
+
+    static void FillParams(ParamBlock par, DomeGenConfigSO cfg, int terrainQuads,
+        bool buildTerrace, bool buildCanyon, bool buildAsh, bool buildLabComplex)
+    {
+        if (cfg == null) return;
+        par.treeCount = cfg.treeCount;
+        par.treeDensityTarget = cfg.treeDensityTarget;
+        par.forestThreshold = cfg.forestThreshold;
+        par.buildRelief = cfg.buildRelief;
         par.terrainQuads = terrainQuads;
         par.buildTerrace = buildTerrace;
         par.buildCanyon = buildCanyon;
         par.buildAsh = buildAsh;
         par.buildLabComplex = buildLabComplex;
-        p.path = PathOf(par);
+    }
 
-        // Формы — имена и семейства, без метров. `declared` сохраняет и роли,
-        // которые не встали: путь обязан объяснять отказ, а не только успех.
-        if (state != null)
-        {
-            foreach (var f in state.forms)
-                p.forms.Add(new FormRecipe
-                {
-                    role = f.name,
-                    name = f.name,
-                    family = f.kind.ToString(),
-                    sign = f.sign.ToString(),
-                });
-            foreach (var d in state.declared)
-                p.forms.Add(new FormRecipe
-                {
-                    role = d.role.ToString(),
-                    name = d.name,
-                    family = "declared",
-                    sign = d.applied ? "applied" : "skipped",
-                });
-        }
+    static FormRecipe RecipeOf(DomeForm f) => new FormRecipe
+    {
+        role = f.name,
+        name = f.name,
+        family = f.kind.ToString(),
+        sign = f.sign.ToString(),
+    };
 
-        p.nodes = LegacyNodes(par);
-        p.signature = SignatureOf(p);
-        p.identity = IdentityOf(p);
-        return p;
+    static void FillForms(MapPlan p, DomeComposition.State state)
+    {
+        if (state == null) return;
+        foreach (var f in state.forms)
+            p.forms.Add(RecipeOf(f));
+        foreach (var d in state.declared)
+            p.forms.Add(new FormRecipe
+            {
+                role = d.role.ToString(),
+                name = d.name,
+                family = "declared",
+                sign = d.applied ? "applied" : "skipped",
+            });
     }
 
     public static string PathOf(ParamBlock p) =>

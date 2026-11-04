@@ -52,6 +52,8 @@ public static class DomeComposition
     {
         /// <summary>Формы, которые реально входят в пол (порядок применения).</summary>
         public List<DomeForm> forms = new List<DomeForm>();
+        /// <summary>G7 шаг 3: ближняя ветвь 0–150 м; отдельная от S2-ролей и их G1/G2.</summary>
+        public List<DomeForm> nearForms = new List<DomeForm>();
         /// <summary>Все семь ролей: применённые и отклонённые с причиной.</summary>
         public List<Placed> declared = new List<Placed>();
         public string note;
@@ -109,24 +111,35 @@ public static class DomeComposition
     static System.Func<DomeFootprint, bool> forbiddenNow;
     static System.Func<DomeFootprint, string> forbiddenWhyNow;
 
-    /// <summary>G7 шаг 1: текущая композиция выражается планом, геометрия не меняется.</summary>
+    /// <summary>G7 шаг 3: план называет схему и ветвь `near`; legacy — без схемы.</summary>
     public static MapPlan ToPlan(State state, DomeGenConfigSO cfg, int terrainQuads = 0,
         bool buildTerrace = false, bool buildCanyon = false, bool buildAsh = false,
-        bool buildLabComplex = false) =>
-        MapPlan.FromLegacy(state, cfg, terrainQuads, buildTerrace, buildCanyon, buildAsh, buildLabComplex);
+        bool buildLabComplex = false, string scheme = null, string near = null) =>
+        string.IsNullOrEmpty(scheme)
+            ? MapPlan.FromLegacy(state, cfg, terrainQuads, buildTerrace, buildCanyon, buildAsh, buildLabComplex)
+            : MapPlan.FromScheme(state, cfg, scheme, string.IsNullOrEmpty(near) ? "ridge" : near,
+                terrainQuads, buildTerrace, buildCanyon, buildAsh, buildLabComplex);
 
     public static State Build(DomeGenConfigSO cfg, long seed, Vector2 entry, Vector3 labDoor,
         Vector2 labCenter, DomeHydro.State hydro, DomeMasks masks,
         System.Func<float, float, float> ground, Vector2? ash = null,
-        IReadOnlyList<Vector2> lairs = null)
+        IReadOnlyList<Vector2> lairs = null, string scheme = null, string near = null)
     {
-        // Сторона v (лево/право от маршрута) на карте не задана — это отражение.
-        // Детерминированно пробуем обе: та, где больше форм встало, и есть раскладка.
+        // v2: сторона раскладки — от воды/входа (схема), а не «где больше форм встало».
+        if (!string.IsNullOrEmpty(scheme))
+        {
+            Vector2 doorXZ = new Vector2(labDoor.x, labDoor.z);
+            if ((doorXZ - entry).sqrMagnitude < 1f) doorXZ = labCenter;
+            bool flip = DomeSchemes.FlipV(entry, doorXZ, hydro, seed);
+            return BuildInternal(cfg, seed, entry, labDoor, labCenter, hydro, masks, ground,
+                flip, ash, lairs, scheme, near);
+        }
+        // v1/legacy: историческое отражение по числу вставших форм.
         var a = BuildInternal(cfg, seed, entry, labDoor, labCenter, hydro, masks, ground,
-            flipV: false, ash, lairs);
+            flipV: false, ash, lairs, null, null);
         if (AppliedCount(a) >= 5) return a;
         var b = BuildInternal(cfg, seed, entry, labDoor, labCenter, hydro, masks, ground,
-            flipV: true, ash, lairs);
+            flipV: true, ash, lairs, null, null);
         return AppliedCount(b) > AppliedCount(a) ? b : a;
     }
 
@@ -139,7 +152,8 @@ public static class DomeComposition
 
     static State BuildInternal(DomeGenConfigSO cfg, long seed, Vector2 entry, Vector3 labDoor,
         Vector2 labCenter, DomeHydro.State hydro, DomeMasks masks,
-        System.Func<float, float, float> ground, bool flipV, Vector2? ash, IReadOnlyList<Vector2> lairs)
+        System.Func<float, float, float> ground, bool flipV, Vector2? ash,
+        IReadOnlyList<Vector2> lairs, string scheme, string near)
     {
         var state = new State();
         if (cfg == null) return state;
@@ -159,9 +173,43 @@ public static class DomeComposition
         state.vAxis = vAxis;
 
         float lake = hydro != null ? hydro.lakeLevel : float.NegativeInfinity;
+
         System.Func<DomeFootprint, bool> forbidden = MakeForbidden(entry, labCenter, hydro, ash, lairs);
         forbiddenNow = forbidden;
         forbiddenWhyNow = MakeForbiddenWhy(entry, labCenter, hydro, ash, lairs);
+
+        // G7 шаг 3: near — обычная форма в CompositionForms, но через CSP.
+        // Осознанное исключение R120: ближняя ветвь живёт у входа (0–150 м);
+        // остальные запреты (станция/вода/ясень/логова/кольцо) остаются.
+        if (!string.IsNullOrEmpty(scheme))
+        {
+            forbiddenNow = MakeForbidden(entry, labCenter, hydro, ash, lairs, includeEntry: false);
+            forbiddenWhyNow = MakeForbiddenWhy(entry, labCenter, hydro, ash, lairs, includeEntry: false);
+            int nearStart = state.forms.Count;
+            foreach (var f in DomeSchemes.NearForms(scheme, near, seed, entry, uAxis, vAxis, hydro, ground))
+            {
+                var src = f;
+                Place(state, src.name, Role.Ridge, src.center,
+                    new[] { 0f }, new[] { 1f }, masks, lake, ground, vAxis,
+                    src.sign == DomeFormSign.Carve, (c, s) =>
+                    {
+                        var g = src;
+                        g.center = c;
+                        g.height = Mathf.Abs(g.height * s);
+                        g.diameter *= s;
+                        g.crest *= s;
+                        return new[] { g };
+                    }, record: false);
+            }
+            if (masks != null)
+                for (int i = nearStart; i < state.forms.Count; i++)
+                {
+                    var f = state.forms[i];
+                    masks.Add("near", DomeFootprint.Circle(f.center, f.diameter * 0.5f + 8f));
+                }
+            forbiddenNow = forbidden;
+            forbiddenWhyNow = MakeForbiddenWhy(entry, labCenter, hydro, ash, lairs);
+        }
         var shifts = new[] { 0f, 20f, -20f, 40f, -40f, 60f, -60f, 80f, -80f, 100f, -100f };
         // 0.82 — рабочий шаг ворот: ниже 0.72 H/D «Седла» даёт C¹-излом >2°
         // на 1 м (G2 M5), а полный размер не проходит маску ясеня.
@@ -267,6 +315,25 @@ public static class DomeComposition
         Place(state, "Котловина З", Role.BasinW, At(650f, 200f), shifts, scales, masks,
             lake, ground, vAxis, true, (c, s) => new[] { BasinAt("Котловина З", c, s) });
 
+        // G7 шаг 3: герой/роли схемы меняют геометрию, а не только путь.
+        // two-capes уже несёт героя основным S2-набором; остальные проходят CSP.
+        if (!string.IsNullOrEmpty(scheme) && scheme != DomeSchemes.TwoCapesSaddle)
+            foreach (var hero in DomeSchemes.HeroForms(scheme, seed, entry, uAxis, vAxis, hydro))
+            {
+                var src = hero;
+                Place(state, src.name, src.sign == DomeFormSign.Carve ? Role.Bowl : Role.Ridge,
+                    src.center, new[] { 0f, 40f, -40f, 80f, -80f }, new[] { 1f, 0.9f },
+                    masks, lake, ground, vAxis, src.sign == DomeFormSign.Carve, (c, s) =>
+                    {
+                        var g = src;
+                        g.center = c;
+                        g.height = Mathf.Abs(g.height * s);
+                        g.diameter *= s;
+                        g.crest *= s;
+                        return new[] { g };
+                    }, record: false);
+            }
+
         int applied = 0;
         foreach (var p in state.declared) if (p.applied) applied++;
         state.note = $"S2 §1.2: объявлено {DeclaredRoles}, применено {applied}; " +
@@ -288,11 +355,11 @@ public static class DomeComposition
     /// ясень R75, логова R25. Проверяется ГАБАРИТ формы, а не центр.
     /// </summary>
     static System.Func<DomeFootprint, bool> MakeForbidden(Vector2 entry, Vector2 labCenter,
-        DomeHydro.State hydro, Vector2? ash, IReadOnlyList<Vector2> lairs)
+        DomeHydro.State hydro, Vector2? ash, IReadOnlyList<Vector2> lairs, bool includeEntry = true)
     {
         return f =>
         {
-            if (DomeFootprints.Overlaps(f, DomeFootprint.Circle(entry, 120f))) return true;
+            if (includeEntry && DomeFootprints.Overlaps(f, DomeFootprint.Circle(entry, 120f))) return true;
             if (DomeFootprints.Overlaps(f, DomeFootprint.Circle(labCenter, 80f))) return true;
             if (hydro != null)
             {
@@ -314,11 +381,11 @@ public static class DomeComposition
     }
 
     static System.Func<DomeFootprint, string> MakeForbiddenWhy(Vector2 entry, Vector2 labCenter,
-        DomeHydro.State hydro, Vector2? ash, IReadOnlyList<Vector2> lairs)
+        DomeHydro.State hydro, Vector2? ash, IReadOnlyList<Vector2> lairs, bool includeEntry = true)
     {
         return f =>
         {
-            if (DomeFootprints.Overlaps(f, DomeFootprint.Circle(entry, 120f))) return "entry120";
+            if (includeEntry && DomeFootprints.Overlaps(f, DomeFootprint.Circle(entry, 120f))) return "entry120";
             if (DomeFootprints.Overlaps(f, DomeFootprint.Circle(labCenter, 80f))) return "lab80";
             if (hydro != null)
             {
@@ -361,7 +428,7 @@ public static class DomeComposition
     static void Place(State state, string name, Role role, Vector2 baseCenter,
         float[] shifts, float[] scales, DomeMasks masks, float lake,
         System.Func<float, float, float> ground, Vector2 vAxis, bool carve,
-        System.Func<Vector2, float, DomeForm[]> make)
+        System.Func<Vector2, float, DomeForm[]> make, bool record = true)
     {
         string why = "";
         foreach (float s in scales)
@@ -390,15 +457,16 @@ public static class DomeComposition
                 if (carve && ground != null && ground(c.x, c.y) - forms[0].height < lake + 2.5f)
                 { why = "dry"; continue; }
                 foreach (var f in forms) state.forms.Add(f);
-                state.declared.Add(new Placed
-                {
-                    role = role,
-                    name = name,
-                    applied = true,
-                    shiftV = dv,
-                    pieces = forms.Length,
-                    note = s < 1f ? $"D/H уменьшены ×{s:F2}" : (dv != 0f ? $"сдвиг v {dv:F0} м" : ""),
-                });
+                if (record)
+                    state.declared.Add(new Placed
+                    {
+                        role = role,
+                        name = name,
+                        applied = true,
+                        shiftV = dv,
+                        pieces = forms.Length,
+                        note = s < 1f ? $"D/H уменьшены ×{s:F2}" : (dv != 0f ? $"сдвиг v {dv:F0} м" : ""),
+                    });
                 return;
             }
         }

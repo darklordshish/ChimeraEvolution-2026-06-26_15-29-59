@@ -67,6 +67,9 @@ public class DomeWorld
     public Vector3 LabNorthDoor { get; private set; }
     /// <summary>G7 шаг 2: станция подтверждена внутри резерва.</summary>
     public bool HasStation { get; private set; }
+    /// <summary>G7 шаг 3: выбранная схема и ветвь `near` (v2; у v1 — пусто).</summary>
+    public string Scheme { get; private set; }
+    public string Near { get; private set; }
     /// <summary>Подход к лаборатории мокрый: у комплекса построен настил.</summary>
     public bool LabWetApproach { get; private set; }
     /// <summary>Решённый вход B0.2: Rock или Underground.</summary>
@@ -213,6 +216,19 @@ public class DomeWorld
         Vector2 entryXZ = EntryPointXZ(seed);
         ResolvedLabEntrance = labEntrance == LabEntrance.Auto ? LabEntrance.Rock : labEntrance;
 
+        // G7 шаг 3: тип/герой — до stationReserve и форм. Схема — данные, не монетка:
+        // кандидат проходит requires/forbids, затем сид выбирает среди прошедших.
+        if (Terrain.TargetOrder)
+        {
+            var scheme = DomeSchemes.Select(cfg, seed, entryXZ, Hydro,
+                (x, z) => DomeHydro.SampleHydro(cfg, Hydro, x, z));
+            Scheme = scheme.id;
+            Near = DomeSchemes.SelectNear(scheme, seed);
+            Trace.Add("scheme", DomeSchemes.All.Length, 1,
+                $"scheme={Scheme} hero={scheme.hero} near={Near}" +
+                (scheme.fallback ? " fallback" : "") + $" · {scheme.word}");
+        }
+
         // 2) Место лаборатории: B0.1 — поиск по сиду; A/C — двор в центре мира.
         //    G7 v2: сначала ТОЛЬКО stationReserve (адрес региона, не плита); финальная
         //    станция ищется после ShapeGround внутри него. v1 ищет на Hydro0 как раньше.
@@ -336,7 +352,8 @@ public class DomeWorld
                     lairAnchors.Add(n.pos);
 
                 Composition = DomeComposition.Build(cfg, seed, entryXZ, door, LabCenter,
-                    Hydro, masks, (x, z) => Terrain.Shape0(x, z), ashAnchor, lairAnchors);
+                    Hydro, masks, (x, z) => Terrain.Shape0(x, z), ashAnchor, lairAnchors,
+                    Scheme, Near);
                 // G7 шаг 2: плато станции — форма landform внутри резерва, не DomeHill.
                 if (site.found)
                 {
@@ -353,7 +370,7 @@ public class DomeWorld
                     // садится ВРЕЗКОЙ (S3 §4.1: Inset). Врезка D150 / верх 70 / до 9 м:
                     // это станционный пол в склоне, а не новая форма схемы. Она возвращает
                     // P/N в 0.80–1.20 (S1 §6.2), а её C¹-шаг ≤2° — G2 M5.
-                    float inset = Mathf.Clamp(baseH - dry - 0.5f, 0f, 9.2f);
+                    float inset = Mathf.Clamp(baseH - dry - 0.5f, 0f, 10.3f);
                     if (inset > 0.2f)
                     {
                         var cut = DomeComposition.StationPlateau();
@@ -361,7 +378,7 @@ public class DomeWorld
                         cut.center = site.center;
                         cut.sign = DomeFormSign.Carve;
                         cut.height = inset;
-                        cut.diameter = 150f;
+                        cut.diameter = 160f;
                         cut.crest = 70f;
                         Composition.forms.Add(cut);
                     }
@@ -381,7 +398,7 @@ public class DomeWorld
                 Trace.Add("composition", DomeComposition.DeclaredRoles,
                     Composition.forms.Count, Composition.note + " | " + compSkips);
                 Plan = DomeComposition.ToPlan(Composition, cfg, terrainQuads,
-                    buildTerrace, buildCanyon, buildAsh, buildLabComplex);
+                    buildTerrace, buildCanyon, buildAsh, buildLabComplex, Scheme, Near);
                 Trace.Add("plan", Plan.nodes.Count, Plan.forms.Count,
                     $"{Plan.path}; identity={Plan.identity}; signature={Plan.signature}");
             }
@@ -721,6 +738,10 @@ public class DomeWorld
         Func<float, float, bool> clearing = (x, z) =>
         {
             if (Vector2.Distance(new Vector2(x, z), new Vector2(Entry.x, Entry.z)) < 12f)
+                return true;
+            // G7 шаг 3: ближняя форма — бровка без стволов; маска `near` уже
+            // включает запас 8 м вокруг пятна формы.
+            if (target && masks != null && masks.ContainsPoint(new Vector2(x, z), "near"))
                 return true;
             if (DomeRavines.Contains(Ravines, x, z, 1.2f)) return true;
             // v2: 0 стволов в R+20 от зоны (S2 З2); v1 — исторический запас 1 м,
@@ -1206,6 +1227,8 @@ public class DomeWorld
         LabPlan = null;
         LabCenter = Vector2.zero;
         HasStation = false;
+        Scheme = null;
+        Near = null;
         LabDoor = default;
         LabAtrium = default;
         LabNorthDoor = default;

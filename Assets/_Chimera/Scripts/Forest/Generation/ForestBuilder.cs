@@ -230,6 +230,19 @@ public class ForestBuilder : MonoBehaviour
         world != null && world.Composition != null
             ? world.Composition.forms
             : (IReadOnlyList<DomeForm>)null;
+    /// <summary>G7 шаг 3: ближняя ветвь 0–150 м; не входит в G1/G2 S2-форм.</summary>
+    /// <summary>G7 шаг 3: ближняя ветвь 0–150 м (входит в CompositionForms/ShapeGround).</summary>
+    public IReadOnlyList<DomeForm> NearForms
+    {
+        get
+        {
+            if (world == null || world.Composition == null) return null;
+            var list = new List<DomeForm>();
+            foreach (var f in world.Composition.forms)
+                if (f.name != null && f.name.StartsWith("Ближняя")) list.Add(f);
+            return list;
+        }
+    }
     public IReadOnlyList<Vector3> TreeColliderPositions => world != null ? world.TreeColliderPositions : new List<Vector3>();
     public float CrownCover => world != null ? world.CrownCover : 0f;
     /// <summary>Открытые зоны S3 (прогалины экосистемы, не арены).</summary>
@@ -262,6 +275,10 @@ public class ForestBuilder : MonoBehaviour
     /// `LabCenter` не подменяется нулём как скрытым дефолтом в центр.
     /// </summary>
     public bool HasStation => world != null && world.HasStation;
+    /// <summary>G7 шаг 3: выбранная схема (`two-capes-saddle`/`bowl-ridge`/`lake-cauldron`).</summary>
+    public string Scheme => world != null ? world.Scheme : null;
+    /// <summary>G7 шаг 3: ближняя ветвь (`ridge`/`hollow`/`cape`/`hybrid`).</summary>
+    public string Near => world != null ? world.Near : null;
     public Vector3 LabAtrium => world != null ? world.LabAtrium : default;
     public Vector3 LabNorthDoor => world != null ? world.LabNorthDoor : default;
     public SamplingContract Contract => world != null ? world.Contract : default;

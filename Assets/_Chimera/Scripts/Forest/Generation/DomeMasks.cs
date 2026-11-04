@@ -28,7 +28,7 @@ public sealed class DomeMasks
     /// <summary>РњР°СЃРєРё, РєРѕС‚РѕСЂС‹Рµ С„РѕСЂРјР° (landform/terrace/canyon/ravines) РЅРµ РёРјРµРµС‚ РїСЂР°РІР° Р·Р°РґРµС‚СЊ.</summary>
     public static readonly string[] FormProtected =
     {
-        "station", "stationReserve", "entry", "gate", "ramp", "water", "mainRoute", "corridor",
+        "station", "stationReserve", "entry", "gate", "ramp", "water", "mainRoute", "corridor", "near",
         "zone", "shell", "common", "ash", "lair", "terrace", "canyon", "ravine", "landform",
     };
 
@@ -39,7 +39,7 @@ public sealed class DomeMasks
     /// </summary>
     public static readonly string[] ErosionKeeps =
     {
-        "water", "landform", "terrace", "canyon", "ravine", "stationReserve",
+        "water", "landform", "terrace", "canyon", "ravine", "stationReserve", "near",
         // холм — не именованная маска: DomeWorld проверяет его DomeHill.Contains;
         // площадка/рампа/щель/POI строятся ПОСЛЕ эрозии и в маску не входят (S4 D4).
     };
