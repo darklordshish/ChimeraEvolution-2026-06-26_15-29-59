@@ -91,6 +91,15 @@ for o in O:
         if not h and 1.57 < p.z < 1.65 and abs(p.x) < 0.11:   # шея по вид.png (срез: диаметр шире на 2.8–3.8 см на z 1.60–1.62)
             q_ = np.interp(p.z, [1.57, 1.58, 1.60, 1.62, 1.65], [1.0, 0.93, 0.70, 0.81, 1.0]); sx += abs(p.x) * (q_ - 1); sy += (p.y - 0.01) * (0.5 * (q_ - 1))
         kl = (round(p.x, 4), round(p.y, 4), round(p.z, 4)); r_ = S.setdefault(kl, [0.0, 0.0, 0]); r_[0] += sg * sx; r_[1] += sy; r_[2] += 1; zap.append((o, v.index, kl))
+# лицо (05.11): переносица вперёд рвёт полосу глазниц, плоскость рта выше; плотные вершины головы, кистью, до нарезки
+for o in O:
+    if o.name not in ('голова', 'Чутьё'): continue
+    for i_, v in enumerate(o.data.vertices):
+        p = o.matrix_world @ v.co
+        if p.y > -0.07: continue
+        w1 = np.exp(-((p.x / 0.018) ** 2 + ((p.z - 1.725) / 0.016) ** 2)); w2 = np.exp(-((p.x / 0.035) ** 2 + ((p.z - 1.64) / 0.016) ** 2))
+        v.co.y -= 0.006 * w1; v.co.z += 0.005 * w2
+        if o.data.shape_keys: o.data.shape_keys.key_blocks[0].data[i_].co = v.co
 maks = 0
 for o, i, kl in zap:
     r_ = S[kl]; dx, dy = r_[0] / r_[2], r_[1] / r_[2]; maks = max(maks, abs(dx), abs(dy)); v = o.data.vertices[i]; v.co.x += dx; v.co.y += dy

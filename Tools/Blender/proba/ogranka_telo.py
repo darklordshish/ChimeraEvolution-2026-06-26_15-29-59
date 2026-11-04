@@ -136,7 +136,7 @@ vid = np.where(pro, 2, np.where(N[:, 1] < 0, 0, 1)); L0 = np.where(vid == 0, Lf,
 PAN = json.load(open(opt['paneli'], encoding='utf-8')) if opt.get('paneli') else []
 PMET = 900000
 for i_, p_ in enumerate(PAN):
-    m = (bool(p_.get('konech', 0)) | (~konech)) & (XA <= p_['x_max']) & (XA >= p_.get('x_min', 0)) & (ZA >= p_['z'][0]) & (ZA <= p_['z'][1]) & (N[:, 1] < -0.3 if p_['vid'] == 'front' else (N[:, 1] > 0.3 if p_['vid'] == 'back' else N[:, 0] > 0.45)) & ((imo != 'Руки') | (not p_.get('konech', 0)) | (bool(p_.get('ruki', 0)) & (ZA >= p_.get('ruki_z', 0))))
+    m = (bool(p_.get('konech', 0)) | (~konech)) & (XA <= p_['x_max']) & (XA >= p_.get('x_min', 0)) & (ZA >= p_['z'][0]) & (ZA <= p_['z'][1]) & (N[:, 1] < -p_.get('ny', 0.3) if p_['vid'] == 'front' else (N[:, 1] > p_.get('ny', 0.3) if p_['vid'] == 'back' else N[:, 0] > 0.45)) & ((imo != 'Руки') | (not p_.get('konech', 0)) | (bool(p_.get('ruki', 0)) & (ZA >= p_.get('ruki_z', 0))))
     METKA[m] = PMET + i_
 PM = METKA >= PMET
 
@@ -587,17 +587,19 @@ def podpaneli(r, T_):
         R_.append(c_)
     return R_
 def mera_pan(metka):
-    Ug = []; Ng = []; Pl = 0
+    Ug = []; Ng = []; Pl = 0; PoP = {}
     for r, T_ in TRI.items():
         if not PM[REG == r].mean() > 0.5: continue
+        im_ = PAN[int(np.bincount(METKA[REG == r][PM[REG == r]] - PMET).argmax())]['imya']
         for c_ in podpaneli(r, T_):
             N_ = []; A_ = []
             for i_ in c_:
                 n3 = np.cross(VP[T_[i_][1]] - VP[T_[i_][0]], VP[T_[i_][2]] - VP[T_[i_][0]]); s3 = np.linalg.norm(n3)
                 if s3 > 1e-9: N_.append(n3 / s3); A_.append(s3 / 2)
             if not N_: continue
-            N_ = np.array(N_); A_ = np.array(A_); mn = (N_ * A_[:, None]).sum(0); mn /= max(np.linalg.norm(mn), 1e-12); u_ = np.degrees(np.arccos(np.clip(N_.dot(mn), -1, 1))); Ug.append(float((u_ * A_).sum() / A_.sum())); Ng.append(len(c_)); Pl += 1
-    print('ТЕЛО: панели %s: подпанелей %d, разброс нормалей медиана %.1f°, 90%% %.1f°, граней на подпанель медиана %.0f, макс %d' % (metka, Pl, np.median(Ug), np.percentile(Ug, 90), np.median(Ng), max(Ng)))
+            N_ = np.array(N_); A_ = np.array(A_); mn = (N_ * A_[:, None]).sum(0); mn /= max(np.linalg.norm(mn), 1e-12); u_ = np.degrees(np.arccos(np.clip(N_.dot(mn), -1, 1))); Ug.append(float((u_ * A_).sum() / A_.sum())); Ng.append(len(c_)); Pl += 1; PoP.setdefault(im_, []).append((Ug[-1], len(c_)))
+    print('ТЕЛО: панели %s: подпанелей %d, разброс нормалей медиана %.1f°, 90%% %.1f°, гр/подп медиана %.0f, макс %d' % (metka, Pl, np.median(Ug), np.percentile(Ug, 90), np.median(Ng), max(Ng)))
+    for k_, v_ in PoP.items(): print('ТЕЛО:   %s %s: подп %d, разброс мед %.1f°, 90%% %.1f°, гр мед %.0f макс %d' % (metka, k_, len(v_), np.median([q[0] for q in v_]), np.percentile([q[0] for q in v_], 90), np.median([q[1] for q in v_]), max(q[1] for q in v_)))
 mera_pan('до плоскости')
 if PLAN > 0:
     LIM = PLAN; Y0 = {}; sum_ = 0; KONT = set()   # контур панели и ось держат контур тела: стоят
@@ -626,7 +628,7 @@ if PLAN > 0:
     mera_pan('после плоскости')
 
 # ДИАГОНАЛИ: четырёхугольник из двух граней области переворачивается, если так они ближе к одной плоскости (убирает «битое стекло», число граней то же). Рёбра-ограничения панелей и границы областей стоят
-FLIP = float(opt.get('flip', 3))
+FLIP = float(opt.get('flip', 3)); ALONG = int(opt.get('vdol', 0))
 if FLIP > 0:
     Zap = set()
     for r, T_ in TRI.items():
@@ -649,11 +651,15 @@ if FLIP > 0:
                 i0 = t1.index(c_); tc = t1[i0:] + t1[:i0]; x_, y_ = tc[1], tc[2]; n1, s1 = nrm(VP[c_], VP[x_], VP[y_]); n2, s2 = nrm(VP[d__], VP[y_], VP[x_]); n3, s3 = nrm(VP[c_], VP[x_], VP[d__]); n4, s4 = nrm(VP[d__], VP[y_], VP[c_])
                 if s3 < 1e-6 or s4 < 1e-6 or n3.dot(n1) < 0.2 or n4.dot(n1) < 0.2: continue
                 if min(s3, s4) / max(s3, s4) < 0.04: continue
-                if math.acos(min(1, n3.dot(n4))) + math.radians(FLIP) < math.acos(min(1, n1.dot(n2))) and tuple(sorted((c_, d__))) not in Ed:
+                u_st = math.acos(min(1, n1.dot(n2))); u_nv = math.acos(min(1, n3.dot(n4))); osn = VP[b_] - VP[a_]; diag = VP[d__] - VP[c_]; vert = lambda w: abs(w[2]) / max(np.linalg.norm(w), 1e-9)
+                # вырожденная грань (высота меньше 3 мм при ребре от 3 см) меняет диагональ всегда; при почти равной плоскости диагональ идёт вдоль массы: на ногах и пояснице это по высоте
+                vyr = (s1 / max(np.linalg.norm(osn), 1e-9) < 0.003 or s2 / max(np.linalg.norm(osn), 1e-9) < 0.003) and np.linalg.norm(osn) > 0.03
+                vdol = ALONG and PM[REG == r].mean() > 0.5 and VP[c_][2] < 1.3 and u_nv < u_st + math.radians(2.5) and vert(diag) > vert(osn) + 0.2
+                if (vyr or vdol or u_nv + math.radians(FLIP) < u_st) and tuple(sorted((c_, d__))) not in Ed:
                     T_[li[0]] = [c_, x_, d__]; T_[li[1]] = [d__, y_, c_]; est += 1; npv += 1; Ed = None; break
             if Ed is None: pass
         if not est: break
-    print('ТЕЛО: диагоналей перевёрнуто %d' % npv)
+    print('ТЕЛО: диагоналей перевёрнуто %d' % npv); mera_pan('после диагоналей')
 
 # 7. В ОБЪЕКТЫ: зона уходит из объектов, области — большинству площади
 BOK = {b.name[:-2].split('.')[0] for a_ in bpy.data.objects if a_.type == 'ARMATURE' for b in a_.data.bones if b.name.endswith('.L')}
