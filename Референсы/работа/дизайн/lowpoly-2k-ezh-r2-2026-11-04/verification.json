@@ -1,0 +1,93 @@
+{
+  "size": [
+    2172,
+    724
+  ],
+  "edge_pixels": 105140,
+  "unchanged_outside_edges": true,
+  "png_verified": [
+    "01-flat-sheet.png",
+    "02-edges-sheet.png",
+    "03-compare-vitrina.png",
+    "04-silhouette-overlay.png",
+    "edges-mask.png"
+  ],
+  "silhouette_method": "manual crops; equal total height incl launcher; centered; largest component L<205, fill holes smaller than 80 px only; leg gaps retained; ground shadows may remain; approximate only",
+  "silhouette_comparison": [
+    {
+      "view": "FRONT",
+      "reference_crop": [
+        804,
+        77,
+        1169,
+        502
+      ],
+      "candidate_crop": [
+        35,
+        187,
+        329,
+        560
+      ],
+      "width_ratio_at_equal_total_height": 0.92,
+      "approximate_mask_iou": 0.826
+    },
+    {
+      "view": "PROFILE",
+      "reference_crop": [
+        39,
+        76,
+        751,
+        504
+      ],
+      "candidate_crop": [
+        341,
+        205,
+        903,
+        560
+      ],
+      "width_ratio_at_equal_total_height": 0.952,
+      "approximate_mask_iou": 0.836
+    },
+    {
+      "view": "FRONT 3/4",
+      "reference_crop": [
+        22,
+        565,
+        497,
+        888
+      ],
+      "candidate_crop": [
+        904,
+        199,
+        1379,
+        560
+      ],
+      "width_ratio_at_equal_total_height": 0.897,
+      "approximate_mask_iou": 0.697
+    },
+    {
+      "view": "BACK",
+      "reference_crop": [
+        1260,
+        73,
+        1635,
+        505
+      ],
+      "candidate_crop": [
+        1389,
+        187,
+        1682,
+        560
+      ],
+      "width_ratio_at_equal_total_height": 0.905,
+      "approximate_mask_iou": 0.775
+    }
+  ],
+  "sha256": {
+    "01-flat-sheet.png": "daabf200d50dea86a9c8b00c08dcc3785aac1143f844c4eb20578d2e4981a9b8",
+    "02-edges-sheet.png": "2de1ec217e86e956a680b7452259699405ea6806ac8e8c72e973a181453162af",
+    "03-compare-vitrina.png": "b66d7648562cb1d7490805a55cd50b351c9e0a11eba9cfa543274f031adeab70",
+    "04-silhouette-overlay.png": "92e5e32ea382108bad61069a19c4d905245a3d08e6be948254127c3e261b6f8f",
+    "edges-mask.png": "d270683f8371c5f2634d2b6915213c0b1a1b082dd3e43c50396418f0d928ce4e"
+  }
+}
