@@ -1,0 +1,43 @@
+{
+ "front": {
+  "vershin_pravaya": 61,
+  "vershin_levaya": 58,
+  "par": 48,
+  "sdvig_osi_px": [
+   0.0,
+   0.0
+  ],
+  "rasxozhd_med_mm": 3.25,
+  "rasxozhd_95_mm": 7.13,
+  "sigma_mm": 3.4
+ },
+ "back": {
+  "vershin_pravaya": 41,
+  "vershin_levaya": 38,
+  "par": 30,
+  "sdvig_osi_px": [
+   -0.5,
+   0.0
+  ],
+  "rasxozhd_med_mm": 2.57,
+  "rasxozhd_95_mm": 7.2,
+  "sigma_mm": 2.69
+ },
+ "profile": {
+  "vershin": 61,
+  "sigma_mm": 3.05,
+  "primech": "второй половины нет: сигма взята средним анфаса и спины"
+ },
+ "svedenie": {
+  "klasterov": 7,
+  "vybrosov": 1,
+  "sdvig_z_med_mm": 3.02,
+  "sdvig_z_maks_mm": 9.71
+ },
+ "myagko": {
+  "lam": 25.0,
+  "sdvig_med_mm": 2.5,
+  "sdvig_maks_mm": 6.81,
+  "predel": "2 σ"
+ }
+}

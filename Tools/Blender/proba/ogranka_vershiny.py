@@ -14,7 +14,7 @@ def op(n, d): return type(d)(a[a.index(n) + 1]) if n in a else d
 RDP, MINL, POR = op('--rdp', 2.5), op('--min', 14.0), op('--porog', 70)
 g = np.asarray(Image.open(SRC).convert('L')).astype(int)
 # коробки зоны груди, плеча и дельты: x0, x1, y0, y1 в пикселях листа
-KOR = dict(front=(219, 372, 135, 295), back=(1095, 1233, 135, 295), profile=(488, 625, 150, 305))
+KOR = dict(front=(219, 372, 135, 295), back=(1095, 1233, 135, 295), profile=(488, 625, 150, 305), front_l=(66, 219, 135, 295), back_r=(1233, 1371, 135, 295))
 SOS = [(i, j) for i in (-1, 0, 1) for j in (-1, 0, 1) if i or j]
 
 
@@ -71,7 +71,7 @@ for k, r in R.items():
     print('ВЕРШИНЫ %s: вершин %d (развилок %d), рёбер %d, ломаных %d, отсеяно %d' % (k, len(r['tochki']), r['razvilok'], len(r['rebra']), r['lomanyh'], r['otseyano']))
     for x, y in r['rebra']: d.line([tuple(r['tochki'][x]), tuple(r['tochki'][y])], fill=(230, 40, 40), width=1)
     for p in r['tochki']: d.ellipse([p[0] - 1.5, p[1] - 1.5, p[0] + 1.5, p[1] + 1.5], fill=(30, 90, 240))
-kr = [im.crop((v[0] - 10, v[2] - 5, v[1] + 10, v[3] + 5)) for v in KOR.values()]
+kr = [im.crop((v[0] - 10, v[2] - 5, v[1] + 10, v[3] + 5)) for k_, v in KOR.items() if k_ in ('front', 'back', 'profile')]
 W_ = sum(c.width for c in kr) * 2; o = Image.new('RGB', (W_, max(c.height for c in kr) * 2), 'white'); x = 0
 for c in kr: o.paste(c.resize((c.width * 2, c.height * 2), Image.LANCZOS), (x, 0)); x += c.width * 2
 o.save(KADR)
