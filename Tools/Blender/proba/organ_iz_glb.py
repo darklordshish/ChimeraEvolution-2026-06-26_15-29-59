@@ -1,6 +1,6 @@
 """ОРГАН ИЗ ОБЪЁМА HUNYUAN (05.11, третий проход; цель по кропу `витрина/органы/` даёт человека в 3/4 с органом). Голова цели разворачивается по её же симметрии, садится на голову шасси по своду (масштаб — ширина черепа, сдвиг — верх и середина), вырезается орган: окно по высоте и глубине, кожа шасси как нижний край. Половина, смотревшая в камеру, зеркалится, прореживается до бюджета, край уходит под кожу. Веса — кость или тело.
 
-  blender -b организм.blend --factory-startup --python-exit-code 1 -P organ_iz_glb.py -- выход.blend цель.glb Объект@Вид тр [--z0 1.6] [--z1 1.74] [--y1 -0.045] [--sheya_y -0.075] [--kost голова] [--okno morda|spina] [--nad 0.008] [--razv 180] [--plechi 0.56] [--y_sdvig 0.04] [--z_sdvig -0.09] [--vpered 1.2] [--suzh 0.6]
+  blender -b организм.blend --factory-startup --python-exit-code 1 -P organ_iz_glb.py -- выход.blend цель.glb Объект@Вид тр [--z0 1.6] [--z1 1.74] [--y1 -0.045] [--sheya_y -0.075] [--kost голова] [--okno morda|spina] [--nad 0.008] [--razv 180] [--plechi 0.56] [--y_sdvig 0.04] [--z_sdvig -0.09] [--vpered 1.2] [--suzh 0.6] [--pol_z 1.6] [--guba 1.6:0.012] [--pl 1.655:0.75]
 """
 import sys, math
 import bpy, bmesh
@@ -63,6 +63,19 @@ if float(opt.get('vpered', '1')) != 1:
     for v in cel.data.vertices:
         if v.co.y < -.10: v.co.y = -.10 + (v.co.y + .10) * float(opt['vpered'])
         if v.co.y < -.10 and opt.get('suzh'): v.co.x *= 1 - (1 - float(opt['suzh'])) * min((-.10 - v.co.y) / .12, 1)
+    cel.data.update()
+# правки морды по листу: дно клином (`--pol_z`: сосульки и зубы цели срезаются в плоскость), тяжёлая нижняя губа (`--guba z:dy`), площе сверху (`--pl z:k`)
+if opt.get('pol_z') or opt.get('guba') or opt.get('pl'):
+    for v in cel.data.vertices:
+        if v.co.y > -.09: continue
+        if opt.get('pl'):
+            z_, k_ = map(float, opt['pl'].split(':'))
+            if v.co.z > z_: v.co.z = z_ + (v.co.z - z_) * k_
+        if opt.get('guba'):
+            z_, d_y = map(float, opt['guba'].split(':'))
+            if v.co.z < z_: v.co.y -= d_y
+        if opt.get('pol_z'): v.co.z = max(v.co.z, float(opt['pol_z']))
+        if opt.get('pol_y') and v.co.z < float(opt['pol_z']) + .03: v.co.y = max(v.co.y, float(opt['pol_y']))
     cel.data.update()
 # вырезка
 bm = bmesh.new(); bm.from_mesh(cel.data)
