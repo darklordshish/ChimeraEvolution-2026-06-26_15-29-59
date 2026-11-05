@@ -1,6 +1,6 @@
 """ОРГАН ИЗ ОБЪЁМА HUNYUAN (05.11, третий проход; цель по кропу `витрина/органы/` даёт человека в 3/4 с органом). Голова цели разворачивается по её же симметрии, садится на голову шасси по своду (масштаб — ширина черепа, сдвиг — верх и середина), вырезается орган: окно по высоте и глубине, кожа шасси как нижний край. Половина, смотревшая в камеру, зеркалится, прореживается до бюджета, край уходит под кожу. Веса — кость или тело.
 
-  blender -b организм.blend --factory-startup --python-exit-code 1 -P organ_iz_glb.py -- выход.blend цель.glb Объект@Вид тр [--z0 1.6] [--z1 1.74] [--y1 -0.045] [--sheya_y -0.075] [--kost голова] [--okno morda|spina] [--nad 0.008] [--razv 180] [--plechi 0.56] [--y_sdvig 0.04] [--z_sdvig -0.09] [--vpered 1.2]
+  blender -b организм.blend --factory-startup --python-exit-code 1 -P organ_iz_glb.py -- выход.blend цель.glb Объект@Вид тр [--z0 1.6] [--z1 1.74] [--y1 -0.045] [--sheya_y -0.075] [--kost голова] [--okno morda|spina] [--nad 0.008] [--razv 180] [--plechi 0.56] [--y_sdvig 0.04] [--z_sdvig -0.09] [--vpered 1.2] [--suzh 0.6]
 """
 import sys, math
 import bpy, bmesh
@@ -38,6 +38,7 @@ def sim(th):
     for j, p in enumerate(P): k.insert((p[0], p[1], 0), j)
     k.balance(); return np.mean([k.find((q[0], q[1], 0))[2] for q in M_[::4]])
 th_ = min(np.radians(np.arange(-75, 76, 3)), key=sim); th_ = min(th_ + np.radians(np.arange(-3, 3.5, .5)), key=sim)
+if opt.get('povorot'): th_ = math.radians(float(opt['povorot']))
 R = Matrix.Rotation(th_, 4, 'Z'); cel.data.transform(R); A = np.array([tuple(v.co) for v in cel.data.vertices])
 print('ЦЕЛЬ: поворот %.1f°' % math.degrees(th_))
 def srez(P, z, dz, xm=9): q = P[(np.abs(P[:, 2] - z) < dz) & (np.abs(P[:, 0]) < xm)]; return q
@@ -61,6 +62,7 @@ print('ЦЕЛЬ: масштаб %.3f, рамка %s .. %s' % (s_, A.min(0).round
 if float(opt.get('vpered', '1')) != 1:
     for v in cel.data.vertices:
         if v.co.y < -.10: v.co.y = -.10 + (v.co.y + .10) * float(opt['vpered'])
+        if v.co.y < -.10 and opt.get('suzh'): v.co.x *= 1 - (1 - float(opt['suzh'])) * min((-.10 - v.co.y) / .12, 1)
     cel.data.update()
 # вырезка
 bm = bmesh.new(); bm.from_mesh(cel.data)
