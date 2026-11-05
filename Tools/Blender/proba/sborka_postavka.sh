@@ -10,6 +10,7 @@ s(){ local pat="$1"; shift; "$B" -b --factory-startup --python-exit-code 1 -P "$
 b(){ local pat="$1" f="$2" sc="$3"; shift 3; "$B" -b "$f" --factory-startup --python-exit-code 1 -P "$T/$sc" -- "$@" > "$W/shag.log" 2>&1 || { grep -A8 -E "Traceback|Error" "$W/shag.log" | cut -c1-220; echo "СТОП: $sc"; exit 1; }; grep -E "$pat" "$W/shag.log" | cut -c1-180 || true; }
 b БАЗА "$BAZ" baza_iz_klyucha.py "$W/p0.blend"
 b "швов|РАСПРАВ" "$W/p0.blend" perenos_klyuchej.py "$W/p1.blend" "$SRC" "$MOST" --klyuchi Волк,Лось,Волк1 --kist_zhestko 0.96 --raspravit ${RASPR:-0} --kontrol 0 --otchet "$W/perenos.json"
+[ -z "${LEPKA:-}" ] || b ЛЕПКА "$W/p1.blend" klyuch_lepka.py "$W/p1.blend" $LEPKA
 b ОРГАН "$W/p1.blend" perenos_organov.py "$W/p2.blend" "$SRC" "$MOST" --kak_est @Волк1,@Лось
 s ИГЛЫ "$T/shipy_ezha.py" -- "$W/p2.blend" "$RAS" "$W/igly.blend"
 s ОРГАН "$T/organ_objekt.py" -- "$W/p2.blend" "$W/igly.blend" иглы Шкура@Ёж "$W/p3.blend"

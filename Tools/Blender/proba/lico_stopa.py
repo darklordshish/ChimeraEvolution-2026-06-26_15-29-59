@@ -44,7 +44,7 @@ def soglasovat(bm, novye):
 
 # ЛИЦО: ось — (имя, z, вынос), половина — имя: (x, z, вынос); рёбра — границы плоскостей
 OS = [('l0', 1.790, 0), ('gl', 1.748, .003), ('kor', 1.733, .004), ('sp', 1.715, .005), ('nos', 1.698, .001), ('pod', 1.683, 0), ('gu', 1.672, 0), ('rot', 1.664, -.0015), ('gn', 1.656, .001), ('bor', 1.648, -.002), ('pdb', 1.638, .001)]
-TO = dict(f1=(.030, 1.795, 0), b1=(.009, 1.746, .003), b2=(.030, 1.757, .005), b3=(.058, 1.750, .002), e1=(.011, 1.733, -.008), e2=(.030, 1.735, -.014), e3=(.052, 1.735, -.006),
+TO = dict(f1=(.030, 1.795, 0), b1=(.009, 1.746, .003), b2=(.030, 1.757, .005), b3=(.058, 1.750, .002), e1=(.011, 1.733, -.006), e2=(.030, 1.735, -.010), e3=(.052, 1.735, -.005),
           u1=(.014, 1.720, -.003), u2=(.034, 1.717, -.002), sk=(.060, 1.718, .003), n1=(.0065, 1.715, .002), n2=(.015, 1.688, -.001), n3=(.007, 1.681, 0), h1=(.038, 1.685, -.005), h2=(.055, 1.683, -.003),
           m1=(.027, 1.664, -.001), g1=(.012, 1.673, 0), g2=(.012, 1.656, 0), d1=(.024, 1.639, 0), d2=(.026, 1.650, -.001), ch=(.060, 1.665, .004))
 RE = 'gl-b1 b1-b2 b2-b3 b1-e1 e1-u1 u1-u2 u2-e3 e3-b3 kor-e1 e1-n1 n1-sp n1-n2 n2-n3 n3-pod e3-sk u2-sk sk-h2 n2-h1 h1-m1 m1-d2 d2-d1 rot-m1 pod-g1 g1-m1 gn-g2 g2-m1 bor-d2 sk-ch ch-d1 l0-f1 f1-b2'.split()
@@ -133,6 +133,27 @@ if opt['bez_lica'] != '1':
             nov_gr.append(f)
     soglasovat(bm, nov_gr); bm.normal_update(); bm.to_mesh(o.data); bm.free(); o.data.update()
     print('ЛИЦО: новых граней %d, точек половины %d' % (n_tr, len(TO) + len(nm) - len(TO)))
+
+# ШЕЯ ПОД ГОЛОВОЙ: огранка упростила шею, и её стенка на x ±0.05, z 1.56–1.60 вышла сквозь кожу головы тонкой тёмной полосой (двойная геометрия). Вершины шеи над кожей уходят под неё
+if opt.get('bez_shei') != '1':
+    h = bpy.data.objects['голова']; Mh = h.matrix_world; h.data.calc_loop_triangles(); Vh = [Mh @ v.co for v in h.data.vertices]; bh = BVHTree.FromPolygons(Vh, [list(t_.vertices) for t_ in h.data.loop_triangles], all_triangles=True)
+    o = bpy.data.objects['шея']; M = o.matrix_world; Mi = M.inverted(); n_sh = 0; mx = 0.0
+    def snaruzhi(p):
+        q, nn, _, d_ = bh.find_nearest(p); return q, nn, d_ if (p - q).dot(nn) > 0 else -d_
+    for v in o.data.vertices:
+        p = M @ v.co
+        if not (p.z > 1.555 and abs(p.x) < 0.075): continue
+        q, nn, d_ = snaruzhi(p)
+        if abs(d_) < 2e-4 or p.y > 0.03: continue   # вершины стыка с головой и затылок не трогаются
+        if d_ > 2e-4 or d_ > -0.018:
+            v.co = Mi @ (q - nn * 0.018); n_sh += 1; mx = max(mx, d_)
+            if o.data.shape_keys:   # без этого меш рисуется по ключу-базе и правка молчит
+                for kb_ in o.data.shape_keys.key_blocks: kb_.data[v.index].co = v.co   # глубоко: плоскость шеи, почти касательная к коже, и давала тонкий язык
+    o.data.update(); o.data.calc_loop_triangles(); ost = 0.0
+    for t_ in o.data.loop_triangles:
+        c_ = M @ t_.center
+        if c_.z > 1.555 and abs(c_.x) < 0.07: ost = max(ost, snaruzhi(c_)[2])
+    print('ШЕЯ: под кожу головы ушло вершин %d, выступали до %.1f мм; центр грани над кожей теперь до %.1f мм' % (n_sh, mx * 1000, ost * 1000))
 
 # СТОПА
 if opt['bez_stopy'] != '1':
