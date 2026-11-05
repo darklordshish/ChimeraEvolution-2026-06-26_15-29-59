@@ -106,7 +106,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4362434552799690752
+    - rid: 4362434553505644544
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -166,7 +166,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4362434552799690753
+    - rid: 4362434553505644545
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -344,7 +344,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4362434552799690754
+    - rid: 4362434553505644546
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -2249,11 +2249,11 @@ MonoBehaviour:
     - {x: -0.02668, y: 1.62549, z: -0.02894}
     - {x: -0.05337, y: 1.6245, z: -0.00885}
     - {x: -0.02235, y: 1.6138, z: 0.02225}
-    - {x: -0.03117, y: 1.61664, z: 0.03141}
-    - {x: -0.01559, y: 1.61073, z: 0.05233}
+    - {x: -0.03166, y: 1.61834, z: 0.03174}
+    - {x: -0.01583, y: 1.61158, z: 0.0525}
     - {x: 0, y: 1.60482, z: 0.07325}
-    - {x: 0.01559, y: 1.61073, z: 0.05233}
-    - {x: 0.03117, y: 1.61664, z: 0.03141}
+    - {x: 0.01583, y: 1.61158, z: 0.0525}
+    - {x: 0.03166, y: 1.61834, z: 0.03174}
     - {x: 0.02235, y: 1.6138, z: 0.02225}
     - {x: 0.05337, y: 1.6245, z: -0.00885}
     - {x: 0.02668, y: 1.62549, z: -0.02894}
@@ -2264,7 +2264,7 @@ MonoBehaviour:
     passport: chelovek-golova-kusok
     own: {r: 0, g: 0, b: 0, a: 0}
     seamFrame: 1
-    seamCenter: {x: -0, y: 1.6178, z: 0.01338}
+    seamCenter: {x: -0, y: 1.61823, z: 0.01347}
     seamAxis: {x: -0, y: 0.98639, z: 0.16443}
     seamUp: {x: -0, y: 0.16443, z: -0.98639}
     seamBone: "\u0448\u0435\u044F"
@@ -2293,7 +2293,7 @@ MonoBehaviour:
     keyed: []
   - seam: "\u043E\u0441\u043D\u043E\u0432\u0430\u043D\u0438\u0435 \u0440\u043E\u0433\u0430"
     bone: "\u0433\u043E\u043B\u043E\u0432\u0430"
-    center: {x: -0.07005, y: 1.79096, z: 0.05545}
+    center: {x: -0.07024, y: 1.79107, z: 0.05503}
     axis: {x: -0.93968, y: 0.34204, z: -0}
     up: {x: 0.34204, y: 0.93968, z: -0}
     ellipse: {x: 0.0527, y: 0.0337}
@@ -4178,7 +4178,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4362434552799690752
+    - rid: 4362434553505644544
       type: {class: LimbStrikeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 8
@@ -4188,7 +4188,7 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.45
         cooldown: 1.1
-    - rid: 4362434552799690753
+    - rid: 4362434553505644545
       type: {class: KickData, ns: , asm: Chimera.Runtime}
       data:
         damage: 4
@@ -4196,7 +4196,7 @@ MonoBehaviour:
         reach: 1.8
         radius: 1.6
         cooldown: 1
-    - rid: 4362434552799690754
+    - rid: 4362434553505644546
       type: {class: ScreamData, ns: , asm: Chimera.Runtime}
       data:
         cooldown: 12
