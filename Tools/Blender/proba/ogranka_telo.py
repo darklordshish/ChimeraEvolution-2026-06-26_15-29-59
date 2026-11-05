@@ -661,6 +661,17 @@ if FLIP > 0:
         if not est: break
     print('ТЕЛО: диагоналей перевёрнуто %d' % npv); mera_pan('после диагоналей')
 
+# СКЛАДКА ГРАНИ: грань вывернута среди всех соседей (--sklad x,y,z; центр грани): короткое ребро схлопывается, грани не вырождаются
+for z_ in filter(None, opt.get('sklad', '').split(';')):
+    p_ = np.array(list(map(float, z_.split(',')))); best = None
+    for r, T_ in TRI.items():
+        for i_, t in enumerate(T_):
+            d_ = np.linalg.norm(VP[t].mean(0) - p_)
+            if best is None or d_ < best[0]: best = (d_, r, i_)
+    t = TRI[best[1]][best[2]]; ed_ = sorted(((np.linalg.norm(VP[a_] - VP[b_]), a_, b_) for a_, b_ in zip(t, t[1:] + t[:1])), key=lambda q: q[0])[0]; a_, b_ = ed_[1], ed_[2]
+    if a_ in KRAJ: a_, b_ = b_, a_
+    print('ТЕЛО: складка грани: центр в %.1f мм, площадь %.1f см², ребро %.1f мм' % (best[0] * 1000, np.linalg.norm(np.cross(VP[t[1]] - VP[t[0]], VP[t[2]] - VP[t[0]])) * 5000, ed_[0] * 1000))
+    for r in TRI: TRI[r] = [[b_ if q == a_ else q for q in t2] for t2 in TRI[r] if not (a_ in t2 and b_ in t2)]
 # ТОЧЕЧНО: вершина выводится наружу по положению (--vyvod файл: [{"p": [x, y, z], "d": [dx, dy, dz]}]), контур зоны стоит
 if opt.get('vyvod'):
     for z_ in json.load(open(opt['vyvod'], encoding='utf-8')):

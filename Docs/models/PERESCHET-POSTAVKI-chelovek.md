@@ -4,7 +4,7 @@
 
 | что | файл | чем | проверено |
 |---|---|---|---|
-| шов головы «основание черепа» | `handoff/cherty/chelovek-golova-kusok.json` | `pasport_shva.py` | поставлен, детектор ОК |
+| шов головы «основание черепа» | `handoff/cherty/chelovek-golova-kusok.json` | `pasport_shva.py` при общей топологии баз; после огранки — `kolco_cherepa.py` (05.11, Б6) | поставлен, детектор ОК |
 | основание морды | `handoff/chelovek-osnovanie-mordy.json` | прежний: центр от хорды, лицо сдвинулось < 1.5 см | кадром не проверено |
 | уши | `handoff/parts/chelovek-ushi.json` | `pasporta_chelovek.py`, настоящие вершины края | детектор ОК |
 | корень хвоста | `handoff/chelovek-koren-hvosta.json` | `pasporta_chelovek.py`, на коже | детектор ОК |
