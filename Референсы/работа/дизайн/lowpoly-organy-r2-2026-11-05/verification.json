@@ -1,0 +1,69 @@
+{
+  "method": "Sobel / nonmaximum suppression / hysteresis, visible tone boundaries only",
+  "parameters": {
+    "sigma": 0.65,
+    "weak": 2.1,
+    "strong": 4.5,
+    "min_component": 7
+  },
+  "sheets": [
+    {
+      "sheet": "volk.png",
+      "size": [
+        1536,
+        1024
+      ],
+      "edge_pixels": 41750,
+      "unchanged_outside_edges": true,
+      "sha256": {
+        "volk.png": "6937aafaef6f15bd6be9e40d4a0b522882f09fa4d0de3dc67eaeed0319b15d0b",
+        "volk-rebra.png": "6ffe3820427ef53c96499a62482084195bfa7a355bf4995a4a44954e76ed1ebd",
+        "volk-rebra-mask.png": "baa3c6bed83b8fca3edae9b3fdf21e85613ac3f5c06b88d71dc1796384b8b89b"
+      }
+    },
+    {
+      "sheet": "los.png",
+      "size": [
+        1774,
+        887
+      ],
+      "edge_pixels": 45104,
+      "unchanged_outside_edges": true,
+      "sha256": {
+        "los.png": "8400a91a93705261b9c5824b2885763984f06599be92b14e3bd5bbd755555db8",
+        "los-rebra.png": "fff4fe752895aa031d9b9c7f9469f22586b98746968ac47529b497ac0135a095",
+        "los-rebra-mask.png": "3790225fd0a3b867ea7133eab24ccc15f4bf91c6fb2ab5af1682a2bd7e3b4940"
+      }
+    },
+    {
+      "sheet": "ezh.png",
+      "size": [
+        1122,
+        1402
+      ],
+      "edge_pixels": 75764,
+      "unchanged_outside_edges": true,
+      "sha256": {
+        "ezh.png": "56e603ff7590e1dfb469b0c4bbc4bc033af772f90c8ca4441cda4bb7e1e533e9",
+        "ezh-rebra.png": "6065fbd27a2543744672461b66184667e72ec0555de00f7bf83537a3007ba9d3",
+        "ezh-rebra-mask.png": "c8a43906674405f65ff026a0fa12db364bc16d9a591d8977f1cfb483bd991a77"
+      }
+    },
+    {
+      "sheet": "zmeya.png",
+      "size": [
+        2172,
+        724
+      ],
+      "edge_pixels": 47114,
+      "unchanged_outside_edges": true,
+      "sha256": {
+        "zmeya.png": "2eab53672a3b359676a93329618dc2f0df98f1934acb7661b3b916bbba4acbd5",
+        "zmeya-rebra.png": "4b451a9ab27a3322aceeb3d4cbc6171414bd337ec456855cb3dd9a356d7452c6",
+        "zmeya-rebra-mask.png": "97a975a501dd356d9e66986663cc6cd20c1f3143d78cb2f2d77229817e1c90ee"
+      }
+    }
+  ],
+  "verified_png_count": 16,
+  "scope": "File integrity and overlay identity only; not organ completeness, topology or 4m readability."
+}
