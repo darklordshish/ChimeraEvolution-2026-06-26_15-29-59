@@ -110,6 +110,36 @@ public static class GameCam
 
     static Vector3Int Key(Vector3 p) => new Vector3Int(Mathf.RoundToInt(p.x * 10000f), Mathf.RoundToInt(p.y * 10000f), Mathf.RoundToInt(p.z * 10000f));
 
+    /// <summary>Химера «шасси + орган донора» тем же путём, что в игре, и близкая камера: ряд органов на теле.</summary>
+    public static string Organ(string chassisAsset, string donorAsset, string slot, float yaw)
+    {
+        Wipe();
+        var chassis = AssetDatabase.LoadAssetAtPath<SpeciesSO>(chassisAsset);
+        var donor = AssetDatabase.LoadAssetAtPath<SpeciesSO>(donorAsset);
+        var plan = BodyProbe.ChimeraPlan(chassis, donor, slot, out var worn, out var grafted);
+        if (worn == null) return slot + ": графт не встал";
+        var root = new GameObject(Rig);
+        var body = new GameObject("тело");
+        body.transform.SetParent(root.transform, false);
+        var cc = body.AddComponent<CharacterController>(); cc.height = 2f; cc.center = Vector3.up;
+        MorphBuilder.Build(body.transform, chassis, worn, plan);
+        body.transform.rotation = Quaternion.Euler(0f, yaw, 0f);
+        var names = new List<string>(); int verts = 0;
+        foreach (var r in body.GetComponentsInChildren<Renderer>())
+        {
+            if (!r.enabled || !r.gameObject.activeInHierarchy) continue;
+            names.Add(r.name);
+            if (r is SkinnedMeshRenderer s && s.sharedMesh != null) verts += s.sharedMesh.vertexCount;
+            else if (r.GetComponent<MeshFilter>()?.sharedMesh != null) verts += r.GetComponent<MeshFilter>().sharedMesh.vertexCount;
+        }
+        var cam = new GameObject("ИгроваяCam").AddComponent<Camera>();
+        cam.transform.SetParent(root.transform, false);
+        cam.fieldOfView = 60f; cam.nearClipPlane = 0.05f; cam.farClipPlane = 300f;
+        cam.transform.position = new Vector3(0f, 1.6f, -2.6f);
+        cam.transform.LookAt(Vector3.up * 1.0f);
+        return donor.speciesName + " " + slot + ": вершин " + verts + "; " + string.Join(",", names);
+    }
+
     /// <summary>Настоящий низ и верх тела с учётом ключа: меш запекается (границы рендерера у скиннинга завышены).</summary>
     public static string Extent()
     {
