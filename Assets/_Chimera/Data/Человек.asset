@@ -106,7 +106,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4362434553505644544
+    - rid: 4362434561654652928
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -166,7 +166,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4362434553505644545
+    - rid: 4362434561654652929
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -344,7 +344,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4362434553505644546
+    - rid: 4362434561654652930
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -4171,6 +4171,12 @@ MonoBehaviour:
   - objectName: "\u0427\u0443\u0442\u044C\u0451@\u0412\u043E\u043B\u043A"
     hides:
     - "\u0427\u0443\u0442\u044C\u0451"
+  - objectName: "\u0427\u0443\u0442\u044C\u0451@\u041B\u043E\u0441\u044C"
+    hides:
+    - "\u0427\u0443\u0442\u044C\u0451"
+  - objectName: "\u0427\u0443\u0442\u044C\u0451@\u0401\u0436"
+    hides:
+    - "\u0427\u0443\u0442\u044C\u0451"
   skinCell: 0.042
   skinBlend: 0.05
   skinFur: 0
@@ -4178,7 +4184,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4362434553505644544
+    - rid: 4362434561654652928
       type: {class: LimbStrikeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 8
@@ -4188,7 +4194,7 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.45
         cooldown: 1.1
-    - rid: 4362434553505644545
+    - rid: 4362434561654652929
       type: {class: KickData, ns: , asm: Chimera.Runtime}
       data:
         damage: 4
@@ -4196,7 +4202,7 @@ MonoBehaviour:
         reach: 1.8
         radius: 1.6
         cooldown: 1
-    - rid: 4362434553505644546
+    - rid: 4362434561654652930
       type: {class: ScreamData, ns: , asm: Chimera.Runtime}
       data:
         cooldown: 12
