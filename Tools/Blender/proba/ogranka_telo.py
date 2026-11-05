@@ -661,10 +661,14 @@ if FLIP > 0:
         if not est: break
     print('ТЕЛО: диагоналей перевёрнуто %d' % npv); mera_pan('после диагоналей')
 
+# ТОЧЕЧНО: вершина выводится наружу по положению (--vyvod файл: [{"p": [x, y, z], "d": [dx, dy, dz]}]), контур зоны стоит
+if opt.get('vyvod'):
+    for z_ in json.load(open(opt['vyvod'], encoding='utf-8')):
+        vs_ = sorted({q for T_ in TRI.values() for t in T_ for q in t}, key=lambda q: np.linalg.norm(VP[q] - z_['p'])); v = vs_[0]; print('ТЕЛО: вывод: ближайшая %s в %.1f мм, сдвиг %s' % (np.round(VP[v], 3), np.linalg.norm(VP[v] - z_['p']) * 1000, z_['d'])); VP[v] = VP[v] + np.array(z_['d'])
 # ШАГ: вершина вплотную к оси садится на ось, а грань целиком в плоскости оси — внутренняя перепонка между половинами, она снимается
 nsh = 0
 for v in {q for T_ in TRI.values() for t in T_ for q in t}:
-    if 0 < VP[v][0] < 0.007 and (v not in KRAJ or VP[v][2] < 0.95) and VP[v][2] > 0.1: VP[v][0] = 0.0; nsh += 1
+    if VP[v][0] != 0 and VP[v][0] < 0.007 and (v not in KRAJ or VP[v][2] < 0.95) and VP[v][2] > 0.1: VP[v][0] = 0.0; nsh += 1   # половина x ≥ 0: сведение углов и перепад уводили вершины шага за ось, после отражения половины заходили друг за друга
 npr = 0
 for r in TRI:
     n0_ = len(TRI[r]); TRI[r] = [t for t in TRI[r] if not all(abs(VP[q][0]) < 1e-5 for q in t)]; npr += n0_ - len(TRI[r])
@@ -800,5 +804,14 @@ def ug_():
         bm.to_mesh(o.data); bm.free(); o.data.update()
 ug_()
 print('ТЕЛО: последняя заделка: открытых рёбер %d, петель %d, граней %d' % (sum(len(v) for v in zap.values()), len(Pet), nz2))
+# СКЛАДКА: вершина внутри перекрывающегося веера (ребро с тремя гранями): вершина снимается вместе со своими гранями, их контур уже закрыт соседними гранями. Какая — числом из разбора (`--ubrat_v x,y,z`, обе стороны)
+if opt.get('ubrat_v'):
+    x_, y_, z_ = map(float, opt['ubrat_v'].split(','))
+    for o in O:
+        M = o.matrix_world; bm = bmesh.new(); bm.from_mesh(o.data); uv = [v for v in bm.verts if abs(abs((M @ v.co).x) - x_) < 0.006 and abs((M @ v.co).y - y_) < 0.006 and abs((M @ v.co).z - z_) < 0.006]
+        if uv:
+            n3 = sum(1 for e in bm.edges if len(e.link_faces) > 2); nf = sum(len(v.link_faces) for v in uv); bmesh.ops.delete(bm, geom=uv, context='VERTS'); n4 = sum(1 for e in bm.edges if len(e.link_faces) > 2)
+            print('ТЕЛО: складка %s: снято вершин %d, граней %d; рёбер с тремя гранями %d → %d' % (o.name, len(uv), nf, n3, n4)); bm.to_mesh(o.data); o.data.update()
+        bm.free()
 print('ТЕЛО: итог %d тр: %s' % (sum(len(o.data.polygons) for o in O), {o.name: len(o.data.polygons) for o in O}))
 bpy.ops.wm.save_as_mainfile(filepath=OUT)
