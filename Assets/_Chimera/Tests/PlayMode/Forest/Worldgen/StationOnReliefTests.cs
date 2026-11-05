@@ -87,6 +87,21 @@ namespace Chimera.Tests.PlayMode
                 foreach (var p in builder.Composition.declared)
                     if (p.role == DomeComposition.Role.StationPlateau) plateau = p.applied;
             Assert.IsTrue(plateau, "плато станции применено слоем landform");
+            // P0 шага 6: станция — врезка с плечом, а не плита на поле.
+            int shoulders = 0;
+            if (builder.Composition != null)
+                foreach (var f in builder.Composition.forms)
+                    if (f.name != null && f.name.Contains("Плечо станции")) shoulders++;
+            Assert.GreaterOrEqual(shoulders, 3, "у станции нет земляного плеча");
+            float back = builder.ShapeGround(
+                builder.LabCenter.x, builder.LabCenter.y + DomeLabComplex.HalfDepth + 8f);
+            float right = builder.ShapeGround(
+                builder.LabCenter.x + DomeLabComplex.HalfWidth + 8f, builder.LabCenter.y);
+            Assert.Greater(back, builder.PlatformY + 1.5f,
+                "плечо сзади не поднимается над площадкой");
+            Assert.Greater(right, builder.PlatformY + 1.5f,
+                "плечо сбоку не поднимается над площадкой");
+
             Assert.IsFalse(builder.Hill.valid, "в v2 станционный холм DomeHill не строится");
             Assert.IsNull(GameObject.Find("StationHill"), "нет видимого StationHill в v2");
 

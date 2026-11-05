@@ -199,7 +199,7 @@ public static class DomeComposition
                         g.diameter *= s;
                         g.crest *= s;
                         return new[] { g };
-                    }, record: false);
+                    }, record: false, skipMasks: new[] { "mainRoute" });
             }
             if (masks != null)
                 for (int i = nearStart; i < state.forms.Count; i++)
@@ -428,7 +428,8 @@ public static class DomeComposition
     static void Place(State state, string name, Role role, Vector2 baseCenter,
         float[] shifts, float[] scales, DomeMasks masks, float lake,
         System.Func<float, float, float> ground, Vector2 vAxis, bool carve,
-        System.Func<Vector2, float, DomeForm[]> make, bool record = true)
+        System.Func<Vector2, float, DomeForm[]> make, bool record = true,
+        string[] skipMasks = null)
     {
         string why = "";
         foreach (float s in scales)
@@ -443,7 +444,7 @@ public static class DomeComposition
                     foreach (var f in forms)
                     {
                         var foot = DomeMasks.ToFootprint(f);
-                        bool bad = (masks != null && masks.BlocksForm(foot)) ||
+                        bool bad = (masks != null && masks.BlocksForm(foot, skipMasks)) ||
                                    (forbiddenNow != null && forbiddenNow(foot));
                         if (!bad) continue;
                         blocked = true;

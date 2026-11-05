@@ -106,8 +106,50 @@ namespace Chimera.Tests.PlayMode
         }
 
         // ------------------------------------------------------------------
-        // G1: уклон
+        // P0 G7 шаг 6: каньон на реальном v2 и дорога по финальному полу
         // ------------------------------------------------------------------
+
+        [UnityTest]
+        public IEnumerator Canyon_Gate_RealV2_IsWetOrDry_NotAbsent()
+        {
+            Assert.IsTrue(builder.Canyon.valid, "каньон v2 не собран");
+            Assert.AreNotEqual(CanyonPolicy.Absent, builder.Canyon.policy,
+                "1337: каньон не может быть absent");
+            Assert.IsTrue(builder.Canyon.policy == CanyonPolicy.Wet ||
+                          builder.Canyon.policy == CanyonPolicy.Dry,
+                "каньон v2 — wet/dry, не " + builder.Canyon.policy);
+            Assert.IsTrue(builder.Canyon.attempts != null &&
+                          builder.Canyon.attempts.Count > 0,
+                "причины попыток каньона потеряны");
+            Assert.IsTrue(builder.Terrace.valid && builder.Terrace.radius > 0f,
+                "терраса должна участвовать в сборке");
+            Assert.IsTrue(builder.HasStation, "станция должна быть собрана");
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator Road_Gate_ReadsFinalSampleGround()
+        {
+            var go = GameObject.Find("ForestRoads");
+            Assert.IsNotNull(go, "меш ForestRoads не найден");
+            var mesh = go.GetComponent<MeshFilter>().sharedMesh;
+            Assert.IsNotNull(mesh, "у ForestRoads нет меша");
+            int checkedPoints = 0;
+            float worst = 0f;
+            Vector3 at = Vector3.zero;
+            foreach (var v in mesh.vertices)
+            {
+                float g = builder.SampleGround(v.x, v.z);
+                float d = Mathf.Abs(v.y - g);
+                if (d > worst) { worst = d; at = v; }
+                checkedPoints++;
+            }
+            Assert.Greater(checkedPoints, 0, "дорога без вершин");
+            Assert.LessOrEqual(worst, 1.0f,
+                $"дорога не на SampleGround: max |y-g|={worst:F2} м у {at}");
+            yield return null;
+        }
+
 
         [UnityTest]
         public IEnumerator G1_Slope_Gate()

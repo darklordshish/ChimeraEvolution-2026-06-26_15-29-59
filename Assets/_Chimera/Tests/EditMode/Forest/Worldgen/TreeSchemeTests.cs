@@ -86,8 +86,10 @@ namespace Chimera.Tests.EditMode
                         Assert.That(f.SlopeStepDegrees(1f), Is.LessThanOrEqualTo(2f),
                             $"{scheme.id}/{near}: C1-шаг >2°");
                         float side = Mathf.Abs(Vector2.Dot(f.center - entry, v));
-                        Assert.Greater(side, f.diameter * 0.5f + 30f,
-                            $"{scheme.id}/{near}: форма ближе 30 м к оси");
+                        // P0 шага 6: ближняя форма читается на 0–50 м; достаточно,
+                        // чтобы её подошва не перекрывала ось, а не 30-метровый отступ.
+                        Assert.Greater(side, f.diameter * 0.5f,
+                            $"{scheme.id}/{near}: центр формы на оси");
                         if (f.sign == DomeFormSign.Lift) lift = true;
                     }
                     Assert.IsTrue(lift, $"{scheme.id}/{near}: все формы только выемки");

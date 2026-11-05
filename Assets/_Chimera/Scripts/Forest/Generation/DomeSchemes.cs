@@ -116,8 +116,8 @@ public static class DomeSchemes
     }
 
     /// <summary>
-    /// Ближняя форма 0–150 м: 2 plateau-формы по бокам оси, чтобы был проход.
-    /// H 2–6 (cape 4–8), грань 22–28°; ось не перекрыта (боковой зазор ≥30 м).
+    /// Ближняя форма 0–150 м: 3 plateau-формы по бокам оси, чтобы был проход.
+    /// H 2–6 (cape 4–8), грань 22–28°; ось не перекрыта (подошва не заходит на ось).
     /// </summary>
     /// <summary>
     /// Герой/роли схемы, которые меняют ГЕОМЕТРИЮ, а не только путь.
@@ -167,7 +167,9 @@ public static class DomeSchemes
         float nearShift = near == "hollow" ? 6f : near == "cape" ? -6f : near == "hybrid" ? 3f : 0f;
         float latShift = near == "cape" ? 4f : near == "hollow" ? -4f : 0f;
         float u = 70f + j + schemeShift + lakeShift + nearShift;
-        float lateral = 80f + latShift;
+        // Ближняя форма должна читаться уже на 0–50 м, а не стоять в 80 м в стороне.
+        // 46 м — центр вне оси, подошва почти у оси; в кадре ближнего плана.
+        float lateral = 46f + latShift;
         Vector2 inward = Vector2.Dot(-entry, vAxis) >= 0f ? vAxis : -vAxis;
         float lake = hydro != null ? hydro.lakeLevel : float.NegativeInfinity;
         if (ground != null)
@@ -177,7 +179,7 @@ public static class DomeSchemes
                 for (int iv = 0; iv < 8; iv++)
                 {
                     float uu = 10f + iu * 8f + nearShift;
-                    float vv = 70f + iv * 10f + latShift;
+                    float vv = 40f + iv * 8f + latShift;
                     Vector2 p = entry + uAxis * uu + inward * vv;
                     if (ground(p.x, p.y) > lake + 1.5f) { u = uu; lateral = vv; found = true; break; }
                 }

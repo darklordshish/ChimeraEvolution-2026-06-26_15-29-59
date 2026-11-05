@@ -105,7 +105,9 @@ public static class DomeCanyon
         if (radius <= 0f) radius = 1000f;
         float lakeR = hydro.lakeRadius;
         int version = cfg.version;
-        bool anchored = terrace.valid && terrace.radius > 0f;
+        // v2: каньон не привязан к террасе станции — иначе все оси идут в станцию
+        // и labClear<0. v1 сохраняет историческую привязку бит-в-бит.
+        bool anchored = cfg.WorldVersion < 2 && terrace.valid && terrace.radius > 0f;
         Vector2 lipTarget = default;
         if (anchored)
         {

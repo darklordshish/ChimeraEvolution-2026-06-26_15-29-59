@@ -489,12 +489,39 @@ public class DomeWorld
                     site.style, site.entrance);
                 if (confirmed.found)
                 {
+                    var oldCenter = site.center;
                     site = confirmed;
                     LabCenter = site.center;
+                    // Confirm мог сдвинуть пятно внутри резерва: формы станции
+                    // (плато/врезка/плечо) обязаны ехать за новым центром, иначе
+                    // плита станции стоит на старом месте, а LabCenter — на новом.
+                    Vector2 stationShift = site.center - oldCenter;
+                    if (Composition != null && stationShift.sqrMagnitude > 1e-4f)
+                    {
+                        for (int i = 0; i < Composition.forms.Count; i++)
+                        {
+                            var f = Composition.forms[i];
+                            if (f.name == null || !f.name.Contains("станции")) continue;
+                            f.center += stationShift;
+                            Composition.forms[i] = f;
+                        }
+                    }
                     LabDoor = site.door;
                     ResolvedLabStyle = site.style;
                     ResolvedLabEntrance = site.entrance;
                     HasStation = true;
+                    // P0 шага 6: станция — не плита на поле. Плечо по краям пятна
+                    // (после Confirm, в его центре): земляные гряды снаружи плиты,
+                    // низкие и C¹, чтобы станция читалась врезкой, а не крышкой с камнями.
+                    Composition.forms.Add(DomeForms.Capsule(
+                        LabCenter + new Vector2(0f, DomeLabComplex.HalfDepth + 8f),
+                        Vector2.right, 18f, 44f, 2.1f, DomeFormSign.Lift, "Плечо станции С"));
+                    Composition.forms.Add(DomeForms.Capsule(
+                        LabCenter + new Vector2(-(DomeLabComplex.HalfWidth + 8f), 0f),
+                        Vector2.up, 14f, 44f, 2.8f, DomeFormSign.Lift, "Плечо станции З"));
+                    Composition.forms.Add(DomeForms.Capsule(
+                        LabCenter + new Vector2(DomeLabComplex.HalfWidth + 8f, 0f),
+                        Vector2.up, 14f, 44f, 2.8f, DomeFormSign.Lift, "Плечо станции В"));
                     // Маска station/ramp/approach — ПОСЛЕ поиска: формы её уже не видят,
                     // а POI/дороги/поды ниже — видят.
                     AddStationMasks(masks, LabCenter, padYaw, padRect, ResolvedLabEntrance,
