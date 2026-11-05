@@ -56,6 +56,36 @@ for kn in opt['klyuchi'].split(','):
         x0, x1, z0, z1, dz = map(float, (x0, x1, z0, z1, dz))
         wx = np.clip((np.abs(Pb[:, 0]) - x0) / 0.03, 0, 1) * np.clip((x1 - np.abs(Pb[:, 0])) / 0.03, 0, 1); wz = np.clip((Pb[:, 2] - z0) / 0.05, 0, 1) * np.clip((z1 - Pb[:, 2]) / 0.05, 0, 1)
         D[:, 2] += dz * wx * wz * ves
+    # масса: ключ:объект|*:z0:z1:k — сечение по высоте базы расширяется от своего центра (нога, рука — каждая сторона отдельно)
+    Pk = Pb + D
+    for s_ in filter(None, opt.get('shir', '').split(';')):
+        kl, ob_, z0, z1, k_ = s_.split(':')
+        if kl != kn: continue
+        z0, z1, k_ = float(z0), float(z1), float(k_)
+        sel = np.array([(ob_ == '*' and not any(o.name == 'Руки' for o, _ in L)) or any(o.name == ob_ for o, _ in L) for L in Gv]) & (Pb[:, 2] > z0 - .08) & (Pb[:, 2] < z1 + .08)
+        for sg in (1, -1):
+            for zc in np.arange(z0 - .08, z1 + .08, .04):
+                # таз — одно сечение от оси, ниже развилки — каждая нога своё: иначе ось стоит, а бока едут, и в паху складка
+                if ob_ == '*' and zc >= 0.86:
+                    if sg < 0: continue
+                    m_ = sel & (np.abs(Pb[:, 2] - zc) < .03)
+                else: m_ = sel & (np.sign(Pb[:, 0]) == sg) & (np.abs(Pb[:, 2] - zc) < .03)
+                if m_.sum() < 3: continue
+                c_ = Pk[m_].mean(0); w_ = float(np.clip(min((zc - (z0 - .08)) / .08, ((z1 + .08) - zc) / .08), 0, 1)); D[m_, :2] += (Pk[m_, :2] - c_[:2]) * ((k_ - 1) * w_)
+    # кисть: ключ:k — масштаб от запястья, жёсткий ход сохраняется
+    for s_ in filter(None, opt.get('kist', '').split(';')):
+        kl, k_ = s_.split(':')
+        if kl != kn: continue
+        Pk = Pb + D
+        for sg in (1, -1):
+            m_ = (ves == 0) & (np.sign(Pb[:, 0]) == sg); c_ = Pk[m_ & (Pb[:, 2] > ZK - .02)].mean(0); D[m_] += (Pk[m_] - c_) * (float(k_) - 1)
+    # бугры: ключ:x0:x1:z0:z1:dy — сдвиг назад на спине по окну базы (шея, холка, лопатки вместо одной плиты)
+    for s_ in filter(None, opt.get('bugor', '').split(';')):
+        kl, x0, x1, z0, z1, dy = s_.split(':')
+        if kl != kn: continue
+        x0, x1, z0, z1, dy = map(float, (x0, x1, z0, z1, dy))
+        m_ = (np.abs(Pb[:, 0]) >= x0) & (np.abs(Pb[:, 0]) <= x1) & (Pb[:, 2] >= z0) & (Pb[:, 2] <= z1) & (Pb[:, 1] > 0)
+        D[m_, 1] += dy
     for g, L in enumerate(Gv):
         for o, j in L:
             kb = o.data.shape_keys.key_blocks.get(kn)

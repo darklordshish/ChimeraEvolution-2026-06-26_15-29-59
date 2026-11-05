@@ -12,6 +12,7 @@ b БАЗА "$BAZ" baza_iz_klyucha.py "$W/p0.blend"
 b "швов|РАСПРАВ" "$W/p0.blend" perenos_klyuchej.py "$W/p1.blend" "$SRC" "$MOST" --klyuchi Волк,Лось,Волк1 --kist_zhestko 0.96 --raspravit ${RASPR:-0} --kontrol 0 --otchet "$W/perenos.json"
 [ -z "${LEPKA:-}" ] || b ЛЕПКА "$W/p1.blend" klyuch_lepka.py "$W/p1.blend" $LEPKA
 b ОРГАН "$W/p1.blend" perenos_organov.py "$W/p2.blend" "$SRC" "$MOST" --kak_est @Волк1,@Лось
+[ -z "${KUSKI:-}" ] || b "ВОЛК|ЛОСЬ" "$W/p2.blend" kuski_klyuchej.py "$W/p2.blend" $KUSKI
 s ИГЛЫ "$T/shipy_ezha.py" -- "$W/p2.blend" "$RAS" "$W/igly.blend"
 s ОРГАН "$T/organ_objekt.py" -- "$W/p2.blend" "$W/igly.blend" иглы Шкура@Ёж "$W/p3.blend"
 s ОРГАН "$T/organ_objekt.py" -- "$W/p3.blend" "$W/igly.blend" игломёт Игломёт@Ёж "$W/p4.blend"

@@ -43,12 +43,13 @@ def soglasovat(bm, novye):
 
 
 # ЛИЦО: ось — (имя, z, вынос), половина — имя: (x, z, вынос); рёбра — границы плоскостей
-OS = [('l0', 1.790, 0), ('gl', 1.748, .002), ('kor', 1.733, .002), ('sp', 1.715, .001), ('nos', 1.698, -.004), ('pod', 1.683, -.005), ('gu', 1.672, -.003), ('rot', 1.664, -.003), ('gn', 1.656, 0), ('bor', 1.648, .004), ('pdb', 1.638, .009)]
-TO = dict(f1=(.030, 1.795, 0), b1=(.009, 1.746, .002), b2=(.030, 1.757, .003), b3=(.058, 1.750, .001), e1=(.011, 1.733, -.004), e2=(.030, 1.735, -.006), e3=(.052, 1.735, -.003),
-          u1=(.014, 1.720, -.003), u2=(.034, 1.717, -.003), sk=(.060, 1.718, .001), n1=(.0065, 1.715, -.001), n2=(.015, 1.688, -.005), n3=(.007, 1.681, -.005), h1=(.038, 1.685, -.008), h2=(.055, 1.683, -.005),
+OS = [('l0', 1.790, -.002), ('gl', 1.748, 0), ('kor', 1.733, -.007), ('sp', 1.715, -.001), ('nos', 1.698, .002), ('pod', 1.683, -.005), ('gu', 1.672, -.003), ('rot', 1.664, -.003), ('gn', 1.656, 0), ('bor', 1.648, .004), ('pdb', 1.638, .009)]
+TO = dict(f1=(.030, 1.795, -.001), b1=(.014, 1.746, .001), b2=(.032, 1.757, .002), b3=(.058, 1.750, .001), e1=(.012, 1.733, -.007), e2=(.030, 1.735, -.008), e3=(.052, 1.735, -.003),
+          u1=(.014, 1.720, -.004), u2=(.034, 1.717, -.003), sk=(.060, 1.718, .001), n1=(.0065, 1.715, -.003), n2=(.015, 1.688, -.003), n3=(.007, 1.681, -.004), h1=(.038, 1.685, -.008), h2=(.055, 1.683, -.005),
           m1=(.027, 1.664, -.003), g1=(.012, 1.673, -.004), g2=(.012, 1.656, 0), d1=(.024, 1.639, .009), d2=(.026, 1.650, .004), ch=(.060, 1.665, .004))
+LOB = ('l0', 'gl', 'f1', 'b1', 'b2')   # лоб одной плоскостью (глубина снята сбоку, x 0.03): иначе гребень плотного черепа идёт клином к носу
 ROT = {'gu', 'rot', 'gn', 'g1', 'g2', 'm1'}   # губы — от одной высоты плотной поверхности: без бантика
-RE = 'gl-b1 b1-b2 b2-b3 b1-e1 e1-u1 u1-u2 u2-e3 e3-b3 kor-e1 e1-n1 n1-sp n1-n2 n2-n3 n3-pod e3-sk u2-sk sk-h2 n2-h1 h1-m1 m1-d2 d2-d1 rot-m1 pod-g1 g1-m1 gn-g2 g2-m1 bor-d2 sk-ch ch-d1 l0-f1 f1-b2'.split()
+RE = 'gl-b1 b1-b2 b2-b3 b1-e1 e1-u1 u1-u2 u2-e3 e3-b3 kor-e1 e1-n1 n1-sp n1-n2 n2-n3 n3-pod e3-sk u2-sk sk-h2 n2-h1 h1-m1 m1-d2 d2-d1 rot-m1 pod-g1 g1-m1 gn-g2 g2-m1 bor-d2 sk-ch ch-d1'.split()
 if opt['bez_lica'] != '1':
     with bpy.data.libraries.load(BAZ) as (src, dst): dst.objects = ['голова', 'Чутьё']
     Vd, Fd = [], []
@@ -65,7 +66,7 @@ if opt['bez_lica'] != '1':
     for v in bm.verts:
         p = M @ v.co; t = max(0.0, min(1.0, (p.z - 1.76) / 0.03))
         if t > 0 and abs(p.x) > 1e-4: p.x += math.copysign(SV * t * min(abs(p.x) / 0.05, 1.0), p.x)
-        if 1.645 < p.z < 1.665 and abs(p.x) > 0.05 and p.y < -0.05: p.x += math.copysign(0.004, p.x); p.z -= 0.003
+        if 1.645 < p.z < 1.665 and abs(p.x) > 0.05 and p.y < -0.03: p.x += math.copysign(0.004, p.x); p.z -= 0.003
         if p.z < 1.632 and p.y < -0.10 and abs(p.x) < 0.03: p.y -= 0.009   # подбородок вперёд
         if 1.62 < p.z < 1.632 and -0.08 < p.y < -0.06 and abs(p.x) < 0.02: p.z = 1.612; p.y -= 0.008   # карман под челюстью: без подреза над шеей
         v.co = Mi @ p
@@ -88,10 +89,11 @@ if opt['bez_lica'] != '1':
         if len(nx) != 1: sys.exit('ЛИЦО: край проёма не цепь после %d вершин' % len(ch))
         prev = ch[-1]; ch.append(nx[0])
     print('ЛИЦО: проём %d граней, край половины %d вершин, ось %.3f → %.3f' % (len(fs), len(ch), pos(top).z, pos(bot).z))
+    Yv, Yn = Y(.03, 1.795, 0), Y(.03, 1.75, 0); Ylob = lambda z_: Yv + (Yn - Yv) * (1.795 - z_) / .045
     P3 = [pos(v) for v in ch]; nm = {}
     for k_, z_, dy in OS:
-        if pos(bot).z + 1e-3 < z_ < pos(top).z - 1e-3: nm[k_] = len(P3); P3.append(Vector((0, Y(0, 1.672 if k_ in ROT else z_, dy), z_)))
-    for k_, (x_, z_, dy) in TO.items(): nm[k_] = len(P3); P3.append(Vector((x_, Y(x_, 1.672 if k_ in ROT else z_, dy), z_)))
+        if pos(bot).z + 1e-3 < z_ < pos(top).z - 1e-3: nm[k_] = len(P3); P3.append(Vector((0, Ylob(z_) if k_ in LOB else Y(0, 1.672 if k_ in ROT else z_, dy), z_)))
+    for k_, (x_, z_, dy) in TO.items(): nm[k_] = len(P3); P3.append(Vector((x_, Ylob(z_) if k_ in LOB else Y(x_, 1.672 if k_ in ROT else z_, dy), z_)))
     n_ch = len(ch); Co = [(q.x, q.z) for q in P3]; E = [(i_, i_ + 1) for i_ in range(n_ch - 1)]
     osc = [nm[k_] for k_, z_, _ in OS if k_ in nm]; E += [(0, osc[0])] + list(zip(osc, osc[1:])) + [(osc[-1], n_ch - 1)]
     PP = np.array([Co[i_] for i_ in list(range(n_ch)) + osc[::-1]])
