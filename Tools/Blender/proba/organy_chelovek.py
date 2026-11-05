@@ -38,7 +38,7 @@ def ves_tela(p):
 def lin(h):
     c = [int(h[i:i + 2], 16) / 255 for i in (1, 3, 5)]; return tuple(x / 12.92 if x <= .04045 else ((x + .055) / 1.055) ** 2.4 for x in c) + (1,)
 GLAZ = {'Человек': '#3A8DFF', 'Волк': '#FFB000', 'Змея': '#B8E000', 'Ёж': '#E0262B', 'Лось': '#B5542A'}
-CVET = dict(коготь=(.05, .045, .04, 1), броня=(.07, .065, .06, 1), нос=(.03, .03, .03, 1), зуб=(.86, .83, .72, 1), глаз=(.34, .30, .08, 1), зрачок=(.01, .01, .01, 1), янтарь=(.62, .34, .06, 1), карий=(.10, .055, .03, 1), бусина=(.015, .015, .02, 1), ямка=(.13, .11, .10, 1))
+CVET = dict(чешуя=lin('#7C8A64'), коготь=(.05, .045, .04, 1), броня=(.07, .065, .06, 1), нос=(.03, .03, .03, 1), зуб=(.86, .83, .72, 1), глаз=(.34, .30, .08, 1), зрачок=(.01, .01, .01, 1), янтарь=(.62, .34, .06, 1), карий=(.10, .055, .03, 1), бусина=(.015, .015, .02, 1), ямка=(.13, .11, .10, 1))
 
 
 class Org:
@@ -362,28 +362,30 @@ def brov_zmeya():
 
 def glaz_vid(vid, r1=.013, r2=.0095, h=.005, pod=.004):
     O = Org('Чутьё.глаз@%s' % vid); p, _ = kozha((EYE['p'][0], -.5, EYE['p'][1]), (0, 1, 0)); fan(O, p, EYE['n'], r1, r2, h, pod=pod); return O
-def zrachok(vid, forma, r2=.0095, h=.005, pod=.004):
+def zrachok_vid(vid, forma, r2=.0095, h=.005, pod=.004):
     """зрачок плоской пластиной у вершины купола: круг, горизонтальный прямоугольник копытного, вертикальная щель"""
     O = Org('Чутьё.зрачок@%s' % vid); H = 'голова'; p, _ = kozha((EYE['p'][0], -.5, EYE['p'][1]), (0, 1, 0)); n = EYE['n']; s1 = n.cross(Vector((0, 0, 1))).normalized(); up = Vector((0, 0, 1))
-    c = p + n * (h + .0008)
-    if forma == 'круг': fan(O, c - n * .0006, n, .0042, .0042, .0006, sides=6, pod=0)
+    r1 = r2 * 1.37; vys = lambda ax, az: pod + (h - pod) * max(0, 1 - ((ax / r1) ** 2 + (az / r2) ** 2) ** .5) + .0009   # над куполом глаза на ~1 мм
+    if forma == 'круг':
+        rr = r2 * .36; kr = [O.v(p + n * vys(rr, 0) + s1 * (rr * math.cos(u)) + up * (rr * math.sin(u)), H) for u in [j * math.pi / 3 for j in range(6)]]; O.konec(kr, O.v(p + n * vys(0, 0), H))
     elif forma == 'полоса':
-        a_ = [O.v(c + s1 * sx * .0068 + up * sz * .0022 - n * .0004, H) for sx, sz in ((1, 1), (-1, 1), (-1, -1), (1, -1))]; O.f(a_[0], a_[1], a_[2]); O.f(a_[0], a_[2], a_[3])
+        a_ = [O.v(p + n * vys(r1 * .5, r2 * .2) + s1 * sx * (r1 * .5) + up * sz * (r2 * .2), H) for sx, sz in ((1, 1), (-1, 1), (-1, -1), (1, -1))]; m_ = O.v(p + n * vys(0, 0), H)
+        for j in range(4): O.f(a_[j], a_[(j + 1) % 4], m_)
     return O
 
 
 @organ('Чутьё.глаз@Волк')
 def glaz_volk(): return glaz_vid('Волк')
 @organ('Чутьё.зрачок@Волк')
-def zr_volk(): return zrachok('Волк', 'круг')
+def zr_volk(): return zrachok_vid('Волк', 'круг')
 @organ('Чутьё.глаз@Лось')
 def glaz_los(): return glaz_vid('Лось', r1=.015, r2=.011)
 @organ('Чутьё.зрачок@Лось')
-def zr_los(): return zrachok('Лось', 'полоса', r2=.011)
+def zr_los(): return zrachok_vid('Лось', 'полоса', r2=.011)
 @organ('Чутьё.глаз@Ёж')
 def glaz_ezh(): return glaz_vid('Ёж', r1=.011, r2=.0095, h=.006)
 @organ('Чутьё.зрачок@Ёж')
-def zr_ezh(): return zrachok('Ёж', 'круг', h=.006)
+def zr_ezh(): return zrachok_vid('Ёж', 'круг', h=.006)
 
 
 @organ('Чутьё.глаз@Змея')
@@ -403,29 +405,52 @@ def yamka():
     O = Org('Чутьё.ямка@Змея'); p, _ = kozha((.028, -.5, 1.695), (0, 1, 0)); fan(O, p, EYE['n'], .019, .015, .008, 5, pod=.006); return O
 
 
-def plastina(O, x, z, r_x, r_z):
-    """плита-ромб по коже: углы на коже с зазором, центр выше, нижний угол внахлёст на следующий ряд; стенки уходят под кожу"""
-    def Yk(x_, z_):
-        h = BVH.ray_cast(Vector((x_, .5, z_)), Vector((0, -1, 0)))
-        return h[0].y if h[0] is not None else None
-    Y0 = Yk(x, z)
-    if Y0 is None: return
-    Cr = [(x, z + r_z), (x + r_x, z), (x, z - r_z), (x - r_x, z)]; Ti = []; Bi = []; ym = Y0
-    for j, (a_, b_) in enumerate(Cr):
-        y_ = Yk(a_, b_)
-        if y_ is None: y_ = Y0 - .05
-        ym = max(ym, y_); dop = (.010, .014, .024, .014)[j]; Ti.append(O.v((a_, y_ + dop, b_))); Bi.append(O.v((a_, y_ - .012, b_)))
-    m_ = O.v((x, ym + .010, z)); Z = (0, 1, 2) if abs(x) < 1e-4 else (0, 1, 2, 3)
-    for j in Z:
-        k = (j + 1) % 4; O.f(Ti[j], Ti[k], m_); O.f(Ti[k], Ti[j], Bi[j]); O.f(Ti[k], Bi[j], Bi[k])
+def cheshuya_romby(O, shag=.09, ug=.62):
+    """чешуя по телу (геймдизайнер 05.11: «по телу должна идти, а не бронеплитами»): кожа спины, шеи и плеч режется двумя семействами косых плоскостей в ромбическую сетку; каждая ячейка-ромб сжимается к своему центру на 12 % (между чешуями видна кожа) и приподнимается на 2 мм. Форма тела повторяется точно, рельефа нет — читается рисунком и тоном куска. Ряд ниже — по ходу тела сверху вниз"""
+    bm = bmesh.new()
+    for o in TELO:
+        if o.name not in ('хребет', 'шея', 'Сердце', 'Руки'): continue
+        M = o.matrix_world; kb = o.data.shape_keys.key_blocks[0] if o.data.shape_keys else None; o.data.calc_loop_triangles()
+        for t_ in o.data.loop_triangles:
+            A = [M @ (kb.data[j].co if kb else o.data.vertices[j].co) for j in t_.vertices]; c = sum(A, Vector()) / 3; n = (A[1] - A[0]).cross(A[2] - A[0])
+            if n.length < 1e-9: continue
+            n.normalize()
+            if 1.06 < c.z < 1.64 and n.y > .25 and (o.name != 'Руки' or c.z > 1.34):
+                try: bm.faces.new([bm.verts.new(a_) for a_ in A])
+                except ValueError: pass
+    bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=1e-5)
+    N1, N2 = Vector((math.sin(ug), 0, math.cos(ug))), Vector((-math.sin(ug), 0, math.cos(ug)))
+    for N_ in (N1, N2):
+        for k in range(-30, 31):
+            bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], dist=1e-6, plane_co=N_ * (k * shag) + Vector((0, 0, 0)), plane_no=N_)
+    # почти плоские соседи внутри одной ячейки — одной гранью: меньше треугольников, рисунок тот же
+    def kl(f): c = f.calc_center_median(); return (math.floor(N1.dot(c) / shag), math.floor(N2.dot(c) / shag))
+    bm.normal_update(); ed = [e for e in bm.edges if len(e.link_faces) == 2 and kl(e.link_faces[0]) == kl(e.link_faces[1]) and e.link_faces[0].normal.angle(e.link_faces[1].normal, 0) < math.radians(9)]
+    bmesh.ops.dissolve_edges(bm, edges=ed, use_verts=True)
+    bmesh.ops.triangulate(bm, faces=bm.faces[:]); bm.normal_update()
+    yach = {}
+    for f in bm.faces:
+        c = f.calc_center_median(); key = (math.floor(N1.dot(c) / shag), math.floor(N2.dot(c) / shag)); yach.setdefault(key, []).append(f)
+    for key, F in yach.items():
+        Sa = sum(f.calc_area() for f in F)
+        if Sa < 4e-4: continue   # обрезки ячеек у края — без них край ровнее
+        cc = sum((f.calc_center_median() * f.calc_area() for f in F), Vector()) / Sa
+        for f in F:
+            n = f.normal if f.normal.y >= 0 else -f.normal
+            O.f(*[O.v(cc + (v.co - cc) * .88 + n * .002) for v in f.verts])
+    bm.free()
 
 
 @organ('Шкура@Змея')
+def cheshuya_osn():
+    """основание нужно коду цветного куска: один ромб в глубине спины, под кожей"""
+    O = Org('Шкура@Змея'); h = BVH.ray_cast(Vector((.05, .5, 1.35)), Vector((0, -1, 0))); c = h[0] - Vector((0, .02, 0))
+    O.f(O.v(c + Vector((0, 0, .01))), O.v(c + Vector((.01, 0, 0))), O.v(c - Vector((0, 0, .01)))); return O
+
+
+@organ('Шкура.чешуя@Змея')
 def cheshuya():
-    O = Org('Шкура@Змея')
-    for z, xs, r in ((1.58, (.07, .20), .085), (1.48, (0, .135, .27), .09), (1.38, (.07, .20), .09), (1.28, (0, .135), .085), (1.18, (.07,), .07)):
-        for x in xs: plastina(O, x, z, r, r * 1.0)
-    return O
+    O = Org('Шкура.чешуя@Змея'); cheshuya_romby(O); return O
 
 
 @organ('Хвост@Змея')
@@ -506,7 +531,7 @@ SOB2 = {'Пасть.нос@Волк': lambda: nos_kolpak('Пасть.нос@Во
 if opt.get('glaz_bazy'):
     """голубой глаз человека — объект базы: его родное Чутьё; чужое Чутьё снимает слот `Чутьё` с ушами и глазом; формы-ключи — сдвиг ближайшей вершины головы"""
     g = bpy.data.objects['голова']; Mg = g.matrix_world; Gk = g.data.shape_keys.key_blocks if g.data.shape_keys else None; Gb = np.array([tuple(Mg @ v.co) for v in g.data.vertices])
-    for nm, fn in (('Чутьё.глаз', lambda: glaz_vid('Человек', r1=.012, r2=.0088, h=.004, pod=.003)), ('Чутьё.зрачок', lambda: zrachok('Человек', 'круг', r2=.0088, h=.004, pod=.003))):
+    for nm, fn in (('Чутьё.глаз', lambda: glaz_vid('Человек', r1=.012, r2=.0088, h=.004, pod=.003)), ('Чутьё.зрачок', lambda: zrachok_vid('Человек', 'круг', r2=.0088, h=.004, pod=.003))):
         O = fn(); O.im = nm + '@Человек'; ob = O.sobrat(); ob.name = nm; ob.data.name = nm
         if Gk:
             ob.shape_key_add(name=Gk[0].name)
@@ -525,6 +550,6 @@ if opt.get('cvet'):
 res = {}
 for im, fn in Sob.items():
     if TOLKO and im not in TOLKO: continue
-    O = fn(); ob = O.sobrat(zerkalo=not im.startswith('Хвост')); ob.data.calc_loop_triangles(); res[im] = len(ob.data.loop_triangles); print('ОРГАН %s: %d тр' % (im, res[im]))
+    O = fn(); ob = O.sobrat(zerkalo=not im.startswith(('Хвост', 'Шкура.чешуя'))); ob.data.calc_loop_triangles(); res[im] = len(ob.data.loop_triangles); print('ОРГАН %s: %d тр' % (im, res[im]))
 if opt.get('otchet'): json.dump(res, open(opt['otchet'], 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 bpy.ops.wm.save_as_mainfile(filepath=OUT)
