@@ -35,7 +35,10 @@ def ves_tela(p):
     return Wb[int(np.linalg.norm(VA - np.array(tuple(p)), axis=1).argmin())]
 
 
-CVET = dict(коготь=(.05, .045, .04, 1), броня=(.07, .065, .06, 1), нос=(.03, .03, .03, 1), зуб=(.86, .83, .72, 1), глаз=(.34, .30, .08, 1), зрачок=(.01, .01, .01, 1), ямка=(.13, .11, .10, 1))
+def lin(h):
+    c = [int(h[i:i + 2], 16) / 255 for i in (1, 3, 5)]; return tuple(x / 12.92 if x <= .04045 else ((x + .055) / 1.055) ** 2.4 for x in c) + (1,)
+GLAZ = {'Человек': '#3A8DFF', 'Волк': '#FFB000', 'Змея': '#B8E000', 'Ёж': '#E0262B', 'Лось': '#B5542A'}
+CVET = dict(коготь=(.05, .045, .04, 1), броня=(.07, .065, .06, 1), нос=(.03, .03, .03, 1), зуб=(.86, .83, .72, 1), глаз=(.34, .30, .08, 1), зрачок=(.01, .01, .01, 1), янтарь=(.62, .34, .06, 1), карий=(.10, .055, .03, 1), бусина=(.015, .015, .02, 1), ямка=(.13, .11, .10, 1))
 
 
 class Org:
@@ -69,8 +72,9 @@ class Org:
             F += [tuple(ind[q] for q in reversed(t)) for t in s.F]
         me = bpy.data.meshes.new(s.im); me.from_pydata([tuple(p) for p in V], [], F); me.update(); o = bpy.data.objects.new(s.im, me)
         ch = s.im.split('@')[0].split('.')[1] if '.' in s.im.split('@')[0] else None
+        vid_ = s.im.split('@')[1] if '@' in s.im else 'Человек'
         if ch:   # цвет: материал объекта `<слот>.<что>@<вид>`, код берёт `_BaseColor`
-            c_ = CVET[ch]; mt = bpy.data.materials.new(ch); mt.diffuse_color = c_; mt.use_nodes = True; mt.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = c_; me.materials.append(mt)
+            c_ = lin(GLAZ[vid_]) if ch == 'глаз' else lin('#141414') if ch == 'зрачок' else CVET[ch]; mt = bpy.data.materials.new(ch); mt.diffuse_color = c_; mt.use_nodes = True; mt.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = c_; me.materials.append(mt)
         bpy.context.scene.collection.objects.link(o); o.parent = arm
         m = o.modifiers.new('ск', 'ARMATURE'); m.object = arm
         imena = {g.name for g in TELO[0].vertex_groups} | {g.name for t_ in TELO for g in t_.vertex_groups}
@@ -243,31 +247,26 @@ def konchiki():
 
 
 def kogti(im, dl, zagib, r):
-    """коготь тёмным рогом; его основание — `Руки@<вид>`: манжета на кончике пальца"""
-    K = 'предплечье'; vid = im.split('@')[1]; O = Org(im) if '.' not in im.split('@')[0] else Org(im)
+    """коготь — изогнутый четырёхгранник двумя звеньями, тёмный рог; основание `Руки@<вид>` — манжета кончика пальца"""
+    K = 'предплечье'; O = Org(im); osn = '.' not in im.split('@')[0]
     for tip, c in konchiki():
-        d = (tip - c).normalized(); pr = Vector((-1, 0, 0)); s1 = pr.cross(d).normalized(); s2 = d.cross(s1).normalized(); st = tip - d * .012
-        if '.' not in im.split('@')[0]:
-            k0 = [O.v(st - d * .016 + s1 * (r * .95 * math.cos(u)) + s2 * (r * .85 * math.sin(u)), K) for u in (0, 2.09, 4.19)]; k1 = [O.v(st + s1 * (r * 1.05 * math.cos(u)) + s2 * (r * .95 * math.sin(u)), K) for u in (0, 2.09, 4.19)]
-            for j in range(3):
-                k = (j + 1) % 3; O.f(k0[j], k0[k], k1[k]); O.f(k0[j], k1[k], k1[j])
-            break   # основание нужно коду: манжета на одном пальце
-        k0 = [O.v(st + s1 * (r * math.cos(u)) + s2 * (r * .9 * math.sin(u)), K) for u in (0, 2.09, 4.19)]; mid = tip + d * (dl * .45) + pr * (zagib * .3)
-        k1 = [O.v(mid + s1 * (r * .6 * math.cos(u)) + s2 * (r * .55 * math.sin(u)), K) for u in (0, 2.09, 4.19)]
-        for j in range(3):
-            k = (j + 1) % 3; O.f(k0[j], k0[k], k1[k]); O.f(k0[j], k1[k], k1[j])
-        O.konec(k1, O.v(tip + d * dl + pr * zagib, K))
+        d = (tip - c).normalized(); pr = Vector((-1, 0, 0)); s1 = pr.cross(d).normalized(); s2 = d.cross(s1).normalized(); st = tip - d * .010
+        kv = lambda c_, a_, b_: [O.v(c_ + s1 * (a_ * x_) + s2 * (b_ * y_), K) for x_, y_ in ((1, 0), (0, 1), (-1, 0), (0, -1))]
+        if osn:
+            O.lofta([kv(st - d * .014, r * 1.0, r * .9), kv(st + d * .002, r * 1.12, r * 1.0)], nachalo=False, konec=False); continue
+        k0 = kv(st, r * .95, r * .85); k1 = kv(tip + d * (dl * .45) + pr * (zagib * .35), r * .62, r * .55)
+        O.lofta([k0, k1], nachalo=False, konec=False); O.konec(k1, O.v(tip + d * dl + pr * zagib, K))
     return O
 
 
 @organ('Руки@Волк')
-def kogti_volk(): return kogti('Руки@Волк', .047, .021, .012)
+def kogti_volk(): return kogti('Руки@Волк', .045, .020, .010)
 @organ('Руки.коготь@Волк')
-def kogti_volk2(): return kogti('Руки.коготь@Волк', .047, .021, .012)
+def kogti_volk2(): return kogti('Руки.коготь@Волк', .045, .020, .010)
 @organ('Руки@Ёж')
-def kogti_ezh(): return kogti('Руки@Ёж', .034, .034, .013)
+def kogti_ezh(): return kogti('Руки@Ёж', .032, .030, .011)
 @organ('Руки.коготь@Ёж')
-def kogti_ezh2(): return kogti('Руки.коготь@Ёж', .034, .034, .013)
+def kogti_ezh2(): return kogti('Руки.коготь@Ёж', .032, .030, .011)
 
 
 def list_sherst(O, x, z, dl, sh, nakl, kost=None, lift=.012):
@@ -304,7 +303,14 @@ def uho_list(O, dl_x, dl_z, sh, z0=1.745, H='голова'):
 
 @organ('Чутьё@Лось')
 def ushi_los():
-    O = Org('Чутьё@Лось'); uho_list(O, .105, .075, .026); return O
+    """лист вверх-в-стороны от макушки (`витрина/лось/вид.png`), округлый конец, чаша вперёд"""
+    O = Org('Чутьё@Лось'); H = 'голова'; p, _ = kozha((.4, -.01, 1.80), (-1, 0, 0)); kor = p - Vector((.008, 0, 0)); d = Vector((.07, 0, .10)); bk = Vector((-.10, 0, .07)).normalized(); q = Vector((0, 1, 0)); sh = .024
+    T = [kor + bk * sh * .5, kor + d * .45 + bk * sh, kor + d * .82 + bk * sh * .62, kor + d, kor + d * .82 - bk * sh * .62, kor + d * .45 - bk * sh, kor - bk * sh * .5]
+    pr = [O.v(t_ - q * .004, H) for t_ in T]; za = [O.v(t_ + q * .004, H) for t_ in T]; c_ = O.v(kor + d * .45 - q * .010, H); c2 = O.v(kor + d * .45 + q * .006, H); n = len(T)
+    for j in range(n):
+        k = (j + 1) % n; O.f(pr[j], pr[k], c_); O.f(za[k], za[j], c2)
+        if j < n - 1: O.f(pr[j], za[j], za[k]); O.f(pr[j], za[k], pr[k])
+    return O
 
 
 @organ('Чутьё@Ёж')
@@ -332,15 +338,15 @@ def kapsula():
     """броня крупнее пальцев: два сегмента на палец, между ними шов"""
     O = Org('Руки.броня@Лось'); K = 'предплечье'; Pal = konchiki(); Cc = [(tip + c) / 2 for tip, c in Pal]
     for i_, (tip, c) in enumerate(Pal):
-        d = (tip - c).normalized(); L_ = (tip - c).length * 2 + .012; koren = tip - d * L_; s1 = Vector((1, 0, 0)); s1 = (s1 - d * s1.dot(d)).normalized(); s2 = d.cross(s1).normalized(); Ring = []
+        d = (tip - c).normalized(); L_ = (tip - c).length * 2 + .012; koren = tip - d * L_; s1 = Vector((1, 0, 0)); s1 = (s1 - d * s1.dot(d)).normalized(); s2 = d.cross(s1).normalized()
         sh_ = min((Cc[i_] - q).length for j_, q in enumerate(Cc) if j_ != i_); rr = max(.008, min(.0165, sh_ * .42))
-        for t_, r in ((0, rr), (.5, rr * .68), (1.0, rr * .82)):
-            c_ = koren + d * (L_ * t_); Ring.append([O.v(c_ + s1 * (r * a_) + s2 * (r * b_), K) for a_, b_ in ((1, 1), (-1, 1), (-1, -1), (1, -1))])
-        O.lofta(Ring, nachalo=False, konec=True)
+        kol = lambda t_, r: [O.v(koren + d * (L_ * t_) + s1 * (r * a_) + s2 * (r * b_), K) for a_, b_ in ((1, 1), (-1, 1), (-1, -1), (1, -1))]
+        O.lofta([kol(0, rr), kol(.47, rr * .92)], nachalo=False, konec=True)   # звено у основания
+        O.lofta([kol(.53, rr * .88), kol(1.0, rr * .7)], nachalo=True, konec=True)   # звено кончика, зазор шва
     return O
 
 
-EYE = dict(p=(.032, 1.733), n=Vector((.3, -.95, 0)).normalized(), r1=.014, r2=.010, h=.008, pod=.004)
+EYE = dict(p=(.032, 1.733), n=Vector((.3, -.95, 0)).normalized(), r1=.015, r2=.011, h=.008, pod=.005)
 def fan(O, c, n, r1, r2, h, sides=6, H='голова', pod=.002):
     s1 = n.cross(Vector((0, 0, 1))).normalized(); s2 = n.cross(s1).normalized(); kr = [O.v(c + s1 * (r1 * math.cos(u)) + s2 * (r2 * math.sin(u)) + n * pod, H) for u in [j * 2 * math.pi / sides for j in range(sides)]]; O.konec(kr, O.v(c + n * h, H))
     return kr
@@ -352,6 +358,32 @@ def brov_zmeya():
     p1, _ = kozha((.010, -.5, 1.752), (0, 1, 0)); p2, _ = kozha((.058, -.5, 1.758), (0, 1, 0)); c_ = p1 + Vector((0, -.014, -.004)); d_ = p2 + Vector((0, -.014, -.004)); e_ = (p1 + p2) / 2 + Vector((0, 0, .014))
     for q in ((O.v(p1, H), O.v(p2, H), O.v(d_, H)), (O.v(p1, H), O.v(d_, H), O.v(c_, H)), (O.v(p1, H), O.v(e_, H), O.v(p2, H))): O.f(*q)
     return O
+
+
+def glaz_vid(vid, r1=.013, r2=.0095, h=.005, pod=.004):
+    O = Org('Чутьё.глаз@%s' % vid); p, _ = kozha((EYE['p'][0], -.5, EYE['p'][1]), (0, 1, 0)); fan(O, p, EYE['n'], r1, r2, h, pod=pod); return O
+def zrachok(vid, forma, r2=.0095, h=.005, pod=.004):
+    """зрачок плоской пластиной у вершины купола: круг, горизонтальный прямоугольник копытного, вертикальная щель"""
+    O = Org('Чутьё.зрачок@%s' % vid); H = 'голова'; p, _ = kozha((EYE['p'][0], -.5, EYE['p'][1]), (0, 1, 0)); n = EYE['n']; s1 = n.cross(Vector((0, 0, 1))).normalized(); up = Vector((0, 0, 1))
+    c = p + n * (h + .0008)
+    if forma == 'круг': fan(O, c - n * .0006, n, .0042, .0042, .0006, sides=6, pod=0)
+    elif forma == 'полоса':
+        a_ = [O.v(c + s1 * sx * .0068 + up * sz * .0022 - n * .0004, H) for sx, sz in ((1, 1), (-1, 1), (-1, -1), (1, -1))]; O.f(a_[0], a_[1], a_[2]); O.f(a_[0], a_[2], a_[3])
+    return O
+
+
+@organ('Чутьё.глаз@Волк')
+def glaz_volk(): return glaz_vid('Волк')
+@organ('Чутьё.зрачок@Волк')
+def zr_volk(): return zrachok('Волк', 'круг')
+@organ('Чутьё.глаз@Лось')
+def glaz_los(): return glaz_vid('Лось', r1=.015, r2=.011)
+@organ('Чутьё.зрачок@Лось')
+def zr_los(): return zrachok('Лось', 'полоса', r2=.011)
+@organ('Чутьё.глаз@Ёж')
+def glaz_ezh(): return glaz_vid('Ёж', r1=.011, r2=.0095, h=.006)
+@organ('Чутьё.зрачок@Ёж')
+def zr_ezh(): return zrachok('Ёж', 'круг', h=.006)
 
 
 @organ('Чутьё.глаз@Змея')
@@ -391,7 +423,7 @@ def plastina(O, x, z, r_x, r_z):
 @organ('Шкура@Змея')
 def cheshuya():
     O = Org('Шкура@Змея')
-    for z, xs, r in ((1.50, (.092, .262), .09), (1.40, (0, .177), .09), (1.30, (.092,), .09), (1.20, (0, .15), .085), (1.10, (.08,), .07)):
+    for z, xs, r in ((1.58, (.07, .20), .085), (1.48, (0, .135, .27), .09), (1.38, (.07, .20), .09), (1.28, (0, .135), .085), (1.18, (.07,), .07)):
         for x in xs: plastina(O, x, z, r, r * 1.0)
     return O
 
@@ -413,7 +445,7 @@ def hvost_zmeya():
 @organ('Шкура@Лось')
 def gorb():
     """цельная масса холки: от основания шеи до лопаток; сечения общие, гребень одной линией с двумя уступами"""
-    O = Org('Шкура@Лось'); Se = [(1.62, .02, .0), (1.55, .06, .075), (1.54, .065, .06), (1.46, .10, .125), (1.45, .105, .105), (1.37, .125, .16), (1.36, .125, .135), (1.28, .115, .125), (1.27, .11, .10), (1.19, .075, .05), (1.12, .03, .004)]; Ko = []
+    O = Org('Шкура@Лось'); Se = [(1.67, .02, .0), (1.60, .06, .075), (1.59, .065, .06), (1.51, .10, .125), (1.50, .105, .105), (1.42, .125, .16), (1.41, .125, .135), (1.33, .115, .125), (1.32, .11, .10), (1.24, .075, .05), (1.17, .03, .004)]; Ko = []
     for z, w, h in Se:
         y0 = kozha((0, .5, z), (0, -1, 0))[0].y; y1 = kozha((w * .55, .5, z), (0, -1, 0))[0].y if BVH.ray_cast(Vector((w * .55, .5, z)), Vector((0, -1, 0)))[0] else y0; y2 = kozha((w, .5, z), (0, -1, 0))[0].y if BVH.ray_cast(Vector((w, .5, z)), Vector((0, -1, 0)))[0] else y0 - .03
         Ko.append([O.v((0, y0 + h, z)), O.v((w * .55, y1 + h * .72, z - .006)), O.v((w, y2 - .004, z - .012))])
@@ -426,7 +458,7 @@ def gorb():
 def igly_ezh():
     """ровные ряды одинаковых клиньев внахлёст: сетка по рядам со сдвигом на полшага, один размер, вниз; край ряда — наружу, контур плеч"""
     O = Org('Шкура@Ёж'); shag = .050; dl = .135; sh = .029
-    for j, (z, xm) in enumerate(((1.60, .02), (1.545, .07), (1.49, .22), (1.435, .28), (1.38, .28), (1.325, .25), (1.27, .21), (1.215, .18), (1.16, .16), (1.105, .145), (1.05, .13))):
+    for j, (z, xm) in enumerate(((1.66, .02), (1.605, .07), (1.55, .20), (1.495, .27), (1.44, .29), (1.385, .27), (1.33, .23), (1.275, .19), (1.22, .17), (1.165, .15), (1.11, .135))):
         x = 0 if j % 2 == 0 else shag / 2
         while x <= xm + 1e-4:
             k_ = x / max(xm, .05); list_sherst(O, x, z, dl, sh, .08 + (k_ ** 3) * .8, lift=.016); x += shag
@@ -435,25 +467,20 @@ def igly_ezh():
 
 @organ('Игломёт@Ёж')
 def iglomet():
-    """четыре гранёные полые трубы рядом над черепом, 48° к горизонту, в профиль концы над лбом и перед ним; низ труб на упоре, упор стоит на загривке. Линия проходит над сводом и затылком с запасом"""
-    O = Org('Игломёт@Ёж'); ug = math.radians(48); d = Vector((0, -math.cos(ug), math.sin(ug))); K = 'грудная клетка'; s1 = Vector((1, 0, 0)); s2 = d.cross(s1).normalized(); r = .021; Y0 = .13; Z0 = 1.935 + (-.03 - Y0) * math.tan(ug); dl = (Y0 + .15) / math.cos(ug); h_min = 9
-    for x in (.025, .075):
-        d = (Vector((0, -math.cos(ug), math.sin(ug))) + Vector((x / .075 * math.tan(math.radians(2.5)), 0, 0))).normalized(); s1 = Vector((1, 0, 0)); s1 = (s1 - d * s1.dot(d)).normalized(); s2 = d.cross(s1).normalized()
-        c0 = Vector((x, Y0, Z0)); c1 = c0 + d * dl
-        for t_ in np.linspace(0, 1, 40):
-            h_ = BVH.find_nearest(c0 + d * (dl * t_)); h_min = min(h_min, h_[3] - r)
+    """`витрина/человек-ёж/ступени.png` ст.1–ст.2: две толстые полые трубы из верха спины между лопатками, за затылком, концы чуть выше макушки, вверх и чуть вперёд; назад не смотрят. Основание уходит под кожу"""
+    O = Org('Игломёт@Ёж'); K = 'грудная клетка'; r = .032; h_min = 9; L = []
+    for x in (.045,):
+        B, _ = kozha((x, .4, 1.50), (0, -1, 0)); B = B - Vector((0, .02, 0)); E = Vector((x * 1.25, B.y - .05, 1.885)); d = (E - B).normalized(); dl = (E - B).length
+        s1 = Vector((1, 0, 0)); s1 = (s1 - d * s1.dot(d)).normalized(); s2 = d.cross(s1).normalized()
+        for t_ in np.linspace(.25, 1, 30):
+            h_ = BVH.find_nearest(B + d * (dl * t_)); h_min = min(h_min, h_[3] - r)
         def kol(c, q): return [O.v(c + s1 * (q * math.cos(u)) + s2 * (q * math.sin(u)), K) for u in [j * math.pi / 3 + .52 for j in range(6)]]
-        k0 = kol(c0, r); k1 = kol(c1, r); k3 = kol(c1, r * .68); dn_ = O.v(c1 - d * .06, K)
-        O.lofta([k0, k1], nachalo=True, konec=False)
+        k0 = kol(B, r); k1 = kol(E, r); k3 = kol(E, r * .66); dn_ = O.v(E - d * .07, K)
+        O.lofta([k0, k1], nachalo=False, konec=False)
         for j in range(6):
             k = (j + 1) % 6; O.f(k1[j], k1[k], k3[k]); O.f(k1[j], k3[k], k3[j])
-        O.konec(k3, dn_)
-    # упор: от загривка к низу труб
-    p0, _ = kozha((.03, .4, 1.545), (0, -1, 0)); w = .085; yt = Y0 - .05; zt = Z0 - .03
-    N = [O.v((0, p0.y - .02, 1.53), K), O.v((w, p0.y - .03, 1.53), K), O.v((w, p0.y - .01, 1.565), K), O.v((0, p0.y, 1.565), K)]; V_ = [O.v((0, yt, zt - .025), K), O.v((w, yt, zt - .025), K), O.v((w, yt + .022, zt + .004), K), O.v((0, yt + .022, zt + .004), K)]
-    for j in range(3): O.f(N[j], N[j + 1], V_[j + 1]); O.f(N[j], V_[j + 1], V_[j])
-    O.f(V_[0], V_[1], V_[2]); O.f(V_[0], V_[2], V_[3])
-    print('ИГЛОМЁТ: длина %.2f, конец y %.3f z %.3f, зазор до тела мин %.0f мм' % (dl, (c0 + d * dl).y, (c0 + d * dl).z, h_min * 1000))
+        O.konec(k3, dn_); L.append((dl, math.degrees(math.atan2(E.z - B.z, B.y - E.y))))
+    print('ИГЛОМЁТ: труб %d, длина %.2f, угол к горизонту %.0f°, конец z %.3f, зазор до тела мин %.0f мм' % (len(L) * 2, L[0][0], L[0][1], E.z, h_min * 1000))
     return O
 
 
@@ -476,6 +503,19 @@ def nozdri():
     O.f(a_, b1, c_); O.f(a_, c_, d_); return O
 SOB2 = {'Пасть.нос@Волк': lambda: nos_kolpak('Пасть.нос@Волк', .017, .016, .03), 'Пасть.нос@Ёж': lambda: nos_kolpak('Пасть.нос@Ёж', .012, .012, .024), 'Пасть.нос@Лось': nozdri,
         'Пасть.зуб@Волк': lambda: zuby('Пасть.зуб@Волк', ((.030, .018, -.024, -.020, .006), (.070, .030, -.030, -.012, .005), (.046, .017, -.054, .016, .005))), 'Пасть.зуб@Змея': lambda: zuby('Пасть.зуб@Змея', ((.036, .040, -.022, -.070, .015),))}
+if opt.get('glaz_bazy'):
+    """голубой глаз человека — объект базы: его родное Чутьё; чужое Чутьё снимает слот `Чутьё` с ушами и глазом; формы-ключи — сдвиг ближайшей вершины головы"""
+    g = bpy.data.objects['голова']; Mg = g.matrix_world; Gk = g.data.shape_keys.key_blocks if g.data.shape_keys else None; Gb = np.array([tuple(Mg @ v.co) for v in g.data.vertices])
+    for nm, fn in (('Чутьё.глаз', lambda: glaz_vid('Человек', r1=.012, r2=.0088, h=.004, pod=.003)), ('Чутьё.зрачок', lambda: zrachok('Человек', 'круг', r2=.0088, h=.004, pod=.003))):
+        O = fn(); O.im = nm + '@Человек'; ob = O.sobrat(); ob.name = nm; ob.data.name = nm
+        if Gk:
+            ob.shape_key_add(name=Gk[0].name)
+            for kb in Gk[1:]:
+                k_ = ob.shape_key_add(name=kb.name, from_mix=False)
+                for j, v in enumerate(ob.data.vertices):
+                    i_ = int(np.linalg.norm(Gb - np.array(tuple(Mg @ v.co)), axis=1).argmin()); k_.data[j].co = v.co + Mg.inverted().to_3x3() @ (Mg.to_3x3() @ (kb.data[i_].co - Gk[0].data[i_].co))
+        print('ГЛАЗ БАЗЫ %s: %d тр, ключей %d' % (nm, len(ob.data.polygons), len(Gk) - 1 if Gk else 0))
+    bpy.ops.wm.save_as_mainfile(filepath=OUT); sys.exit(0)
 if opt.get('cvet'):
     res = {}
     for im, fn in SOB2.items():
