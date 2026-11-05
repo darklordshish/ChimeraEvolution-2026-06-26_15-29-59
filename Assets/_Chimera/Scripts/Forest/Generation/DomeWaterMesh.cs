@@ -97,6 +97,33 @@ public static class DomeWaterMesh
         return new Vector3(x, DomeHydro.SampleHydro(cfg, s, x, z) + 0.25f, z);
     }
 
+    /// <summary>v2: полка берега 3–5 м, на lakeLevel +0.5…+1.2 (не «синий диск» на плоскости).</summary>
+    public static Mesh LakeShelf(DomeHydro.State s)
+    {
+        if (s == null || s.lakeRadius <= 0f) return EmptyMesh("LakeShelf");
+        const int segs = 64;
+        float r0 = s.lakeRadius * 1.02f;
+        float r1 = r0 + 5f;
+        var verts = new Vector3[segs * 6];
+        int v = 0;
+        for (int i = 0; i < segs; i++)
+        {
+            float a0 = i / (float)segs * Mathf.PI * 2f;
+            float a1 = (i + 1) / (float)segs * Mathf.PI * 2f;
+            Vector3 inner0 = new Vector3(s.lakeCenter.x + Mathf.Cos(a0) * r0,
+                s.lakeLevel + 0.5f, s.lakeCenter.y + Mathf.Sin(a0) * r0);
+            Vector3 inner1 = new Vector3(s.lakeCenter.x + Mathf.Cos(a1) * r0,
+                s.lakeLevel + 0.5f, s.lakeCenter.y + Mathf.Sin(a1) * r0);
+            Vector3 outer0 = new Vector3(s.lakeCenter.x + Mathf.Cos(a0) * r1,
+                s.lakeLevel + 1.2f, s.lakeCenter.y + Mathf.Sin(a0) * r1);
+            Vector3 outer1 = new Vector3(s.lakeCenter.x + Mathf.Cos(a1) * r1,
+                s.lakeLevel + 1.2f, s.lakeCenter.y + Mathf.Sin(a1) * r1);
+            verts[v++] = inner0; verts[v++] = outer1; verts[v++] = outer0;
+            verts[v++] = inner0; verts[v++] = inner1; verts[v++] = outer1;
+        }
+        return FacetMesh("LakeShelf", verts);
+    }
+
     // ---- каньон: плёс, полотно, ручей (Task 2, 27.10) ----------------------
 
     /// <summary>
@@ -287,7 +314,7 @@ public static class DomeWaterMesh
     /// </summary>
     public static void Build(Transform parent, DomeGenConfigSO cfg, DomeHydro.State hydro,
         DomeCanyon.State canyon, Func<float, float, float> ground, Material waterMat,
-        List<Mesh> track)
+        List<Mesh> track, bool v2 = false, Material shelfMat = null)
     {
         if (parent == null) throw new ArgumentNullException(nameof(parent));
         if (waterMat == null) throw new ArgumentNullException(nameof(waterMat));
@@ -298,6 +325,12 @@ public static class DomeWaterMesh
             var lake = LakeDisc(hydro);
             track.Add(lake);
             Part("Lake", lake, waterMat, parent);
+            if (v2)
+            {
+                var shelf = LakeShelf(hydro);
+                track.Add(shelf);
+                Part("LakeShelf", shelf, shelfMat != null ? shelfMat : waterMat, parent);
+            }
             if (cfg != null)
             {
                 var river = RiverRibbon(cfg, hydro);

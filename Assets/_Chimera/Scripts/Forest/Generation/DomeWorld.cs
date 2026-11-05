@@ -344,7 +344,7 @@ public class DomeWorld
                 try
                 {
                     bool standLab = LabCenter.sqrMagnitude > 0.01f;
-                    float ashScale = standLab ? DomeAshSite.ScaleFor(cfg) : 1f;
+                    float ashScale = standLab ? DomeAshSite.ScaleFor(cfg, Scheme) : 1f;
                     var ashSpot = DomeAshSite.FindSpot(cfg, seed, LabCenter, Hydro, 96,
                         ashScale, standLab, null, (x, z) => Terrain.Shape0(x, z), masks);
                     ashAnchor = ashSpot.pos;
@@ -1084,7 +1084,7 @@ public class DomeWorld
 
         if (HasAsh)
             Pois.Add(ForestPoiKind.Ash, "ash", Ash.pos,
-                DomeAshSite.CrownDiameter * 0.5f * DomeAshSite.ScaleFor(cfg) + 5f, 0f,
+                DomeAshSite.CrownDiameter * 0.5f * DomeAshSite.ScaleFor(cfg, Scheme) + 5f, 0f,
                 Ash.groundY);
 
         foreach (var mouth in Mouths)
@@ -1391,7 +1391,7 @@ public class DomeWorld
     void BuildRockRing()
     {
         var mat = Flat(DomePalette.Rock);
-        var mesh = DomeRockRing.BuildRingMesh(cfg, 256, 6);
+        var mesh = DomeRockRing.BuildRingMesh(cfg, 256, 6, Terrain.TargetOrder);
         Track(mesh);
         var go = Part("RockRing", mesh, mat);
         var collider = go.AddComponent<MeshCollider>();
@@ -1403,7 +1403,8 @@ public class DomeWorld
         var mat = Flat(DomePalette.Water);
         // Озеро и река — прежнее поведение; плёс/полотно/ручей добавляются только при
         // живом каньоне и читают тот же SampleGround, что чанки и NavMesh (Task 2).
-        DomeWaterMesh.Build(Root.transform, cfg, Hydro, Canyon, SampleGround, mat, meshes);
+        DomeWaterMesh.Build(Root.transform, cfg, Hydro, Canyon, SampleGround, mat, meshes,
+            Terrain.TargetOrder, Flat(DomePalette.Terrain));
     }
 
     void BuildMouthsAndNests(long seed)
@@ -1450,7 +1451,7 @@ public class DomeWorld
             // Место ясеня считается ОТ лаборатории, а не от центра мира: в B0.1 двор уехал,
             // и «100–400 м от лаборатории» — это расстояние до комплекса.
             bool standLab = LabCenter.sqrMagnitude > 0.01f;
-            float ashScale = standLab ? DomeAshSite.ScaleFor(cfg) : 1f;
+            float ashScale = standLab ? DomeAshSite.ScaleFor(cfg, Scheme) : 1f;
             var spot = DomeAshSite.FindSpot(cfg, seed, LabCenter, Hydro, 96, ashScale, standLab,
                 (x, z) => DomeRavines.Contains(Ravines, x, z, 1.4f), SampleGround, masks);
             // Ясень стоит по тому же рельефу, что и всё остальное (с оврагами/рампой).
@@ -1463,7 +1464,7 @@ public class DomeWorld
             var crown = Flat(DomePalette.Crown);
             var owl = Flat(DomePalette.Owl);
             DomeAshSite.BuildGeometry(Root.transform, new Vector3(spot.pos.x, gy, spot.pos.y),
-                bark, crown, owl, meshes, ashScale);
+                bark, crown, owl, meshes, ashScale, Terrain.TargetOrder);
 
             var nestGo = new GameObject("AshNest");
             nestGo.transform.SetParent(Root.transform, false);

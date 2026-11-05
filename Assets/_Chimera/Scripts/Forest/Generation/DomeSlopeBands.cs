@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 /// <summary>
 /// S2 §4: полосы склона для материала чанка. Пороги — градусы; к границе добавляется
@@ -15,16 +15,22 @@ public static class DomeSlopeBands
 
     /// <summary>Порог полосы в градусах (до шума).</summary>
     public static readonly float[] Thresholds = { 10f, 18f, 26f, 35f };
+    /// <summary>v2: 10–18° слито с травой — полоса Turf больше не рисует «тропу» в A.</summary>
+    public static readonly float[] ThresholdsV2 = { 18f, 26f, 35f, 45f };
 
-    /// <summary>Индекс полосы 0..4 по уклону с шумом ±2° от (seed, x, z).</summary>
-    public static int Index(float slopeDegrees, float x, float z, long seed)
+    /// <summary>Индекс полосы 0..4 по уклону с шумом ±2° от (seed, x, z). v1 — исторический.</summary>
+    public static int Index(float slopeDegrees, float x, float z, long seed) =>
+        Index(slopeDegrees, x, z, seed, 1);
+
+    public static int Index(float slopeDegrees, float x, float z, long seed, int worldVersion)
     {
-        float n = Noise(x, z, seed) * 2f; // −2…+2
+        float n = Noise(x, z, seed) * 2f;
         float s = slopeDegrees + n;
-        if (s < Thresholds[0]) return Grass;
-        if (s < Thresholds[1]) return Turf;
-        if (s < Thresholds[2]) return Scree;
-        if (s < Thresholds[3]) return Rock;
+        float[] th = worldVersion >= 2 ? ThresholdsV2 : Thresholds;
+        if (s < th[0]) return Grass;
+        if (s < th[1]) return Turf;
+        if (s < th[2]) return Scree;
+        if (s < th[3]) return Rock;
         return Cliff;
     }
 

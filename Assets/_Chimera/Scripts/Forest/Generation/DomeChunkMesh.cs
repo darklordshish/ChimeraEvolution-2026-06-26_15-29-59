@@ -75,7 +75,7 @@ public static class DomeChunkMesh
                 Vector3 n = Vector3.Cross(b - a, c - a).normalized;
                 float slope = Mathf.Acos(Mathf.Clamp(Mathf.Abs(n.y), 0f, 1f)) * Mathf.Rad2Deg;
                 Vector3 mid = (a + b + c) / 3f;
-                int band = DomeSlopeBands.Index(slope, mid.x, mid.z, seed);
+                int band = DomeSlopeBands.Index(slope, mid.x, mid.z, seed, cfg.WorldVersion);
                 bands[band].Add(tris[i]);
                 bands[band].Add(tris[i + 1]);
                 bands[band].Add(tris[i + 2]);

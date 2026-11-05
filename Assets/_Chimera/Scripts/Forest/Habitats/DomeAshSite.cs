@@ -27,6 +27,15 @@ public static class DomeAshSite
     public static float ScaleFor(DomeGenConfigSO cfg) =>
         cfg != null && cfg.mapDiameter <= StandMaxDiameter ? StandScale : 1f;
 
+    /// <summary>v2: ясень — параметр схемы; v1 (scheme=null) сохраняет прежний масштаб.</summary>
+    public static float ScaleFor(DomeGenConfigSO cfg, string scheme)
+    {
+        float s = ScaleFor(cfg);
+        if (scheme == DomeSchemes.BowlRidge) s *= 0.85f;
+        else if (scheme == DomeSchemes.LakeCauldron) s *= 0.75f;
+        return s;
+    }
+
     public struct AshSpot
     {
         public Vector2 pos;
@@ -109,7 +118,7 @@ public static class DomeAshSite
     /// </summary>
     public static GameObject BuildGeometry(Transform parent, Vector3 ground,
         Material bark, Material crown, Material owl, ICollection<Mesh> track = null,
-        float scale = 1f)
+        float scale = 1f, bool stylized = false)
     {
         if (parent == null) throw new ArgumentNullException(nameof(parent));
         if (bark == null) throw new ArgumentNullException(nameof(bark));
@@ -143,7 +152,32 @@ public static class DomeAshSite
             new Vector3(NestLateral, NestHeight + 0.75f, 0f), track);
         Part(root.transform, "AshOwlHead", FloraMeshKit.Icosahedron(0.32f), owl,
             new Vector3(NestLateral, NestHeight + 1.35f, 0.35f), track);
+        if (stylized) AddV2Detail(root.transform, bark, crown, track);
         return root;
+    }
+
+    /// <summary>v2: рваная крона, ветви и опора присады — не «гриб» на конусе.</summary>
+    static void AddV2Detail(Transform root, Material bark, Material crown, ICollection<Mesh> track)
+    {
+        Part(root, "AshCrownLobeA",
+            FloraMeshKit.AshCrownWide(CrownDiameter * 0.34f, CrownHeight * 0.58f), crown,
+            new Vector3(CrownDiameter * 0.20f, CrownBase + CrownHeight * 0.10f, 0f), track);
+        Part(root, "AshCrownLobeB",
+            FloraMeshKit.AshCrownWide(CrownDiameter * 0.31f, CrownHeight * 0.52f), crown,
+            new Vector3(-CrownDiameter * 0.18f, CrownBase + CrownHeight * 0.16f,
+                CrownDiameter * 0.08f), track);
+        Part(root, "AshCrownLobeC",
+            FloraMeshKit.AshCrownWide(CrownDiameter * 0.28f, CrownHeight * 0.46f), crown,
+            new Vector3(0f, CrownBase + CrownHeight * 0.04f, -CrownDiameter * 0.16f), track);
+        for (int i = 0; i < 3; i++)
+            Part(root, "AshBranch" + (char)('A' + i),
+                FloraMeshKit.Slab(6f - i * 0.7f, 0.45f, 0.85f), bark,
+                new Vector3(NestLateral * (0.45f + i * 0.12f),
+                    NestHeight - 1.2f - i * 1.6f, (i - 1) * 2.2f), track);
+        Part(root, "AshNestSupportW", FloraMeshKit.Slab(0.5f, 0.35f, 4.2f), bark,
+            new Vector3(NestLateral * 0.45f, NestHeight - 2.2f, -1.0f), track);
+        Part(root, "AshNestSupportE", FloraMeshKit.Slab(0.5f, 0.35f, 4.2f), bark,
+            new Vector3(NestLateral * 0.45f, NestHeight - 2.2f, 1.0f), track);
     }
 
     static void Part(Transform parent, string name, Mesh mesh, Material mat, Vector3 localPos,
