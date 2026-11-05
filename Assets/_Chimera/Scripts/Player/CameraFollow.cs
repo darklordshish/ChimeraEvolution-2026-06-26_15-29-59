@@ -2,14 +2,15 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 /// <summary>
-/// Камера с двумя режимами (тоггл в PlayerController, клавиша V):
-/// 3-е лицо — follow за целью; 1-е лицо — в голове, питч мышью/стиком. Тряска работает в обоих.
+/// Камера с тремя режимами (круг в PlayerController, клавиша V):
+/// 3-е лицо издали и близко — follow за целью; 1-е лицо — в голове, питч мышью/стиком. Тряска работает во всех.
 /// </summary>
 public class CameraFollow : MonoBehaviour
 {
     [Header("Третье лицо")]
     [SerializeField] Transform target;
     [SerializeField] Vector3 offset = new Vector3(0f, 6f, -7f);
+    [SerializeField] Vector3 nearOffset = NearDefault;   // близкий режим: тело видно крупно
     [SerializeField] float followLerp = 10f;
     [SerializeField] float lookHeight = 1.2f;
     [SerializeField] bool rotateBehind = true;   // камера висит ЗА СПИНОЙ тела (мышь крутит тело — камера следом)
@@ -22,6 +23,11 @@ public class CameraFollow : MonoBehaviour
     [SerializeField] float pitchSensitivity = 0.1f;
     [SerializeField] float minPitch = -60f;
     [SerializeField] float maxPitch = 70f;
+
+    public static readonly Vector3 NearDefault = new Vector3(0f, 2.2f, -3.2f);
+    /// <summary>Новое поле у камеры, уже лежащей в сцене, приходит нулём: ноль читаем как «не настроено», иначе камера окажется в теле.</summary>
+    public static Vector3 NearOr(Vector3 v) => v == Vector3.zero ? NearDefault : v;
+    Vector3 CurrentOffset => player != null && player.View == PlayerController.ViewMode.Near ? NearOr(nearOffset) : offset;
 
     Vector3 followPos;
     float shakeTimer, shakeDuration, shakeMag, pitch;
@@ -85,7 +91,7 @@ public class CameraFollow : MonoBehaviour
 
         followPos = Vector3.Lerp(followPos, target.position, followLerp * Time.deltaTime);
         float k = size != null ? size.Scale : 1f;   // камера за плечом отходит вместе с ростом
-        transform.position = followPos + Quaternion.Euler(0f, yaw, 0f) * offset * k + shake;
+        transform.position = followPos + Quaternion.Euler(0f, yaw, 0f) * CurrentOffset * k + shake;
         transform.LookAt(target.position + Vector3.up * (size != null ? size.FromGround(lookHeight) : lookHeight));
     }
 

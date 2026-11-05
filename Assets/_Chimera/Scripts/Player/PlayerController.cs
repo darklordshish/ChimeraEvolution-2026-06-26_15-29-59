@@ -45,7 +45,12 @@ public class PlayerController : MonoBehaviour
     [SerializeField] float lookSensitivity = 0.1f;  // мышь, поворот в FPS
     [SerializeField] float gamepadYawSpeed = 180f;  // правый стик, поворот в FPS
 
-    public bool FirstPerson { get; private set; }
+    /// <summary>Режим камеры, клавиша V идёт по кругу: 3-е лицо издали → 3-е лицо близко → 1-е лицо (геймдизайнер 05.11).</summary>
+    public enum ViewMode { Far, Near, First }
+    public static ViewMode Next(ViewMode v) => v == ViewMode.Far ? ViewMode.Near : v == ViewMode.Near ? ViewMode.First : ViewMode.Far;
+
+    public ViewMode View { get; private set; } = ViewMode.Far;
+    public bool FirstPerson => View == ViewMode.First;
 
     CharacterController controller;
     Knockback knockback;
@@ -114,7 +119,7 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         groundY = transform.position.y;
-        SetFirstPerson(false);
+        SetView(ViewMode.Far);
     }
 
     void OnEnable() { moveAction.Enable(); lookAction.Enable(); dashAction.Enable(); toggleViewAction.Enable(); sneakAction.Enable(); sprintAction.Enable(); }
@@ -127,7 +132,7 @@ public class PlayerController : MonoBehaviour
         // а перетаскивание звёзд молчит — указатель «прилип» к персонажу. Владение курсором — у конструктора
         if (ConstructorUI.IsOpen) return;
 
-        if (toggleViewAction.WasPressedThisFrame()) SetFirstPerson(!FirstPerson);
+        if (toggleViewAction.WasPressedThisFrame()) SetView(Next(View));
 
         Vector2 mv = moveAction.ReadValue<Vector2>();
 
@@ -202,9 +207,9 @@ public class PlayerController : MonoBehaviour
         }
     }
 
-    void SetFirstPerson(bool on)
+    void SetView(ViewMode view)
     {
-        FirstPerson = on;
+        View = view;
         Cursor.lockState = CursorLockMode.Locked; // мышь — руль тела в ОБОИХ видах, курсор не нужен (Esc отпускает)
         Cursor.visible = false;
         // свою голову от ПЕРВОГО лица не рендерим (нос/куб лезут в камеру) — классика FPS; в 3-м лице возвращаем.
