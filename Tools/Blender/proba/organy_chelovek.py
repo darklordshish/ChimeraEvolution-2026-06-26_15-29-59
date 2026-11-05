@@ -333,13 +333,13 @@ def kapsula():
     O = Org('Руки.броня@Лось'); K = 'предплечье'
     for tip, c in konchiki():
         d = (tip - c).normalized(); L_ = (tip - c).length * 2 + .012; koren = tip - d * L_; s1 = Vector((1, 0, 0)); s1 = (s1 - d * s1.dot(d)).normalized(); s2 = d.cross(s1).normalized(); Ring = []
-        for t_, r in ((0, .023), (.50, .019), (1.0, .012)):
+        for t_, r in ((0, .019), (.50, .0165), (1.0, .011)):
             c_ = koren + d * (L_ * t_); Ring.append([O.v(c_ + s1 * (r * a_) + s2 * (r * b_), K) for a_, b_ in ((1, 1), (-1, 1), (-1, -1), (1, -1))])
         O.lofta(Ring, nachalo=False, konec=False)
     return O
 
 
-EYE = dict(p=(.032, 1.733), n=Vector((.3, -.95, 0)).normalized(), r1=.027, r2=.018, h=.012)
+EYE = dict(p=(.032, 1.733), n=Vector((.3, -.95, 0)).normalized(), r1=.027, r2=.019, h=.015, pod=.007)
 def fan(O, c, n, r1, r2, h, sides=6, H='голова', pod=.002):
     s1 = n.cross(Vector((0, 0, 1))).normalized(); s2 = n.cross(s1).normalized(); kr = [O.v(c + s1 * (r1 * math.cos(u)) + s2 * (r2 * math.sin(u)) + n * pod, H) for u in [j * 2 * math.pi / sides for j in range(sides)]]; O.konec(kr, O.v(c + n * h, H))
     return kr
@@ -355,28 +355,34 @@ def brov_zmeya():
 
 @organ('Чутьё.глаз@Змея')
 def glaz_zmeya():
-    O = Org('Чутьё.глаз@Змея'); p, _ = kozha((EYE['p'][0], -.5, EYE['p'][1]), (0, 1, 0)); fan(O, p, EYE['n'], EYE['r1'], EYE['r2'], EYE['h']); return O
+    O = Org('Чутьё.глаз@Змея'); p, _ = kozha((EYE['p'][0], -.5, EYE['p'][1]), (0, 1, 0)); fan(O, p, EYE['n'], EYE['r1'], EYE['r2'], EYE['h'], pod=EYE['pod']); return O
 
 
 @organ('Чутьё.зрачок@Змея')
 def zrachok():
     O = Org('Чутьё.зрачок@Змея'); H = 'голова'; p, _ = kozha((EYE['p'][0], -.5, EYE['p'][1]), (0, 1, 0)); n = EYE['n']; s1 = n.cross(Vector((0, 0, 1))).normalized(); c = p + n * (EYE['h'] + .0015)
-    a_ = O.v(c + s1 * .003, H); b_ = O.v(c - s1 * .003, H); v_ = O.v(p + n * (EYE['h'] * .45 + .002) + Vector((0, 0, .015)), H); n_ = O.v(p + n * (EYE['h'] * .45 + .002) - Vector((0, 0, .015)), H)
+    sv = EYE['pod'] + (EYE['h'] - EYE['pod']) * (1 - .015 / EYE['r2']) + .002; a_ = O.v(c + s1 * .0045, H); b_ = O.v(c - s1 * .0045, H); v_ = O.v(p + n * sv + Vector((0, 0, .015)), H); n_ = O.v(p + n * sv - Vector((0, 0, .015)), H)
     O.f(a_, v_, b_); O.f(b_, n_, a_); return O
 
 
 @organ('Чутьё.ямка@Змея')
 def yamka():
-    O = Org('Чутьё.ямка@Змея'); p, _ = kozha((.028, -.5, 1.695), (0, 1, 0)); fan(O, p, EYE['n'], .019, .015, .003, 5); return O
+    O = Org('Чутьё.ямка@Змея'); p, _ = kozha((.028, -.5, 1.695), (0, 1, 0)); fan(O, p, EYE['n'], .019, .015, .008, 5, pod=.006); return O
 
 
 def plastina(O, x, z, r_x, r_z):
-    """плита с толщиной: верх лежит над кожей, боковые стенки уходят под неё"""
-    if BVH.ray_cast(Vector((x, .4, z)), Vector((0, -1, 0)))[0] is None: return
-    p, _ = kozha((x, .4, z), (0, -1, 0)); n = Vector((min(abs(x) / .25, 1) * .6, .8, .1)).normalized()
-    bk = Vector((0, 0, 1)).cross(n).normalized(); bk = bk if bk.x > 0 else -bk; vn = n.cross(bk).normalized(); vn = vn if vn.z > 0 else -vn; v_ = .020
-    T = [p + vn * r_z + n * .006, p + bk * r_x + n * v_, p - vn * r_z + n * (v_ + .005), p - bk * r_x + n * v_]; B = [t - n * .03 for t in T]; m_ = O.v(p + n * (v_ + .004))
-    Ti = [O.v(t) for t in T]; Bi = [O.v(t) for t in B]; Z = (0, 1, 2) if abs(x) < 1e-4 else (0, 1, 2, 3)
+    """плита-ромб по коже: углы на коже с зазором, центр выше, нижний угол внахлёст на следующий ряд; стенки уходят под кожу"""
+    def Yk(x_, z_):
+        h = BVH.ray_cast(Vector((x_, .5, z_)), Vector((0, -1, 0)))
+        return h[0].y if h[0] is not None else None
+    Y0 = Yk(x, z)
+    if Y0 is None: return
+    Cr = [(x, z + r_z), (x + r_x, z), (x, z - r_z), (x - r_x, z)]; Ti = []; Bi = []; ym = Y0
+    for j, (a_, b_) in enumerate(Cr):
+        y_ = Yk(a_, b_)
+        if y_ is None: y_ = Y0 - .05
+        ym = max(ym, y_); dop = (.010, .014, .024, .014)[j]; Ti.append(O.v((a_, y_ + dop, b_))); Bi.append(O.v((a_, y_ - .012, b_)))
+    m_ = O.v((x, ym + .010, z)); Z = (0, 1, 2) if abs(x) < 1e-4 else (0, 1, 2, 3)
     for j in Z:
         k = (j + 1) % 4; O.f(Ti[j], Ti[k], m_); O.f(Ti[k], Ti[j], Bi[j]); O.f(Ti[k], Bi[j], Bi[k])
 
@@ -384,7 +390,7 @@ def plastina(O, x, z, r_x, r_z):
 @organ('Шкура@Змея')
 def cheshuya():
     O = Org('Шкура@Змея')
-    for z, xs, r in ((1.49, (.09, .26), .092), (1.36, (0, .175), .092), (1.23, (.09,), .084), (1.12, (0,), .07)):
+    for z, xs, r in ((1.50, (.092, .262), .09), (1.40, (0, .177), .09), (1.30, (.092,), .09), (1.20, (0, .15), .085), (1.10, (.08,), .07)):
         for x in xs: plastina(O, x, z, r, r * 1.0)
     return O
 
