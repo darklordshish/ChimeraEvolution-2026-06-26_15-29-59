@@ -125,6 +125,12 @@ public static class BodyMesh
     public static bool OrganObjectsOn = true;
     public const string GrowthShape = "рост";
     static bool IsOrganObject(string name) => name.IndexOf('@') > 0;
+    /// <summary>Ключ органа у объекта: кусок органа со своим цветом `<слот>.<что>@<вид>` (коготь, мочка) показывается и растёт вместе с `<слот>@<вид>`.</summary>
+    public static string OrganKey(string objectName)
+    {
+        int at = objectName.IndexOf('@'), dot = objectName.IndexOf('.');
+        return at > 0 && dot > 0 && dot < at ? objectName.Substring(0, dot) + objectName.Substring(at) : objectName;
+    }
 
     /// <summary>КЛЮЧ ТЕЛА СТУПЕНИ 1 (решение геймдизайнера 28.10 по разбору дизайн-линии `FEEDBACK-2026-10-28-codex-telo-st1.md`):
     /// колонка ст.1 листа — атлет с волчьими акцентами, а не половина ст.2. Линейный ключ этого не умеет: его середина
@@ -200,7 +206,7 @@ public static class BodyMesh
             if (mesh == null || src.bones.Length == 0) continue;
             if (src.name.StartsWith("@") && !stages.Any(st => st.objectName == src.name)) continue;
             bool organ = IsOrganObject(src.name);
-            if (organ && (organObjects == null || !organObjects.ContainsKey(src.name))) continue;
+            if (organ && (organObjects == null || !organObjects.ContainsKey(OrganKey(src.name)))) continue;
             if (organ && stageReplaces.Contains(SlotOf(src.name))) continue;
             if (stageHides.Contains(SlotOf(src.name))) continue;
             if (!organ && organSlots.Contains(SlotOf(src.name))) continue;
@@ -269,7 +275,7 @@ public static class BodyMesh
             if (organ)
             {
                 int shape = skinned.GetBlendShapeIndex(GrowthShape);
-                if (shape >= 0) smr.SetBlendShapeWeight(shape, Mathf.Clamp01(organObjects[src.name]) * 100f);
+                if (shape >= 0) smr.SetBlendShapeWeight(shape, Mathf.Clamp01(organObjects[OrganKey(src.name)]) * 100f);
             }
             if (Application.isPlaying)
             {
@@ -316,7 +322,7 @@ public static class BodyMesh
 
     static string SlotOf(string objectName)
     {
-        int at = objectName.IndexOf('@'); if (at > 0) return objectName.Substring(0, at);   // орган на шаблоне `<слот>@<вид>`
+        int at = objectName.IndexOf('@'); if (at > 0) objectName = objectName.Substring(0, at);   // орган на шаблоне `<слот>@<вид>`
         int dot = objectName.IndexOf('.'); return dot > 0 ? objectName.Substring(0, dot) : objectName;
     }
 

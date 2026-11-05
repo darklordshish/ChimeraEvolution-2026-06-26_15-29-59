@@ -89,7 +89,7 @@ public static class MorphBuilder
                 .SelectMany(st => (st.hides ?? new string[0]).Concat(st.replacesTraits ?? new string[0])));
             bool ByStage(BodyPart p) => p != null && (stageSlots.Contains(p.slot ?? "") || stageSlots.Contains(p.objectSlot ?? "") || stageSlots.Contains(p.mainSlot ?? ""));
             // ОРГАН НА ШАБЛОНЕ (`<слот>@<вид>` в меше шасси) заменяет куски органа донора на швах этого слота
-            var meshObjects = new HashSet<string>(pureChassis.bodyMesh.GetComponentsInChildren<SkinnedMeshRenderer>(true).Select(r => r.name));
+            var meshObjects = new HashSet<string>(pureChassis.bodyMesh.GetComponentsInChildren<SkinnedMeshRenderer>(true).Select(r => BodyMesh.OrganKey(r.name)));
             var organObjects = BodyMesh.OrganObjectsFor(pureChassis, wornOrgans).Where(kv => BodyMesh.OrganObjectsOn && meshObjects.Contains(kv.Key)).ToDictionary(kv => kv.Key, kv => kv.Value);
             bool ByOrganObject((BodyPart part, SpeciesSO donor) pd) => pd.part != null && pd.donor != null && organObjects.ContainsKey(BodyMesh.OrganObject(pd.part.slot ?? "", pd.donor.speciesName));
             var onBody = (chassis.placedParts ?? new (BodyPart, SpeciesSO)[0]).Where(pd => !ByStage(pd.part) && !ByOrganObject(pd)).ToArray();

@@ -211,6 +211,48 @@ namespace Chimera.Tests.EditMode
             Object.DestroyImmediate(mesh);
         }
 
+        /// <summary>Кусок органа со своим цветом (коготь, мочка, глаз): объект `<слот>.<что>@<вид>` виден и растёт вместе с органом,
+        /// носит имя слота и несёт цвет материала.</summary>
+        [Test]
+        public void ColoredOrganPiece_FollowsItsOrgan_KeepsSlotName_AndOwnColor()
+        {
+            Assert.AreEqual("Руки@Волк", BodyMesh.OrganKey("Руки.коготь@Волк"));
+            Assert.AreEqual("Руки@Волк", BodyMesh.OrganKey("Руки@Волк"));
+            Assert.AreEqual("голова.зубы", BodyMesh.OrganKey("голова.зубы"));
+            Assert.AreEqual("@Волк", BodyMesh.OrganKey("@Волк"));
+
+            Species().bodyMesh = Model();
+            var own = model.GetComponentInChildren<SkinnedMeshRenderer>();
+            var piece = Object.Instantiate(own.gameObject, own.transform.parent);
+            piece.name = "голова.коготь@Волк";
+            var mesh = Object.Instantiate(own.sharedMesh);
+            mesh.AddBlendShapeFrame(BodyMesh.GrowthShape, 100f, new[] { Vector3.zero, Vector3.one, Vector3.zero }, null, null);
+            var pieceSmr = piece.GetComponent<SkinnedMeshRenderer>();
+            pieceSmr.sharedMesh = mesh;
+            var dark = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            dark.SetColor("_BaseColor", new Color(0.1f, 0.1f, 0.12f, 1f));
+            pieceSmr.sharedMaterial = dark;
+
+            Build(so.organs.ToList());
+            var smrs = go.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            Assert.AreEqual(1, smrs.Length, "без прививки цветной кусок органа не рисуется");
+            var container = smrs[0].transform.parent;
+            var skeleton = go.GetComponentsInChildren<Transform>(true).First(t => t.name == "Skeleton");
+            foreach (var r in smrs) Object.DestroyImmediate(r.gameObject);
+
+            var grown = new System.Collections.Generic.Dictionary<string, float> { [BodyMesh.OrganObject("голова", "Волк")] = 0.4f };
+            BodyMesh.Place(container, skeleton, model, null, jointsOf: so, organObjects: grown);
+            smrs = container.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            Assert.AreEqual(2, smrs.Length, "с прививкой цветной кусок садится на свой объект");
+            var drawn = smrs.Single(r => r.sharedMesh.GetBlendShapeIndex(BodyMesh.GrowthShape) >= 0);
+            Assert.AreEqual("голова", drawn.name, "имя — слот (контракт имён частей)");
+            Assert.AreEqual(40f, drawn.GetBlendShapeWeight(drawn.sharedMesh.GetBlendShapeIndex(BodyMesh.GrowthShape)), 1e-3f, "растёт на вес органа");
+            Assert.IsTrue(drawn.TryGetComponent<PartMark>(out var mark) && mark.HasOwn, "свой цвет не дошёл до паспорта детали");
+            Assert.Less(Mathf.Abs(mark.own.r - 0.1f), 1e-3f);
+            Object.DestroyImmediate(dark);
+            Object.DestroyImmediate(mesh);
+        }
+
         static readonly Vector3 KeyShift = new(0f, 0f, 0.1f);
 
         /// <summary>ИДЕНТИЧНОСТЬ КЛЮЧОМ (опыт 14.10): вес формы-ключа вида-цели ставится на меш шасси — тело течёт к виду.</summary>
