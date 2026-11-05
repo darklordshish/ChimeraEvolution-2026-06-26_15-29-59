@@ -1,6 +1,6 @@
 """ОРГАН ИЗ ОБЪЁМА HUNYUAN (05.11, третий проход; цель по кропу `витрина/органы/` даёт человека в 3/4 с органом). Голова цели разворачивается по её же симметрии, садится на голову шасси по своду (масштаб — ширина черепа, сдвиг — верх и середина), вырезается орган: окно по высоте и глубине, кожа шасси как нижний край. Половина, смотревшая в камеру, зеркалится, прореживается до бюджета, край уходит под кожу. Веса — кость или тело.
 
-  blender -b организм.blend --factory-startup --python-exit-code 1 -P organ_iz_glb.py -- выход.blend цель.glb Объект@Вид тр [--z0 1.6] [--z1 1.74] [--y1 -0.045] [--sheya_y -0.075] [--kost голова] [--okno morda|spina] [--nad 0.008] [--razv 180] [--plechi 0.56] [--y_sdvig 0.04] [--z_sdvig -0.09] [--vpered 1.2] [--suzh 0.6] [--pol_z 1.6] [--guba 1.6:0.012] [--pl 1.655:0.75]
+  blender -b организм.blend --factory-startup --python-exit-code 1 -P organ_iz_glb.py -- выход.blend цель.glb Объект@Вид тр [--z0 1.6] [--z1 1.74] [--y1 -0.045] [--sheya_y -0.075] [--kost голова] [--okno morda|spina] [--nad 0.008] [--razv 180] [--plechi 0.56] [--y_sdvig 0.04] [--z_sdvig -0.09] [--top_z 1.6] [--rastvor 8] [--vpered 1.2] [--suzh 0.6] [--pol_z 1.6] [--guba 1.6:0.012] [--pl 1.655:0.75]
 """
 import sys, math
 import bpy, bmesh
@@ -54,7 +54,7 @@ else:
     # масштаб — размах плеч, разворот спиной к +y: сторона, где выше перепад глубины на середине
     q = srez(A, A[:, 2].min() + H0 * .3, H0 * .03); cx = (q[:, 0].max() + q[:, 0].min()) / 2; s_ = float(opt.get('plechi', '.56')) / (q[:, 0].max() - q[:, 0].min())
     if float(opt.get('razv', '0')): cel.data.transform(Matrix.Rotation(math.radians(float(opt['razv'])), 4, 'Z')); A = np.array([tuple(v.co) for v in cel.data.vertices]); q = srez(A, A[:, 2].min() + H0 * .3, H0 * .03); cx = (q[:, 0].max() + q[:, 0].min()) / 2
-    zr = 1.85 - top * s_; z_ = (1.40 - zr) / s_; yq = srez(A, z_, .02 / s_); yq = yq[np.abs(yq[:, 0] - cx) < .05 / s_]; yh = srez(VA, 1.40, .05, .08)[:, 1].max()
+    zr = float(opt.get('top_z', '1.85')) - top * s_; z_ = (1.40 - zr) / s_; yq = srez(A, z_, .02 / s_); yq = yq[np.abs(yq[:, 0] - cx) < .05 / s_]; yh = srez(VA, 1.40, .05, .08)[:, 1].max()
     T = Matrix.Translation((-cx * s_, yh + float(opt.get('y_sdvig', '0')) - yq[:, 1].max() * s_, zr + float(opt.get('z_sdvig', '0')))) @ Matrix.Scale(s_, 4)
 cel.data.transform(T); cel.data.update(); A = np.array([tuple(v.co) for v in cel.data.vertices])
 print('ЦЕЛЬ: масштаб %.3f, рамка %s .. %s' % (s_, A.min(0).round(3), A.max(0).round(3)))
@@ -96,6 +96,10 @@ else:
     bmesh.ops.delete(bm, geom=ub, context='FACES'); bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context='VERTS')
 bm.to_mesh(cel.data); bm.free(); cel.data.update(); n_vyr = len(cel.data.polygons)
 # прореживание половины: ось держится
+if opt.get('rastvor'):   # сперва плоскости: рёбра плит держатся, прореживание дальше их не съедает
+    bpy.context.view_layer.objects.active = cel; d0 = cel.modifiers.new('р', 'DECIMATE'); d0.ratio = .25; bpy.ops.object.modifier_apply(modifier='р')
+    d0 = cel.modifiers.new('р', 'DECIMATE'); d0.decimate_type = 'DISSOLVE'; d0.angle_limit = math.radians(float(opt['rastvor'])); bpy.ops.object.modifier_apply(modifier='р')
+    bm = bmesh.new(); bm.from_mesh(cel.data); bmesh.ops.triangulate(bm, faces=bm.faces[:]); bm.to_mesh(cel.data); bm.free(); cel.data.update(); n_vyr = len(cel.data.polygons); print('ЦЕЛЬ: после плоскостей %d граней половины' % n_vyr)
 ok = TR / 2
 d_ = cel.modifiers.new('д', 'DECIMATE'); d_.ratio = min(1.0, ok / max(n_vyr, 1)); d_.use_symmetry = False; bpy.context.view_layer.objects.active = cel; bpy.ops.object.modifier_apply(modifier='д')
 bm = bmesh.new(); bm.from_mesh(cel.data); bmesh.ops.triangulate(bm, faces=bm.faces[:])
