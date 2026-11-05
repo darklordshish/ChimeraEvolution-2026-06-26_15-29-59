@@ -248,9 +248,9 @@ def kogti(im, dl, zagib, r):
 
 
 @organ('Руки@Волк')
-def kogti_volk(): return kogti('Руки@Волк', .036, .016, .009)
+def kogti_volk(): return kogti('Руки@Волк', .047, .021, .012)
 @organ('Руки@Ёж')
-def kogti_ezh(): return kogti('Руки@Ёж', .026, .026, .010)
+def kogti_ezh(): return kogti('Руки@Ёж', .034, .034, .013)
 
 
 def list_sherst(O, x, z, dl, sh, nakl, kost=None, lift=.012):
@@ -276,15 +276,18 @@ def griva():
 
 
 def uho_list(O, dl_x, dl_z, sh, z0=1.745, H='голова'):
-    """лист уха плашмя к лицу: ширина поперёк длины в плоскости анфаса, чаша вогнута"""
-    p, _ = kozha((.4, -.02, z0), (-1, 0, 0)); kor = p - Vector((.005, 0, 0)); d = Vector((dl_x, 0, dl_z)); bk = Vector((-dl_z, 0, dl_x)).normalized(); q = Vector((0, 1, 0)); tip = kor + d
-    a_ = O.v(kor + bk * (sh * .5), H); b_ = O.v(kor - bk * (sh * .5), H); m1 = O.v(kor + d * .42 + bk * sh, H); m2 = O.v(kor + d * .42 - bk * sh, H); c_ = O.v(kor + d * .4 + q * .012, H); t_ = O.v(tip, H)
-    for x_ in ((a_, c_, m1), (m1, c_, t_), (c_, m2, t_), (c_, b_, m2), (a_, b_, c_)): O.f(*x_)
+    """лист уха плашмя к лицу, ширина треть длины; две стороны раздельно, чтобы свет шёл по одной стороне"""
+    p, _ = kozha((.4, -.02, z0), (-1, 0, 0)); kor = p - Vector((.005, 0, 0)); d = Vector((dl_x, 0, dl_z)); bk = Vector((-dl_z, 0, dl_x)).normalized(); q = Vector((0, 1, 0))
+    T = [kor + bk * (sh * .45), kor + d * .45 + bk * sh, kor + d, kor + d * .45 - bk * sh, kor - bk * (sh * .45)]
+    pr = [O.v(t_ - q * .004, H) for t_ in T]; za = [O.v(t_ + q * .004, H) for t_ in T]; c_ = O.v(kor + d * .42 - q * .012, H); c2 = O.v(kor + d * .42 + q * .012, H)
+    for j in range(4):
+        O.f(pr[j], pr[j + 1], c_); O.f(za[j + 1], za[j], c2); O.f(pr[j], za[j], za[j + 1]); O.f(pr[j], za[j + 1], pr[j + 1])
+    O.f(pr[4], pr[0], c_); O.f(za[0], za[4], c2)
 
 
 @organ('Чутьё@Лось')
 def ushi_los():
-    O = Org('Чутьё@Лось'); uho_list(O, .130, .090, .029); return O
+    O = Org('Чутьё@Лось'); uho_list(O, .135, .095, .033); return O
 
 
 @organ('Чутьё@Ёж')
@@ -303,7 +306,7 @@ def kapsula():
     O = Org('Руки@Лось'); K = 'предплечье'
     for tip, c in konchiki():
         d = (tip - c).normalized(); L_ = (tip - c).length * 2 + .012; koren = tip - d * L_; s1 = Vector((1, 0, 0)); s1 = (s1 - d * s1.dot(d)).normalized(); s2 = d.cross(s1).normalized(); Ring = []
-        for t, r in ((0, .020), (.52, .018), (1.0, .009)):
+        for t, r in ((0, .023), (.52, .021), (1.0, .011)):
             c_ = koren + d * (L_ * t); Ring.append([O.v(c_ + s1 * (r * a_) + s2 * (r * b_), K) for a_, b_ in ((1, 1), (-1, 1), (-1, -1), (1, -1))])
         O.lofta(Ring, nachalo=False, konec=False)
     return O
@@ -368,27 +371,35 @@ def gorb():
 
 @organ('Шкура@Ёж')
 def igly_ezh():
-    """ровные слои, ряд сдвинут на полшага, контур плеч колючий"""
-    O = Org('Шкура@Ёж'); shag = .058
-    for j, (z, xm) in enumerate(((1.62, .035), (1.555, .095), (1.49, .225), (1.425, .285), (1.36, .265), (1.295, .22), (1.23, .185), (1.165, .165), (1.10, .15), (1.04, .125))):
+    """ровные ряды одинаковых клиньев внахлёст: сетка по рядам со сдвигом на полшага, один размер, вниз; край ряда — наружу, контур плеч"""
+    O = Org('Шкура@Ёж'); shag = .062; dl = .135; sh = .028
+    for j, (z, xm) in enumerate(((1.60, .02), (1.53, .08), (1.46, .25), (1.39, .29), (1.32, .26), (1.25, .21), (1.18, .17), (1.11, .15), (1.04, .13))):
         x = 0 if j % 2 == 0 else shag / 2
         while x <= xm + 1e-4:
-            list_sherst(O, x, z, .125, .024, .05 + (x / max(xm, .05)) * .9, lift=.018); x += shag
+            k_ = x / max(xm, .05); list_sherst(O, x, z, dl, sh, .08 + (k_ ** 3) * .8, lift=.016); x += shag
     return O
 
 
 @organ('Игломёт@Ёж')
 def iglomet():
-    """трубы вдвое короче листа, основание на загривке; вперёд над головой: при виде сбоку конец перед лбом, 50° к горизонту; идут сбоку от черепа"""
-    O = Org('Игломёт@Ёж'); ug = math.radians(50); d = Vector((0, -math.cos(ug), math.sin(ug))); K = 'грудная клетка'; dl = .44; s1 = Vector((1, 0, 0)); s2 = d.cross(s1).normalized(); r = .024
-    for x in (.092, .144):
-        p0, _ = kozha((x, .4, 1.50), (0, -1, 0)); c0 = p0 - d * .025; c1 = c0 + d * dl
-        def kol(c, q): return [O.v(c + s1 * (q * math.cos(u)) + s2 * (q * math.sin(u)), K) for u in [j * 2 * math.pi / 5 + .3 for j in range(5)]]
-        k0 = kol(c0, r); k1 = kol(c1, r); k3 = kol(c1, r * .6); dn_ = O.v(c1 - d * .05, K)
-        O.lofta([k0, k1], nachalo=False, konec=False)
-        for j in range(5):
-            k = (j + 1) % 5; O.f(k1[j], k1[k], k3[k]); O.f(k1[j], k3[k], k3[j])
+    """четыре гранёные полые трубы рядом над черепом, 48° к горизонту, в профиль концы над лбом и перед ним; низ труб на упоре, упор стоит на загривке. Линия проходит над сводом и затылком с запасом"""
+    O = Org('Игломёт@Ёж'); ug = math.radians(48); d = Vector((0, -math.cos(ug), math.sin(ug))); K = 'грудная клетка'; s1 = Vector((1, 0, 0)); s2 = d.cross(s1).normalized(); r = .021; Y0 = .13; Z0 = 1.912 + (-.03 - Y0) * math.tan(ug); dl = (Y0 + .15) / math.cos(ug); h_min = 9
+    for x in (.025, .075):
+        c0 = Vector((x, Y0, Z0)); c1 = c0 + d * dl
+        for t_ in np.linspace(0, 1, 40):
+            h_ = BVH.find_nearest(c0 + d * (dl * t_)); h_min = min(h_min, h_[3] - r)
+        def kol(c, q): return [O.v(c + s1 * (q * math.cos(u)) + s2 * (q * math.sin(u)), K) for u in [j * math.pi / 3 + .52 for j in range(6)]]
+        k0 = kol(c0, r); k1 = kol(c1, r); k3 = kol(c1, r * .68); dn_ = O.v(c1 - d * .06, K)
+        O.lofta([k0, k1], nachalo=True, konec=False)
+        for j in range(6):
+            k = (j + 1) % 6; O.f(k1[j], k1[k], k3[k]); O.f(k1[j], k3[k], k3[j])
         O.konec(k3, dn_)
+    # упор: от загривка к низу труб
+    p0, _ = kozha((.03, .4, 1.545), (0, -1, 0)); w = .085; yt = Y0 - .05; zt = Z0 - .03
+    N = [O.v((0, p0.y - .02, 1.53), K), O.v((w, p0.y - .03, 1.53), K), O.v((w, p0.y - .01, 1.565), K), O.v((0, p0.y, 1.565), K)]; V_ = [O.v((0, yt, zt - .025), K), O.v((w, yt, zt - .025), K), O.v((w, yt + .022, zt + .004), K), O.v((0, yt + .022, zt + .004), K)]
+    for j in range(3): O.f(N[j], N[j + 1], V_[j + 1]); O.f(N[j], V_[j + 1], V_[j])
+    O.f(V_[0], V_[1], V_[2]); O.f(V_[0], V_[2], V_[3])
+    print('ИГЛОМЁТ: длина %.2f, конец y %.3f z %.3f, зазор до тела мин %.0f мм' % (dl, (c0 + d * dl).y, (c0 + d * dl).z, h_min * 1000))
     return O
 
 
