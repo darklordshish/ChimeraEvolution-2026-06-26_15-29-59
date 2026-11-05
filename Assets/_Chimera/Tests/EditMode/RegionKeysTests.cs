@@ -52,6 +52,20 @@ namespace Chimera.Tests.EditMode
             Assert.IsEmpty(BodyMesh.OrganObjectsFor(h, h.organs.Where(x => x != null).ToList()), "свои органы — без объектов органа");
         }
 
+        /// <summary>ДВА ОРГАНА НА ОДНОМ МЕСТЕ (решение 14 спеки двух слоёв): видна форма первого в порядке отрисовки, а не обе —
+        /// иначе два Чутья давали две пары ушей и глаз.</summary>
+        [Test]
+        public void TwoGraftsOnOneSlot_ShowOnlyTheFirst()
+        {
+            var h = Load("Человек"); var w = Load("Волк"); var l = Load("Лось");
+            var worn = h.organs.Where(o => o != null && o.slot != "Чутьё").ToList();
+            worn.Insert(0, l.organs.First(o => o != null && o.slot == "Чутьё"));
+            worn.Insert(0, w.organs.First(o => o != null && o.slot == "Чутьё"));
+            Assert.AreEqual(new[] { "Чутьё@Волк" }, BodyMesh.OrganObjectsFor(h, worn).Keys.ToArray(), "волчье первое — видно оно одно");
+            (worn[0], worn[1]) = (worn[1], worn[0]);
+            Assert.AreEqual(new[] { "Чутьё@Лось" }, BodyMesh.OrganObjectsFor(h, worn).Keys.ToArray(), "порядок решает, чья форма");
+        }
+
         [Test]
         public void OwnOrgans_GiveNoAreas()
         {

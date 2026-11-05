@@ -103,16 +103,20 @@ public static class BodyMesh
     /// поверх своих объектов шасси, снимает их только по записи (`SpeciesSO.organObjectRules`); кусок органа донора на шве при
     /// нём не ставится. Растёт формой-ключом
     /// `рост` по доле вида-донора от нуля до первой ступени (критик модельной линии 22.10: «одна форма растёт от 15 % до ст.1,
-    /// без скачка»). Ключ: имя объекта, значение — вес роста.</summary>
+    /// без скачка»). Ключ: имя объекта, значение — вес роста. НА СЛОТ — ОДИН ОРГАН, первый в порядке отрисовки
+    /// (`CreatureBody.WornInDrawOrder`, решение 14 спеки двух слоёв): два Чутья разом давали две пары ушей и глаз (05.11).
+    /// Работают оба, видна форма первого; слияние дизайна — отдельная фича.</summary>
     public static Dictionary<string, float> OrganObjectsFor(SpeciesSO chassis, IReadOnlyList<Organ> worn)
     {
         var res = new Dictionary<string, float>();
         if (chassis == null || worn == null) return res;
         var id = GlobalLayer.Identity(chassis, worn);
+        var shown = new HashSet<string>();
         foreach (var o in worn)
         {
             if (o == null || o.chassisOnly || string.IsNullOrEmpty(o.slot)) continue;
             if (chassis.organs != null && System.Array.IndexOf(chassis.organs, o) >= 0) continue;
+            if (!shown.Add(o.slot)) continue;
             var owner = ChainSwap.OwnerOf(o);
             if (owner == null || owner == chassis || !id.TryGetValue(owner, out var share)) continue;
             res[OrganObject(o.slot, owner.speciesName)] = Mathf.Clamp01(share / GlobalLayer.WeakAt);
