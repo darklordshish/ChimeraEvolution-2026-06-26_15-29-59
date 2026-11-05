@@ -1,7 +1,7 @@
 """ЛЕПКА КЛЮЧЕЙ ПОД МАССУ БАЗЫ (05.11, Б7; ГеймБосс: ключи грубее базы, мозаика, манжета рвётся полосами). Перенос мостом даёт каждой вершине свой сдвиг, и на крупной грани они спорят: плоскости базы ломаются в мозаику. Здесь сглаживается поле СДВИГОВ, а не форма: сдвиг вершины тянется к среднему соседей, поэтому большие плоскости базы остаются плоскостями и в ключе. Вершины, совпавшие в базе (швы объектов), идут одной группой: швы не расходятся. Кисть (`Руки`, z < `--z_kist`) держит жёсткий ход и служит краем поля, у запястья вес плавный: манжета не рвётся.
 Правки формы по весам кости считаются здесь же: `--plech` — лишние проходы по плечам (острые углы), `--lok` — сдвиг окна по z (опустить плечи: голова «Лося» утоплена).
 
-  blender -b сборка.blend --factory-startup --python-exit-code 1 -P klyuch_lepka.py -- выход.blend [--klyuchi Волк,Волк1,Лось] [--it 8] [--lam 0.5] [--z_kist 0.96] [--noga ключ:z;…] [--plech 10] [--stopa_z 0.13] [--lok ключ:x0:x1:z0:z1:dz;…]
+  blender -b сборка.blend --factory-startup --python-exit-code 1 -P klyuch_lepka.py -- выход.blend [--klyuchi Волк,Волк1,Лось] [--it 8] [--lam 0.5] [--z_kist 0.96] [--noga ключ:z;…] [--plech 10] [--stopa_it 20 --stopa_z 0.16] [--lok ключ:x0:x1:z0:z1:dz;…]
 """
 import sys
 import bpy, bmesh
@@ -46,8 +46,9 @@ for kn in opt['klyuchi'].split(','):
         kl, z_ = s_.split(':')
         if kl == kn: vk = vk * np.clip((Pb[:, 2] - float(z_)) / 0.15, 0, 1)
     pl = (np.abs(Pb[:, 0]) > 0.09) & (Pb[:, 2] > 1.30) & (Pb[:, 2] < 1.66)
-    for it_ in range(IT + int(opt.get('plech', '0'))):
-        m_ = vk if it_ < IT else vk * pl
+    st_ = (Pb[:, 2] < float(opt.get('stopa_z', '0.16'))) & ~ruki; nst = int(opt.get('stopa_it', '0'))
+    for it_ in range(IT + int(opt.get('plech', '0')) + nst):
+        m_ = vk if it_ < IT else vk * pl if it_ < IT + int(opt.get('plech', '0')) else ves * st_   # стопа: свои проходы сглаживания поля сдвигов, мятые грани уходят, форма стопы ключа остаётся
         Sr = np.array([D[s].mean(0) for s in Is]); D = D + (LAM * m_)[:, None] * (Sr - D)
     # правка масс: вверх — шея и голова, вниз — плечи (окно по z базы и |x|)
     for s_ in filter(None, opt.get('lok', '').split(';')):
@@ -56,15 +57,6 @@ for kn in opt['klyuchi'].split(','):
         x0, x1, z0, z1, dz = map(float, (x0, x1, z0, z1, dz))
         wx = np.clip((np.abs(Pb[:, 0]) - x0) / 0.03, 0, 1) * np.clip((x1 - np.abs(Pb[:, 0])) / 0.03, 0, 1); wz = np.clip((Pb[:, 2] - z0) / 0.05, 0, 1) * np.clip((z1 - Pb[:, 2]) / 0.05, 0, 1)
         D[:, 2] += dz * wx * wz * ves
-    # стопа жёстко (`--stopa_z z`): ход стопы под ключом — поворот и масштаб по самой стопе, без мятых граней; к голени плавно
-    if opt.get('stopa_z'):
-        zs = float(opt['stopa_z'])
-        for sg in (1, -1):
-            m_ = (np.sign(Pb[:, 0]) == sg) & (Pb[:, 2] < zs) & ~ruki
-            if m_.sum() < 6: continue
-            A_, B_ = Pb[m_], Pb[m_] + D[m_]; ca, cb = A_.mean(0), B_.mean(0); U_, S_, Vt = np.linalg.svd((A_ - ca).T @ (B_ - cb)); dd = np.sign(np.linalg.det(Vt.T @ U_.T)); R_ = Vt.T @ np.diag([1, 1, dd]) @ U_.T
-            sc = np.sqrt(((B_ - cb) ** 2).sum() / ((A_ - ca) ** 2).sum()); Dz = (sc * (A_ - ca) @ R_.T + cb) - A_
-            w_ = np.clip((zs - Pb[m_, 2]) / .05, 0, 1)[:, None]; D[m_] = w_ * Dz + (1 - w_) * D[m_]
     # масса: ключ:объект|*:z0:z1:k — сечение по высоте базы расширяется от своего центра (нога, рука — каждая сторона отдельно)
     Pk = Pb + D
     for s_ in filter(None, opt.get('shir', '').split(';')):

@@ -38,7 +38,7 @@ def ves_tela(p):
 def lin(h):
     c = [int(h[i:i + 2], 16) / 255 for i in (1, 3, 5)]; return tuple(x / 12.92 if x <= .04045 else ((x + .055) / 1.055) ** 2.4 for x in c) + (1,)
 GLAZ = {'Человек': '#3A8DFF', 'Волк': '#FFB000', 'Змея': '#B8E000', 'Ёж': '#E0262B', 'Лось': '#B5542A'}
-CVET = dict(чешуя=lin('#7C8A64'), коготь=(.05, .045, .04, 1), броня=(.07, .065, .06, 1), нос=(.03, .03, .03, 1), зуб=(.86, .83, .72, 1), глаз=(.34, .30, .08, 1), зрачок=(.01, .01, .01, 1), янтарь=(.62, .34, .06, 1), карий=(.10, .055, .03, 1), бусина=(.015, .015, .02, 1), ямка=(.13, .11, .10, 1))
+CVET = dict(чешуя=lin('#9AA092'), коготь=(.05, .045, .04, 1), броня=(.07, .065, .06, 1), нос=(.03, .03, .03, 1), зуб=(.86, .83, .72, 1), глаз=(.34, .30, .08, 1), зрачок=(.01, .01, .01, 1), янтарь=(.62, .34, .06, 1), карий=(.10, .055, .03, 1), бусина=(.015, .015, .02, 1), ямка=(.13, .11, .10, 1))
 
 
 class Org:
@@ -434,10 +434,24 @@ def cheshuya_romby(O, shag=.09, ug=.62):
     for key, F in yach.items():
         Sa = sum(f.calc_area() for f in F)
         if Sa < 4e-4: continue   # обрезки ячеек у края — без них край ровнее
-        cc = sum((f.calc_center_median() * f.calc_area() for f in F), Vector()) / Sa
-        for f in F:
-            n = f.normal if f.normal.y >= 0 else -f.normal
-            O.f(*[O.v(cc + (v.co - cc) * .88 + n * .002) for v in f.verts])
+        cc = sum((f.calc_center_median() * f.calc_area() for f in F), Vector()) / Sa; nn = sum((f.normal * f.calc_area() for f in F), Vector())
+        if nn.y < 0: nn = -nn
+        nn.normalize(); V = {v for f_ in F for v in f_.verts}; pod = sum((v.co - cc).dot(nn) for v in V) / len(V) + .0018
+        # ромб плоский: ячейка ложится на свою среднюю плоскость над кожей, внутренние рёбра растворяются — одна грань на ромб, свет ровный
+        bc = bmesh.new(); mp = {}
+        for f_ in F:
+            q = []
+            for v in f_.verts:
+                if v not in mp: q_ = cc + ((v.co - cc) - nn * (v.co - cc).dot(nn)) * .90; mp[v] = bc.verts.new(q_ + nn * max(pod, (v.co - cc).dot(nn) + .0018))   # почти плоско: где кожа выше плоскости, ромб ложится на кожу
+                q.append(mp[v])
+            try: bc.faces.new(q)
+            except ValueError: pass
+        bc.normal_update(); bmesh.ops.dissolve_limit(bc, angle_limit=math.radians(6), verts=bc.verts[:], edges=bc.edges[:]); bmesh.ops.dissolve_degenerate(bc, edges=bc.edges[:], dist=1e-4)
+        dv = [v for v in bc.verts if len(v.link_edges) == 2 and (v.link_edges[0].other_vert(v).co - v.co).normalized().dot((v.link_edges[1].other_vert(v).co - v.co).normalized()) < -.995]
+        bmesh.ops.dissolve_verts(bc, verts=dv)
+        bmesh.ops.triangulate(bc, faces=bc.faces[:])
+        for f_ in bc.faces: O.f(*[O.v(v.co) for v in f_.verts])
+        bc.free()
     bm.free()
 
 
@@ -492,20 +506,20 @@ def igly_ezh():
 
 @organ('Игломёт@Ёж')
 def iglomet():
-    """`витрина/человек-ёж/ступени.png` ст.1–ст.2: две толстые полые трубы из верха спины между лопатками, за затылком, концы чуть выше макушки, вверх и чуть вперёд; назад не смотрят. Основание уходит под кожу"""
-    O = Org('Игломёт@Ёж'); K = 'грудная клетка'; r = .032; h_min = 9; L = []
-    for x in (.045,):
-        B, _ = kozha((x, .4, 1.50), (0, -1, 0)); B = B - Vector((0, .02, 0)); E = Vector((x * 1.25, B.y - .05, 1.885)); d = (E - B).normalized(); dl = (E - B).length
+    """`витрина/человек-ёж/ступени.png` ст.1–ст.2: две толстые полые трубы из верха спины между лопатками, наклон вперёд 30° от вертикали, концы над макушкой и чуть перед ней; идут по бокам черепа. Основание под кожей"""
+    O = Org('Игломёт@Ёж'); K = 'грудная клетка'; r = .030; ug = math.radians(30); h_min = 9; L = .44
+    for x in (.128,):
+        B, _ = kozha((.10, .4, 1.50), (0, -1, 0)); B = Vector((x, B.y - .02, 1.50)); d = Vector((.08, -math.sin(ug), math.cos(ug))).normalized(); E = B + d * L
         s1 = Vector((1, 0, 0)); s1 = (s1 - d * s1.dot(d)).normalized(); s2 = d.cross(s1).normalized()
-        for t_ in np.linspace(.25, 1, 30):
-            h_ = BVH.find_nearest(B + d * (dl * t_)); h_min = min(h_min, h_[3] - r)
+        for t_ in np.linspace(.3, 1, 40):   # без основания: оно под кожей нарочно
+            h_ = BVH.find_nearest(B + d * (L * t_)); h_min = min(h_min, h_[3] - r)
         def kol(c, q): return [O.v(c + s1 * (q * math.cos(u)) + s2 * (q * math.sin(u)), K) for u in [j * math.pi / 3 + .52 for j in range(6)]]
         k0 = kol(B, r); k1 = kol(E, r); k3 = kol(E, r * .66); dn_ = O.v(E - d * .07, K)
         O.lofta([k0, k1], nachalo=False, konec=False)
         for j in range(6):
             k = (j + 1) % 6; O.f(k1[j], k1[k], k3[k]); O.f(k1[j], k3[k], k3[j])
-        O.konec(k3, dn_); L.append((dl, math.degrees(math.atan2(E.z - B.z, B.y - E.y))))
-    print('ИГЛОМЁТ: труб %d, длина %.2f, угол к горизонту %.0f°, конец z %.3f, зазор до тела мин %.0f мм' % (len(L) * 2, L[0][0], L[0][1], E.z, h_min * 1000))
+        O.konec(k3, dn_)
+    print('ИГЛОМЁТ: труб 2, длина %.2f, от вертикали %.0f°, основание y %.3f z %.3f, конец x %.3f y %.3f z %.3f, зазор до тела мин %.0f мм' % (L, math.degrees(math.acos(d.z)), B.y, B.z, E.x, E.y, E.z, h_min * 1000))
     return O
 
 
