@@ -137,6 +137,12 @@ public static class GameCam
         cam.fieldOfView = 60f; cam.nearClipPlane = 0.05f; cam.farClipPlane = 300f;
         cam.transform.position = new Vector3(0f, 1.6f, -2.6f);
         cam.transform.LookAt(Vector3.up * 1.0f);
+        // свой цвет детали (`слот.что@вид`): в игре его кладёт `TintMixer`, в кадре без тела-существа — здесь
+        foreach (var m in body.GetComponentsInChildren<PartMark>(true))
+        {
+            var r = m.GetComponent<Renderer>(); if (r == null) continue;
+            var pb = new MaterialPropertyBlock(); pb.SetColor("_BaseColor", m.own); r.SetPropertyBlock(pb);
+        }
         return donor.speciesName + " " + slot + ": вершин " + verts + "; " + string.Join(",", names);
     }
 
