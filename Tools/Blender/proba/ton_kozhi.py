@@ -77,7 +77,26 @@ for k, T in sorted(SBOR.items()):
             for j in range(len(T['V'])): kb.data[j].co = D.get(j, B0.get(j, T['V'][j]))
 for o in bpy.data.objects:
     if '.тон' in o.name:
-        for p in o.data.polygons: p.use_smooth = False
+        if opt.get('gladko') != '1':
+            for p in o.data.polygons: p.use_smooth = False
         o.data.calc_loop_triangles(); itog[o.name] = len(o.data.loop_triangles)
+# гладкие нормали в области рисунка (`--gladko 1`): свет на спине ровный, рисунок кромок читается тоном. Нормаль вершины —
+# среднее нормалей граней области в той же точке по всем объектам тонов; вне области огранка как была (нормаль грани)
+if opt.get('gladko') == '1':
+    from collections import defaultdict
+    acc = defaultdict(lambda: Vector((0, 0, 0))); key = lambda p: (round(p.x, 4), round(p.y, 4), round(p.z, 4))
+    for k_, T in SBOR.items():
+        if k_ == 0: continue
+        for f in T['F']:
+            P = [T['V'][q] for q in f]; n = (P[1] - P[0]).cross(P[2] - P[0])
+            for q in P: acc[key(q)] += n
+    for k_, T in SBOR.items():
+        ob = bpy.data.objects['%s.тон%d@%s' % (SL, k_ + 1, VID)]; me = ob.data; ln = []
+        for p_ in me.polygons:
+            p_.use_smooth = k_ != 0
+            for li in p_.loop_indices:
+                v = me.vertices[me.loops[li].vertex_index].co; a_ = acc.get(key(v))
+                ln.append(tuple(a_.normalized()) if (k_ != 0 and a_ is not None and a_.length > 0) else tuple(p_.normal))
+        me.normals_split_custom_set(ln)
 print('ТОН %s@%s: %s, всего %d тр' % (SL, VID, itog, sum(itog.values())))
 bpy.ops.wm.save_as_mainfile(filepath=OUT)
