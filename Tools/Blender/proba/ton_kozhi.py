@@ -17,7 +17,9 @@ mats = []
 for k, t in enumerate(TONY):
     m = bpy.data.materials.new('тон%d' % (k + 1)); c = (t, t, t, 1); m.diffuse_color = c; m.use_nodes = True; m.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = c; mats.append(m)
 v_obl = lambda c, n: Z0 < c.z < Z1 and n.y > .2
-dist = lambda c, N: abs((N.dot(c) / SH) - round(N.dot(c) / SH)) * SH
+MEL = lambda c: c.z > 1.52 or abs(c.x) > .17   # шея и бока: сетка вдвое мельче
+def dist(c, N):
+    s_ = SH / 2 if MEL(c) else SH; q = N.dot(c) / s_; return abs(q - round(q)) * s_
 itog = {}; SBOR = {}
 for nm in opt['obj'].split(','):
     src = bpy.data.objects[nm]; M = src.matrix_world; Mi = M.inverted()
@@ -26,10 +28,16 @@ for nm in opt['obj'].split(','):
     obl = [f for f in bm.faces if v_obl(M @ f.calc_center_median(), (M.to_3x3() @ f.normal).normalized())]
     geom = list({v for f in obl for v in f.verts}) + list({e for f in obl for e in f.edges}) + obl
     for N in (N1, N2):
-        for k in range(-30, 31):
-            for d in (-KR, 0.0, KR):
+        for k2 in range(-60, 61):
+            k = k2 / 2
+            for d in ((-KR, 0.0, KR) if k2 % 2 == 0 else (-KR, KR)):
+                if k2 % 2:   # полушаг — только на шее и боках
+                    geom_ = [g for g in geom if g.is_valid and isinstance(g, bmesh.types.BMFace) and MEL(M @ g.calc_center_median())]
+                    if not geom_: continue
                 co = Mi @ (N * (k * SH + d)); no = (Mi.to_3x3() @ N).normalized()
-                r = bmesh.ops.bisect_plane(bm, geom=[g for g in geom if g.is_valid], dist=1e-6, plane_co=co, plane_no=no)
+                gg = [g for g in geom if g.is_valid]
+                if k2 % 2: gf = set(geom_); gg = list({v for f in gf for v in f.verts}) + list({e for f in gf for e in f.edges}) + list(gf)
+                r = bmesh.ops.bisect_plane(bm, geom=gg, dist=1e-6, plane_co=co, plane_no=no)
                 geom = [g for g in geom if g.is_valid] + r['geom_cut']
                 geom = list({g for g in geom if g.is_valid} | {f for g in r['geom_cut'] if isinstance(g, bmesh.types.BMEdge) for f in g.link_faces})
     bmesh.ops.triangulate(bm, faces=bm.faces[:]); bm.normal_update()
