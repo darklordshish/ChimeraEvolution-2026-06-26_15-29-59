@@ -38,7 +38,7 @@ def ves_tela(p):
 def lin(h):
     c = [int(h[i:i + 2], 16) / 255 for i in (1, 3, 5)]; return tuple(x / 12.92 if x <= .04045 else ((x + .055) / 1.055) ** 2.4 for x in c) + (1,)
 GLAZ = {'Человек': '#3A8DFF', 'Волк': '#FFB000', 'Змея': '#B8E000', 'Ёж': '#E0262B', 'Лось': '#B5542A'}
-CVET = dict(чешуя=lin('#9AA092'), коготь=(.05, .045, .04, 1), броня=(.07, .065, .06, 1), нос=(.03, .03, .03, 1), зуб=(.86, .83, .72, 1), глаз=(.34, .30, .08, 1), зрачок=(.01, .01, .01, 1), янтарь=(.62, .34, .06, 1), карий=(.10, .055, .03, 1), бусина=(.015, .015, .02, 1), ямка=(.13, .11, .10, 1))
+CVET = dict(канал=(.02, .02, .02, 1), чешуя=lin('#9AA092'), коготь=(.05, .045, .04, 1), броня=(.07, .065, .06, 1), нос=(.03, .03, .03, 1), зуб=(.86, .83, .72, 1), глаз=(.34, .30, .08, 1), зрачок=(.01, .01, .01, 1), янтарь=(.62, .34, .06, 1), карий=(.10, .055, .03, 1), бусина=(.015, .015, .02, 1), ямка=(.13, .11, .10, 1))
 
 
 class Org:
@@ -508,29 +508,37 @@ def igly_ezh():
 
 @organ('Игломёт@Ёж')
 def iglomet():
-    """`витрина/человек-ёж/ступени.png` ст.1–ст.2: три короткие толстые полые трубы тесной группой за головой, наклон вперёд 12°, длина 0.30, концы над затылком; торцы открыты. Стоят на горбе загривка — клин от кожи к основаниям, читается частью спины, а не брусом. Труба держится за затылком с зазором"""
-    O = Org('Игломёт@Ёж'); K = 'грудная клетка'; r = .040; ug = math.radians(12); d = Vector((0, -math.sin(ug), math.cos(ug))); L = .30; h_min = 9
-    Zb = 1.889 - L * math.cos(ug); Yb = .16
-    s1 = Vector((1, 0, 0)); s2 = d.cross(s1).normalized(); kon = []
-    for x in (-.092, 0.0, .092):
+    """`витрина/человек-ёж/ступени.png` ст.1: три отдельные круглые трубы (8 граней) с просветом, наклон вперёд 12°, длина 0.30, концы над затылком; торец открыт и чуть скошен, внутри тёмный канал (`Игломёт.канал@Ёж`). Каждая труба стоит на своём коротком основании-конусе от кожи загривка"""
+    O = Org('Игломёт@Ёж'); K = 'грудная клетка'; r = .034; ug = math.radians(12); d = Vector((0, -math.sin(ug), math.cos(ug))); L = .30; h_min = 9; S = 8
+    Zb = 1.889 - L * math.cos(ug); Yb = .16; s1 = Vector((1, 0, 0)); s2 = d.cross(s1).normalized(); kon = []
+    for x in (-.098, 0.0, .098):
         B = Vector((x, Yb + (.015 if x == 0 else 0), Zb)); E = B + d * L; kon.append(E)
         for t_ in np.linspace(0, 1, 30):
             h_ = BVH.find_nearest(B + d * (L * t_)); h_min = min(h_min, h_[3] - r)
-        def kol(c, q): return [O.v(c + s1 * (q * math.cos(u)) + s2 * (q * math.sin(u)), K) for u in [j * math.pi / 3 + .52 for j in range(6)]]
-        k0 = kol(B, r); k1 = kol(E, r); k3 = kol(E, r * .7); dn_ = O.v(E - d * .09, K)
+        kol = lambda c, q, sk=0: [O.v(c + s1 * (q * math.cos(u)) + s2 * (q * math.sin(u)) + d * (sk * math.sin(u)), K) for u in [j * 2 * math.pi / S for j in range(S)]]
+        k0 = kol(B, r); k1 = kol(E, r, .018); k3 = kol(E, r * .7, .018)   # срез скошен: верх трубы длиннее спереди
         O.lofta([k0, k1], nachalo=True, konec=False)
-        for j in range(6):
-            k = (j + 1) % 6; O.f(k1[j], k1[k], k3[k]); O.f(k1[j], k3[k], k3[j])
-        O.konec(k3, dn_)
-    # горб загривка: клин от кожи (z 1.38–1.56) к основаниям труб, сужается кверху
-    P = lambda x, y, z: O.v((x, y, z), K); w0, w1 = .15, .13
-    def ky(x, z): return kozha((x, .5, z), (0, -1, 0))[0].y - .01
-    Nz = [P(-w0, ky(-w0, 1.38), 1.38), P(w0, ky(w0, 1.38), 1.38), P(w1, ky(w1 * .6, 1.56), 1.56), P(-w1, ky(-w1 * .6, 1.56), 1.56)]
-    Vz = [P(-w1, Yb + .01, Zb - .03), P(w1, Yb + .01, Zb - .03), P(w1 * .9, Yb - .03, Zb + .02), P(-w1 * .9, Yb - .03, Zb + .02)]
-    for j in range(4):
-        k = (j + 1) % 4; O.f(Nz[j], Nz[k], Vz[k]); O.f(Nz[j], Vz[k], Vz[j])
-    O.f(Vz[0], Vz[1], Vz[2]); O.f(Vz[0], Vz[2], Vz[3])
-    E = kon[1]; print('ИГЛОМЁТ: труб 3, длина %.2f, диаметр %.0f мм, концы y %.3f z %.3f, зазор до тела мин %.0f мм' % (L, r * 2000, E.y, E.z, h_min * 1000))
+        for j in range(S):
+            k = (j + 1) % S; O.f(k1[j], k1[k], k3[k]); O.f(k1[j], k3[k], k3[j])
+        # основание: конус от кожи загривка к низу трубы
+        q, n = kozha((x * .8, .5, Zb - .05), (0, -1, 0)); C0 = q - n * .01
+        kb = [O.v(C0 + s1 * (r * 1.5 * math.cos(u)) + Vector((0, 0, r * 1.2 * math.sin(u))), K) for u in [j * 2 * math.pi / S for j in range(S)]]
+        O.lofta([kb, k0], nachalo=False, konec=False)
+    E = kon[1]; print('ИГЛОМЁТ: труб 3, 8 граней, длина %.2f, диаметр %.0f мм, просвет %.0f мм, концы y %.3f z %.3f, зазор до тела мин %.0f мм' % (L, r * 2000, (.098 - 2 * r) * 1000, E.y, E.z, h_min * 1000))
+    return O
+
+
+@organ('Игломёт.канал@Ёж')
+def iglomet_kanal():
+    O = Org('Игломёт.канал@Ёж'); K = 'грудная клетка'; r = .034 * .7; ug = math.radians(12); d = Vector((0, -math.sin(ug), math.cos(ug))); L = .30; S = 8
+    Zb = 1.889 - L * math.cos(ug); Yb = .16; s1 = Vector((1, 0, 0)); s2 = d.cross(s1).normalized()
+    for x in (-.098, 0.0, .098):
+        E = Vector((x, Yb + (.015 if x == 0 else 0), Zb)) + d * L
+        kol = lambda c, sk=0: [O.v(c + s1 * (r * math.cos(u)) + s2 * (r * math.sin(u)) + d * (sk * math.sin(u)), K) for u in [j * 2 * math.pi / S for j in range(S)]]
+        k3 = kol(E, .018); kd = kol(E - d * .09)
+        for j in range(S):   # стенки канала смотрят внутрь
+            k = (j + 1) % S; O.f(k3[j], kd[j], kd[k]); O.f(k3[j], kd[k], k3[k])
+        O.konec(kd[::-1], O.v(E - d * .09, K))
     return O
 
 
