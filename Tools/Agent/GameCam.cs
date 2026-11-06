@@ -141,6 +141,7 @@ public static class GameCam
         foreach (var m in body.GetComponentsInChildren<PartMark>(true))
         {
             var r = m.GetComponent<Renderer>(); if (r == null) continue;
+            if (!m.HasOwn) continue;   // тон рисунка кожи кладёт сам BodyMesh (база × тон), чёрным его не затирать
             var pb = new MaterialPropertyBlock(); pb.SetColor("_BaseColor", m.own); r.SetPropertyBlock(pb);
         }
         return donor.speciesName + " " + slot + ": вершин " + verts + "; " + string.Join(",", names);
