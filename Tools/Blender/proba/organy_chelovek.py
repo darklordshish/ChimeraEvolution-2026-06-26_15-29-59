@@ -405,7 +405,7 @@ def yamka():
     O = Org('Чутьё.ямка@Змея'); p, _ = kozha((.028, -.5, 1.695), (0, 1, 0)); fan(O, p, EYE['n'], .019, .015, .008, 5, pod=.006); return O
 
 
-def cheshuya_romby(O, shag=.09, ug=.62):
+def cheshuya_romby(O, shag=.09, ug=.62, zatuh=0):
     """чешуя по телу (геймдизайнер 05.11: «по телу должна идти, а не бронеплитами»): кожа спины, шеи и плеч режется двумя семействами косых плоскостей в ромбическую сетку; каждая ячейка-ромб сжимается к своему центру на 12 % (между чешуями видна кожа) и приподнимается на 2 мм. Форма тела повторяется точно, рельефа нет — читается рисунком и тоном куска. Ряд ниже — по ходу тела сверху вниз"""
     bm = bmesh.new()
     for o in TELO:
@@ -442,7 +442,9 @@ def cheshuya_romby(O, shag=.09, ug=.62):
         for f_ in F:
             q = []
             for v in f_.verts:
-                if v not in mp: q_ = cc + ((v.co - cc) - nn * (v.co - cc).dot(nn)) * .90; mp[v] = bc.verts.new(q_ + nn * max(pod, (v.co - cc).dot(nn) + .0018))   # почти плоско: где кожа выше плоскости, ромб ложится на кожу
+                if v not in mp:
+                    q_ = cc + ((v.co - cc) - nn * (v.co - cc).dot(nn)) * (.90 - (.45 * min(max(1.33 - cc.z, 0) / .25, 1) if zatuh else 0))
+                    mp[v] = bc.verts.new(q_ + nn * max(pod, (v.co - cc).dot(nn) + .0018))   # почти плоско: где кожа выше плоскости, ромб ложится на кожу
                 q.append(mp[v])
             try: bc.faces.new(q)
             except ValueError: pass
@@ -464,7 +466,7 @@ def cheshuya_osn():
 
 @organ('Шкура.чешуя@Змея')
 def cheshuya():
-    O = Org('Шкура.чешуя@Змея'); cheshuya_romby(O); return O
+    O = Org('Шкура.чешуя@Змея'); cheshuya_romby(O, shag=.075, zatuh=1); return O
 
 
 @organ('Хвост@Змея')
