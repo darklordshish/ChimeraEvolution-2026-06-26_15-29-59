@@ -90,6 +90,8 @@ public class TintMixer : MonoBehaviour
 
     void LateUpdate() { if (dirty) Apply(); }
 
+    public static Color Tone(Color baseColor, Color tone) => new Color(baseColor.r * tone.r, baseColor.g * tone.g, baseColor.b * tone.b, baseColor.a);
+
     /// <summary>Пересчитать и записать НЕМЕДЛЕННО. Нужно там, где следом читают итоговый цвет: телеграф
     /// снимает им «родную» базу (`Rebase`), и, отложи мы запись до конца кадра, он снял бы прошлый цвет.</summary>
     public void Apply()
@@ -104,8 +106,8 @@ public class TintMixer : MonoBehaviour
             // ЧУЖОЕ НЕ ТРОГАЕМ: у обычного NPC материал запечён — состава ему никто не задавал, слоёв нет,
             // и красить его нечем. Без этой проверки микшер залил бы волка с лосём серым по построению
             if (!own && !hasComposition) continue;
-            // БАЗА: своя окраска детали, иначе цвет по составу
-            Color c = own ? mark.own : composition;
+            // БАЗА: своя окраска детали, иначе цвет по составу (грань рисунка Шкуры — со своим тоном)
+            Color c = own ? mark.own : mark != null && mark.HasTone ? Tone(composition, mark.tone) : composition;
             PartRole role = mark != null ? mark.role : PartRole.None;
 
             for (int k = 0; k < layers.Count; k++)          // отсортированы по приоритету

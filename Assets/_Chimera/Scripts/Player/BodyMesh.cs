@@ -256,10 +256,12 @@ public static class BodyMesh
 
             int dot = src.name.IndexOf('.');
             var go = new GameObject(organ || dot > 0 ? SlotOf(src.name) : src.name);   // ИМЯ = СЛОТ: контракт имён частей
+            bool tone = IsTone(src.name);
             if (dot > 0 && src.sharedMaterial != null && src.sharedMaterial.HasProperty("_BaseColor"))
             {
                 var own = src.sharedMaterial.GetColor("_BaseColor"); own.a = 1f;
-                go.AddComponent<PartMark>().own = own;
+                if (tone) go.AddComponent<PartMark>().tone = own;   // грань рисунка кожи: тон к цвету тела, а не свой цвет
+                else go.AddComponent<PartMark>().own = own;
             }
             go.transform.SetParent(container, false);
             var smr = go.AddComponent<SkinnedMeshRenderer>();
@@ -289,7 +291,14 @@ public static class BodyMesh
                 smr.localBounds = b;
             }
             else smr.updateWhenOffscreen = true;
-            if (mat != null) smr.sharedMaterial = src.name.StartsWith("@") || organ ? TwoSided(mat) : mat;   // черты и органы на шаблоне — оболочки
+            if (mat != null) smr.sharedMaterial = (src.name.StartsWith("@") || organ) && !tone ? TwoSided(mat) : mat;   // черты и органы на шаблоне — оболочки; рисунок кожи — сама кожа
+            // тон рисунка виден и без окраски по составу (NPC с запечённым материалом): база материала × тон
+            if (tone && mat != null && mat.HasProperty("_BaseColor") && go.TryGetComponent<PartMark>(out var toneMark))
+            {
+                var block = new MaterialPropertyBlock();
+                block.SetColor("_BaseColor", TintMixer.Tone(mat.GetColor("_BaseColor"), toneMark.tone));
+                smr.SetPropertyBlock(block);
+            }
             placed++;
         }
         // ПОЗУ СТУПЕНИ ЗДЕСЬ НЕ СТАВИМ: после меша тела на тот же скелет привязываются куски органов, и их привязка обязана
@@ -322,6 +331,15 @@ public static class BodyMesh
         foreach (var st in chassis.keyStages)
             if (st != null && keys.TryGetValue(st.key, out var w) && w >= KeyWeight(st.step) - 1e-3f && w > 0f) res.Add(st);
         return res;
+    }
+
+    /// <summary>РИСУНОК КОЖИ (спека `2026-11-06-shkura-obrabotka-kozhi.md`, вариант А — цвет по граням): объект `<слот>.тон…`
+    /// (`хребет.тон2@Змея`) — грани кожи одного тона. Его цвет — множитель к цвету тела, а не своя окраска: тело остаётся
+    /// окрашенным по составу, а рисунок лежит поверх тоном.</summary>
+    public static bool IsTone(string objectName)
+    {
+        int dot = objectName.IndexOf('.');
+        return dot > 0 && string.CompareOrdinal(objectName, dot + 1, "тон", 0, 3) == 0;
     }
 
     static string SlotOf(string objectName)

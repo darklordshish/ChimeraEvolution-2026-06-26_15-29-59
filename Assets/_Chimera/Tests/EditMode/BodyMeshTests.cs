@@ -253,6 +253,36 @@ namespace Chimera.Tests.EditMode
             Object.DestroyImmediate(mesh);
         }
 
+        /// <summary>РИСУНОК КОЖИ (спека 06.11): грань `<слот>.тон@<вид>` несёт тон — множитель к цвету тела, а не свою окраску;
+        /// без окраски по составу (NPC) база материала × тон уже стоит в блоке свойств.</summary>
+        [Test]
+        public void ToneFaces_MultiplyBodyColor_NotReplaceIt()
+        {
+            Assert.IsTrue(BodyMesh.IsTone("хребет.тон2@Змея"));
+            Assert.IsTrue(BodyMesh.IsTone("хребет.тон"));
+            Assert.IsFalse(BodyMesh.IsTone("голова.зубы"));
+            Assert.IsFalse(BodyMesh.IsTone("Шкура@Змея"));
+
+            Species().bodyMesh = Model();
+            var src = model.GetComponentInChildren<SkinnedMeshRenderer>();
+            src.name = "голова.тон";
+            var toneMat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            toneMat.SetColor("_BaseColor", new Color(0.8f, 0.9f, 0.8f, 1f));
+            src.sharedMaterial = toneMat;
+            Build(so.organs.ToList());
+            Object.DestroyImmediate(toneMat);
+            var smr = go.GetComponentsInChildren<SkinnedMeshRenderer>(true).Single();
+            Assert.AreEqual("голова", smr.name, "имя — слот");
+            Assert.IsTrue(smr.TryGetComponent<PartMark>(out var mark) && mark.HasTone && !mark.HasOwn, "тон, а не своя окраска");
+            Assert.AreEqual(0.8f, mark.tone.r, 1e-3f);
+            Assert.AreEqual(0.45f, TintMixer.Tone(new Color(0.5f, 0.5f, 0.5f), mark.tone).g, 1e-3f, "цвет тела × тон");
+            if (smr.sharedMaterial != null && smr.sharedMaterial.HasProperty("_BaseColor"))
+            {
+                var block = new MaterialPropertyBlock(); smr.GetPropertyBlock(block);
+                Assert.AreEqual(smr.sharedMaterial.GetColor("_BaseColor").r * 0.8f, block.GetColor("_BaseColor").r, 1e-3f, "без окраски по составу — база материала × тон");
+            }
+        }
+
         static readonly Vector3 KeyShift = new(0f, 0f, 0.1f);
 
         /// <summary>ИДЕНТИЧНОСТЬ КЛЮЧОМ (опыт 14.10): вес формы-ключа вида-цели ставится на меш шасси — тело течёт к виду.</summary>
