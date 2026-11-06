@@ -45,6 +45,7 @@ if krai:
     bmesh.ops.delete(bm, geom=[f for f in bm.faces if f[KL]], context='FACES'); bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context='VERTS')
     sl = IM.split('@')[0].split('.')[0]; nk = sl + '.край@' + IM.split('@')[1]; st = bpy.data.objects.get(nk)
     if st: bpy.data.objects.remove(st, do_unlink=True)
+    for L_ in list(bk.verts.layers.deform.values()): bk.verts.layers.deform.remove(L_)   # веса прежнего объекта по чужим индексам групп
     mk = bpy.data.meshes.new(nk); bk.to_mesh(mk); bk.free(); ok = bpy.data.objects.new(nk, mk); bpy.context.scene.collection.objects.link(ok); ok.parent = o.parent; ok.matrix_world = o.matrix_world.copy()
     mm = ok.modifiers.new('ск', 'ARMATURE'); mm.object = [x for x in bpy.data.objects if x.type == 'ARMATURE'][0]
     h = opt['krai']; c_ = [int(h[k:k + 2], 16) / 255 for k in (1, 3, 5)]; c_ = tuple(x / 12.92 if x <= .04045 else ((x + .055) / 1.055) ** 2.4 for x in c_) + (1,)
@@ -58,6 +59,7 @@ for t in TELO:
     gn = {g.index: g.name for g in t.vertex_groups}; Wb += [{gn[g.group]: g.weight for g in v.groups if g.weight > 0} for v in t.data.vertices]
 for o_ in [o] + ([bpy.data.objects[nk]] if krai else []):
     for g in list(o_.vertex_groups): o_.vertex_groups.remove(g)
+    o_.data.vertices.foreach_set('select', [False] * len(o_.data.vertices))
     for j, v in enumerate(o_.data.vertices):
         for n_, w_ in Wb[int(np.linalg.norm(VA - np.array(tuple(o_.matrix_world @ v.co)), axis=1).argmin())].items(): (o_.vertex_groups.get(n_) or o_.vertex_groups.new(name=n_)).add([j], w_, 'REPLACE')
 if opt.get('cvet'):
