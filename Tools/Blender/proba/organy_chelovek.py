@@ -508,20 +508,27 @@ def igly_ezh():
 
 @organ('Игломёт@Ёж')
 def iglomet():
-    """`витрина/человек-ёж/ступени.png` ст.1–ст.2: две толстые полые трубы из верха спины между лопатками, наклон вперёд 30° от вертикали, концы над макушкой и чуть перед ней; идут по бокам черепа. Основание под кожей"""
-    O = Org('Игломёт@Ёж'); K = 'грудная клетка'; r = .030; ug = math.radians(30); h_min = 9; L = .44
-    for x in (.128,):
-        B, _ = kozha((.10, .4, 1.50), (0, -1, 0)); B = Vector((x, B.y - .02, 1.50)); d = Vector((.08, -math.sin(ug), math.cos(ug))).normalized(); E = B + d * L
-        s1 = Vector((1, 0, 0)); s1 = (s1 - d * s1.dot(d)).normalized(); s2 = d.cross(s1).normalized()
-        for t_ in np.linspace(.3, 1, 40):   # без основания: оно под кожей нарочно
+    """`витрина/человек-ёж/ступени.png` ст.1–ст.2 (геймдизайнер 06.11: «из прошлых листов брать»): три короткие толстые полые трубы тесной группой из загривка сразу за головой, почти вертикально, наклон вперёд 12°; концы чуть выше макушки, над затылком. Трубы стоят на упоре: загривок отстоит от затылка, иначе труба прошла бы сквозь голову"""
+    O = Org('Игломёт@Ёж'); K = 'грудная клетка'; r = .027; ug = math.radians(12); d = Vector((0, -math.sin(ug), math.cos(ug))); L = .46; h_min = 9; Yb, Zb = .175, 1.40
+    s1 = Vector((1, 0, 0)); s2 = d.cross(s1).normalized(); kon = []
+    for x in (-.068, 0.0, .068):
+        B = Vector((x, Yb + (.012 if x == 0 else 0), Zb)); E = B + d * L; kon.append(E)
+        for t_ in np.linspace(.25, 1, 40):
             h_ = BVH.find_nearest(B + d * (L * t_)); h_min = min(h_min, h_[3] - r)
         def kol(c, q): return [O.v(c + s1 * (q * math.cos(u)) + s2 * (q * math.sin(u)), K) for u in [j * math.pi / 3 + .52 for j in range(6)]]
         k0 = kol(B, r); k1 = kol(E, r); k3 = kol(E, r * .66); dn_ = O.v(E - d * .07, K)
-        O.lofta([k0, k1], nachalo=False, konec=False)
+        O.lofta([k0, k1], nachalo=True, konec=False)
         for j in range(6):
             k = (j + 1) % 6; O.f(k1[j], k1[k], k3[k]); O.f(k1[j], k3[k], k3[j])
         O.konec(k3, dn_)
-    print('ИГЛОМЁТ: труб 2, длина %.2f, от вертикали %.0f°, основание y %.3f z %.3f, конец x %.3f y %.3f z %.3f, зазор до тела мин %.0f мм' % (L, math.degrees(math.acos(d.z)), B.y, B.z, E.x, E.y, E.z, h_min * 1000))
+    # упор: брус от кожи загривка к основаниям труб
+    ys = kozha((0, .4, 1.44), (0, -1, 0))[0].y; w = .105
+    P = lambda x, y, z: O.v((x, y, z), K)
+    Nz = [P(-w, ys - .02, 1.36), P(w, ys - .02, 1.36), P(w, ys - .02, 1.50), P(-w, ys - .02, 1.50)]; Vz = [P(-w, Yb + .04, 1.37), P(w, Yb + .04, 1.37), P(w, Yb + .02, 1.47), P(-w, Yb + .02, 1.47)]
+    for j in range(4):
+        k = (j + 1) % 4; O.f(Nz[j], Nz[k], Vz[k]); O.f(Nz[j], Vz[k], Vz[j])
+    O.f(Vz[0], Vz[1], Vz[2]); O.f(Vz[0], Vz[2], Vz[3])
+    E = kon[1]; print('ИГЛОМЁТ: труб 3, длина %.2f, от вертикали 12°, концы y %.3f z %.3f, зазор до тела мин %.0f мм' % (L, E.y, E.z, h_min * 1000))
     return O
 
 
@@ -566,6 +573,6 @@ if opt.get('cvet'):
 res = {}
 for im, fn in Sob.items():
     if TOLKO and im not in TOLKO: continue
-    O = fn(); ob = O.sobrat(zerkalo=not im.startswith(('Хвост', 'Шкура.чешуя'))); ob.data.calc_loop_triangles(); res[im] = len(ob.data.loop_triangles); print('ОРГАН %s: %d тр' % (im, res[im]))
+    O = fn(); ob = O.sobrat(zerkalo=not im.startswith(('Хвост', 'Шкура.чешуя', 'Игломёт'))); ob.data.calc_loop_triangles(); res[im] = len(ob.data.loop_triangles); print('ОРГАН %s: %d тр' % (im, res[im]))
 if opt.get('otchet'): json.dump(res, open(opt['otchet'], 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 bpy.ops.wm.save_as_mainfile(filepath=OUT)
