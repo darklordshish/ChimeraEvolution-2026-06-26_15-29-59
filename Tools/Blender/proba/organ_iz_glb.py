@@ -1,6 +1,6 @@
 """ОРГАН ИЗ ОБЪЁМА HUNYUAN (05.11, третий проход; цель по кропу `витрина/органы/` даёт человека в 3/4 с органом). Голова цели разворачивается по её же симметрии, садится на голову шасси по своду (масштаб — ширина черепа, сдвиг — верх и середина), вырезается орган: окно по высоте и глубине, кожа шасси как нижний край. Половина, смотревшая в камеру, зеркалится, прореживается до бюджета, край уходит под кожу. Веса — кость или тело.
 
-  blender -b организм.blend --factory-startup --python-exit-code 1 -P organ_iz_glb.py -- выход.blend цель.glb Объект@Вид тр [--z0 1.6] [--z1 1.74] [--y1 -0.045] [--sheya_y -0.075] [--kost голова] [--okno morda|spina] [--nad 0.008] [--razv 180] [--plechi 0.56] [--y_sdvig 0.04] [--z_sdvig -0.09] [--top_z 1.6] [--rastvor 8] [--vpered 1.2] [--suzh 0.6] [--pol_z 1.6] [--guba 1.6:0.012] [--pl 1.655:0.75]
+  blender -b организм.blend --factory-startup --python-exit-code 1 -P organ_iz_glb.py -- выход.blend цель.glb Объект@Вид тр [--z0 1.6] [--z1 1.74] [--y1 -0.045] [--sheya_y -0.075] [--kost голова] [--okno morda|spina] [--nad 0.008] [--razv 180] [--plechi 0.56] [--y_sdvig 0.04] [--z_sdvig -0.09] [--top_z 1.6] [--rastvor 8] [--cvet #9AA092] [--vpered 1.2] [--suzh 0.6] [--pol_z 1.6] [--guba 1.6:0.012] [--pl 1.655:0.75]
 """
 import sys, math
 import bpy, bmesh
@@ -97,7 +97,7 @@ else:
 bm.to_mesh(cel.data); bm.free(); cel.data.update(); n_vyr = len(cel.data.polygons)
 # прореживание половины: ось держится
 if opt.get('rastvor'):   # сперва плоскости: рёбра плит держатся, прореживание дальше их не съедает
-    bpy.context.view_layer.objects.active = cel; d0 = cel.modifiers.new('р', 'DECIMATE'); d0.ratio = .25; bpy.ops.object.modifier_apply(modifier='р')
+    bpy.context.view_layer.objects.active = cel; d0 = cel.modifiers.new('р', 'DECIMATE'); d0.ratio = float(opt.get('pred', '.25')); bpy.ops.object.modifier_apply(modifier='р')
     d0 = cel.modifiers.new('р', 'DECIMATE'); d0.decimate_type = 'DISSOLVE'; d0.angle_limit = math.radians(float(opt['rastvor'])); bpy.ops.object.modifier_apply(modifier='р')
     bm = bmesh.new(); bm.from_mesh(cel.data); bmesh.ops.triangulate(bm, faces=bm.faces[:]); bm.to_mesh(cel.data); bm.free(); cel.data.update(); n_vyr = len(cel.data.polygons); print('ЦЕЛЬ: после плоскостей %d граней половины' % n_vyr)
 ok = TR / 2
@@ -129,5 +129,8 @@ for j, p in enumerate(V2):
     else:
         for n_, w_ in Wb[int(np.linalg.norm(VA - np.array(tuple(p)), axis=1).argmin())].items(): (o.vertex_groups.get(n_) or o.vertex_groups.new(name=n_)).add([j], w_, 'REPLACE')
 for p_ in me.polygons: p_.use_smooth = False
+if opt.get('cvet'):   # цветной кусок `<слот>.<что>@<вид>`: код берёт `_BaseColor` материала
+    h = opt['cvet']; c_ = [int(h[i:i + 2], 16) / 255 for i in (1, 3, 5)]; c_ = tuple(x / 12.92 if x <= .04045 else ((x + .055) / 1.055) ** 2.4 for x in c_) + (1,)
+    mt = bpy.data.materials.new(IM.split('@')[0].split('.')[-1]); mt.diffuse_color = c_; mt.use_nodes = True; mt.node_tree.nodes['Principled BSDF'].inputs['Base Color'].default_value = c_; me.materials.append(mt)
 me.calc_loop_triangles(); print('ОРГАН %s: %d тр из вырезки %d граней, на оси %d, край под кожу %d, рамка %s .. %s' % (IM, len(me.loop_triangles), n_vyr, n_os, n_kr, np.array(o.bound_box[0]).round(3), np.array(o.bound_box[6]).round(3)))
 bpy.ops.wm.save_as_mainfile(filepath=OUT)
