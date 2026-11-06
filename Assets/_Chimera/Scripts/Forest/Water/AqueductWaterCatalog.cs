@@ -49,17 +49,36 @@ namespace Chimera.Forest.Water
             ReservoirReason = reservoirReason; AbsentReason = absentReason;
         }
 
-        public string PrimaryCode => AqueductWaterCatalog.CodeOf(Primary);\n\n        public bool HasLake => (Bodies & WaterBodyKind.Lake) != 0;
+        public string PrimaryCode => AqueductWaterCatalog.CodeOf(Primary);
+
+        public bool HasLake => (Bodies & WaterBodyKind.Lake) != 0;
         public bool HasRiver => (Bodies & WaterBodyKind.River) != 0;
         public bool HasReservoir => (Bodies & WaterBodyKind.Reservoir) != 0;
     }
 
     /// <summary>Task 0: каталог воды 20 сидов v2/2000/48. Это данные, не геометрия.</summary>
+    /// <summary>Task 1: выбор по сиду. Планирует объект, но не строит геометрию.</summary>
+    public readonly struct AqueductPlacementPlan
+    {
+        public readonly int Seed;
+        public readonly bool ShouldBuild;
+        public readonly AqueductType Type;
+        public readonly string Reason;
+
+        public AqueductPlacementPlan(int seed, bool shouldBuild, AqueductType type, string reason)
+        {
+            Seed = seed; ShouldBuild = shouldBuild; Type = type; Reason = reason;
+        }
+
+        public string Code => AqueductWaterCatalog.CodeOf(Type);
+    }
     public static class AqueductWaterCatalog
     {
         public const int WorldVersion = 2;
         public const float MapDiameter = 2000f;
         public const int TerrainQuads = 48;
+        /// <summary>AW-RS пока не имеет модели; выбор обязан вернуть долг, а не подменить озером.</summary>
+        public const bool ReservoirModelAvailable = false;
 
         public static readonly IReadOnlyList<AqueductWaterSeed> Seeds = new[]
         {
@@ -91,7 +110,39 @@ namespace Chimera.Forest.Water
             row = default; return false;
         }
 
-        public static string CodeOf(AqueductType type)\n        {\n            switch (type)\n            {\n                case AqueductType.River: return "AW-R";\n                case AqueductType.Lake: return "AW-L";\n                case AqueductType.Reservoir: return "AW-RS";\n                case AqueductType.WaterfallSpillway: return "AW-F";\n                default: return "absent";\n            }\n        }\n\n        public static AqueductType PrimaryFor(WaterBodyKind bodies)
+        public static AqueductPlacementPlan PlanFor(int seed)
+        {
+            if (!TryGet(seed, out var row))
+                return new AqueductPlacementPlan(seed, false, AqueductType.Absent, "seed not in catalog");
+            return PlanFor(row.Seed, row.Bodies, ReservoirModelAvailable);
+        }
+
+        public static AqueductPlacementPlan PlanFor(int seed, WaterBodyKind bodies,
+            bool reservoirModelAvailable = false)
+        {
+            var type = PrimaryFor(bodies);
+            if (type == AqueductType.Absent)
+                return new AqueductPlacementPlan(seed, false, type, "no water body");
+            if (type == AqueductType.Reservoir && !reservoirModelAvailable)
+                return new AqueductPlacementPlan(seed, false, type,
+                    "AW-RS model not delivered; absent/debt, no lake fallback");
+            return new AqueductPlacementPlan(seed, true, type, "water: " + CodeOf(type));
+        }
+
+        public static string CodeOf(AqueductType type)
+
+        {
+            switch (type)
+            {
+                case AqueductType.River: return "AW-R";
+                case AqueductType.Lake: return "AW-L";
+                case AqueductType.Reservoir: return "AW-RS";
+                case AqueductType.WaterfallSpillway: return "AW-F";
+                default: return "absent";
+            }
+        }
+
+        public static AqueductType PrimaryFor(WaterBodyKind bodies)
         {
             if ((bodies & WaterBodyKind.Waterfall) != 0) return AqueductType.WaterfallSpillway;
             if ((bodies & WaterBodyKind.Reservoir) != 0) return AqueductType.Reservoir;

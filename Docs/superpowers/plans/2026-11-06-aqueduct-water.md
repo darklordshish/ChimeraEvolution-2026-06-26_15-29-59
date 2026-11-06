@@ -32,10 +32,10 @@
 
 ### Task 1 — типы акведука (данные, не форма)
 
-- [ ] `AqueductType` как данные: `AW-R`, `AW-L`, `AW-RS`, `AW-F`.
-- [ ] Для каждого типа: где ставится, какие опоры нужны, какой забор/сброс, какой water body не трогать.
-- [ ] `None` → `absent`; `absent` не создаёт ни prefab, ни коллайдер, ни воду.
-- [ ] Сторож `AqueductTypeTests`.
+- [x] `AqueductType` как данные: `AW-R`, `AW-L`, `AW-RS`, `AW-F`; `WaterBodyKind` и `AqueductPlacementPlan`.
+- [x] Для каждого типа: где ставится, какие опоры нужны, какой забор/сброс, какой water body не трогать — правила в `AqueductWaterCatalog`. Реализация опор — Task 2.
+- [x] `None` → `absent`; `absent` не создаёт ни prefab, ни коллайдер, ни воду. Проверка: `AqueductPlacementTests`.
+- [x] Сторож `AqueductTypeTests`; `AqueductPlacementTests` — выбор без геометрии.
 
 ### Task 2 — prefab: опоры, швы, лоток, сброс
 
