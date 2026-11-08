@@ -67,6 +67,7 @@ public static class ForestProfiles
         });
         b.worldVersion = 2;
         b.treeVersion = 2;
+        b.buildAqueduct = true;
         b.buildRelief = true;
         b.buildThermalErosion = erosion;
         b.buildHydraulicErosion = erosion;

@@ -36,6 +36,8 @@ public sealed class DomeTerrain
     public DomeHydro.State hydro;
     public DomeTerrace.State terrace;
     public DomeCanyon.State canyon;
+    /// <summary>Решение B: v2/1337 — рельеф не режется процедурным DomeCanyon.Apply; вырез делает DomeChunkMesh.</summary>
+    public bool useHandoffCanyon;
     public DomeRavines.Ravine[] ravines;
     public DomeRelief.State relief;
     /// <summary>S2: семь форм композиции (v2). v1 остаётся на <see cref="relief"/>.</summary>
@@ -168,7 +170,8 @@ public sealed class DomeTerrain
     {
         float h = Hydro0(x, z);
         h = DomeTerrace.Apply(h, terrace, x, z);
-        h = DomeCanyon.Apply(h, canyon, x, z, hydro.lakeLevel);
+        if (!(TargetOrder && useHandoffCanyon))
+            h = DomeCanyon.Apply(h, canyon, x, z, hydro.lakeLevel);
         h = DomeRavines.Apply(h, ravines, x, z, hydro.lakeLevel);
         return h;
     }

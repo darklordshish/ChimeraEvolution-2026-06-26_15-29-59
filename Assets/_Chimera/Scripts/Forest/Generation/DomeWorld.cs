@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Chimera.Forest.Water;
 using Unity.AI.Navigation;
 using UnityEngine;
 using UnityEngine.AI;
@@ -81,6 +82,9 @@ public class DomeWorld
     public List<DomeRavines.Ravine> Ravines { get; private set; } = new List<DomeRavines.Ravine>();
     public DomeTerrace.State Terrace { get; private set; }
     public DomeCanyon.State Canyon { get; private set; }
+    /// <summary>Решение B: v2/1337 — авторский graded-меш; процедурный Apply и старый mesh не участвуют.</summary>
+    public bool HandoffCanyon { get; private set; }
+    public int Aqueducts { get; private set; }
     public DomeHill.State Hill { get; private set; }
     public int FallenTrees { get; private set; }
     public int VisualNests { get; private set; }
@@ -142,6 +146,7 @@ public class DomeWorld
     /// <summary>Площадка прямоугольная (комплекс) или круглая (старый лабиринт/двор A).</summary>
     bool padRect;
     bool northCrevice;
+    bool aqueductMode;
     NavMeshSurface navSurface;
     readonly List<Material> mats = new List<Material>();
     public IReadOnlyList<Material> Materials => mats;
@@ -166,7 +171,7 @@ public class DomeWorld
         bool buildLabComplex = false, LabEntrance labEntrance = LabEntrance.Rock,
         bool buildRavines = false, bool buildLabPlan = false, int labPlanVersion = 1,
         bool buildTerrace = false, bool buildCanyon = false, bool buildStationLoop = false,
-        bool buildStationHill = false)
+        bool buildStationHill = false, bool buildAqueduct = false)
     {
         if (root == null) throw new ArgumentNullException(nameof(root));
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
@@ -174,6 +179,7 @@ public class DomeWorld
 
         Root = root;
         this.cfg = cfg;
+        aqueductMode = buildAqueduct;
         chunkQuads = Mathf.Clamp(terrainQuads, 4, 128);
         northCrevice = buildStationLoop && labEntrance == LabEntrance.Buried;
         Contract = SamplingContract.From(cfg, terrainQuads);
@@ -304,6 +310,20 @@ public class DomeWorld
         if (buildCanyon)
             Canyon = DomeCanyon.Build(cfg, seed, Hydro, entryXZ, LabCenter,
                 DomeRockRing.InnerRadius(cfg), Terrace, masks);
+        HandoffCanyon = Terrain.TargetOrder && buildCanyon && Canyon.valid &&
+            Canyon.policy != CanyonPolicy.Absent && DomeCanyonHandoff.IsHandoff(seed) &&
+            DomeCanyonHandoff.LoadPrefab() != null;
+        if (HandoffCanyon)
+        {
+            var handoff = Canyon;
+            handoff.axis = new List<Vector2>(DomeCanyonHandoff.Axis);
+            handoff.mouth = DomeCanyonHandoff.Mouth;
+            handoff.lip = DomeCanyonHandoff.Lip;
+            Canyon = handoff;
+        }
+        // Акведук стоит над целым полом: handoff-вырез каньона под ним не режем.
+        // Состояние Canyon при этом остаётся валидным для детекторов/POI, но геометрия поля — без cut.
+        Terrain.useHandoffCanyon = HandoffCanyon && !buildAqueduct;
         if (buildRavines)
             Ravines = DomeRavines.Build(cfg, seed, LabCenter, entryXZ, Hydro,
                 DomeRockRing.InnerRadius(cfg), 3, masks);
@@ -318,7 +338,7 @@ public class DomeWorld
 
         // Слои формы — в одном месте (DomeTerrain). Сначала заполняем то, что уже есть.
         Terrain.terrace = Terrace;
-        Terrain.canyon = Canyon;
+        Terrain.canyon = buildAqueduct ? default : Canyon;
         Terrain.ravines = Ravines.ToArray();
         Terrain.labCenter = LabCenter;
         Terrain.padYaw = padYaw;
@@ -594,6 +614,7 @@ public class DomeWorld
         if (!Terrain.TargetOrder) EnsureChunks();
         BuildRockRing();
         BuildWater();
+        if (buildAqueduct) BuildAqueducts();
         BuildMouthsAndNests(seed);
         if (buildAsh) BuildAshAndNest(seed);
         else
@@ -741,6 +762,16 @@ public class DomeWorld
             }
 
             if (target) EnsureChunks();
+            if (HandoffCanyon && !buildAqueduct)
+                BuildCanyonHandoff();
+            else if (!buildAqueduct && Terrain.TargetOrder && Canyon.valid && Canyon.policy != CanyonPolicy.Absent)
+            {
+                DomeCanyonAuthorMesh.Build(Root.transform, Canyon, SampleGround,
+                    Flat(DomePalette.Rock), Flat(DomePalette.Water),
+                    Flat(new Color(0.78f, 0.88f, 0.92f)), meshes);
+                var flatFall = Root.transform.Find("Fall");
+                if (flatFall != null) flatFall.gameObject.SetActive(false);
+            }
             Func<float, float, float> podGround = target
                 ? (Func<float, float, float>)ShapeGround
                 : SampleGround;
@@ -856,7 +887,8 @@ public class DomeWorld
     {
         float raw = RawGround(x, z);
         raw = DomeTerrace.Apply(raw, Terrace, x, z);
-        raw = DomeCanyon.Apply(raw, Canyon, x, z, Hydro.lakeLevel);
+        if (!(Terrain != null && Terrain.TargetOrder && HandoffCanyon))
+            raw = DomeCanyon.Apply(raw, Canyon, x, z, Hydro.lakeLevel);
         raw = DomeRavines.Apply(raw, Ravines, x, z, Hydro.lakeLevel);
         return raw;
     }
@@ -1298,6 +1330,7 @@ public class DomeWorld
         Ravines = new List<DomeRavines.Ravine>();
         Terrace = default;
         Canyon = default;
+        HandoffCanyon = false;
         Hill = default;
         FallenTrees = 0;
         VisualNests = 0;
@@ -1342,6 +1375,12 @@ public class DomeWorld
     /// посаженная на аналитику, «клюётся» террейном. Повторяем треугольники чанка
     /// (p00,p11,p10) и (p00,p01,p11) с той же диагональю — лента ложится ровно.
     /// </summary>
+    /// <summary>Локальное разрешение чанка: каньон получает вдвое больше клеток.</summary>
+    int QuadsForChunk(int cx, int cz)
+    {
+        return chunkQuads;
+    }
+
     float RenderedGround(float x, float z)
     {
         if (cfg == null) return 0f;
@@ -1376,7 +1415,7 @@ public class DomeWorld
             return h00 + (h10 - h00) * u + (h11 - h10) * v;
         return h00 + (h01 - h00) * v + (h11 - h01) * u;
     }
-    void BuildChunks(int terrainQuads)
+    void BuildChunks(int chunkQuads)
     {
         var mat = Flat(DomePalette.Terrain);
         // S2 §4: материал по полосе уклона — только v2; v1 остаётся одним Terrain.
@@ -1402,14 +1441,23 @@ public class DomeWorld
                 float centerX = -half + (cx + 0.5f) * cfg.chunkSize;
                 float centerZ = -half + (cz + 0.5f) * cfg.chunkSize;
                 if (new Vector2(centerX, centerZ).magnitude > half) continue;
-                var mesh = DomeChunkMesh.BuildChunkMesh(cfg, cx, cz, terrainQuads,
-                    SampleGround, Terrain.TargetOrder, cfg.seed);
+                float x0 = centerX - cfg.chunkSize * 0.5f;
+                float z0 = centerZ - cfg.chunkSize * 0.5f;
+                Func<float, float, bool> skipAt = Terrain.useHandoffCanyon &&
+                    DomeCanyonHandoff.IntersectsChunk(x0, z0,
+                        x0 + cfg.chunkSize, z0 + cfg.chunkSize)
+                    ? (x, z) => DomeCanyonHandoff.Inside(x, z) : null;
+                var mesh = DomeChunkMesh.BuildChunkMesh(cfg, cx, cz, QuadsForChunk(cx, cz),
+                    SampleGround, Terrain.TargetOrder, cfg.seed, skipAt);
                 Track(mesh);
                 var go = Part($"Chunk_{cx}_{cz}", mesh, mat);
                 if (slopeMats != null)
                     go.GetComponent<MeshRenderer>().sharedMaterials = slopeMats;
-                var collider = go.AddComponent<MeshCollider>();
-                collider.sharedMesh = mesh;
+                if (mesh.vertexCount > 0)
+                {
+                    var collider = go.AddComponent<MeshCollider>();
+                    collider.sharedMesh = mesh;
+                }
                 built++;
             }
         Chunks = built;
@@ -1431,7 +1479,51 @@ public class DomeWorld
         // Озеро и река — прежнее поведение; плёс/полотно/ручей добавляются только при
         // живом каньоне и читают тот же SampleGround, что чанки и NavMesh (Task 2).
         DomeWaterMesh.Build(Root.transform, cfg, Hydro, Canyon, SampleGround, mat, meshes,
-            Terrain.TargetOrder, Flat(DomePalette.Terrain));
+            Terrain.TargetOrder, Flat(DomePalette.Terrain), includeCanyon: !HandoffCanyon && !aqueductMode);
+    }
+
+    /// <summary>
+    /// Решение B: prefab handoff ставится по origin устья, Y=-7.5925 и yaw хорды.
+    /// Вода — только у префаба: wet оставляет, dry гасит, absent сюда не доходит.
+    /// </summary>
+    void BuildCanyonHandoff()
+    {
+        var prefab = DomeCanyonHandoff.LoadPrefab();
+        if (prefab == null)
+        {
+            Debug.LogError("[Forest] CanyonAuthorGraded не найден в Resources/Canyon");
+            return;
+        }
+        var go = UnityEngine.Object.Instantiate(prefab, DomeCanyonHandoff.RootPosition,
+            DomeCanyonHandoff.Rotation, Root.transform);
+        go.name = "CanyonAuthorGraded";
+        bool wet = Canyon.policy == CanyonPolicy.Wet;
+        foreach (string name in new[] { "CanyonWater", "CanyonFallStep1",
+                     "CanyonFallStep2", "CanyonFallStep3", "CanyonFoam" })
+        {
+            var t = FindDeep(go.transform, name);
+            if (t != null) t.gameObject.SetActive(wet);
+        }
+        var collider = FindDeep(go.transform, "CanyonCollider");
+        if (collider != null) collider.gameObject.SetActive(true);
+    }
+
+    static Transform FindDeep(Transform root, string name)
+    {
+        if (root.name == name) return root;
+        for (int i = 0; i < root.childCount; i++)
+        {
+            var found = FindDeep(root.GetChild(i), name);
+            if (found != null) return found;
+        }
+        return null;
+    }
+
+    void BuildAqueducts()
+    {
+        if (Root == null || Hydro == null) return;
+        var go = AqueductPlacement.Build(Root.transform, (int)cfg.seed, Hydro, SampleGround);
+        if (go != null) Aqueducts = 1;
     }
 
     void BuildMouthsAndNests(long seed)

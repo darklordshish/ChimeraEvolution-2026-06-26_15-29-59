@@ -80,6 +80,13 @@ namespace Chimera.Forest.Water
         /// <summary>AW-RS пока не имеет модели; выбор обязан вернуть долг, а не подменить озером.</summary>
         public const bool ReservoirModelAvailable = false;
 
+        /// <summary>Seed 1337 — фактический мир ForestPavilion; не входит в 20-сидовую матрицу Task 0.</summary>
+        public static readonly AqueductWaterSeed WorldSeed = new AqueductWaterSeed(
+            1337, WaterBodyKind.River | WaterBodyKind.Lake | WaterBodyKind.Waterfall,
+            AqueductType.WaterfallSpillway, new Vector2(-232.02f, -308.92f), -2.866313f, 150f,
+            594.623f, new Vector2(785.16f, -246.09f), -21.74428f, true, 14.28356f,
+            new Vector2(-76.44f, -404.83f), new Vector2(71.64f, -497.31f),
+            "not modeled in v2", "");
         public static readonly IReadOnlyList<AqueductWaterSeed> Seeds = new[]
         {
             new AqueductWaterSeed(1, WaterBodyKind.River | WaterBodyKind.Lake, AqueductType.Lake, new Vector2(49.196f, 593.29f), -5.31f, 150f, 589.567f, new Vector2(230.469f, -738.281f), -14.708f, false, 0f, new Vector2(0f, 0f), new Vector2(0f, 0f), "not modeled in v2", ""),
@@ -106,6 +113,7 @@ namespace Chimera.Forest.Water
 
         public static bool TryGet(int seed, out AqueductWaterSeed row)
         {
+            if (WorldSeed.Seed == seed) { row = WorldSeed; return true; }
             foreach (var r in Seeds) if (r.Seed == seed) { row = r; return true; }
             row = default; return false;
         }

@@ -104,6 +104,8 @@ public class ForestBuilder : MonoBehaviour
     [Header("География 27.10: терраса и каньон (Ø2000)")]
     public bool buildTerrace = false;
     public bool buildCanyon = false;
+    [Tooltip("Task 3: акведук по каталогу воды; отдельно от каньона, terrain не режет")]
+    public bool buildAqueduct = false;
     /// <summary>Петля A: северная дверь станции (Bastion). По умолчанию выключена, A/C не меняются.</summary>
     public bool buildStationLoop = false;
     /// <summary>Холм станции: lift-слой вокруг Buried; по умолчанию выключен, A/C не меняются.</summary>
@@ -260,6 +262,8 @@ public class ForestBuilder : MonoBehaviour
         world != null ? world.Ravines : new List<DomeRavines.Ravine>();
     public DomeTerrace.State Terrace => world != null ? world.Terrace : default;
     public DomeCanyon.State Canyon => world != null ? world.Canyon : default;
+    public bool HandoffCanyon => world != null && world.HandoffCanyon;
+    public int Aqueducts => world != null ? world.Aqueducts : 0;
     public int FallenTrees => world != null ? world.FallenTrees : 0;
     public int VisualNests => world != null ? world.VisualNests : 0;
     public Vector3 SpawnPoint { get; private set; }
@@ -463,7 +467,7 @@ public class ForestBuilder : MonoBehaviour
         world.Build(BuiltRoot, ownedConfig, terrainQuads, chosen, buildAsh, spawnAtEntry,
             labStyle, minLabDistance > 0f ? minLabDistance : DefaultMinLabDistance,
             buildLabComplex, labEntrance, buildRavines, buildLabPlan, labPlanVersion,
-            buildTerrace, buildCanyon, buildStationLoop, buildStationHill);
+            buildTerrace, buildCanyon, buildStationLoop, buildStationHill, buildAqueduct);
 
         var surface = GetComponent<NavMeshSurface>();
         world.BuildNavMesh(surface);

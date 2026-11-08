@@ -147,6 +147,19 @@ namespace Chimera.Tests.PlayMode
             Assert.Greater(checkedPoints, 0, "дорога без вершин");
             Assert.LessOrEqual(worst, 1.0f,
                 $"дорога не на SampleGround: max |y-g|={worst:F2} м у {at}");
+            // P0: у лаборатории рендер-вершины не проваливаются в яму.
+            int nearLab = 0;
+            foreach (var v in mesh.vertices)
+            {
+                if (Vector2.Distance(new Vector2(v.x, v.z), builder.LabCenter) > 80f) continue;
+                nearLab++;
+                float g = builder.SampleGround(v.x, v.z);
+                Assert.GreaterOrEqual(v.y, g - 0.35f,
+                    $"дорога у лаборатории ниже SampleGround на {g - v.y:F2} м у {v}");
+                Assert.GreaterOrEqual(v.y, builder.PlatformY - 0.35f,
+                    $"дорога у лаборатории ниже площадки на {builder.PlatformY - v.y:F2} м у {v}");
+            }
+            Assert.Greater(nearLab, 0, "у лаборатории нет вершин дороги");
             yield return null;
         }
 

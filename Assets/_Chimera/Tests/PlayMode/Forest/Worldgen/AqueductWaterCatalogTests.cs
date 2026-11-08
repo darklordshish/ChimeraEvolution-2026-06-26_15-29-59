@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using Chimera.Forest.Water;
 using NUnit.Framework;
@@ -80,6 +80,7 @@ namespace Chimera.Tests.PlayMode
                 try
                 {
                     b.Build();
+                    Assert.AreEqual(1, b.Aqueducts, "акведук не поставлен: seed " + row.Seed);
                     var h = b.Hydro;
                     var c = b.Canyon;
                     Assert.IsNotNull(h, "Hydro: seed " + row.Seed);

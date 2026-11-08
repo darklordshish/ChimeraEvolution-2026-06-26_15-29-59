@@ -31,8 +31,8 @@ public static class DomeWaterMesh
     public const float StreamMinLift = 0.02f;
 
     /// <summary>Ширина полотна водопада — рабочая цель спеки 8–12 м.</summary>
-    public const float MinFallWidth = 8f;
-    public const float MaxFallWidth = 12f;
+    public const float MinFallWidth = 6f;
+    public const float MaxFallWidth = 10f;
     /// <summary>Ширина ручья — 3–6 м (ручей, а не второй каньон).</summary>
     public const float MinStreamWidth = 3f;
     public const float MaxStreamWidth = 6f;
@@ -314,7 +314,8 @@ public static class DomeWaterMesh
     /// </summary>
     public static void Build(Transform parent, DomeGenConfigSO cfg, DomeHydro.State hydro,
         DomeCanyon.State canyon, Func<float, float, float> ground, Material waterMat,
-        List<Mesh> track, bool v2 = false, Material shelfMat = null)
+        List<Mesh> track, bool v2 = false, Material shelfMat = null,
+        bool includeCanyon = true)
     {
         if (parent == null) throw new ArgumentNullException(nameof(parent));
         if (waterMat == null) throw new ArgumentNullException(nameof(waterMat));
@@ -339,7 +340,8 @@ public static class DomeWaterMesh
             }
         }
 
-        if (!canyon.valid || canyon.policy != CanyonPolicy.Wet || ground == null) return;
+        if (!includeCanyon || !canyon.valid || canyon.policy != CanyonPolicy.Wet ||
+            ground == null) return;
 
         float lakeLevel = hydro != null ? hydro.lakeLevel : 0f;
         float poolLevel = PoolLevel(canyon, lakeLevel, ground);

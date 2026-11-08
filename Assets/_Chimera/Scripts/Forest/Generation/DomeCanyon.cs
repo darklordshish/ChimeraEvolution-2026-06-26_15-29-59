@@ -42,6 +42,8 @@ public static class DomeCanyon
         public float rim;
         public Vector2 pool;
         public float poolRadius;
+        /// <summary>v2: дно может уходить ниже уровня озера (B). v1 — старый FloorAboveLake.</summary>
+        public bool floorBelowLake;
     }
 
     // Рабочие цели спеки, не нормы. Локальные дефолты Task 1: DomeGenConfigSO не меняется.
@@ -53,6 +55,8 @@ public static class DomeCanyon
     public const float MaxHalfWidth = 12f;
     public const float MinDepth = 8f;
     public const float MaxDepth = 18f;
+    public const float V2MinDepth = 12f;
+    public const float V2MaxDepth = 17f;
     public const float MinFall = 12f;
     public const float MaxFall = 18f;
 
@@ -66,7 +70,9 @@ public static class DomeCanyon
     public const int Attempts = 192;
     const float ShoulderFactor = 1.2f;
     const float EndFadeMeters = 8f;
+    // Дно может уходить ниже уровня озера: иначе кламп съедает 12–17 м формы.
     const float FloorAboveLake = 0.45f;
+    const float FloorBelowLake = 2.0f;
 
     /// <summary>Детерминированный бросок: seed + версия cfg + соль + номер попытки.</summary>
     public static string PolicyId(CanyonPolicy p) =>
@@ -105,6 +111,9 @@ public static class DomeCanyon
         if (radius <= 0f) radius = 1000f;
         float lakeR = hydro.lakeRadius;
         int version = cfg.version;
+        bool v2 = cfg.WorldVersion >= 2;
+        float minDepth = v2 ? V2MinDepth : MinDepth;
+        float maxDepth = v2 ? V2MaxDepth : MaxDepth;
         // v2: каньон не привязан к террасе станции — иначе все оси идут в станцию
         // и labClear<0. v1 сохраняет историческую привязку бит-в-бит.
         bool anchored = cfg.WorldVersion < 2 && terrace.valid && terrace.radius > 0f;
@@ -207,7 +216,10 @@ public static class DomeCanyon
                     depthHead = depthHead,
                     depthMouth = depthMouth,
                     fallHeight = fall,
-                    rim = Mathf.Lerp(10f, 16f, Roll(seed, version, 8111, attempt)),
+                    rim = v2
+                        ? Mathf.Lerp(2f, 4f, Roll(seed, version, 8111, attempt))
+                        : Mathf.Lerp(10f, 16f, Roll(seed, version, 8111, attempt)),
+                    floorBelowLake = v2,
                     pool = pool,
                     poolRadius = poolRadius,
                 };
@@ -286,7 +298,9 @@ public static class DomeCanyon
 
         // Дно не ниже воды + 0.45 — правило слоя, даже если сырое поле там ниже:
         // исключение только «вне пятна», где возвращается raw до этой строки.
-        return Mathf.Max(raw - carve, lakeLevel + FloorAboveLake);
+        return s.floorBelowLake
+            ? Mathf.Max(raw - carve, lakeLevel - FloorBelowLake)
+            : Mathf.Max(raw - carve, lakeLevel + FloorAboveLake);
     }
 
     /// <summary>
@@ -294,6 +308,14 @@ public static class DomeCanyon
     /// полуширину, а не параметр u. Точка ровно на расширенной кромке считается снаружи
     /// (строгое неравенство): «в 2 м от кромки при margin = 2» — не каньон.
     /// </summary>
+    /// <summary>Расстояние до оси каньона; для адаптивной подсетки кромки.</summary>
+    public static float DistanceToAxis(State s, float x, float z)
+    {
+        if (!s.valid || s.axis == null || s.axis.Count < 2) return float.PositiveInfinity;
+        float along, lateral;
+        return NearestOnAxis(s.axis, x, z, out along, out lateral) ? lateral : float.PositiveInfinity;
+    }
+
     public static bool Contains(State s, float x, float z, float margin = 0f)
     {
         if (!s.valid || s.axis == null || s.axis.Count < 2) return false;
