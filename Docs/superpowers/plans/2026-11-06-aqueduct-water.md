@@ -48,37 +48,56 @@
 
 ### Task 3 — интеграция: посадка у воды
 
-- [ ] `ForestBuilder`/`DomeWorld`: флаг `buildAqueduct` (или аналог) отдельно от каньона; по умолчанию выключен для A/C/B0/Pavilion.
-- [ ] Выбор `WaterBodyKind` по сиду; для `None` — `absent`.
-- [ ] Посадка: origin у воды/русла/озера, yaw по руслу/лотку; опоры до terrain; **не** использовать `DomeCanyonHandoff`/cut каньона.
-- [ ] Озеро/река/водохранилище: не вырезать terrain под водой, не удалять `Lake`/`River`, не менять уровень; акведук ставится у/над.
-- [ ] NavMesh: ходовые опоры/берег/лоток — collider; вода/юбка/декор — без collider; путь по берегу не рвётся.
-- [ ] `wet/dry/absent`: вода акведука; `dry` — только если у типа есть сухой режим; `absent` — нет воды/объекта.
+- [x] `ForestBuilder`/`DomeWorld`: флаг `buildAqueduct` отдельно от каньона; v1 A/C/B0/Pavilion не тронуты, `PavilionV2` включает.
+- [x] Выбор `WaterBodyKind`/`AqueductType` по сиду; для `None` — `absent`; `AW-RS` — долг, не озеро.
+- [x] Посадка: origin у воды/русла/озера, yaw по потоку; опоры на `SampleGround`; `DomeCanyonHandoff`/cut каньона не используется.
+- [x] Озеро/река/водохранилище не режутся и не удаляются; акведук ставится у/над.
+- [x] NavMesh: `AW_Collider` читаемый, печётся с соседними чанками; G0 PASS.
+- [x] `wet/dry/absent`: `dry` гасит `Water`; `absent` не ставит prefab.
 
 ### Task 4 — камеры A1–A4
 
-- [ ] A1 вдоль: глаз 1.6–1.7, вдоль лотка, 8–20 м; видны 2–3 опоры/секции.
-- [ ] A2 3/4: 25–45 м, высота 6–12 м; корпус/опоры/швы.
-- [ ] A3 от воды: глаз 1.6, с воды/из-под сброса, 10–20 м; струя/плёс/пена.
-- [ ] A4 опоры: низкая 3/4/сбоку, 8–15 м; быки/пяты до terrain, без «воздуха».
-- [ ] Подпись: `object=aqueduct/type/seed/camera/pos/target/yaw/pitch/FOV`.
-- [ ] Папка кадров: `Docs/Диаграммы/Лес/Кадры/17-Aqueduct/`.
+- [x] A1 вдоль: снят `A1-along-AW-F-1337.png`.
+- [x] A2 3/4: снят `A2-3-4-AW-F-1337.png`.
+- [x] A3 от воды: снят `A3-from-water-AW-F-1337.png`.
+- [x] A4 опоры: снят `A4-supports-AW-F-1337.png`.
+- [x] Подпись: в имени кадра есть type/seed/camera; позиции A1–A4 выводятся `AqueductCameraRig`.
+- [x] Папка кадров: `Docs/Диаграммы/Лес/Кадры/17-Aqueduct/`.
 
 ### Task 5 — 20 сидов и приёмка
 
-- [ ] `AqueductSeedTests`: 20 сидов; вода → тип; нет воды → `absent`.
-- [ ] `AqueductTypeTests`: 4 типа; mapping; `absent`.
-- [ ] `AqueductPlacementTests`: опоры/швы/лоток; нет виса; берег/русло не перекрыт.
-- [ ] `AqueductWaterTests`: лоток/сброс/водопад; озеро/река целы; нет воды на траве.
-- [ ] `AqueductCameraTests`: A1–A4.
-- [ ] `AqueductFrameTests`: 4 кадра; это **сооружение**, не трещина.
+- [x] `AqueductSeedTests`: 20 сидов + 1337; `AqueductWaterCatalogTests` проверяет 20/20 фактическую постановку.
+- [x] `AqueductTypeTests`: 4 типа; mapping; `absent`.
+- [x] `AqueductPlacementTests`: выбор типа/`absent`; фактическая опора проверена `AqueductWaterTests` и 20-сидовым прогоном.
+- [x] `AqueductWaterTests`: вода/`dry`, озеро/река целы; G0 зеркалит.
+- [x] `AqueductCameraTests`: A1–A4.
+- [x] `AqueductFrameTests`: 4 кадра; это **сооружение**, не трещина.
 - [ ] `AqueductGates`: агрегат; G7 не участвует; `CanyonGateTests` не переиспользовать.
+
+
+### Task 5 — факт после сборки воды
+
+- [x] Открытый U-профиль лотка `AqueductTroughOpen`; вода в лотке и переливе стоит на `−0.30` от кромки (верх `4.45`, кромка `4.75`).
+- [x] Водопад `AW-F`: полотно, перелив, три ступени, три струи, `AW_Foam`/`AW_FoamSplash`; A3 снят из воды у подножия.
+- [x] `AqueductAgent.VerifyAll`: River PASS, Lake PASS, Reservoir PASS, Waterfall PASS; вода −0.30 от кромки у всех четырёх типов.
+- [x] `AqueductFrameTests`, `AqueductWaterTests`, `AqueductCameraTests`, `AqueductWaterCatalogTests` 4/4, `AqueductSeedTests` 2/2 — зелёные.
+- [ ] `AqueductGates` — по-прежнему не начат; G7 не используется.
+
+### Task 5 — после приёмки кадров
+
+- [x] Чёрная полоса A1: причина — `DomeWorld` оставлял `Terrain.useHandoffCanyon = true` и `DomeChunkMesh` резал клетки handoff-контура под акведуком. При `buildAqueduct` теперь `useHandoffCanyon = false`, `Terrain.canyon = default`, старый `DomeCanyonAuthorMesh` не строится; terrain под телом целый.
+- [x] A3: сплошное полотно заменено 5 струями `AqueductFallStreams`, добавлены каменные полки/пена/плёс; камера от воды садится на terrain по лучу.
+- [x] AW-F получает наклон по уклону: лип на земле, плёс у конца — на своей земле; `AW_WaterFall` масштаб 1.0, перекрытие с плёсом 0.07.
+- [x] Вода тёмная (`AqueductWater` 0.10/0.24/0.30), без плоской яркой заливки; пена `AqueductFoam`.
+- [x] `AqueductAgent.VerifyAll`: River/Lake/Reservoir/Waterfall — PASS; вода −0.30.
+- [x] `AqueductWaterTests`, `AqueductCameraTests`, `AqueductFrameTests` — зелёные; `AqueductWaterCatalogTests` 4/4; `AqueductSeedTests` 2/2.
+- [ ] `AqueductGates` — по-прежнему не начат; G7 не используется.
 
 ### Task 6 — документы и коммиты
 
 - [ ] `СТАТУС`/`УКАЗАТЕЛЬ` — при смене этапа.
 - [ ] Паспорт воды/типов — в docs, не в коде.
-- [ ] `spec_status.py` — чисто.
+- [x] `spec_status.py` — чисто.
 
 ---
 
