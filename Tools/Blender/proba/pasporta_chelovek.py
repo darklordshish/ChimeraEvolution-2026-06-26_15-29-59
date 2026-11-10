@@ -44,7 +44,8 @@ i0 = max(range(8), key=lambda k: (Pu[k] - sum(Pu, Vector()) / 8).dot(up)); Pu = 
 c = sum(Pu, Vector()) / 8
 if (Pu[1] - c).dot(side) < 0: Pu = [Pu[0]] + Pu[:0:-1]
 s['ring_m'] = [U(p) for p in Pu]; s['center_m'] = U(c); s['ellipse_m'] = [round(max((p - c).dot(side) for p in Pu), 4), round(max((p - c).dot(up) for p in Pu), 4)]
-s['note'] = s.get('note', '') + '; с 03.11 ring_m — настоящие вершины края объекта Чутьё (сварка ищет кольцо по близости 2 мм)'
+DOP_ = '; с 03.11 ring_m — настоящие вершины края объекта Чутьё (сварка ищет кольцо по близости 2 мм)'
+s['note'] = s.get('note', '').split(DOP_)[0] + DOP_   # дописка одна: прежде каждая сборка добавляла её заново
 wr('parts/chelovek-ushi.json', d); print('ПАСПОРТА: уши — центр %s, эллипс %s' % (s['center_m'], s['ellipse_m']))
 # КОРЕНЬ ХВОСТА
 d = rd('chelovek-koren-hvosta.json'); s = d['seam']; ax = Bk(s['axis_out']); up = Bk(s['up']); c0 = Bk(s['center_m'])
