@@ -166,7 +166,7 @@ public static class BodyMesh
 
     public static int Place(Transform container, Transform skeleton, GameObject model, Material mat, ICollection<string> skipSlots = null,
                             IReadOnlyDictionary<string, float> keys = null, SpeciesSO jointsOf = null, IReadOnlyDictionary<string, float> regionKeys = null,
-                            IReadOnlyDictionary<string, float> organObjects = null)
+                            IReadOnlyDictionary<string, float> organObjects = null, Material skin = null, float skinWeight = 1f)
     {
         var bones = new Dictionary<string, Transform>();
         foreach (var t in skeleton.GetComponentsInChildren<Transform>(true))
@@ -203,6 +203,7 @@ public static class BodyMesh
             .Where(r => r != null && organObjects != null && organObjects.ContainsKey(r.objectName ?? "") && !stageReplaces.Contains(SlotOf(r.objectName)))
             .SelectMany(r => r.hides ?? new string[0]));
 
+        float restTop = -1f;   // рост тела в позе покоя — для кожи, считается один раз и только если она есть
         int placed = 0;
         foreach (var src in renderers)
         {
@@ -251,6 +252,7 @@ public static class BodyMesh
                 skinned.name = src.name;
                 skinned.hideFlags = HideFlags.HideAndDontSave;
                 skinned.bindposes = bind;
+                WriteRest(skinned, toBody);
                 cache[key] = skinned;
             }
 
@@ -291,7 +293,19 @@ public static class BodyMesh
                 smr.localBounds = b;
             }
             else smr.updateWhenOffscreen = true;
-            if (mat != null) smr.sharedMaterial = (src.name.StartsWith("@") || organ) && !tone ? TwoSided(mat) : mat;   // черты и органы на шаблоне — оболочки; рисунок кожи — сама кожа
+            // КОЖА ОРГАНА — только телу шасси: не органам на шаблоне, не цветным кускам `слот.что`, не чертам `@`
+            bool bodyObject = !organ && dot < 0 && !src.name.StartsWith("@");
+            if (skin != null && bodyObject)
+            {
+                if (restTop < 0f) restTop = RestTop(renderers, model.transform);
+                smr.sharedMaterial = skin;
+                var skinBlock = new MaterialPropertyBlock();
+                smr.GetPropertyBlock(skinBlock);
+                skinBlock.SetFloat(KozhaOrgana.SkinWeight, Mathf.Clamp01(skinWeight));
+                skinBlock.SetFloat(KozhaOrgana.BodyHeight, Mathf.Max(restTop, 0.1f));
+                smr.SetPropertyBlock(skinBlock);   // TintMixer читает блок перед записью цвета, поэтому вес и рост переживают окраску
+            }
+            else if (mat != null) smr.sharedMaterial = (src.name.StartsWith("@") || organ) && !tone ? TwoSided(mat) : mat;   // черты и органы на шаблоне — оболочки; рисунок кожи — сама кожа
             // тон рисунка виден и без окраски по составу (NPC с запечённым материалом): база материала × тон
             if (tone && mat != null && mat.HasProperty("_BaseColor") && go.TryGetComponent<PartMark>(out var toneMark))
             {
@@ -305,6 +319,39 @@ public static class BodyMesh
         // сниматься с костей в покое. Позу ставит `MorphBuilder` последней, после всех кусков (22.10: куски Рук висели в
         // покое снаружи кисти, которая ушла по позе)
         return placed;
+    }
+
+    /// <summary>ПОЗА ПОКОЯ В МЕШЕ (спека `2026-11-10-kozha-organa-proekciej.md`): uv2 — позиции вершин, uv3 — нормали в системе тела.
+    /// Кожа проецируется по ним, а не по миру: узор не плывёт, когда кости гнут тело. Пишется один раз на копию меша (она живёт в
+    /// кэше); сторож — `BodyMeshTests.RestPose_*`: каналы той же длины, что вершины (импорт и кэш молча теряют лишние каналы).</summary>
+    static void WriteRest(Mesh m, Matrix4x4 toBody)
+    {
+        var verts = m.vertices;
+        if (m.normals.Length != verts.Length) m.RecalculateNormals();
+        var normals = m.normals;
+        var pos = new List<Vector3>(verts.Length);
+        var nor = new List<Vector3>(verts.Length);
+        for (int i = 0; i < verts.Length; i++)
+        {
+            pos.Add(toBody.MultiplyPoint3x4(verts[i]));
+            nor.Add(toBody.MultiplyVector(normals[i]).normalized);
+        }
+        m.SetUVs(2, pos);
+        m.SetUVs(3, nor);
+    }
+
+    /// <summary>Верх тела в позе покоя, м: по границам мешей объектов тела (не органов и не черт). Мера «доли тела» для плитки и маски.</summary>
+    static float RestTop(SkinnedMeshRenderer[] renderers, Transform model)
+    {
+        float top = 0f;
+        foreach (var src in renderers)
+        {
+            if (src.sharedMesh == null || src.bones.Length == 0 || IsOrganObject(src.name) || src.name.StartsWith("@")) continue;
+            int k = System.Array.FindIndex(src.bones, b => b != null);
+            if (k < 0 || src.sharedMesh.bindposes.Length != src.bones.Length) continue;
+            top = Mathf.Max(top, InSpace(src.sharedMesh.bounds, InModel(src.bones[k], model) * src.sharedMesh.bindposes[k]).max.y);
+        }
+        return top;
     }
 
     /// <summary>ДВУСТОРОННИЙ МАТЕРИАЛ ДЛЯ ЧЕРТ СТУПЕНИ (22.10, решение по разбору модельной линии): грива, хвост, мех `@<ключ>` —

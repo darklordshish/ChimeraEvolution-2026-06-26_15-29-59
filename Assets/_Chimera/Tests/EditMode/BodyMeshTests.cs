@@ -366,6 +366,42 @@ namespace Chimera.Tests.EditMode
             Assert.IsNull(go.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == "челюсть"), "при выключенном меше вида его кости не создаются");
             Assert.IsFalse(go.GetComponentsInChildren<SkinnedMeshRenderer>(true).Any(r => r.sharedMesh.vertexCount == 3));
         }
+        /// <summary>ПОЗА ПОКОЯ ДЛЯ КОЖИ (спека 10.11): у копии меша каналы uv2 (позиция) и uv3 (нормаль) той же длины, что вершины, и
+        /// лежат в системе тела; два объекта, у которых вершина в одной точке тела, получают одну позицию покоя — система общая.</summary>
+        [Test]
+        public void RestPose_WrittenInBodySpace_SameLengthAsVertices_AndCommonToObjects()
+        {
+            Species().bodyMesh = Model();
+            // второй объект: те же точки тела, но вершины в обратном порядке (в другой системе объекта не нужно — тот же родитель)
+            var first = model.GetComponentInChildren<SkinnedMeshRenderer>();
+            var second = Object.Instantiate(first.gameObject, first.transform.parent);
+            second.name = "хребет";
+            var m2 = Object.Instantiate(first.sharedMesh);
+            var v = first.sharedMesh.vertices; System.Array.Reverse(v);
+            var bw = first.sharedMesh.boneWeights; System.Array.Reverse(bw);
+            m2.Clear();
+            m2.vertices = v; m2.boneWeights = bw; m2.triangles = new[] { 0, 1, 2 };
+            m2.bindposes = first.sharedMesh.bindposes;
+            second.GetComponent<SkinnedMeshRenderer>().sharedMesh = m2;
+            Build(so.organs.ToList());
+
+            var smrs = go.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            Assert.AreEqual(2, smrs.Length);
+            var all = new System.Collections.Generic.List<Vector3>();
+            foreach (var r in smrs)
+            {
+                var pos = new System.Collections.Generic.List<Vector3>(); var nor = new System.Collections.Generic.List<Vector3>();
+                r.sharedMesh.GetUVs(2, pos); r.sharedMesh.GetUVs(3, nor);
+                Assert.AreEqual(r.sharedMesh.vertexCount, pos.Count, "uv2 (позиция покоя) потеряна или не той длины");
+                Assert.AreEqual(r.sharedMesh.vertexCount, nor.Count, "uv3 (нормаль покоя) потеряна или не той длины");
+                foreach (var n in nor) Assert.AreEqual(1f, n.magnitude, 1e-3f, "нормаль покоя не единичная");
+                all.AddRange(pos);
+            }
+            foreach (var p in new[] { OnSpine, OnHead, OnJaw })
+                Assert.AreEqual(2, all.Count(q => (q - p).magnitude < 1e-3f), $"точка тела {p}: у двух объектов позиция покоя должна совпасть");
+            Object.DestroyImmediate(m2);
+        }
+
         /// <summary>ПРАВАЯ КОЛОНКА ЛИСТА — СТУПЕНЬ 2 (геймдизайнер 15.10): на чужом шасси ступень 3 недостижима, поэтому цель
         /// ключа, снятая с правой колонки, — это полный вес на ступени 2. Человек со всеми волчьими органами — ключ «Волк» = 1.</summary>
         [Test]
