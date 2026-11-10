@@ -36,6 +36,7 @@ MEMORY = os.path.join(os.path.expanduser('~'), '.claude', 'projects', 'C--Users-
 
 MD_LINK = re.compile(r'\[[^\]\n]*\]\(([^)\s]+)\)')
 TICK = re.compile(r'`([^`\n]+?\.md)`')
+INLINE_CODE = re.compile(r'`[^`\n]*`')
 WIKI = re.compile(r'\[\[([a-z0-9-]+)\]\]')
 CANCELLED = re.compile(r'⛔\s*ОТМЕН|ОТМЕНЕН[АО]?\s+ЦЕЛИКОМ|\*\*Статус:\*\*[^\n]*решения ОТМЕНЕНЫ', re.I)
 
@@ -88,8 +89,7 @@ def main():
         text = strip_code(read(src))
         base = os.path.dirname(src)
         targets = []
-        for m in MD_LINK.finditer(re.sub(r'`[^`
-]*`', '', text)):   # ссылка внутри `кода` — пример, а не ссылка
+        for m in MD_LINK.finditer(INLINE_CODE.sub('', text)):   # ссылка внутри `кода` — пример, а не ссылка
             targets.append(('link', m.group(1)))
         for m in TICK.finditer(text):
             targets.append(('tick', m.group(1)))
