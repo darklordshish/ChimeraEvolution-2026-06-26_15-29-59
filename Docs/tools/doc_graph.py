@@ -83,10 +83,13 @@ def main():
     edges = defaultdict(set)      # откуда → куда
     dead = []                     # (откуда, ссылка)
     for src in files + mem_files:
+        if os.path.basename(src) == 'ССЫЛКИ.md':
+            continue   # сам файл обратных ссылок — отчёт о графе, а не его ребро: иначе сирот не было бы вовсе
         text = strip_code(read(src))
         base = os.path.dirname(src)
         targets = []
-        for m in MD_LINK.finditer(text):
+        for m in MD_LINK.finditer(re.sub(r'`[^`
+]*`', '', text)):   # ссылка внутри `кода` — пример, а не ссылка
             targets.append(('link', m.group(1)))
         for m in TICK.finditer(text):
             targets.append(('tick', m.group(1)))
