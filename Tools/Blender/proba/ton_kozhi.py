@@ -1,6 +1,6 @@
 """РИСУНОК КОЖИ ОРГАНА ГРАНЯМИ (06.11, спека `2026-11-06-shkura-obrabotka-kozhi.md`, вариант А). Объекты кожи шасси (`--obj`) копируются целиком со всеми формами-ключами и весами, копия режется косой сеткой ромбов в области органа (спина, шея, плечи: нормаль назад, `--z`), грани раскладываются по тонам: полоса вдоль линий сетки — кромка (тёмный тон), середина ромба — светлый, вне области — тон 1.0 (как тело). Каждый тон — объект `<слот>.тон<N>@<вид>` со своим материалом: цвет материала — множитель к цвету тела. Орган снимает исходные объекты записью в `organy/<шасси>.json`, поэтому копии обязаны покрыть их полностью. Накладки этого органа (`--snyat`) удаляются.
 
-  blender -b сборка.blend --factory-startup --python-exit-code 1 -P ton_kozhi.py -- выход.blend Шкура Змея [--obj хребет,шея,Сердце] [--shag 0.10] [--kromka 0.012] [--z 1.06:1.66] [--tony 1.0,0.86,0.70] [--snyat Шкура.чешуя@Змея,Шкура.край@Змея] [--rezhim zony]
+  blender -b сборка.blend --factory-startup --python-exit-code 1 -P ton_kozhi.py -- выход.blend Шкура Змея [--obj хребет,шея,Сердце] [--shag 0.10] [--kromka 0.012] [--z 1.06:1.66] [--tony 1.0,0.86,0.70] [--snyat Шкура.чешуя@Змея,Шкура.край@Змея] [--rezhim zony] [--kil 0.0125]
 """
 import sys, math
 import bpy, bmesh
@@ -54,6 +54,58 @@ for nm in opt['obj'].split(','):
         c = M @ f.calc_center_median(); n = (M.to_3x3() @ f.normal).normalized()
         if not v_obl(c, n): f[TL] = 0; continue
         f[TL] = 2 if min(dist(c, N1), dist(c, N2)) < KR else 1
+    if opt.get('kil'):   # РЕЛЬЕФ ПО СЕТКЕ (проба Codex 06.11 в тонах): середина ячейки заменяется веером от её края к килю — ребру из двух точек по вертикальной диагонали, поднятому над кожей. Край ячейки остаётся на коже и общий с кромкой: шов закрыт. Веса и ключи киля — среднее края
+        H = float(opt['kil']); DFL = bm.verts.layers.deform.verify(); SKL = list(bm.verts.layers.shape.values()); bm.normal_update()
+        def kl(c): s_ = SH / 2 if MEL(c) else SH; return (s_, math.floor(N1.dot(c) / s_), math.floor(N2.dot(c) / s_))
+        yach = {}
+        for f in bm.faces:
+            if f[TL] == 1: yach.setdefault(kl(M @ f.calc_center_median()), []).append(f)
+        n_y = 0; n_tr = 0
+        for key, F in yach.items():
+            Fs = set(F); kr = [e for f in F for e in f.edges if sum(1 for g in e.link_faces if g in Fs) == 1]
+            if len(kr) < 3: continue
+            vv = {v for e in kr for v in e.verts}; c = sum((v.co for v in vv), Vector()) / len(vv); cw = M @ c
+            s_ = key[0]; tt = lambda v: (N1 + N2).dot(M @ v.co)
+            top = max(vv, key=tt); bot = min(vv, key=tt)
+            n = sum((f.normal * f.calc_area() for f in F), Vector()).normalized()
+            if (M.to_3x3() @ n).y < 0: n = -n
+            nw = (M.to_3x3() @ n).normalized(); mask = min(1.0, max(0.0, (nw.y - .2) / .3)) * min(1.0, max(0.0, (cw.z - Z0) / .08)) * min(1.0, max(0.0, (Z1 - cw.z) / .08)) * (.6 if MEL(cw) else 1.0)
+            h = H * mask; off = n * h
+            K = []
+            for tgt in (top, bot):
+                q = c.lerp(tgt.co, .45); nv = bm.verts.new(q + off)
+                w = {}
+                for v in vv:
+                    for g, x in v[DFL].items(): w[g] = w.get(g, 0) + x / len(vv)
+                for g, x in w.items(): nv[DFL][g] = x
+                for L in SKL: nv[L] = sum((v[L] for v in vv), Vector()) / len(vv) + (q - c) + off
+                K.append(nv)
+            vint = {v for f in F for v in f.verts} - vv
+            bmesh.ops.delete(bm, geom=F, context='FACES_ONLY')
+            for v in vint:
+                if v.is_valid and not v.link_faces: bm.verts.remove(v)
+            k1, k2 = K
+            for e in kr:
+                if not e.is_valid: continue
+                a_, b_ = e.verts; m_ = (a_.co + b_.co) / 2; kk = k1 if (m_ - k1.co).length < (m_ - k2.co).length else k2
+                try:
+                    f = bm.faces.new((a_, b_, kk)); f[TL] = 1; n_tr += 1; f.normal_update()
+                    if f.normal.dot(n) < 0: f.normal_flip()
+                except ValueError: pass
+            # перемычка между веерами: вершины края, у которых соседние рёбра ушли к разным точкам киля
+            for v in vv:
+                ks = {x for f in v.link_faces if f[TL] == 1 for x in f.verts if x in K}
+                if len(ks) == 2:
+                    try:
+                        f = bm.faces.new((v, k1, k2)); f[TL] = 1; n_tr += 1; f.normal_update()
+                        if f.normal.dot(n) < 0: f.normal_flip()
+                    except ValueError: pass
+            n_y += 1
+        bmesh.ops.recalc_face_normals(bm, faces=[f for f in bm.faces if f[TL] == 1]) if False else None
+        for f in bm.faces:   # обход новых граней — по нормали кожи под ними
+            if f[TL] == 1 and f.normal.length > 0:
+                f.normal_update()
+        print('КИЛЬ %s: ячеек %d, граней веера %d' % (nm, n_y, n_tr))
     SK = [L for L in bm.verts.layers.shape.values()]; DF = bm.verts.layers.deform.verify(); gn = {g.index: g.name for g in src.vertex_groups}
     for f in bm.faces:   # копится по тонам в мировых координатах: веса по именам костей, ключи по именам
         T = SBOR.setdefault(f[TL], dict(V=[], F=[], W=[], K={}, ix={}))
