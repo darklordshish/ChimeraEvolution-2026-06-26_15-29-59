@@ -458,15 +458,26 @@ def cheshuya_romby(O, shag=.09, ug=.62, zatuh=0):
 
 
 @organ('Шкура@Змея')
-def cheshuya_osn():
-    """основание нужно коду цветного куска: один ромб в глубине спины, под кожей"""
-    O = Org('Шкура@Змея'); h = BVH.ray_cast(Vector((.05, .5, 1.35)), Vector((0, -1, 0))); c = h[0] - Vector((0, .02, 0))
-    O.f(O.v(c + Vector((0, 0, .01))), O.v(c + Vector((.01, 0, 0))), O.v(c - Vector((0, 0, .01)))); return O
-
-
-@organ('Шкура.чешуя@Змея')
-def cheshuya():
-    O = Org('Шкура.чешуя@Змея'); cheshuya_romby(O, shag=.075, zatuh=1); return O
+def cheshuya_kili():
+    """накладка чешуи (спека 10.11: рельеф геометрией только участком, ~200 тр; рисунок по телу даёт плитка): крупные кили той же формы, что объём Codex 06.11 — ромбическая сетка, в ячейке продольный киль (0.25,0.25)–(0.75,0.75), шесть скатов к углам. Шаг и высота крупнее плитки, чтобы кили читались на силуэте плеч в 3/4 сзади; углы ячейки на 2 мм под кожей"""
+    O = Org('Шкура@Змея'); SHAG, UG, HK = .068, .62, .018; S_, C_ = math.sin(UG), math.cos(UG)
+    def tochka(u, w):   # узел сетки (u, w) → точка кожи сзади и нормаль
+        x = (u - w) * SHAG / (2 * S_); z = (u + w) * SHAG / (2 * C_) + Z0_
+        d_ = Vector((0, -1, -.45)).normalized(); h = BVH.ray_cast(Vector((x, .08, z)) - d_ * .8, d_)   # луч проходит через узел на глубине спины
+        if h[0] is None or h[1].dot(d_) > -.05 or not (1.24 < h[0].z < 1.66) or abs(x) > .33: return None
+        if h[1].dot(d_) > 0: h = (h[0], -h[1])
+        return h[0], h[1]
+    Z0_ = 1.30; n_ = 0
+    for i in range(-9, 10):
+        for j in range(-9, 10):
+            U = [tochka(i + a_, j + b_) for a_, b_ in ((0, 0), (1, 0), (1, 1), (0, 1), (.25, .25), (.75, .75))]
+            if any(q is None for q in U) or max((U[k][0] - U[(k + 1) % 4][0]).length for k in range(4)) > SHAG * 1.6: continue   # ячейка, разорванная краем тела
+            ug = [q[0] - q[1] * .002 for q in U[:4]]; kil = [U[k][0] + U[k][1] * HK for k in (4, 5)]
+            a_, b_, c_, d_ = (O.v(p) for p in ug); r0, r1 = (O.v(p) for p in kil)
+            for f in ((a_, b_, r0), (b_, r1, r0), (b_, c_, r1), (c_, d_, r1), (d_, r0, r1), (d_, a_, r0)): O.f(*f)
+            n_ += 1
+    print('ЧЕШУЯ: килей %d' % n_)
+    return O
 
 
 @organ('Хвост@Змея')
@@ -583,6 +594,6 @@ if opt.get('cvet'):
 res = {}
 for im, fn in Sob.items():
     if TOLKO and im not in TOLKO: continue
-    O = fn(); ob = O.sobrat(zerkalo=not im.startswith(('Хвост', 'Шкура.чешуя', 'Игломёт'))); ob.data.calc_loop_triangles(); res[im] = len(ob.data.loop_triangles); print('ОРГАН %s: %d тр' % (im, res[im]))
+    O = fn(); ob = O.sobrat(zerkalo=not im.startswith(('Хвост', 'Шкура.чешуя', 'Игломёт', 'Шкура@Змея'))); ob.data.calc_loop_triangles(); res[im] = len(ob.data.loop_triangles); print('ОРГАН %s: %d тр' % (im, res[im]))
 if opt.get('otchet'): json.dump(res, open(opt['otchet'], 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 bpy.ops.wm.save_as_mainfile(filepath=OUT)
