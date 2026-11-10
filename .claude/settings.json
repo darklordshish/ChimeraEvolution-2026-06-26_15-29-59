@@ -10,6 +10,18 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "shell": "bash",
+            "command": "M=\"$HOME/.claude/projects/C--Users-semion-Documents-Chimera-game-ChimeraEvolution/memory\"; [ -d \"$M/.git\" ] && cd \"$M\" && git add -A && { git diff --cached --quiet || git -c user.name='Claude memory' -c user.email=noreply@anthropic.com commit -qm 'память: авто'; } 2>/dev/null || true",
+            "timeout": 30
+          }
+        ]
+      }
     ]
   }
 }

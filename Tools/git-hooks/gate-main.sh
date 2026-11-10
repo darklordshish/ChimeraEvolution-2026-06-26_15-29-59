@@ -69,6 +69,13 @@ $out"
   say "каталог референсов чист"
 fi
 
+# 1в. граф документов (ресёрч «Многослойная память агентов», 10.11): битых ссылок между документами нет
+if [ -f Docs/tools/doc_graph.py ]; then
+  out=$(PYTHONIOENCODING=utf-8 "$py" Docs/tools/doc_graph.py 2>&1) || fail "в документах битые ссылки:
+$out"
+  say "ссылки документов целы"
+fi
+
 # 2. EditMode — если публикация задевает Unity. quotePath=false: иначе git берёт кириллический путь в кавычки
 # ("Assets/_Chimera/Data/\320\222…"), `^Assets/` не совпадает, и правка ассета вида уходила без тестов (поймано 24.09).
 # Поставки `Docs/models/handoff/` — тоже Unity: их читают `SpeciesHandoff` и тесты (`PlanTemplateTests`,
