@@ -14,15 +14,29 @@ Shader "Chimera/KozhaProekciej"
         _SkinHeight ("Skin Height Tile", 2D) = "gray" {}
         _SkinTint ("Donor tint", Color) = (1,1,1,1)
         _SkinMean ("Tile mean (linear)", Color) = (1,1,1,1)
-        _PatternTex ("Large pattern tile (gray)", 2D) = "white" {}
-        _PatternScale ("Pattern tiles per body height", Float) = 7
+        _PatternHalfW ("Diamond half-width (fraction of body height)", Float) = 0.05
+        _PatternPeriod ("Diamond period along spine", Float) = 0.11
+        _PatternPhase ("Pattern phase along spine", Float) = 0
+        _PatternRim ("Light rim width (in d)", Float) = 0.08
+        _SpineAxis ("Spine axis (body space)", Vector) = (0,0,1,0)
         _PatternContrast ("Pattern contrast", Range(0,1)) = 0
-        _SkinScale ("Tiles per body height", Float) = 8
+        _SkinScale ("Tiles per body height", Float) = 28
+        _ScaleContrast ("Fine scale contrast", Range(0,1)) = 0.3
+        _DorsalAxis ("Dorsal axis (body space)", Vector) = (0,1,0,0)
+        _DorsalEdge ("Dorsal falloff half-width (dot)", Float) = 0.35
+        _PatternLimb ("Pattern factor on limbs", Float) = 1
+        _HeadEdge ("Head-bone mask transition half-width (weight)", Float) = 0.07
+        _HeadCut ("Head-bone mask threshold (weight)", Float) = 0.62
+        _PatternWidth ("Diamond width factor", Float) = 1.25
+        _PatternTop ("Chain top (fraction of body height)", Float) = 0.87
+        _PatternBottom ("Chain bottom", Float) = 0.54
+        _MaskEdge ("Mask edge half-width (fraction of height)", Float) = 0.007
+        _TriPower ("Triplanar sharpness", Float) = 10
         _BodyHeight ("Body height, m", Float) = 1.85
         _SkinWeight ("Skin weight", Range(0,1)) = 1
         _SkinRelief ("Relief strength", Range(0,2)) = 0.6
-        _MaskMin ("Mask min (fraction of body height)", Float) = 0.0
-        _MaskMax ("Mask max (fraction of body height)", Float) = 0.88
+        _MaskMin ("Mask min (fraction of body height)", Float) = -0.5
+        _MaskMax ("Mask max (fraction of body height)", Float) = 10
     }
     SubShader
     {
@@ -45,7 +59,6 @@ Shader "Chimera/KozhaProekciej"
 
             TEXTURE2D(_SkinTex);    SAMPLER(sampler_SkinTex);
             TEXTURE2D(_SkinHeight); SAMPLER(sampler_SkinHeight);
-            TEXTURE2D(_PatternTex); SAMPLER(sampler_PatternTex);
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseColor;
@@ -53,7 +66,22 @@ Shader "Chimera/KozhaProekciej"
                 float4 _SkinTint;
                 float4 _SkinMean;
                 float _SkinScale;
-                float _PatternScale;
+                float _PatternHalfW;
+                float _PatternPeriod;
+                float _PatternPhase;
+                float _PatternRim;
+                float4 _SpineAxis;
+                float4 _DorsalAxis;
+                float _DorsalEdge;
+                float _PatternLimb;
+                float _ScaleContrast;
+                float _MaskEdge;
+                float _HeadEdge;
+                float _HeadCut;
+                float _PatternWidth;
+                float _PatternTop;
+                float _PatternBottom;
+                float _TriPower;
                 float _PatternContrast;
                 float _BodyHeight;
                 float _SkinWeight;
@@ -68,6 +96,7 @@ Shader "Chimera/KozhaProekciej"
                 float3 normalOS : NORMAL;
                 float3 restPos : TEXCOORD2;   // поза покоя, система тела
                 float3 restN : TEXCOORD3;
+                float2 headW : TEXCOORD4;     // вес по кости головы
             };
 
             struct Varyings
@@ -78,6 +107,7 @@ Shader "Chimera/KozhaProekciej"
                 float3 normalOS : TEXCOORD2;
                 float3 restPos : TEXCOORD3;
                 float3 restN : TEXCOORD4;
+                float headW : TEXCOORD5;
             };
 
             Varyings Vert(Attributes IN)
@@ -90,6 +120,7 @@ Shader "Chimera/KozhaProekciej"
                 OUT.normalOS = IN.normalOS;
                 OUT.restPos = IN.restPos;
                 OUT.restN = IN.restN;
+                OUT.headW = IN.headW.x;
                 return OUT;
             }
 
@@ -106,8 +137,8 @@ Shader "Chimera/KozhaProekciej"
                 float3 nW = normalize(IN.normalWS);
                 float3 nRest = normalize(IN.restN);
 
-                // триплан: веса по |n|^4, нормированные; координаты плитки — позиция покоя в долях тела
-                float3 w = pow(abs(nRest), 4.0);
+                // триплан: веса по |n|^_TriPower (резко, без двоящихся ромбов на боку), нормированные; координаты плитки — позиция покоя в долях тела
+                float3 w = pow(abs(nRest), _TriPower);
                 w /= max(w.x + w.y + w.z, 1e-5);
                 float3 p = IN.restPos / max(_BodyHeight, 1e-3) * _SkinScale;
                 float2 uvX = p.zy, uvY = p.xz, uvZ = p.xy;
@@ -137,22 +168,41 @@ Shader "Chimera/KozhaProekciej"
                 float3 gW = TransformObjectToWorldDir(RotateTo(gRest, nRest, normalize(IN.normalOS)), false);
                 float3 nBump = normalize(nW - _SkinRelief * 0.25 * gW);
 
-                // маска: доля высоты тела в позе покоя, на краях smoothstep 0.03
+                // МАСКА КОЖИ ПО КОСТИ ГОЛОВЫ (критик 10.11): вес вершины по поддереву кости головы, граница идёт под подбородком и по
+                // основанию черепа, а не горизонтальной «шапочкой» на высоте носа. Маска по высоте осталась опцией (_MaskMin/_MaskMax)
                 float hFrac = IN.restPos.y / max(_BodyHeight, 1e-3);
-                float mask = smoothstep(_MaskMin - 0.03, _MaskMin + 0.03, hFrac)
-                           * (1.0 - smoothstep(_MaskMax - 0.03, _MaskMax + 0.03, hFrac));
+                float mask = (1.0 - smoothstep(_HeadCut - _HeadEdge, _HeadCut + _HeadEdge, IN.headW))
+                           * smoothstep(_MaskMin - _MaskEdge, _MaskMin + _MaskEdge, hFrac)
+                           * (1.0 - smoothstep(_MaskMax - _MaskEdge, _MaskMax + _MaskEdge, hFrac));
                 float weight = saturate(_SkinWeight) * mask;
 
-                // КРУПНЫЙ УЗОР вида (сёдла змеи): тот же триплан по позе покоя, своя плотность в долях тела. Нормирован на среднее
-                // (самый грубый мип = среднее плитки), поэтому яркость не падает; нет плитки — контраст 0, слоя нет
-                float3 pp = IN.restPos / max(_BodyHeight, 1e-3) * _PatternScale;
-                float pat = SAMPLE_TEXTURE2D(_PatternTex, sampler_PatternTex, pp.zy).r * w.x
-                          + SAMPLE_TEXTURE2D(_PatternTex, sampler_PatternTex, pp.xz).r * w.y
-                          + SAMPLE_TEXTURE2D(_PatternTex, sampler_PatternTex, pp.xy).r * w.z;
-                float patMean = SAMPLE_TEXTURE2D_LOD(_PatternTex, sampler_PatternTex, float2(0.5, 0.5), 11).r;
-                float patLayer = lerp(1.0, pat / max(patMean, 1e-3), _PatternContrast);
+                // КРУПНЫЙ УЗОР вида (сёдла змеи) — АНАЛИТИЧЕСКИ в координатах позы покоя, а не плиткой: одна цепь ромбов вдоль хребта.
+                // along — вдоль оси хребта шасси, lateral — поперёк (тело симметрично по X); всё в долях роста тела. Ромб: d < 1, край
+                // ступенчатый (координаты квантуются), вокруг тонкая светлая кайма. Вес — дорсальный: спина полный, бока ~половина,
+                // грудь и живот 0; на конечностях узора нет (_PatternLimb 0). Нет узора у вида — _PatternContrast 0
+                float3 pr = IN.restPos / max(_BodyHeight, 1e-3);
+                float along = dot(pr, normalize(_SpineAxis.xyz));
+                float lateral = abs(pr.x);
+                const float Q = 11.0;   // ступеней на полуширину ромба и на период
+                float hw = max(_PatternHalfW * _PatternWidth, 1e-4);   // поперечная полуось шире продольной (ромбы шире высоты)
+                float fr = frac(along / max(_PatternPeriod, 1e-4) + _PatternPhase);
+                float frQ = floor(fr * Q + 0.5) / Q;
+                float latQ = floor(lateral / hw * Q + 0.5) / Q;
+                float d = latQ + abs(frQ - 0.5) * 2.0;                        // квантованный: ступени только на внешнем крае тёмного поля
+                float dRaw = lateral / hw + abs(fr - 0.5) * 2.0;             // нерезаный: по нему кайма — сплошная, ровными гранями
+                // цепь — от загривка до крестца, края гаснут остриём (фаза подогнана под низ, верх — целое число периодов)
+                float inChain = step(_PatternBottom, along) * step(along, _PatternTop);
+                // вес по нормали плавный (как в r4): спина полный, бока ~половина, грудь и живот 0; цепь обрезана по along
+                float dorsal = smoothstep(-_DorsalEdge, _DorsalEdge, dot(nRest, normalize(_DorsalAxis.xyz)));
+                float o = _PatternContrast * dorsal * _PatternLimb * inChain;
+                // тёмный ромб чуть теплее и темнее основы, тонкая светлая кайма только по его контуру; поле вне ромбов — основа
+                float3 warm = float3(1.0, 0.94, 0.84);
+                float3 patLayer = d < 1.0 ? lerp(float3(1, 1, 1), warm, o) * (1.0 - 0.6 * o)
+                               : dRaw < 1.0 + _PatternRim ? float3(1, 1, 1) * (1.0 + 1.4 * o)
+                               : float3(1, 1, 1);
+                float3 scaleLayer = lerp(float3(1, 1, 1), tile / max(_SkinMean.rgb, 1e-3), _ScaleContrast);
 
-                float3 albedo = _BaseColor.rgb * lerp(float3(1, 1, 1), _SkinTint.rgb * tile / max(_SkinMean.rgb, 1e-3) * patLayer, weight);   // плитка нормирована на среднее: даёт контраст швов, не яркость; тинт — цвет вида-донора
+                float3 albedo = _BaseColor.rgb * lerp(float3(1, 1, 1), _SkinTint.rgb * scaleLayer * patLayer, weight);   // плитка нормирована на среднее: даёт контраст швов, не яркость; тинт — цвет вида-донора
                 float3 n = normalize(lerp(nW, nBump, weight));
 
                 float4 shadowCoord = TransformWorldToShadowCoord(IN.positionWS);

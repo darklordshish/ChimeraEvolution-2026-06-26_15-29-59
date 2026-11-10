@@ -395,6 +395,15 @@ namespace Chimera.Tests.EditMode
                 Assert.AreEqual(r.sharedMesh.vertexCount, pos.Count, "uv2 (позиция покоя) потеряна или не той длины");
                 Assert.AreEqual(r.sharedMesh.vertexCount, nor.Count, "uv3 (нормаль покоя) потеряна или не той длины");
                 foreach (var n in nor) Assert.AreEqual(1f, n.magnitude, 1e-3f, "нормаль покоя не единичная");
+                var head = new System.Collections.Generic.List<Vector2>();
+                r.sharedMesh.GetUVs(4, head);
+                Assert.AreEqual(r.sharedMesh.vertexCount, head.Count, "uv4 (вес по кости головы) потеряна или не той длины");
+                // вершина на голове и на челюсти (кость сверх графа под головой) — вес 1, на хребте — 0
+                for (int i = 0; i < head.Count; i++)
+                {
+                    float expect = (pos[i] - OnSpine).magnitude < 1e-3f ? 0f : 1f;
+                    Assert.AreEqual(expect, head[i].x, 1e-4f, $"вес по кости головы у вершины {pos[i]}");
+                }
                 all.AddRange(pos);
             }
             foreach (var p in new[] { OnSpine, OnHead, OnJaw })

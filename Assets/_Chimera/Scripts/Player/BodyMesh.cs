@@ -128,6 +128,7 @@ public static class BodyMesh
     /// <summary>Ручка сторожей посадки кусков на швах: с органом на шаблоне кусок органа донора не ставится, мерить нечего.</summary>
     public static bool OrganObjectsOn = true;
     public const string GrowthShape = "рост";
+    const string HeadPlace = "голова";   // место головы: его кость и поддерево — вес для маски кожи
     static bool IsOrganObject(string name) => name.IndexOf('@') > 0;
     /// <summary>Ключ органа у объекта: кусок органа со своим цветом `<слот>.<что>@<вид>` (коготь, мочка) показывается и растёт вместе с `<слот>@<вид>`.</summary>
     public static string OrganKey(string objectName)
@@ -245,6 +246,13 @@ public static class BodyMesh
                 bind[i] = ours[i].worldToLocalMatrix * container.localToWorldMatrix * toBody;
                 stamp.Append('|').Append(ours[i].name).Append(bind[i].GetHashCode());
             }
+            // КОСТЬ ГОЛОВЫ — кость места `голова` шасси (а не имя): вес вершины по её поддереву уходит в канал для маски кожи
+            Transform headBone = null;
+            var headDef = jointsOf?.bones?.FirstOrDefault(b => b != null && b.socket == HeadPlace);
+            if (headDef != null) bones.TryGetValue(headDef.name, out headBone);
+            var inHead = new bool[ours.Length];
+            for (int i = 0; i < ours.Length; i++) inHead[i] = headBone != null && ours[i] != skeleton && ours[i].IsChildOf(headBone);
+            stamp.Append("|head:").Append(headBone != null ? headBone.name : "-");
             string key = stamp.ToString();
             if (!cache.TryGetValue(key, out var skinned) || skinned == null)   // запись бывает мёртвой, как у оболочки поля
             {
@@ -252,7 +260,7 @@ public static class BodyMesh
                 skinned.name = src.name;
                 skinned.hideFlags = HideFlags.HideAndDontSave;
                 skinned.bindposes = bind;
-                WriteRest(skinned, toBody);
+                WriteRest(skinned, toBody, inHead);
                 cache[key] = skinned;
             }
 
@@ -303,6 +311,10 @@ public static class BodyMesh
                 smr.GetPropertyBlock(skinBlock);
                 skinBlock.SetFloat(KozhaOrgana.SkinWeight, Mathf.Clamp01(skinWeight));
                 skinBlock.SetFloat(KozhaOrgana.BodyHeight, Mathf.Max(restTop, 0.1f));
+                var dorsal = (jointsOf != null ? jointsOf.DorsalAxis : Vector3.up);   // ось спины — параметр шасси, узор идёт цепью по ней
+                skinBlock.SetVector(KozhaOrgana.DorsalAxis, dorsal);
+                skinBlock.SetVector(KozhaOrgana.SpineAxis, jointsOf != null ? jointsOf.SpineAxis : Vector3.forward);
+                skinBlock.SetFloat(KozhaOrgana.PatternLimb, src.name == BodySlots.Arms || src.name == BodySlots.Legs ? KozhaOrgana.LimbPattern : 1f);
                 smr.SetPropertyBlock(skinBlock);   // TintMixer читает блок перед записью цвета, поэтому вес и рост переживают окраску
             }
             else if (mat != null) smr.sharedMaterial = (src.name.StartsWith("@") || organ) && !tone ? TwoSided(mat) : mat;   // черты и органы на шаблоне — оболочки; рисунок кожи — сама кожа
@@ -324,7 +336,7 @@ public static class BodyMesh
     /// <summary>ПОЗА ПОКОЯ В МЕШЕ (спека `2026-11-10-kozha-organa-proekciej.md`): uv2 — позиции вершин, uv3 — нормали в системе тела.
     /// Кожа проецируется по ним, а не по миру: узор не плывёт, когда кости гнут тело. Пишется один раз на копию меша (она живёт в
     /// кэше); сторож — `BodyMeshTests.RestPose_*`: каналы той же длины, что вершины (импорт и кэш молча теряют лишние каналы).</summary>
-    static void WriteRest(Mesh m, Matrix4x4 toBody)
+    static void WriteRest(Mesh m, Matrix4x4 toBody, bool[] inHead)
     {
         var verts = m.vertices;
         if (m.normals.Length != verts.Length) m.RecalculateNormals();
@@ -338,6 +350,22 @@ public static class BodyMesh
         }
         m.SetUVs(2, pos);
         m.SetUVs(3, nor);
+        // uv4.x — вес вершины по поддереву кости головы: маска кожи идёт по нему (под подбородком и по основанию черепа), а не по высоте
+        var bw = m.boneWeights;
+        var head = new List<Vector2>(verts.Length);
+        for (int i = 0; i < verts.Length; i++)
+        {
+            float w = 0f;
+            if (i < bw.Length)
+            {
+                if (bw[i].weight0 > 0f && bw[i].boneIndex0 < inHead.Length && inHead[bw[i].boneIndex0]) w += bw[i].weight0;
+                if (bw[i].weight1 > 0f && bw[i].boneIndex1 < inHead.Length && inHead[bw[i].boneIndex1]) w += bw[i].weight1;
+                if (bw[i].weight2 > 0f && bw[i].boneIndex2 < inHead.Length && inHead[bw[i].boneIndex2]) w += bw[i].weight2;
+                if (bw[i].weight3 > 0f && bw[i].boneIndex3 < inHead.Length && inHead[bw[i].boneIndex3]) w += bw[i].weight3;
+            }
+            head.Add(new Vector2(Mathf.Clamp01(w), 0f));
+        }
+        m.SetUVs(4, head);
     }
 
     /// <summary>Верх тела в позе покоя, м: по границам мешей объектов тела (не органов и не черт). Мера «доли тела» для плитки и маски.</summary>

@@ -30,6 +30,11 @@ public class SpeciesSO : ScriptableObject
     public float formScale = 1f;      // МАСШТАБ ВИДА: собранное тело целиком × это (`BodySize`), поставка формы не пересчитывается
                                       // (спека `2026-10-20-razmer-hedzhhalka.md`: Хеджхалк 0.55). 0 в старом ассете — читается как 1
     public float FormScale => formScale > 0f ? formScale : 1f;
+    public Vector3 dorsalAxis;        // ОСЬ СПИНЫ в системе тела (куда смотрит спина): у человека назад (0,0,-1), у четвероногих вверх. По ней кожа органа
+                                      // кладёт крупный узор дорсальной цепью (`KozhaOrgana`, спека 10.11). Ноль в старом ассете — «вверх» (свойство ниже)
+    public Vector3 spineAxis;         // ОСЬ ХРЕБТА в системе тела (вдоль неё идёт цепь узора): у человека вверх (0,1,0), у четвероногих вперёд. Ноль — «вперёд»
+    public Vector3 SpineAxis => spineAxis.sqrMagnitude > 1e-4f ? spineAxis.normalized : Vector3.forward;
+    public Vector3 DorsalAxis => dorsalAxis.sqrMagnitude > 1e-4f ? dorsalAxis.normalized : Vector3.up;
     public float mass;                // МАССА ВИДА, кг — число ДИЗАЙНА, а не замер (тела перекрываются, объём врёт): по ней растёт химера
                                       // (`GlobalLayer.Growth`, спека `2026-10-20-shkala-morfov.md`). 0 — не задана, вид рост не двигает
 

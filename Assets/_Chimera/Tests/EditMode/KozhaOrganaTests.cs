@@ -51,17 +51,36 @@ namespace Chimera.Tests.EditMode
             Assert.AreEqual(snake.tint.g, body[0].sharedMaterial.GetColor("_SkinTint").g, 1e-4f, "цвет кожи — цвет вида-донора");
         }
 
-        /// <summary>Крупный узор необязателен: у змеи плитка `uzor` подгружена и контраст включён, без неё слой выключен.</summary>
+        /// <summary>Крупный узор необязателен: у змеи описание `uzor.json` загружено и контраст включён, без него слой выключен.</summary>
         [Test]
         public void LargePattern_OnForSnake_OffWithoutTile()
         {
             var snakeMat = KozhaOrgana.For(Load("Змея"));
-            Assert.IsNotNull(snakeMat.GetTexture("_PatternTex"), "у змеи узор не задан");
+            Assert.AreEqual(0.0385f, snakeMat.GetFloat("_PatternHalfW"), 1e-4f, "у змеи узор из uzor.json не загружен");
             Assert.Greater(snakeMat.GetFloat("_PatternContrast"), 0f);
             var plain = new Material(Shader.Find(KozhaOrgana.ShaderName));
             KozhaOrgana.ApplyPattern(plain, null);
             Assert.AreEqual(0f, plain.GetFloat("_PatternContrast"), "донор без узора — слой выключен");
             Object.DestroyImmediate(plain);
+        }
+
+        /// <summary>Ось спины — параметр шасси: человек — назад, нет значения — вверх; она доходит до блока свойств тела.</summary>
+        [Test]
+        public void DorsalAxis_IsChassisParameter_AndReachesBody()
+        {
+            var human = Load("Человек"); var snake = Load("Змея");
+            Assert.AreEqual(new Vector3(0f, 0f, -1f), human.DorsalAxis, "у человека спина — назад в системе тела (запусти chimera-species)");
+            Assert.AreEqual(Vector3.up, snake.DorsalAxis, "без значения — вверх");
+            Assert.AreEqual(Vector3.up, human.SpineAxis, "хребет человека — вверх");
+            Assert.AreEqual(Vector3.forward, snake.SpineAxis, "без значения — вперёд");
+            var smrs = Build(human, WithHideOf(human, snake));
+            var body = smrs.Where(r => IsBodyObject(r) && HasSkin(r)).ToArray();
+            var block = new MaterialPropertyBlock();
+            body.First(r => r.name == "хребет").GetPropertyBlock(block);
+            Assert.AreEqual(-1f, block.GetVector(KozhaOrgana.DorsalAxis).z, 1e-4f);
+            Assert.AreEqual(1f, block.GetFloat(KozhaOrgana.PatternLimb), "торс — полный узор");
+            body.First(r => r.name == "Руки").GetPropertyBlock(block);
+            Assert.AreEqual(0f, block.GetFloat(KozhaOrgana.PatternLimb), "на руках крупного узора нет");
         }
 
         [Test]

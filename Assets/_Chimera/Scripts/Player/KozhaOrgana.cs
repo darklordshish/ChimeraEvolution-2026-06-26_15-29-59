@@ -30,21 +30,51 @@ public static class KozhaOrgana
         m.SetTexture("_SkinTex", color);
         m.SetTexture("_SkinHeight", relief);
         m.SetColor("_SkinMean", MeanLinear(color));
-        ApplyPattern(m, Resources.Load<Texture2D>("Кожа/" + donor + "/uzor"));
+        m.SetFloat("_ScaleContrast", ScaleContrast);
+        ApplyPattern(m, LoadPattern(donor));
         m.SetColor("_SkinTint", Tint(donorSpecies));
         cache[donor] = m;
         return m;
     }
 
-    public const float PatternContrast = 0.6f;
-    public static readonly int PatternTex = Shader.PropertyToID("_PatternTex");
+    public const float PatternContrast = 0.35f;   // светотень мышц должна читаться сквозь узор (критик 10.11)
+    public const float ScaleContrast = 0.3f;      // мелкая чешуя сливается в тон издали, а не рябит
+    public const float LimbPattern = 0f;          // на руках и ногах крупного узора нет — только чешуя
+    public static readonly int SpineAxis = Shader.PropertyToID("_SpineAxis");
+    public static readonly int DorsalAxis = Shader.PropertyToID("_DorsalAxis");
+    public static readonly int PatternLimb = Shader.PropertyToID("_PatternLimb");
     public static readonly int PatternContrastId = Shader.PropertyToID("_PatternContrast");
 
-    /// <summary>КРУПНЫЙ УЗОР (`uzor.png`, необязателен): сёдла змеи поверх мелкой чешуи. Нет плитки — контраст 0, слоя нет.</summary>
-    public static void ApplyPattern(Material m, Texture2D pattern)
+    /// <summary>КРУПНЫЙ УЗОР ВИДА (сёдла змеи) — цепь ромбов вдоль хребта, шейдер считает его аналитически по позе покоя. Описание
+    /// узора — файл `Resources/Кожа/<вид>/uzor.json`; нет файла — узора нет, остаётся одна чешуя. Файл, а не поле вида: данные
+    /// узора живут рядом с плитками кожи, и новый донор не требует правки ассетов видов. Числа — в долях роста тела.</summary>
+    [System.Serializable]
+    public class PatternSpec
     {
-        if (pattern != null) m.SetTexture(PatternTex, pattern);
-        m.SetFloat(PatternContrastId, pattern != null ? PatternContrast : 0f);
+        public float halfW = 0.0385f;      // продольная полуось ромба (≈ ¼ ширины спины)
+        public float period = 0.085f;     // шаг ромбов вдоль хребта (≈ 2·halfW·1.1)
+        public float widen = 1.25f;      // поперечная полуось = halfW · widen: ромбы шире высоты
+        public float top = 0.85f;        // верх цепи (загривок) вдоль хребта, доля роста тела
+        public float bottom = 0.51f;     // низ цепи (крестец); фаза считается от верха, остриё ромба — ровно на `top`
+        public float rim = 0.15f;        // светлая кайма, доля размера ромба
+        public float contrast = PatternContrast;
+    }
+
+    static PatternSpec LoadPattern(string donor)
+    {
+        var json = Resources.Load<TextAsset>("Кожа/" + donor + "/uzor");
+        return json == null ? null : JsonUtility.FromJson<PatternSpec>(json.text);
+    }
+
+    /// <summary>Нет описания — контраст 0, слоя нет.</summary>
+    public static void ApplyPattern(Material m, PatternSpec spec)
+    {
+        m.SetFloat(PatternContrastId, spec != null ? spec.contrast : 0f);
+        if (spec == null) return;
+        m.SetFloat("_PatternHalfW", spec.halfW); m.SetFloat("_PatternPeriod", spec.period);
+        m.SetFloat("_PatternPhase", -spec.top / Mathf.Max(spec.period, 1e-4f));   // цепь начинается целым остриём ромба ровно на верху (загривок)
+        m.SetFloat("_PatternRim", spec.rim); m.SetFloat("_PatternWidth", spec.widen);
+        m.SetFloat("_PatternTop", spec.top); m.SetFloat("_PatternBottom", spec.bottom);
     }
 
     /// <summary>Цвет вида-донора — тот же `SpeciesSO.tint`, из которого `TintMixer` собирает цвет по составу.</summary>
