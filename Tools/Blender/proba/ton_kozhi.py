@@ -1,6 +1,6 @@
 """РИСУНОК КОЖИ ОРГАНА ГРАНЯМИ (06.11, спека `2026-11-06-shkura-obrabotka-kozhi.md`, вариант А). Объекты кожи шасси (`--obj`) копируются целиком со всеми формами-ключами и весами, копия режется косой сеткой ромбов в области органа (спина, шея, плечи: нормаль назад, `--z`), грани раскладываются по тонам: полоса вдоль линий сетки — кромка (тёмный тон), середина ромба — светлый, вне области — тон 1.0 (как тело). Каждый тон — объект `<слот>.тон<N>@<вид>` со своим материалом: цвет материала — множитель к цвету тела. Орган снимает исходные объекты записью в `organy/<шасси>.json`, поэтому копии обязаны покрыть их полностью. Накладки этого органа (`--snyat`) удаляются.
 
-  blender -b сборка.blend --factory-startup --python-exit-code 1 -P ton_kozhi.py -- выход.blend Шкура Змея [--obj хребет,шея,Сердце] [--shag 0.10] [--kromka 0.012] [--z 1.06:1.66] [--tony 1.0,0.86,0.70] [--snyat Шкура.чешуя@Змея,Шкура.край@Змея]
+  blender -b сборка.blend --factory-startup --python-exit-code 1 -P ton_kozhi.py -- выход.blend Шкура Змея [--obj хребет,шея,Сердце] [--shag 0.10] [--kromka 0.012] [--z 1.06:1.66] [--tony 1.0,0.86,0.70] [--snyat Шкура.чешуя@Змея,Шкура.край@Змея] [--rezhim zony]
 """
 import sys, math
 import bpy, bmesh
@@ -24,10 +24,18 @@ itog = {}; SBOR = {}
 for nm in opt['obj'].split(','):
     src = bpy.data.objects[nm]; M = src.matrix_world; Mi = M.inverted()
     bm = bmesh.new(); bm.from_mesh(src.data); bm.normal_update()
+    if opt.get('rezhim') == 'zony':   # шерсть пятнами по граням тела: тёмный хребет и загривок, средние бока, светлое брюхо; без резки
+        TL = bm.faces.layers.int.new('тон'); bm.normal_update()
+        for f in bm.faces:
+            c = M @ f.calc_center_median(); n = (M.to_3x3() @ f.normal).normalized()
+            f[TL] = 2 if (n.y > .35 and c.z > 1.12) or (c.z > 1.50 and n.y > 0) else 0 if (n.y < -.35 and c.z < 1.42) else 1
+        obl = []
+    else:
+        obl = None
     # резка: линии сетки и полосы кромок по обе стороны, только в области
-    obl = [f for f in bm.faces if v_obl(M @ f.calc_center_median(), (M.to_3x3() @ f.normal).normalized())]
+    if obl is None: obl = [f for f in bm.faces if v_obl(M @ f.calc_center_median(), (M.to_3x3() @ f.normal).normalized())]
     geom = list({v for f in obl for v in f.verts}) + list({e for f in obl for e in f.edges}) + obl
-    for N in (N1, N2):
+    for N in ((N1, N2) if opt.get('rezhim') != 'zony' else ()):
         for k2 in range(-60, 61):
             k = k2 / 2
             for d in ((-KR, 0.0, KR) if k2 % 2 == 0 else (-KR, KR)):
@@ -41,8 +49,8 @@ for nm in opt['obj'].split(','):
                 geom = [g for g in geom if g.is_valid] + r['geom_cut']
                 geom = list({g for g in geom if g.is_valid} | {f for g in r['geom_cut'] if isinstance(g, bmesh.types.BMEdge) for f in g.link_faces})
     bmesh.ops.triangulate(bm, faces=bm.faces[:]); bm.normal_update()
-    TL = bm.faces.layers.int.new('тон')
-    for f in bm.faces:
+    TL = bm.faces.layers.int.get('тон') or bm.faces.layers.int.new('тон')
+    for f in (bm.faces if opt.get('rezhim') != 'zony' else []):
         c = M @ f.calc_center_median(); n = (M.to_3x3() @ f.normal).normalized()
         if not v_obl(c, n): f[TL] = 0; continue
         f[TL] = 2 if min(dist(c, N1), dist(c, N2)) < KR else 1

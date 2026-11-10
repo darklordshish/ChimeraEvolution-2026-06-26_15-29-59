@@ -512,7 +512,7 @@ def iglomet():
     O = Org('Игломёт@Ёж'); K = 'грудная клетка'; r = .034; ug = math.radians(12); d = Vector((0, -math.sin(ug), math.cos(ug))); L = .30; h_min = 9; S = 8
     Zb = 1.889 - L * math.cos(ug); Yb = .16; s1 = Vector((1, 0, 0)); s2 = d.cross(s1).normalized(); kon = []
     for x in (-.098, 0.0, .098):
-        B = Vector((x, Yb + (.015 if x == 0 else 0), Zb)); E = B + d * L; kon.append(E)
+        B = Vector((x, Yb - (.020 if x == 0 else 0), Zb))   # средняя вперёд: в профиль три трубы ступенькой; E = B + d * L; kon.append(E)
         for t_ in np.linspace(0, 1, 30):
             h_ = BVH.find_nearest(B + d * (L * t_)); h_min = min(h_min, h_[3] - r)
         kol = lambda c, q, sk=0: [O.v(c + s1 * (q * math.cos(u)) + s2 * (q * math.sin(u)) + d * (sk * math.sin(u)), K) for u in [j * 2 * math.pi / S for j in range(S)]]
@@ -533,7 +533,7 @@ def iglomet_kanal():
     O = Org('Игломёт.канал@Ёж'); K = 'грудная клетка'; r = .034 * .7; ug = math.radians(12); d = Vector((0, -math.sin(ug), math.cos(ug))); L = .30; S = 8
     Zb = 1.889 - L * math.cos(ug); Yb = .16; s1 = Vector((1, 0, 0)); s2 = d.cross(s1).normalized()
     for x in (-.098, 0.0, .098):
-        E = Vector((x, Yb + (.015 if x == 0 else 0), Zb)) + d * L
+        E = Vector((x, Yb - (.020 if x == 0 else 0), Zb)) + d * L
         kol = lambda c, sk=0: [O.v(c + s1 * (r * math.cos(u)) + s2 * (r * math.sin(u)) + d * (sk * math.sin(u)), K) for u in [j * 2 * math.pi / S for j in range(S)]]
         k3 = kol(E, .018); kd = kol(E - d * .09)
         for j in range(S):   # стенки канала смотрят внутрь
