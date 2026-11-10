@@ -509,7 +509,7 @@ def gorb():
 @organ('Шкура@Ёж')
 def igly_ezh():
     """ровные ряды одинаковых клиньев внахлёст: сетка по рядам со сдвигом на полшага, один размер, вниз; край ряда — наружу, контур плеч"""
-    O = Org('Шкура@Ёж'); shag = .050; dl = .135; sh = .029
+    O = Org('Шкура@Ёж'); shag = .066; dl = .15; sh = .034
     for j, (z, xm) in enumerate(((1.66, .02), (1.605, .07), (1.55, .20), (1.495, .27), (1.44, .29), (1.385, .27), (1.33, .23), (1.275, .19), (1.22, .17), (1.165, .15), (1.11, .135))):
         x = 0 if j % 2 == 0 else shag / 2
         while x <= xm + 1e-4:
@@ -523,7 +523,7 @@ def iglomet():
     O = Org('Игломёт@Ёж'); K = 'грудная клетка'; r = .034; ug = math.radians(12); d = Vector((0, -math.sin(ug), math.cos(ug))); L = .30; h_min = 9; S = 8
     Zb = 1.889 - L * math.cos(ug); Yb = .16; s1 = Vector((1, 0, 0)); s2 = d.cross(s1).normalized(); kon = []
     for x in (-.098, 0.0, .098):
-        B = Vector((x, Yb - (.020 if x == 0 else 0), Zb))   # средняя вперёд: в профиль три трубы ступенькой; E = B + d * L; kon.append(E)
+        B = Vector((x, Yb - (.020 if x == 0 else 0), Zb)); E = B + d * L; kon.append(E)   # средняя вперёд: в профиль три трубы ступенькой
         for t_ in np.linspace(0, 1, 30):
             h_ = BVH.find_nearest(B + d * (L * t_)); h_min = min(h_min, h_[3] - r)
         kol = lambda c, q, sk=0: [O.v(c + s1 * (q * math.cos(u)) + s2 * (q * math.sin(u)) + d * (sk * math.sin(u)), K) for u in [j * 2 * math.pi / S for j in range(S)]]
