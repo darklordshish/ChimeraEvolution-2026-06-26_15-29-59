@@ -103,8 +103,10 @@ public static class MorphBuilder
             }
             var ownOnClaimed = PartAssembly.OwnOnClaimed(pureChassis, wornOrgans, onBody).Where(o => !ByStage(o)).ToList();
             foreach (var own in ownOnClaimed) if (!string.IsNullOrEmpty(own.objectSlot)) given.Add(own.objectSlot);
+            // КОЖА ПРИВИТОЙ ШКУРЫ — на тело шасси проекцией плитки донора (спека 10.11); нет плитки — кожи нет, тело как раньше
+            var skin = KozhaOrgana.Of(pureChassis, wornOrgans, organObjects, out float skinWeight, out _);
             BodyMesh.Place(container.transform, chimeraSkeleton, pureChassis.bodyMesh, PrimitiveMaterial(), given, chimeraKeys, pureChassis,
-                           BodyMesh.RegionKeysFor(pureChassis, wornOrgans), organObjects);   // органы прорастают формой своей области
+                           BodyMesh.RegionKeysFor(pureChassis, wornOrgans), organObjects, skin, skinWeight);   // органы прорастают формой своей области
             // куски, забравшие место целиком (голова), — первыми: органы на этом месте садятся на места самого куска
             foreach (var (part, donor) in onBody.OrderBy(p => PartAssembly.Claimed(p.part, p.donor) == null))
             {

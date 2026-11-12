@@ -23,6 +23,8 @@ public static class SpeciesBootstrap
         human.speciesName = "Человек";
         human.mass = 80f;   // масса — для роста химеры (спека `2026-10-20-shkala-morfov.md`)
         human.formScale = 1f;
+        human.spineAxis = Vector3.up;                  // хребет прямоходящего идёт вверх
+        human.dorsalAxis = new Vector3(0f, 0f, -1f);   // спина прямоходящего — назад в системе тела (кожа органа: узор цепью по хребту)
         human.tint = new Color(0.9f, 0.72f, 0.62f); // телесный — база палитры (все органы человечьи → этот цвет)
         human.mutagenPool = 16;
         human.baseHp = 75;  // БАЗА ТЕЛА (см. CreatureBody: итог = база × (1 + бонусы × экспрессия)).
