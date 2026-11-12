@@ -1,48 +1,819 @@
 using System;
+using System.Collections.Generic;
 using Unity.AI.Navigation;
 using UnityEngine;
 
 /// <summary>
 /// Точка подключения павильона — 1:1 как арена (ArenaWalls): висит на пустом объекте
 /// в центре мира, сид — сериализованное поле (+ randomSeed-флаг как у арены),
-/// размер — поле mapDiameter (аналог arenaSide). s10a: скелет — поля, разрешение сида
-/// и лог-фраза; полный Awake-путь (чанки → флора → постройки → бейк) — следующими
-/// заходами. Лес, слайс s10a.
+/// размер — поле mapDiameter (аналог arenaSide). Срез A: полная сборка мира в Awake
+/// через DomeWorld (чанки, вода, кольцо, устья/гнездо, ясень, корпуса, флора, свод),
+/// NavMesh тайлами и постановка игрока во дворе лаборатории.
+/// Срез C: точки купола становятся настоящими LairSite — устья и гнёзда змей в реестре,
+/// совиное гнездо в реестре без спавна, ForestSpawner с землёй под зверя.
+/// Срез B (B0): чанк — поле (сетка обязана делить диаметр), вход у подножия кольца
+/// (игрок на world.Entry + каменный портал), ясень можно выключить (на Ø400 он в скале).
+/// B0.1: лаборатория — единый ЗАКРЫТЫЙ бункер (LabStyle Bastion/InSlope, случайное место
+/// по сиду не ближе minLabDistance к входу, сплошное перекрытие, искусственный свет,
+/// ходибельный интерьер) за флагом buildLabComplex; при false стоит прежний лабиринт —
+/// сцены A и C не меняются.
+/// Лес, срез A (24.10) + C + B0 + B0.1.
 /// </summary>
 [RequireComponent(typeof(NavMeshSurface))]
 public class ForestBuilder : MonoBehaviour
 {
     [Header("Сид (виден в Inspector, пишется в лог с инструкцией — как ArenaWalls)")]
     public long seed = 1337;
-    public bool randomSeed = true;
+    public bool randomSeed = false;
 
     [Header("Размер (аналог arenaSide: один параметр масштабирует всё)")]
     public float mapDiameter = 2000f;
+    [Tooltip("0 = старые 700; иначе целевое число деревьев на стенд")]
+    public int treeCount = 0;
+    [Tooltip("Пятна леса/поляны; A/C по умолчанию выключены")]
+    public bool patchyFlora = false;
+    [Tooltip("Множитель подлеска; 0 = исторические бюджеты (v1), v2 задаёт явно")]
+    public float undergrowthScale = 0f;
+    [Tooltip("Доля леса fBm; 0 = исторические 0.55 (v1), v2 задаёт пятнами")]
+    public float forestFraction = 0f;
+    [Tooltip("Явный порог fBm для v2; -999 = историческая формула")]
+    public float forestThreshold = -999f;
+    [Tooltip("Целевая плотность пятен v2, дер./км²; 0 = фиксированный treeCount")]
+    public float treeDensityTarget = 0f;
+    [Tooltip("Пол числа деревьев v2; 0 = без пола")]
+    public int treeMinCount = 0;
+    [Tooltip("Потолок числа деревьев v2; 0 = без потолка")]
+    public int treeMaxCount = 0;
+    // S3: слой рельефа отдельно от разметки. 0 у старой сцены — историческая связка
+    // (patchyFlora) сохраняет Pavilion v1 бит-в-бит; v2 включает только явный флаг.
+    [Tooltip("Рельеф формы (P5-lite) отдельным флагом; A/C/B0 — выключено")]
+    public bool buildRelief = false;
+
+    [Header("Эрозия S4 (v2): тепловая + гидро-запекание")]
+    public bool buildThermalErosion = false;
+    public bool buildHydraulicErosion = false;
+    public int erosionVersion = 1;
+    public string erosionCacheDir = "";
+    public int erosionResolution = 0;
+    public int erosionDrops = 0;
+    public int erosionSteps = 0;
+
+    // Сетка чанков начинается в −D/2 и шагает на chunkSize, поэтому chunkSize ОБЯЗАН
+    // делить диаметр: при Ø400 и 250 внутри чаши остаётся дыра, а чанк торчит за кольцо.
+    // Ноль — «не настроено»: новое сериализованное поле у компонента из сцены приходит
+    // нулём (гоча), и тогда берём диаметр/8 (Ø2000 → 250, Ø400 → 50), а НЕ дефолт 250.
+    [Header("Чанк (м): 0 — диаметр/8, но не мельче 50")]
+    public float chunkSize = 250f;
+
+    [Header("Рельеф: квадов на чанк (16 — превью-редколесье)")]
+    public int terrainQuads = 16;
+
+    // 0 = «не настроено» = v1: новое сериализованное поле у старой сцены приходит нулём
+    // (гоча проекта), и это НЕ должно означать «версия 0». Меняется только вместе
+    // с новыми эталонными константами; см. WorldFingerprint.Version.
+    [Header("Версия формулы отпечатка: 0 = v1 (старые сцены)")]
+    public int fingerprintVersion = 0;
+
+    // S1: у ПОЛЯ своя версия, отдельно от версии отпечатка и `cfg.version`.
+    // 0 приходит у старой сцены (гоча нового сериализованного поля) и читается как v1;
+    // 2 — три полосы H0. A/C/B0 остаются v1 (0 в поле), `ForestPavilion` переключит шаг 8.
+    [Header("Версия поля: 0 = не настроено = v1, 2 = полосы H0 (S1)")]
+    public int worldVersion = 0;
+    /// <summary>G7: 0 = v1 (поля нет), 2 = явный v2-профиль. В ключ эрозии не входит.</summary>
+    public int treeVersion = 0;
+
+
+    [Header("Сборка при старте (выключить — соберёшь Build() вручную)")]
+    public bool buildOnAwake = true;
 
     [Header("Конфиг (необязательно: иначе дефолты DomeGenConfigSO)")]
     public DomeGenConfigSO config;
 
+    [Header("Игрок (необязательно: иначе двор лаборатории)")]
+    public Transform playerSpawn;
+
+    [Header("Вход у подножия кольца (B): игрок на world.Entry + каменный портал")]
+    public bool spawnAtEntry = false;
+
+    [Header("Ясень и гнездо совы (B выключает: на Ø400 дерево встаёт в скалу)")]
+    public bool buildAsh = true;
+
+    [Header("Овраги B1.1: выемки, упавшие стволы, визуальные гнёзда (без LairSite)")]
+    public bool buildRavines = false;
+
+    [Header("География 27.10: терраса и каньон (Ø2000)")]
+    public bool buildTerrace = false;
+    public bool buildCanyon = false;
+    [Tooltip("Task 3: акведук по каталогу воды; отдельно от каньона, terrain не режет")]
+    public bool buildAqueduct = false;
+    /// <summary>Петля A: северная дверь станции (Bastion). По умолчанию выключена, A/C не меняются.</summary>
+    public bool buildStationLoop = false;
+    /// <summary>Холм станции: lift-слой вокруг Buried; по умолчанию выключен, A/C не меняются.</summary>
+    public bool buildStationHill = false;
+
+    [Header("Лаборатория B0.1: единый закрытый бункер вместо старого лабиринта")]
+    public bool buildLabComplex = false;
+
+    [Header("B0.3: генерировать план интерьера (fixed/mirror)")]
+    public bool buildLabPlan = false;
+    public int labPlanVersion = 1;
+
+    [Header("B1.2: климат — время и погода (B0.3)")]
+    public bool buildClimate = false;
+    public WeatherKind climateWeather = WeatherKind.Clear;
+    public float climateTimeMinutes = 10f;
+    public float climateTimeScale = 1f / 60f;
+    public bool climateAutoWeather = false;
+    public float climateChangeMinutes = 8f;
+    public float climateBlendSeconds = 20f;
+    ForestClimate climate;
+
+    [Header("Стиль оболочки: Bastion (наземный) / InSlope (в склоне) / Auto")]
+    public LabStyle labStyle = LabStyle.Bastion;
+
+    [Header("Вход B0.2: Rock (портал в скале) / Underground (спуск) / Auto")]
+    public LabEntrance labEntrance = LabEntrance.Rock;
+
+    // Ноль = «не настроено»: новое сериализованное поле у компонента из сцены приходит
+    // нулём (гоча проекта), а порог 150 м — решение B0.1, не случайное число.
+    [Header("Комплекс не ближе стольких метров к входу (0 — 150)")]
+    public float minLabDistance = DefaultMinLabDistance;
+
+    [Header("Логова и спавнер (пусто — логова копят очередь, но не рожают)")]
+    public List<SpeciesSO> speciesPool = new List<SpeciesSO>();
+
+    [Header("Змея: префаб с цепью тела (фабрика цепь не вешает)")]
+    public GameObject snakePrefab;
+
+    [Header("Змеиные логовища: устья и гнёзда (числа тюнинга)")]
+    public int snakeCapacity = DefaultSnakeCapacity;
+    public int snakeTier = DefaultSnakeTier;
+    public float snakeHomeRadius = DefaultSnakeHomeRadius;
+    public float snakeSpawnRadius = DefaultSnakeSpawnRadius;
+    public float snakeFearRadius = DefaultSnakeFearRadius;
+    public float snakeRespawnSeconds = DefaultSnakeRespawn;
+
+    // Дефолты среза C — ОДНИМ местом: поля в сцене уже лежат, а новое сериализованное
+    // поле у такого компонента приходит НУЛЁМ (гоча проекта). Ноль читаем как
+    // «не настроено» и подставляем дефолт, иначе логова молча получат capacity 0.
+    const int DefaultSnakeCapacity = 3;
+    const int DefaultSnakeTier = 2;
+    const float DefaultSnakeHomeRadius = 12f;
+    const float DefaultSnakeSpawnRadius = 3f;
+    const float DefaultSnakeFearRadius = 18f;
+    const float DefaultSnakeRespawn = 30f;
+    /// <summary>Порог B0.1: лаборатория не ближе стольких метров к входу.</summary>
+    const float DefaultMinLabDistance = 150f;
+
+    /// <summary>
+    /// G7 шаг 0: единственный список логических POI-слоёв. Его читают и
+    /// <see cref="PoiKind"/>, и `G7Shot`, и `G7ParityTests`; второго перечня нет.
+    /// `LabShell` — остов лаборатории (S3 §4.2), тоже POI.
+    /// </summary>
+    public static readonly string[] PoiWhitelist =
+    {
+        "SpacePaths", "ArenaEdge", "ForestRoads", "LevelGate", "LabShell", "CoverPod",
+    };
+
     public int ResolvedSeed { get; private set; }
+    public GameObject BuiltRoot { get; private set; }
+
+    public static bool IsPoiKind(string kind) =>
+        !string.IsNullOrEmpty(kind) && Array.IndexOf(PoiWhitelist, kind) >= 0;
+
+    /// <summary>
+    /// Логический POI-слой объекта: имя/префикс, а поды — по адресу из
+    /// <see cref="CoverPods"/> (у них общее имя `DomeFlora`). null — не POI.
+    /// </summary>
+    public string PoiKind(GameObject go)
+    {
+        if (go == null) return null;
+        string n = go.name;
+        string kind = null;
+        if (n == "SpacePaths") kind = "SpacePaths";
+        else if (n == "ArenaEdge") kind = "ArenaEdge";
+        else if (n == "ForestRoads") kind = "ForestRoads";
+        else if (n.StartsWith("LevelGate", StringComparison.Ordinal)) kind = "LevelGate";
+        else if (n.StartsWith("LabShell", StringComparison.Ordinal)) kind = "LabShell";
+        else if (n == "DomeFlora" && CoverPods != null && CoverPods.Count > 0)
+        {
+            Vector3 wp = go.transform.position;
+            var xz = new Vector2(wp.x, wp.z);
+            foreach (var pod in CoverPods)
+                if ((xz - pod.center).sqrMagnitude < 0.25f) { kind = "CoverPod"; break; }
+        }
+        return IsPoiKind(kind) ? kind : null;
+    }
+    public DomeHydro.State Hydro => world != null ? world.Hydro : null;
+    public DomeFacilityLayout.Facility Facility => world != null ? world.Facility : null;
+    public DomeAshSite.AshSpot Ash => world != null ? world.Ash : default;
+    public DomeHill.State Hill => world != null ? world.Hill : default;
+    public bool HasAsh => world != null && world.HasAsh;
+    public LairSite NestSite => world != null ? world.NestSite : null;
+    public int Chunks => world != null ? world.Chunks : 0;
+    public int Trees => world != null ? world.Trees : 0;
+    public int TreeColliders => world != null ? world.TreeColliders : 0;
+    public float ForestAreaKm2 => world != null ? world.ForestAreaKm2 : 0f;
+    /// <summary>Лежащие стволы сухостоя: у них коллайдера нет (`TreeColliders == Trees − DeadLogs`).</summary>
+    public int DeadLogs => world != null ? world.DeadLogs : 0;
+    public int CoverPodsBuilt => world != null ? world.CoverPodsBuilt : 0;
+    public int ArenaEdges => world != null ? world.ArenaEdges : 0;
+    public int ReliefHills => world != null ? world.ReliefHills : 0;
+    public DomeRelief.State Relief => world != null ? world.Relief : null;
+    /// <summary>S2: композиция v2 (null у v1).</summary>
+    public DomeComposition.State Composition => world != null ? world.Composition : null;
+    /// <summary>G7 шаг 1: план текущего мира; null у v1.</summary>
+    public MapPlan Plan => world != null ? world.Plan : null;
+    /// <summary>Формы композиции для отпечатка; пусто — берётся старая ветка Relief.</summary>
+    public DomeErosion.State Erosion => world != null ? world.Erosion : null;
+    public ForestRoadNetwork Roads => world != null ? world.Roads : null;
+
+    public IReadOnlyList<DomeForm> CompositionForms =>
+        world != null && world.Composition != null
+            ? world.Composition.forms
+            : (IReadOnlyList<DomeForm>)null;
+    /// <summary>G7 шаг 3: ближняя ветвь 0–150 м; не входит в G1/G2 S2-форм.</summary>
+    /// <summary>G7 шаг 3: ближняя ветвь 0–150 м (входит в CompositionForms/ShapeGround).</summary>
+    public IReadOnlyList<DomeForm> NearForms
+    {
+        get
+        {
+            if (world == null || world.Composition == null) return null;
+            var list = new List<DomeForm>();
+            foreach (var f in world.Composition.forms)
+                if (f.name != null && f.name.StartsWith("Ближняя")) list.Add(f);
+            return list;
+        }
+    }
+    public IReadOnlyList<Vector3> TreeColliderPositions => world != null ? world.TreeColliderPositions : new List<Vector3>();
+    public float CrownCover => world != null ? world.CrownCover : 0f;
+    /// <summary>Открытые зоны S3 (прогалины экосистемы, не арены).</summary>
+    public IReadOnlyList<ForestSpace.Zone> Zones => world != null ? world.Zones : new List<ForestSpace.Zone>();
+    /// <summary>Связи 16 м между зонами (лесные проходы).</summary>
+    public IReadOnlyList<ForestSpace.Link> Links => world != null ? world.Links : new List<ForestSpace.Link>();
+    public IReadOnlyList<ForestSpace.Zone> Commons => world != null ? world.Commons : new List<ForestSpace.Zone>();
+    public IReadOnlyList<ForestSpace.Zone> Waterholes => world != null ? world.Waterholes : new List<ForestSpace.Zone>();
+    public IReadOnlyList<DomeShell.Spot> Shells => world != null ? world.Shells : new List<DomeShell.Spot>();
+    public IReadOnlyList<DomeGate.Spot> Gates => world != null ? world.Gates : new List<DomeGate.Spot>();
+    public ForestPoiRegistry Pois => world != null ? world.Pois : new ForestPoiRegistry();
+    public IReadOnlyList<ForestSpace.CoverPod> CoverPods => world != null ? world.CoverPods : new List<ForestSpace.CoverPod>();
+    public int Ravines => world != null ? world.Ravines.Count : 0;
+    public IReadOnlyList<DomeRavines.Ravine> RavineList =>
+        world != null ? world.Ravines : new List<DomeRavines.Ravine>();
+    public DomeTerrace.State Terrace => world != null ? world.Terrace : default;
+    public DomeCanyon.State Canyon => world != null ? world.Canyon : default;
+    public bool HandoffCanyon => world != null && world.HandoffCanyon;
+    public int Aqueducts => world != null ? world.Aqueducts : 0;
+    public int FallenTrees => world != null ? world.FallenTrees : 0;
+    public int VisualNests => world != null ? world.VisualNests : 0;
+    public Vector3 SpawnPoint { get; private set; }
+    /// <summary>Вход мира (срез B): у подножия скального кольца, внутри чаши. До SpawnPlayer готов.</summary>
+    public Vector3 Entry => world != null ? world.Entry : default;
+    /// <summary>Центр лаборатории в координатах поля: двор A/C или плита комплекса B0.1.</summary>
+    public Vector2 LabCenter => world != null ? world.LabCenter : Vector2.zero;
+    /// <summary>Портал комплекса B0.1 в координатах поля (как Entry); default у старого лабиринта.</summary>
+    public Vector3 LabDoor => world != null ? world.LabDoor : default;
+    /// <summary>
+    /// G7 шаг 2: станция подтверждена внутри `stationReserve` (v2) или найдена (v1).
+    /// `false` — терминальное «станции нет»: потребители станции пропускаются,
+    /// `LabCenter` не подменяется нулём как скрытым дефолтом в центр.
+    /// </summary>
+    public bool HasStation => world != null && world.HasStation;
+    /// <summary>G7 шаг 3: выбранная схема (`two-capes-saddle`/`bowl-ridge`/`lake-cauldron`).</summary>
+    public string Scheme => world != null ? world.Scheme : null;
+    /// <summary>G7 шаг 3: ближняя ветвь (`ridge`/`hollow`/`cape`/`hybrid`).</summary>
+    public string Near => world != null ? world.Near : null;
+    public Vector3 LabAtrium => world != null ? world.LabAtrium : default;
+    public Vector3 LabNorthDoor => world != null ? world.LabNorthDoor : default;
+    public SamplingContract Contract => world != null ? world.Contract : default;
+    public GenTrace Trace => world != null ? world.Trace : null;
+    public ulong Fingerprint { get; private set; }
+    public string FingerprintHex => WorldFingerprint.Hex(Fingerprint);
+    /// <summary>Какой стиль комплекс получил на самом деле (Auto разрешён в один из двух).</summary>
+    public LabStyle ResolvedLabStyle => world != null ? world.ResolvedLabStyle : labStyle;
+    public LabEntrance ResolvedLabEntrance => world != null ? world.ResolvedLabEntrance : labEntrance;
+    /// <summary>Построенный комплекс (null при старом лабиринте A/C).</summary>
+    public DomeLabComplex.Result LabComplex => world != null ? world.LabComplex : null;
+    public LabPlan LabPlan => world != null ? world.LabPlan : null;
+    public float SampleGround(float x, float z) => world != null ? world.SampleGround(x, z) : 0f;
+    public float RawGround(float x, float z) => world != null ? world.RawGround(x, z) : 0f;
+    /// <summary>Поле + скальное кольцо: одна функция для устьев/гнёзд/ясеня (S3 §7).</summary>
+    public float RingGround(float x, float z) => world != null ? world.RingGround(x, z) : 0f;
+    /// <summary>S3: форма без площадки — вход POI и эрозии (S4).</summary>
+    public float ShapeGround(float x, float z) => world != null ? world.ShapeGround(x, z) : 0f;
+    /// <summary>S3: <c>Shape0 = PreErosion</c>.</summary>
+    public float Shape0(float x, float z) => world != null ? world.Shape0(x, z) : 0f;
+    /// <summary>Единственный пол мира (порядок слоёв) — для детекторов.</summary>
+    public DomeTerrain Terrain => world != null ? world.Terrain : null;
+    /// <summary>Маски габаритов S3 (null у v1).</summary>
+    public DomeMasks Masks => world != null ? world.Masks : null;
+    /// <summary>Высота площадки станции/двора (низ плиты) в координатах поля.</summary>
+    public float PlatformY => world != null ? world.PlatformY : 0f;
+    /// <summary>Поворот площадки станции (градусы); у старого лабиринта A/C — 0.</summary>
+    public float PadYaw => world != null ? world.PadYaw : 0f;
+    /// <summary>
+    /// Версия формулы отпечатка, которой собран мир. Ноль в поле — «не настроено» →
+    /// действующая v1 (<see cref="WorldFingerprint.Version"/>), а не версия 0.
+    /// </summary>
+    public int FingerprintVersion => fingerprintVersion > 0 ? fingerprintVersion : WorldFingerprint.Version;
+    /// <summary>
+    /// Версия поля S1: 0 в поле сцены = «не настроено» → v1. Трактовка нуля —
+    /// одна на проект (<see cref="DomeGenConfigSO.ResolveWorldVersion"/>), не своя.
+    /// Не путать с <see cref="FingerprintVersion"/> и <c>cfg.version</c>: у поля своя соль.
+    /// </summary>
+    public int WorldVersion => DomeGenConfigSO.ResolveWorldVersion(worldVersion);
+    /// <summary>0 читается как v1; явная 2 — только v2-профиль.</summary>
+    public int TreeVersion => treeVersion > 0 ? treeVersion : 0;
+    /// <summary>Сколько устьев нашло поле (адреса логовищ, не тела).</summary>
+    public int MouthCount => world != null ? world.Mouths.Count : 0;
+    /// <summary>Сколько гнёзд нашло поле (адреса логовищ, не тела).</summary>
+    public int NestCount => world != null ? world.Nests.Count : 0;
+
+    /// <summary>Логова этого мира в порядке постановки: змеиные, затем совиное — ровно то, что в реестре.</summary>
+    public IReadOnlyList<LairSite> Lairs => lairs;
+    /// <summary>Спавнер логовищ (живёт на этом же объекте, появляется вместе с миром).</summary>
+    public ForestSpawner Spawner => spawner;
+    /// <summary>Реестр логовищ (живёт на этом же объекте).</summary>
+    public LairRegistry Registry => lairRegistry;
+
+    DomeWorld world;
+    DomeGenConfigSO ownedConfig;
+    LairRegistry lairRegistry;
+    ForestSpawner spawner;
+    readonly List<LairSite> lairs = new List<LairSite>();
+    bool building;
 
     void Awake()
     {
-        if (randomSeed)
-        {
-            seed = Environment.TickCount;
-            Debug.Log($"ForestBuilder: случайный сид {seed} (для воспроизведения — выключи randomSeed и впиши его)");
-        }
-        var cfg = ConfigOrDefault();
-        ResolvedSeed = DomeGenRules.ResolveSeed(cfg, (int)seed);
-        if (config == null) Destroy(cfg);
+        if (buildOnAwake) Build();
     }
 
-    DomeGenConfigSO ConfigOrDefault()
+    /// <summary>
+    /// Собрать мир. Повторный вызов пересобирает с нуля. Ошибки сборки логируются,
+    /// но не валят Awake: пустой мир лучше, чем мёртвая сцена.
+    /// </summary>
+    public void Build()
     {
-        if (config != null) return config;
-        var cfg = ScriptableObject.CreateInstance<DomeGenConfigSO>();
-        cfg.seed = seed;
-        cfg.randomSeed = false;
-        cfg.mapDiameter = mapDiameter;
-        return cfg;
+        if (building) return;
+        building = true;
+        try
+        {
+            BuildInternal();
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[Forest] сборка мира не удалась: {e}");
+            Clear();
+        }
+        finally
+        {
+            building = false;
+        }
+    }
+
+    void BuildInternal()
+    {
+        Clear();
+
+        ownedConfig = config != null ? Instantiate(config) : ScriptableObject.CreateInstance<DomeGenConfigSO>();
+        ownedConfig.randomSeed = false;
+        ownedConfig.mapDiameter = mapDiameter;
+        ownedConfig.worldVersion = WorldVersion;
+        ownedConfig.chunkSize = ResolveChunkSize(mapDiameter);
+        ownedConfig.treeCount = treeCount > 0 ? treeCount : 0;
+        ownedConfig.patchyFlora = patchyFlora;
+        ownedConfig.undergrowthScale = undergrowthScale > 0f ? undergrowthScale : 1f;
+        if (forestFraction > 0f) ownedConfig.forestFraction = forestFraction;
+        if (forestThreshold > -900f) ownedConfig.forestThreshold = forestThreshold;
+        if (treeDensityTarget > 0f) ownedConfig.treeDensityTarget = treeDensityTarget;
+        if (treeMinCount > 0) ownedConfig.treeMinCount = treeMinCount;
+        if (treeMaxCount > 0) ownedConfig.treeMaxCount = treeMaxCount;
+        ownedConfig.buildRelief = buildRelief;
+        ownedConfig.buildThermalErosion = buildThermalErosion;
+        ownedConfig.buildHydraulicErosion = buildHydraulicErosion;
+        ownedConfig.erosionVersion = erosionVersion;
+        DomeErosion.CacheDir = erosionCacheDir;
+        if (erosionResolution > 0) ownedConfig.erosionResolution = erosionResolution;
+        if (erosionDrops > 0) ownedConfig.hydroDrops = erosionDrops;
+        if (erosionSteps > 0) ownedConfig.hydroSteps = erosionSteps;
+
+        var issues = DomeGenRules.CheckConfig(ownedConfig);
+        if (issues.Count > 0)
+        {
+            Debug.LogError($"[Forest] конфиг купола не сходится: {string.Join("; ", issues)}");
+            DestroyOwnedConfig();
+            return;
+        }
+
+        // S1 §12 (P0-6): полосы H0 объявлены ТОЛЬКО для Ø2000 при terrainQuads ≥ 48.
+        // Ниже этого разрешения самая короткая волна микро-полосы уходит под 4·meshStep
+        // и поле алиасит — молча собирать такой мир нельзя.
+        if (WorldVersion >= 2 && !SamplingContract.BandProfileSupported(mapDiameter, terrainQuads))
+        {
+            Debug.LogError(
+                $"[Forest] worldVersion={WorldVersion} при Ø{mapDiameter} и terrainQuads={terrainQuads}: " +
+                $"полосы H0 требуют Ø{SamplingContract.BandProfileDiameter} и ≥" +
+                $"{SamplingContract.BandProfileMinQuads} квадов на чанк — сборка отменена");
+            DestroyOwnedConfig();
+            return;
+        }
+
+        long chosen;
+        if (randomSeed)
+        {
+            // Как у арены: сид от тика, но с перебором — поле без озера/реки не мир.
+            long baseSeed = (uint)Environment.TickCount;
+            chosen = 0L;
+            bool found = false;
+            for (int attempt = 0; attempt < 8 && !found; attempt++)
+            {
+                long candidate = baseSeed + attempt;
+                ownedConfig.seed = candidate;
+                try
+                {
+                    DomeHydro.Build(ownedConfig, 256);
+                    chosen = candidate;
+                    found = true;
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"[Forest] сид {candidate} не дал воду: {e.Message}");
+                }
+            }
+            if (!found)
+            {
+                Debug.LogError("[Forest] 8 сидов подряд не дали пригодный мир — сборка отменена");
+                DestroyOwnedConfig();
+                return;
+            }
+            seed = chosen;
+            Debug.Log($"ForestBuilder: случайный сид {seed} (для воспроизведения — выключи randomSeed и впиши его)");
+        }
+        else
+        {
+            chosen = seed;
+            Debug.Log($"[Forest] фикс-сид {chosen}");
+        }
+
+        ownedConfig.seed = chosen;
+        ResolvedSeed = unchecked((int)chosen);
+        BuiltRoot = new GameObject($"{chosen}_ForestWorld");
+        BuiltRoot.transform.SetParent(transform, false);
+
+        world = new DomeWorld();
+        // buildEntry — это «поставить вход-портал»: сцена, которая просит спавн у входа,
+        // хочет и сам вход видимым. Отдельного рубильника у портала нет намеренно.
+        // B0.1: стиль и порог лаборатории идут в мир; 0 в пороге — «не настроено».
+        world.Build(BuiltRoot, ownedConfig, terrainQuads, chosen, buildAsh, spawnAtEntry,
+            labStyle, minLabDistance > 0f ? minLabDistance : DefaultMinLabDistance,
+            buildLabComplex, labEntrance, buildRavines, buildLabPlan, labPlanVersion,
+            buildTerrace, buildCanyon, buildStationLoop, buildStationHill, buildAqueduct);
+
+        var surface = GetComponent<NavMeshSurface>();
+        world.BuildNavMesh(surface);
+
+        SpawnPlayer();
+
+        BuildLairs();
+        Fingerprint = WorldFingerprint.Compute(this);
+        SetupClimate();
+
+        int parts = world.Facility != null ? world.Facility.parts.Count
+            : world.LabComplex != null ? world.LabComplex.parts : 0;
+        string lab;
+        if (world.LabComplex != null)
+        {
+            float labToEntry = Vector2.Distance(
+                world.LabCenter, new Vector2(world.Entry.x, world.Entry.z));
+            lab = $"комплекс {world.LabComplex.style} в {labToEntry:F0} м от входа, " +
+                  $"деталей {world.LabComplex.parts} " +
+                  $"(интерьер {world.LabComplex.interiorParts}, оболочка {world.LabComplex.exteriorParts}), " +
+                  $"ламп {world.LabComplex.lights}, портал {world.LabDoor}, " +
+                  $"план {world.LabComplex.planTemplate} v{world.LabComplex.planVersion}" +
+                  (world.LabComplex.planFallback ? " fallback" : "");
+        }
+        else
+        {
+            lab = $"старый лабиринт, деталей {parts}";
+        }
+        Debug.Log($"[Forest] мир {chosen}: чанков {world.Chunks}, деревьев {world.Trees}, " +
+                  $"устий {world.Mouths.Count}, гнёзд {world.Nests.Count}, {lab}, " +
+                  $"ясень {(world.HasAsh ? "есть" : "нет")}, " +
+                  $"гнездо совы {(world.NestSite != null ? "есть" : "нет")}, " +
+                  $"оврагов {world.Ravines.Count}, стволов {world.FallenTrees}, визуальных гнёзд {world.VisualNests}, " +
+                  $"вход {world.Entry}");
+    }
+
+    /// <summary>
+    /// Чанк, делящий диаметр. Ноль в поле — «не настроено» (новое сериализованное поле
+    /// у компонента из сцены приходит нулём): диаметр/8 даёт 250 на Ø2000 — прежний мир A,
+    /// — а дефолт 250 на Ø400 оставил бы дыру в чаше. Нижняя граница 50 — правило DomeGenRules.
+    /// </summary>
+    float ResolveChunkSize(float diameter)
+    {
+        if (chunkSize > 0f) return chunkSize;
+        return Mathf.Max(50f, diameter / 8f);
+    }
+
+    /// <summary>
+    /// Игрок — в точку playerSpawn (если задан), в world.Entry (если сцена просит вход)
+    /// или в центр двора лаборатории. CharacterController гасим на время телепорта:
+    /// иначе он вернёт позицию.
+    /// </summary>
+    void SpawnPlayer()
+    {
+        if (world == null) return;
+        Vector3 basePos = playerSpawn != null ? playerSpawn.position
+                        : spawnAtEntry ? world.Entry
+                        : world.SpawnPoint;
+        // Вход — это портал; стоять В нём нельзя (камера внутри косяка). Игрок
+        // появляется на 6 м в чашу от входа, лицом к лесу; портал остаётся за спиной.
+        Vector3? faceDir = null;
+        if (spawnAtEntry && playerSpawn == null)
+        {
+            Vector2 inward = -new Vector2(basePos.x, basePos.z);
+            if (inward.sqrMagnitude > 1e-4f)
+            {
+                inward.Normalize();
+                basePos += new Vector3(inward.x, 0f, inward.y) * 6f;
+                // Комментарий обещал «лицом к лесу» — теперь это ещё и выполнено:
+                // камера/тело не смотрят в скалу за спиной.
+                faceDir = new Vector3(inward.x, 0f, inward.y);
+            }
+        }
+        Vector3 target = new Vector3(basePos.x, world.SampleGround(basePos.x, basePos.z) + 1f, basePos.z);
+        SpawnPoint = target;
+
+        var player = UnityEngine.Object.FindAnyObjectByType<PlayerController>();
+        CharacterController controller = player != null ? player.GetComponent<CharacterController>() : null;
+        Transform targetTransform = player != null ? player.transform : null;
+        if (targetTransform == null)
+        {
+            controller = UnityEngine.Object.FindAnyObjectByType<CharacterController>();
+            if (controller != null) targetTransform = controller.transform;
+        }
+        if (targetTransform == null)
+        {
+            Debug.Log("[Forest] игрок не найден — мир ждёт, точка спавна запомнена");
+            return;
+        }
+
+        if (controller != null) controller.enabled = false;
+        targetTransform.position = target;
+        // Спавн у входа: тело и камера смотрят в чашу, а не в скалу за спиной.
+        if (faceDir.HasValue)
+            targetTransform.rotation = Quaternion.LookRotation(faceDir.Value, Vector3.up);
+        if (controller != null) controller.enabled = true;
+    }
+
+    /// <summary>
+    /// Срез C: точки купола → настоящие логова. Устье — логово змей (Den), гнездо у устья —
+    /// тоже змеиное (Nest). Ни мешей, ни коллайдеров тут нет: LairSite — АДРЕС популяции,
+    /// страха и возврата домой, поэтому NavMesh он не задевает (бейк был выше).
+    /// Совиное гнездо уже стоит в кроне ясеня (DomeWorld), ему остаётся регистрация без спавна.
+    /// </summary>
+    void BuildLairs()
+    {
+        if (world == null) return;
+
+        lairRegistry = GetComponent<LairRegistry>();
+        if (lairRegistry == null) lairRegistry = gameObject.AddComponent<LairRegistry>();
+
+        int mouths = 0;
+        foreach (var m in world.Mouths)
+        {
+            // Логово — не в скале портала, а на ровной земле перед ним. DomeSlope ищет
+            // площадку в 5 м, но у кольца она ещё под скалой: змея рождается в камне и
+            // её не видно. BowlPad отодвигает адрес в чашу, пока кольцо не перестанет
+            // быть выше поля. Вход остаётся точкой самого устья.
+            Vector2 down = new Vector2(Mathf.Cos(m.facing), Mathf.Sin(m.facing));
+            Vector2 pad = BowlPad(m.pos + down * 5f);
+            float y = Mathf.Max(world.RingGround(pad.x, pad.y),
+                                world.SampleGround(pad.x, pad.y));
+            var site = MakeSnakeLair($"Логово_устье_{mouths}", FieldToWorld(pad.x, y, pad.y),
+                LairSite.LairAreaType.Den);
+            float yMouth = world.RingGround(m.pos.x, m.pos.y);
+            site.entrances.Add(FieldToWorld(m.pos.x, yMouth, m.pos.y));
+            mouths++;
+        }
+
+        int nests = 0;
+        foreach (var n in world.Nests)
+        {
+            // Гнёзда тоже могут стоять на кромке кольца. Тот же BowlPad: адрес — в чаше,
+            // каирн остаётся на месте. Высота — верхняя из скалы и поля, чтобы не под водой.
+            Vector2 pad = BowlPad(n.pos);
+            float y = Mathf.Max(world.RingGround(pad.x, pad.y),
+                                world.SampleGround(pad.x, pad.y));
+            MakeSnakeLair($"Логово_гнездо_{nests}", FieldToWorld(pad.x, y, pad.y),
+                LairSite.LairAreaType.Nest);
+            nests++;
+        }
+
+        if (world.NestSite != null)
+        {
+            // Сова в реестре есть, а спавна нет: тела филина в игре ещё не существует,
+            // и рожать «Сову» из пула было бы пустым телом. Страх при этом живёт и тает.
+            world.NestSite.spawnEnabled = false;
+            lairRegistry.Register(world.NestSite);
+            lairs.Add(world.NestSite); // Lairs и Registry держат ОДНО и то же множество
+        }
+
+        spawner = GetComponent<ForestSpawner>();
+        if (spawner == null) spawner = gameObject.AddComponent<ForestSpawner>();
+        spawner.snakePrefab = snakePrefab;
+        spawner.Configure(lairRegistry, speciesPool, SpawnGroundAtWorld);
+        spawner.autoTick = true;
+
+        if (speciesPool == null || speciesPool.Count == 0)
+            Debug.LogWarning("[Forest] пул видов пуст: логова стоят и копят очередь, но рожать некому — " +
+                             "впиши виды в speciesPool у ForestBuilder");
+
+        Debug.Log($"[Forest] логова: змеиных {mouths + nests} (устий {mouths}, гнёзд {nests}), " +
+                  $"совиное {(world.NestSite != null ? "есть (без спавна)" : "нет")}, " +
+                  $"в реестре {lairRegistry.Count}, пул {(speciesPool != null ? speciesPool.Count : 0)}, " +
+                  $"autoTick {spawner.autoTick}");
+    }
+
+    LairSite MakeSnakeLair(string name, Vector3 worldPos, LairSite.LairAreaType areaType)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(world.Root.transform, false);
+        go.transform.position = worldPos; // FieldToWorld уже перевёл в мировые
+        var site = go.AddComponent<LairSite>();
+        site.speciesName = "Змея";
+        site.areaType = areaType;
+        // Ноль = «не настроено» (новое поле у компонента из сцены приходит нулём).
+        site.capacity = snakeCapacity > 0 ? snakeCapacity : DefaultSnakeCapacity;
+        site.tier = snakeTier > 0 ? snakeTier : DefaultSnakeTier;
+        site.homeRadius = snakeHomeRadius > 0f ? snakeHomeRadius : DefaultSnakeHomeRadius;
+        site.spawnRadius = snakeSpawnRadius > 0f ? snakeSpawnRadius : DefaultSnakeSpawnRadius;
+        site.fearRadius = snakeFearRadius > 0f ? snakeFearRadius : DefaultSnakeFearRadius;
+        site.respawnSeconds = snakeRespawnSeconds > 0f ? snakeRespawnSeconds : DefaultSnakeRespawn;
+        lairRegistry.Register(site);
+        lairs.Add(site);
+        return site;
+    }
+
+    /// <summary>
+    /// Отодвинуть адрес логова от скального кольца в чашу. Кольцо считается «выше поля»,
+    /// пока RingField больше SampleGround: тогда точка ещё в камне, и змея рождается под ним.
+    /// Шагаем к центру по 5 м, пока кольцо не перестанет доминировать.
+    /// </summary>
+    Vector2 BowlPad(Vector2 start)
+    {
+        Vector2 p = start;
+        for (int i = 0; i < 12; i++)
+        {
+            float ring = world.RingGround(p.x, p.y);
+            float field = world.SampleGround(p.x, p.y);
+            if (ring <= field + 0.5f) return p;
+            if (p.sqrMagnitude < 1f) break;
+            p += -p.normalized * 5f;
+        }
+        return p;
+    }
+
+    /// <summary>Координаты поля → мировые. Корень мира может стоять не в нуле; в нуле — тождество.</summary>
+    Vector3 FieldToWorld(float x, float y, float z)
+    {
+        return world.Root.transform.TransformPoint(new Vector3(x, y, z));
+    }
+
+    /// <summary>
+    /// Земля для спавнера. Приходит МИРОВАЯ точка (сайт живёт в мировых, как игрок),
+    /// а поле мира считает в координатах корня — потому переводим туда и обратно.
+    /// Высота — верхняя из скалы кольца и поля (см. гнёзда): не ниже видимой поверхности.
+    /// </summary>
+    /// <summary>Высота для точки рождения: только пол поля, без скальной полки кольца.</summary>
+    float SpawnGroundAtWorld(float x, float z)
+    {
+        if (world == null || world.Root == null) return 0f;
+        var root = world.Root.transform;
+        Vector3 local = root.InverseTransformPoint(new Vector3(x, 0f, z));
+        float y = world.SampleGround(local.x, local.z);
+        return root.TransformPoint(new Vector3(local.x, y, local.z)).y;
+    }
+    float GroundAtWorld(float x, float z)
+    {
+        if (world == null || world.Root == null || ownedConfig == null) return 0f;
+        var root = world.Root.transform;
+        Vector3 local = root.InverseTransformPoint(new Vector3(x, 0f, z));
+        float y = Mathf.Max(world.RingGround(local.x, local.z),
+                            world.SampleGround(local.x, local.z));
+        return root.TransformPoint(new Vector3(local.x, y, local.z)).y;
+    }
+
+    /// <summary>
+    /// Снести мир и всё, что он создал. Сериализованные поля (сид, диаметр, конфиг)
+    /// не трогаются — иначе повторный Build соберёт не тот мир.
+    /// </summary>
+    public void Clear()
+    {
+        Fingerprint = 0UL;
+        // Порядок важен: тик → живые → адреса → мир.
+        // 1) autoTick off: следующий Update не должен Tick-нуть по снесённым сайтам.
+        // 2) ClearSpawned: рождённые звери НЕ дети корня мира (префаб/фабрика кладут их
+        //    в корень сцены), поэтому world.Clear их не снимет — снимаем сами, и снимаем
+        //    ПОКА ИХ `home` ЖИВ: снести сначала сайты значило бы оставить живого зверя
+        //    с `home` на снесённый LairSite (долг среза C — ровно это).
+        // 3) реестр и список логов — адреса уходят раньше самих сайтов (сайты снесёт world).
+        // 4) world.Clear — сам мир.
+        if (spawner != null)
+        {
+            spawner.autoTick = false;
+            spawner.ClearSpawned();
+        }
+        if (lairRegistry != null) lairRegistry.Clear();
+        lairs.Clear();
+
+        if (climate != null)
+        {
+            climate.enabled = false;
+            climate.skyRoot = null;
+            climate.wetMaterials = null;
+            climate.rain = null;
+            climate.lab = null;
+            climate.ground = null;
+            ForestClimate.LabZone = null;
+        }
+        if (world != null)
+        {
+            world.Clear();
+            world = null;
+        }
+        else if (BuiltRoot != null)
+        {
+            if (Application.isPlaying) BuiltRoot.SetActive(false);
+            DestroyObject(BuiltRoot, !Application.isPlaying);
+        }
+        BuiltRoot = null;
+
+        var surface = GetComponent<NavMeshSurface>();
+        if (surface != null && surface.navMeshData != null)
+        {
+            surface.RemoveData();
+            DestroyObject(surface.navMeshData, !Application.isPlaying);
+            surface.navMeshData = null;
+        }
+
+        DestroyOwnedConfig();
+        SpawnPoint = default;
+        DomeSkyRig.Reset();
+        ForestClimate.ResetStatic();
+    }
+
+    void SetupClimate()
+    {
+        if (!buildClimate || world == null)
+        {
+            if (climate != null) climate.enabled = false;
+            return;
+        }
+        if (climate == null)
+        {
+            climate = GetComponent<ForestClimate>();
+            if (climate == null) climate = gameObject.AddComponent<ForestClimate>();
+        }
+        climate.enabled = true;
+        climate.state = new WeatherState { kind = climateWeather };
+        climate.timeMinutes = climateTimeMinutes;
+        climate.timeScale = climateTimeScale;
+        climate.autoWeather = climateAutoWeather;
+        climate.weatherChangeMinutes = climateChangeMinutes;
+        climate.weatherBlendSeconds = climateBlendSeconds;
+        climate.weatherSeed = ResolvedSeed;
+        climate.weatherTable = DomeWeather.PavilionTable();
+        climate.SetWeatherImmediate(climateWeather);
+        climate.StartWeatherClock();
+        climate.skyRoot = world.Root;
+        climate.lab = world.LabComplex;
+        climate.SetGround(world.SampleGround, world.Hydro.lakeLevel);
+        ForestClimate.LabZone = world.LabComplex;
+        var wet = new List<Material>(world.Materials);
+        wet.AddRange(DomeFlora.Materials);
+        climate.wetMaterials = wet;
+        if (climateWeather == WeatherKind.Rain && climate.rain == null)
+            climate.rain = DomeRain.BuildPreview(world.Root, 0f, 0f, world.SampleGround);
+        climate.ApplyVisuals();
+    }
+
+    void DestroyOwnedConfig()
+    {
+        if (ownedConfig == null) return;
+        DestroyObject(ownedConfig, !Application.isPlaying);
+        ownedConfig = null;
+    }
+
+    void OnDestroy()
+    {
+        Clear();
+    }
+
+    static void DestroyObject(UnityEngine.Object obj, bool immediate)
+    {
+        if (obj == null) return;
+        if (immediate) UnityEngine.Object.DestroyImmediate(obj);
+        else UnityEngine.Object.Destroy(obj);
     }
 }

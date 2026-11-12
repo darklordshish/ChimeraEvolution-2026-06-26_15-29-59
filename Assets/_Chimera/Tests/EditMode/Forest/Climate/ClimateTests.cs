@@ -112,6 +112,17 @@ namespace Chimera.Tests.EditMode
         }
 
         [Test]
+        public void HeightFog_LowlandThick_PlateauClear_AndMonotone()
+        {
+            Assert.AreEqual(1f, ForestClimate.HeightFog(0f, 0f), 1e-5f, "у воды густо");
+            Assert.AreEqual(1f, ForestClimate.HeightFog(-5f, 0f), 1e-5f, "ниже воды — тот же низ");
+            Assert.Less(ForestClimate.HeightFog(10f, 0f), 1f, "на высоте реже");
+            Assert.Less(ForestClimate.HeightFog(20f, 0f), ForestClimate.HeightFog(10f, 0f),
+                "монотонно вниз");
+            Assert.AreEqual(0f, ForestClimate.HeightFog(30f, 0f), 1e-5f, "плато чисто");
+        }
+
+        [Test]
         public void Wind_ValidatesDirection()
         {
             var ok = new WeatherState { kind = WeatherKind.Wind, windDir = new Vector2(1f, 0f), windStrength = 3f };
@@ -136,6 +147,28 @@ namespace Chimera.Tests.EditMode
             var noPulse = good;
             noPulse.pulseFreq = 0f;
             Assert.IsNotEmpty(TelegraphChannels.Validate(noPulse), "нулевой пульс обязан ловиться");
+        }
+        [Test]
+        public void PickWeather_EmptyTable_IsClear()
+        {
+            Assert.AreEqual(WeatherKind.Clear, ForestClimate.PickWeather(default, 9, 0));
+        }
+
+        [Test]
+        public void PickWeather_AllRain_IsRain_AndDeterministic()
+        {
+            var rain = Table(0f, 1f, 0f, 0f, 0f);
+            Assert.AreEqual(WeatherKind.Rain, ForestClimate.PickWeather(rain, 9, 0));
+            Assert.AreEqual(ForestClimate.PickWeather(rain, 9, 3),
+                ForestClimate.PickWeather(rain, 9, 3), "тот же сид/шаг — тот же выбор");
+        }
+        [Test]
+        public void WeatherBlend_Targets_AreExplicit()
+        {
+            Assert.AreEqual(1f, ForestClimate.WetFor(WeatherKind.Rain), "дождь мокрый");
+            Assert.AreEqual(0f, ForestClimate.WetFor(WeatherKind.Clear), "ясно сухо");
+            Assert.AreEqual(1f, ForestClimate.FogFor(WeatherKind.Fog), "туман плотный");
+            Assert.AreEqual(0f, ForestClimate.FogFor(WeatherKind.Rain), "дождь не туман");
         }
     }
 }

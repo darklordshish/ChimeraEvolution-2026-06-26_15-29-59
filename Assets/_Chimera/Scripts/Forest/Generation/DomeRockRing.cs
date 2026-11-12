@@ -51,7 +51,8 @@ public static class DomeRockRing
         return u * u * (3f - 2f * u);
     }
 
-    public static Mesh BuildRingMesh(DomeGenConfigSO cfg, int around, int radial)
+    public static Mesh BuildRingMesh(DomeGenConfigSO cfg, int around, int radial,
+        bool stylized = false)
     {
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
         around = Mathf.Clamp(around, 16, 512);
@@ -67,10 +68,10 @@ public static class DomeRockRing
                 float a1 = ((i + 1) / (float)around) * Mathf.PI * 2f;
                 float t0 = j / (float)radial;
                 float t1 = (j + 1) / (float)radial;
-                Vector3 p00 = Point(cfg, rin, rout, a0, t0);
-                Vector3 p10 = Point(cfg, rin, rout, a1, t0);
-                Vector3 p01 = Point(cfg, rin, rout, a0, t1);
-                Vector3 p11 = Point(cfg, rin, rout, a1, t1);
+                Vector3 p00 = Point(cfg, rin, rout, a0, t0, stylized);
+                Vector3 p10 = Point(cfg, rin, rout, a1, t0, stylized);
+                Vector3 p01 = Point(cfg, rin, rout, a0, t1, stylized);
+                Vector3 p11 = Point(cfg, rin, rout, a1, t1, stylized);
                 verts[v++] = p00;
                 verts[v++] = p10;
                 verts[v++] = p11;
@@ -88,9 +89,19 @@ public static class DomeRockRing
         return mesh;
     }
 
-    static Vector3 Point(DomeGenConfigSO cfg, float rin, float rout, float angle, float t)
+    static Vector3 Point(DomeGenConfigSO cfg, float rin, float rout, float angle, float t,
+        bool stylized)
     {
         float r = Mathf.Lerp(rin, rout, t);
-        return new Vector3(Mathf.Cos(angle) * r, HeightAt(cfg, angle, t), Mathf.Sin(angle) * r);
+        float h = HeightAt(cfg, angle, t);
+        if (stylized)
+        {
+            // v2: 4 яруса по радиусу, полка и рваная осыпь вместо гладкой ленты.
+            float tier = t * 4f;
+            float step = tier - Mathf.Floor(tier);
+            float shelf = step < 0.18f ? Mathf.Lerp(2.2f, 0f, step / 0.18f) : 0f;
+            h += shelf * (1f - t) + (RidgeAt(cfg, angle) - 0.5f) * 3f * (1f - t);
+        }
+        return new Vector3(Mathf.Cos(angle) * r, h, Mathf.Sin(angle) * r);
     }
 }

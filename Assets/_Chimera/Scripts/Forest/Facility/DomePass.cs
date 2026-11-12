@@ -12,10 +12,24 @@ public static class DomePass
     /// Карта блоков res×res на квадрат диаметра: склон, вода (озеро/русло),
     /// круги корпусов (r = половина габарита + 1м).
     /// </summary>
+    /// <param name="ground">
+    /// Пол мира. S3 §2.4: передавать <c>DomeWorld.SampleGround</c>, а не сырое поле —
+    /// иначе связность проверяется по полу, которого не будет. <c>null</c> — диагностика
+    /// сырого поля (исторические тесты).
+    /// </param>
+    /// <param name="ringInner">
+    /// S3 §3.2: внутренний радиус скального кольца. &gt;0 — кольцо блокируется полосой
+    /// (сегодняшний <c>BlockedGrid</c> кольца не знал и проходил сквозь стену).
+    /// </param>
     public static bool[,] BlockedGrid(DomeGenConfigSO cfg, DomeHydro.State hydro,
-        DomeFacilityLayout.Facility f, int res)
+        DomeFacilityLayout.Facility f, int res, Func<float, float, float> ground,
+        float ringInner)
     {
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
+        if (ground == null)
+            throw new ArgumentNullException(nameof(ground),
+                "DomePass обязан читать SampleGround мира, а не сырое поле");
+        Func<float, float, float> field = ground;
         res = Mathf.Clamp(res, 32, 256);
         float d = cfg.mapDiameter;
         float cell = d / res;
@@ -25,8 +39,10 @@ public static class DomePass
             {
                 float x = -d / 2 + (ix + 0.5f) * cell;
                 float z = -d / 2 + (iz + 0.5f) * cell;
-                if (new Vector2(x, z).magnitude > d / 2) { blocked[ix, iz] = true; continue; }
-                if (DomeSlope.SlopeAt(cfg, x, z) > 22f) { blocked[ix, iz] = true; continue; }
+                float r = new Vector2(x, z).magnitude;
+                if (r > d / 2) { blocked[ix, iz] = true; continue; }
+                if (ringInner > 0f && r > ringInner - 2f) { blocked[ix, iz] = true; continue; }
+                if (DomeSlope.SlopeAtS(cfg, x, z, field) > 22f) { blocked[ix, iz] = true; continue; }
                 if (hydro != null)
                 {
                     float dx = x - hydro.lakeCenter.x, dz = z - hydro.lakeCenter.y;

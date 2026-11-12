@@ -92,4 +92,14 @@ public static class WeatherModifier
         float d = baseDensity - falloffPerMeter * heightY;
         return d < 0f ? 0f : (d > 1f ? 1f : d);
     }
+
+    /// <summary>
+    /// Высотный климат павильона: низина у воды — густой туман, плато — чисто.
+    /// Высота — над уровнем озера, а не мировая Y (иначе каньон и терраса
+    /// считались бы по разным началам). Тотальна и монотонна.
+    /// </summary>
+    public static float HeightFogMult(float heightAboveLake, float falloffPerMeter = 0.04f)
+    {
+        return FogDensityAt(Mathf.Max(0f, heightAboveLake), 1f, Mathf.Max(0f, falloffPerMeter));
+    }
 }

@@ -5,10 +5,37 @@ using UnityEngine;
 /// <summary>
 /// Ясень-исполин и сова (s10g-1): место — 100–400м от лаборатории, уклон <15°,
 /// суша (вне озера и русла); гнездо — LairSite «Сова»/Nest в кроне.
-/// Чистые данные + конфигуратор логова; геометрия — превью следующим заходом.
+/// Числа ясеня, геометрия и конфигуратор логова — один источник для превью и рантайма.
 /// </summary>
 public static class DomeAshSite
 {
+    // Принятые числа ясеня «под панораму» (14.10). Один источник для превью и рантайма:
+    // высота 85 м, крона 140 м в поперечнике, ствол 16 м на середине высоты, корни 50 м.
+    public const float Height = 85f;
+    public const float CrownDiameter = 140f;
+    public const float CrownHeight = 50f;
+    public const float CrownBase = 39f;
+    public const float TrunkDiameterMid = 16f;
+    public const float TrunkTop = 42f;
+    public const float RootSpread = 50f;
+    public const float NestHeight = 36f;
+    public const float NestLateral = 12f;
+    /// <summary>На стенде B0 (Ø400) панорамные 85/140 не влезают; A остаётся 1.0.</summary>
+    public const float StandScale = 0.6f;
+    public const float StandMaxDiameter = 600f;
+
+    public static float ScaleFor(DomeGenConfigSO cfg) =>
+        cfg != null && cfg.mapDiameter <= StandMaxDiameter ? StandScale : 1f;
+
+    /// <summary>v2: ясень — параметр схемы; v1 (scheme=null) сохраняет прежний масштаб.</summary>
+    public static float ScaleFor(DomeGenConfigSO cfg, string scheme)
+    {
+        float s = ScaleFor(cfg);
+        if (scheme == DomeSchemes.BowlRidge) s *= 0.85f;
+        else if (scheme == DomeSchemes.LakeCauldron) s *= 0.75f;
+        return s;
+    }
+
     public struct AshSpot
     {
         public Vector2 pos;
@@ -17,13 +44,18 @@ public static class DomeAshSite
 
     /// <summary>Место ясеня: первое годное по детерминированному обходу сетки.</summary>
     public static AshSpot FindSpot(DomeGenConfigSO cfg, long seed, Vector2 labCenter,
-        DomeHydro.State hydro, int gridRes)
+        DomeHydro.State hydro, int gridRes, float scale = 1f, bool requireRingFit = false,
+        Func<float, float, bool> reject = null, Func<float, float, float> ground = null,
+        DomeMasks masks = null)
     {
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
         if (hydro == null) throw new ArgumentNullException(nameof(hydro));
+        Func<float, float, float> field = ground ??
+            ((x, z) => DomeHeightField.SampleHeight(cfg, x, z));
         gridRes = Mathf.Clamp(gridRes, 32, 160);
         float d = cfg.mapDiameter;
         float cell = d / gridRes;
+        float rin = Mathf.Max(1f, DomeRockRing.InnerRadius(cfg));
         var fallback = new AshSpot { pos = new Vector2(labCenter.x + 150f, labCenter.y), groundY = 0f };
         bool hasFallback = false;
         for (int ix = 0; ix < gridRes; ix++)
@@ -35,7 +67,14 @@ public static class DomeAshSite
                 if (p.magnitude > d / 2) continue;
                 float distLab = Vector2.Distance(p, labCenter);
                 if (distLab < 100f || distLab > 400f) continue;
-                if (DomeSlope.SlopeAt(cfg, x, z) >= 15f) continue;
+                if (reject != null && reject(x, z)) continue;
+                // S3 §3.2: ясень — R75, проверяется габаритом против масок мира.
+                if (masks != null &&
+                    masks.BlocksForm(DomeFootprint.Circle(p, CrownDiameter * 0.5f * scale + 5f)))
+                    continue;
+                // На B0 крона не должна входить в кольцо; A/C сохраняют старое поведение.
+                if (requireRingFit && p.magnitude + CrownDiameter * 0.5f * scale > rin - 6f) continue;
+                if (DomeSlope.SlopeAtS(cfg, x, z, field) >= 15f) continue;
                 float dx = x - hydro.lakeCenter.x, dz = z - hydro.lakeCenter.y;
                 if (dx * dx + dz * dz < (hydro.lakeRadius + 10f) * (hydro.lakeRadius + 10f)) continue;
                 bool nearRiver = false;
@@ -47,12 +86,12 @@ public static class DomeAshSite
                 if (nearRiver) continue;
                 if (!hasFallback)
                 {
-                    fallback = new AshSpot { pos = p, groundY = DomeHeightField.SampleHeight(cfg, x, z) };
+                    fallback = new AshSpot { pos = p, groundY = field(x, z) };
                     hasFallback = true;
                 }
                 long roll = (long)(SeededHash.Hash(seed, 1000, ix * 1000 + iz) % 7);
                 if (roll == 0)
-                    return new AshSpot { pos = p, groundY = DomeHeightField.SampleHeight(cfg, x, z) };
+                    return new AshSpot { pos = p, groundY = field(x, z) };
             }
         if (!hasFallback) throw new InvalidOperationException("места ясеню нет (смени сид)");
         return fallback;
@@ -70,5 +109,90 @@ public static class DomeAshSite
         site.tier = 2;
         site.capacity = 2;
         site.transform.position = crownPos;
+    }
+
+    /// <summary>
+    /// Геометрия ясеня по принятым числам: ствол 42 м (16 м в поперечнике на середине),
+    /// крона-купол 140 м в размахе с верхом на 85 м, корни 50 м у земли, присада-гнездо.
+    /// Один источник для DomePreview и DomeWorld; меши можно отдать track на снос.
+    /// </summary>
+    public static GameObject BuildGeometry(Transform parent, Vector3 ground,
+        Material bark, Material crown, Material owl, ICollection<Mesh> track = null,
+        float scale = 1f, bool stylized = false)
+    {
+        if (parent == null) throw new ArgumentNullException(nameof(parent));
+        if (bark == null) throw new ArgumentNullException(nameof(bark));
+        if (crown == null) throw new ArgumentNullException(nameof(crown));
+        if (owl == null) throw new ArgumentNullException(nameof(owl));
+
+        var root = new GameObject("Ash");
+        root.transform.SetParent(parent, false);
+        // ground — координаты поля, то есть локальные для корня мира.
+        root.transform.localPosition = ground;
+        root.transform.localScale = Vector3.one * Mathf.Max(0.01f, scale);
+
+        // Ствол: r 12 у земли → 4 на 42 м; на середине r 8 = диаметр 16.
+        float r0 = TrunkDiameterMid * 0.75f;
+        float r1 = TrunkDiameterMid * 0.25f;
+        Part(root.transform, "AshTrunk", FloraMeshKit.Trunk(r0, r1, TrunkTop), bark,
+            Vector3.zero, track, withCollider: true);
+        Part(root.transform, "AshRoots", FloraMeshKit.AshRoots(RootSpread * 0.5f, 10), bark,
+            Vector3.zero, track);
+        // Верх кроны = CrownBase + 0.92·CrownHeight = 39 + 46 = 85 м.
+        Part(root.transform, "AshCrown",
+            FloraMeshKit.AshCrownWide(CrownDiameter * 0.5f, CrownHeight), crown,
+            new Vector3(0f, CrownBase, 0f), track);
+
+        // Присада-гнездо: ветвь от ствола, площадка и болванка совы (масштаб, не модель).
+        Part(root.transform, "AshBranch", FloraMeshKit.Slab(4.5f, 0.4f, 0.8f), bark,
+            new Vector3(NestLateral * 0.55f, NestHeight - 0.5f, 0f), track);
+        Part(root.transform, "AshNestPerch", FloraMeshKit.Slab(3.6f, 0.35f, 3.6f), bark,
+            new Vector3(NestLateral, NestHeight - 0.2f, 0f), track);
+        Part(root.transform, "AshOwl", FloraMeshKit.Icosahedron(0.55f), owl,
+            new Vector3(NestLateral, NestHeight + 0.75f, 0f), track);
+        Part(root.transform, "AshOwlHead", FloraMeshKit.Icosahedron(0.32f), owl,
+            new Vector3(NestLateral, NestHeight + 1.35f, 0.35f), track);
+        if (stylized) AddV2Detail(root.transform, bark, crown, track);
+        return root;
+    }
+
+    /// <summary>v2: рваная крона, ветви и опора присады — не «гриб» на конусе.</summary>
+    static void AddV2Detail(Transform root, Material bark, Material crown, ICollection<Mesh> track)
+    {
+        Part(root, "AshCrownLobeA",
+            FloraMeshKit.AshCrownWide(CrownDiameter * 0.34f, CrownHeight * 0.58f), crown,
+            new Vector3(CrownDiameter * 0.20f, CrownBase + CrownHeight * 0.10f, 0f), track);
+        Part(root, "AshCrownLobeB",
+            FloraMeshKit.AshCrownWide(CrownDiameter * 0.31f, CrownHeight * 0.52f), crown,
+            new Vector3(-CrownDiameter * 0.18f, CrownBase + CrownHeight * 0.16f,
+                CrownDiameter * 0.08f), track);
+        Part(root, "AshCrownLobeC",
+            FloraMeshKit.AshCrownWide(CrownDiameter * 0.28f, CrownHeight * 0.46f), crown,
+            new Vector3(0f, CrownBase + CrownHeight * 0.04f, -CrownDiameter * 0.16f), track);
+        for (int i = 0; i < 3; i++)
+            Part(root, "AshBranch" + (char)('A' + i),
+                FloraMeshKit.Slab(6f - i * 0.7f, 0.45f, 0.85f), bark,
+                new Vector3(NestLateral * (0.45f + i * 0.12f),
+                    NestHeight - 1.2f - i * 1.6f, (i - 1) * 2.2f), track);
+        Part(root, "AshNestSupportW", FloraMeshKit.Slab(0.5f, 0.35f, 4.2f), bark,
+            new Vector3(NestLateral * 0.45f, NestHeight - 2.2f, -1.0f), track);
+        Part(root, "AshNestSupportE", FloraMeshKit.Slab(0.5f, 0.35f, 4.2f), bark,
+            new Vector3(NestLateral * 0.45f, NestHeight - 2.2f, 1.0f), track);
+    }
+
+    static void Part(Transform parent, string name, Mesh mesh, Material mat, Vector3 localPos,
+        ICollection<Mesh> track, bool withCollider = false)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(parent, false);
+        go.transform.localPosition = localPos;
+        go.AddComponent<MeshFilter>().sharedMesh = mesh;
+        go.AddComponent<MeshRenderer>().sharedMaterial = mat;
+        if (withCollider)
+        {
+            var collider = go.AddComponent<MeshCollider>();
+            collider.sharedMesh = mesh;
+        }
+        if (track != null) track.Add(mesh);
     }
 }

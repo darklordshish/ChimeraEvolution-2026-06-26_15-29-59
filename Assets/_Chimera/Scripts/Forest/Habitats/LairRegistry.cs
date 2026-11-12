@@ -24,6 +24,16 @@ public class LairRegistry : MonoBehaviour
         sites.Remove(site);
     }
 
+    /// <summary>
+    /// Опустошить реестр (пересборка мира среза C). Самим сайтам ничего не делает —
+    /// их сносит мир вместе с корнем; здесь только снимаем адреса, чтобы новая сборка
+    /// не увидела снесённые.
+    /// </summary>
+    public void Clear()
+    {
+        sites.Clear();
+    }
+
     public int TotalCapacity(string speciesName)
     {
         int total = 0;
