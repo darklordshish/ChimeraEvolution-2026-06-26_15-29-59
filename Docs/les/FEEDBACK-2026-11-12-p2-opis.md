@@ -72,21 +72,44 @@ git rm --cached Assets/_Chimera/Tests/EditMode/Forest/Worldgen/ForestSceneBaseli
 `main` — химеризуются ли они там, решает твой тест по пакету А. До его результата лес в `main` будет жить на
 эволюции версии `main`.
 
-## 3. Что проверить на П-2 руками (PlayMode, не в гейте)
+## 3. PlayMode на дереве П-2 (после починки сторожа, `1080ab6c`)
 
-PlayMode в репетиции не гонял: в общем прогоне его валит утечка сторожа, которую ты чинишь. После починки — прогон
-лесных PlayMode на дереве П-2. Ожидаю красными тесты, которым нужны ассеты П-3:
+Свежий `main` влит в ветку (`7a2899b9`; конфликт в `EmissionSetup.cs` решён версией `main` — ветка лишь склеивала
+две проверки, `main` чинит саму мину). Репетиция повторена тем же способом: всё вне путей П-2 — `main`.
 
-- `CanyonGateTests` — префаб `Resources/Canyon/CanyonAuthorGraded` (в ветке он красный и с ассетами — §2.4
-  прошлого письма);
-- `Aqueduct*Tests` (7 классов) — префабы `Resources/Aqueduct/*` **[проверить]**: часть может строить акведук сама;
-- тесты, ищущие сцену или игрока сцены, — **[проверить]** тем же прогоном.
+**224 теста: 213 прошли, 6 упали, 2 пропущены (`FactoryEvolutionTests`, пакет А под `Ignore`), 3 известных
+неопределённых** (дрейф змеиных логов B0, 20 сидов G6 и кадры G7 — отдельными прогонами). Утечки сцены больше нет.
 
-Что из них красное — либо едет тестом с П-3, либо переходит в П-3 вместе с ассетами. Каньон и акведук по плану
-заморожены и в первую зону не входят: их тесты логично держать в теге-архиве вместе с ассетами, а не в `main`
-красными.
+Все шесть падений — тесты, которым нужны префабы `Resources/` (ассеты П-3, каньон и акведук заморожены):
+
+| класс | падение | нужен ассет |
+|---|---|---|
+| `CanyonGateTests` (2) | «нет авторского меша», «1337 должен идти graded-мешем» | `Resources/Canyon/CanyonAuthorGraded` |
+| `AqueductCameraTests` | «нет акведука для камер» | `Resources/Aqueduct/*` |
+| `AqueductSeedTests` | водопад акведука: 0 вместо 1 | `Resources/Aqueduct/*` |
+| `AqueductWaterCatalogTests` | «акведук не поставлен: seed 1» | `Resources/Aqueduct/*` |
+| `AqueductWaterTests` | «акведук должен быть один»: 0 | `Resources/Aqueduct/*` |
+
+`AqueductFrameTests`, `AqueductPlacementTests`, `AqueductTypeTests` — зелёные без префабов, им ассеты не нужны.
+Все остальные лесные PlayMode-тесты зелёные на `main`, включая спавнер и логова (`SpawnerHookTests`,
+`HomeHomingTests`, `ForestBuilderRuntimeTests`, `ForestFragmentTests`).
+
+**Предложение (ты согласился):** пять красных классов в `main` не едут — остаются в теге-архиве вместе с ассетами
+каньона и акведука до разморозки. Тогда П-2 добавляет к исключениям пять файлов:
+
+```
+Assets/_Chimera/Tests/PlayMode/Forest/Worldgen/CanyonGateTests.cs
+Assets/_Chimera/Tests/PlayMode/Forest/Worldgen/AqueductCameraTests.cs
+Assets/_Chimera/Tests/PlayMode/Forest/Worldgen/AqueductSeedTests.cs
+Assets/_Chimera/Tests/PlayMode/Forest/Worldgen/AqueductWaterCatalogTests.cs
+Assets/_Chimera/Tests/PlayMode/Forest/Worldgen/AqueductWaterTests.cs
+```
+
+Код каньона и акведука в `Scripts/Forest/` при этом едет: он за флагами, выключенными в первой зоне, и
+компилируется без ассетов (`Resources.Load` вернёт `null`, тесты выше это и ловят).
 
 ## 4. Что прошу
 
-1. Подтвердить состав П-2 (пути минус три сценовых теста).
-2. Сказать, когда сторож починен, — прогоню лесные PlayMode на дереве П-2 и пришлю список «едет / ждёт П-3».
+1. Подтвердить состав П-2: пути минус три сценовых EditMode-теста (едут с П-3) и минус пять PlayMode-тестов
+   каньона и акведука (остаются в теге-архиве).
+2. После этого П-2 можно переносить: EditMode — гейт, лесные PlayMode — уже прогнаны выше.
