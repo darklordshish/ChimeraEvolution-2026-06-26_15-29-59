@@ -1,19 +1,20 @@
-# Памятки сквада CHIMERA — освежено 05.09.2026
+# Досье агентов CHIMERA — исторический снимок 05.09.2026
 
-Каждый член перед работой освежил проект и сделал шпаргалку в своей области. Читать перед слайсом.
+**Не использовать как инструкции.** Эти заметки — снимок старого сквада (клетка M×N, 800 трис,
+79 документов). Актуальные определения и правила лежат в `../agents/<агент>.md` и `../skills/`;
+источник правды проекта — `CLAUDE.md`, `Docs/СТАТУС.md`, `Docs/CONSTRUCTOR_GUIDE.md`.
 
-| памятка | роль |
+| заметка | актуальный агент |
 |---|---|
-| [orchestrator.md](orchestrator.md) | Маэстро — дирижёр, YAGNI, spec-first |
-| [morphologist.md](morphologist.md) | Скульптор — сокет-план, клетка, детектор |
-| [designer-artdirector.md](designer-artdirector.md) | Художник — Blender, low-poly 800 трис |
-| [haskell-categorizer.md](haskell-categorizer.md) | Профессор — функтор, ко-лимит, DSL |
-| [combat-senses.md](combat-senses.md) | Оружейник — доставки×эффекты, К-Н-Б |
-| [psyche-ecologist.md](psyche-ecologist.md) | Лесник — психики, эволюция, три оси |
-| [unity-integrator.md](unity-integrator.md) | Завхоз — гочи Unity, префабы, сцена |
-| [tester.md](tester.md) | Контролёр — врата, EditMode/PlayMode, audit |
-| [docs-keeper.md](docs-keeper.md) | Архивариус — где правда, 79 доков |
+| orchestrator.md | `../agents/orchestrator.md` |
+| morphologist.md | `../agents/morphologist.md` |
+| designer-artdirector.md | `../agents/designer-artdirector.md` |
+| haskell-categorizer.md | `../agents/haskell-categorizer.md` |
+| combat-senses.md | `../agents/combat-senses.md` |
+| psyche-ecologist.md | `../agents/psyche-ecologist.md` |
+| unity-integrator.md | `../agents/unity-integrator.md` |
+| tester.md | `../agents/tester.md` |
+| docs-keeper.md | `../agents/docs-keeper.md` |
 
-План работы: `Docs/superpowers/plans/2026-09-04-paradigma-modeli-himery.md` (Ф0-Ф7, клетка → модель как психика).
-Точка входа: `Docs/СТАТУС.md` → `Docs/УКАЗАТЕЛЬ.md` → `Docs/CONSTRUCTOR_GUIDE.md`.
-Детекторы: `Chimera → Выгрузить карту тел` → `Docs/Диаграммы/КАРТА_ТЕЛ.md` (0 щелей — зелёный).
+Если заметка расходится с агентом — прав агент. Если агент расходится с `CLAUDE.md` — прав
+`CLAUDE.md` (и агента надо чинить).

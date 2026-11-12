@@ -1,27 +1,36 @@
 ﻿---
 name: categorical-chimera
-description: Use when viewing CHIMERA architecture through category theory — functors, colimits, DSL, effect algebras. Proposes testable ideas, not refactors for beauty.
+description: Use when viewing CHIMERA architecture through category theory — functors, coproducts, keys, effect algebras. Proposes testable ideas, not refactors for beauty.
 ---
 
 # Categorical Chimera
 
-CHIMERA — уже категорна, просто не названа.
+CHIMERA — уже категорна, просто не названа. Но не подгоняй отменённые модели под красивую теорию.
 
 ## Словарь проекта → категорный
+
 | проект | категорно |
 |---|---|
-| `SpeciesSO` видов | объекты категории `Species` |
-| `CreatureBody` сборка | функтор `Species → Assembly` |
-| Графт `Organ.slot` | морфизм, `SpeciesSO.sockets` — копродукт |
-| Клетка `M×N×3` (`SPEC-kletka`) | тензор, химера = ко-лимит (среднее таблиц) |
-| `WindupAbility`+`HitEffect` | free monad + интерпретаторы |
+| `SpeciesSO` / меш вида | объекты категории `Species` |
+| `CreatureBody` / `BodyMesh` сборка | функтор `Species → Assembly` |
+| `Organ.slot`, `BodySocket` | морфизм/копродукт по слотам |
+| `BodyMesh.KeysFor` — форма-ключ | эндоморфизм/интерполяция внутри вида, не смена объекта |
+| `PartPieces` — куски по швам | копредел/склейка по общему кольцу шва (не «среднее всего тела») |
+| `WindupAbility` + `HitEffect` | free monad + интерпретаторы |
 | `PsycheDispatch` по доминанте | копродукт коалгебр, `Metamorph` — смена коалгебры |
-| Три оси (`CLAUDE.md:64`) | три функтора из `Composition` |
+| три оси из состава | три функтора из `Composition` |
+
+**Клетка M×N и «химера = ко-лимит таблиц» ОТМЕНЕНЫ 10.09.** Не возвращать их под новым именем;
+смешение идёт по идентичности (пропорции) + куски/ключи, а не средним клеток.
 
 ## Правила
-- Каждая идея — **спека-слайс**, не рефактор всего. Формат: проблема → категорная модель → C#-эскиз → цена/выгода → что мерить детектором.
-- Уважай закрытое (`СТАТУС.md:164-172`): клетка-меш, ось от головы, смешение после чистых — не переоткрывать.
-- Рисуй `categorical-diagrams` (палитра, ASCII-only, выноси SVG), ставь `source-anchors` (★ — свой синтез).
-- Проходи YAGNI-фильтр `orchestrator`: есть ли 2 носителя? Чинит ли щель/дрейф? Сериализуется ли в Unity?
 
-Связан: `spec-first` (оформление), `chimera-validation` (проверка), `docs-sync` (куда записать).
+- Каждая идея — **спека-слайс**, не рефактор всего: проблема → модель → C#-эскиз → цена/выгода → что мерить.
+- Уважай закрытое (`СТАТУС`, «Решено — не переоткрывать»): источник формы — меш/куски, корень `хребет`,
+  рост по массе, смешение включено; чистых видов не ждём.
+- Рисуй `categorical-diagrams` (палитра, ASCII-only, выноси SVG), ставь `source-anchors` (★ — свой синтез).
+- Проходи YAGNI-фильтр: есть ли 2 носителя? Чинит ли щель/дрейф? Сериализуется ли в Unity?
+- Если теория требует отменить уже принятое решение — это не аргумент, а сигнал, что модель не та.
+
+Связан: `spec-first` (оформление), `body-form` (действующая форма), `chimera-validation` (проверка),
+`docs-sync` (куда записать).

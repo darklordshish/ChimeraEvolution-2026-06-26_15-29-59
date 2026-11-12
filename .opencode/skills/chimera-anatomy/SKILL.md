@@ -1,30 +1,36 @@
 ﻿---
 name: chimera-anatomy
-description: Use when working with Anatomy workshop, Blender cage, species refs, or any Python tools in CHIMERA. Handles Anaconda path and audit pipeline.
+description: Use when working with CHIMERA references, passports, or Python tools under Anatomy — not as the source of current body form. Current form lives in meshes and handoff.
 ---
 
-# Chimera Anatomy Workshop
+# Chimera Anatomy — референсы и паспорта
+
+`Anatomy/` — мастерская **референсов и эталонов**, а не источник формы тела с 13.10.
+Форма вида сейчас — цельный меш + куски (`body-form`), числа берутся из `Docs/models/handoff`,
+а не из анатомических костей.
 
 ## Где что
-`Anatomy/README.md` — мастерская. `Anatomy/species/<вид>/{<вид>.py, ref/{photo,skeleton,muscle}, etalon/, out/}`, `Anatomy/tools/` 9 инструментов.
 
-## Инструменты (Python — только Anaconda)
-Bare `python` — сломанный stub. Рабочий: `C:\ProgramData\anaconda3\python.exe` (см. `using-anaconda-python`).
+- `Anatomy/README.md` — правила мастерской.
+- `Anatomy/species/<вид>/` — `ref/` (фото, скелет, мышцы), `etalon/`, `out/`, `REFS.md`.
+- `Anatomy/tools/` — Python-инструменты для референсов/промеров.
+- Паспорта — в git; тяжёлые фото/3D — локально, вне git (`Chimera_game/_refs-local/`).
 
-| tool | что |
-|---|---|
-| `skel.py` | координаты кости → Unity (Euler ZXY, ось +Y) |
-| `speciesdata.py` | данные вида + эмуляция `MorphBuilder.Place` |
-| `render.py` | рендер слоя как `BoneMesher` (`--part`, `--layer`) |
-| `grid.py` | сетка для снятия эталона |
-| `audit.py` | детектор щелей как в Unity |
-| `commons.py`, `sheet.py`, `reroot.py` | общее, листы, пересадка корня |
+## Что чем является
 
-## Blender-клетка
-`Tools/Blender/README.md`, `Docs/models/SPEC-kletka-tela.md` — слот = таблица `M×N`, химера = среднее. Обмерщик: луч из оси до болвана. Порядок §11 свят.
+- **Референс/эталон** — картинка и её паспорт: что видно, чему верить. Оценку ставить, только открыв картинку.
+- **Кости** — риг для меша, не источник силуэта. Старые cage-обмеры (`cagerun.py`, `make.py --cage`,
+  `SPEC-kletka`) отменены; не выдавать их числа за текущую форму.
+- **Текущая форма** — `Docs/models/handoff/` и `Assets/_Chimera/Models/<вид>_mesh.fbx`; правки — в ветке
+  модельной линии, не в `SpeciesBootstrap`.
 
-## Референсы
-Лежат локально, в git — паспорта (`Anatomy/README.md`). По видам — `Anatomy/species/<вид>/REFS.md` (инвентарь, отвергнутое, пробелы). Высокий приоритет закрыт у 4/5, остался канон человека в числах (`СТАТУС.md:94-105`).
+## Python
+
+Только Anaconda: `C:\ProgramData\Anaconda3\python.exe`. Bare `python` — сломанная заглушка.
+Проверки референсов — по `Anatomy/README.md`; старые `audit.py`/`render.py` не заменяют
+`chimera-map`/`chimera-silhouette`/`Кадры`.
 
 ## Правило
-Правь `Anatomy/species/<вид>/*.py`, не `SpeciesBootstrap` числа. После — `Chimera → Создать дефолтные виды` + `Выгрузить карту тел` (`chimera-validation`).
+
+Не переписывать числа формы в `SpeciesBootstrap`. После правок поставки — `SpeciesHandoff` при
+пересоздании видов; после правок данных видов — `Chimera → Создать дефолтные виды`.
