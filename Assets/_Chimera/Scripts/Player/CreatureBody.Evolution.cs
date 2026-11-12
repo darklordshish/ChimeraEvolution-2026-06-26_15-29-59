@@ -5,6 +5,35 @@ using UnityEngine;
 // ось (donors=все уже стоят из Awake). Зовётся из CreditKiller (this=жертва, killer=убийца). Partial-модуль.
 public partial class CreatureBody
 {
+    bool evolutionReady; // платформа применена (Awake и Configure зовут её оба — повтор не дублирует Metamorph)
+    bool awakeRan;       // Awake действительно прошёл (в EditMode-стенде Configure зовут без него)
+
+    /// <summary>ПЛАТФОРМА ЭВОЛЮЦИИ NPC: все виды — доноры, стартовое родство, цвет по составу, Metamorph. Один вход
+    /// на оба пути рождения: `Awake` (префаб, шасси уже есть) и `Configure` (тело от `ChimeraFactory`: в Awake шасси
+    /// было null). Игрока (move != null) не трогает. mergeDonors — для Configure: заданных доноров не затираем.</summary>
+    void InitEvolution(bool mergeDonors)
+    {
+        if (chassis == null || move != null) return;
+        var cfg = EvolutionConfig.Instance;
+        if (cfg == null || !cfg.EvolveNpc || cfg.AllSpecies == null || cfg.AllSpecies.Length == 0) return;
+
+        if (mergeDonors && donors != null && donors.Length > 0)
+        {
+            var all = new List<SpeciesSO>(cfg.AllSpecies);
+            foreach (var d in donors) if (d != null && !all.Contains(d)) all.Add(d);
+            donors = all.ToArray();
+        }
+        else donors = cfg.AllSpecies; // все виды — потенциальные доноры (родные надеты → чистый вид)
+        tintComposition = true;       // цвет по составу
+
+        if (evolutionReady) return;   // остальное — ровно раз
+        evolutionReady = true;
+        if (awakeRan) SetAffinity(chassis.speciesName, AffinityCap); // «я точно своего вида»: Awake фабричному телу шасси не видел
+        foreach (var sp in cfg.AllSpecies)
+            if (sp != null && sp != chassis) SetAffinity(sp.speciesName, cfg.StartAffinity);
+        if (GetComponent<Metamorph>() == null) gameObject.AddComponent<Metamorph>();
+    }
+
     /// <summary>Стохастически надеть убийце орган ИЗ СОСТАВА жертвы (this). Шанс = родство убийцы к виду
     /// органа × конфиг. Влезет по пулу (Install гейтит) — надел. Grant по СЛУЧАЙНОМУ надетому органу жертвы.
     /// Ветка вида вне EvolutionConfig.AllSpecies недоступна убийце (нет донора) — грант просто не найдёт слот.</summary>

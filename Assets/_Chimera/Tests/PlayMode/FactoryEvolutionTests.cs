@@ -56,7 +56,6 @@ namespace Chimera.Tests.PlayMode
         }
 
         [UnityTest]
-        [Ignore("пакет А, ждёт починки — письмо Лесника 12.11")]
         public IEnumerator FactoryBody_IsEvolvable_LikePrefabBody()
         {
             var a = MakeSpecies("ТестА");
@@ -76,7 +75,6 @@ namespace Chimera.Tests.PlayMode
         }
 
         [UnityTest]
-        [Ignore("пакет А, ждёт починки — письмо Лесника 12.11")]
         public IEnumerator FactoryKiller_Chimerizes_OnKillingFactoryVictim()
         {
             var a = MakeSpecies("ТестА");
@@ -95,6 +93,41 @@ namespace Chimera.Tests.PlayMode
             for (int s = 0; s < killer.SlotCount; s++)
                 if (killer.GetSlot(s).installed && killer.GetSlot(s).species == "ТестБ") grafted = true;
             Assert.IsTrue(grafted, "убийство не привело к графту: фабричный убийца не получил орган вида жертвы (TryChimerize)");
+        }
+
+        [UnityTest]
+        public IEnumerator FactoryBody_InitEvolution_IsIdempotent()
+        {
+            var a = MakeSpecies("ТестА");
+            var b = MakeSpecies("ТестБ");
+            MakeEvo(new[] { a, b });
+            var body = ChimeraFactory.Spawn(a, new SpeciesSO[0], new Vector3(500f, 0f, 500f), "~ИдемпотентА");
+            trash.Add(body.gameObject);
+            yield return null;
+            body.Configure(a, new SpeciesSO[0], true); // повторная сборка не должна дублировать платформу
+            yield return null;
+            Assert.AreEqual(1, body.GetComponents<Metamorph>().Length);
+        }
+
+        [UnityTest]
+        public IEnumerator FactorySnake_IsVisible_WithChain()
+        {
+            var snake = UnityEditor.AssetDatabase.LoadAssetAtPath<SpeciesSO>("Assets/_Chimera/Data/Змея.asset");
+            Assert.IsNotNull(snake);
+            var body = ChimeraFactory.Spawn(snake, new SpeciesSO[0], new Vector3(500f, 0f, 500f), "~ФабричнаяЗмея");
+            trash.Add(body.gameObject);
+            yield return null;
+            Assert.IsNotNull(body.GetComponent<SnakeBodyChain>(), "фабричная змея без цепи звеньев");
+            Assert.IsNotNull(body.GetComponent<Health>());
+            // «видима» = тело нарисовано (меши с габаритом). enabled не меряем: неподвижная змея прячется Camouflage — так задумано
+            int visible = 0; string names = "";
+            foreach (var r in body.GetComponentsInChildren<Renderer>())
+            {
+                if (!(r is MeshRenderer || r is SkinnedMeshRenderer) || r.name == "HeatGhost" || r.name == "Sphere") continue;
+                names += r.name + ",";
+                if (r.bounds.size.sqrMagnitude > 1e-6f) visible++;
+            }
+            Assert.Greater(visible, 1, "у фабричной змеи нет видимой геометрии: " + names);
         }
 
         // ── сторож утечки сцены арены (EndlessLoopSmokeTests грузит SampleScene в Single) ──
