@@ -2,8 +2,8 @@
 using UnityEngine;
 
 /// <summary>
-/// B1.1: Р»РѕРєР°Р»СЊРЅС‹Рµ РѕРІСЂР°РіРё РЅР° СЃС‚РµРЅРґРµ B0. Р”РµС‚РµСЂРјРёРЅРёСЂРѕРІР°РЅРЅР°СЏ РІС‹РµРјРєР° РІ РїРѕР»Рµ РІС‹СЃРѕС‚,
-/// СѓРїР°РІС€РёРµ СЃС‚РІРѕР»С‹ РїРѕ Р±РѕСЂС‚Р°Рј Рё РІРёР·СѓР°Р»СЊРЅС‹Рµ РіРЅС‘Р·РґР° Р·РјРµР№ Р±РµР· LairSite/СЃРїР°РІРЅРµСЂР°.
+/// B1.1: локальные овраги на стенде B0. Детерминированная выемка в поле высот,
+/// упавшие стволы по бортам и визуальные гнёзда змей без LairSite/спавнера.
 /// </summary>
 public static class DomeRavines
 {
@@ -106,7 +106,7 @@ public static class DomeRavines
         return list;
     }
 
-    /// <summary>Р’С‹РµРјРєР° РѕРІСЂР°РіР° РІ СЃС‹СЂРѕРј РїРѕР»Рµ РІС‹СЃРѕС‚; РґРЅРѕ РЅРµ РѕРїСѓСЃРєР°РµС‚СЃСЏ РЅРёР¶Рµ РІРѕРґС‹.</summary>
+    /// <summary>Выемка оврага в сыром поле высот; дно не опускается ниже воды.</summary>
     public static float Apply(float raw, IReadOnlyList<Ravine> ravines, float x, float z, float lakeLevel)
     {
         // Пустой список — тождество: A/C и B0.1 не должны получать кламп к воде.
@@ -190,7 +190,7 @@ public static class DomeRavines
         return n;
     }
 
-    /// <summary>Р—РµРјР»СЏРЅС‹Рµ Р±РѕСЂС‚Р°: РїСЂРёРїРѕРґРЅСЏС‚С‹Рµ РІР°Р»С‹ РїРѕ РєСЂР°СЏРј, С‡С‚РѕР±С‹ Р»РѕР¶Р±РёРЅР° С‡РёС‚Р°Р»Р°СЃСЊ.</summary>
+    /// <summary>Земляные борта: приподнятые валы по краям, чтобы ложбина читалась.</summary>
     public static int BuildWalls(GameObject root, IReadOnlyList<Ravine> ravines,
         System.Func<float, float, float> ground, Material rock, ICollection<Mesh> track)
     {
@@ -228,7 +228,7 @@ public static class DomeRavines
     }
 
     /// <summary>Тёмное дно: читаемая полоса земли между бортами.</summary>
-    /// <summary>РљР°РјРµРЅРЅС‹Рµ Р±РѕСЂС‚Р°: РґРµР»Р°СЋС‚ РІС‹РµРјРєСѓ С‡РёС‚Р°РµРјРѕР№, РґР°Р¶Рµ РµСЃР»Рё РїРѕР»Рµ РІРѕРєСЂСѓРі РЅРёР·РєРѕРµ.</summary>
+    /// <summary>Каменные борта: делают выемку читаемой, даже если поле вокруг низкое.</summary>
     public static int BuildRim(GameObject root, IReadOnlyList<Ravine> ravines, long seed,
         System.Func<float, float, float> ground, Material rock, ICollection<Mesh> track)
     {

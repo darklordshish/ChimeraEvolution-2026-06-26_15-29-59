@@ -3,23 +3,23 @@ using UnityEngine;
 [CreateAssetMenu(menuName = "Chimera/Forest/DomeGenConfig", fileName = "DomeGenConfig")]
 public class DomeGenConfigSO : ScriptableObject
 {
-    [Header("РЎРёРґ: РІРёРґРµРЅ РІ Inspector, РїРёС€РµС‚СЃСЏ РІ Р»РѕРі СЃ РёРЅСЃС‚СЂСѓРєС†РёРµР№ (РєР°Рє ArenaWalls)")]
+    [Header("Сид: виден в Inspector, пишется в лог с инструкцией (как ArenaWalls)")]
     public long seed = 1337;
     public bool randomSeed = true;
 
-    [Header("Р’РµСЂСЃРёСЏ (СЃРјРµРЅР° Р°Р»РіРѕСЂРёС‚РјР° = СЃРјРµРЅР° version)")]
+    [Header("Версия (смена алгоритма = смена version)")]
     public int version = 1;
 
-    // S1 (2026-11-01): Сѓ РџРћР›РЇ СЃРІРѕСЏ РІРµСЂСЃРёСЏ. 0/1 вЂ” v1 Р±РёС‚-РІ-Р±РёС‚ (A/C/B0),
-    // 2 вЂ” С‚СЂРё РїРѕР»РѕСЃС‹ H0. `version` РѕСЃС‚Р°С‘С‚СЃСЏ СЃРѕР»СЊСЋ v1 Рё РЅРµ РїРµСЂРµРёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ:
-    // РёРЅР°С‡Рµ СЃРјРµРЅР° РїРѕР»РѕСЃ СЃРґРІРёРЅСѓР»Р° Р±С‹ A/C. 0 РїСЂРёС…РѕРґРёС‚ Сѓ СЃС‚Р°СЂС‹С… Р°СЃСЃРµС‚РѕРІ/СЃС†РµРЅ
-    // (РіРѕС‡Р° РЅРѕРІРѕРіРѕ СЃРµСЂРёР°Р»РёР·РѕРІР°РЅРЅРѕРіРѕ РїРѕР»СЏ) Рё С‡РёС‚Р°РµС‚СЃСЏ РєР°Рє v1.
-    [Header("Р’РµСЂСЃРёСЏ РїРѕР»СЏ: 0 = РЅРµ РЅР°СЃС‚СЂРѕРµРЅРѕ = v1, 2 = РїРѕР»РѕСЃС‹ H0 (S1)")]
+    // S1 (2026-11-01): у ПОЛЯ своя версия. 0/1 — v1 бит-в-бит (A/C/B0),
+    // 2 — три полосы H0. `version` остаётся солью v1 и не переиспользуется:
+    // иначе смена полос сдвинула бы A/C. 0 приходит у старых ассетов/сцен
+    // (гоча нового сериализованного поля) и читается как v1.
+    [Header("Версия поля: 0 = не настроено = v1, 2 = полосы H0 (S1)")]
     public int worldVersion = 0;
 
-    [Header("РџРѕР»РѕСЃС‹ H0 v2: РјРµС‚СЂС‹ РЅР° Г2000, РјР°СЃС€С‚Р°Р±РёСЂСѓСЋС‚СЃСЏ D/2000")]
+    [Header("Полосы H0 v2: метры на Ø2000, масштабируются D/2000")]
     public float macroLambda = 1600f;
-    [Tooltip("РџРѕР»РЅС‹Р№ РїРµСЂРµРїР°Рґ P, Рј (Р°РјРїР»РёС‚СѓРґР° A = P/2)")]
+    [Tooltip("Полный перепад P, м (амплитуда A = P/2)")]
     public float macroAmplitude = 56f;
     [Range(0, 4)] public int macroOctaves = 2;
     [Range(0f, 0.12f)] public float macroWarp = 0.10f;
@@ -28,7 +28,7 @@ public class DomeGenConfigSO : ScriptableObject
     public float mesoAmplitude = 36f;
     [Range(0, 4)] public int mesoOctaves = 3;
     [Range(0f, 0.12f)] public float mesoWarp = 0.10f;
-    [Tooltip("Ridged С‚РѕР»СЊРєРѕ РЅР° РјРµР·Рѕ Рё С‚РѕР»СЊРєРѕ РїРѕРґ РјР°СЃРєРѕР№ (S1 В§3.2)")]
+    [Tooltip("Ridged только на мезо и только под маской (S1 §3.2)")]
     public bool mesoRidged = true;
 
     public float microLambda = 90f;
@@ -36,38 +36,38 @@ public class DomeGenConfigSO : ScriptableObject
     [Range(0, 4)] public int microOctaves = 2;
     [Range(0f, 0.12f)] public float microWarp = 0.08f;
 
-    [Header("РљР»Р°СЃСЃС‹ СѓРєР»РѕРЅР° S1 В§11: С…РѕРґСЊР±Р° в‰¤ walk, СЃС‚РµРЅР° > maxSlopeDegrees")]
+    [Header("Классы уклона S1 §11: ходьба ≤ walk, стена > maxSlopeDegrees")]
     public float walkMaxDegrees = DefaultWalkMaxDegrees;
 
-    /// <summary>Р“СЂР°РЅРёС†Р° В«РїСЂРѕС…РѕРґРёРјРѕВ» РїРѕ S1 В§11.3; 0 РІ РїРѕР»Рµ = В«РЅРµ РЅР°СЃС‚СЂРѕРµРЅРѕВ».</summary>
+    /// <summary>Граница «проходимо» по S1 §11.3; 0 в поле = «не настроено».</summary>
     public const float DefaultWalkMaxDegrees = 22f;
 
-    /// <summary>РџРµСЂРІР°СЏ (Рё РїРѕ СѓРјРѕР»С‡Р°РЅРёСЋ РґРµР№СЃС‚РІСѓСЋС‰Р°СЏ) РІРµСЂСЃРёСЏ РїРѕР»СЏ.</summary>
+    /// <summary>Первая (и по умолчанию действующая) версия поля.</summary>
     public const int FirstWorldVersion = 1;
 
-    // Р•Р”РРќРЎРўР’Р•РќРќРђРЇ С‚РѕС‡РєР° РїСЂР°РІРёР»Р° В«0 в†’ v1В». Р—РѕРІСѓС‚ РѕР±Р° РІС…РѕРґР°: <see cref="WorldVersion"/>
-    // РЅР° РєРѕРЅС„РёРіРµ Рё <see cref="ForestBuilder.WorldVersion"/> РІ СЃС†РµРЅРµ; СЃРІРѕРµРіРѕ `> 0 ? : 1`
-    // Р±РѕР»СЊС€Рµ РЅРёРіРґРµ РЅРµС‚, РёРЅР°С‡Рµ РґРІР° РїРѕР»СЏ РґР°РґСѓС‚ РґРІРµ С‚СЂР°РєС‚РѕРІРєРё РѕРґРЅРѕРіРѕ РЅСѓР»СЏ.
-    /// <summary>Р Р°Р·СЂРµС€РёС‚СЊ РІРµСЂСЃРёСЋ РїРѕР»СЏ: 0/РѕС‚СЂРёС†Р°С‚РµР»СЊРЅРѕРµ = В«РЅРµ РЅР°СЃС‚СЂРѕРµРЅРѕВ» = v1.</summary>
+    // ЕДИНСТВЕННАЯ точка правила «0 → v1». Зовут оба входа: <see cref="WorldVersion"/>
+    // на конфиге и <see cref="ForestBuilder.WorldVersion"/> в сцене; своего `> 0 ? : 1`
+    // больше нигде нет, иначе два поля дадут две трактовки одного нуля.
+    /// <summary>Разрешить версию поля: 0/отрицательное = «не настроено» = v1.</summary>
     public static int ResolveWorldVersion(int rawVersion)
     {
         return rawVersion > 0 ? rawVersion : FirstWorldVersion;
     }
 
-    /// <summary>0 РІ РїРѕР»Рµ = В«РЅРµ РЅР°СЃС‚СЂРѕРµРЅРѕВ» = v1: РЅРѕРІРѕРµ РїРѕР»Рµ Сѓ СЃС‚Р°СЂРѕР№ СЃС†РµРЅС‹ РїСЂРёС…РѕРґРёС‚ РЅСѓР»С‘Рј.</summary>
+    /// <summary>0 в поле = «не настроено» = v1: новое поле у старой сцены приходит нулём.</summary>
     public int WorldVersion => ResolveWorldVersion(worldVersion);
 
-    /// <summary>0 РІ РїРѕР»Рµ = В«РЅРµ РЅР°СЃС‚СЂРѕРµРЅРѕВ» в†’ 22 (РіРѕС‡Р° РЅРѕРІРѕРіРѕ СЃРµСЂРёР°Р»РёР·РѕРІР°РЅРЅРѕРіРѕ РїРѕР»СЏ).</summary>
+    /// <summary>0 в поле = «не настроено» → 22 (гоча нового сериализованного поля).</summary>
     public float WalkMaxDegrees => walkMaxDegrees > 0f ? walkMaxDegrees : DefaultWalkMaxDegrees;
 
-    /// <summary>Р“СЂР°РЅРёС†Р° СЃС‚РµРЅС‹ = СЃСѓС‰РµСЃС‚РІСѓСЋС‰РёР№ РїСЂРµРґРµР» С„Р»РѕСЂС‹; РІС‚РѕСЂРѕРіРѕ Р»РёС‚РµСЂР°Р»Р° 35 РЅРµС‚.</summary>
+    /// <summary>Граница стены = существующий предел флоры; второго литерала 35 нет.</summary>
     public float WallMinDegrees => maxSlopeDegrees > 0f ? maxSlopeDegrees : DefaultWallMinDegrees;
 
-    [Header("Р Р°Р·РјРµСЂ: РѕРґРёРЅ РїР°СЂР°РјРµС‚СЂ РјР°СЃС€С‚Р°Р±РёСЂСѓРµС‚ РІСЃС‘ (С„РѕСЂРјСѓР»С‹ вЂ” DomeGenRules)")]
+    [Header("Размер: один параметр масштабирует всё (формулы — DomeGenRules)")]
     public float mapDiameter = 2000f;
     public float chunkSize = 250f;
 
-    [Header("Р РµР»СЊРµС„: FBM + ridged СЃ РјР°СЃРєРѕР№ РіРѕСЂ + domain warp")]
+    [Header("Рельеф: FBM + ridged с маской гор + domain warp")]
     public int octaves = 5;
     public int ridgedOctaves = 5;
     public int warpOctaves = 4;
@@ -75,7 +75,7 @@ public class DomeGenConfigSO : ScriptableObject
     public float baseFrequency = 0.02f;
     public float amplitude = 6f;
     public float maxSlopeDegrees = DefaultWallMinDegrees;
-    /// <summary>Р“СЂР°РЅРёС†Р° В«СЃС‚РµРЅР°В» РїРѕ S1 В§11.3 вЂ” РѕРЅР° Р¶Рµ РїСЂРµРґРµР» С„Р»РѕСЂС‹ (35).</summary>
+    /// <summary>Граница «стена» по S1 §11.3 — она же предел флоры (35).</summary>
     public const float DefaultWallMinDegrees = 35f;
 
     [Header("Эрозия S4 (только v2; v1 флаги false)")]
@@ -99,27 +99,27 @@ public class DomeGenConfigSO : ScriptableObject
     public float hydroQuantum = 0.02f;
     public float hydroClamp = 1.5f;
 
-    [Header("Р’РѕРґР° (s10b): РїРѕРєР° Р—РђР“Р›РЈРЁРљРђ С‡РёСЃР»РѕРј, РєР°Рє РІ s8")]
+    [Header("Вода (s10b): пока ЗАГЛУШКА числом, как в s8")]
     public float waterLevel = -1.5f;
 
-    // S3 (2026-11-01): P5-lite вЂ” РЎР’РћР™ СЃР»РѕР№ С„РѕСЂРјС‹, Р° РЅРµ С‡Р°СЃС‚СЊ B-lite. РџРѕРєР° СЃС†РµРЅР°
-    // `ForestPavilion` РЅРµ РїРѕР»СѓС‡РёР»Р° С„Р»Р°Рі СЏРІРЅРѕ (СЌС‚Рѕ S1 С€Р°Рі 8), v1 РѕР±СЏР·Р°РЅ РѕСЃС‚Р°С‚СЊСЃСЏ
-    // Р±РёС‚-РІ-Р±РёС‚: С‚Р°Рј РґРµР№СЃС‚РІСѓРµС‚ РёСЃС‚РѕСЂРёС‡РµСЃРєР°СЏ СЃРІСЏР·РєР° `patchyFlora в†’ СЂРµР»СЊРµС„`.
-    [Header("Р РµР»СЊРµС„ С„РѕСЂРјС‹ (S3): РѕС‚РґРµР»СЊРЅС‹Р№ СЃР»РѕР№; 0 Сѓ СЃС‚Р°СЂРѕР№ СЃС†РµРЅС‹ = РёСЃС‚РѕСЂРёС‡РµСЃРєР°СЏ СЃРІСЏР·РєР° СЃ patchyFlora")]
+    // S3 (2026-11-01): P5-lite — СВОЙ слой формы, а не часть B-lite. Пока сцена
+    // `ForestPavilion` не получила флаг явно (это S1 шаг 8), v1 обязан остаться
+    // бит-в-бит: там действует историческая связка `patchyFlora → рельеф`.
+    [Header("Рельеф формы (S3): отдельный слой; 0 у старой сцены = историческая связка с patchyFlora")]
     public bool buildRelief = false;
 
     /// <summary>
-    /// Р’РєР»СЋС‡С‘РЅ Р»Рё СЃР»РѕР№ СЂРµР»СЊРµС„Р°. Р”Р»СЏ v1 вЂ” РёСЃС‚РѕСЂРёСЏ (patchyFlora), С‡С‚РѕР±С‹ РѕС‚РїРµС‡Р°С‚РѕРє
-    /// Pavilion РЅРµ РїРѕРµС…Р°Р» РґРѕ S1 С€Р°РіР° 8; РґР»СЏ v2 вЂ” С‚РѕР»СЊРєРѕ СЏРІРЅС‹Р№ <see cref="buildRelief"/>.
-    /// Р”РІСѓС… РёСЃС‚РѕС‡РЅРёРєРѕРІ РЅРµС‚: СЂРµС€РµРЅРёРµ РІ РѕРґРЅРѕРј СЃРІРѕР№СЃС‚РІРµ.
+    /// Включён ли слой рельефа. Для v1 — история (patchyFlora), чтобы отпечаток
+    /// Pavilion не поехал до S1 шага 8; для v2 — только явный <see cref="buildRelief"/>.
+    /// Двух источников нет: решение в одном свойстве.
     /// </summary>
     public bool ReliefEnabled => buildRelief || (WorldVersion <= 1 && patchyFlora);
 
-    [Header("РџР»РѕС‚РЅРѕСЃС‚Рё (s10d): С†РµР»Рё РІС‹РІРѕРґСЏС‚СЃСЏ С„РѕСЂРјСѓР»РѕР№, РЅРµ С‡РёСЃР»РѕРј")]
+    [Header("Плотности (s10d): цели выводятся формулой, не числом")]
     public float treeDensityPerM2 = 0.03f;
-    /// <summary>0 = СЃС‚Р°СЂС‹Рµ 700; РёРЅР°С‡Рµ С†РµР»РµРІРѕРµ С‡РёСЃР»Рѕ РґРµСЂРµРІСЊРµРІ РЅР° СЃС‚РµРЅРґ.</summary>
+    /// <summary>0 = старые 700; иначе целевое число деревьев на стенд.</summary>
     public int treeCount = 0;
-    /// <summary>РџСЏС‚РЅР° Р»РµСЃР°/РїРѕР»СЏРЅС‹ РїРѕ РЅРёР·РєРѕС‡Р°СЃС‚РѕС‚РЅРѕРјСѓ fBm; РІС‹РєР»СЋС‡РµРЅРѕ РґР»СЏ A/C.</summary>
+    /// <summary>Пятна леса/поляны по низкочастотному fBm; выключено для A/C.</summary>
     public bool patchyFlora = false;
     public float forestFraction = 0.55f;
     /// <summary>Явный порог fBm для пятен v2; −999 — историческая формула forestFraction.</summary>
@@ -134,15 +134,15 @@ public class DomeGenConfigSO : ScriptableObject
     /// потому что 2.8k GameObject'ов подлеска стоили 2.1 с сборки.</summary>
     public float undergrowthScale = 1f;
 
-    [Header("NavMesh: РўРћР›Р¬РљРћ С‚Р°Р№Р»Р°РјРё (РјРѕРЅРѕ-Р±РµР№Рє РЅР° Г2000 Р·Р°РїСЂРµС‰С‘РЅ)")]
+    [Header("NavMesh: ТОЛЬКО тайлами (моно-бейк на Ø2000 запрещён)")]
     public float navVoxelSize = 0.35f;
     public float navTileSize = 112f;
 
-    [Header("РљСѓРїРѕР»: РїРёРє РєРѕРЅСЃС‚Р°РЅС‚Р°, СЂР°РґРёСѓСЃС‹ вЂ” РѕС‚ РґРёР°РјРµС‚СЂР°")]
+    [Header("Купол: пик константа, радиусы — от диаметра")]
     public float ringPeakHeight = 100f;
     public float vaultRadiusFactor = 1.4f;
 
-    [Header("Fast-preview (20вЂ“45СЃ РІРјРµСЃС‚Рѕ 70вЂ“140СЃ РїРѕР»РЅРѕРіРѕ Р±РµР№РєР°)")]
+    [Header("Fast-preview (20–45с вместо 70–140с полного бейка)")]
     public bool fastPreview = false;
     public int previewHeightmapSize = 2048;
 
