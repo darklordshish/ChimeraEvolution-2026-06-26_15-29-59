@@ -45,15 +45,12 @@ public class PlayerController : MonoBehaviour
     [SerializeField] float lookSensitivity = 0.1f;  // мышь, поворот в FPS
     [SerializeField] float gamepadYawSpeed = 180f;  // правый стик, поворот в FPS
 
-    [Header("Защита от провала")]
-    // НОВЫЕ поля у компонента, уже лежащего в сцене, приходят НУЛЁМ (гоча проекта). Читаем 0 как «не настроено»
-    [SerializeField] float fallProbeRange = 250f;  // насколько глубоко искать пол под игроком
-    [SerializeField] float voidFallDepth = 15f;    // пола нет вовсе — на сколько упасть, прежде чем вернуть на опору
+    /// <summary>Режим камеры, клавиша V идёт по кругу: 3-е лицо издали → 3-е лицо близко → 1-е лицо (геймдизайнер 05.11).</summary>
+    public enum ViewMode { Far, Near, First }
+    public static ViewMode Next(ViewMode v) => v == ViewMode.Far ? ViewMode.Near : v == ViewMode.Near ? ViewMode.First : ViewMode.Far;
 
-    float FallProbeRange => fallProbeRange > 0f ? fallProbeRange : 250f;
-    float VoidFallDepth => voidFallDepth > 0f ? voidFallDepth : 15f;
-
-    public bool FirstPerson { get; private set; }
+    public ViewMode View { get; private set; } = ViewMode.Far;
+    public bool FirstPerson => View == ViewMode.First;
 
     CharacterController controller;
     Knockback knockback;
@@ -63,13 +60,7 @@ public class PlayerController : MonoBehaviour
     Slow slow;         // замедление от игл ежа (до-создаётся эффектом): режет ход, не рывок
     Satiety satiety;   // истощение (пустая шкала голода) слабит ход
     Vector3 velocity;
-    float dashTimer, dashReadyAt, legDashOverride; // legDashOverride: длинный рывок лосиных ног (0 = дефолт dashDuration)
-    // ОПОРА: высота, на которой игрок реально стоял последний раз, и насколько его корень выше поверхности.
-    // Прежний groundY снимался один раз в Start и превращался в «верни меня на старт» — спуск с холма
-    // телепортировал игрока назад вверх. Теперь опора обновляется по CharacterController.isGrounded,
-    // а если провалились сквозь пол — спасаем на ПОВЕРХНОСТЬ ПОД НОГАМИ, а не на старую высоту.
-    float supportY, standOffset;
-    bool standOffsetKnown;
+    float dashTimer, dashReadyAt, groundY, legDashOverride; // legDashOverride: длинный рывок лосиных ног (0 = дефолт dashDuration)
     Vector3 dashDir;
     IGrabber grabber;        // волк/змея, держащий игрока в захвате
     float grabSlow = 1f;     // множитель скорости И рывка, пока в захвате (1 = свободно; 0 = корень на 3-й стадии обхвата)
@@ -77,8 +68,8 @@ public class PlayerController : MonoBehaviour
     bool grabImmune; // чёрный ход: будущая способность даёт иммунитет к захвату
     // dev-призрак даёт иммунитет к захватам автоматически (и теряет его вместе с призраком при атаке):
     // волк/змея уже проверяют GrabImmune в своих захватах — распускаются сами
-    public bool GrabImmune { get => grabImmune || Perception.PlayerGhost; set => grabImmune = value; }
-    public bool IsGrabbed => grabber != null && GrabberAlive(grabber); // тебя держат (гейт для своего обхвата и т.п.)
+    public bool GrabImmune { get => grabImmune || Perception.PlayerUnseen; set => grabImmune = value; }
+    public bool IsGrabbed => grabber != null; // тебя держат (гейт для своего обхвата и т.п.)
     public bool IsDashing => dashTimer > 0f;  // ТАРАН лосиных ног ездит на рывке (PlayerCharge гейтит уроном)
 
     void Awake()
@@ -112,9 +103,7 @@ public class PlayerController : MonoBehaviour
 
         toggleViewAction = new InputAction("ToggleView", InputActionType.Button);
         toggleViewAction.AddBinding("<Keyboard>/v");
-        // buttonNorth занят УДАРОМ РОГАМИ (PlayerInputDriver). Вид — на Select: обе кнопки должны работать
-        // одновременно, а не перекрывать друг друга (жалоба плейтеста).
-        toggleViewAction.AddBinding("<Gamepad>/select");
+        toggleViewAction.AddBinding("<Gamepad>/buttonNorth");
 
         // ТИХИЙ ШАГ переехал с Shift на Ctrl: Shift занял спринт — «жму Shift = трачу» читается само,
         // и это привычнее по другим играм
@@ -129,16 +118,8 @@ public class PlayerController : MonoBehaviour
 
     void Start()
     {
-        supportY = transform.position.y;
-        // Смещение корня над поверхностью зависит от капсулы и её center. Снимаем его там, где игрок
-        // действительно стоит; в воздухе останется запасной вариант из габарита капсулы.
-        if (TrySampleGround(transform.position, out float surface) && StandOffsetFrom(surface, out float offset))
-        {
-            standOffset = offset;
-            standOffsetKnown = true;
-        }
-        else standOffset = FallbackStandOffset;
-        SetFirstPerson(false);
+        groundY = transform.position.y;
+        SetView(ViewMode.Far);
     }
 
     void OnEnable() { moveAction.Enable(); lookAction.Enable(); dashAction.Enable(); toggleViewAction.Enable(); sneakAction.Enable(); sprintAction.Enable(); }
@@ -151,11 +132,7 @@ public class PlayerController : MonoBehaviour
         // а перетаскивание звёзд молчит — указатель «прилип» к персонажу. Владение курсором — у конструктора
         if (ConstructorUI.IsOpen) return;
 
-        // МЁРТВЫЙ/ОТКЛЮЧЁННЫЙ ДЕРЖАТЕЛЬ БОЛЬШЕ НЕ ДЕРЖИТ: иначе убитый волк оставлял игрока замедленным
-        // навсегда (grabber — ссылка на компонент, который уже уничтожен или выключен).
-        if (grabber != null && !GrabberAlive(grabber)) { grabber = null; grabSlow = 1f; }
-
-        if (toggleViewAction.WasPressedThisFrame()) SetFirstPerson(!FirstPerson);
+        if (toggleViewAction.WasPressedThisFrame()) SetView(Next(View));
 
         Vector2 mv = moveAction.ReadValue<Vector2>();
 
@@ -180,12 +157,10 @@ public class PlayerController : MonoBehaviour
             dashReadyAt = Time.time + dashCooldown;
             dashDir = move.sqrMagnitude > 0.01f ? move.normalized : transform.forward;
             // срываемся рывком: держащий решает, отпустит ли (змея на поздних стадиях обхвата — нет). Иммун — всегда свободен.
-            // Мёртвого держателя не спрашиваем: вызов на уничтоженном компоненте кинул бы MissingReferenceException.
-            if (grabber != null && (!GrabberAlive(grabber) || GrabImmune || grabber.BreakFree(dashRipDamage)))
+            if (grabber != null && (GrabImmune || grabber.BreakFree(dashRipDamage)))
             {
-                bool releasedBySelf = GrabberAlive(grabber) && !GrabImmune; // держатель был живой и отпустил
                 grabber = null; grabSlow = 1f;
-                if (releasedBySelf && health != null) health.TakeDamage(dashRipSelfDamage, true); // рвал себя из захвата — больно (минует i-frames)
+                if (!GrabImmune && health != null) health.TakeDamage(dashRipSelfDamage, true); // рвал себя из захвата — больно (минует i-frames)
             }
         }
 
@@ -224,111 +199,17 @@ public class PlayerController : MonoBehaviour
         Vector3 motion = horizontal;
         motion.y = velocity.y;
         controller.Move(motion * Time.deltaTime);
-        GroundGuard();
-    }
 
-    /// <summary>
-    /// ЗАЩИТА ОТ ПРОВАЛА, ЗНАЮЩАЯ РЕЛЬЕФ.
-    ///
-    /// Старое правило помнило ОДНУ высоту из Start: спустился ниже неё на 3 м — тебя вернули наверх.
-    /// На рельефе это телепорт в небо. Новое правило:
-    ///  • стоим (isGrounded) — опора = текущая высота, спуск ей и является;
-    ///  • падаем, но НЕ ниже последней опоры — обычный прыжок/сход с уступа, не трогаем;
-    ///  • падаем НИЖЕ опоры и поверхность снова оказывается выше корня — провалились сквозь пол,
-    ///    возвращаем на эту поверхность (а не на старую высоту);
-    ///  • под нами вообще нет поверхности (дыра в мир) — старая защита: на последнюю опору.
-    /// </summary>
-    void GroundGuard()
-    {
-        Vector3 p = transform.position;
-
-        if (controller.isGrounded)
+        if (transform.position.y < groundY - 3f) // провалились сквозь пол (стая продавила) — возвращаем
         {
-            supportY = p.y;
-            if (!standOffsetKnown && TrySampleGround(p, out float surfaceOnGround) && StandOffsetFrom(surfaceOnGround, out float offset))
-            {
-                standOffset = offset;
-                standOffsetKnown = true;
-            }
-            return;
-        }
-
-        // Ещё не ниже опоры — это обычное падение с уступа, а не провал.
-        if (p.y >= supportY - 0.5f) return;
-
-        // Ищем поверхность под нами: луч идёт сверху, поэтому находит и пол, сквозь который провалились.
-        if (TrySampleGround(p, out float surface))
-        {
-            if (p.y >= surface + 0.05f) return; // поверхность ниже — падаем на неё нормально
-            p.y = surface + Mathf.Max(0f, standOffset) + 0.02f;
-            transform.position = p;
-            velocity.y = 0f;
-            supportY = p.y;
-            return;
-        }
-
-        // Поверхности нет вовсе — только тогда это «провал в пустоту» (арена). Держим старую защиту по опоре.
-        if (p.y < supportY - VoidFallDepth)
-        {
-            p.y = supportY;
-            transform.position = p;
+            var p = transform.position; p.y = groundY; transform.position = p;
             velocity.y = 0f;
         }
     }
 
-    /// <summary>Ближайшая СТОЯТЬ-НА-НЕЙ поверхность под точкой: луч сверху вниз, отбрасываем себя, существ
-    /// и всё, что не является верхней гранью (стены, стволы). Именно «сверху», чтобы найти пол, сквозь
-    /// который игрок уже провалился: этот пол остался выше текущего положения.</summary>
-    bool TrySampleGround(Vector3 at, out float surfaceY)
+    void SetView(ViewMode view)
     {
-        surfaceY = 0f;
-        // Стартуем чуть ВЫШЕ последней опоры, а не на произвольной высоте: так находим пол, сквозь который
-        // провалились, и не цепляем крышу/ветку над головой (она выше луча).
-        Vector3 from = new Vector3(at.x, Mathf.Max(at.y, supportY) + 0.25f, at.z);
-        int mask = ~LayerMask.GetMask("Ignore Raycast");
-        var hits = Physics.RaycastAll(from, Vector3.down, FallProbeRange, mask, QueryTriggerInteraction.Ignore);
-        bool found = false;
-        float best = float.NegativeInfinity;
-        for (int i = 0; i < hits.Length; i++)
-        {
-            var col = hits[i].collider;
-            if (col == null || col.isTrigger) continue;
-            if (col.transform == transform || col.transform.IsChildOf(transform)) continue; // своя капсула
-            if (col.GetComponentInParent<Health>() != null) continue;                       // живое — не пол
-            if (hits[i].normal.y < 0.5f) continue;                                          // стены и стволы
-            if (hits[i].point.y > best) { best = hits[i].point.y; found = true; }
-        }
-        if (found) surfaceY = best;
-        return found;
-    }
-
-    /// <summary>Смещение корня над поверхностью, снятое, когда игрок СТОИТ. Если поверхность далеко
-    /// (игрок в воздухе при старте), это не «рост над землёй», а высота падения — не берем.</summary>
-    bool StandOffsetFrom(float surface, out float offset)
-    {
-        offset = transform.position.y - surface;
-        if (offset < -0.05f || offset > controller.height + 1f) { offset = 0f; return false; }
-        offset = Mathf.Max(0f, offset);
-        return true;
-    }
-
-    // Запасной вариант, если поверхность ещё не поймана: низ капсулы относительно её center.
-    float FallbackStandOffset =>
-        Mathf.Max(0f, controller.height * 0.5f - controller.center.y + controller.skinWidth);
-
-    /// <summary>Живой ли держатель: уничтоженный компонент или выключенный объект держать не может.
-    /// IGrabber реализуют MonoBehaviour, поэтому проверяем Unity-объект, а не только C#-ссылку.</summary>
-    static bool GrabberAlive(IGrabber g)
-    {
-        if (g == null) return false;
-        if (g is Object obj && obj == null) return false;            // уничтожен (Unity-оператор ==)
-        if (g is Behaviour b && (!b.isActiveAndEnabled || !b.gameObject.activeInHierarchy)) return false;
-        return true;
-    }
-
-    void SetFirstPerson(bool on)
-    {
-        FirstPerson = on;
+        View = view;
         Cursor.lockState = CursorLockMode.Locked; // мышь — руль тела в ОБОИХ видах, курсор не нужен (Esc отпускает)
         Cursor.visible = false;
         // свою голову от ПЕРВОГО лица не рендерим (нос/куб лезут в камеру) — классика FPS; в 3-м лице возвращаем.
@@ -351,8 +232,7 @@ public class PlayerController : MonoBehaviour
         n == "Head" || n == "Nose" || n == "Jaw" || n == "Teeth"
         || n == "EyeL" || n == "EyeR" || n == "EarL" || n == "EarR"
         || n == "BrowL" || n == "BrowR"
-        || n == "голова" || n == "Пасть" || n == "уши" || n == "глаза"
-        || n == "нос" || n == "морда" || n == "челюсть" || n == "зубы"; // морф-части/куски: те же имена, что у головы в Telegraph
+        || n == "голова" || n == "Пасть" || n == "уши" || n == "глаза"; // морф-части: имя = сокет (Organ.slot)
 
     // конструктор меняет мобильность при смене органа в слоте «Ноги»
     public void SetLegs(float newMoveSpeed, float newDashSpeed, float newDashDuration = 0f)
@@ -365,12 +245,8 @@ public class PlayerController : MonoBehaviour
     // слот «Чутьё»: быстрее откат рывка
     public void SetDashCooldown(float newCooldown) => dashCooldown = newCooldown;
 
-    // захват волком: режем скорость, пока висит; рывок/пинок снимают. Мёртвого/выключенного держателя не принимаем
-    public void ApplyGrab(IGrabber g, float slow)
-    {
-        if (!GrabberAlive(g)) return;
-        grabber = g; grabSlow = Mathf.Clamp01(slow);
-    } // 0 = полный корень (3-я стадия)
+    // захват волком: режем скорость, пока висит; рывок/пинок снимают
+    public void ApplyGrab(IGrabber g, float slow) { grabber = g; grabSlow = Mathf.Clamp01(slow); } // 0 = полный корень (3-я стадия)
     public void ReleaseGrab(IGrabber g) { if (ReferenceEquals(grabber, g)) { grabber = null; grabSlow = 1f; } }
 
 }

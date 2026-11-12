@@ -14,7 +14,7 @@
 | **ригблоки** клин · брусок · капля | `Assets/_Chimera/Models/ригблоки.fbx` + каталог `Resources/Формы.asset` (3 записи) | `Tools/Blender/blocks.py` |
 | **граф волка v2** — 14 узлов, `Graph.Check` ЧИСТО | [`handoff/volk-graph.json`](handoff/volk-graph.json) | `Anatomy/species/wolf/graph.py` |
 | **раскладка головы** — калибр, детали, морда, зубы | [`handoff/volk-head-layout.json`](handoff/volk-head-layout.json) | `Anatomy/species/wolf/head_layout.py` |
-| **раскладка ног** — брусок и капля на узлах | [`handoff/volk-legs-layout.json`](handoff/volk-legs-layout.json) | `Anatomy/species/wolf/legs_layout.py` |
+| **раскладка ног** — брусок и капля на узлах | [`handoff/volk-legs-layout.json`](handoff/volk-organs-layout.json) | `Anatomy/species/wolf/legs_layout.py` |
 
 **Внимание: `volk-graph.json` живой.** В нём больше нет пястей и плюсен, поэтому первый же `chimera-species` без кода
 крепления оставит волка без лап ниже запястья и скакательного сустава. Раскладки головы и ног `SpeciesHandoff` не читает:

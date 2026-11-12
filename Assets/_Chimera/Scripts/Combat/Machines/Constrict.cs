@@ -72,7 +72,6 @@ public class Constrict : MonoBehaviour, IOrganAbility
     public bool Begin(Health victim, IGrabber grabOwner = null)
     {
         if (!Ready || victim == null || Holding) return false;
-        if (!CombatReach.CanHit(transform, victim.transform)) return false;
         held = victim;
         owner = grabOwner;
         victim.TryGetComponent(out heldPlayer);
@@ -148,7 +147,7 @@ public class Constrict : MonoBehaviour, IOrganAbility
         {
             chokeNext = Time.time + (victimIsPlayer ? data.chokeInterval : data.npcChokeInterval);
             held.LastAttacker = ownHealth; // смерть от удушения — убийство захватчика (родство/переваривание)
-            held.TakeDamage(victimIsPlayer ? data.chokeDamage : data.npcChokeDamage, true);
+            held.TakeDamage(OutgoingDamage.Apply(this, victimIsPlayer ? data.chokeDamage : data.npcChokeDamage), true);
         }
         if (victimIsPlayer) held.MarkInCombat();
         return GrabTick.Holding;

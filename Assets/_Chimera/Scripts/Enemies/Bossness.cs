@@ -76,6 +76,14 @@ public class Bossness : MonoBehaviour
         if (settings.expression > 0f) body.SetExpression(settings.expression);
     }
 
+    /// <summary>ШАГ 2 для боссa, собираемого ИЗ ПАМЯТИ (`BossMemory`): пороги признания и раскрытие генов те же, а химерные
+    /// слоты и их органы приходят из записи — случайно досыпать нечего (спека вечной эволюции, 1.6).</summary>
+    public void ExtendFromMemory(CreatureBody body)
+    {
+        body.SetKinThresholds(settings.kinWeakAt, settings.kinMediumAt);
+        if (settings.expression > 0f) body.SetExpression(settings.expression);
+    }
+
     /// <summary>ШАГ 3 — после сборки и психики: размер, ярость, награда.</summary>
     public void Finish(CreatureBody body, string typeId)
     {

@@ -1,0 +1,212 @@
+{
+  "model_crop": [
+    100,
+    240,
+    565,
+    680
+  ],
+  "reference_crop": [
+    85,
+    175,
+    337,
+    410
+  ],
+  "lines": [
+    {
+      "label": "1",
+      "color": "#e88b1c",
+      "dashed": false,
+      "points": [
+        [
+          182,
+          350
+        ],
+        [
+          208,
+          382
+        ],
+        [
+          242,
+          401
+        ],
+        [
+          285,
+          399
+        ],
+        [
+          326,
+          387
+        ]
+      ]
+    },
+    {
+      "label": "1",
+      "color": "#e88b1c",
+      "dashed": false,
+      "points": [
+        [
+          339,
+          387
+        ],
+        [
+          380,
+          401
+        ],
+        [
+          415,
+          395
+        ],
+        [
+          445,
+          370
+        ],
+        [
+          472,
+          342
+        ]
+      ]
+    },
+    {
+      "label": "2",
+      "color": "#e88b1c",
+      "dashed": false,
+      "points": [
+        [
+          218,
+          468
+        ],
+        [
+          260,
+          447
+        ],
+        [
+          302,
+          422
+        ],
+        [
+          330,
+          414
+        ],
+        [
+          360,
+          430
+        ],
+        [
+          400,
+          450
+        ],
+        [
+          432,
+          472
+        ]
+      ]
+    },
+    {
+      "label": "3",
+      "color": "#168ba5",
+      "dashed": true,
+      "points": [
+        [
+          332,
+          438
+        ],
+        [
+          331,
+          480
+        ],
+        [
+          330,
+          525
+        ],
+        [
+          329,
+          570
+        ],
+        [
+          329,
+          622
+        ]
+      ]
+    },
+    {
+      "label": "3",
+      "color": "#168ba5",
+      "dashed": true,
+      "points": [
+        [
+          294,
+          482
+        ],
+        [
+          309,
+          480
+        ],
+        [
+          321,
+          482
+        ]
+      ]
+    },
+    {
+      "label": "3",
+      "color": "#168ba5",
+      "dashed": true,
+      "points": [
+        [
+          340,
+          482
+        ],
+        [
+          356,
+          480
+        ],
+        [
+          375,
+          484
+        ]
+      ]
+    },
+    {
+      "label": "3",
+      "color": "#168ba5",
+      "dashed": true,
+      "points": [
+        [
+          296,
+          526
+        ],
+        [
+          309,
+          524
+        ],
+        [
+          320,
+          526
+        ]
+      ]
+    },
+    {
+      "label": "3",
+      "color": "#168ba5",
+      "dashed": true,
+      "points": [
+        [
+          339,
+          526
+        ],
+        [
+          355,
+          524
+        ],
+        [
+          369,
+          528
+        ]
+      ]
+    }
+  ],
+  "sources": {
+    "C:\\Users\\semion\\Documents\\Chimera_game\\ChimeraEvolution\\Референсы\\витрина\\человек\\вид.png": "e9f813313f57d9c046f6332e66afa002c8152466b74985ca3eba7bf4344ed065",
+    "C:\\Users\\semion\\Documents\\Chimera_game\\ChimeraEvolution-codex\\Experiments\\shoulder-local-2026-10-31\\review_rest_front.png": "56cfafb80f55296b189cded533c79e6bf21262eb43ff36d99ec92f7257e80e35"
+  }
+}

@@ -73,13 +73,13 @@ public class Satiety : MonoBehaviour
         fullness = Mathf.Max(0f, fullness - decayPerSec * Time.deltaTime); // голод растёт (у химеры быстрее — см. тиры)
         if (!IsSated) { hpAcc = 0f; return; }
 
-        // пока СЫТ — доливаем HP и стамину (устойчиво, уроном не сбивается: восстановление, не трапеза)
+        // пока СЫТ — доливаем HP и стамину (уроном не сбивается: восстановление, не трапеза; HP — сквозь подавление регена)
         if (stamina == null) TryGetComponent(out stamina);
         stamina?.Recover(staminaRegen * Time.deltaTime);
 
         if (health != null && health.Current < health.Max)
         {
-            hpAcc += hpRegen * Time.deltaTime;
+            hpAcc += hpRegen * health.RegenFactor * Time.deltaTime;   // яд и укус Пасти глушат и еду (`Health.RegenFactor`)
             if (hpAcc >= 1f) { int h = (int)hpAcc; hpAcc -= h; health.Heal(h); }
         }
     }

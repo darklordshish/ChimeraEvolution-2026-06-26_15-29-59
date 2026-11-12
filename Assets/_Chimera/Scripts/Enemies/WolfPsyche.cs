@@ -623,6 +623,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
             {
                 var m = col.GetComponentInParent<MoosePsyche>();
                 if (m == null || !m.TryGetComponent<Health>(out var hp)) continue;
+                if (!Perception.Notices(transform, m.transform, senses, proximityRadius)) continue; // тушу видно или чуять — не «знаем, что она где-то в 22 м»
                 float d = (m.transform.position - transform.position).sqrMagnitude;
                 if (d < best) { best = d; mooseTarget = hp; }
             }

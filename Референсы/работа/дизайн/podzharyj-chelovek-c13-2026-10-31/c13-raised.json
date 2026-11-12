@@ -1,0 +1,80 @@
+{
+  "fbx": "C:/Users/semion/Documents/Chimera_game/ChimeraEvolution-codex/Experiments/podzharyj-c10-2026-10-31/c13.fbx",
+  "kluch": "Поджарый",
+  "ves": 1.0,
+  "poza": null,
+  "vesa_bolshe_4": 0,
+  "vidno": [
+    "Ноги",
+    "Руки",
+    "Сердце",
+    "Чутьё",
+    "голова",
+    "хребет",
+    "шея"
+  ],
+  "kluchi": {
+    "Поджарый": 1.0,
+    "Поджарый·ПодъёмПлеч": 1.0
+  },
+  "diagnostic_pose": "Both shoulders abducted 70.0 degrees in world Y; not a game animation",
+  "razvorot_klyucha": 0,
+  "razvorot_v_poze": 0,
+  "skladka_v_poze": 4,
+  "szhatie_v_poze": 1,
+  "obekty": {
+    "Ноги": {
+      "granej": 1684,
+      "razvorot": 0,
+      "razvorot_v_poze": 0,
+      "skladka": 0,
+      "szhatie": 0
+    },
+    "Руки": {
+      "granej": 1036,
+      "razvorot": 0,
+      "razvorot_v_poze": 0,
+      "skladka": 3,
+      "szhatie": 0
+    },
+    "Сердце": {
+      "granej": 221,
+      "razvorot": 0,
+      "razvorot_v_poze": 0,
+      "skladka": 1,
+      "szhatie": 0
+    },
+    "Чутьё": {
+      "granej": 160,
+      "razvorot": 0,
+      "razvorot_v_poze": 0,
+      "skladka": 0,
+      "szhatie": 0
+    },
+    "голова": {
+      "granej": 788,
+      "razvorot": 0,
+      "razvorot_v_poze": 0,
+      "skladka": 0,
+      "szhatie": 0
+    },
+    "хребет": {
+      "granej": 375,
+      "razvorot": 0,
+      "razvorot_v_poze": 0,
+      "skladka": 0,
+      "szhatie": 1
+    },
+    "шея": {
+      "granej": 1474,
+      "razvorot": 0,
+      "razvorot_v_poze": 0,
+      "skladka": 0,
+      "szhatie": 0
+    }
+  },
+  "shov_vershin": 187,
+  "shov_razoshlos_1mm": 0,
+  "shov_maks_mm": 0.0,
+  "zazor_mm": {}
+}

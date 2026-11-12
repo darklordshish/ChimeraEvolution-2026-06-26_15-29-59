@@ -1,0 +1,68 @@
+{
+  "size": [
+    1774,
+    887
+  ],
+  "edge_pixels": 44397,
+  "unchanged_outside_edges": true,
+  "silhouettes": {
+    "PROFILE": {
+      "iou": 0.7736,
+      "reference_crop_size": [
+        1059,
+        222
+      ],
+      "candidate_crop_size": [
+        1628,
+        321
+      ],
+      "normalization": "equal full profile length"
+    },
+    "FRONT": {
+      "iou": 0.8195,
+      "reference_crop_size": [
+        222,
+        312
+      ],
+      "candidate_crop_size": [
+        270,
+        377
+      ],
+      "normalization": "equal silhouette height"
+    },
+    "FRONT 3/4": {
+      "iou": 0.799,
+      "reference_crop_size": [
+        471,
+        306
+      ],
+      "candidate_crop_size": [
+        495,
+        333
+      ],
+      "normalization": "equal silhouette height"
+    },
+    "REAR": {
+      "iou": 0.8246,
+      "reference_crop_size": [
+        177,
+        331
+      ],
+      "candidate_crop_size": [
+        245,
+        365
+      ],
+      "normalization": "equal silhouette height"
+    }
+  },
+  "method": "Sobel NMS hysteresis; silhouette threshold largest component, uniform scale, aligned bbox center and base",
+  "sha256": {
+    "01-flat-sheet.png": "a3dfcd87737ff82a0b92e064935a0122010d4134462dfb057537a88714b649b2",
+    "02-edges-sheet.png": "51b543202daf0a1970f8f8713457c496dfbb4a23d9868c0e3e04d27c1d57fffe",
+    "03-compare-vitrina.png": "55ad9484e6dc7136cd7a93b1513f6e575a53cbcbfab78e86aed78beea4009786",
+    "04-silhouette-overlays.png": "4dd3b8857a50399a5e2b8346ad5e00443ce7a4ed7605aa2929b4fbc6d3ab3126",
+    "edges-mask.png": "0723c00bfadd91b01a2bae17437ece052742922205f998623ce573a5bda7bcde",
+    "profile-body.png": "14290aeb68fae3eced89435361f422e4872e6a308750584b2bea6246b5658e88",
+    "profile-head.png": "f9c9b31fa5d451ca33b8f35c1980f963555a810b33349a38000dd1f707300e3d"
+  }
+}

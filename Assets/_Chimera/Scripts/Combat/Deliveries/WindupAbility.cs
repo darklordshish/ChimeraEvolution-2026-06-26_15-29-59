@@ -43,23 +43,10 @@ public abstract class WindupAbility : MonoBehaviour, IAbility, IAbilityCarrier
         TryGetComponent(out variance);
     }
 
-    Morale morale;   // шкала духа стайных (вешает психика ПОСЛЕ нашего Awake — берём лениво)
-    Satiety satiety; // шкала сытости-голода (тело вешает в Awake): истощённый бьёт слабее
-    Bossness bossness; // модуль боссовости: множитель урона и вампиризм всех приёмов (лениво — порядок навески не важен)
+    Bossness bossness; // модуль боссовости: вампиризм всех приёмов (лениво — порядок навески не важен)
 
-    // урон доставки: ярость × разброс особи × ДУХ (раскачанная мораль бьёт больнее) × ВИГОР (истощённый — слабее)
-    protected float DamageMult
-    {
-        get
-        {
-            if (morale == null) TryGetComponent(out morale);
-            if (satiety == null) TryGetComponent(out satiety);
-            if (bossness == null) TryGetComponent(out bossness);
-            return (rage != null ? rage.DamageMult : 1f) * (variance != null ? variance.DamageMult : 1f)
-                 * (morale != null ? morale.DamageMult : 1f) * (satiety != null ? satiety.Vigor : 1f)
-                 * (bossness != null ? bossness.DamageMult : 1f);
-        }
-    }
+    // урон доставки — общий множитель делателя (`OutgoingDamage`): ярость × разброс × дух × вигор × боссовость
+    protected float DamageMult => OutgoingDamage.Mult(this);
 
     // ВАМПИРИЗМ — не черта приёма, а модуля боссовости: у приёмов было своё поле, и ставил его только вервольф
     protected int BossLifeSteal
@@ -189,14 +176,4 @@ public abstract class WindupAbility : MonoBehaviour, IAbility, IAbilityCarrier
         Vector3 d = target.position - transform.position; d.y = 0f;
         return d.magnitude;
     }
-
-    /// <summary>ДОСТАЁТ ЛИ ПРИЁМ ДО ЦЕЛИ: горизонтальный конус записи + вертикаль + отсутствие стены.
-    /// Общее правило ближнего боя (<see cref="CombatReach"/>). Дальние доставки (залп, наскок) его не
-    /// зовут: у них своя траектория, и стена — дело снаряда, а не выбора цели.</summary>
-    protected bool TargetInCone(float range, float halfAngle, float verticalSlack = 0f) =>
-        target != null && CombatReach.InMelee(transform, target, range, halfAngle, verticalSlack);
-
-    /// <summary>Контактная проверка без конуса (радиусные приёмы): вертикаль + стена.</summary>
-    protected bool ContactReach(float verticalSlack = 0f) =>
-        target != null && CombatReach.CanHit(transform, target, verticalSlack);
 }

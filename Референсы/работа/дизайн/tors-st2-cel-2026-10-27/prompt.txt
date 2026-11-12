@@ -1,0 +1,8 @@
+Tool: built-in image_gen.imagegen, opaque white background.
+Reference: coordinator worktree / Референсы/витрина/оборотень/тело.png.
+Workflow: reference-based generation followed by three targeted image edits.
+
+Initial passes (summary, not verbatim): clean front / left-facing profile / three-quarter cropped torso of the same stage-2 werewolf, neutral gray broad low-poly planes, white background; preserve chest and shoulder mass, stooped pose and dark briefs. No head, mane, tail, text or lines. Separate sloping pectoral edges, open high-centered rib arch, broad longitudinal abdomen without pointed wedge. Waist 0.60-0.70 ribcage width, anterior abdomen setback 0.20-0.30 ribcage depth. First correction removed downward diamond on abdomen. Second correction restored forward torso lean (shoulders forward relative to pelvis) and emphasized independent pectoral slopes. These passes are not delivered as separate alternatives.
+
+Final local edit prompt (verbatim):
+Precise local edit. Keep this exact three-panel torso sheet, identical gray facets, pose, shoulders, front and three-quarter panels and white background. Change ONLY middle left-facing profile abdomen contour: its front waist currently too deeply pinched back. Fill the anterior abdominal surface FORWARD towards left by about 35-40 pixels at the narrowest waist, with a broad gentle blend from below ribs to waistband. Do not shift chest or pelvis or arms. Maintain forward hunch. The front abdomen setback from foremost chest should be about 25-30 percent of full ribcage depth, not current roughly 40 percent. No bulging potbelly, just less extreme hollow. Keep all else unchanged, no text or annotations.

@@ -115,7 +115,7 @@ public class ChimeraAlphaPsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         // ЗАМАХ ЗАХВАТА идёт: цель ушла или подошёл второй чужой — сорван; дотянул — хватаем
         if (grabWindupEnd >= 0f)
         {
-            if (Grip == null || dist > Grip.GrabRange || OthersNear() || !CombatReach.CanHit(transform, targetHealth.transform)) CancelGrabWindup();
+            if (Grip == null || dist > Grip.GrabRange || OthersNear()) CancelGrabWindup();
             else if (Time.time >= grabWindupEnd)
             {
                 CancelGrabWindup();
@@ -130,7 +130,7 @@ public class ChimeraAlphaPsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         if (Time.time >= nextAttackTime)
         {
             // ЗАХВАТ ПО ВОЗМОЖНОСТИ: запись есть, перезарядка прошла, цель в досягаемости и она ОДНА
-            if (Grip != null && Grip.Ready && dist <= Grip.GrabRange && !OthersNear() && CombatReach.CanHit(transform, targetHealth.transform))
+            if (Grip != null && Grip.Ready && dist <= Grip.GrabRange && !OthersNear())
             {
                 grabWindupEnd = Time.time + Grip.WindupTime;
                 if (TryGetComponent<Telegraph>(out var cue)) cue.Set(true, TelegraphColors.Grab, intent: true);
@@ -235,15 +235,12 @@ public class ChimeraAlphaPsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     bool IsHostile(Health other)
     {
         if (other == null || other == ownHealth || other.Current <= 0) return false;
-        if (Perception.PlayerGhost && other.GetComponent<PlayerController>() != null) return false; // dev-призрак: игрок невидим, пока не атаковал (BreakGhost раскроет)
+        if (Perception.PlayerUnseen && other.GetComponent<PlayerController>() != null) return false; // dev-призрак: игрок невидим, пока не атаковал (BreakGhost раскроет)
         var ob = other.GetComponent<CreatureBody>();
         return !(ob != null && body != null && CreatureBody.Regard(body, ob) >= KinTier.Weak); // СВОИХ (кого Я признаю по составу) пропускаю
     }
 
-    // ближайший НЕ-кин (кого Я не признаю своим по составу). Истинная химера размыта → не признаёт никого → бьёт всех.
-    // СТЕНА — НЕ ЦЕЛЬ: у альфы нет профиля чувств, её радиус-скан — это «увидел», а увидеть сквозь скалу нельзя.
-    // Проверяем прямой луч только при ВЫБОРЕ цели; уже выбранную не бросаем из-за угла — иначе погоня рвётся на
-    // каждом дереве. Запах/тепло как обходной канал для альфы — развилка (сейчас каналов у неё нет вовсе).
+    // ближайший НЕ-кин (кого Я не признаю своим по составу). Истинная химера размыта → не признаёт никого → бьёт всех
     void Retarget()
     {
         int hits = Physics.OverlapSphereNonAlloc(transform.position, ScanRadius, scanHits, ~0, QueryTriggerInteraction.Ignore);
@@ -252,7 +249,6 @@ public class ChimeraAlphaPsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         {
             var other = scanHits[i].GetComponentInParent<Health>();
             if (!IsHostile(other)) continue;
-            if (!Perception.HasLineOfSight(transform.position, other.transform, transform)) continue;
             float d = (other.transform.position - transform.position).sqrMagnitude;
             if (d < best) { best = d; bestT = other.transform; bestH = other; }
         }

@@ -31,9 +31,9 @@ public class BiteAbility : WindupAbility, IOrganAbility
 
     protected override AbilityRun OnTick()
     {
-        // ГЕОМЕТРИЯ + СТЕНА + ВЕРТИКАЛЬ: тот же конус записи, но сквозь скалу и на другой уровень не кусаем.
-        bool inReach = TargetInCone(data.range, data.halfAngle);
-        if (!inReach) return AbilityRun.Cancelled; // увернулся / скрылся за стеной — замах сорван
+        float dist = DistToTarget();
+        bool inCone = Vector3.Angle(transform.forward, DirToTarget()) <= data.halfAngle;
+        if (!(dist <= data.range && inCone)) return AbilityRun.Cancelled; // увернулся — замах сорван
 
         if (Time.time >= windupEnd)
         {

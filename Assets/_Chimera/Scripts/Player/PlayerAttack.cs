@@ -66,9 +66,8 @@ public class PlayerAttack : MonoBehaviour, IAbility, IOrganAbility
         int struck = 0;
         foreach (var hp in TargetScan.Healths(transform.position, range + ScanPad, transform))
         {
-            // конус + вертикаль + стена: удар конечностью не проходит сквозь укрытие и не бьёт вверх/вниз по ярусу
-            if (!CombatReach.InMelee(transform, hp.transform, range, halfAngle)) continue;
-            blow.Deliver(hit, hp, manual ? strike.damageMult : 1f); // урон; эрозия по кину — внутри Hit.Apply
+            if (!InCone(hp.transform.position, range, halfAngle)) continue;
+            blow.Deliver(hit, hp, (manual ? strike.damageMult : 1f) * OutgoingDamage.Mult(this)); // урон; эрозия по кину — внутри Hit.Apply
             struck++;
         }
 
@@ -77,6 +76,13 @@ public class PlayerAttack : MonoBehaviour, IAbility, IOrganAbility
             if (hitstopDuration > 0f) Hitstop.Do(hitstopDuration); // 0 = выключить глобальный фриз
             if (cam != null) cam.Shake(0.12f, shakeMagnitude);
         }
+    }
+
+    bool InCone(Vector3 point, float range, float halfAngle)
+    {
+        Vector3 to = point - transform.position; to.y = 0f;
+        if (to.sqrMagnitude > range * range) return false;
+        return to.sqrMagnitude < 0.0001f || Vector3.Angle(transform.forward, to) <= halfAngle;
     }
 
     void OnDrawGizmos()

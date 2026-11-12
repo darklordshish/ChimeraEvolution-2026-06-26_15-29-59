@@ -1,0 +1,15 @@
+{
+ "vid": "Змея",
+ "istochnik": "ChimeraEvolution-codex/Experiments/zmeya-relief-grid-2026-11-06/probe.py",
+ "shag_m": 0.065,
+ "ugol_rad": 0.62,
+ "vysota_m": 0.0125,
+ "plitka_m": {
+  "x": 0.11187,
+  "z": 0.07986
+ },
+ "pikseli": 1024,
+ "yacheek_v_plitke": 2,
+ "normali": "касательные, OpenGL (+y вверх), x — ось x тела, y — ось z тела",
+ "vysota": "16 бит: 0 — кожа, 65535 — 12.5 мм"
+}

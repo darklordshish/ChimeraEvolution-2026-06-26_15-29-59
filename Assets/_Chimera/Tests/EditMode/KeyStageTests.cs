@@ -77,7 +77,36 @@ namespace Chimera.Tests.EditMode
             }
             finally { Object.DestroyImmediate(go); }
         }
-    
+
+        /// <summary>ОРГАН НА ШАБЛОНЕ ПОД ЧЕРТОЙ — ПО ТОМУ ЖЕ ПРАВИЛУ, ЧТО И КУСОК (29.10, модельная линия): черта ступени несёт свои
+        /// кисти с когтями, а `Руки@Волк` садился на пальцы шасси под ней и торчал палочками. Слот «Руки» черта не прячет (это вся
+        /// рука с плечом) — она его ЗАМЕНЯЕТ (`zamenyaet_cherty`), и орган на шаблоне снимается по `hides ∪ replacesTraits`.</summary>
+        [Test]
+        public void Stage_RemovesDonorOrganObjects_OnItsPlaces()
+        {
+            var human = AssetDatabase.LoadAssetAtPath<SpeciesSO>("Assets/_Chimera/Data/Человек.asset");
+            var wolf = AssetDatabase.LoadAssetAtPath<SpeciesSO>("Assets/_Chimera/Data/Волк.asset");
+            var worn = human.organs.Where(o => o != null)
+                            .Select(o => o.chassisOnly ? o : wolf.organs.FirstOrDefault(w => w != null && w.slot == o.slot && !w.chassisOnly && !w.nativeOnly) ?? o).ToList();
+            var stages = BodyMesh.ActiveStages(human, BodyMesh.KeysFor(human, worn));
+            if (stages.Count == 0) Assert.Inconclusive("у человека нет черты ключа «Волк»");
+            var slots = new HashSet<string>(stages.SelectMany(st => (st.hides ?? new string[0]).Concat(st.replacesTraits ?? new string[0])));
+            if (!BodyMesh.OrganObjectsFor(human, worn).Keys.Any(n => slots.Contains(n.Substring(0, n.IndexOf('@')))))
+                Assert.Inconclusive("под чертой ступени нет ни одного органа на шаблоне — нечего мерить");
+            var go = new GameObject("~ступень-органы-шаблона"); var cc = go.AddComponent<CharacterController>(); cc.height = 2f; cc.center = Vector3.up;
+            try
+            {
+                MorphBuilder.Build(go.transform, human, worn, null);
+                foreach (var r in go.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                {
+                    var n = r.sharedMesh != null ? r.sharedMesh.name : "";
+                    int at = n.IndexOf('@');
+                    if (at > 0) Assert.IsFalse(slots.Contains(n.Substring(0, at)), $"орган на шаблоне «{n}» нарисован под чертой ключа");
+                }
+            }
+            finally { Object.DestroyImmediate(go); }
+        }
+
         /// <summary>Черта ступени `@<ключ>` (грива, хвост, мех — открытая оболочка) рисуется двусторонним материалом, тело шасси —
         /// односторонним (22.10: изнанка гривы на одностороннем материале давала «щит» на груди).</summary>
         [Test]

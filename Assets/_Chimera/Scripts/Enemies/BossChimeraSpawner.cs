@@ -27,19 +27,22 @@ public class BossChimeraSpawner : MonoBehaviour
     [Header("Автоспавн по родству")]
     [SerializeField] bool autoSpawn;
     [SerializeField, Range(0, 100)] int affinityThreshold = 75; // родство игрока ко ВСЕМ донорам
-    [SerializeField] float respawnDelay = 120f;
+    [Tooltip("Кулдаун возрождения в ИГРОВЫХ ЧАСАХ (`WorldClock`): сон игрока его двигает. 0 — по умолчанию (сутки)")]
+    [SerializeField] float respawnDelayHours = 24f;
     [SerializeField] float spawnDistance = 18f;
 
     CreatureBody current;
-    float nextSpawn;
+    string currentType, currentName, currentWere;
+    double nextSpawnHours; // игровые часы, не Time.time: иначе «сон» игрока кулдаун не двигал бы (спека вечной эволюции, 1.5)
 
     public CreatureBody Current => current;
     public bool AutoSpawn { get => autoSpawn; set => autoSpawn = value; }
+    float RespawnHours => respawnDelayHours > 0f ? respawnDelayHours : 24f;
     float SpawnDistance => spawnDistance > 0f ? spawnDistance : 18f;
 
     void Update()
     {
-        if (!autoSpawn || current != null || Time.time < nextSpawn) return;
+        if (!autoSpawn || current != null || WorldClock.Now < nextSpawnHours) return;
         var pb = CreatureBody.PlayerBody;
         if (pb == null || !pb.AllDonorsAffinityAtLeast(affinityThreshold)) return;
         SpawnNearPlayer(recipe);
@@ -69,7 +72,11 @@ public class BossChimeraSpawner : MonoBehaviour
         if (human.speciesName != "Человек")
             Debug.LogWarning($"BossChimeraSpawner: шасси игрока «{human.speciesName}», а босс по сценарию — химера ЧЕЛОВЕКА");
 
-        string were = r == Recipe.Werebeast ? PickWereSpecies(pb.Donors, human) : null;
+        // ПАМЯТЬ БОССА (1.6): тип уже встречали — собираем из записи, а не заново из доноров игрока
+        string typeKey = r == Recipe.Werebeast ? "Босс-оборотень" : "Босс-химера";
+        BossMemory.TryGet(typeKey, out var memory);
+
+        string were = r == Recipe.Werebeast ? (memory != null && !string.IsNullOrEmpty(memory.wereSpecies) ? memory.wereSpecies : PickWereSpecies(pb.Donors, human)) : null;
         if (r == Recipe.Werebeast && were == null)
         {
             Debug.LogWarning("BossChimeraSpawner: среди доноров игрока нет зверя — оборотню не из кого");
@@ -77,7 +84,8 @@ public class BossChimeraSpawner : MonoBehaviour
         }
         // награда — за ТИП босса: оборотень любого вида считается одним типом, имя объекта говорит, кто выпал
         string typeId = r == Recipe.Werebeast ? "Босс-оборотень" : "Босс-химера";
-        string name = r == Recipe.Werebeast ? $"Оборотень ({were})" : typeId;
+        string name = memory != null && !string.IsNullOrEmpty(memory.displayName) ? memory.displayName
+                      : r == Recipe.Werebeast ? $"Оборотень ({were})" : typeId;
         float scale = bossness != null && bossness.sizeScale > 0f ? bossness.sizeScale : 1f;
         Bossness module = null;
 
@@ -85,6 +93,7 @@ public class BossChimeraSpawner : MonoBehaviour
             beforeBody: go => module = Bossness.AttachBefore(go, bossness),
             compose: b =>
             {
+                if (memory != null) { BossMemory.Apply(b, memory); module.ExtendFromMemory(b); return; }
                 if (r == Recipe.Werebeast) ChimeraFactory.InstallAllFrom(b, were);
                 else ChimeraFactory.InstallRandomBeasts(b, randomOrgans);
                 module.Extend(b);
@@ -92,17 +101,32 @@ public class BossChimeraSpawner : MonoBehaviour
         if (body == null) return null;
 
         module.Finish(body, typeId);
+        currentType = typeId; currentName = name; currentWere = were;
         if (body.TryGetComponent<Health>(out var hp))
-            hp.onDeath.AddListener(() => { if (current == body) { current = null; nextSpawn = Time.time + respawnDelay; } });
+            hp.onDeath.AddListener(() => { if (current == body) Retire(body); });
         current = body;
 
-        // Подпись — ПРО ТУ ЖЕ психику, что повешена: диспатч берёт доминанту только от порога PsycheDispatch,
-        // иначе лог «доминанта Волк (Weak)» рядом с химерой-альфой читался бы как расхождение.
-        var any = body.MostKin(out var tier);
-        var dom = tier >= PsycheDispatch.PsycheTier ? any : null;
+        var dom = body.MostKin(out var tier);
         Debug.Log($"{name}: доминанта {(dom != null ? $"{dom.speciesName} ({tier})" : "нет — истинная химера")} · " +
                   $"HP {(hp != null ? hp.Max : 0)} · {ChimeraFactory.Describe(body)}", body);
         return body;
+    }
+
+    /// <summary>Босс ушёл (убит): записать его состав в `BossMemory` и запустить кулдаун по игровым часам.
+    /// Зовётся в onDeath — тело ещё цело (Destroy отложен до конца кадра), состав читается.</summary>
+    void Retire(CreatureBody body)
+    {
+        var rec = BossMemory.Capture(currentType, currentName, currentWere, body);
+        current = null;
+        nextSpawnHours = WorldClock.Now + RespawnHours;
+        if (rec != null) Debug.Log($"BossMemory: «{rec.displayName}» записан ({rec.entries.Count} органов): {rec.Description}");
+    }
+
+    // уход без смерти (выгрузка сцены, снос объекта): помним состав тоже. Спавнер выходит из сцены вместе с миром
+    void OnDestroy()
+    {
+        if (current != null && current.TryGetComponent<Health>(out var hp) && !hp.IsDead)
+            BossMemory.Capture(currentType, currentName, currentWere, current);
     }
 
     // вид оборотня: задан в инспекторе — он, иначе случайный зверь из доноров (шасси-человек в оборотни не годится)

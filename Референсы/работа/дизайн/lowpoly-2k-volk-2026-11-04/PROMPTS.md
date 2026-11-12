@@ -1,0 +1,18 @@
+# Запросы — 04.11.2026
+
+Встроенный image_gen, первый проход и одна корректировка.
+Входы из соседней актуальной ChimeraEvolution: волк/вид.png (образ), волк/орто.png (стойка и посадка головы), lowpoly-2k-chelovek-2026-11-04/01-flat-sheet.png (только стиль).
+
+## Точный запрос
+
+Use case: stylized-concept. Create a production low-poly WOLF plane reference sheet, wide white canvas, five full body views arranged horizontally: FRONT, PROFILE facing left, FRONT THREE QUARTER, BACK, BACK THREE QUARTER. Input image 1 is the approved wolf shape study: preserve its exact lean long-legged wolf identity, silhouette, chest width, moderate mane, wedge muzzle, upright pointed ears, deep chest, tucked abdomen, narrow wrists, angular hocks and lowered bushy tail. Input image 2 is the authoritative orthographic pair for raised head carriage, limb length and aligned neutral standing paws. Input image 3 is ONLY the accepted coarse gray flat shading style sample of a human. Depict the same wolf in five orthographic views, equal physical scale, identical neutral square standing stance, same lighting, paws on one thin ground line, enough horizontal space for every tail and muzzle. Broad deliberate sculptural planes with constant gray fill and crisp tone boundaries, roughly 30 to 50 countable broad planes on the side torso from shoulder to rump. Entire animal visually plausible around 2000 triangles, simplified large planes across ribs, scapula, elbow, wrist, iliac crest, knee and hock. Mane and tail are compact coherent volumes with a few broad pointed silhouette tufts. Lean chest and narrow dry lower legs preserve the source proportions exactly. Whole bodies including ear tips claws and tail entirely in frame. Calm monochrome gray clay, neutral studio illumination, pure white background, small English view labels beneath the common ground line. Main subject is the wolf, reference human is style only.
+
+## Единственная корректировка
+
+Use case: style-transfer. Refine image 1, the five-view low-poly gray wolf sheet. Images 2 and 3 are the approved wolf silhouette and orthographic proportions. Preserve the white five-view layout, exact cameras, ground line, raised head carriage, stance, gray material, ears and lowered tail. Match the reference silhouette more faithfully: front and back overall width about ten percent broader at the same ear-to-ground height, profile muzzle-to-tail length about twelve percent longer at the same height, with long torso and dry slender legs. The reference controls proportions. Main refinement: sculpt the ribcage side with 30 to 40 broad individually readable flat gray planes between shoulder and hip, arranged around the convex chest and tucked belly. Break the long dark diagonal stripes into broad interlocking planes following the ribcage, lumbar transition and pelvis. Give the outer thigh three or four broad angled planes expressing rounded hip into knee. Keep the coarse planar language of an approximately 2000 triangle game wolf. The mane remains a compact connected volume with a few silhouette tufts; broad gray planes form the chest instead of regular nested ornamental chevrons. Simplified facial planes. Constant gray tones per plane, clean crisp borders, equal scale and even neutral studio lighting across all five full bodies. All figures and tails fit fully in the canvas with white space between them.
+
+Входы: первый проход 00-first-pass.png, актуальные волк/вид.png и волк/орто.png. Корректировка сохранена как итог 01-flat-sheet.png.
+
+## Производные листы
+
+Обвод, сравнение и наложения — Anaconda/Pillow/NumPy/SciPy, без новой генерации. draw_edges.py воспроизводит результат. Обвод сохраняет все пиксели вне маски линий.

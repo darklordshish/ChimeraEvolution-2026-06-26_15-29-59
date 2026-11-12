@@ -1,0 +1,93 @@
+{
+  "size": [
+    2172,
+    724
+  ],
+  "edge_pixels": 60007,
+  "unchanged_outside_edges": true,
+  "png_verified": [
+    "01-flat-sheet.png",
+    "02-edges-sheet.png",
+    "03-compare-vitrina.png",
+    "04-silhouette-overlay.png",
+    "edges-mask.png"
+  ],
+  "silhouette_method": "manual crops; equal total height incl launcher; centered; largest component L<205, hole fill; approximate only",
+  "silhouette_comparison": [
+    {
+      "view": "FRONT",
+      "reference_crop": [
+        804,
+        77,
+        1169,
+        502
+      ],
+      "candidate_crop": [
+        32,
+        189,
+        350,
+        589
+      ],
+      "width_ratio_at_equal_total_height": 0.928,
+      "approximate_mask_iou": 0.792
+    },
+    {
+      "view": "PROFILE",
+      "reference_crop": [
+        39,
+        76,
+        751,
+        504
+      ],
+      "candidate_crop": [
+        370,
+        189,
+        880,
+        589
+      ],
+      "width_ratio_at_equal_total_height": 0.768,
+      "approximate_mask_iou": 0.616
+    },
+    {
+      "view": "FRONT 3/4",
+      "reference_crop": [
+        22,
+        565,
+        497,
+        888
+      ],
+      "candidate_crop": [
+        896,
+        189,
+        1334,
+        589
+      ],
+      "width_ratio_at_equal_total_height": 0.746,
+      "approximate_mask_iou": 0.6
+    },
+    {
+      "view": "BACK",
+      "reference_crop": [
+        1260,
+        73,
+        1635,
+        505
+      ],
+      "candidate_crop": [
+        1367,
+        189,
+        1687,
+        589
+      ],
+      "width_ratio_at_equal_total_height": 0.921,
+      "approximate_mask_iou": 0.773
+    }
+  ],
+  "sha256": {
+    "01-flat-sheet.png": "7b95f3311d596450dcbd830ba7f5d7b55fcc2861e6e6ffa118596c142eedf63d",
+    "02-edges-sheet.png": "d085c881319a5ea0a9b124feb8211d7995e07ced70ff79dd84bf437a3b3f4702",
+    "03-compare-vitrina.png": "230dbc45d4aeded356604d53f69e79fa3241a5d3d7c9705a1c1848e813e53e34",
+    "04-silhouette-overlay.png": "d603d47c78c58ea38e3045d8a377810c0291a25d5dfb3be846581a34c899f779",
+    "edges-mask.png": "978a0b628e8a6bff238efc96e3e2261a0573046ffadc8114ab70d8ac8f2d367a"
+  }
+}

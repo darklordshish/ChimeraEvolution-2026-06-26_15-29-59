@@ -1,0 +1,19 @@
+{
+  "01-chistyj.png": {
+    "sha256": "d8f2d63bab58882126818e34e350307ffb0872aea25d83df32994998e2159081",
+    "bytes": 1597722
+  },
+  "02-linii.png": {
+    "sha256": "a8021839111f607137144992905af16ee4accf830ae7e429e67f6d598122fe80",
+    "bytes": 1378794
+  },
+  "clean_size": [
+    1774,
+    887
+  ],
+  "overlay_body_offset": [
+    0,
+    85
+  ],
+  "note": "Clean pixels preserved exactly outside explicitly drawn annotation strokes."
+}

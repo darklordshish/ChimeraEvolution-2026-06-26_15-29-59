@@ -1,0 +1,44 @@
+{
+"tri_chetv_pered": {
+"ugol": 20.0,
+"masshtab": 420,
+"sdvig": 152,
+"iou_kontura": 0.529,
+"syrye": {
+"med_mm": 7.26,
+"kv75_mm": 12.03,
+"tochek": 127
+},
+"myagkie": {
+"med_mm": 7.26,
+"kv75_mm": 12.36,
+"tochek": 115
+},
+"sluchajnye": {
+"med_mm": 6.89,
+"kv75_mm": 13.87,
+"tochek": 67
+}
+},
+"tri_chetv_zad": {
+"ugol": 205.0,
+"masshtab": 420,
+"sdvig": 132,
+"iou_kontura": 0.523,
+"syrye": {
+"med_mm": 6.49,
+"kv75_mm": 13.96,
+"tochek": 97
+},
+"myagkie": {
+"med_mm": 6.49,
+"kv75_mm": 13.96,
+"tochek": 83
+},
+"sluchajnye": {
+"med_mm": 7.77,
+"kv75_mm": 12.52,
+"tochek": 80
+}
+}
+}

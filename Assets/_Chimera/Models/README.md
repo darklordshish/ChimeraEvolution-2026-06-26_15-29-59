@@ -86,7 +86,7 @@
 
 ### Имена — контракт с кодом
 
-- `Head` и `Nose` прячет от первого лица `PlayerController.SetFirstPerson`;
+- `Head` и `Nose` прячет от первого лица `PlayerController.SetView`;
 - `Head`/`Nose`/`Jaw`/`Ear*` красят эмоции (`Telegraph.IsHeadName`, сравнение по префиксу —
   ловит и `EarL`, и `Ear_L`);
 - лицо исключено из тинта состава по именам.

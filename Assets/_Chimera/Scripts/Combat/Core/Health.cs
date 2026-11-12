@@ -28,8 +28,10 @@ public class Health : MonoBehaviour
 
     public UnityEvent onDamaged = new(); // = new(), чтобы не были null при AddComponent в рантайме (босс)
     public UnityEvent onDeath = new();
+    public UnityEvent onRevived = new(); // игрок встаёт после «сна» (спека вечной эволюции 2026-11-12, §5 п.1.2)
 
     bool dead;
+    public bool IsDead => dead;
     float regenAccum;
     float regenSuppressUntil, regenSuppressFactor = 1f; // дебафф регена (укус Пасти игрока)
     Rage rage; // ярость: входящий урон больше (может добавиться в рантайме — ленивый поиск)
@@ -48,7 +50,7 @@ public class Health : MonoBehaviour
         if (dead || Current >= maxHealth) return;
         float rate = RegenPerSecond;
         if (!InCombat) rate += OutOfCombatRegen;
-        if (Time.time < regenSuppressUntil) rate *= regenSuppressFactor; // сбит укусом Пасти
+        rate *= RegenFactor; // сбит укусом Пасти или ядом
         if (rate <= 0f) return;
 
         regenAccum += rate * Time.deltaTime;
@@ -79,11 +81,28 @@ public class Health : MonoBehaviour
         Current = Mathf.Min(maxHealth + OverhealCap, Current + amount); // вампиризм может уйти свыше макс. (temp HP)
     }
 
+    /// <summary>Доля восстановления, которая сейчас проходит: яд (стадия 1) — 0, укус Пасти — свой множитель, иначе 1.
+    /// ЛЮБОЕ восстановление HP — и сердца, и сытости — идёт через неё (аудит дизайн-линии 26.10, §10 п.2: сытый отравленный
+    /// зверь получал 4 HP/с едой мимо яда, и «яд останавливает реген» было правдой наполовину).</summary>
+    public float RegenFactor => Time.time < regenSuppressUntil ? regenSuppressFactor : 1f;
+
     // временно сбить реген цели (укус Пасти): factor<1 уменьшает реген на duration секунд (рефрешится)
     public void SuppressRegen(float factor, float duration)
     {
         regenSuppressFactor = Mathf.Clamp01(factor);
         regenSuppressUntil = Time.time + duration;
+    }
+
+    /// <summary>ОЖИВЛЕНИЕ: полное HP, флаг смерти снят, события. Игрок после «сна» встаёт тем же объектом — сцена не
+    /// перезагружается (спека вечной эволюции, 1.2). Урон и реген после оживления снова идут как обычно.</summary>
+    public void Revive()
+    {
+        dead = false;
+        Current = maxHealth;
+        regenAccum = 0f;
+        Invulnerable = false;
+        LastAttacker = null;
+        onRevived?.Invoke();
     }
 
     public void TakeDamage(int amount) => TakeDamage(amount, false);

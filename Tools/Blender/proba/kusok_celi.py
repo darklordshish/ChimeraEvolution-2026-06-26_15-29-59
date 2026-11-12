@@ -14,8 +14,8 @@
      на ступени 2 вида-ключа, снимает `skryvaet`, черты `zamenyaet_cherty` не ставит).
 
   blender -b --factory-startup -P kusok_celi.py -- ключ.blend цель.obj выход.fbx паспорт.json
-      [--imya Волк] [--zazor 0.012] [--zazor_hvost 0.05] [--golova_z 1.50] [--golova_x 0.25] [--griva_z 1.15] [--griva_x 0.42] [--hvost_z 1.0] [--hvost_y 0.12]
-      [--ostrov 400] [--lapy_z 0.32] [--stupen 2|1 [--st1_y -0.02] [--st1_z 1.62] [--st1_zatylok 0.06] [--st1_verh 1.70] [--st1_hvost 0.65] [--st1_niz 1.30] [--ves1 0.5]] [--prizhim_d 0.06 --prizhim_k 0.35] [--dvustor 1] [--tselikom 1] [--dolya 0.08] [--shots префикс]
+      [--imya Волк] [--zazor 0.012] [--zazor_hvost 0.05] [--golova_z 1.50] [--golova_x 0.25] [--griva_z 1.15] [--griva_x 0.42 [--griva_x_verh 1.65:0.04]] [--korona 1.62:0.12:0.04] [--griva_pered_z 1.40] [--hvost_z 1.0] [--hvost_y 0.12] [--hvost_x 9] [--bez_kostej плечо,предплечье] [--kisti_z 0.9 [--kisti_zazor 0.012]] [--hvost_naklon 20] [--hvost_k_osi 0.2] [--ushi 1.80:0.06:1.4] [--golova_po_vesam 1 [--golova_sheya_z 1.5]] [--zakryt 200]
+      [--ostrov 400] [--lapy_z 0.32 [--lapy_naklon 0.6]] [--stupen 2|1 [--st1_y -0.02] [--st1_z 1.62] [--st1_zatylok 0.06] [--st1_verh 1.70] [--st1_hvost 0.65] [--st1_niz 1.30] [--ves1 0.5] [--st1_ushi 1.66:0.06[:-0.04]]] [--prizhim_d 0.06 --prizhim_k 0.35 [--prizhim_verh 1.45]] [--dvustor 1] [--normali 1] [--tselikom 1] [--dolya 0.08] [--shots префикс]
 Вход `ключ.blend` — сохранённый `kluch_vida.py --blend` (меш шасси с ключом и арматурой). Печатает «КУСОК: …».
 """
 import sys, json, os
@@ -73,33 +73,95 @@ for o in body:
         c.shape_key_clear()
         for v, p in zip(c.data.vertices, mix): v.co = p
     c.modifiers.clear(); c.parent = None; c.matrix_world = o.matrix_world.copy()
-    srcs.append(c)
+    srcs.append(c); c['iskhod'] = o.name
 
 # 2. цель и отбор граней
 bpy.ops.wm.obj_import(filepath=cel, forward_axis='NEGATIVE_Z', up_axis='Y')
 t = [o for o in bpy.context.selected_objects if o.type == 'MESH'][0]
 bpy.context.view_layer.objects.active = t
 bpy.ops.object.transform_apply(location=True, rotation=True, scale=True)
+# ВЕСА ЦЕЛИ ГОТОВЫЕ (`--vesa файл.json`, 21.10): цель снята в покой `podgonka_v_poze.py --cel_pokoj`, и её веса — те, по
+# которым она снималась; они едут через отбор и прорежение группами вершин, переноса с тела нет
+VESA = json.load(open(opt['vesa'], encoding='utf-8')) if opt.get('vesa') else None
+if VESA:
+    assert len(VESA) == len(t.data.vertices), 'веса не той цели: %d против %d вершин' % (len(VESA), len(t.data.vertices))
+    vg_ = {}
+    for vi, ws in enumerate(VESA):
+        for nm, x in ws.items():
+            if nm not in vg_: vg_[nm] = t.vertex_groups.new(name=nm)
+            vg_[nm].add([vi], x, 'REPLACE')
 gap, gz, mz, mx, hz, hy, gt, pz = (float(opt[k]) for k in ('zazor', 'golova_z', 'griva_z', 'griva_x', 'hvost_z', 'hvost_y', 'zazor_hvost', 'lapy_z'))
 bm = bmesh.new(); bm.from_mesh(t.data); bm.faces.ensure_lookup_table()
 n_all = len(bm.faces)
 kill = []
+KISTI = float(opt.get('kisti_z', '0'))
+GPV = opt.get('golova_po_vesam', '0') == '1'
 for f in bm.faces:
     c = f.calc_center_median()
     d = bvh.find_nearest(c)[3]
     head = c.z > gz and abs(c.x) < float(opt['golova_x'])     # у лося рога — до 0.6 м от средней линии
     mane = c.z > mz and abs(c.x) < mx and d > gap
+    # `--griva_x_verh z:x` (30.10, критик n4: «сзади над затылком ком с плоским верхом и тремя зубцами — нужен веер»): выше высоты покоя z
+    # гребень уже (|x| < x) — над теменем остаётся средняя полоса прядей, уши сзади открыты
+    if opt.get('griva_x_verh'):
+        zv_, xv_ = (float(v) for v in opt['griva_x_verh'].split(':'))
+        if c.z > zv_ and abs(c.x) >= xv_: mane = False
+    # `--griva_pered_z`: спереди (впереди тела, y < −0.03) грива — только выше этой высоты покоя (критик ряда: «нагрудник» шерсти
+    # до пояса закрывал грудь; у r13 воротник кончается на ключицах)
+    if mane and c.y < -0.03 and c.z < float(opt.get('griva_pered_z', '0')): mane = False
     tail = c.z < hz and c.y > hy and d > (gap if c.z > 0.75 else gt)     # ниже ягодиц — дальше от тела: мех икр цели в хвост не идёт
+    # `--hvost_x` (21.10, критик r1: хвост начинался на талии и шириной 45 см закрывал ягодицы фартуком) — только у средней линии
+    tail = tail and abs(c.x) < float(opt.get('hvost_x', '9'))
     paw = c.z < pz and abs(c.x) > 0.12          # лапы цели ниже скакательного: накрывают стопу шасси «на носке» (у цели лапа длинная, с пальцами)
+    # `--lapy_naklon k` (29.10, критик новой ст.2: «ботфорт — шов горизонтальный и с ребром; вести косо: спереди выше, сзади ниже»):
+    # порог лапы по высоте покоя зависит от глубины — z < lapy_z − k·y (−y — вперёд: спереди выше, сзади ниже)
+    if opt.get('lapy_naklon'): paw = c.z < pz - float(opt['lapy_naklon']) * c.y and abs(c.x) > 0.12
+    # КИСТИ (`--kisti_z 0.9`, 21.10, ГеймБосс по листу r8: «кисти — кулаки без когтей»): грани, у которых главная кость по
+    # весам `--vesa` — предплечье, ниже запястья покоя К2 (0.90 м) — кисть цели с когтями целиком
+    if (KISTI or GPV) and VESA:
+        sc_ = {}
+        for v in f.verts:
+            for nm, x in VESA[v.index].items(): sc_[nm] = sc_.get(nm, 0.0) + x
+        gl_ = max(sc_, key=sc_.get) if sc_ else ''
+        # `--kisti_zazor`: из кисти — только то, что отстоит от тела дальше зазора (когти цели; пальцы лежат на подогнанной кисти)
+        if KISTI: paw = paw or (gl_.startswith('предплечье') and c.z < KISTI and d > float(opt.get('kisti_zazor', '0')))
+        # ГОЛОВА ПО ВЕСАМ (`--golova_po_vesam 1`, 21.10, критик r10): срез по высоте не закрывал затылок — голова человека под
+        # куском снята, и сквозь шов шеи светился фон. Голова — всё, у чего главная кость «голова», с затылком
+        # `--golova_sheya_z`: и грани с главной костью «шея» выше этой высоты покоя — затылок цели взвешен на шею, а шов шеи К2
+        # с головой (край 1.55–1.59 м) ниже затылка цели: без них между швом и куском светился фон
+        if GPV: head = gl_ == 'голова' or (gl_ == 'шея' and c.z > float(opt.get('golova_sheya_z', '9')))
+    # `--korona z:y:x` (30.10, критик n4: «сзади над затылком ком с плоским верхом и зубцами — нужен веер»): гребень цели на затылке
+    # взвешен на голову и идёт в кусок головой; позади черепа (выше z, дальше y назад) остаётся только средняя полоса |x| < x
+    if opt.get('korona') and head:
+        kz_, ky_, kx_ = (float(v) for v in opt['korona'].split(':'))
+        if c.z > kz_ and c.y > ky_ and abs(c.x) >= kx_: head = False
     if STEP < 2:
         # ст.1 (лист, колонка 2): голова человеческая, стопа ещё не лапа; грива — за головой и по спине, спереди лицо открыто
-        head = paw = False
+        head = False; paw = paw if KISTI else False     # когти кисти (`--kisti_z`) — и на ступени 1 (органы на шаблоне)
+        # `--st1_ushi z:x` (22.10, ст.1 по своей колонке листа: человеческая голова с ОСТРЫМИ УШАМИ): грани выше z и дальше x от
+        # средней линии, отстоящие от тела — уши цели ст.1
+        if opt.get('st1_ushi'):
+            pr_ = [float(v) for v in opt['st1_ushi'].split(':')]; uz_, ux_ = pr_[:2]; uy_ = pr_[2] if len(pr_) > 2 else -9
+            # третье поле — не впереди y (лицо цели ст.1 отличается от лица шасси и иначе шло в уши «маской»)
+            head = c.z > uz_ and abs(c.x) > ux_ and c.y > uy_ and d > gap
         mane = mane and c.z > float(opt['st1_niz'])     # ст.1: грива кончается на середине лопатки рваным краем, а не плитой до поясницы
         mane = mane and c.y > float(opt['st1_y']) and (c.z < float(opt['st1_z']) or c.y > float(opt['st1_zatylok']))     # выше — только за черепом: иначе капюшон над головой
     if TSELIKOM:
         continue
     if not (head or mane or tail or paw):
         kill.append(f)
+# БЕЗ КОСТЕЙ (`--bez_kostej плечо,предплечье,…`, 21.10, критик r5): цель колонки переведена в позу голого тела, но её руки
+# вынесены вперёд — «колонка минус тело» оставляла их обрезки, в позе они висели у колен. Грань, у которой главная кость
+# (по весам `--vesa`) из списка, выбрасывается
+BEZK = set(x for x in opt.get('bez_kostej', '').split(',') if x)
+if BEZK and VESA:
+    kill_s = set(kill)
+    for f in bm.faces:
+        if f in kill_s: continue
+        sc_ = {}
+        for v in f.verts:
+            for nm, x in VESA[v.index].items(): sc_[nm] = sc_.get(nm, 0.0) + x
+        if sc_ and max(sc_, key=sc_.get).split('.')[0] in BEZK: kill.append(f)
 bmesh.ops.delete(bm, geom=kill, context='FACES')
 
 # 3. островки
@@ -154,13 +216,17 @@ if W_STEP < 1.0:
 # вершина гривы (выше `--hvost_z`) дальше `--prizhim_d` от тела ступени подтягивается к нему — остаток сверх порога
 # ×`--prizhim_k`; хвост не трогается
 _bv, _bf = [], []
-for s in srcs:
+# прижимать — к ВИДИМОМУ телу ступени: голова человека на ст.2 снята, и грива, прижатая к ней, оставляла туннель к холке
+# (критики r7–r10: «серп за затылком» сквозь силуэт)
+for s in [s_ for s_ in srcs if s_.get('iskhod') not in HIDE]:
     n0 = len(_bv); _bv += [s.matrix_world @ v.co for v in s.data.vertices]; _bf += [[n0 + k for k in p.vertices] for p in s.data.polygons]
 _bvh = BVHTree.FromPolygons(_bv, _bf)
 PD, PK = float(opt['prizhim_d']), float(opt['prizhim_k'])
 moved_ = 0
 for v in t.data.vertices:
-    if v.co.z < hz or (STEP >= 2 and v.co.z > 1.45): continue     # ст.2: голова цели не прижимается к голове человека
+    # ст.2: голова цели не прижимается к голове человека; `--prizhim_verh` — выше какой высоты не прижимать (9 — везде: кусок без
+    # головы, 21.10 критик r7: грива колонки на новом теле отходила от спины на 2–3 см)
+    if v.co.z < hz or (STEP >= 2 and v.co.z > float(opt.get('prizhim_verh', '1.45'))): continue
     loc, nrm, fi, d = _bvh.find_nearest(v.co)
     if loc is None or d <= PD: continue
     # сжатие нарастает книзу плавно (r7: ровное ×0.35 срезало низ гривы ножом — рваный край пропал): у затылка ×1, к низу ×PK
@@ -174,6 +240,61 @@ if STEP < 2 and float(opt['st1_hvost']) != 1.0:
     for v in t.data.vertices:
         if root is not None and v.co.z < hz and v.co.y > hy - 0.04:
             v.co = root + (v.co - root) * float(opt['st1_hvost'])
+# ДУГА ХВОСТА (`--hvost_naklon 20`, 21.10, q-hvost-duga: хвост висел отвесно, у колонки ~45° назад): вершины хвоста (ниже
+# `--hvost_z`, позади `--hvost_y`) поворачиваются вокруг корня (верхняя точка хвоста) по оси X — «+» отводит назад; доля
+# поворота растёт от корня к кончику, хвост гнётся дугой, а не ломается у основания
+# УШИ (`--ushi z:x:k`, 21.10, критик r9: уши 6–8 % роста против 10–11 % у листа): вершины выше `z` и дальше `x` от средней
+# линии растут в `k` раз от центра основания уха своей стороны (полоса 2 см над `z`); к черепу (|x| от x до x+3 см) — плавно
+if opt.get('ushi'):
+    uz, ux, uk = (float(v) for v in opt['ushi'].split(':'))
+    for sg in (-1, 1):
+        side = [v for v in t.data.vertices if v.co.z > uz and v.co.x * sg > ux]
+        base = [v.co for v in side if v.co.z < uz + 0.02]
+        if not base: continue
+        piv = sum(base, Vector()) / len(base)
+        # тянуть ВВЕРХ от основания (ось головы в покое вертикальна), ширину не трогать: ×k от центра ушло в ширину и толщину
+        # (критик r10), а «ось основание → верхняя вершина» сузила ухо (критик r11)
+        for v in side:
+            w = min(1.0, (v.co.x * sg - ux) / 0.03)
+            v.co.z = v.co.z + (v.co.z - piv.z) * (uk - 1.0) * w
+        print('КУСОК: уши ×%g, сторона %+d: %d вершин' % (uk, sg, len(side)))
+# ХВОСТ К СРЕДНЕЙ ЛИНИИ (`--hvost_k_osi 0.2`, 22.10, ст.1: у цели Hunyuan хвост висит наискосок вбок — на листе назад-вниз):
+# боковое отклонение вершин хвоста от корня ×k, нарастает от корня к кончику
+if opt.get('hvost_k_osi'):
+    kx = float(opt['hvost_k_osi'])
+    tv0 = [v for v in t.data.vertices if v.co.z < hz and v.co.y > hy - 0.04]
+    if tv0:
+        r0 = max(tv0, key=lambda v: v.co.z).co.copy(); dl0 = max(1e-3, r0.z - min(v.co.z for v in tv0))
+        for v in tv0:
+            u = min(1.0, max(0.0, (r0.z - v.co.z) / dl0)); f = 1.0 + (kx - 1.0) * u
+            v.co.x = r0.x + (v.co.x - r0.x) * f
+        print('КУСОК: хвост к средней линии ×%g (%d вершин)' % (kx, len(tv0)))
+HN = float(opt.get('hvost_naklon', '0'))
+if HN:
+    import math
+    tv = [v for v in t.data.vertices if v.co.z < hz and v.co.y > hy - 0.04 and abs(v.co.x) < 0.2]
+    if tv:
+        root = max(tv, key=lambda v: v.co.z).co.copy(); dl = max(1e-3, root.z - min(v.co.z for v in tv))
+        for v in tv:
+            u = min(1.0, max(0.0, (root.z - v.co.z) / dl)); a_ = math.radians(HN) * (0.4 + 0.6 * u)
+            d_ = v.co - root; cy, cz = math.cos(a_), math.sin(a_)
+            v.co = root + Vector((d_.x, d_.y * cy - d_.z * cz, d_.y * cz + d_.z * cy))
+        print('КУСОК: хвост отведён назад на %g° (%d вершин)' % (HN, len(tv)))
+# ЗАКРЫТЬ КРАЯ (`--zakryt N`, 21.10, критики r9–r12: «туннель за затылком»): у 3D-цели грива и шея — один объём, и кусок гривы —
+# капюшон без внутренней стенки; между ним и шеей шасси светился фон. Граничные петли не длиннее N рёбер заливаются гранями
+if int(opt.get('zakryt', '0')):
+    bm3 = bmesh.new(); bm3.from_mesh(t.data)
+    r_ = bmesh.ops.holes_fill(bm3, edges=[e for e in bm3.edges if e.is_boundary], sides=int(opt['zakryt']))
+    bmesh.ops.triangulate(bm3, faces=r_['faces'])
+    bm3.to_mesh(t.data); bm3.free()
+    print('КУСОК: закрыто краёв — %d граней заплаток' % len(r_['faces']))
+# НОРМАЛИ НАРУЖУ (`--normali 1`, 22.10: черты «@» в игре рисуются двусторонним материалом — копии граней `--dvustor` больше не нужны;
+# нормали цели Hunyuan у открытой оболочки гривы смотрят вразнобой — выравниваются согласованно наружу)
+if opt.get('normali', '0') == '1':
+    bm4 = bmesh.new(); bm4.from_mesh(t.data)
+    bmesh.ops.recalc_face_normals(bm4, faces=list(bm4.faces))
+    bm4.to_mesh(t.data); bm4.free()
+    print('КУСОК: нормали выровнены наружу')
 if opt.get('dvustor', '0') == '1':
     # ОБОРОТНАЯ СТОРОНА: кусок меха — открытая оболочка, изнутри (из-за головы, из-под пряди) видна пустота и тёмная дыра
     # отсечённых граней; копия граней с обратной нормалью закрывает её (материал односторонний)
@@ -191,6 +312,11 @@ for s in srcs:
     src_bvh.append((s, BVHTree.FromPolygons([s.matrix_world @ v.co for v in me.vertices], [list(p.vertices) for p in me.polygons])))
 W = [dict() for _ in t.data.vertices]
 for v in t.data.vertices:
+    if VESA:
+        ws = {t.vertex_groups[ge.group].name: ge.weight for ge in v.groups}
+        top = sorted(ws.items(), key=lambda kv: -kv[1])[:4]; sm = sum(x for _, x in top) or 1.0
+        W[v.index] = {nm: x / sm for nm, x in top if x > 1e-4}
+        continue
     best = None
     for s, b in src_bvh:
         hit = b.find_nearest(v.co)

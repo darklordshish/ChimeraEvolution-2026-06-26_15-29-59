@@ -9,5 +9,8 @@ public class PartMark : MonoBehaviour
     public PartRole role;   // чем этот кусок является (глаз, ухо, ямка…)
     public Color own;       // своя окраска; alpha 0 = не задана — деталь красится по составу, как всё тело
 
+    public Color tone;      // ТОН КОЖИ (рисунок Шкуры, спека 06.11): множитель к цвету по составу; alpha 0 = нет
+
     public bool HasOwn => own.a > 0f;
+    public bool HasTone => tone.a > 0f;
 }

@@ -191,9 +191,13 @@ namespace Chimera.Tests.EditMode
             foreach (var r in smrs) Object.DestroyImmediate(r.gameObject);
             var grown = new System.Collections.Generic.Dictionary<string, float> { [organ.name] = 0.4f };
             // без записи — поверх своего (роговой кусок на своей кисти)
-            BodyMesh.Place(container, skeleton, model, null, jointsOf: so, organObjects: grown);
+            var lit = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            BodyMesh.Place(container, skeleton, model, lit, jointsOf: so, organObjects: grown);
             smrs = container.GetComponentsInChildren<SkinnedMeshRenderer>(true);
             Assert.AreEqual(2, smrs.Length, "без записи орган на шаблоне садится поверх своего объекта");
+            // орган на шаблоне — тонкая оболочка: двусторонний, как черты ступени (28.10); тело — одностороннее
+            Assert.AreEqual(1, smrs.Count(r => r.sharedMaterial != null && r.sharedMaterial.GetFloat("_Cull") == 0f), "двусторонний — ровно орган");
+            Object.DestroyImmediate(lit);
             foreach (var r in smrs) Object.DestroyImmediate(r.gameObject);
             // по записи — снимает свой объект слота (уши Чутья вместо ушей носителя)
             so.organObjectRules = new[] { new OrganObjectRule { objectName = organ.name, hides = new[] { "голова" } } };
@@ -205,6 +209,78 @@ namespace Chimera.Tests.EditMode
             Assert.GreaterOrEqual(shape, 0, "это не объект органа");
             Assert.AreEqual(40f, smrs[0].GetBlendShapeWeight(shape), 1e-3f, "рост — на вес доли");
             Object.DestroyImmediate(mesh);
+        }
+
+        /// <summary>Кусок органа со своим цветом (коготь, мочка, глаз): объект `<слот>.<что>@<вид>` виден и растёт вместе с органом,
+        /// носит имя слота и несёт цвет материала.</summary>
+        [Test]
+        public void ColoredOrganPiece_FollowsItsOrgan_KeepsSlotName_AndOwnColor()
+        {
+            Assert.AreEqual("Руки@Волк", BodyMesh.OrganKey("Руки.коготь@Волк"));
+            Assert.AreEqual("Руки@Волк", BodyMesh.OrganKey("Руки@Волк"));
+            Assert.AreEqual("голова.зубы", BodyMesh.OrganKey("голова.зубы"));
+            Assert.AreEqual("@Волк", BodyMesh.OrganKey("@Волк"));
+
+            Species().bodyMesh = Model();
+            var own = model.GetComponentInChildren<SkinnedMeshRenderer>();
+            var piece = Object.Instantiate(own.gameObject, own.transform.parent);
+            piece.name = "голова.коготь@Волк";
+            var mesh = Object.Instantiate(own.sharedMesh);
+            mesh.AddBlendShapeFrame(BodyMesh.GrowthShape, 100f, new[] { Vector3.zero, Vector3.one, Vector3.zero }, null, null);
+            var pieceSmr = piece.GetComponent<SkinnedMeshRenderer>();
+            pieceSmr.sharedMesh = mesh;
+            var dark = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            dark.SetColor("_BaseColor", new Color(0.1f, 0.1f, 0.12f, 1f));
+            pieceSmr.sharedMaterial = dark;
+
+            Build(so.organs.ToList());
+            var smrs = go.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            Assert.AreEqual(1, smrs.Length, "без прививки цветной кусок органа не рисуется");
+            var container = smrs[0].transform.parent;
+            var skeleton = go.GetComponentsInChildren<Transform>(true).First(t => t.name == "Skeleton");
+            foreach (var r in smrs) Object.DestroyImmediate(r.gameObject);
+
+            var grown = new System.Collections.Generic.Dictionary<string, float> { [BodyMesh.OrganObject("голова", "Волк")] = 0.4f };
+            BodyMesh.Place(container, skeleton, model, null, jointsOf: so, organObjects: grown);
+            smrs = container.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            Assert.AreEqual(2, smrs.Length, "с прививкой цветной кусок садится на свой объект");
+            var drawn = smrs.Single(r => r.sharedMesh.GetBlendShapeIndex(BodyMesh.GrowthShape) >= 0);
+            Assert.AreEqual("голова", drawn.name, "имя — слот (контракт имён частей)");
+            Assert.AreEqual(40f, drawn.GetBlendShapeWeight(drawn.sharedMesh.GetBlendShapeIndex(BodyMesh.GrowthShape)), 1e-3f, "растёт на вес органа");
+            Assert.IsTrue(drawn.TryGetComponent<PartMark>(out var mark) && mark.HasOwn, "свой цвет не дошёл до паспорта детали");
+            Assert.Less(Mathf.Abs(mark.own.r - 0.1f), 1e-3f);
+            Object.DestroyImmediate(dark);
+            Object.DestroyImmediate(mesh);
+        }
+
+        /// <summary>РИСУНОК КОЖИ (спека 06.11): грань `<слот>.тон@<вид>` несёт тон — множитель к цвету тела, а не свою окраску;
+        /// без окраски по составу (NPC) база материала × тон уже стоит в блоке свойств.</summary>
+        [Test]
+        public void ToneFaces_MultiplyBodyColor_NotReplaceIt()
+        {
+            Assert.IsTrue(BodyMesh.IsTone("хребет.тон2@Змея"));
+            Assert.IsTrue(BodyMesh.IsTone("хребет.тон"));
+            Assert.IsFalse(BodyMesh.IsTone("голова.зубы"));
+            Assert.IsFalse(BodyMesh.IsTone("Шкура@Змея"));
+
+            Species().bodyMesh = Model();
+            var src = model.GetComponentInChildren<SkinnedMeshRenderer>();
+            src.name = "голова.тон";
+            var toneMat = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            toneMat.SetColor("_BaseColor", new Color(0.8f, 0.9f, 0.8f, 1f));
+            src.sharedMaterial = toneMat;
+            Build(so.organs.ToList());
+            Object.DestroyImmediate(toneMat);
+            var smr = go.GetComponentsInChildren<SkinnedMeshRenderer>(true).Single();
+            Assert.AreEqual("голова", smr.name, "имя — слот");
+            Assert.IsTrue(smr.TryGetComponent<PartMark>(out var mark) && mark.HasTone && !mark.HasOwn, "тон, а не своя окраска");
+            Assert.AreEqual(0.8f, mark.tone.r, 1e-3f);
+            Assert.AreEqual(0.45f, TintMixer.Tone(new Color(0.5f, 0.5f, 0.5f), mark.tone).g, 1e-3f, "цвет тела × тон");
+            if (smr.sharedMaterial != null && smr.sharedMaterial.HasProperty("_BaseColor"))
+            {
+                var block = new MaterialPropertyBlock(); smr.GetPropertyBlock(block);
+                Assert.AreEqual(smr.sharedMaterial.GetColor("_BaseColor").r * 0.8f, block.GetColor("_BaseColor").r, 1e-3f, "без окраски по составу — база материала × тон");
+            }
         }
 
         static readonly Vector3 KeyShift = new(0f, 0f, 0.1f);
@@ -219,6 +295,44 @@ namespace Chimera.Tests.EditMode
             var v = Baked(go.GetComponentsInChildren<SkinnedMeshRenderer>(true).Single());
             Near(OnHead + KeyShift * 0.5f, v[1], "вершина головы при весе ключа 0.5");
             Near(OnSpine, v[0], "ключ сдвинул то, чего не двигает");
+        }
+
+        static readonly Vector3 Step1Shift = new(0f, 0.08f, 0f);
+
+        /// <summary>КЛЮЧ ТЕЛА СТУПЕНИ 1 (28.10): есть форма `Волк1` — путь веса идёт ломаной через неё: на весе ступени 1 тело
+        /// ровно ст.1 (а не половина ст.2), на 1 — ровно ст.2, между — линейно по отрезкам.</summary>
+        [Test]
+        public void StageOneShape_PathGoesThroughItsOwnBody()
+        {
+            Species().bodyMesh = Model();
+            var mesh = model.GetComponentInChildren<SkinnedMeshRenderer>().sharedMesh;
+            var w2o = model.GetComponentInChildren<SkinnedMeshRenderer>().transform.worldToLocalMatrix;
+            var d1 = new Vector3[3]; d1[1] = w2o.MultiplyVector(Step1Shift);
+            mesh.AddBlendShapeFrame("Волк1", 100f, d1, null, null);
+            float s1 = BodyMesh.KeyStep1;
+            Vector3 At(float w)
+            {
+                BodyMesh.ForceKey = "Волк"; BodyMesh.ForceWeight = w; BodyMesh.ResetCache();
+                if (go != null) Object.DestroyImmediate(go);
+                Build(so.organs.ToList());
+                return Baked(go.GetComponentsInChildren<SkinnedMeshRenderer>(true).Single())[1];
+            }
+            Near(OnHead + Step1Shift, At(s1), "вес ступени 1 — тело ст.1 целиком");
+            Near(OnHead + Step1Shift * 0.5f, At(s1 * 0.5f), "до ступени 1 растёт форма ст.1");
+            Near(OnHead + KeyShift, At(1f), "вес 1 — ровно ст.2, форма ст.1 ушла");
+            Near(OnHead + (Step1Shift + KeyShift) * 0.5f, At((s1 + 1f) * 0.5f), "между ступенями — отрезок ст.1 → ст.2");
+        }
+
+        /// <summary>Нет формы `<ключ>1` — путь прежний, линейный.</summary>
+        [Test]
+        public void StageOneShape_Absent_KeepsLinearPath()
+        {
+            var m = new Mesh { vertices = new[] { Vector3.zero, Vector3.right, Vector3.up }, triangles = new[] { 0, 1, 2 } };
+            m.AddBlendShapeFrame("Волк", 100f, new Vector3[3], null, null);
+            var shapes = BodyMesh.StageShapes(m, "Волк", 0.3f).ToList();
+            Assert.AreEqual(1, shapes.Count);
+            Assert.AreEqual(("Волк", 0.3f), shapes[0]);
+            Object.DestroyImmediate(m);
         }
 
         /// <summary>ВАРИАНТ Б (геймдизайнер 19.10): с чужим органом тело ОСТАЁТСЯ мешем вида — орган без куска пока не виден.
@@ -252,6 +366,51 @@ namespace Chimera.Tests.EditMode
             Assert.IsNull(go.GetComponentsInChildren<Transform>(true).FirstOrDefault(t => t.name == "челюсть"), "при выключенном меше вида его кости не создаются");
             Assert.IsFalse(go.GetComponentsInChildren<SkinnedMeshRenderer>(true).Any(r => r.sharedMesh.vertexCount == 3));
         }
+        /// <summary>ПОЗА ПОКОЯ ДЛЯ КОЖИ (спека 10.11): у копии меша каналы uv2 (позиция) и uv3 (нормаль) той же длины, что вершины, и
+        /// лежат в системе тела; два объекта, у которых вершина в одной точке тела, получают одну позицию покоя — система общая.</summary>
+        [Test]
+        public void RestPose_WrittenInBodySpace_SameLengthAsVertices_AndCommonToObjects()
+        {
+            Species().bodyMesh = Model();
+            // второй объект: те же точки тела, но вершины в обратном порядке (в другой системе объекта не нужно — тот же родитель)
+            var first = model.GetComponentInChildren<SkinnedMeshRenderer>();
+            var second = Object.Instantiate(first.gameObject, first.transform.parent);
+            second.name = "хребет";
+            var m2 = Object.Instantiate(first.sharedMesh);
+            var v = first.sharedMesh.vertices; System.Array.Reverse(v);
+            var bw = first.sharedMesh.boneWeights; System.Array.Reverse(bw);
+            m2.Clear();
+            m2.vertices = v; m2.boneWeights = bw; m2.triangles = new[] { 0, 1, 2 };
+            m2.bindposes = first.sharedMesh.bindposes;
+            second.GetComponent<SkinnedMeshRenderer>().sharedMesh = m2;
+            Build(so.organs.ToList());
+
+            var smrs = go.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            Assert.AreEqual(2, smrs.Length);
+            var all = new System.Collections.Generic.List<Vector3>();
+            foreach (var r in smrs)
+            {
+                var pos = new System.Collections.Generic.List<Vector3>(); var nor = new System.Collections.Generic.List<Vector3>();
+                r.sharedMesh.GetUVs(2, pos); r.sharedMesh.GetUVs(3, nor);
+                Assert.AreEqual(r.sharedMesh.vertexCount, pos.Count, "uv2 (позиция покоя) потеряна или не той длины");
+                Assert.AreEqual(r.sharedMesh.vertexCount, nor.Count, "uv3 (нормаль покоя) потеряна или не той длины");
+                foreach (var n in nor) Assert.AreEqual(1f, n.magnitude, 1e-3f, "нормаль покоя не единичная");
+                var head = new System.Collections.Generic.List<Vector2>();
+                r.sharedMesh.GetUVs(4, head);
+                Assert.AreEqual(r.sharedMesh.vertexCount, head.Count, "uv4 (вес по кости головы) потеряна или не той длины");
+                // вершина на голове и на челюсти (кость сверх графа под головой) — вес 1, на хребте — 0
+                for (int i = 0; i < head.Count; i++)
+                {
+                    float expect = (pos[i] - OnSpine).magnitude < 1e-3f ? 0f : 1f;
+                    Assert.AreEqual(expect, head[i].x, 1e-4f, $"вес по кости головы у вершины {pos[i]}");
+                }
+                all.AddRange(pos);
+            }
+            foreach (var p in new[] { OnSpine, OnHead, OnJaw })
+                Assert.AreEqual(2, all.Count(q => (q - p).magnitude < 1e-3f), $"точка тела {p}: у двух объектов позиция покоя должна совпасть");
+            Object.DestroyImmediate(m2);
+        }
+
         /// <summary>ПРАВАЯ КОЛОНКА ЛИСТА — СТУПЕНЬ 2 (геймдизайнер 15.10): на чужом шасси ступень 3 недостижима, поэтому цель
         /// ключа, снятая с правой колонки, — это полный вес на ступени 2. Человек со всеми волчьими органами — ключ «Волк» = 1.</summary>
         [Test]

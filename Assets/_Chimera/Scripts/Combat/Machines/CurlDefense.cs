@@ -40,7 +40,7 @@ public class CurlDefense : MonoBehaviour, IOrganAbility
     Stamina Breath { get { if (stamina == null) TryGetComponent(out stamina); return stamina; } }
     CreatureBody body; // ПРОКАТ бьёт записью переката того же органа — берём у тела лениво
     RollData Roll { get { if (body == null) TryGetComponent(out body); return body != null ? body.Ability<RollData>() : null; } }
-    Rage rage; // ЗАГНАН (ярость): на истощении НЕ разворачивается — держит клубок/катится ценой HP (ярость-на-HP)
+    Rage rage; // ЗАГНАН (ярость): на истощении НЕ разворачивается — держит клубок/катится (цены HP нет — снята `bfc9694`)
     bool Raging { get { if (rage == null) TryGetComponent(out rage); return rage != null && rage.IsEnraged; } }
     Telegraph telegraph;
     CharacterController controller;
@@ -83,7 +83,7 @@ public class CurlDefense : MonoBehaviour, IOrganAbility
         var s = Breath;
         if (s != null)
         {
-            s.Drain(data.staminaDrain * Time.deltaTime);   // истощён+ярость → Drain сам жжёт HP (ярость-на-HP)
+            s.Drain(data.staminaDrain * Time.deltaTime);   // только стамина: HP клубок не тратит
             if (s.Exhausted) { Uncurl(); return false; }   // выдохся → развернулся (окно на спине — C3)
         }
         ShowTint(BallTint(false)); // серый ↔ бордо: свернувшийся ярый ёж светится яростью, не серым
@@ -117,7 +117,7 @@ public class CurlDefense : MonoBehaviour, IOrganAbility
             var hit = new Hit(health, transform.position);
             var blow = new MeleeBlow { Damage = roll.damage, BleedStacks = roll.bleedStacks, KnockForce = roll.knockForce };
             foreach (var hp in TargetScan.Healths(transform.position + rollDir * roll.radius, roll.radius, transform))
-                if (rolledThis.Add(hp)) blow.Deliver(hit, hp);
+                if (rolledThis.Add(hp)) blow.Deliver(hit, hp, OutgoingDamage.Mult(this));
         }
 
         var s = Breath;

@@ -53,7 +53,7 @@ public class Noise : MonoBehaviour
     public void Spike(float strength, float duration, Color tone)
     {
         spike = Mathf.Clamp01(strength);
-        spikeUntil = Time.time + duration * ForestClimate.CueDurationMult(transform.position); // s3b: в тумане/дождь объявление дольше (сила клампится)
+        spikeUntil = Time.time + duration * ForestClimate.CueDurationMult(); // s3b: в тумане/дождь объявление дольше (сила клампится)
         Tone = tone;
         SpikeAt = Time.time;
     }
@@ -85,7 +85,7 @@ public class Noise : MonoBehaviour
         {
             if (n == null || n.transform == self) continue;
             // призрак не слышен (как и не виден); dev-тишина глушит игрока отдельно — для диагностики каналов
-            if ((Perception.PlayerGhost || Perception.DevSilent) && n.GetComponent<PlayerController>() != null) continue;
+            if ((Perception.PlayerUnseen || Perception.DevSilent) && n.GetComponent<PlayerController>() != null) continue;
             float loud = n.Loudness;
             if (loud <= 0.01f) continue;
             float audible = loud * range;

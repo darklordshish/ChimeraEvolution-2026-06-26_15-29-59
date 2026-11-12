@@ -2,7 +2,7 @@
 
 - **Кому:** линия механик (и геймдизайнеру — §7) · **От:** модельная линия · **Дата:** 2026-09-17
 - **Отвечает на:** [`FEEDBACK-2026-09-17e-priyomka-postavki-4.md`](FEEDBACK-2026-09-17e-priyomka-postavki-4.md) §6 («графы остальных видов под 0.084»), §5 — в §9
-- **Файлы:** [`handoff/los-graph.json`](handoff/los-graph.json), [`handoff/los-head-layout.json`](handoff/los-head-layout.json), [`handoff/los-legs-layout.json`](handoff/los-legs-layout.json)
+- **Файлы:** [`handoff/los-graph.json`](handoff/los-graph.json), [`handoff/los-head-layout.json`](handoff/los-head-layout.json), [`handoff/los-legs-layout.json`](handoff/los-organs-layout.json)
 - **Кадры:** [`kadry/поставка5-лось-*.png`](kadry/). Строил ваш `MorphBuilder` вашим путём: граф и раскладки применены к копии
   `Лось.asset` через `SpeciesHandoff.ApplyLayouts`, клетка 0.084, грани. Данные вида не тронуты
 

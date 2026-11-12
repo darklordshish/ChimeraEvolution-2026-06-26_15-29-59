@@ -51,7 +51,7 @@
 
 ## 2. Ноги — три блока на узел
 
-[`kadry/поставка4-лапы.png`](kadry/поставка4-лапы.png). Правило крепления прежнее (ваше §2), числа — [`handoff/volk-legs-layout.json`](handoff/volk-legs-layout.json).
+[`kadry/поставка4-лапы.png`](kadry/поставка4-лапы.png). Правило крепления прежнее (ваше §2), числа — [`handoff/volk-legs-layout.json`](handoff/volk-organs-layout.json).
 
 | орган | узел | блок | что | центр · габарит, м |
 |---|---|---|---|---|

@@ -103,16 +103,20 @@ public static class BodyMesh
     /// поверх своих объектов шасси, снимает их только по записи (`SpeciesSO.organObjectRules`); кусок органа донора на шве при
     /// нём не ставится. Растёт формой-ключом
     /// `рост` по доле вида-донора от нуля до первой ступени (критик модельной линии 22.10: «одна форма растёт от 15 % до ст.1,
-    /// без скачка»). Ключ: имя объекта, значение — вес роста.</summary>
+    /// без скачка»). Ключ: имя объекта, значение — вес роста. НА СЛОТ — ОДИН ОРГАН, первый в порядке отрисовки
+    /// (`CreatureBody.WornInDrawOrder`, решение 14 спеки двух слоёв): два Чутья разом давали две пары ушей и глаз (05.11).
+    /// Работают оба, видна форма первого; слияние дизайна — отдельная фича.</summary>
     public static Dictionary<string, float> OrganObjectsFor(SpeciesSO chassis, IReadOnlyList<Organ> worn)
     {
         var res = new Dictionary<string, float>();
         if (chassis == null || worn == null) return res;
         var id = GlobalLayer.Identity(chassis, worn);
+        var shown = new HashSet<string>();
         foreach (var o in worn)
         {
             if (o == null || o.chassisOnly || string.IsNullOrEmpty(o.slot)) continue;
             if (chassis.organs != null && System.Array.IndexOf(chassis.organs, o) >= 0) continue;
+            if (!shown.Add(o.slot)) continue;
             var owner = ChainSwap.OwnerOf(o);
             if (owner == null || owner == chassis || !id.TryGetValue(owner, out var share)) continue;
             res[OrganObject(o.slot, owner.speciesName)] = Mathf.Clamp01(share / GlobalLayer.WeakAt);
@@ -124,7 +128,33 @@ public static class BodyMesh
     /// <summary>Ручка сторожей посадки кусков на швах: с органом на шаблоне кусок органа донора не ставится, мерить нечего.</summary>
     public static bool OrganObjectsOn = true;
     public const string GrowthShape = "рост";
+    const string HeadPlace = "голова";   // место головы: его кость и поддерево — вес для маски кожи
     static bool IsOrganObject(string name) => name.IndexOf('@') > 0;
+    /// <summary>Ключ органа у объекта: кусок органа со своим цветом `<слот>.<что>@<вид>` (коготь, мочка) показывается и растёт вместе с `<слот>@<вид>`.</summary>
+    public static string OrganKey(string objectName)
+    {
+        int at = objectName.IndexOf('@'), dot = objectName.IndexOf('.');
+        return at > 0 && dot > 0 && dot < at ? objectName.Substring(0, dot) + objectName.Substring(at) : objectName;
+    }
+
+    /// <summary>КЛЮЧ ТЕЛА СТУПЕНИ 1 (решение геймдизайнера 28.10 по разбору дизайн-линии `FEEDBACK-2026-10-28-codex-telo-st1.md`):
+    /// колонка ст.1 листа — атлет с волчьими акцентами, а не половина ст.2. Линейный ключ этого не умеет: его середина
+    /// жёстко B0 + ½(B2 − B0), и правка ст.2 двигает ст.1. Есть в меше форма `<ключ>1` (тело ст.1) — путь веса идёт ЛОМАНОЙ
+    /// через неё: от 0 до `KeyStep1` растёт `<ключ>1`, дальше она уходит, а `<ключ>` приходит; на весе ступени 1 тело ровно
+    /// ст.1, на 1 — ровно ст.2. Формы-ключи складываются дельтами от базы, поэтому ломаная точна. Нет формы `<ключ>1` — прежний
+    /// линейный путь. Логика ступеней (поза, черты, ключи областей) по-прежнему видит один ключ с весом — меняется только то,
+    /// какие формы его рисуют. Сторож — `BodyMeshTests.StageOneShape_*`.</summary>
+    public static IEnumerable<(string shape, float w)> StageShapes(Mesh mesh, string key, float weight)
+    {
+        float w = Mathf.Clamp01(weight);
+        bool has = mesh.GetBlendShapeIndex(key) >= 0, has1 = mesh.GetBlendShapeIndex(key + "1") >= 0;
+        if (!has1) { if (has) yield return (key, w); yield break; }
+        float s1 = Mathf.Clamp(KeyStep1, 1e-3f, 1f - 1e-3f);
+        if (w <= s1) { yield return (key + "1", w / s1); if (has) yield return (key, 0f); yield break; }
+        float t = (w - s1) / (1f - s1);
+        yield return (key + "1", 1f - t);
+        if (has) yield return (key, t);
+    }
 
     /// <summary>Вес ключа по ступени: 1 — ручка (лист: колонка 2 из «база · ст.1 · · ст.2»), 2 — полный ключ.
     /// Не `GlobalLayer.G`: тот смешивает пропорции поля с ЧИСТЫМ видом (вес 1 — родное шасси), а цель ключа — ступень 2.</summary>
@@ -137,7 +167,7 @@ public static class BodyMesh
 
     public static int Place(Transform container, Transform skeleton, GameObject model, Material mat, ICollection<string> skipSlots = null,
                             IReadOnlyDictionary<string, float> keys = null, SpeciesSO jointsOf = null, IReadOnlyDictionary<string, float> regionKeys = null,
-                            IReadOnlyDictionary<string, float> organObjects = null)
+                            IReadOnlyDictionary<string, float> organObjects = null, Material skin = null, float skinWeight = 1f)
     {
         var bones = new Dictionary<string, Transform>();
         foreach (var t in skeleton.GetComponentsInChildren<Transform>(true))
@@ -165,12 +195,16 @@ public static class BodyMesh
         // ЧЕРТА КЛЮЧА НА СТУПЕНИ: объект `@<ключ>` рисуется только на её ступени и снимает объекты шасси под собой
         var stages = ActiveStages(jointsOf, keys);
         var stageHides = new HashSet<string>(stages.SelectMany(st => st.hides ?? new string[0]));
+        // орган на шаблоне под чертой — по правилу кусков (`MorphBuilder`: `hides ∪ replacesTraits`): черта несёт свои кисти с
+        // когтями, а слот «Руки» она не прячет (это вся рука), а заменяет — `Руки@Волк` торчал из её кисти палочками (29.10)
+        var stageReplaces = new HashSet<string>(stages.SelectMany(st => (st.hides ?? new string[0]).Concat(st.replacesTraits ?? new string[0])));
         // орган на шаблоне снимает свои объекты шасси, только если это записано (`organObjectRules`): уши Чутья заменяют уши
         // человека, а когти Рук садятся поверх своей кисти — объект «Руки» шасси это вся рука с плечом (22.10)
         var organSlots = new HashSet<string>((jointsOf?.organObjectRules ?? new OrganObjectRule[0])
-            .Where(r => r != null && organObjects != null && organObjects.ContainsKey(r.objectName ?? ""))
+            .Where(r => r != null && organObjects != null && organObjects.ContainsKey(r.objectName ?? "") && !stageReplaces.Contains(SlotOf(r.objectName)))
             .SelectMany(r => r.hides ?? new string[0]));
 
+        float restTop = -1f;   // рост тела в позе покоя — для кожи, считается один раз и только если она есть
         int placed = 0;
         foreach (var src in renderers)
         {
@@ -178,7 +212,8 @@ public static class BodyMesh
             if (mesh == null || src.bones.Length == 0) continue;
             if (src.name.StartsWith("@") && !stages.Any(st => st.objectName == src.name)) continue;
             bool organ = IsOrganObject(src.name);
-            if (organ && (organObjects == null || !organObjects.ContainsKey(src.name))) continue;
+            if (organ && (organObjects == null || !organObjects.ContainsKey(OrganKey(src.name)))) continue;
+            if (organ && stageReplaces.Contains(SlotOf(src.name))) continue;
             if (stageHides.Contains(SlotOf(src.name))) continue;
             if (!organ && organSlots.Contains(SlotOf(src.name))) continue;
             // место несёт чужой кусок (химера на меше вида): свой объект этого слота со всеми `слот.что` не ставится
@@ -211,6 +246,13 @@ public static class BodyMesh
                 bind[i] = ours[i].worldToLocalMatrix * container.localToWorldMatrix * toBody;
                 stamp.Append('|').Append(ours[i].name).Append(bind[i].GetHashCode());
             }
+            // КОСТЬ ГОЛОВЫ — кость места `голова` шасси (а не имя): вес вершины по её поддереву уходит в канал для маски кожи
+            Transform headBone = null;
+            var headDef = jointsOf?.bones?.FirstOrDefault(b => b != null && b.socket == HeadPlace);
+            if (headDef != null) bones.TryGetValue(headDef.name, out headBone);
+            var inHead = new bool[ours.Length];
+            for (int i = 0; i < ours.Length; i++) inHead[i] = headBone != null && ours[i] != skeleton && ours[i].IsChildOf(headBone);
+            stamp.Append("|head:").Append(headBone != null ? headBone.name : "-");
             string key = stamp.ToString();
             if (!cache.TryGetValue(key, out var skinned) || skinned == null)   // запись бывает мёртвой, как у оболочки поля
             {
@@ -218,15 +260,18 @@ public static class BodyMesh
                 skinned.name = src.name;
                 skinned.hideFlags = HideFlags.HideAndDontSave;
                 skinned.bindposes = bind;
+                WriteRest(skinned, toBody, inHead);
                 cache[key] = skinned;
             }
 
             int dot = src.name.IndexOf('.');
             var go = new GameObject(organ || dot > 0 ? SlotOf(src.name) : src.name);   // ИМЯ = СЛОТ: контракт имён частей
+            bool tone = IsTone(src.name);
             if (dot > 0 && src.sharedMaterial != null && src.sharedMaterial.HasProperty("_BaseColor"))
             {
                 var own = src.sharedMaterial.GetColor("_BaseColor"); own.a = 1f;
-                go.AddComponent<PartMark>().own = own;
+                if (tone) go.AddComponent<PartMark>().tone = own;   // грань рисунка кожи: тон к цвету тела, а не свой цвет
+                else go.AddComponent<PartMark>().own = own;
             }
             go.transform.SetParent(container, false);
             var smr = go.AddComponent<SkinnedMeshRenderer>();
@@ -235,10 +280,8 @@ public static class BodyMesh
             smr.rootBone = skeleton;
             if (keys != null)
                 foreach (var kv in keys)
-                {
-                    int shape = skinned.GetBlendShapeIndex(kv.Key);
-                    if (shape >= 0) smr.SetBlendShapeWeight(shape, Mathf.Clamp01(kv.Value) * 100f);
-                }
+                    foreach (var (shapeName, w) in StageShapes(skinned, kv.Key, kv.Value))
+                        smr.SetBlendShapeWeight(skinned.GetBlendShapeIndex(shapeName), w * 100f);
             if (regionKeys != null)
                 foreach (var kv in regionKeys)
                 {
@@ -248,7 +291,7 @@ public static class BodyMesh
             if (organ)
             {
                 int shape = skinned.GetBlendShapeIndex(GrowthShape);
-                if (shape >= 0) smr.SetBlendShapeWeight(shape, Mathf.Clamp01(organObjects[src.name]) * 100f);
+                if (shape >= 0) smr.SetBlendShapeWeight(shape, Mathf.Clamp01(organObjects[OrganKey(src.name)]) * 100f);
             }
             if (Application.isPlaying)
             {
@@ -258,7 +301,30 @@ public static class BodyMesh
                 smr.localBounds = b;
             }
             else smr.updateWhenOffscreen = true;
-            if (mat != null) smr.sharedMaterial = src.name.StartsWith("@") ? TwoSided(mat) : mat;
+            // КОЖА ОРГАНА — только телу шасси: не органам на шаблоне, не цветным кускам `слот.что`, не чертам `@`
+            bool bodyObject = !organ && dot < 0 && !src.name.StartsWith("@");
+            if (skin != null && bodyObject)
+            {
+                if (restTop < 0f) restTop = RestTop(renderers, model.transform);
+                smr.sharedMaterial = skin;
+                var skinBlock = new MaterialPropertyBlock();
+                smr.GetPropertyBlock(skinBlock);
+                skinBlock.SetFloat(KozhaOrgana.SkinWeight, Mathf.Clamp01(skinWeight));
+                skinBlock.SetFloat(KozhaOrgana.BodyHeight, Mathf.Max(restTop, 0.1f));
+                var dorsal = (jointsOf != null ? jointsOf.DorsalAxis : Vector3.up);   // ось спины — параметр шасси, узор идёт цепью по ней
+                skinBlock.SetVector(KozhaOrgana.DorsalAxis, dorsal);
+                skinBlock.SetVector(KozhaOrgana.SpineAxis, jointsOf != null ? jointsOf.SpineAxis : Vector3.forward);
+                skinBlock.SetFloat(KozhaOrgana.PatternLimb, src.name == BodySlots.Arms || src.name == BodySlots.Legs ? KozhaOrgana.LimbPattern : 1f);
+                smr.SetPropertyBlock(skinBlock);   // TintMixer читает блок перед записью цвета, поэтому вес и рост переживают окраску
+            }
+            else if (mat != null) smr.sharedMaterial = (src.name.StartsWith("@") || organ) && !tone ? TwoSided(mat) : mat;   // черты и органы на шаблоне — оболочки; рисунок кожи — сама кожа
+            // тон рисунка виден и без окраски по составу (NPC с запечённым материалом): база материала × тон
+            if (tone && mat != null && mat.HasProperty("_BaseColor") && go.TryGetComponent<PartMark>(out var toneMark))
+            {
+                var block = new MaterialPropertyBlock();
+                block.SetColor("_BaseColor", TintMixer.Tone(mat.GetColor("_BaseColor"), toneMark.tone));
+                smr.SetPropertyBlock(block);
+            }
             placed++;
         }
         // ПОЗУ СТУПЕНИ ЗДЕСЬ НЕ СТАВИМ: после меша тела на тот же скелет привязываются куски органов, и их привязка обязана
@@ -267,9 +333,60 @@ public static class BodyMesh
         return placed;
     }
 
+    /// <summary>ПОЗА ПОКОЯ В МЕШЕ (спека `2026-11-10-kozha-organa-proekciej.md`): uv2 — позиции вершин, uv3 — нормали в системе тела.
+    /// Кожа проецируется по ним, а не по миру: узор не плывёт, когда кости гнут тело. Пишется один раз на копию меша (она живёт в
+    /// кэше); сторож — `BodyMeshTests.RestPose_*`: каналы той же длины, что вершины (импорт и кэш молча теряют лишние каналы).</summary>
+    static void WriteRest(Mesh m, Matrix4x4 toBody, bool[] inHead)
+    {
+        var verts = m.vertices;
+        if (m.normals.Length != verts.Length) m.RecalculateNormals();
+        var normals = m.normals;
+        var pos = new List<Vector3>(verts.Length);
+        var nor = new List<Vector3>(verts.Length);
+        for (int i = 0; i < verts.Length; i++)
+        {
+            pos.Add(toBody.MultiplyPoint3x4(verts[i]));
+            nor.Add(toBody.MultiplyVector(normals[i]).normalized);
+        }
+        m.SetUVs(2, pos);
+        m.SetUVs(3, nor);
+        // uv4.x — вес вершины по поддереву кости головы: маска кожи идёт по нему (под подбородком и по основанию черепа), а не по высоте
+        var bw = m.boneWeights;
+        var head = new List<Vector2>(verts.Length);
+        for (int i = 0; i < verts.Length; i++)
+        {
+            float w = 0f;
+            if (i < bw.Length)
+            {
+                if (bw[i].weight0 > 0f && bw[i].boneIndex0 < inHead.Length && inHead[bw[i].boneIndex0]) w += bw[i].weight0;
+                if (bw[i].weight1 > 0f && bw[i].boneIndex1 < inHead.Length && inHead[bw[i].boneIndex1]) w += bw[i].weight1;
+                if (bw[i].weight2 > 0f && bw[i].boneIndex2 < inHead.Length && inHead[bw[i].boneIndex2]) w += bw[i].weight2;
+                if (bw[i].weight3 > 0f && bw[i].boneIndex3 < inHead.Length && inHead[bw[i].boneIndex3]) w += bw[i].weight3;
+            }
+            head.Add(new Vector2(Mathf.Clamp01(w), 0f));
+        }
+        m.SetUVs(4, head);
+    }
+
+    /// <summary>Верх тела в позе покоя, м: по границам мешей объектов тела (не органов и не черт). Мера «доли тела» для плитки и маски.</summary>
+    static float RestTop(SkinnedMeshRenderer[] renderers, Transform model)
+    {
+        float top = 0f;
+        foreach (var src in renderers)
+        {
+            if (src.sharedMesh == null || src.bones.Length == 0 || IsOrganObject(src.name) || src.name.StartsWith("@")) continue;
+            int k = System.Array.FindIndex(src.bones, b => b != null);
+            if (k < 0 || src.sharedMesh.bindposes.Length != src.bones.Length) continue;
+            top = Mathf.Max(top, InSpace(src.sharedMesh.bounds, InModel(src.bones[k], model) * src.sharedMesh.bindposes[k]).max.y);
+        }
+        return top;
+    }
+
     /// <summary>ДВУСТОРОННИЙ МАТЕРИАЛ ДЛЯ ЧЕРТ СТУПЕНИ (22.10, решение по разбору модельной линии): грива, хвост, мех `@<ключ>` —
     /// открытые оболочки, как волосы и мех в играх. С отсечением задних граней дальняя сторона гривы показывала изнанку, грудь
-    /// выглядела «щитом»; двусторонность граней копиями давала изнанку, прижатую к груди. Тело шасси остаётся односторонним.</summary>
+    /// выглядела «щитом»; двусторонность граней копиями давала изнанку, прижатую к груди. Тело шасси остаётся односторонним.
+    /// Органы на шаблоне `<слот>@<вид>` (уши, когти, гребень) — такие же тонкие оболочки из цели: 28.10 детектор дыр модельной
+    /// линии нашёл на ст.1 102 пятна изнанки, с двусторонним органом — 7.</summary>
     public static Material TwoSided(Material mat)
     {
         if (mat == null) return null;
@@ -291,9 +408,18 @@ public static class BodyMesh
         return res;
     }
 
+    /// <summary>РИСУНОК КОЖИ (спека `2026-11-06-shkura-obrabotka-kozhi.md`, вариант А — цвет по граням): объект `<слот>.тон…`
+    /// (`хребет.тон2@Змея`) — грани кожи одного тона. Его цвет — множитель к цвету тела, а не своя окраска: тело остаётся
+    /// окрашенным по составу, а рисунок лежит поверх тоном.</summary>
+    public static bool IsTone(string objectName)
+    {
+        int dot = objectName.IndexOf('.');
+        return dot > 0 && string.CompareOrdinal(objectName, dot + 1, "тон", 0, 3) == 0;
+    }
+
     static string SlotOf(string objectName)
     {
-        int at = objectName.IndexOf('@'); if (at > 0) return objectName.Substring(0, at);   // орган на шаблоне `<слот>@<вид>`
+        int at = objectName.IndexOf('@'); if (at > 0) objectName = objectName.Substring(0, at);   // орган на шаблоне `<слот>@<вид>`
         int dot = objectName.IndexOf('.'); return dot > 0 ? objectName.Substring(0, dot) : objectName;
     }
 

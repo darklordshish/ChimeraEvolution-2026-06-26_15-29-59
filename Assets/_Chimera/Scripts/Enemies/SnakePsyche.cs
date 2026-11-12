@@ -28,7 +28,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     [SerializeField] float rotationSpeed = 320f;
     [SerializeField] float thermalRange = 14f;              // термозрение: видит тёплого сквозь укрытия
     [SerializeField, Range(0f, 1f)] float creepSpeed = 0.5f;
-    [SerializeField] float roamSenseRadius = 22f;           // праздный поиск: чуем тёплую жизнь ЗА термо-радиусом — крадёмся к ней (не застываем точкой-приманкой)
+    [SerializeField] float roamSenseRadius = 22f;           // праздный поиск: крадёмся к тёплой жизни (не застываем точкой-приманкой); потолок — дальность термо (`WarmRadius`)
     [SerializeField] float wanderRadius = 12f;              // ничего не чуем — тихо бродим этим радиусом (перемешиваем засады)
     [SerializeField, NotOrganData("поведение засады: как часто змея манит гремком")] float lureInterval = 1.2f;             // ПРИМАНКА: жертва вне броска — гремим часто и маним
     [SerializeField] float rattleHearRadius = 15f;          // пассивный гремок: тихий (будит любопытство рядом)
@@ -589,7 +589,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
             if (dist <= bite.Range)
             {
                 // в упор: обвить (обхват) либо простой ядовитый укус
-                if (constrictM.Ready && Random.value < grabChance && CombatReach.CanHit(transform, targetHealth.transform)) { BeginGrabWindup(); Settle(Vector3.zero); return; }
+                if (constrictM.Ready && Random.value < grabChance) { BeginGrabWindup(); Settle(Vector3.zero); return; }
                 if (bite.TryUse()) activeAbility = bite;
                 Settle(Vector3.zero); return;
             }
@@ -614,7 +614,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     {
         bool attacking = constricting || activeAbility != null || windingUp
                          || (target != null && Perception.SeesThermal(transform.position, target, senses.Range(SenseKind.Thermal)));
-        bool cue = !attacking && (fleeing || climb != ClimbPhase.None || NearestWarm(roamSenseRadius, out _) != null);
+        bool cue = !attacking && (fleeing || climb != ClimbPhase.None || NearestWarm(WarmRadius, out _) != null);
         alert.Observe(attacking, cue);
     }
 
@@ -659,7 +659,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     void Prowl()
     {
         HoldStealth(); // прокрадываемся-ищем в камуфляже: охотник-невидимка не собирает вокруг себя роящуюся стаю
-        Health warm = NearestWarm(roamSenseRadius, out bool lonely);
+        Health warm = NearestWarm(WarmRadius, out bool lonely);
         if (warm == null) { TryRattle(); CreepTo(nav.Wander(wanderRadius)); return; } // никого — бродим, изредка гремим
         if (lonely) { TryLure(); CreepTo(warm.transform.position); return; }          // одинокая жизнь за термо — манить и красться навстречу
         // рядом ТОЛПА без одиночек: не кормим осцилляцию — тихо уходим прочь от центра массы искать отбившихся
@@ -667,6 +667,10 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         Vector3 spot = transform.position + (away.sqrMagnitude > 0.01f ? away.normalized : transform.forward) * (roamSenseRadius * 0.5f);
         CreepTo(spot);
     }
+
+    // ПРАЗДНЫЙ ПОИСК — В ПРЕДЕЛАХ ТЕРМОЧУТЬЯ (26.10, аудит дизайн-линии §10 п.4): прежде змея «чуяла тёплую жизнь ЗА
+    // термо-радиусом» на 22 м — знание, которого ей не даёт ни один канал. Теперь потолок — дальность термо профиля
+    float WarmRadius => Mathf.Min(roamSenseRadius, senses != null ? senses.Range(SenseKind.Thermal) : roamSenseRadius);
 
     // ближайшая тёплая жизнь в радиусе (термочутьё сквозь стены; Massive и своя ноша не в счёт); заодно — одиночка ли она
     Health NearestWarm(float radius, out bool lonely)
@@ -703,7 +707,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         float d = to.magnitude;
         Face(d > 0.001f ? to / d : transform.forward);
 
-        if (d > bite.Range * 1.2f || !CombatReach.CanHit(transform, targetHealth.transform)) { windingUp = false; telegraph.Clear(); nextAttackTime = Time.time + 0.3f; }
+        if (d > bite.Range * 1.2f) { windingUp = false; telegraph.Clear(); nextAttackTime = Time.time + 0.3f; }
         else if (Time.time >= windupEnd) { windingUp = false; StartConstrict(); }
         Settle(Vector3.zero);
     }
@@ -718,7 +722,6 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     void StartConstrict()
     {
         // вся механика хвата (стадии/Massive-кап/слоу жертвы-игрока/Grabbed/гонка вырывания) — в машине
-        if (targetHealth == null || !CombatReach.CanHit(transform, targetHealth.transform)) return;
         constricting = constrictM.Begin(targetHealth, this);
         if (!constricting) return;
         shownStage = 1;

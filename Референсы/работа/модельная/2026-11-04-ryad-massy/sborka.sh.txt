@@ -1,0 +1,22 @@
+SWB=$(cygpath -m /c/Temp/claude/1483c06dbf80a144/53623ae4-97d2-450f-a7bb-396e65699af4/scratchpad); W=$SWB/ch; R="C:/Users/semion/Documents/Chimera_game/_refs-local/эксперименты/chelovek-podzharyj-2026-10-30/r2"; D=Референсы/работа/модельная/2026-10-30-chelovek-podzharyj/maski; B="/c/Program Files/Blender Foundation/Blender 5.2/blender.exe"; T=Tools/Blender/proba; H=Docs/models/handoff; MK="$D/vid-front.png,$D/vid-profile.png"; PS="$H/cherty/chelovek-golova-kusok.json,$H/parts/chelovek-ushi.json"; BZ="$R/r8-baza-bezklyuchej.blend"; PY=/c/ProgramData/anaconda3/python.exe
+export PYTHONIOENCODING=utf-8
+STD="--min_pl 22 --split 45 --dev 0.018 --merge 9 --tol 0.017 --dolya_kg 0.4 --lam 0.06 --sdvig 0.01 --ostrota 0.4 --z_stopa 0.05 --min_n 32 --bliz 0.018"
+$PY - "$W" "$T" <<'EOF'
+import json,sys
+W,T=sys.argv[1:3]
+a={p['imya']:p for p in json.load(open(f'{W}/r11/paneli-myagkie.json',encoding='utf-8'))}; b={p['imya']:p for p in json.load(open(f'{T}/r10-paneli.json',encoding='utf-8'))}
+json.dump([a['грудь'],b['спина'],b['низ перед'],b['низ сзади']],open(f'{W}/m/paneli-V.json','w',encoding='utf-8'),ensure_ascii=False)
+EOF
+"$B" -b "$BZ" --factory-startup --python-exit-code 1 -P $T/massy_po_listu.py -- $W/m/baza-B.blend $W/m/karta.json B $W/m/paneli-V.json $W/m/paneli-B.json 2>&1 | grep -E 'МАССЫ|rror|line [0-9]' | cut -c1-220
+"$B" -b "$BZ" --factory-startup --python-exit-code 1 -P $T/massy_po_listu.py -- $W/m/baza-A.blend $W/m/karta.json A $W/m/paneli-V.json $W/m/paneli-A.json 2>&1 | grep -E 'МАССЫ .:|rror|line [0-9]' | cut -c1-220
+var(){ # имя база панели доп_сборки доп_кадра
+  "$B" -b "$2" --factory-startup --python-exit-code 1 -P $T/ogranka_telo.py -- $W/m/$1_a.blend $W/r10/metki.npz --pasporta "$PS" --paneli "$3" $STD $4 2>&1 | grep -E 'итог|rror|line [0-9]' | cut -c1-170
+  "$B" -b $W/m/$1_a.blend --factory-startup --python-exit-code 1 -P $T/ryad_byudzheta.py -- $W/m/$1.blend $W/m $1 --cel 1 --bez_prorezh 1 --bez_sogl 1 --linii 0 --maski "$MK" --maski2 "$W/m/ogr-front.png,$W/m/ogr-profile.png" $5 2>&1 | grep -E '^РЯД:|rror|line [0-9]' | sed 's/"dolya_telo.*"ostrye/"ostrye/' | cut -c1-200
+}
+var v "$BZ" $W/m/paneli-V.json "" ""
+var b $W/m/baza-B.blend $W/m/paneli-B.json "" ""
+var a $W/m/baza-A.blend $W/m/paneli-A.json "" ""
+var b3 $W/m/baza-B.blend $W/m/paneli-B.json "--min_pl 9 --split 30 --dev 0.012 --merge 6 --tol 0.011 --dolya_kg 0.5 --min_n 12 --plita 35" ""
+cp $W/m/b_a.blend $W/m/b6_a.blend
+"$B" -b $W/m/b6_a.blend --factory-startup --python-exit-code 1 -P $T/ryad_byudzheta.py -- $W/m/b6.blend $W/m b6 --cel 1 --bez_prorezh 1 --bez_sogl 1 --linii 0 --maski "$MK" --maski2 "$W/m/ogr-front.png,$W/m/ogr-profile.png" --gladko 28 2>&1 | grep -E '^РЯД:|rror|line [0-9]' | sed 's/"dolya_telo.*"ostrye/"ostrye/' | cut -c1-200
+$PY $SWB/z14.py $W

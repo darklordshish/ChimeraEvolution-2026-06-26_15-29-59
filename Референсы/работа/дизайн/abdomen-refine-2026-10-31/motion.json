@@ -1,0 +1,91 @@
+{
+  "poses": [
+    {
+      "name": "rest",
+      "angle": 0,
+      "axis": "X"
+    },
+    {
+      "name": "flex25",
+      "angle": 25,
+      "axis": "X"
+    },
+    {
+      "name": "extend15",
+      "angle": -15,
+      "axis": "X"
+    },
+    {
+      "name": "twist30",
+      "angle": 30,
+      "axis": "Z"
+    }
+  ],
+  "rows": [
+    {
+      "variant": "original",
+      "pose": "rest",
+      "fold_flags": 0,
+      "compressed_faces": 0,
+      "min_patch_area_ratio": 0.9999971831878673,
+      "seam_max_mm": 0.0
+    },
+    {
+      "variant": "original",
+      "pose": "flex25",
+      "fold_flags": 0,
+      "compressed_faces": 0,
+      "min_patch_area_ratio": 0.5577537502755899,
+      "seam_max_mm": 4.470348358154297e-05
+    },
+    {
+      "variant": "original",
+      "pose": "extend15",
+      "fold_flags": 0,
+      "compressed_faces": 0,
+      "min_patch_area_ratio": 0.8756124819170148,
+      "seam_max_mm": 1.4901161193847656e-05
+    },
+    {
+      "variant": "original",
+      "pose": "twist30",
+      "fold_flags": 0,
+      "compressed_faces": 0,
+      "min_patch_area_ratio": 0.5508543004293922,
+      "seam_max_mm": 8.33000234328132e-06
+    },
+    {
+      "variant": "abs",
+      "pose": "rest",
+      "fold_flags": 0,
+      "compressed_faces": 0,
+      "min_patch_area_ratio": 0.9999969332044847,
+      "seam_max_mm": 0.0
+    },
+    {
+      "variant": "abs",
+      "pose": "flex25",
+      "fold_flags": 0,
+      "compressed_faces": 0,
+      "min_patch_area_ratio": 0.5733212944716576,
+      "seam_max_mm": 4.470348358154297e-05
+    },
+    {
+      "variant": "abs",
+      "pose": "extend15",
+      "fold_flags": 0,
+      "compressed_faces": 0,
+      "min_patch_area_ratio": 0.872871001780114,
+      "seam_max_mm": 1.4901161193847656e-05
+    },
+    {
+      "variant": "abs",
+      "pose": "twist30",
+      "fold_flags": 0,
+      "compressed_faces": 0,
+      "min_patch_area_ratio": 0.5508543004293922,
+      "seam_max_mm": 8.33000234328132e-06
+    }
+  ],
+  "note": "Synthetic two-joint torso poses, PSD off. Dominant-bone orientation flags, not self-intersection detection or anatomical scoring. Different triangulations; counts not directly equivalent."
+}

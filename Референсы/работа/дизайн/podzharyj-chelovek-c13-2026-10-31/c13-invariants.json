@@ -1,0 +1,16 @@
+{
+  "source": "Experiments/podzharyj-c10-2026-10-31/c9.blend",
+  "candidate": "Experiments/podzharyj-c10-2026-10-31/c13.blend",
+  "errors": [],
+  "changed_keys": {
+    "Руки:Поджарый": {
+      "max_axis_delta_m": 0.005542874336242676,
+      "moved_vertices": 27
+    },
+    "Сердце:Поджарый": {
+      "max_axis_delta_m": 0.0040000006556510925,
+      "moved_vertices": 11
+    }
+  },
+  "total_triangles": 5738
+}
