@@ -28,8 +28,10 @@ public class Health : MonoBehaviour
 
     public UnityEvent onDamaged = new(); // = new(), чтобы не были null при AddComponent в рантайме (босс)
     public UnityEvent onDeath = new();
+    public UnityEvent onRevived = new(); // игрок встаёт после «сна» (спека вечной эволюции 2026-11-12, §5 п.1.2)
 
     bool dead;
+    public bool IsDead => dead;
     float regenAccum;
     float regenSuppressUntil, regenSuppressFactor = 1f; // дебафф регена (укус Пасти игрока)
     Rage rage; // ярость: входящий урон больше (может добавиться в рантайме — ленивый поиск)
@@ -89,6 +91,18 @@ public class Health : MonoBehaviour
     {
         regenSuppressFactor = Mathf.Clamp01(factor);
         regenSuppressUntil = Time.time + duration;
+    }
+
+    /// <summary>ОЖИВЛЕНИЕ: полное HP, флаг смерти снят, события. Игрок после «сна» встаёт тем же объектом — сцена не
+    /// перезагружается (спека вечной эволюции, 1.2). Урон и реген после оживления снова идут как обычно.</summary>
+    public void Revive()
+    {
+        dead = false;
+        Current = maxHealth;
+        regenAccum = 0f;
+        Invulnerable = false;
+        LastAttacker = null;
+        onRevived?.Invoke();
     }
 
     public void TakeDamage(int amount) => TakeDamage(amount, false);

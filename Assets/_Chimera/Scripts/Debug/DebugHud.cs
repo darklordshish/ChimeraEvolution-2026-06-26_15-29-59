@@ -22,6 +22,8 @@ public class DebugHud : MonoBehaviour
     PlayerBellow bellow;
     GUIStyle style, smallStyle, legendStyle;
 
+    ChimeraCensus.Snapshot census;
+    float nextCensus;
     bool showLegend = true; // легенда видна по умолчанию — учебник языка сигналов; F1 прячет
 
     void Start()
@@ -70,6 +72,12 @@ public class DebugHud : MonoBehaviour
         var roll = player != null ? player.GetComponent<PlayerRoll>() : null;
         if (roll != null && roll.Active) abil.Add("перекат (рывок)");
         GUI.Label(new Rect(14, 10, 900, 26), $"Способности: {string.Join(" · ", abil)}   ·   Tab — конструктор", style);
+
+        // ── ВЕЧНЫЙ ЦИКЛ: игровое время и доля химер среди NPC (спека 2026-11-12, 1.4 / К-7). Перепись раз в полсекунды ──
+        if (Time.unscaledTime >= nextCensus) { census = ChimeraCensus.Take(); nextCensus = Time.unscaledTime + 0.5f; }
+        var clk = WorldClock.Instance;
+        string clockText = clk != null ? $"день {clk.Day}, {clk.HourOfDay:0}:00{(clk.IsNight ? " (ночь)" : "")}{(clk.IsSleeping ? " · СОН ×" + clk.SleepSpeedup : "")}   ·   " : "";
+        GUI.Label(new Rect(14, 60, 900, 22), $"{clockText}Химер среди NPC: {census}", smallStyle);
 
         // ── дев-режимы: молчат, пока выключены; включённый режим обязан быть виден ──
         var modes = new List<string>();

@@ -15,8 +15,14 @@ public static class Perception
     // повторное включение (Dev-панель) заново прячет и сбрасывает интерес NPC.
     public static bool PlayerGhost;
     public static void BreakGhost() { PlayerGhost = false; }
+
+    /// <summary>ИГРОК ЛЕЖИТ (`PlayerDeath`, спека вечной эволюции 2026-11-12, 1.2): для чувств NPC тело игрока пусто —
+    /// тот же канал, что у призрака, но атака его НЕ раскрывает (лежащий не атакует) и дев-тумблеры его не трогают.</summary>
+    public static bool PlayerHidden;
+    /// <summary>Единый предикат «игрока для NPC нет»: призрак или лежит. Все места, где чувство опрашивает игрока, берут его.</summary>
+    public static bool PlayerUnseen => PlayerGhost || PlayerHidden;
     static bool GhostHides(Transform target) =>
-        PlayerGhost && target != null && target.GetComponent<PlayerController>() != null;
+        PlayerUnseen && target != null && target.GetComponent<PlayerController>() != null;
 
     /// <summary>ЧУТЬЁ УЧЁНОГО (человеческое Чутьё) — наблюдательность: игрок РАСПОЗНАЁТ намерение по замаху
     /// (цвет приёма вместо безымянного «что-то готовит») и читает состояния ЧИСЛОМ. Ставит тело игрока.
