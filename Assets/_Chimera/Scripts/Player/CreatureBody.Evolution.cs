@@ -2,46 +2,36 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // ЭВОЛЮЦИЯ (стохастическая химеризация): убийца с шансом = родство надевает орган жертвы. Родство — единая
-// ось (donors=все уже стоят из InitEvolution). Зовётся из CreditKiller (this=жертва, killer=убийца). Partial-модуль.
+// ось (donors=все уже стоят из Awake). Зовётся из CreditKiller (this=жертва, killer=убийца). Partial-модуль.
 public partial class CreatureBody
 {
-    // ПУЛ ХИМЕРЫ ДЛЯ NPC. Родные органы вида стоят дороже его же пула (волк: 26 при пуле 16, змея: 24 при 20) —
-    // значит у ПРЕФАБНОГО зверя первый же грант отваливался по цене, и эволюция «включалась», но молчала.
-    // Рождённое составом тело (`ChimeraFactory`) и раньше жило с расширенным пулом; теперь платформа эволюции
-    // даёт тот же запас ВСЕМ, кого ведёт. Число — запас, а не баланс: психики и приёмы его не читают.
-    const int EvolutionPoolBonus = 9999;
+    bool evolutionReady; // платформа применена (Awake и Configure зовут её оба — повтор не дублирует Metamorph)
+    bool awakeRan;       // Awake действительно прошёл (в EditMode-стенде Configure зовут без него)
 
-    bool evolutionReady; // платформа применена (Awake и Configure зовут её оба — второй заход не дублирует)
-    bool awakeRan;       // компонент действительно жил в мире: в EditMode-стенде Awake не зовётся
-
-    /// <summary>ПЛАТФОРМА ЭВОЛЮЦИИ NPC: все виды — доноры, стартовое родство, цвет по составу, слушатель
-    /// метаморфозы. ОДИН вход на оба пути рождения: `Awake` (префаб — шасси уже сериализовано) и `Configure`
-    /// (тело, рождённое составом: в Awake шасси ещё null, его отдаёт Configure следующей строкой). Без второго
-    /// захода фабричный NPC оставался без `Metamorph` и без родства — психика не перевешивалась при сдвиге
-    /// доминанты, а `Power` равнялся нулю.</summary>
-    void InitEvolution()
+    /// <summary>ПЛАТФОРМА ЭВОЛЮЦИИ NPC: все виды — доноры, стартовое родство, цвет по составу, Metamorph. Один вход
+    /// на оба пути рождения: `Awake` (префаб, шасси уже есть) и `Configure` (тело от `ChimeraFactory`: в Awake шасси
+    /// было null). Игрока (move != null) не трогает. mergeDonors — для Configure: заданных доноров не затираем.</summary>
+    void InitEvolution(bool mergeDonors)
     {
-        if (chassis == null) return;
-
-        // РОДНОЕ — НА КАП («я точно своего вида»): у префаба это делал Awake, фабричному телу шасси дают позже.
-        // В EditMode-стенде (Awake не было) не трогаем: там Configure — сборка для замера, а не рождение,
-        // и кап родства к шасси сломал бы экономику тестов.
-        if (awakeRan) SetAffinity(chassis.speciesName, AffinityCap);
-        if (move != null) return; // игрок собирается сборкой, эволюции не подлежит
-
+        if (chassis == null || move != null) return;
         var cfg = EvolutionConfig.Instance;
         if (cfg == null || !cfg.EvolveNpc || cfg.AllSpecies == null || cfg.AllSpecies.Length == 0) return;
 
-        // ДОНОРЫ ПЕРЕЖИВАЮТ ПОВТОРНЫЙ Configure: тело могли пересобрать с другим списком — эволюции нужен весь лес
-        donors = cfg.AllSpecies; // все виды — потенциальные доноры (родные надеты → чистый вид)
-        tintComposition = true;  // цвет по составу (развязка Telegraph.Rebase готова)
+        if (mergeDonors && donors != null && donors.Length > 0)
+        {
+            var all = new List<SpeciesSO>(cfg.AllSpecies);
+            foreach (var d in donors) if (d != null && !all.Contains(d)) all.Add(d);
+            donors = all.ToArray();
+        }
+        else donors = cfg.AllSpecies; // все виды — потенциальные доноры (родные надеты → чистый вид)
+        tintComposition = true;       // цвет по составу
 
-        if (evolutionReady) return; // остальное — ровно раз
+        if (evolutionReady) return;   // остальное — ровно раз
         evolutionReady = true;
-        poolBonus = Mathf.Max(poolBonus, EvolutionPoolBonus); // иначе родные органы вида съедают пул и грант молчит
+        if (awakeRan) SetAffinity(chassis.speciesName, AffinityCap); // «я точно своего вида»: Awake фабричному телу шасси не видел
         foreach (var sp in cfg.AllSpecies)
-            if (sp != null && sp != chassis) SetAffinity(sp.speciesName, cfg.StartAffinity); // стартовое родство чужим
-        if (GetComponent<Metamorph>() == null) gameObject.AddComponent<Metamorph>(); // ре-диспатч психики при сдвиге доминанты
+            if (sp != null && sp != chassis) SetAffinity(sp.speciesName, cfg.StartAffinity);
+        if (GetComponent<Metamorph>() == null) gameObject.AddComponent<Metamorph>();
     }
 
     /// <summary>Стохастически надеть убийце орган ИЗ СОСТАВА жертвы (this). Шанс = родство убийцы к виду
