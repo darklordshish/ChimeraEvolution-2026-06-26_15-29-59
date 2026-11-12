@@ -142,9 +142,6 @@ public class ForestBuilder : MonoBehaviour
     [Header("Логова и спавнер (пусто — логова копят очередь, но не рожают)")]
     public List<SpeciesSO> speciesPool = new List<SpeciesSO>();
 
-    [Header("Змея: префаб с цепью тела (фабрика цепь не вешает)")]
-    public GameObject snakePrefab;
-
     [Header("Змеиные логовища: устья и гнёзда (числа тюнинга)")]
     public int snakeCapacity = DefaultSnakeCapacity;
     public int snakeTier = DefaultSnakeTier;
@@ -621,7 +618,6 @@ public class ForestBuilder : MonoBehaviour
 
         spawner = GetComponent<ForestSpawner>();
         if (spawner == null) spawner = gameObject.AddComponent<ForestSpawner>();
-        spawner.snakePrefab = snakePrefab;
         spawner.Configure(lairRegistry, speciesPool, SpawnGroundAtWorld);
         spawner.autoTick = true;
 

@@ -44,7 +44,7 @@ namespace Chimera.Tests.EditMode
             {
                 expectedHost = new GameObject("~ExpectedA");
                 expected = ForestProfiles.A(expectedHost);
-                AddPopulation(expected, species: true, snake: true);
+                AddPopulation(expected, species: true);
                 AssertNoDiff(scene, expected, "A/ForestSandbox");
             });
         }
@@ -67,7 +67,7 @@ namespace Chimera.Tests.EditMode
             {
                 expectedHost = new GameObject("~ExpectedPavilion");
                 expected = ForestProfiles.PavilionV1(expectedHost);
-                AddPopulation(expected, species: true, snake: true);
+                AddPopulation(expected, species: true);
                 AssertNoDiff(scene, expected, "Pavilion v1");
             });
         }
@@ -116,21 +116,14 @@ namespace Chimera.Tests.EditMode
             }
         }
 
-        /// <summary>Сцена держит ссылки на пул/префаб — ожидаемый профиль обязан их повторить.</summary>
-        static void AddPopulation(ForestBuilder b, bool species, bool snake)
+        /// <summary>Сцена держит ссылку на пул видов — ожидаемый профиль обязан её повторить.</summary>
+        static void AddPopulation(ForestBuilder b, bool species)
         {
             if (species)
             {
                 var so = AssetDatabase.LoadAssetAtPath<SpeciesSO>("Assets/_Chimera/Data/Змея.asset");
                 Assert.IsNotNull(so, "вид «Змея» не загружен");
                 b.speciesPool = new List<SpeciesSO> { so };
-            }
-            if (snake)
-            {
-                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                    "Assets/_Chimera/Prefabs/Snake.prefab");
-                Assert.IsNotNull(prefab, "префаб Snake.prefab не загружен");
-                b.snakePrefab = prefab;
             }
         }
 

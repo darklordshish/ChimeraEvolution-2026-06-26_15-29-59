@@ -51,7 +51,6 @@ public static class ForestB0Scene
                       " spawnAtEntry=" + fb.spawnAtEntry + " buildAsh=" + fb.buildAsh);
         sb.AppendLine("    config=" + (fb.config == null ? "null" : fb.config.name) +
                       " playerSpawn=" + (fb.playerSpawn == null ? "null" : fb.playerSpawn.name) +
-                      " snakePrefab=" + (fb.snakePrefab == null ? "null" : fb.snakePrefab.name) +
                       " speciesPool=[" + string.Join(",", fb.speciesPool.Select(s => s != null ? s.name : "null")) + "]");
         return sb.ToString();
     }
@@ -122,13 +121,12 @@ public static class ForestB0Scene
         SetBool(so, "buildAsh", false);
         SetObject(so, "playerSpawn", null);
         SetObject(so, "config", null);
-        SetObject(so, "snakePrefab", null);
         var pool = so.FindProperty("speciesPool");
         if (pool == null) return "FAILED: speciesPool field missing";
         pool.arraySize = 0;
         so.ApplyModifiedPropertiesWithoutUndo();
         sb.AppendLine("ForestBuilder written: seed=4 randomSeed=false Ø400 chunk=100 quads=24 " +
-                      "buildOnAwake=true spawnAtEntry=true buildAsh=false pool=0 snakePrefab=null playerSpawn=null config=null");
+                      "buildOnAwake=true spawnAtEntry=true buildAsh=false pool=0 playerSpawn=null config=null");
 
         // Камеры: TopCam ортo 300 / far 6000, SandboxCam и Main Camera far 6000,
         // CameraFollow.target — Player ЭТОЙ сцены.
@@ -287,8 +285,7 @@ public static class ForestB0Scene
                           " buildAsh=" + Eq(so, "buildAsh", p => p.boolValue == e.Ash, e.Ash.ToString()) +
                           " spawnAtEntry=" + Eq(so, "spawnAtEntry", p => p.boolValue == e.Entry, e.Entry.ToString()) +
                           " pool=" + Eq(so, "speciesPool", p => p.arraySize == e.Pool, e.Pool.ToString()));
-            sb.AppendLine("  nulls: config=" + (fb.config == null) + " playerSpawn=" + (fb.playerSpawn == null) +
-                          " snakePrefab=" + (fb.snakePrefab == null));
+            sb.AppendLine("  nulls: config=" + (fb.config == null) + " playerSpawn=" + (fb.playerSpawn == null));
         }
         else sb.AppendLine("  ForestBuilder: MISSING");
 

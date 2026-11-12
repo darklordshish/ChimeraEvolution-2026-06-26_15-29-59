@@ -16,14 +16,6 @@ public class ForestSpawner : MonoBehaviour
     public List<SpeciesSO> speciesPool = new List<SpeciesSO>();
 
     /// <summary>
-    /// Готовая особь змеи. `ChimeraFactory` собирает тело из состава, но у змеи тело —
-    /// ЦЕПЬ (`SnakeBodyChain`), а фабрика цепь не вешает: рождённая змея невидима
-    /// (рендереры морфа выключены). Пока цепь не переехала в фабрику, лесной спавнер
-    /// для «Змеи» берёт префаб; остальные виды идут прежним путём через фабрику.
-    /// </summary>
-    public GameObject snakePrefab;
-
-    /// <summary>
     /// Тикать себя в Update. ВЫКЛ по умолчанию намеренно: существующие тесты дёргают Tick
     /// явно, и самопроизвольный тик ломал бы их арифметику. В мире среза C ForestBuilder включает.
     /// </summary>
@@ -44,10 +36,6 @@ public class ForestSpawner : MonoBehaviour
     /// с `home` на уже снесённый `LairSite`. Чужие тела сюда не попадают.
     /// </summary>
     readonly List<CreatureBody> spawned = new List<CreatureBody>();
-
-    // Префаб змеи проверен и негоден (нет тела/цепи/здоровья) — второй раз не Instantiate-им,
-    // иначе каждая попытка рождала бы пустую копию, а очередь не тратилась бы: бесконечный поток.
-    bool prefabBroken;
 
     // Внятное предупреждение о пуле — ОДИН раз на вид, а не каждый тик.
     readonly HashSet<string> warnedMissingSpecies = new HashSet<string>();
@@ -73,7 +61,6 @@ public class ForestSpawner : MonoBehaviour
         speciesPool = pool;
         groundSampler = ground;
         spawnCounter = 0;     // новый мир — новый детерминированный ряд точек рождения
-        prefabBroken = false; // префаб могли пересобрать/переназначить
         warnedMissingSpecies.Clear();
     }
 
@@ -102,48 +89,18 @@ public class ForestSpawner : MonoBehaviour
         if (site.population + site.ReservedCount >= site.capacity) return false; // крыша занята телами
         if (site.IsExhausted) return false;
 
-        bool usePrefab = snakePrefab != null && site.speciesName == "Змея";
-        SpeciesSO species = null;
-        if (usePrefab)
-        {
-            // Сломанный префаб: один внятный лог и НИ ОДНОГО Instantiate — очередь просто ждёт починки.
-            if (!SnakePrefabReady()) return false;
-        }
-        else
-        {
-            species = FindSpecies(site.speciesName);
-            if (species == null) { WarnMissingSpecies(site.speciesName); return false; }
-        }
+        SpeciesSO species = FindSpecies(site.speciesName);
+        if (species == null) { WarnMissingSpecies(site.speciesName); return false; }
 
+        // Все виды — через фабрику, змея тоже: цепь звеньев фабрика вешает сама (пакет А, `f2b24c8d`).
         Vector3 pos = SpawnPos(site);
-        CreatureBody body;
-        if (usePrefab)
-        {
-            // Цепь змеи живёт в префабе; фабрика её не собирает (см. поле snakePrefab).
-            // Корень ставим по НИЗУ капсулы: префабы держат его на земле, но считаем, а не верим.
-            pos.y -= CapsuleBottom(snakePrefab);
-            var go = UnityEngine.Object.Instantiate(snakePrefab, pos, Quaternion.identity);
-            body = go.GetComponent<CreatureBody>();
-            if (body == null)
-            {
-                // Проверка была выше — сюда можно попасть, только если префаб подменили на лету.
-                Kill(go);
-                prefabBroken = true;
-                Debug.LogWarning($"ForestSpawner: у snakePrefab «{snakePrefab.name}» пропало тело — копия снесена, " +
-                                 "место не рожает (иначе поток пустых Instantiate).", this);
-                return false;
-            }
-        }
-        else
-        {
-            body = ChimeraFactory.Spawn(
-                species,
-                speciesPool != null ? speciesPool.ToArray() : new SpeciesSO[0],
-                pos,
-                species.speciesName + "-lair",
-                null,
-                null);
-        }
+        CreatureBody body = ChimeraFactory.Spawn(
+            species,
+            speciesPool != null ? speciesPool.ToArray() : new SpeciesSO[0],
+            pos,
+            species.speciesName + "-lair",
+            null,
+            null);
         if (body == null) return false;
         spawned.Add(body); // свой живой зверь — уборщику на пересборке мира
         lastSpawn = body;
@@ -241,42 +198,14 @@ public class ForestSpawner : MonoBehaviour
         p.y = groundSampler(p.x, p.z);
         return p;
     }
-    /// <summary>Низ капсулы относительно корня (м). Префабы держат его на земле (`center` = полвысоты),
-    /// но считаем, а не верим: корень ставим так, чтобы низ капсулы лёг на землю.</summary>
-    static float CapsuleBottom(GameObject prefab)
-    {
-        var cc = prefab != null ? prefab.GetComponent<CharacterController>() : null;
-        return cc != null ? cc.center.y - cc.height * 0.5f : 0f;
-    }
-
-    /// <summary>Префаб змеи годен, если в нём есть тело, цепь и здоровье. Негодный префаб — ОДИН лог и
-    /// отказ рожать: поток пустых копий хуже, чем пустое логово (и оба видны в консоли).</summary>
-    bool SnakePrefabReady()
-    {
-        if (prefabBroken) return false;
-        if (snakePrefab == null) return false;
-
-        bool ok = snakePrefab.TryGetComponent<CreatureBody>(out _)
-               && snakePrefab.TryGetComponent<SnakeBodyChain>(out _)
-               && snakePrefab.TryGetComponent<Health>(out _);
-        if (ok) return true;
-
-        prefabBroken = true;
-        Debug.LogWarning(
-            $"ForestSpawner: snakePrefab «{snakePrefab.name}» негоден — нет CreatureBody/SnakeBodyChain/Health. " +
-            "Змеи из логовищ рожаться не будут (иначе каждая попытка плодила бы пустые копии). " +
-            "Пересобери префаб: Chimera → Создать префаб Змеи.", this);
-        return false;
-    }
-
-    /// <summary>Вид логова нечем родить: его нет в пуле, и snakePrefab не назначен. Предупреждение — один раз
-    /// на вид (иначе каждый тик спамил бы консоль), и в нём назван ОБА выхода: пул и `snakePrefab`.</summary>
+    /// <summary>Вид логова нечем родить: его нет в пуле. Предупреждение — один раз на вид (иначе каждый тик
+    /// спамил бы консоль), и в нём назван выход.</summary>
     void WarnMissingSpecies(string species)
     {
         if (!warnedMissingSpecies.Add(species)) return;
         Debug.LogWarning(
-            $"ForestSpawner: вида «{species}» нет в speciesPool, а snakePrefab не назначен — логово не может родить. " +
-            "Добавь вид в ForestBuilder.speciesPool или назначь snakePrefab (готовый префаб с телом и цепью).", this);
+            $"ForestSpawner: вида «{species}» нет в speciesPool — логово не может родить. " +
+            "Добавь вид в ForestBuilder.speciesPool.", this);
     }
 
     static void Kill(GameObject go)

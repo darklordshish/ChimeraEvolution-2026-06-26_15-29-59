@@ -457,7 +457,6 @@ public static class CanyonAgent
         b.forestThreshold = src.forestThreshold;
         b.forestFraction = src.forestFraction;
         b.speciesPool = new List<SpeciesSO>();
-        b.snakePrefab = null;
 
         try
         {

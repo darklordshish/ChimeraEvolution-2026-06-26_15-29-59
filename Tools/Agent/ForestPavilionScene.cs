@@ -71,7 +71,6 @@ public static class ForestPavilionScene
         // Никаких чужих ссылок из Sandbox: мир параметрический.
         SetObject(so, "config", null);
         SetObject(so, "playerSpawn", null);
-        SetObject(so, "snakePrefab", null);
         var pool = so.FindProperty("speciesPool");
         if (pool == null) return sb.ToString() + "FAILED: speciesPool field missing";
         pool.arraySize = 0;
@@ -219,8 +218,7 @@ public static class ForestPavilionScene
                " buildClimate=" + fb.buildClimate +
                " buildTerrace=" + fb.buildTerrace + " buildCanyon=" + fb.buildCanyon +
                " minLabDistance=" + fb.minLabDistance +
-               " pool=[" + string.Join(",", fb.speciesPool.Select(s => s != null ? s.name : "null")) + "]" +
-               " snakePrefab=" + (fb.snakePrefab == null ? "null" : fb.snakePrefab.name);
+               " pool=[" + string.Join(",", fb.speciesPool.Select(s => s != null ? s.name : "null")) + "]";
     }
 
     static string BuildSettingsLine() =>

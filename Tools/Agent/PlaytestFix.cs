@@ -66,16 +66,13 @@ public static class PlaytestFix
         if (isPavilion)
         {
             var snake = FindSpecies(_Змея);
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/_Chimera/Prefabs/Snake.prefab");
             var pool = so.FindProperty("speciesPool");
             if (snake == null) sb.AppendLine("FAIL: species " + _Змея + " not found");
-            else if (prefab == null) sb.AppendLine("FAIL: Snake.prefab not found");
             else
             {
                 pool.arraySize = 1;
                 pool.GetArrayElementAtIndex(0).objectReferenceValue = snake;
-                so.FindProperty("snakePrefab").objectReferenceValue = prefab;
-                sb.AppendLine("speciesPool = [" + snake.name + "], snakePrefab = " + prefab.name);
+                sb.AppendLine("speciesPool = [" + snake.name + "]");
             }
 
             // Rock = 0; Buried = 3. Плейтест не смешиваем с непринятым Buried.
@@ -191,7 +188,7 @@ public static class PlaytestFix
         var fb = roots.Select(g => g.GetComponent<ForestBuilder>()).FirstOrDefault(b => b != null);
         if (fb != null)
             sb.AppendLine("  builder: pool=[" + string.Join(",", fb.speciesPool.Select(s => s != null ? s.name : "null")) +
-                          "] snakePrefab=" + (fb.snakePrefab != null ? fb.snakePrefab.name : "null") +
+                          "]" +
                           " entrance=" + fb.labEntrance + " style=" + fb.labStyle +
                           " stationLoop=" + fb.buildStationLoop + " stationHill=" + fb.buildStationHill);
         var evo = roots.Select(g => g.GetComponent<EvolutionConfig>()).FirstOrDefault(c => c != null);

@@ -101,6 +101,29 @@ namespace Chimera.Tests.PlayMode
             yield return null;
         }
 
+        /// <summary>
+        /// Змея из логова — через фабрику, как все: обход префабом снят 12.11, когда фабрика стала вешать цепь
+        /// звеньев (пакет А, `f2b24c8d`). Без цепи змея невидима — ровно этот долг держал обход.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator Snake_FromLair_ComesFromFactory_WithChain()
+        {
+            var snake = UnityEditor.AssetDatabase.LoadAssetAtPath<SpeciesSO>("Assets/_Chimera/Data/Змея.asset");
+            Assert.IsNotNull(snake, "вид «Змея» не загружен");
+            var reg = Registry();
+            var site = Site("Змея", 1, new Vector3(600f, 0.5f, 600f));
+            reg.Register(site);
+            var spawner = Spawner(reg, new List<SpeciesSO> { snake });
+            site.Tick(1f);
+
+            Assert.IsTrue(spawner.DrainOnce(site), "логово змеи рожает из пула видов");
+            CreatureBody born = spawner.lastSpawn;
+            Assert.IsNotNull(born, "рождённое тело есть");
+            trash.Add(born.gameObject);
+            Assert.IsNotNull(born.GetComponent<SnakeBodyChain>(), "змея из логова без цепи звеньев — невидима");
+            yield return null;
+        }
+
         [UnityTest]
         public IEnumerator Spawned_InRadius_NotWhenExhausted()
         {
