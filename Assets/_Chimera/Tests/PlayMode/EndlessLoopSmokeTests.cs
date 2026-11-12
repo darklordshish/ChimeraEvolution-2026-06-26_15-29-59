@@ -50,14 +50,22 @@ namespace Chimera.Tests.PlayMode
             yield return null;
         }
 
-        [TearDown]
-        public void Reset()
+        // ВЫГРУЗКА АРЕНЫ: сцена грузится Single и без выгрузки оставляла игрока и зверей арены всем следующим тестам
+        // прогона (письмо Лесника 12.11: шесть лесных PlayMode-классов краснели только в общем прогоне).
+        [UnityTearDown]
+        public IEnumerator Reset()
         {
             Time.timeScale = 1f;
             Perception.PlayerGhost = false;
             Perception.PlayerHidden = false;
             BossMemory.Clear();
             SuperBossReward.ResetClaims();
+
+            var arena = SceneManager.GetSceneByName("SampleScene");
+            if (!arena.IsValid() || !arena.isLoaded) yield break;
+            var empty = SceneManager.CreateScene("Пусто-после-вечного-цикла");
+            SceneManager.SetActiveScene(empty);
+            yield return SceneManager.UnloadSceneAsync(arena);
         }
 
         [UnityTest]
