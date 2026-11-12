@@ -26,7 +26,9 @@ namespace Chimera.Tests.EditMode
                 var mat = AssetDatabase.LoadAssetAtPath<UnityEngine.Material>(path);
                 if (mat == null || mat.shader == null || mat.shader.name != LitShader) continue;
                 lit++;
-                if (!mat.IsKeywordEnabled("_EMISSION")) off.Add(path);
+                // keyword держится, только пока emission не «чёрный»: иначе валидация URP снимает его сама (см. EmissionSetup)
+                if (!mat.IsKeywordEnabled("_EMISSION")
+                    || (mat.globalIlluminationFlags & UnityEngine.MaterialGlobalIlluminationFlags.EmissiveIsBlack) != 0) off.Add(path);
             }
             Assert.GreaterOrEqual(lit, 12, "Lit-материалов существ не меньше 12");
             Assert.IsEmpty(off, "без keyword emission не светится: " + string.Join(", ", off));
