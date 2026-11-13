@@ -77,7 +77,8 @@ namespace Chimera.Tests.EditMode
             for (int i = 0; i < 25; i++) s.Tick(1f);
             Assert.AreEqual(2, s.pendingSpawns, "второй слот на 11-й секунде, дальше стоит на капе");
             Assert.AreEqual(1, s.ConsumeSpawn(), "хук забирает слот");
-            Assert.AreEqual(1, s.population, "забранный слот — в популяции");
+            Assert.AreEqual(1, s.pendingSpawns, "слот ушёл из очереди");
+            Assert.AreEqual(0, s.population, "занятость — жильцы, а не забранные слоты (закон жильца, 13.11)");
         }
 
         [Test]

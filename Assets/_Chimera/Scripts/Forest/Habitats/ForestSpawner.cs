@@ -104,10 +104,10 @@ public class ForestSpawner : MonoBehaviour
         if (body == null) return false;
         spawned.Add(body); // свой живой зверь — уборщику на пересборке мира
         lastSpawn = body;
-        body.home = site; // s6: точка возврата — свой дом с рождения
         site.ConsumeSpawn();
+        site.Claim(body); // закон жильца: новорождённый — жилец места рождения, дом можно сменить
         Health health = body.GetComponent<Health>();
-        if (health != null) health.onDeath.AddListener(() => OnSpawnedDeath(site, body));
+        if (health != null) health.onDeath.AddListener(() => OnSpawnedDeath(body));
         return true;
     }
 
@@ -138,19 +138,25 @@ public class ForestSpawner : MonoBehaviour
         }
     }
 
-    void OnSpawnedDeath(LairSite home, CreatureBody body)
+    /// <summary>
+    /// Смерть зверя логова. Место в логове освобождается само (мёртвый не жилец, `LairSite.population`), а страх — по
+    /// закону свидетелей (спека «логово по законам» §4.3): пугаются логова, чьи жильцы смерть видели или слышали, или
+    /// у чьего порога она случилась. Вид жертвы не сравнивается с видом логова.
+    /// <para>Лес знает смерти тех, кого родил; смерти босса и игрока придут, когда у механик будет общий сигнал смерти.</para>
+    /// </summary>
+    void OnSpawnedDeath(CreatureBody body)
     {
         spawned.Remove(body); // мёртвый не жилец: SpawnedCount не должен его считать
-        if (home == null || body == null) return;
-        home.ReportDeath();
-        Vector3 deathPos = body.transform.position;
+        if (body == null) return;
+        ReportDeathAt(body.transform.position, body);
+    }
+
+    /// <summary>Смерть в точке — всем логовам реестра по закону свидетелей.</summary>
+    public void ReportDeathAt(Vector3 deathPos, CreatureBody victim)
+    {
         if (registry == null) return;
         foreach (var s in registry.Sites)
-        {
-            if (s == null || s.speciesName != home.speciesName) continue;
-            if (Vector3.Distance(s.transform.position, deathPos) <= Mathf.Max(s.fearRadius, 0f))
-                s.ReportKill(deathPos);
-        }
+            if (s != null && s.Witnessed(deathPos, victim)) s.Scare();
     }
 
     /// <summary>Снять из списка всё, что уже мертво или снесено, не дожидаясь смерти с колбэком
