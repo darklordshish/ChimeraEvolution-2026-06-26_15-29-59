@@ -47,21 +47,26 @@ namespace Chimera.Tests.EditMode
             finally { Object.DestroyImmediate(go); }
         }
 
+        /// <summary>Закон жильца (спека «логово по законам» §4.1): уход жильца крышу вернувшегося не трогает.</summary>
         [Test]
-        public void ReportDeath_DoesNotTouchRoof()
+        public void Leave_DoesNotTouchRoof()
         {
             var go = new GameObject("~Lair");
+            var animal = new GameObject("~Жилец");
             try
             {
                 var site = go.AddComponent<LairSite>();
                 site.capacity = 4;
-                site.population = 1;
+                var body = animal.AddComponent<CreatureBody>();
+                Assert.IsTrue(site.Claim(body), "тело взяло логово домом");
                 site.TryReserve(301);
-                site.ReportDeath();
-                Assert.AreEqual(0, site.population, "популяция упала");
-                Assert.AreEqual(1, site.ReservedCount, "крыша цела (смерть вернувшегося — только Release)");
+                Assert.AreEqual(1, site.population, "жилец в занятости");
+                site.Leave(body);
+                Assert.AreEqual(0, site.population, "ушёл — не жилец");
+                Assert.IsNull(body.home, "дом обнулён");
+                Assert.AreEqual(1, site.ReservedCount, "крыша цела (вернувшегося снимает только Release)");
             }
-            finally { Object.DestroyImmediate(go); }
+            finally { Object.DestroyImmediate(go); Object.DestroyImmediate(animal); }
         }
 
         [Test]
