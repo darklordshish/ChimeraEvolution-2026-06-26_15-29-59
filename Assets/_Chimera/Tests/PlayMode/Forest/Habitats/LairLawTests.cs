@@ -125,5 +125,95 @@ namespace Chimera.Tests.PlayMode
             Assert.Greater(seen.fear, 0f, "жилец слышал смерть — логово ежа боится, хотя жертва не ёж");
             Assert.AreEqual(0f, far.fear, "волчье логово не видело — не боится, хотя вид тот же");
         }
+
+        Health PlainHealth(Vector3 pos)
+        {
+            var go = new GameObject("~Смертный");
+            go.transform.position = pos;
+            trash.Add(go);
+            var h = go.AddComponent<Health>();
+            return h;
+        }
+
+        [UnityTest]
+        public IEnumerator AnyDeath_FiresOncePerDeath_WithPointAndKiller_AgainAfterRevive()
+        {
+            var victim = PlainHealth(new Vector3(10f, 0f, 20f));
+            var killer = PlainHealth(new Vector3(0f, 0f, 0f));
+            victim.LastAttacker = killer;
+            int n = 0; Health gotV = null, gotK = null; Vector3 gotAt = default;
+            System.Action<Health, Vector3, Health> sub = (v, at, k) => { n++; gotV = v; gotAt = at; gotK = k; };
+            Health.AnyDeath += sub;
+            try
+            {
+                victim.TakeDamage(999999, true);
+                victim.TakeDamage(999999, true); // мёртвый второй раз не умирает
+                Assert.AreEqual(1, n, "ровно один сигнал на смерть");
+                Assert.AreSame(victim, gotV);
+                Assert.AreEqual(new Vector3(10f, 0f, 20f), gotAt);
+                Assert.AreSame(killer, gotK, "убийца — LastAttacker");
+
+                yield return null; // destroyOnDeath: объект снесён в конце кадра
+            }
+            finally { Health.AnyDeath -= sub; }
+
+            // Revive: второй объект без сноса (destroyOnDeath по умолчанию true — оживляем до конца кадра)
+            var v2 = PlainHealth(Vector3.zero);
+            System.Action<Health, Vector3, Health> sub2 = (v, at, k) => { if (v == v2) n += 100; };
+            Health.AnyDeath += sub2;
+            try
+            {
+                v2.TakeDamage(999999, true);
+                v2.Revive();
+                v2.TakeDamage(999999, true);
+                Assert.AreEqual(201, n, "после Revive следующая смерть шлёт снова");
+            }
+            finally { Health.AnyDeath -= sub2; }
+        }
+
+        [UnityTest]
+        public IEnumerator AnyDeath_ThrowingSubscriber_DoesNotBreakDeath()
+        {
+            var victim = PlainHealth(Vector3.zero);
+            bool deathEvent = false, second = false;
+            victim.onDeath.AddListener(() => deathEvent = true);
+            System.Action<Health, Vector3, Health> bad = (v, at, k) => throw new System.InvalidOperationException("подписчик сломан");
+            System.Action<Health, Vector3, Health> good = (v, at, k) => second = true;
+            Health.AnyDeath += bad; Health.AnyDeath += good;
+            try
+            {
+                LogAssert.Expect(LogType.Exception, new System.Text.RegularExpressions.Regex("подписчик сломан"));
+                victim.TakeDamage(999999, true);
+                Assert.IsTrue(victim.IsDead);
+                Assert.IsTrue(deathEvent, "onDeath отработал");
+                Assert.IsTrue(second, "следующий подписчик получил сигнал");
+            }
+            finally { Health.AnyDeath -= bad; Health.AnyDeath -= good; }
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator PlayerDeath_NearLair_ScaresResidents_ViaAnyDeath()
+        {
+            var wolf = Species("Волк");
+            var reg = new GameObject("~Реестр").AddComponent<LairRegistry>();
+            trash.Add(reg.gameObject);
+            var spawner = new GameObject("~Спавнер").AddComponent<ForestSpawner>();
+            trash.Add(spawner.gameObject);
+            spawner.Configure(reg, new List<SpeciesSO> { wolf });
+            var site = Site("Волк", 2, new Vector3(1500f, 0f, 1500f));
+            reg.Register(site);
+            var far = Site("Волк", 2, new Vector3(1900f, 0f, 1500f));
+            reg.Register(far);
+
+            // «Игрок» не рождён лесом: тело с Health рядом с порогом логова
+            var player = Body(Species("Человек"), new Vector3(1505f, 0f, 1500f));
+            yield return null;
+            Assert.AreEqual(0f, site.fear);
+            player.GetComponent<Health>().TakeDamage(999999, true);
+            yield return null;
+            Assert.Greater(site.fear, 0f, "смерть чужого тела у порога пугает логово без ReportDeathAt руками");
+            Assert.AreEqual(0f, far.fear, "дальнее логово не видело");
+        }
     }
 }

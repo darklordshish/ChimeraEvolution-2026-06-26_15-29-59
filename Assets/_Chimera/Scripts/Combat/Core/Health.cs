@@ -30,6 +30,11 @@ public class Health : MonoBehaviour
     public UnityEvent onDeath = new();
     public UnityEvent onRevived = new(); // игрок встаёт после «сна» (спека вечной эволюции 2026-11-12, §5 п.1.2)
 
+    /// <summary>ОБЩИЙ СИГНАЛ СМЕРТИ (закон логова: страх от свидетелей): жертва, точка смерти, убийца
+    /// (`LastAttacker` или null). Один раз на смерть; после `Revive` следующая смерть шлёт снова. Подписчик, бросивший
+    /// исключение, смерти не ломает — ловится и логируется. Подписку снимать в OnDisable (статика живёт до домена).</summary>
+    public static event System.Action<Health, Vector3, Health> AnyDeath;
+
     bool dead;
     public bool IsDead => dead;
     float regenAccum;
@@ -128,7 +133,21 @@ public class Health : MonoBehaviour
         {
             dead = true;
             onDeath?.Invoke();
+            RaiseAnyDeath();
             if (destroyOnDeath) Destroy(gameObject);
+        }
+    }
+
+    void RaiseAnyDeath()
+    {
+        var handlers = AnyDeath;
+        if (handlers == null) return;
+        Vector3 at = transform.position;
+        Health killer = LastAttacker != null ? LastAttacker : null; // Unity-null -> настоящий null
+        foreach (var d in handlers.GetInvocationList())
+        {
+            try { ((System.Action<Health, Vector3, Health>)d)(this, at, killer); }
+            catch (System.Exception e) { Debug.LogException(e, this); }
         }
     }
 }

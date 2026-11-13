@@ -64,6 +64,16 @@ public class ForestSpawner : MonoBehaviour
         warnedMissingSpecies.Clear();
     }
 
+    void OnEnable() { Health.AnyDeath += OnAnyDeath; }
+    void OnDisable() { Health.AnyDeath -= OnAnyDeath; }
+
+    /// <summary>Любая смерть в мире (игрок, босс, чужие, свои) — свидетелям логов. Общий сигнал ядра.</summary>
+    void OnAnyDeath(Health victim, Vector3 at, Health killer)
+    {
+        if (victim == null) return;
+        ReportDeathAt(at, victim.GetComponent<CreatureBody>());
+    }
+
     void Update()
     {
         if (autoTick) Tick(Time.deltaTime);
@@ -142,13 +152,12 @@ public class ForestSpawner : MonoBehaviour
     /// Смерть зверя логова. Место в логове освобождается само (мёртвый не жилец, `LairSite.population`), а страх — по
     /// закону свидетелей (спека «логово по законам» §4.3): пугаются логова, чьи жильцы смерть видели или слышали, или
     /// у чьего порога она случилась. Вид жертвы не сравнивается с видом логова.
-    /// <para>Лес знает смерти тех, кого родил; смерти босса и игрока придут, когда у механик будет общий сигнал смерти.</para>
+    /// <para>Смерти всех (и босса, и игрока) приходят общим сигналом `Health.AnyDeath`; здесь только учёт своих.</para>
     /// </summary>
     void OnSpawnedDeath(CreatureBody body)
     {
         spawned.Remove(body); // мёртвый не жилец: SpawnedCount не должен его считать
-        if (body == null) return;
-        ReportDeathAt(body.transform.position, body);
+        // Страх идёт общим сигналом Health.AnyDeath (OnAnyDeath) — здесь второго отчёта нет.
     }
 
     /// <summary>Смерть в точке — всем логовам реестра по закону свидетелей.</summary>
