@@ -1,0 +1,26 @@
+{
+ "organ": "Шкура@Змея",
+ "byudzhet": 102,
+ "zerkalo": false,
+ "raskladka": {
+  "tip": "romb",
+  "shag": 0.068,
+  "ug": 0.62,
+  "b0": 0.1397,
+  "a_max": 0.25,
+  "b_min": -0.2195,
+  "b_max": 0.1397
+ },
+ "element": {
+  "tip": "plastina",
+  "nah": 1.25,
+  "hk": 0.013,
+  "bok": 0.004,
+  "verh": 0.003,
+  "skat_dop": 0.35,
+  "skat_zazor": 0.002,
+  "glub_max": 0.012,
+  "rastyazh": 1.45,
+  "skat_dalnost": 0.5
+ }
+}

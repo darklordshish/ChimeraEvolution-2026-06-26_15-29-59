@@ -3,7 +3,7 @@
   blender -b тело.blend --factory-startup --python-exit-code 1 -P organy_chelovek.py -- выход.blend [--tolko Рога@Лось,…] [--otchet тр.json]
 Дальше каждый объект идёт в сборку через `organ_objekt.py` (база прижата к телу, форма `рост` полная).
 """
-import sys, math, json
+import sys, os, math, json
 import bpy, bmesh
 import numpy as np
 from mathutils import Vector
@@ -115,6 +115,12 @@ def organ(im):
     def d(fn):
         Sob[im] = fn; return fn
     return d
+
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'nakladki')); import nakladka   # накладки Шкуры — движок и данные доноров (13.11)
+def nak(f):
+    """орган Шкуры из `nakladki/<f>.json`: один движок, донор — данные; движок строит обе стороны и отдаёт готовый объект"""
+    d = nakladka.zagruzit(f); Sob[d['organ']] = lambda: nakladka.postroit(d, 'Человек')
 
 
 def prizma(O, kontur, y_ot, tol, kost):
@@ -269,38 +275,7 @@ def kogti_ezh(): return kogti('Руки@Ёж', .032, .030, .011)
 def kogti_ezh2(): return kogti('Руки.коготь@Ёж', .032, .030, .011)
 
 
-def list_sherst(O, x, z, dl, sh, nakl, kost=None, lift=.012, luch=None, shir=False):
-    """лист: корень на коже, кончик по направлению nakl (0 — вниз, к π/2 — наружу), ребро приподнято; нормаль от оси спины. luch — направление луча к коже через (x, 0.08, z): по умолчанию сзади по −y; на трапеции сверху-сзади, иначе луч проходит над плечом"""
-    if luch == 'blizh': p, ns_ = BVH.find_nearest(Vector((x, .10, z)))[:2]   # корень — ближайшая точка кожи к (x, 0.10, z): на трапеции у шеи лучи проходят мимо тела
-    else:
-        if luch: d = Vector(luch).normalized(); p0 = Vector((x, .08, z)) - d * .6
-        else: p0 = Vector((x, .4, z)); d = Vector((0, -1, 0))
-        if BVH.ray_cast(p0, d)[0] is None: return
-        p, n = kozha(p0, d)
-    n = Vector((min(abs(x) / .25, 1) * .7, .75, .15)).normalized()
-    if luch == 'blizh': n = (n + ns_).normalized()   # с ближайшей точкой — и нормаль кожи: на верхней плоскости трапеции лист по «спинной» нормали уходил под кожу (6-й проход критика)
-    vn = Vector((math.sin(nakl), 0, -math.cos(nakl))); vn = (vn - n * vn.dot(n)).normalized(); bk = n.cross(vn).normalized()
-    if bk.x < 0: bk = -bk
-    koren = O.v(p - n * .006 - vn * .01, kost); l = O.v(p + vn * (dl * .4) + bk * sh + n * lift, kost); r = O.v(p + vn * (dl * .4) - bk * sh + n * lift, kost)
-    gr = O.v(p + vn * (dl * .45) + n * (lift + sh * .3), kost); kon = O.v(p + vn * dl + n * (lift * .8), kost)
-    if shir:   # широкий корень под кожей и под листом ряда выше: лист с одним острым концом, а не веретено
-        rl = O.v(p - n * .014 + bk * sh * .7, kost); rr = O.v(p - n * .014 - bk * sh * .7, kost)
-        F_ = ((koren, gr, rl), (rl, gr, l), (l, gr, kon)) if abs(x) < 1e-4 else ((rl, gr, l), (rr, r, gr), (rl, rr, gr), (l, gr, kon), (gr, r, kon))
-    else: F_ = ((koren, gr, l), (l, gr, kon)) if abs(x) < 1e-4 else ((koren, gr, l), (koren, r, gr), (l, gr, kon), (gr, r, kon))
-    for q in F_: O.f(*q)
-
-
-@organ('Шкура@Волк')
-def griva():
-    """`витрина/органы/волк-2.png`, ряд 3 (паспорт витрины: грива на загривке и плечах, не сползает на спину): накидка из листьев вокруг основания шеи, три ряда внахлёст; листья свисают вниз и чуть наружу по телу, длина неравная, корень широкий (10.11: прежний веер с наклоном до 64° от вертикали читался ошейником с шипами — наклон сжат до ≤ 30°; после критика — воротник поднят на шею, лист с одним острым концом)"""
-    O = Org('Шкура@Волк'); DL = (1.0, .82, 1.12, .9, 1.06, .78)
-    for k, (r, dl, sh, ug) in enumerate(((.05, .12, .044, (0, .7, 1.3)), (.11, .13, .044, (.2, .6, 1.0, 1.35)), (.17, .14, .042, (0, .4, .8, 1.15)))):   # 3-й проход критика: короткие широкие листья ярусами черепицей вокруг шеи, а не длинные сосульки
-        for m, th in enumerate(ug):
-            kr = th > 1.0   # крайние у плеча: наружу до ~50° и длиннее — выходят за контур дельты (2-й проход критика)
-            list_sherst(O, r * math.sin(th), 1.66 - r * math.cos(th), dl * DL[(k * 4 + m) % 6] * (1.35 if kr else 1), sh, .10 + th * (.65 if kr else .35), lift=.042 - .008 * k, luch='blizh', shir=True)   # верхние ярусы отходят от кожи на 4 см — выступ воротника в профиль
-    for x, z, dl in ((.19, 1.50, .21), (.235, 1.47, .17)):   # на верху дельты: лист через плечо вниз-наружу — грива видна спереди и в профиль
-        list_sherst(O, x, z, dl, .034, .95, lift=.018, luch=(0, -.5, -1), shir=True)   # верхний ряд — воротник на шее, отходит от кожи сильнее: у накидки объём
-    return O
+nak('volk')
 
 
 def uho_list(O, dl_x, dl_z, sh, z0=1.745, H='голова'):
@@ -417,93 +392,7 @@ def yamka():
     O = Org('Чутьё.ямка@Змея'); p, _ = kozha((.028, -.5, 1.695), (0, 1, 0)); fan(O, p, EYE['n'], .019, .015, .008, 5, pod=.006); return O
 
 
-def cheshuya_romby(O, shag=.09, ug=.62, zatuh=0):
-    """чешуя по телу (геймдизайнер 05.11: «по телу должна идти, а не бронеплитами»): кожа спины, шеи и плеч режется двумя семействами косых плоскостей в ромбическую сетку; каждая ячейка-ромб сжимается к своему центру на 12 % (между чешуями видна кожа) и приподнимается на 2 мм. Форма тела повторяется точно, рельефа нет — читается рисунком и тоном куска. Ряд ниже — по ходу тела сверху вниз"""
-    bm = bmesh.new()
-    for o in TELO:
-        if o.name not in ('хребет', 'шея', 'Сердце', 'Руки'): continue
-        M = o.matrix_world; kb = o.data.shape_keys.key_blocks[0] if o.data.shape_keys else None; o.data.calc_loop_triangles()
-        for t_ in o.data.loop_triangles:
-            A = [M @ (kb.data[j].co if kb else o.data.vertices[j].co) for j in t_.vertices]; c = sum(A, Vector()) / 3; n = (A[1] - A[0]).cross(A[2] - A[0])
-            if n.length < 1e-9: continue
-            n.normalize()
-            if 1.06 < c.z < 1.64 and n.y > .25 and (o.name != 'Руки' or c.z > 1.34):
-                try: bm.faces.new([bm.verts.new(a_) for a_ in A])
-                except ValueError: pass
-    bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=1e-5)
-    N1, N2 = Vector((math.sin(ug), 0, math.cos(ug))), Vector((-math.sin(ug), 0, math.cos(ug)))
-    for N_ in (N1, N2):
-        for k in range(-30, 31):
-            bmesh.ops.bisect_plane(bm, geom=bm.verts[:] + bm.edges[:] + bm.faces[:], dist=1e-6, plane_co=N_ * (k * shag) + Vector((0, 0, 0)), plane_no=N_)
-    # почти плоские соседи внутри одной ячейки — одной гранью: меньше треугольников, рисунок тот же
-    def kl(f): c = f.calc_center_median(); return (math.floor(N1.dot(c) / shag), math.floor(N2.dot(c) / shag))
-    bm.normal_update(); ed = [e for e in bm.edges if len(e.link_faces) == 2 and kl(e.link_faces[0]) == kl(e.link_faces[1]) and e.link_faces[0].normal.angle(e.link_faces[1].normal, 0) < math.radians(9)]
-    bmesh.ops.dissolve_edges(bm, edges=ed, use_verts=True)
-    bmesh.ops.triangulate(bm, faces=bm.faces[:]); bm.normal_update()
-    yach = {}
-    for f in bm.faces:
-        c = f.calc_center_median(); key = (math.floor(N1.dot(c) / shag), math.floor(N2.dot(c) / shag)); yach.setdefault(key, []).append(f)
-    for key, F in yach.items():
-        Sa = sum(f.calc_area() for f in F)
-        if Sa < 4e-4: continue   # обрезки ячеек у края — без них край ровнее
-        cc = sum((f.calc_center_median() * f.calc_area() for f in F), Vector()) / Sa; nn = sum((f.normal * f.calc_area() for f in F), Vector())
-        if nn.y < 0: nn = -nn
-        nn.normalize(); V = {v for f_ in F for v in f_.verts}; pod = sum((v.co - cc).dot(nn) for v in V) / len(V) + .0018
-        # ромб плоский: ячейка ложится на свою среднюю плоскость над кожей, внутренние рёбра растворяются — одна грань на ромб, свет ровный
-        bc = bmesh.new(); mp = {}
-        for f_ in F:
-            q = []
-            for v in f_.verts:
-                if v not in mp:
-                    q_ = cc + ((v.co - cc) - nn * (v.co - cc).dot(nn)) * (.90 - (.45 * min(max(1.33 - cc.z, 0) / .25, 1) if zatuh else 0))
-                    mp[v] = bc.verts.new(q_ + nn * max(pod, (v.co - cc).dot(nn) + .0018))   # почти плоско: где кожа выше плоскости, ромб ложится на кожу
-                q.append(mp[v])
-            try: bc.faces.new(q)
-            except ValueError: pass
-        bc.normal_update(); bmesh.ops.dissolve_limit(bc, angle_limit=math.radians(6), verts=bc.verts[:], edges=bc.edges[:]); bmesh.ops.dissolve_degenerate(bc, edges=bc.edges[:], dist=1e-4)
-        dv = [v for v in bc.verts if len(v.link_edges) == 2 and (v.link_edges[0].other_vert(v).co - v.co).normalized().dot((v.link_edges[1].other_vert(v).co - v.co).normalized()) < -.995]
-        bmesh.ops.dissolve_verts(bc, verts=dv)
-        bmesh.ops.triangulate(bc, faces=bc.faces[:])
-        for f_ in bc.faces: O.f(*[O.v(v.co) for v in f_.verts])
-        bc.free()
-    bm.free()
-
-
-@organ('Шкура@Змея')
-def cheshuya_kili():
-    """накладка чешуи (спека 10.11: рельеф геометрией только участком, ~200 тр; рисунок по телу даёт плитка): ромбическая сетка Codex 06.11, но пластина — черепица по `витрина/органы/змея.png`: верхний угол уходит под кожу (3 мм), нижний приподнят на 13 мм и даёт тень, бока на 4 мм; ромб больше ячейки на 25% — ряды внахлёст (2-й проход критика: при 22 мм и 15% между рядами чернели щели, в профиль пластины отслаивались). 10.11, после критика: пирамидки-кили с вершиной в центре читались бронёй с шипами"""
-    O = Org('Шкура@Змея'); SHAG, UG, HK, NAH = .068, .62, .013, 1.25; XM_, ZL_ = float(opt.get('kil_x', '.27')), float(opt.get('kil_z', '1.30')); S_, C_ = math.sin(UG), math.cos(UG)
-    def tochka(u, w):   # узел сетки (u, w) → точка кожи сзади и нормаль
-        x = (u - w) * SHAG / (2 * S_); z = (u + w) * SHAG / (2 * C_) + Z0_
-        d_ = Vector((0, -1, -.45)).normalized(); h = BVH.ray_cast(Vector((x, .08, z)) - d_ * .8, d_)   # луч проходит через узел на глубине спины
-        if h[0] is None or h[1].dot(d_) > -.05:   # за краем спины луч мимо: узел ложится на ближайшую точку кожи — ячейка обнимает верх плеча (10.11: кили не доходили до краёв плеч на ширину киля)
-            if abs(x) > XM_: return None
-            q, n, _, _ = BVH.find_nearest(Vector((x, .10, z)))
-            if n.y < -.2: return None
-            h = (q, n)
-        elif h[1].dot(d_) > 0: h = (h[0], -h[1])
-        if not (ZL_ < h[0].z < 1.66): return None
-        return h[0], h[1]
-    Z0_ = 1.30; n_ = 0
-    for i in range(-9, 10):
-        for j in range(-9, 10):
-            U = [tochka(i + .5 + (a_ - .5) * NAH, j + .5 + (b_ - .5) * NAH) for a_, b_ in ((0, 0), (1, 0), (1, 1), (0, 1))]   # низ, бок +x, верх, бок −x; ромб больше ячейки на NAH — ряды внахлёст
-            if any(q is None for q in U) or max((U[k][0] - U[(k + 1) % 4][0]).length for k in range(4)) > SHAG * NAH * 1.45: continue   # ячейка, разорванная краем тела (4-й проход: растянутые до 1.9 шага на дельте читались сколами)
-            (pb, nb), (pr, nr), (pt, nt), (pl, nl) = U
-            def glub(m):   # насколько точка под кожей (м); > 0 — под
-                q_, n_q, _, _ = BVH.find_nearest(m); return (q_ - m).dot(n_q)
-            if max(glub((pb + nb * HK + pt - nt * .003) / 2), glub((pr + nr * .004 + pl + nl * .004) / 2)) > .012: continue   # на выпуклой дельте плоская пластина уходит серединой под кожу, наружу торчит лезвие угла (5-й проход критика: «сколы»)
-            B, R, T, L = O.v(pb + nb * HK), O.v(pr + nr * .004), O.v(pt - nt * .003), O.v(pl + nl * .004)
-            # скат под нижними кромками к коже на треть ячейки ниже: смотрит назад-вверх и освещён (3-й проход: отвесная юбка уходила в тень и читалась чёрной щелью)
-            Ux = [tochka(i + .5 + (a_ - .5) * (NAH + .35), j + .5 + (b_ - .5) * (NAH + .35)) for a_, b_ in ((0, 0), (1, 0), (0, 1))]
-            Bs, Rs, Ls = (O.v(q[0] - q[1] * .002) if q and (q[0] - p).length < SHAG * .5 else None for q, (p, n_) in zip(Ux, ((pb, nb), (pr, nr), (pl, nl))))   # точка ската не дальше полшага от кромки: иначе скат тянулся на руку
-            O.f(T, R, B); O.f(T, B, L)   # пластина с изломом по вертикали
-            if Bs is not None:   # скат под нижними кромками — только где у ската есть точка на коже; иначе он вырождался в тонкое лезвие и висел сколом на дельте (5-й проход)
-                if Rs is not None: O.f(R, Rs, Bs); O.f(R, Bs, B)
-                if Ls is not None: O.f(L, B, Bs); O.f(L, Bs, Ls)
-            n_ += 1
-    print('ЧЕШУЯ: килей %d' % n_)
-    return O
+nak('zmeya')
 
 
 @organ('Хвост@Змея')
@@ -520,34 +409,10 @@ def hvost_zmeya():
     O.lofta(Ring, nachalo=True, konec=False); O.konec(Ring[-1], O.v(e + d * .24, K)); return O
 
 
-@organ('Шкура@Лось')
-def gorb():
-    """`витрина/органы/лось-1.png`, ряд 5: гребень холки ступенчатыми пластинами от основания шеи до лопаток. Каждая пластина растёт вниз к своей кромке, подступёнок к следующей пологий — 2.5 см по высоте, без нависания (10.11: уступы-пары сечений в 1 см читались тёмными щелями поперёк горба; гладкий горб критик прочёл перекачанной трапецией)"""
-    O = Org('Шкура@Лось'); Ko = []
-    Wz = ((1.67, .02), (1.60, .06), (1.51, .10), (1.42, .125), (1.33, .115), (1.24, .075), (1.17, .03))
-    def shir(z):
-        for (z0, w0), (z1, w1) in zip(Wz, Wz[1:]):
-            if z1 <= z <= z0: return w1 + (w0 - w1) * (z - z1) / (z0 - z1)
-        return Wz[-1][1]
-    Pr = [(1.67, .0), (1.56, .065), (1.47, .115), (1.45, .075), (1.37, .14), (1.35, .095), (1.26, .105), (1.17, .004)]   # 2-й проход критика: кромки выносятся назад за предыдущую на 3.5–4.5 см — зубцы в профиль; у шеи подступёнка нет (6-й проход: тёмный клин)   # (z, высота над кожей): кромка пластины, подступёнок, кромка…
-    Se = [(z, shir(z) * .7, h) for z, h in Pr]   # гребень уже на треть — выше и острее
-    for z, w, h in Se:
-        y0 = kozha((0, .5, z), (0, -1, 0))[0].y; y1 = kozha((w * .55, .5, z), (0, -1, 0))[0].y if BVH.ray_cast(Vector((w * .55, .5, z)), Vector((0, -1, 0)))[0] else y0; y2 = kozha((w, .5, z), (0, -1, 0))[0].y if BVH.ray_cast(Vector((w, .5, z)), Vector((0, -1, 0)))[0] else y0 - .03
-        Ko.append([O.v((0, y0 + h, z)), O.v((w * .55, y1 + h * .72, z - .006)), O.v((w, y2 - .004, z - .012))])
-    for r0, r1 in zip(Ko, Ko[1:]):
-        for j in range(2): O.f(r0[j], r0[j + 1], r1[j + 1]); O.f(r0[j], r1[j + 1], r1[j])
-    return O
+nak('los')
 
 
-@organ('Шкура@Ёж')
-def igly_ezh():
-    """ровные ряды одинаковых клиньев внахлёст: сетка по рядам со сдвигом на полшага, один размер, вниз; край ряда — наружу, контур плеч"""
-    O = Org('Шкура@Ёж'); shag = .066; dl = .15; sh = .034
-    for j, (z, xm) in enumerate(((1.66, .07), (1.625, .16), (1.59, .17), (1.55, .21), (1.495, .27), (1.44, .29), (1.385, .27), (1.33, .23), (1.275, .19))):   # 10.11, после критика: верхние ряды шире и гуще — на трапецию (ряд 1.575 добавлен в 4-м проходе), три нижних сняты ради бюджета
-        x = 0 if j % 2 == 0 else shag / 2
-        while x <= xm + 1e-4:
-            k_ = x / max(xm, .05); list_sherst(O, x, z, dl, sh, .08 + (k_ ** 3) * .35, lift=.016, luch='blizh' if z > 1.50 else None); x += shag   # на трапеции корень — ближайшая точка кожи: лучи по −y и сверху проходили над плечом, и иглы верхних рядов пропадали   # крайние — не больше 36° наружу: прежние 50° торчали оторванными
-    return O
+nak('ezh')
 
 
 # трубы игломёта: (x, длина, y основания, z основания, наклон вперёд °). 10.11, после критика: трубы стояли на полке в 10 см за кожей (основания y 0.16 при спине 0.061) и в 3/4 сзади сливались в плиту. Теперь треугольником: передняя пара вплотную к шее почти вертикально, разной длины (в профиль — два конца), задняя по центру ниже по спине и позади пары (в профиль — третья); концы на 3–8 см выше макушки (1.85)
@@ -638,6 +503,6 @@ if opt.get('cvet'):
 res = {}
 for im, fn in Sob.items():
     if TOLKO and im not in TOLKO: continue
-    O = fn(); ob = O.sobrat(zerkalo=not im.startswith(('Хвост', 'Шкура.чешуя', 'Игломёт', 'Шкура@Змея'))); ob.data.calc_loop_triangles(); res[im] = len(ob.data.loop_triangles); print('ОРГАН %s: %d тр' % (im, res[im]))
+    O = fn(); ob = O if isinstance(O, bpy.types.Object) else O.sobrat(zerkalo=not im.startswith(('Хвост', 'Шкура.чешуя', 'Игломёт'))); ob.data.calc_loop_triangles(); res[im] = len(ob.data.loop_triangles); print('ОРГАН %s: %d тр' % (im, res[im]))
 if opt.get('otchet'): json.dump(res, open(opt['otchet'], 'w', encoding='utf-8'), ensure_ascii=False, indent=1)
 bpy.ops.wm.save_as_mainfile(filepath=OUT)
