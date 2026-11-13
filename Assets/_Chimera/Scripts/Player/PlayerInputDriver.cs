@@ -73,7 +73,7 @@ public class PlayerInputDriver : MonoBehaviour
         // пользователя); альтернатива — ЛКМ как оружие слота Рук (коготь↔иглы), тогда убрать этот бинд
         volleyAction = new InputAction("QuillVolley", InputActionType.Button);
         volleyAction.AddBinding("<Mouse>/middleButton");
-        volleyAction.AddBinding("<Gamepad>/rightShoulder");
+        volleyAction.AddBinding("<Gamepad>/rightStickPress"); // правый шифтер занят воем — двойная привязка (13.11)
     }
 
     int knownSlots; // пересобрать хоткеи, когда слотов стало больше (выдан химерный слот)

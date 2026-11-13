@@ -2,6 +2,13 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AI;
 
+/// <summary>Адрес выхода босса: куда он приходит в мир (дверь, лаз). Подключается компонентом на спавнере или
+/// статически (`BossChimeraSpawner.ExitProvider`); нет адреса — босс рождается в `spawnDistance` от игрока.</summary>
+public interface IBossExit
+{
+    bool TryGetExit(out Vector3 pos, out Quaternion rot);
+}
+
 /// <summary>БОСС-ХИМЕРА — спавнер-тюнинг в сцене (правило проекта: настраиваемое — объектом, не бутстрапом).
 ///     Шасси — ВСЕГДА Человек: сценарный закон «босс — химера человека с кем-то». Доноры берутся у тела игрока —
 /// босс буквально «такой же, как ты, только зашёл дальше». Состав набирается конструктором по рецепту, а
@@ -31,6 +38,9 @@ public class BossChimeraSpawner : MonoBehaviour
     [SerializeField] float respawnDelayHours = 24f;
     [SerializeField] float spawnDistance = 18f;
 
+    /// <summary>Подключаемый адрес выхода (null — смотреть компонент `IBossExit` на этом объекте, затем «от игрока»).</summary>
+    public static IBossExit ExitProvider;
+
     CreatureBody current;
     string currentType, currentName, currentWere;
     double nextSpawnHours; // игровые часы, не Time.time: иначе «сон» игрока кулдаун не двигал бы (спека вечной эволюции, 1.5)
@@ -51,6 +61,9 @@ public class BossChimeraSpawner : MonoBehaviour
     public CreatureBody SpawnNearPlayer(Recipe r)
     {
         var pb = CreatureBody.PlayerBody;
+        var exit = ExitProvider;
+        if (exit == null) TryGetComponent(out exit);
+        if (exit != null && exit.TryGetExit(out Vector3 exitPos, out Quaternion exitRot)) return Spawn(r, exitPos, exitRot);
         Vector3 origin = pb != null ? pb.transform.position : transform.position;
         Vector2 dir = Random.insideUnitCircle.normalized;
         if (dir == Vector2.zero) dir = Vector2.right;
@@ -60,7 +73,7 @@ public class BossChimeraSpawner : MonoBehaviour
     }
 
     /// <param name="ground">точка на земле; центр носителя поднимается на полкапсулы с учётом размера босса</param>
-    public CreatureBody Spawn(Recipe r, Vector3 ground)
+    public CreatureBody Spawn(Recipe r, Vector3 ground, Quaternion? rotation = null)
     {
         var pb = CreatureBody.PlayerBody;
         if (pb == null || pb.Chassis == null || pb.Donors == null || pb.Donors.Length == 0)
@@ -100,6 +113,7 @@ public class BossChimeraSpawner : MonoBehaviour
             });
         if (body == null) return null;
 
+        if (rotation.HasValue) body.transform.rotation = rotation.Value; // после Spawn: позицию CC уже зафиксировал
         module.Finish(body, typeId);
         currentType = typeId; currentName = name; currentWere = were;
         if (body.TryGetComponent<Health>(out var hp))
