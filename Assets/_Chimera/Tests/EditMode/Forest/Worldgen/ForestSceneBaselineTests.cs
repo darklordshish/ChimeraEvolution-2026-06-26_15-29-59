@@ -18,6 +18,7 @@ namespace Chimera.Tests.EditMode
     public class ForestSceneBaselineTests
     {
         const string CapturedAt = "2026-11-01 @ 961f854d";
+        const string FirstZoneAt = "2026-11-13 (П-3: павильон — первая зона)";
         const string Sandbox = "Assets/Scenes/ForestSandbox.unity";
         const string Fragment = "Assets/Scenes/ForestFragment.unity";
         const string Pavilion = "Assets/Scenes/ForestPavilion.unity";
@@ -108,7 +109,8 @@ namespace Chimera.Tests.EditMode
                 Assert.IsTrue(b.buildAsh, $"{CapturedAt}: {Pavilion} buildAsh");
                 Assert.IsFalse(b.buildRavines, $"{CapturedAt}: {Pavilion} buildRavines");
                 Assert.IsTrue(b.buildTerrace, $"{CapturedAt}: {Pavilion} buildTerrace");
-                Assert.IsTrue(b.buildCanyon, $"{CapturedAt}: {Pavilion} buildCanyon");
+                // 13.11, П-3: павильон — первая зона вечного цикла; каньон заморожен (тег-архив), пул — четыре зверя.
+                Assert.IsFalse(b.buildCanyon, $"{FirstZoneAt}: {Pavilion} buildCanyon");
                 Assert.IsTrue(b.buildStationLoop, $"{CapturedAt}: {Pavilion} buildStationLoop");
                 Assert.IsTrue(b.buildStationHill, $"{CapturedAt}: {Pavilion} buildStationHill");
                 Assert.IsTrue(b.buildLabComplex, $"{CapturedAt}: {Pavilion} buildLabComplex");
@@ -118,7 +120,7 @@ namespace Chimera.Tests.EditMode
                 Assert.AreEqual(LabStyle.Bastion, b.labStyle, $"{CapturedAt}: {Pavilion} labStyle");
                 Assert.AreEqual(LabEntrance.Rock, b.labEntrance, $"{CapturedAt}: {Pavilion} labEntrance");
                 Assert.AreEqual(150f, b.minLabDistance, 1e-4f, $"{CapturedAt}: {Pavilion} minLabDistance");
-                Assert.AreEqual(1, b.speciesPool.Count, $"{CapturedAt}: {Pavilion} speciesPool");
+                Assert.AreEqual(4, b.speciesPool.Count, $"{FirstZoneAt}: {Pavilion} speciesPool");
                 AssertDefaults(b);
             });
         }

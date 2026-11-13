@@ -44,7 +44,7 @@ namespace Chimera.Tests.EditMode
             {
                 expectedHost = new GameObject("~ExpectedA");
                 expected = ForestProfiles.A(expectedHost);
-                AddPopulation(expected, species: true);
+                AddPopulation(expected, "Змея");
                 AssertNoDiff(scene, expected, "A/ForestSandbox");
             });
         }
@@ -67,7 +67,7 @@ namespace Chimera.Tests.EditMode
             {
                 expectedHost = new GameObject("~ExpectedPavilion");
                 expected = ForestProfiles.PavilionV1(expectedHost);
-                AddPopulation(expected, species: true);
+                AddPopulation(expected, "Волк", "Змея", "Лось", "Ёж"); // первая зона, 13.11
                 AssertNoDiff(scene, expected, "Pavilion v1");
             });
         }
@@ -117,13 +117,14 @@ namespace Chimera.Tests.EditMode
         }
 
         /// <summary>Сцена держит ссылку на пул видов — ожидаемый профиль обязан её повторить.</summary>
-        static void AddPopulation(ForestBuilder b, bool species)
+        static void AddPopulation(ForestBuilder b, params string[] species)
         {
-            if (species)
+            b.speciesPool = new List<SpeciesSO>();
+            foreach (var name in species)
             {
-                var so = AssetDatabase.LoadAssetAtPath<SpeciesSO>("Assets/_Chimera/Data/Змея.asset");
-                Assert.IsNotNull(so, "вид «Змея» не загружен");
-                b.speciesPool = new List<SpeciesSO> { so };
+                var so = AssetDatabase.LoadAssetAtPath<SpeciesSO>($"Assets/_Chimera/Data/{name}.asset");
+                Assert.IsNotNull(so, $"вид «{name}» не загружен");
+                b.speciesPool.Add(so);
             }
         }
 

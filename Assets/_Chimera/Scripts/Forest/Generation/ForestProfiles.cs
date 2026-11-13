@@ -36,12 +36,13 @@ public static class ForestProfiles
         buildOnAwake = true,
     });
 
-    /// <summary>Pavilion v1: B-lite — Ø2000, сид 1337, quads 48, 1500 деревьев.</summary>
+    /// <summary>Pavilion v1: B-lite — Ø2000, сид 1337, quads 48, 1500 деревьев. С 13.11 — первая зона вечного цикла:
+    /// каньон выключен (заморожен, ассеты в теге `archive/les-zamorozka-2026-11-12`).</summary>
     public static ForestBuilder PavilionV1(GameObject host) => Configure(host, new Profile
     {
         seed = 1337, diameter = 2000f, chunk = 250f, quads = 48, treeCount = 1500,
         patchy = true, ash = true, spawnAtEntry = true,
-            terrace = true, canyon = true, stationLoop = true, stationHill = true,
+            terrace = true, canyon = false, stationLoop = true, stationHill = true,
             labComplex = true, labPlan = true, climate = true,
             style = LabStyle.Bastion, entrance = LabEntrance.Rock,
         climateTimeMinutes = 10.5f, climateTimeScale = 0f,
