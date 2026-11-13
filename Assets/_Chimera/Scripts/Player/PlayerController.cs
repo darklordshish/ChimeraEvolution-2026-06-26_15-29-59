@@ -60,7 +60,7 @@ public class PlayerController : MonoBehaviour
     Slow slow;         // замедление от игл ежа (до-создаётся эффектом): режет ход, не рывок
     Satiety satiety;   // истощение (пустая шкала голода) слабит ход
     Vector3 velocity;
-    float dashTimer, dashReadyAt, groundY, legDashOverride; // legDashOverride: длинный рывок лосиных ног (0 = дефолт dashDuration)
+    float dashTimer, dashReadyAt, supportY, standOffset, legDashOverride; // legDashOverride: длинный рывок лосиных ног (0 = дефолт dashDuration)
     Vector3 dashDir;
     IGrabber grabber;        // волк/змея, держащий игрока в захвате
     float grabSlow = 1f;     // множитель скорости И рывка, пока в захвате (1 = свободно; 0 = корень на 3-й стадии обхвата)
@@ -69,7 +69,7 @@ public class PlayerController : MonoBehaviour
     // dev-призрак даёт иммунитет к захватам автоматически (и теряет его вместе с призраком при атаке):
     // волк/змея уже проверяют GrabImmune в своих захватах — распускаются сами
     public bool GrabImmune { get => grabImmune || Perception.PlayerUnseen; set => grabImmune = value; }
-    public bool IsGrabbed => grabber != null; // тебя держат (гейт для своего обхвата и т.п.)
+    public bool IsGrabbed => grabber != null && GrabberAlive(grabber); // тебя держат (гейт для своего обхвата и т.п.)
     public bool IsDashing => dashTimer > 0f;  // ТАРАН лосиных ног ездит на рывке (PlayerCharge гейтит уроном)
 
     void Awake()
@@ -103,7 +103,7 @@ public class PlayerController : MonoBehaviour
 
         toggleViewAction = new InputAction("ToggleView", InputActionType.Button);
         toggleViewAction.AddBinding("<Keyboard>/v");
-        toggleViewAction.AddBinding("<Gamepad>/buttonNorth");
+        toggleViewAction.AddBinding("<Gamepad>/select"); // не buttonNorth: тот отдан удару рогами (PlayerInputDriver)
 
         // ТИХИЙ ШАГ переехал с Shift на Ctrl: Shift занял спринт — «жму Shift = трачу» читается само,
         // и это привычнее по другим играм
@@ -116,9 +116,19 @@ public class PlayerController : MonoBehaviour
         sprintAction.AddBinding("<Gamepad>/leftStickPress");
     }
 
+    // ЗАЩИТА ОТ ПРОВАЛА. Поля — гоча проекта: ноль в старой сцене = «по умолчанию»
+    [SerializeField] float fallProbeRange = 250f;  // насколько глубоко искать пол
+    [SerializeField] float voidFallDepth = 15f;    // пола нет вовсе: на сколько упасть, прежде чем вернуть на опору
+    float FallProbeRange => fallProbeRange > 0f ? fallProbeRange : RayGroundProbe.DefaultRange;
+    float VoidFallDepth => voidFallDepth > 0f ? voidFallDepth : 15f;
+    public float SupportY => supportY;
+    RayGroundProbe defaultProbe;
+
     void Start()
     {
-        groundY = transform.position.y;
+        supportY = transform.position.y;
+        standOffset = FallbackStandOffset;
+        if (TryFloor(transform.position, out float surface0) && StandOffsetFrom(surface0, out float off0)) standOffset = off0;
         SetView(ViewMode.Far);
     }
 
@@ -133,6 +143,7 @@ public class PlayerController : MonoBehaviour
         if (ConstructorUI.IsOpen) return;
 
         if (toggleViewAction.WasPressedThisFrame()) SetView(Next(View));
+        if (grabber != null && !GrabberAlive(grabber)) { grabber = null; grabSlow = 1f; } // мёртвый держатель не держит
 
         Vector2 mv = moveAction.ReadValue<Vector2>();
 
@@ -200,11 +211,76 @@ public class PlayerController : MonoBehaviour
         motion.y = velocity.y;
         controller.Move(motion * Time.deltaTime);
 
-        if (transform.position.y < groundY - 3f) // провалились сквозь пол (стая продавила) — возвращаем
+        GroundGuard();
+    }
+
+
+    /// <summary>Защита от провала, каждый кадр. Стоит (isGrounded) — опора = текущая высота (спуск и есть новая опора).
+    /// Не ниже опоры на 0,5 м — обычный прыжок/сход с уступа. Ниже опоры, а пол под нами есть и выше корня —
+    /// провал сквозь пол: ставим НА ЭТОТ пол. Пола нет вовсе и упали глубже VoidFallDepth — на последнюю опору.</summary>
+    public void GroundGuard()
+    {
+        Vector3 p = transform.position;
+        if (controller.isGrounded)
         {
-            var p = transform.position; p.y = groundY; transform.position = p;
-            velocity.y = 0f;
+            supportY = p.y;
+            if (TryFloor(p, out float s) && StandOffsetFrom(s, out float o)) standOffset = o;
+            return;
         }
+        if (p.y >= supportY - 0.5f) return;
+        if (TryFloor(p, out float surface))
+        {
+            if (p.y >= surface + 0.05f) return; // пол ниже нас — падаем на него нормально
+            p.y = surface + Mathf.Max(0f, standOffset) + 0.02f;
+            Teleport(p);
+            supportY = p.y;
+            return;
+        }
+        if (p.y < supportY - VoidFallDepth) { p.y = supportY; Teleport(p); }
+    }
+
+    // CharacterController перебивает transform.position — на время переноса гасим его
+    void Teleport(Vector3 p)
+    {
+        bool was = controller.enabled;
+        controller.enabled = false;
+        transform.position = p;
+        controller.enabled = was;
+        velocity.y = 0f;
+    }
+
+    bool TryFloor(Vector3 at, out float y)
+    {
+        // стартуем чуть ВЫШЕ опоры: находим пол, сквозь который провалились, и не цепляем крышу над головой
+        Vector3 from = new Vector3(at.x, Mathf.Max(at.y, supportY) + 0.25f, at.z);
+        var probe = GroundProbe.Provider;
+        if (probe == null && TryGetComponent(out IGroundProbe own)) probe = own;
+        if (probe == null)
+        {
+            defaultProbe ??= new RayGroundProbe(transform);
+            defaultProbe.Range = FallProbeRange;
+            probe = defaultProbe;
+        }
+        return probe.TryFloor(from, out y);
+    }
+
+    // смещение корня над полом, снятое когда игрок СТОИТ; далеко — это высота падения, не берём
+    bool StandOffsetFrom(float surface, out float offset)
+    {
+        offset = transform.position.y - surface;
+        if (offset < -0.05f || offset > controller.height + 1f) { offset = 0f; return false; }
+        return true;
+    }
+
+    float FallbackStandOffset => Mathf.Max(0f, controller.height * 0.5f - controller.center.y + controller.skinWidth);
+
+    /// <summary>Живой ли держатель: уничтоженный компонент или выключенный объект держать не может.</summary>
+    static bool GrabberAlive(IGrabber g)
+    {
+        if (g == null) return false;
+        if (g is Object obj && obj == null) return false;
+        if (g is Behaviour b && (!b.isActiveAndEnabled || !b.gameObject.activeInHierarchy)) return false;
+        return true;
     }
 
     void SetView(ViewMode view)
@@ -246,7 +322,7 @@ public class PlayerController : MonoBehaviour
     public void SetDashCooldown(float newCooldown) => dashCooldown = newCooldown;
 
     // захват волком: режем скорость, пока висит; рывок/пинок снимают
-    public void ApplyGrab(IGrabber g, float slow) { grabber = g; grabSlow = Mathf.Clamp01(slow); } // 0 = полный корень (3-я стадия)
+    public void ApplyGrab(IGrabber g, float slow) { if (!GrabberAlive(g)) return; grabber = g; grabSlow = Mathf.Clamp01(slow); } // 0 = полный корень (3-я стадия)
     public void ReleaseGrab(IGrabber g) { if (ReferenceEquals(grabber, g)) { grabber = null; grabSlow = 1f; } }
 
 }

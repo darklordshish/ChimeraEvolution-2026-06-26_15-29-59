@@ -30,8 +30,7 @@ public class Telegraph : MonoBehaviour
     // КЛЫКИ НАМЕРЕННО ВНЕ СПИСКА: белый оскал — акцент, он должен читаться на любой эмоции
     static bool IsHeadName(string n) =>
         n == "Head" || n == "Muzzle" || n == "Nose" || n == "Jaw" || n.StartsWith("Ear")
-        || n == "голова" || n == "Пасть" || n == "уши" || n == "глаза"
-        || n == "нос" || n == "морда" || n == "челюсть" || n == "зубы"; // морф-части и куски головы: имена совпадают с PlayerController.IsOwnFace
+        || n == "голова" || n == "Пасть" || n == "уши" || n == "глаза"; // МОРФ-части именуются по СОКЕТУ (имя = Organ.slot) — эмоции красят их же
 
     void Awake()
     {
@@ -126,7 +125,7 @@ public class Telegraph : MonoBehaviour
         float pulseAmp = 0f, pulseWave = 0f;
         if (pulseTime >= 0f && pulseLatched)
         {
-            pulseAmp = pulse.pulseAmp * Mathf.Clamp01((0.85f - ForestClimate.RangeMult(SenseKind.Sight, transform.position)) / 0.45f);
+            pulseAmp = pulse.pulseAmp * Mathf.Clamp01((0.85f - ForestClimate.RangeMult(SenseKind.Sight)) / 0.45f);
             pulseWave = 0.5f + 0.5f * Mathf.Sin(pulseTime * pulse.pulseFreq * Mathf.PI * 2f);
         }
 
@@ -155,10 +154,6 @@ public class Telegraph : MonoBehaviour
 
     public bool IsShowing => active; // «существо сейчас что-то телеграфирует» = раскрыто (сигнал для камуфляжа)
 
-    /// <summary>Показан ли ЗАМАХ (намерение), а не статус-покраска. Нужен статусам вроде StunTint:
-    /// снимая свой цвет, они не должны гасить чужой свежий замах. См. StunTint.Update.</summary>
-    public bool IsIntentShowing => active && activeIntent;
-
     // s3c: ПУЛЬС-АКЦЕНТ (не обводка — честное имя): временная модуляция первого канала.
     // Armed — SetPulse, работает только на активном ЗАМАХЕ (intent): статусы не пульсируют.
     // Гейт — видимость <0.8, отпуск >0.9 (гистерезис от щелчка), амплитуда рампой 0.85→0.4.
@@ -173,7 +168,7 @@ public class Telegraph : MonoBehaviour
     void Update()
     {
         if (!pulseArmed || !active || !activeIntent) return;
-        float f = ForestClimate.RangeMult(SenseKind.Sight, transform.position);
+        float f = ForestClimate.RangeMult(SenseKind.Sight);
         if (!pulseLatched && f < 0.8f) pulseLatched = true;
         else if (pulseLatched && f > 0.9f) pulseLatched = false;
         if (!pulseLatched) return;

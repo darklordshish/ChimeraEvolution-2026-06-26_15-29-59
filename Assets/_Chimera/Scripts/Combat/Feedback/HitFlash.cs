@@ -15,30 +15,14 @@ public class HitFlash : MonoBehaviour
     Color[] baseColors;
     MaterialPropertyBlock mpb;
     Telegraph telegraph;
-    Health health;
     float timer;
 
-    void Awake()
-    {
-        // ПОДПИСКА ОДИН РАЗ. Rebuild зовут после каждой пересборки морфа, а AddListener копил
-        // слушателей: на химере, пересобранной десяток раз, один удар запускал десяток таймеров.
-        health = GetComponent<Health>();
-        health.onDamaged.AddListener(OnDamaged);
-        Rebuild();
-    }
-
-    void OnDestroy()
-    {
-        if (health != null) health.onDamaged.RemoveListener(OnDamaged);
-    }
-
-    void OnDamaged() => timer = flashTime;
+    void Awake() => Rebuild();
 
     /// <summary>Пере-собрать рендереры. ЗОВЁТ `CreatureBody` после каждой сборки морфа: части рождаются
     /// в рантайме, а ссылки из Awake к этому моменту мертвы — у волка массив был пуст навсегда (визуал
     /// префаба отключён), у змеи забит уничтоженными ссылками. Вспышки урона не было вообще, и ошибок
-    /// в консоли тоже: гвард `!= null` гасил их молча.
-    /// Подписку на урон здесь НЕ трогаем — она живёт в Awake/OnDestroy.</summary>
+    /// в консоли тоже: гвард `!= null` гасил их молча.</summary>
     public void Rebuild()
     {
         var list = new System.Collections.Generic.List<Renderer>();
@@ -53,6 +37,8 @@ public class HitFlash : MonoBehaviour
             var m = renderers[i].sharedMaterial;
             baseColors[i] = (m != null && m.HasProperty(BaseColor)) ? m.GetColor(BaseColor) : Color.gray;
         }
+
+        GetComponent<Health>().onDamaged.AddListener(() => timer = flashTime);
     }
 
     void Update()

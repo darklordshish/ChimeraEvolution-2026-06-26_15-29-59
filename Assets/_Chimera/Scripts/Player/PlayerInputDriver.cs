@@ -20,7 +20,6 @@ public class PlayerInputDriver : MonoBehaviour
     PlayerConstrict constrict;
     PlayerQuillVolley volley;
     CreatureBody body;
-    Health health;
     InputAction attackAction, biteAction, kickAction, howlAction, constrictAction, antlerAction, presentAction, volleyAction;
     readonly List<(InputAction action, int slot)> slotActions = new();
 
@@ -33,12 +32,6 @@ public class PlayerInputDriver : MonoBehaviour
         bellow = GetComponent<PlayerBellow>();
         scream = GetComponent<PlayerScream>();
         antler = GetComponent<PlayerAntler>();
-
-        // СМЕРТЬ ГАСИТ ВСЕ ПРИЁМЫ, а не два. PlayerDeath выключает контроллер и удар, но укус/пинок/
-        // рога/клич/хват/таран продолжали бы слушаться кнопок из «трупа». Драйвер — общий вход ввода,
-        // поэтому он и выключает себя и все грани на теле.
-        health = GetComponent<Health>();
-        if (health != null) health.onDeath.AddListener(OnDeath);
 
         // ЛКМ / X на геймпаде / J
         attackAction = new InputAction("Attack", InputActionType.Button);
@@ -71,18 +64,16 @@ public class PlayerInputDriver : MonoBehaviour
         constrictAction.AddBinding("<Keyboard>/f");
         constrictAction.AddBinding("<Gamepad>/leftTrigger");
 
-        // C / D-pad вверх: тумблер позиции НОШИ (защёлкнутой жертвы хвата) — за спину ↔ подставить под свои удары.
-        // БЫЛ leftShoulder, а он держит ТИХИЙ ШАГ (PlayerController) — две функции на одной кнопке.
+        // C / левый бампер: тумблер позиции НОШИ (защёлкнутой жертвы хвата) — за спину ↔ подставить под свои удары
         presentAction = new InputAction("PresentVictim", InputActionType.Button);
         presentAction.AddBinding("<Keyboard>/c");
-        presentAction.AddBinding("<Gamepad>/dpad/up");
+        presentAction.AddBinding("<Gamepad>/leftShoulder");
 
         // СРЕДНЯЯ КНОПКА МЫШИ — ЗАЛП ИГЛАМИ (орган «Иглы-руки», дальний бой). Отдельная кнопка (решение
-        // пользователя); альтернатива — ЛКМ как оружие слота Рук (коготь↔иглы), тогда убрать этот бинд.
-        // БЫЛ rightShoulder, а он же — ВОЙ: залп и голос звучали одной кнопкой. Теперь залп на клик правого стика.
+        // пользователя); альтернатива — ЛКМ как оружие слота Рук (коготь↔иглы), тогда убрать этот бинд
         volleyAction = new InputAction("QuillVolley", InputActionType.Button);
         volleyAction.AddBinding("<Mouse>/middleButton");
-        volleyAction.AddBinding("<Gamepad>/rightStickPress");
+        volleyAction.AddBinding("<Gamepad>/rightStickPress"); // правый шифтер занят воем — двойная привязка (13.11)
     }
 
     int knownSlots; // пересобрать хоткеи, когда слотов стало больше (выдан химерный слот)
@@ -122,21 +113,6 @@ public class PlayerInputDriver : MonoBehaviour
     {
         attackAction.Disable(); biteAction.Disable(); kickAction.Disable(); howlAction.Disable(); constrictAction.Disable(); antlerAction.Disable(); presentAction.Disable(); volleyAction.Disable();
         foreach (var (a, _) in slotActions) a.Disable();
-    }
-
-    void OnDestroy()
-    {
-        if (health != null) health.onDeath.RemoveListener(OnDeath);
-    }
-
-    /// <summary>Смерть: выключаем ВСЕ приёмы на теле, а не только удар. Иначе «труп» продолжает
-    /// кусать/пинать/кричать, пока сцена не перезагрузится.</summary>
-    void OnDeath()
-    {
-        var abilities = GetComponents<MonoBehaviour>();
-        for (int i = 0; i < abilities.Length; i++)
-            if (abilities[i] is IAbility || abilities[i] is IOrganAbility) abilities[i].enabled = false;
-        enabled = false; // Update больше не читает ввод
     }
 
     void Update()
