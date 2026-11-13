@@ -85,7 +85,7 @@ def sobrat(S, G, im, zerkalo):
     for j, p in enumerate(V):
         for n_, w_ in S.ves(p).items(): (o.vertex_groups.get(n_) or o.vertex_groups.new(name=n_)).add([j], w_, 'REPLACE')
     for p_ in me.polygons: p_.use_smooth = False
-    bm = bmesh.new(); bm.from_mesh(me); bmesh.ops.triangulate(bm, faces=bm.faces[:]); bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:]); bm.to_mesh(me); bm.free(); me.update(); return o
+    bm = bmesh.new(); bm.from_mesh(me); bmesh.ops.triangulate(bm, faces=bm.faces[:]); bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:]); bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS"); bm.to_mesh(me); bm.free(); me.update(); return o
 
 
 # ---------- элементы ----------
@@ -96,7 +96,8 @@ def el_list(S, G, a, b, E, nakl, dl=None):
     n = (S.L * (sgn * .7 * min(abs(a) / .25, 1)) + S.N * .75 - S.A * .15).normalized(); w_ = E.get('ns_ves', 1.0); nz = E.get('ns_ves_nizhe')
     if nz and b > nz[0]: w_ = nz[1]   # ниже по спине: корень на ровной коже, нормаль кожи листу не нужна (на трапеции наклонной плоскости — нужна: иначе лист уходит под кожу)
     n = (n + ns * w_).normalized()
-    vn = S.A * math.cos(nakl) + S.L * sgn * math.sin(nakl); vn = (vn - n * vn.dot(n)).normalized(); bk = n.cross(vn).normalized()
+    Av = (S.A + Vector((0, 0, -1)) * E.get('vniz', 0)).normalized()   # «вниз» элемента: вдоль спины с долей вниз по весу (vniz) — у четвероногого спина горизонтальна, и без этого лист ложится вдоль холки; у человека A и так вниз, разницы нет
+    vn = Av * math.cos(nakl) + S.L * sgn * math.sin(nakl); vn = (vn - n * vn.dot(n)).normalized(); bk = n.cross(vn).normalized()
     if bk.dot(S.L) * sgn < 0: bk = -bk
     sym = abs(a) < 1e-4; v = G.v
     koren = v(p - n * (.006 * sg) - vn * (.01 * sg)); l = v(p + vn * (dl * .4) + bk * sh + n * lift)
