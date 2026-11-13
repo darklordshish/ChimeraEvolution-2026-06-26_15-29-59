@@ -53,6 +53,12 @@
   "dl": 0.15,
   "sh": 0.034,
   "lift": 0.016,
-  "shir": false, "ns_ves": 1.0, "ns_ves_nizhe": [-0.0599, 0.0]
+  "shir": false,
+  "ns_ves": 1.0,
+  "ns_ves_nizhe": [
+   -0.0599,
+   0.0
+  ],
+  "vniz": 1.0
  }
 }

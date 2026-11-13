@@ -83,6 +83,7 @@
  },
  "element": {
   "tip": "list",
-  "shir": true
+  "shir": true,
+  "vniz": 1.0
  }
 }
