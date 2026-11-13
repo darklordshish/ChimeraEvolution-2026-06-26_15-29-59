@@ -55,6 +55,7 @@ public static class ForestPavilionFirstZone
         var so = new SerializedObject(fb);
         SetBool(so, "buildCanyon", false);
         SetBool(so, "buildAqueduct", false);
+        SetBool(so, "buildAnimalLairs", true); // логова волка, лося, ежа (спека «логово по законам» §4.4)
         var pool = so.FindProperty("speciesPool");
         if (pool == null) return "FAILED: нет поля speciesPool";
         pool.arraySize = Pool.Length;
@@ -65,7 +66,7 @@ public static class ForestPavilionFirstZone
             pool.GetArrayElementAtIndex(i).objectReferenceValue = sp;
         }
         so.ApplyModifiedPropertiesWithoutUndo();
-        sb.AppendLine("профиль: buildCanyon=false buildAqueduct=false пул=[" + string.Join(",", Pool) + "]");
+        sb.AppendLine("профиль: buildCanyon=false buildAqueduct=false buildAnimalLairs=true пул=[" + string.Join(",", Pool) + "]");
 
         // ---- объекты вечного цикла из SampleScene ----
         var sample = EditorSceneManager.OpenScene(SamplePath, OpenSceneMode.Additive);

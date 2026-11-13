@@ -579,6 +579,8 @@ MonoBehaviour:
   dashRipSelfDamage: 5
   lookSensitivity: 0.1
   gamepadYawSpeed: 180
+  fallProbeRange: 250
+  voidFallDepth: 15
 --- !u!143 &1024955166
 CharacterController:
   m_ObjectHideFlags: 0
@@ -956,6 +958,10 @@ MonoBehaviour:
   snakeSpawnRadius: 3
   snakeFearRadius: 18
   snakeRespawnSeconds: 30
+  buildAnimalLairs: 1
+  wolfLairCapacity: 4
+  mooseLairCapacity: 2
+  hedgehogLairCapacity: 2
 --- !u!114 &1532378594
 MonoBehaviour:
   m_ObjectHideFlags: 0

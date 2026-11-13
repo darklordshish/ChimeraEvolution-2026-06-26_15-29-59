@@ -93,6 +93,25 @@ namespace Chimera.Tests.PlayMode
                 Assert.IsNotNull(born.GetComponent<SnakeBodyChain>(), "змея из логова — с цепью звеньев");
         }
 
+        /// <summary>Спека «логово по законам» §5 п. 6: у каждого из четырёх зверей есть дом, и дом рожает свой вид.</summary>
+        [UnityTest]
+        public IEnumerator EveryAnimal_HasLair_ThatBirthsItsKind()
+        {
+            Assert.IsTrue(builder.buildAnimalLairs, "логова зверей включены в профиле первой зоны");
+            foreach (var species in new[] { "Волк", "Змея", "Лось", "Ёж" })
+            {
+                LairSite site = null;
+                foreach (var l in builder.Lairs) if (l != null && l.speciesName == species) { site = l; break; }
+                Assert.IsNotNull(site, $"у вида «{species}» есть логово");
+                Assert.IsTrue(NavMesh.SamplePosition(site.transform.position, out _, 4f, NavMesh.AllAreas),
+                    $"логово «{species}» на проходимой земле");
+                site.pendingSpawns = 1;
+                Assert.IsTrue(builder.Spawner.DrainOnce(site), $"логово «{species}» рожает");
+                Assert.AreEqual(species, builder.Spawner.lastSpawn.Chassis.speciesName, $"логово «{species}» рожает свой вид");
+            }
+            yield return null;
+        }
+
         [UnityTest]
         public IEnumerator BossExit_IsLabDoor_OnNavMesh()
         {

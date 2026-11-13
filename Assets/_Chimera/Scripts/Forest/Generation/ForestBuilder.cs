@@ -150,6 +150,15 @@ public class ForestBuilder : MonoBehaviour, IBossExit
     public float snakeFearRadius = DefaultSnakeFearRadius;
     public float snakeRespawnSeconds = DefaultSnakeRespawn;
 
+    [Header("Логова волка, лося, ежа (спека 2026-11-13 «логово по законам» §4.4; 0 — по умолчанию)")]
+    public bool buildAnimalLairs = false;
+    public int wolfLairCapacity = DefaultWolfCapacity;
+    public int mooseLairCapacity = DefaultMooseCapacity;
+    public int hedgehogLairCapacity = DefaultHedgehogCapacity;
+    const int DefaultWolfCapacity = 4;     // стая
+    const int DefaultMooseCapacity = 2;
+    const int DefaultHedgehogCapacity = 2;
+
     // Дефолты среза C — ОДНИМ местом: поля в сцене уже лежат, а новое сериализованное
     // поле у такого компонента приходит НУЛЁМ (гоча проекта). Ноль читаем как
     // «не настроено» и подставляем дефолт, иначе логова молча получат capacity 0.
@@ -628,6 +637,8 @@ public class ForestBuilder : MonoBehaviour, IBossExit
             nests++;
         }
 
+        int animal = buildAnimalLairs ? BuildAnimalLairs() : 0;
+
         if (world.NestSite != null)
         {
             // Сова в реестре есть, а спавна нет: тела филина в игре ещё не существует,
@@ -646,22 +657,76 @@ public class ForestBuilder : MonoBehaviour, IBossExit
             Debug.LogWarning("[Forest] пул видов пуст: логова стоят и копят очередь, но рожать некому — " +
                              "впиши виды в speciesPool у ForestBuilder");
 
-        Debug.Log($"[Forest] логова: змеиных {mouths + nests} (устий {mouths}, гнёзд {nests}), " +
+        Debug.Log($"[Forest] логова: змеиных {mouths + nests} (устий {mouths}, гнёзд {nests}), зверей {animal}, " +
                   $"совиное {(world.NestSite != null ? "есть (без спавна)" : "нет")}, " +
                   $"в реестре {lairRegistry.Count}, пул {(speciesPool != null ? speciesPool.Count : 0)}, " +
                   $"autoTick {spawner.autoTick}");
     }
 
-    LairSite MakeSnakeLair(string name, Vector3 worldPos, LairSite.LairAreaType areaType)
+    /// <summary>
+    /// Логова волка, лося и ежа: адреса — чистая функция мира (`DomeAnimalLairs`), по сиду, из воды, прогалин и
+    /// деревьев; чужие адреса (змеиные логова, гнездо совы) обходятся. Возвращает, сколько поставлено.
+    /// </summary>
+    int BuildAnimalLairs()
+    {
+        var avoid = new List<Vector2>();
+        foreach (var l in lairs)
+        {
+            Vector3 f = world.Root.transform.InverseTransformPoint(l.transform.position);
+            avoid.Add(new Vector2(f.x, f.z));
+        }
+        if (world.HasAsh) avoid.Add(world.Ash.pos);
+        var spots = DomeAnimalLairs.Find(new DomeAnimalLairs.World
+        {
+            diameter = world.MapDiameter,
+            seed = ResolvedSeed,
+            ground = world.SampleGround,
+            hydro = world.Hydro,
+            trees = world.TreeColliderPositions,
+            zones = world.Zones,
+            lab = world.LabCenter,
+            entry = new Vector2(world.Entry.x, world.Entry.z),
+            avoid = avoid,
+        });
+        int n = 0;
+        foreach (var s in spots)
+        {
+            float y = world.SampleGround(s.pos.x, s.pos.y);
+            Vector3 pos = FieldToWorld(s.pos.x, y, s.pos.y);
+            switch (s.kind)
+            {
+                case DomeAnimalLairs.Kind.Wolf:
+                    MakeLair($"Логово_волк_{n}", pos, "Волк", LairSite.LairAreaType.Den,
+                        wolfLairCapacity > 0 ? wolfLairCapacity : DefaultWolfCapacity);
+                    break;
+                case DomeAnimalLairs.Kind.Moose:
+                    MakeLair($"Лёжка_лось_{n}", pos, "Лось", LairSite.LairAreaType.Rest,
+                        mooseLairCapacity > 0 ? mooseLairCapacity : DefaultMooseCapacity);
+                    break;
+                case DomeAnimalLairs.Kind.Hedgehog:
+                    MakeLair($"Нора_ёж_{n}", pos, "Ёж", LairSite.LairAreaType.Burrow,
+                        hedgehogLairCapacity > 0 ? hedgehogLairCapacity : DefaultHedgehogCapacity);
+                    break;
+            }
+            n++;
+        }
+        return n;
+    }
+
+    LairSite MakeSnakeLair(string name, Vector3 worldPos, LairSite.LairAreaType areaType) =>
+        MakeLair(name, worldPos, "Змея", areaType, snakeCapacity > 0 ? snakeCapacity : DefaultSnakeCapacity);
+
+    /// <summary>Логово любого вида. Радиусы, страх и темп — общие числа среза C (тюнинг на builder'е).</summary>
+    LairSite MakeLair(string name, Vector3 worldPos, string species, LairSite.LairAreaType areaType, int capacity)
     {
         var go = new GameObject(name);
         go.transform.SetParent(world.Root.transform, false);
         go.transform.position = worldPos; // FieldToWorld уже перевёл в мировые
         var site = go.AddComponent<LairSite>();
-        site.speciesName = "Змея";
+        site.speciesName = species;
         site.areaType = areaType;
         // Ноль = «не настроено» (новое поле у компонента из сцены приходит нулём).
-        site.capacity = snakeCapacity > 0 ? snakeCapacity : DefaultSnakeCapacity;
+        site.capacity = capacity;
         site.tier = snakeTier > 0 ? snakeTier : DefaultSnakeTier;
         site.homeRadius = snakeHomeRadius > 0f ? snakeHomeRadius : DefaultSnakeHomeRadius;
         site.spawnRadius = snakeSpawnRadius > 0f ? snakeSpawnRadius : DefaultSnakeSpawnRadius;
