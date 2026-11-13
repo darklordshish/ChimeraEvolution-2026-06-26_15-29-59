@@ -10,14 +10,35 @@ public static class DomeSkyRig
 {
     static bool primed;
     static readonly Dictionary<int, float> baseIntensities = new Dictionary<int, float>();
+    static bool fogCaptured;
+    static bool fogEnabled;
+    static FogMode fogMode;
+    static float fogDensity;
+    static Color fogColor;
+    static float ambientIntensity;
 
     public static void Reset()
     {
-        primed = false;
+        foreach (var pair in baseIntensities)
+        {
+            var l = Object.FindObjectsByType<Light>(FindObjectsInactive.Include);
+            foreach (var light in l)
+                if (light.GetInstanceID() == pair.Key) light.intensity = pair.Value;
+        }
         baseIntensities.Clear();
+        primed = false;
+        if (fogCaptured)
+        {
+            RenderSettings.fog = fogEnabled;
+            RenderSettings.fogMode = fogMode;
+            RenderSettings.fogDensity = fogDensity;
+            RenderSettings.fogColor = fogColor;
+            RenderSettings.ambientIntensity = ambientIntensity;
+            fogCaptured = false;
+        }
     }
 
-    public static void ApplyPhase(GameObject root, float timeMinutes)
+    public static void ApplyPhase(GameObject root, float timeMinutes, bool log = true)
     {
         if (root == null) throw new System.ArgumentNullException(nameof(root));
         var s = DomeCelestial.StateAt(timeMinutes);
@@ -61,10 +82,20 @@ public static class DomeSkyRig
             if (baseIntensities.TryGetValue(l.GetInstanceID(), out float @base))
                 l.intensity = @base * (0.05f + 0.95f * s.dayT);
         }
+        if (!fogCaptured)
+        {
+            fogEnabled = RenderSettings.fog;
+            fogMode = RenderSettings.fogMode;
+            fogDensity = RenderSettings.fogDensity;
+            fogColor = RenderSettings.fogColor;
+            ambientIntensity = RenderSettings.ambientIntensity;
+            fogCaptured = true;
+        }
         RenderSettings.fog = true;
         RenderSettings.fogMode = FogMode.ExponentialSquared;
         RenderSettings.fogDensity = s.fogDensity;
         RenderSettings.fogColor = s.fogColor;
-        Debug.Log($"[Forest] фаза неба: t={timeMinutes:F1} мин, день {s.dayT:F2}, туман {s.fogDensity:F3}");
+        RenderSettings.ambientIntensity = ambientIntensity * (0.35f + 0.65f * s.dayT);
+        if (log) Debug.Log($"[Forest] фаза неба: t={timeMinutes:F1} мин, день {s.dayT:F2}, туман {s.fogDensity:F3}");
     }
 }

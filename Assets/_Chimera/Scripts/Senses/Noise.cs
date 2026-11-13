@@ -85,7 +85,7 @@ public class Noise : MonoBehaviour
         {
             if (n == null || n.transform == self) continue;
             // призрак не слышен (как и не виден); dev-тишина глушит игрока отдельно — для диагностики каналов
-            if ((Perception.PlayerGhost || Perception.DevSilent) && n.GetComponent<PlayerController>() != null) continue;
+            if ((Perception.PlayerUnseen || Perception.DevSilent) && n.GetComponent<PlayerController>() != null) continue;
             float loud = n.Loudness;
             if (loud <= 0.01f) continue;
             float audible = loud * range;

@@ -37,6 +37,13 @@ public static class DomeGenRules
             issues.Add($"amplitude={cfg.amplitude} должен быть >= 0");
         if (cfg.maxSlopeDegrees <= 0f || cfg.maxSlopeDegrees > 60f)
             issues.Add($"maxSlopeDegrees={cfg.maxSlopeDegrees} вне (0, 60]");
+        // S1 §11.3: две границы классов из конфига, не литералы; 0 в walkMax — «не настроено».
+        if (cfg.WalkMaxDegrees >= cfg.WallMinDegrees)
+            issues.Add($"walkMaxDegrees={cfg.WalkMaxDegrees} должно быть < wallMinDegrees={cfg.WallMinDegrees}");
+        if (cfg.worldVersion < 0 || cfg.worldVersion > 2)
+            issues.Add($"worldVersion={cfg.worldVersion} вне [0, 2] (0/1 = v1, 2 = полосы)");
+        if (cfg.WorldVersion >= 2)
+            CheckBands(cfg, issues);
         if (cfg.treeDensityPerM2 < 0f)
             issues.Add($"treeDensityPerM2={cfg.treeDensityPerM2} должен быть >= 0");
         if (cfg.forestFraction <= 0f || cfg.forestFraction > 1f)
@@ -50,6 +57,60 @@ public static class DomeGenRules
         if (cfg.vaultRadiusFactor <= 1f)
             issues.Add($"vaultRadiusFactor={cfg.vaultRadiusFactor} должен быть > 1");
         return issues;
+    }
+
+    /// <summary>
+    /// S1 §3.2/§11.4: полосы v2 и потолки наклона. Числа здесь — не «ещё одни настройки»,
+    /// а инвариант: <c>Σ πP/λ ≤ 0.700 = tan 35°</c> и каждая полоса в своём потолке.
+    /// Проверка идёт по метрам на Ø2000: масштаб D/2000 у λ и P общий и сокращается.
+    /// </summary>
+    static void CheckBands(DomeGenConfigSO cfg, List<string> issues)
+    {
+        if (cfg.macroLambda <= 0f) issues.Add($"macroLambda={cfg.macroLambda} должен быть > 0");
+        if (cfg.mesoLambda <= 0f) issues.Add($"mesoLambda={cfg.mesoLambda} должен быть > 0");
+        if (cfg.microLambda <= 0f) issues.Add($"microLambda={cfg.microLambda} должен быть > 0");
+        if (cfg.macroAmplitude < 0f) issues.Add($"macroAmplitude={cfg.macroAmplitude} должен быть >= 0");
+        if (cfg.mesoAmplitude < 0f) issues.Add($"mesoAmplitude={cfg.mesoAmplitude} должен быть >= 0");
+        if (cfg.microAmplitude < 0f) issues.Add($"microAmplitude={cfg.microAmplitude} должен быть >= 0");
+        if (cfg.macroOctaves < 0 || cfg.macroOctaves > 4)
+            issues.Add($"macroOctaves={cfg.macroOctaves} вне [0, 4]");
+        if (cfg.mesoOctaves < 0 || cfg.mesoOctaves > 4)
+            issues.Add($"mesoOctaves={cfg.mesoOctaves} вне [0, 4]");
+        if (cfg.microOctaves < 0 || cfg.microOctaves > 4)
+            issues.Add($"microOctaves={cfg.microOctaves} вне [0, 4]");
+        CheckWarp("macro", cfg.macroWarp, issues);
+        CheckWarp("meso", cfg.mesoWarp, issues);
+        CheckWarp("micro", cfg.microWarp, issues);
+
+        float macro = BandBudget(cfg.macroAmplitude, cfg.macroLambda);
+        float meso = BandBudget(cfg.mesoAmplitude, cfg.mesoLambda);
+        float micro = BandBudget(cfg.microAmplitude, cfg.microLambda);
+        if (macro > 0.19f + 1e-4f)
+            issues.Add($"макро-полоса: πP/λ = {macro:F3} > 0.19 (S1 §3.2)");
+        if (meso > 0.30f + 1e-4f)
+            issues.Add($"мезо-полоса: πP/λ = {meso:F3} > 0.30 (S1 §11.4)");
+        if (micro > 0.21f + 1e-4f)
+            issues.Add($"микро-полоса: πP/λ = {micro:F3} > 0.21 (S1 §11.4)");
+        float sum = macro + meso + micro;
+        if (sum > 0.700f + 1e-4f)
+            issues.Add($"сумма полос πP/λ = {sum:F3} > 0.700 = tan 35°");
+        if (cfg.macroAmplitude + 1e-4f < 1.3f * cfg.mesoAmplitude)
+            issues.Add($"P_macro={cfg.macroAmplitude} < 1.3·P_meso={cfg.mesoAmplitude} (S1 §3.2: связь амплитуд)");
+        if (cfg.mesoAmplitude > 0.0955f * cfg.mesoLambda + 1e-3f)
+            issues.Add($"P_meso={cfg.mesoAmplitude} > 0.0955·λ={0.0955f * cfg.mesoLambda:F1} (пара P/λ)");
+        if (cfg.microAmplitude > 0.0668f * cfg.microLambda + 1e-3f)
+            issues.Add($"P_micro={cfg.microAmplitude} > 0.0668·λ={0.0668f * cfg.microLambda:F1} (пара P/λ)");
+    }
+
+    static float BandBudget(float amplitude, float lambda)
+    {
+        return lambda > 0f ? Mathf.PI * amplitude / lambda : 0f;
+    }
+
+    static void CheckWarp(string band, float warp, List<string> issues)
+    {
+        if (warp < 0f || warp > 0.12f)
+            issues.Add($"{band}Warp={warp} вне [0, 0.12] (S1 §3.2: A_w ≤ 0.12·λ)");
     }
 
     /// <summary>Число чанков по стороне: ceil(D / chunk). D=2000, chunk=250 → 8.</summary>

@@ -32,6 +32,9 @@ public static class ChimeraFactory
 
         // ДОСТАВКИ заводит тело по записям органов (провизия в Recompute) — уже после beforeBody, ярость им видна.
         // Гарантийного укуса нет: альфа бьёт тем, что дало тело (Arsenal), а без записей удара — только сближается
+        // ЦЕПЬ ЗМЕИ — ДО ТЕЛА, КАК У ПРЕФАБА: `CreatureBody.RebuildMorph` лишь обновляет существующую цепь, сам не создаёт —
+        // без компонента звенья не ведутся и змея рождалась невидимой (письмо Лесника 24.10). Признак — шасси с цепью звеньев.
+        if (HasLinkChain(chassis)) go.AddComponent<SnakeBodyChain>();
         var body = go.AddComponent<CreatureBody>();
         body.Configure(chassis, donors, tintFromComposition: true);
         // ЭКОНОМИКА ПУЛА — ИГРОКУ, А НЕ РОЖДЁННОМУ СОСТАВОМ. Холодная химера родится с родством 0 → без скидки
@@ -50,6 +53,13 @@ public static class ChimeraFactory
             if (go.TryGetComponent<MeshFilter>(out var mf)) UnityEngine.Object.Destroy(mf);
         }
         return body;
+    }
+
+    static bool HasLinkChain(SpeciesSO chassis)
+    {
+        if (chassis.sockets != null)
+            foreach (var sk in chassis.sockets) if (sk.chain > 0 && sk.linkLength > 0f) return true;
+        return false;
     }
 
     /// <summary>РЕЦЕПТ ОДНОГО ДОНОРА: в каждый родной слот, где у вида `species` есть орган, ставится его орган.

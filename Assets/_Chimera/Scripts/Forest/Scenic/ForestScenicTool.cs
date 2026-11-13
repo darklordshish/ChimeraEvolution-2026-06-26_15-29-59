@@ -47,6 +47,8 @@ public static class ForestScenicTool
             top.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
         }
         var topCam = top.GetComponent<Camera>();
+        top.gameObject.SetActive(true);
+        topCam.enabled = true;
         topCam.orthographic = true;
         topCam.orthographicSize = size;
         // Окклюзия ВЫКЛ навсегда: в сцене лежат протухшие baked-данные, и они режут
@@ -54,6 +56,8 @@ public static class ForestScenicTool
         // Генеративный мир окклюзию не печёт.
         topCam.useOcclusionCulling = false;
         var sandboxCam0 = sandbox.GetComponent<Camera>();
+        sandbox.gameObject.SetActive(true);
+        sandboxCam0.enabled = true;
         sandboxCam0.useOcclusionCulling = false;
         Debug.Log("[Forest] камеры SandboxCam (3/4) + TopCam (топдаун-орто) готовы");
     }
@@ -274,7 +278,8 @@ public static class ForestScenicTool
     }
 
     /// <summary>
-    /// Кадр ясеня (s10g-2): камера перед исполином, в кадре ствол + крона + гнездо.
+    /// Кадр ясеня (s10g-2, числа 14.10): камера перед исполином 85 м / 140 м,
+    /// в кадре ствол + крона + присада-гнездо.
     /// </summary>
     public static void FrameAsh()
     {
@@ -284,10 +289,10 @@ public static class ForestScenicTool
         RenderSettings.fog = false;
         SetupCameras("35");
         var sandbox = GameObject.Find("SandboxCam");
-        sandbox.transform.position = new Vector3(a.pos.x - 45f, 18f, a.pos.y - 55f);
-        sandbox.transform.LookAt(new Vector3(a.pos.x, a.groundY + 22f, a.pos.y));
+        sandbox.transform.position = new Vector3(a.pos.x - 160f, 48f, a.pos.y - 190f);
+        sandbox.transform.LookAt(new Vector3(a.pos.x, a.groundY + 42f, a.pos.y));
         sandbox.GetComponent<Camera>().farClipPlane = 6000f;
-        Debug.Log("[Forest] кадр ясеня настроен (туман выкл)");
+        Debug.Log("[Forest] кадр ясеня настроен (85 м, туман выкл)");
     }
 
     /// <summary>

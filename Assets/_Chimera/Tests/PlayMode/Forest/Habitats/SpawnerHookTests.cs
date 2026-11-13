@@ -65,6 +65,25 @@ namespace Chimera.Tests.PlayMode
             trash.Clear();
         }
 
+        /// <summary>
+        /// Дефолты среза C — контракт для старых вызовов: сам тик ВЫКЛ (иначе Update
+        /// дёргал бы очереди, которые тесты считают руками), новое поле `spawnEnabled`
+        /// включено (старые сцены не должны молча перестать рожать), Configure — 2 аргумента.
+        /// </summary>
+        [Test]
+        public void Defaults_AutoTickOff_SpawnEnabledOn_TwoArgConfigure()
+        {
+            var reg = Registry();
+            var site = Site("Волк", 1, Vector3.zero);
+            var spawner = Spawner(reg, new List<SpeciesSO>()); // Конфигур без земли — старый путь
+
+            Assert.IsFalse(spawner.autoTick,
+                "по умолчанию спавнер сам не тикает: тесты дёргают Tick явно");
+            Assert.IsTrue(site.spawnEnabled,
+                "новое поле приходит включённым — иначе старые логова молча замолчали бы");
+            Assert.AreSame(reg, spawner.registry, "Configure(reg, pool) по-прежнему вешает реестр");
+        }
+
         [UnityTest]
         public IEnumerator DrainOnce_DrainsQueue()
         {
@@ -79,6 +98,29 @@ namespace Chimera.Tests.PlayMode
             Assert.IsTrue(spawner.DrainOnce(site), "хук рожает из очереди");
             Assert.AreEqual(0, site.pendingSpawns, "слот ушёл из очереди");
             Assert.AreEqual(1, site.population, "слот — в популяции");
+            yield return null;
+        }
+
+        /// <summary>
+        /// Змея из логова — через фабрику, как все: обход префабом снят 12.11, когда фабрика стала вешать цепь
+        /// звеньев (пакет А, `f2b24c8d`). Без цепи змея невидима — ровно этот долг держал обход.
+        /// </summary>
+        [UnityTest]
+        public IEnumerator Snake_FromLair_ComesFromFactory_WithChain()
+        {
+            var snake = UnityEditor.AssetDatabase.LoadAssetAtPath<SpeciesSO>("Assets/_Chimera/Data/Змея.asset");
+            Assert.IsNotNull(snake, "вид «Змея» не загружен");
+            var reg = Registry();
+            var site = Site("Змея", 1, new Vector3(600f, 0.5f, 600f));
+            reg.Register(site);
+            var spawner = Spawner(reg, new List<SpeciesSO> { snake });
+            site.Tick(1f);
+
+            Assert.IsTrue(spawner.DrainOnce(site), "логово змеи рожает из пула видов");
+            CreatureBody born = spawner.lastSpawn;
+            Assert.IsNotNull(born, "рождённое тело есть");
+            trash.Add(born.gameObject);
+            Assert.IsNotNull(born.GetComponent<SnakeBodyChain>(), "змея из логова без цепи звеньев — невидима");
             yield return null;
         }
 

@@ -34,6 +34,9 @@ namespace Chimera.Tests.PlayMode
             }
             Assert.Greater(shared, 100, "полос сотни");
             Assert.IsTrue(oneMesh, "один shared-меш на всех");
+            rain.SetGround((x, z) => 5f);
+            rain.Follow(new Vector3(10f, 99f, 20f));
+            Assert.AreEqual(5f, rain.transform.position.y, 1e-4f, "дождь стоит на земле, не на Y=0");
             DomeRain.WipePreview(root);
             Object.Destroy(root);
             yield return null;

@@ -20,6 +20,40 @@ namespace Chimera.Tests.EditMode
         }
 
         [Test]
+        public void ApplyWet_ThenReset_RestoresDryColor()
+        {
+            var shader = Shader.Find("Sprites/Default");
+            Assert.IsNotNull(shader, "нужен шейдер с _Color");
+            var mat = new Material(shader);
+            var dry = new Color(0.5f, 0.4f, 0.3f, 1f);
+            mat.color = dry;
+
+            DomeWeather.ApplyWet(new[] { mat }, 1f);
+            Assert.Less(mat.color.r, dry.r, "мокрый материал темнее");
+
+            DomeWeather.ResetWet();
+            Assert.AreEqual(dry.r, mat.color.r, 1e-5f, "ResetWet возвращает сухой цвет");
+            Assert.AreEqual(dry.g, mat.color.g, 1e-5f);
+            Object.DestroyImmediate(mat);
+        }
+
+        [Test]
+        public void ApplyWet_UrpLit_UsesBaseColor_AndResets()
+        {
+            var shader = Shader.Find("Universal Render Pipeline/Lit");
+            Assert.IsNotNull(shader, "URP Lit доступен");
+            var mat = new Material(shader);
+            var dry = new Color(0.5f, 0.4f, 0.3f, 1f);
+            mat.SetColor("_BaseColor", dry);
+
+            DomeWeather.ApplyWet(new[] { mat }, 1f);
+            Assert.Less(mat.GetColor("_BaseColor").r, dry.r, "URP Lit мокнет через _BaseColor");
+            DomeWeather.ResetWet();
+            Assert.AreEqual(dry.r, mat.GetColor("_BaseColor").r, 1e-5f, "ResetWet вернул сухой цвет");
+            Object.DestroyImmediate(mat);
+        }
+
+        [Test]
         public void WetAlbedo_DarkensByStep()
         {
             var dry = new Color(0.5f, 0.5f, 0.5f);

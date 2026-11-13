@@ -34,21 +34,33 @@ public static class DomeWeather
     {
         foreach (var mat in mats)
         {
-            if (mat == null || !mat.HasProperty("_Color")) continue;
-            string key = mat.name + mat.GetInstanceID();
-            if (!WetBases.TryGetValue(key, out var dry))
+            if (mat == null) continue;
+            string prop = mat.HasProperty("_BaseColor") ? "_BaseColor"
+                : mat.HasProperty("_Color") ? "_Color" : null;
+            if (prop == null) continue;
+            if (!WetBases.TryGetValue(mat, out var dry))
             {
-                dry = mat.color;
-                WetBases[key] = dry;
+                dry = new WetBase { color = mat.GetColor(prop), prop = prop };
+                WetBases[mat] = dry;
             }
-            mat.color = WetAlbedo(dry, wet);
+            mat.SetColor(prop, WetAlbedo(dry.color, wet));
         }
     }
 
-    static readonly Dictionary<string, Color> WetBases = new Dictionary<string, Color>();
+    struct WetBase
+    {
+        public Color color;
+        public string prop;
+    }
 
+    static readonly Dictionary<Material, WetBase> WetBases = new Dictionary<Material, WetBase>();
+
+    /// <summary>Вернуть сухие цвета живым материалам и очистить базы.</summary>
     public static void ResetWet()
     {
+        foreach (var pair in WetBases)
+            if (pair.Key != null && pair.Key.HasProperty(pair.Value.prop))
+                pair.Key.SetColor(pair.Value.prop, pair.Value.color);
         WetBases.Clear();
     }
 }

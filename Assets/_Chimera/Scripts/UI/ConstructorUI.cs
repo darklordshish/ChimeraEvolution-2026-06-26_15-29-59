@@ -106,7 +106,7 @@ public class ConstructorUI : MonoBehaviour
 
     void Update()
     {
-        if (toggleAction.WasPressedThisFrame()) SetOpen(!open);
+        if (toggleAction.WasPressedThisFrame() && !PlayerDeath.IsDown) SetOpen(!open); // лежащему сборка недоступна
 
         if (open)
         {

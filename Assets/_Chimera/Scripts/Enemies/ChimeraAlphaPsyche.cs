@@ -235,7 +235,7 @@ public class ChimeraAlphaPsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     bool IsHostile(Health other)
     {
         if (other == null || other == ownHealth || other.Current <= 0) return false;
-        if (Perception.PlayerGhost && other.GetComponent<PlayerController>() != null) return false; // dev-призрак: игрок невидим, пока не атаковал (BreakGhost раскроет)
+        if (Perception.PlayerUnseen && other.GetComponent<PlayerController>() != null) return false; // dev-призрак: игрок невидим, пока не атаковал (BreakGhost раскроет)
         var ob = other.GetComponent<CreatureBody>();
         return !(ob != null && body != null && CreatureBody.Regard(body, ob) >= KinTier.Weak); // СВОИХ (кого Я признаю по составу) пропускаю
     }

@@ -115,14 +115,26 @@ public static class DomeFacilityPlacer
         }
     }
 
-    public static void ClearMats()
+    /// <summary>Редакторный WipePreview: немедленный снос кэшей (прежнее поведение).</summary>
+    public static void ClearMats() => DestroyCaches(true);
+
+    /// <summary>Рантайм: в Play Destroy (отложенный), в редакторе — DestroyImmediate.</summary>
+    public static void ReleaseCaches() => DestroyCaches(!Application.isPlaying);
+
+    static void DestroyCaches(bool immediate)
     {
         foreach (var mat in mats)
-            if (mat != null) Object.DestroyImmediate(mat);
+            if (mat != null) DestroyObject(mat, immediate);
         mats.Clear();
         foreach (var mesh in meshCache.Values)
-            if (mesh != null) Object.DestroyImmediate(mesh);
+            if (mesh != null) DestroyObject(mesh, immediate);
         meshCache.Clear();
+    }
+
+    static void DestroyObject(Object obj, bool immediate)
+    {
+        if (immediate) Object.DestroyImmediate(obj);
+        else Object.Destroy(obj);
     }
 
     public static List<Material> LiveMats()

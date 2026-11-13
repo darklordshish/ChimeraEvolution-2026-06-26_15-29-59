@@ -21,6 +21,53 @@ public static class DomeHydro
         public float riverHalfWidth = 2.5f;
         public float riverDepth = 0.9f;
         public float lakeDepth = 2.5f;
+        public RiverIndex riverIndex;
+    }
+
+    /// <summary>Пространственный индекс русла: ближайшая точка за O(1) в среднем.</summary>
+    public sealed class RiverIndex
+    {
+        readonly Dictionary<long, List<int>> buckets = new Dictionary<long, List<int>>();
+        readonly float cell;
+
+        public RiverIndex(List<Vector2> pts, float cellSize)
+        {
+            cell = Mathf.Max(1f, cellSize);
+            for (int i = 0; i < pts.Count; i++)
+            {
+                long key = Key(Mathf.FloorToInt(pts[i].x / cell), Mathf.FloorToInt(pts[i].y / cell));
+                if (!buckets.TryGetValue(key, out var list))
+                {
+                    list = new List<int>();
+                    buckets[key] = list;
+                }
+                list.Add(i);
+            }
+        }
+
+        public int Nearest(State s, float x, float z, out float dist)
+        {
+            int bx = Mathf.FloorToInt(x / cell);
+            int bz = Mathf.FloorToInt(z / cell);
+            int best = -1;
+            float bestSq = float.PositiveInfinity;
+            for (int dx = -1; dx <= 1; dx++)
+                for (int dz = -1; dz <= 1; dz++)
+                {
+                    if (!buckets.TryGetValue(Key(bx + dx, bz + dz), out var list)) continue;
+                    foreach (int i in list)
+                    {
+                        float ddx = x - s.riverPts[i].x;
+                        float ddz = z - s.riverPts[i].y;
+                        float sq = ddx * ddx + ddz * ddz;
+                        if (sq < bestSq) { bestSq = sq; best = i; }
+                    }
+                }
+            dist = best < 0 ? float.PositiveInfinity : Mathf.Sqrt(bestSq);
+            return best;
+        }
+
+        static long Key(int x, int z) => ((long)x << 32) ^ (uint)z;
     }
 
     public static State Build(DomeGenConfigSO cfg, int gridRes)
@@ -150,6 +197,7 @@ public static class DomeHydro
             state.riverPts.RemoveAt(0);
             state.riverBed.RemoveAt(0);
         }
+        state.riverIndex = new RiverIndex(state.riverPts, state.riverHalfWidth * 3f);
         return state;
     }
 
@@ -189,6 +237,12 @@ public static class DomeHydro
 
     static int NearestRiverPoint(State s, float x, float z, out float dist)
     {
+        if (s.riverIndex != null)
+        {
+            int indexed = s.riverIndex.Nearest(s, x, z, out dist);
+            if (indexed >= 0) return indexed;
+        }
+
         int best = -1;
         dist = float.PositiveInfinity;
         float range = s.riverHalfWidth * 3f;

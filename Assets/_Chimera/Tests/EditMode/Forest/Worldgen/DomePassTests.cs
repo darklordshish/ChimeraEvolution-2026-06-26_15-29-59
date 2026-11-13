@@ -25,15 +25,29 @@ namespace Chimera.Tests.EditMode
             return "?";
         }
 
+        /// <summary>
+        /// Крылья лаборатории достижимы, а ангар — ЗА кольцом: с S3 кольцо стало
+        /// маской, и связность сквозь скалу больше не проходит. Это правило, а не регресс.
+        /// </summary>
         [Test]
-        public void Lab_ReachesWings_AndHangar()
+        public void Lab_ReachesWings_AndRingSealsHangar()
         {
             var cfg = Config(1337);
             try
             {
                 var hydro = DomeHydro.Build(cfg, 128);
                 var f = DomeFacilityLayout.Build(cfg, 1337, Vector2.zero);
-                var blocked = DomePass.BlockedGrid(cfg, hydro, f, 128);
+                // S3 §2.4: связность мерится по полу мира (Hydro0 + формы), а не по H0.
+                var terrain = new DomeTerrain
+                {
+                    cfg = cfg,
+                    hydro = hydro,
+                    worldVersion = cfg.WorldVersion,
+                    ravines = new DomeRavines.Ravine[0],
+                };
+                float rin = DomeRockRing.InnerRadius(cfg);
+                var blocked = DomePass.BlockedGrid(cfg, hydro, f, 128,
+                    terrain.SampleGround, rin);
                 foreach (var id in new[] { "Arena", "Cells", "Surgery", "Rest" })
                 {
                     Vector2 target = Target(f, id);
@@ -41,8 +55,10 @@ namespace Chimera.Tests.EditMode
                         $"лаборатория → {id} ({Poi(f, id)})");
                 }
                 Vector2 hangar = Target(f, "Hangar");
-                Assert.IsTrue(DomePass.Connected(blocked, cfg.mapDiameter, f.labCenter, hangar),
-                    $"лаборатория → ангар ({Poi(f, "Hangar")})");
+                Assert.Greater(hangar.magnitude, rin,
+                    "ангар по замыслу за кольцом — тест про стену, а не про ангар");
+                Assert.IsFalse(DomePass.Connected(blocked, cfg.mapDiameter, f.labCenter, hangar),
+                    $"ангар ({Poi(f, "Hangar")}) за кольцом не должен быть достижим пешком");
             }
             finally
             {
@@ -55,6 +71,44 @@ namespace Chimera.Tests.EditMode
             foreach (var p in f.pois)
                 if (p.id == id) return p.pos;
             return f.labCenter;
+        }
+
+        /// <summary>
+        /// S3 §3.2: кольцо — маска. Раньше `BlockedGrid` кольца не знал и связность
+        /// проходила сквозь скальную стену.
+        /// </summary>
+        [Test]
+        public void Ring_BlocksEveryCellBehindInnerRadius()
+        {
+            var cfg = Config(1337);
+            try
+            {
+                var hydro = DomeHydro.Build(cfg, 96);
+                var terrain = new DomeTerrain
+                {
+                    cfg = cfg, hydro = hydro, worldVersion = cfg.WorldVersion,
+                    ravines = new DomeRavines.Ravine[0],
+                };
+                float rin = DomeRockRing.InnerRadius(cfg);
+                int res = 128;
+                var blocked = DomePass.BlockedGrid(cfg, hydro, null, res,
+                    terrain.SampleGround, rin);
+                float cell = cfg.mapDiameter / res;
+                // Вне кольца — блок; внутри решение принимает рельеф/вода, не кольцо.
+                for (int ix = 0; ix < res; ix++)
+                    for (int iz = 0; iz < res; iz++)
+                    {
+                        float x = -cfg.mapDiameter / 2 + (ix + 0.5f) * cell;
+                        float z = -cfg.mapDiameter / 2 + (iz + 0.5f) * cell;
+                        if (new Vector2(x, z).magnitude < rin + 5f) continue;
+                        if (new Vector2(x, z).magnitude > cfg.mapDiameter / 2f) continue;
+                        Assert.IsTrue(blocked[ix, iz], $"клетка за rin не заблокирована: {x:F0};{z:F0}");
+                    }
+            }
+            finally
+            {
+                Object.DestroyImmediate(cfg);
+            }
         }
 
         [Test]
