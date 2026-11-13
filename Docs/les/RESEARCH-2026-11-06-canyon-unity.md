@@ -699,17 +699,20 @@ C — только как временный патч с явной пометк
 
 ## 8. Источники и что проверено
 
+> С 13.11 ассеты каньона (`Models/Canyon`, `Resources/Canyon`) и агенты `CanyonAgent`, `CanyonGradedAgent` — в теге
+> `archive/les-zamorozka-2026-11-12`: каньон заморожен до возврата большого павильона (план среза 12.11).
+
 ### Прочитано/сверено
 
 - [`SPEC-2026-11-03-canyon-handoff.md`](SPEC-2026-11-03-canyon-handoff.md) — контракт handoff,
   §2.2 footprint/торцы, §2.6 LOD/коллайдер, §3 вырез, §8 внедрение 06.11.
-- [`canyon_author_graded.md`](../../Assets/_Chimera/Models/Canyon/canyon_author_graded.md) —
+- `Assets/_Chimera/Models/Canyon/canyon_author_graded.md` —
   origin, оси, кромка, §2 (Wout), §3 (глубина), §4 (торцы/юбка), §5 (вода), §6 (габариты),
   §7 (LOD), §8 (коллайдер), §10 (честные ограничения), §11 (что осталось интегратору).
 - [`canyon-rim-1337.csv`](canyon-rim-1337.csv), [`canyon-rim-1337.md`](canyon-rim-1337.md) —
   20 точек; `rimLeftY/rimRightY` **с `Apply`**, `...NoCanyon` — контроль. Отсюда числа §1.1.
-- [`CanyonAuthorGraded.prefab`](../../Assets/_Chimera/Models/Canyon/CanyonAuthorGraded.prefab) и
-  [`Resources/Canyon/CanyonAuthorGraded.prefab`](../../Assets/_Chimera/Resources/Canyon/CanyonAuthorGraded.prefab) —
+- `Assets/_Chimera/Models/Canyon/CanyonAuthorGraded.prefab` и
+  `Assets/_Chimera/Resources/Canyon/CanyonAuthorGraded.prefab` —
   identity-трансформы, LODGroup 179.9374/0.55/0.10, коллайдер, материалы, вода.
 - [`DomeChunkMesh.cs`](../../Assets/_Chimera/Scripts/Forest/Generation/DomeChunkMesh.cs) —
   `BuildChunkMeshClipped`, 4×4, `skipAt`, отсутствие веера перехода.
@@ -722,8 +725,8 @@ C — только как временный патч с явной пометк
   (rim lip, floor clamp), `Contains` по `halfWidth`.
 - [`DomeWaterMesh.cs`](../../Assets/_Chimera/Scripts/Forest/Generation/DomeWaterMesh.cs) —
   `Pool`/`Fall`/`Stream`, `includeCanyon`; в handoff не строятся.
-- [`CanyonGradedAgent.cs`](../../Tools/Agent/CanyonGradedAgent.cs) — импорт, префаб, `CheckRim`,
-  `CheckWater`; [`CanyonAgent.cs`](../../Tools/Agent/CanyonAgent.cs) — старый `Measure` (14 точек,
+- `Tools/Agent/CanyonGradedAgent.cs` — импорт, префаб, `CheckRim`,
+  `CheckWater`; `Tools/Agent/CanyonAgent.cs` — старый `Measure` (14 точек,
   «skirt 2.7»).
 - Кадры `Docs/Диаграммы/Лес/Кадры/15-G7/G7-tur-kanon.png`, `G7-tur-vodopad.png` — визуальный
   факт «лоток + чёрный торец + вода не читается».
