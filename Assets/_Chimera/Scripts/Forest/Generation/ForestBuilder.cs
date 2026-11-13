@@ -20,7 +20,7 @@ using UnityEngine;
 /// Лес, срез A (24.10) + C + B0 + B0.1.
 /// </summary>
 [RequireComponent(typeof(NavMeshSurface))]
-public class ForestBuilder : MonoBehaviour
+public class ForestBuilder : MonoBehaviour, IBossExit
 {
     [Header("Сид (виден в Inspector, пишется в лог с инструкцией — как ArenaWalls)")]
     public long seed = 1337;
@@ -499,6 +499,27 @@ public class ForestBuilder : MonoBehaviour
                   $"гнездо совы {(world.NestSite != null ? "есть" : "нет")}, " +
                   $"оврагов {world.Ravines.Count}, стволов {world.FallenTrees}, визуальных гнёзд {world.VisualNests}, " +
                   $"вход {world.Entry}");
+        BossChimeraSpawner.ExitProvider = this; // босс выходит из лаборатории этого мира (П-3, 13.11)
+    }
+
+    /// <summary>
+    /// ВЫХОД БОССА — дверь лаборатории (портал на фасаде), а не вход в павильон: босс выходит из лаборатории
+    /// (спека вечной эволюции 12.11). Адрес известен после `Build` и меняется при перестройке; без комплекса
+    /// лаборатории адреса нет — спавнер берёт своё правило «на дистанции от игрока».
+    /// </summary>
+    public bool TryGetExit(out Vector3 pos, out Quaternion rot)
+    {
+        pos = default;
+        rot = Quaternion.identity;
+        if (world == null || world.Root == null || world.LabComplex == null) return false;
+        var root = world.Root.transform;
+        Vector3 door = root.TransformPoint(world.LabDoor);
+        door.y = SpawnGroundAtWorld(door.x, door.z);
+        float yaw = world.LabComplex.yawDeg * Mathf.Deg2Rad;
+        Vector3 outward = root.TransformDirection(new Vector3(-Mathf.Sin(yaw), 0f, -Mathf.Cos(yaw))); // фасад — к чаше
+        pos = door;
+        rot = Quaternion.LookRotation(outward, Vector3.up);
+        return true;
     }
 
     /// <summary>
@@ -707,6 +728,7 @@ public class ForestBuilder : MonoBehaviour
     public void Clear()
     {
         Fingerprint = 0UL;
+        if (ReferenceEquals(BossChimeraSpawner.ExitProvider, this)) BossChimeraSpawner.ExitProvider = null;
         // Порядок важен: тик → живые → адреса → мир.
         // 1) autoTick off: следующий Update не должен Tick-нуть по снесённым сайтам.
         // 2) ClearSpawned: рождённые звери НЕ дети корня мира (префаб/фабрика кладут их

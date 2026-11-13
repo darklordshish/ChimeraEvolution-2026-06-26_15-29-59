@@ -94,6 +94,20 @@ namespace Chimera.Tests.PlayMode
         }
 
         [UnityTest]
+        public IEnumerator BossExit_IsLabDoor_OnNavMesh()
+        {
+            Assert.AreSame(builder, BossChimeraSpawner.ExitProvider, "выход босса отдаёт мир павильона");
+            Assert.IsTrue(builder.TryGetExit(out Vector3 exit, out Quaternion rot), "адрес выхода есть после сборки");
+            Assert.IsNotNull(builder.LabComplex, "лаборатория-комплекс построена");
+            Vector3 entry = builder.Entry;
+            Assert.Greater(Vector2.Distance(new Vector2(exit.x, exit.z), new Vector2(entry.x, entry.z)), 20f,
+                "босс выходит из лаборатории, а не из входа в павильон");
+            Assert.IsTrue(NavMesh.SamplePosition(exit, out _, 3f, NavMesh.AllAreas),
+                "у двери лаборатории есть навмеш — босс сможет идти");
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator Sky_FollowsWorldClock()
         {
             var clock = Object.FindAnyObjectByType<WorldClock>();
