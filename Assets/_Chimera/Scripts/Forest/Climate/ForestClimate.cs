@@ -51,10 +51,31 @@ public class ForestClimate : MonoBehaviour
     float blendStart;
     bool blending;
 
+    // Игровые часы сцены (спека вечной эволюции 12.11: ОДИН носитель времени). Ищем один раз, а не каждый кадр:
+    // без часов `WorldClock.Instance` звал бы поиск по сцене на каждом Update.
+    WorldClock clock;
+    bool clockLooked;
+
     void Update()
     {
-        float dt = Time.deltaTime * timeScale;
-        timeMinutes = Mathf.Repeat(timeMinutes + dt, DayNightCycle.DayLengthMinutes);
+        bool firstLink = false;
+        if (!clockLooked) { clock = WorldClock.Instance; clockLooked = true; firstLink = clock != null; }
+        float dt;
+        if (clock != null)
+        {
+            // Фаза суток — та же, что у часов (`WorldClock.Phase01`): час суток в лесные минуты. Свой темп
+            // `timeScale` при часах не действует — иначе у неба и у мира было бы два разных «сейчас».
+            // Первый кадр только сверяет время: разница со стартовой минутой — не прожитое время,
+            // и погода не должна прокрутиться на неё разом.
+            float t = clock.HourOfDay / 24f * DayNightCycle.DayLengthMinutes;
+            dt = firstLink ? 0f : Mathf.Repeat(t - timeMinutes, DayNightCycle.DayLengthMinutes);
+            timeMinutes = t;
+        }
+        else
+        {
+            dt = Time.deltaTime * timeScale;
+            timeMinutes = Mathf.Repeat(timeMinutes + dt, DayNightCycle.DayLengthMinutes);
+        }
         CurrentState = state;
         CurrentTimeMinutes = timeMinutes;
 
