@@ -18,7 +18,7 @@ namespace Chimera.Tests.PlayMode
         [TearDown]
         public void Clean()
         {
-            PlayerDeath.IsWaterAt = null;
+            PlayerDeath.IsWaterAt = null; PlayerDeath.FallbackPoint = null;
             foreach (var o in trash) if (o != null) Object.Destroy(o);
             trash.Clear();
         }

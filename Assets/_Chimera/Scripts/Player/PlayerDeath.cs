@@ -149,11 +149,38 @@ public class PlayerDeath : MonoBehaviour
         if (!water && NavMesh.SamplePosition(death, out var near, 1f + feetOffset, NavMesh.AllAreas)
             && Mathf.Abs(near.position.x - death.x) < 0.5f && Mathf.Abs(near.position.z - death.z) < 0.5f)
             return death;
-        for (float r = 5f; r <= RiseSearchRadius + 0.01f; r += 5f)
-            if (NavMesh.SamplePosition(death, out var hit, r, NavMesh.AllAreas) && (IsWaterAt == null || !IsWaterAt(hit.position)))
-                return hit.position + Vector3.up * feetOffset;
+        if (IsWaterAt == null)
+        {
+            for (float r = 5f; r <= RiseSearchRadius + 0.01f; r += 5f)
+                if (NavMesh.SamplePosition(death, out var hit, r, NavMesh.AllAreas))
+                    return hit.position + Vector3.up * feetOffset;
+            return death;
+        }
+        // вода известна: ближайшая точка навмеша лежит на дне озера — ищем сушу кольцами вокруг точки смерти
+        for (float r = 5f; r <= RiseWaterMaxRadius + 0.01f; r += r < 30f ? 5f : 10f)
+        {
+            int dirs = r <= RiseSearchRadius ? 8 : 16;
+            float bestD = float.MaxValue;
+            Vector3 best = default;
+            for (int i = 0; i < dirs; i++)
+            {
+                float a = i * Mathf.PI * 2f / dirs;
+                var probe = death + new Vector3(Mathf.Cos(a), 0f, Mathf.Sin(a)) * r;
+                if (!NavMesh.SamplePosition(probe, out var hit, 2f, NavMesh.AllAreas) || IsWaterAt(hit.position)) continue;
+                float d = (hit.position - death).sqrMagnitude;
+                if (d < bestD) { bestD = d; best = hit.position; }
+            }
+            if (bestD < float.MaxValue) return best + Vector3.up * feetOffset;
+        }
+        if (FallbackPoint != null && FallbackPoint(out var fb)) return fb + Vector3.up * feetOffset;
         return death;
     }
+
+    /// <summary>Предел поиска суши при известной воде (озеро павильона бывает до ~150 м в радиусе).</summary>
+    public const float RiseWaterMaxRadius = 200f;
+    /// <summary>Запасная точка подъёма (лес отдаёт точку входа игрока); false — нет.</summary>
+    public delegate bool PointProvider(out Vector3 p);
+    public static PointProvider FallbackPoint;
 
     // яд и кровь тикали бы дальше и убили бы встающего повторно
     void ClearDamageOverTime()
