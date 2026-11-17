@@ -96,7 +96,7 @@ public class ForestSpawner : MonoBehaviour
     {
         if (site == null || site.pendingSpawns <= 0) return false;
         if (!site.spawnEnabled) return false;
-        if (site.population + site.ReservedCount >= site.capacity) return false; // крыша занята телами
+        if (site.population >= site.capacity) return false; // крыша занята телами
         if (site.IsExhausted) return false;
 
         SpeciesSO species = FindSpecies(site.speciesName);
