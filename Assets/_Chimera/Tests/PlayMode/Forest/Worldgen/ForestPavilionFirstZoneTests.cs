@@ -126,6 +126,37 @@ namespace Chimera.Tests.PlayMode
             yield return null;
         }
 
+        /// <summary>Подъём после смерти знает воду павильона: озеро — вода, точка появления игрока — нет (17.11).</summary>
+        [UnityTest]
+        public IEnumerator DeathRise_KnowsPavilionWater()
+        {
+            Assert.IsNotNull(PlayerDeath.IsWaterAt, "лес подключил запрос воды");
+            var h = builder.Hydro;
+            Assert.IsNotNull(h, "вода посчитана");
+            Vector3 lake = builder.BuiltRoot.transform.TransformPoint(new Vector3(h.lakeCenter.x, 0f, h.lakeCenter.y));
+            Assert.IsTrue(PlayerDeath.IsWaterAt(lake), "центр озера — вода");
+            var pc = Object.FindAnyObjectByType<PlayerController>();
+            Assert.IsFalse(PlayerDeath.IsWaterAt(pc.transform.position), "точка появления игрока — суша");
+            yield return null;
+        }
+
+        /// <summary>
+        /// Смерть у берега (10 м в воду) — подъём на суше. Ждёт механик: `RisePoint` расширяет радиус, но
+        /// `NavMesh.SamplePosition` отдаёт БЛИЖАЙШУЮ точку, а навмеш лежит и на дне озера — ближайшая всегда под водой.
+        /// Нужен поиск по кольцу вокруг точки смерти (письмо ГеймБоссу 17.11).
+        /// </summary>
+        [UnityTest, Ignore("ждёт поиска суши по кольцу в PlayerDeath.RisePoint — письмо ГеймБоссу 17.11")]
+        public IEnumerator DeathRise_NearShore_StandsOnLand()
+        {
+            var h = builder.Hydro;
+            Vector2 inward = new Vector2(h.lakeCenter.x + h.lakeRadius - 10f, h.lakeCenter.y);
+            Vector3 nearShore = builder.BuiltRoot.transform.TransformPoint(new Vector3(inward.x, 0f, inward.y));
+            Assert.IsTrue(PlayerDeath.IsWaterAt(nearShore), "10 м от берега — ещё вода");
+            Vector3 rise = PlayerDeath.RisePoint(nearShore);
+            Assert.IsFalse(PlayerDeath.IsWaterAt(rise), "умер у берега в озере — встаёт на суше");
+            yield return null;
+        }
+
         [UnityTest]
         public IEnumerator Sky_FollowsWorldClock()
         {
