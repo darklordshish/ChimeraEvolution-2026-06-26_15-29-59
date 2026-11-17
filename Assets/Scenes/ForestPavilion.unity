@@ -745,6 +745,9 @@ MonoBehaviour:
   rotateBehind: 1
   rigidYaw: 1
   yawFollowSpeed: 70
+  wallRadius: 0.2
+  wallRecover: 6
+  wallPad: 0.05
   headHeight: 1.7
   headForward: 0.25
   pitchSensitivity: 0.1
@@ -961,6 +964,13 @@ MonoBehaviour:
   wolfLairCapacity: 4
   mooseLairCapacity: 2
   hedgehogLairCapacity: 2
+  buildBeacon: 1
+  beaconHeight: 50
+  beaconColor: {r: 1, g: 0.55, b: 0.15, a: 1}
+  beaconIntensity: 1
+  beaconLampSize: 1.6
+  beaconMinAngle: 1.2
+  beaconGlowRange: 30
 --- !u!114 &1532378594
 MonoBehaviour:
   m_ObjectHideFlags: 0

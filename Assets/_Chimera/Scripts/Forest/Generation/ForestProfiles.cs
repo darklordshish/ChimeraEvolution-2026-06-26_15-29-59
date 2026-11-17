@@ -42,7 +42,7 @@ public static class ForestProfiles
     {
         seed = 1337, diameter = 2000f, chunk = 250f, quads = 48, treeCount = 1500,
         patchy = true, ash = true, spawnAtEntry = true,
-            terrace = true, canyon = false, stationLoop = true, stationHill = true, animalLairs = true,
+            terrace = true, canyon = false, stationLoop = true, stationHill = true, animalLairs = true, beacon = true,
             labComplex = true, labPlan = true, climate = true,
             style = LabStyle.Bastion, entrance = LabEntrance.Rock,
         climateTimeMinutes = 10.5f, climateTimeScale = 0f,
@@ -102,6 +102,7 @@ public static class ForestProfiles
         public bool terrace;
         public bool canyon;
         public bool animalLairs; // логова волка, лося, ежа — первая зона (13.11)
+        public bool beacon;      // маяк над лабораторией — проба 17.11
         public bool stationLoop;
         public bool stationHill;
         public LabStyle style;
@@ -129,6 +130,7 @@ public static class ForestProfiles
         b.buildTerrace = p.terrace;
         b.buildCanyon = p.canyon;
         b.buildAnimalLairs = p.animalLairs;
+        b.buildBeacon = p.beacon;
         b.buildStationLoop = p.stationLoop;
         b.buildStationHill = p.stationHill;
         b.buildLabComplex = p.labComplex;
