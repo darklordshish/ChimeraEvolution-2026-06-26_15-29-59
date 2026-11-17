@@ -145,7 +145,7 @@ namespace Chimera.Tests.PlayMode
         /// `NavMesh.SamplePosition` отдаёт БЛИЖАЙШУЮ точку, а навмеш лежит и на дне озера — ближайшая всегда под водой.
         /// Нужен поиск по кольцу вокруг точки смерти (письмо ГеймБоссу 17.11).
         /// </summary>
-        [UnityTest, Ignore("ждёт поиска суши по кольцу в PlayerDeath.RisePoint — письмо ГеймБоссу 17.11")]
+        [UnityTest]
         public IEnumerator DeathRise_NearShore_StandsOnLand()
         {
             var h = builder.Hydro;
@@ -154,6 +154,18 @@ namespace Chimera.Tests.PlayMode
             Assert.IsTrue(PlayerDeath.IsWaterAt(nearShore), "10 м от берега — ещё вода");
             Vector3 rise = PlayerDeath.RisePoint(nearShore);
             Assert.IsFalse(PlayerDeath.IsWaterAt(rise), "умер у берега в озере — встаёт на суше");
+            yield return null;
+        }
+
+        /// <summary>Смерть в середине озера — подъём на суше (кольцевой поиск до выхода из воды).</summary>
+        [UnityTest]
+        public IEnumerator DeathRise_LakeCenter_StandsOnLand()
+        {
+            var h = builder.Hydro;
+            Vector3 lake = builder.BuiltRoot.transform.TransformPoint(new Vector3(h.lakeCenter.x, 0f, h.lakeCenter.y));
+            Assert.IsTrue(PlayerDeath.IsWaterAt(lake), "центр озера — вода");
+            Vector3 rise = PlayerDeath.RisePoint(lake);
+            Assert.IsFalse(PlayerDeath.IsWaterAt(rise), "умер посреди озера — встаёт на суше");
             yield return null;
         }
 

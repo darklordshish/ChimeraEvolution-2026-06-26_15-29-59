@@ -511,6 +511,13 @@ public class ForestBuilder : MonoBehaviour, IBossExit
         BossChimeraSpawner.ExitProvider = this; // босс выходит из лаборатории этого мира (П-3, 13.11)
         waterProbe = IsWater;
         PlayerDeath.IsWaterAt = waterProbe; // игрок не встаёт после смерти в озере или реке (17.11)
+        PlayerDeath.FallbackPoint = TryGetRiseFallback;
+    }
+
+    bool TryGetRiseFallback(out Vector3 p)
+    {
+        p = SpawnPoint;
+        return SpawnPoint != default;
     }
 
     // Подставленный в PlayerDeath запрос воды — держим ссылку, чтобы снять ровно свой.
@@ -811,6 +818,7 @@ public class ForestBuilder : MonoBehaviour, IBossExit
         Fingerprint = 0UL;
         if (ReferenceEquals(BossChimeraSpawner.ExitProvider, this)) BossChimeraSpawner.ExitProvider = null;
         if (waterProbe != null && PlayerDeath.IsWaterAt == waterProbe) PlayerDeath.IsWaterAt = null;
+        if (waterProbe != null) PlayerDeath.FallbackPoint = null;
         waterProbe = null;
         // Порядок важен: тик → живые → адреса → мир.
         // 1) autoTick off: следующий Update не должен Tick-нуть по снесённым сайтам.
