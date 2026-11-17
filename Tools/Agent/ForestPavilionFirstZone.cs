@@ -56,6 +56,14 @@ public static class ForestPavilionFirstZone
         SetBool(so, "buildCanyon", false);
         SetBool(so, "buildAqueduct", false);
         SetBool(so, "buildAnimalLairs", true); // логова волка, лося, ежа (спека «логово по законам» §4.4)
+        // Маяк над лабораторией (решение геймдизайнера 17.11, проба): галка и числа явно — новое поле в сцене пришло нулём.
+        SetBool(so, "buildBeacon", true);
+        SetFloat(so, "beaconHeight", 50f);
+        so.FindProperty("beaconColor").colorValue = new Color(1f, 0.55f, 0.15f);
+        SetFloat(so, "beaconIntensity", 1f);
+        SetFloat(so, "beaconLampSize", 1.6f);
+        SetFloat(so, "beaconMinAngle", 1.2f);
+        SetFloat(so, "beaconGlowRange", 30f);
         var pool = so.FindProperty("speciesPool");
         if (pool == null) return "FAILED: нет поля speciesPool";
         pool.arraySize = Pool.Length;

@@ -159,6 +159,24 @@ public class ForestBuilder : MonoBehaviour, IBossExit
     const int DefaultMooseCapacity = 2;
     const int DefaultHedgehogCapacity = 2;
 
+    [Header("Маяк над лабораторией (проба 17.11): мачта выше крон, фонарь без тумана; снять — галка")]
+    public bool buildBeacon = false;
+    [Tooltip("от земли у двери до фонаря, м; кроны леса — до 18 м")] public float beaconHeight = DefaultBeaconHeight;
+    public Color beaconColor = DefaultBeaconColor;
+    [Tooltip("множитель цвета; больше 1 — пересвет")] public float beaconIntensity = DefaultBeaconIntensity;
+    [Tooltip("диаметр фонаря вблизи, м")] public float beaconLampSize = DefaultBeaconLampSize;
+    [Tooltip("фонарь не меньше этого угла с любого расстояния, град")] public float beaconMinAngle = DefaultBeaconMinAngle;
+    [Tooltip("радиус точечного света у фонаря, м; 0 — без света")] public float beaconGlowRange = DefaultBeaconGlowRange;
+    // Ноль в поле — «не настроено» (новое поле у компонента из сцены приходит нулём): берём дефолт.
+    const float DefaultBeaconHeight = 50f; // 25 м (заказ 17.11) от входа закрыто ближними кронами — ряд высот `МАЯК.md`
+    static readonly Color DefaultBeaconColor = new Color(1f, 0.55f, 0.15f);
+    const float DefaultBeaconIntensity = 1f; // выше 1 без bloom только выжигает оранжевый в белый — фонарь путается со звездой
+    const float DefaultBeaconLampSize = 1.6f;
+    const float DefaultBeaconMinAngle = 1.2f; // ~14 пикселей на 720p при поле зрения 60°
+    const float DefaultBeaconGlowRange = 30f;
+    /// <summary>Мачта стоит на столько метров вглубь от двери — над входом, а не перед ним.</summary>
+    const float BeaconInset = 2f;
+
     // Дефолты среза C — ОДНИМ местом: поля в сцене уже лежат, а новое сериализованное
     // поле у такого компонента приходит НУЛЁМ (гоча проекта). Ноль читаем как
     // «не настроено» и подставляем дефолт, иначе логова молча получат capacity 0.
@@ -512,6 +530,45 @@ public class ForestBuilder : MonoBehaviour, IBossExit
         waterProbe = IsWater;
         PlayerDeath.IsWaterAt = waterProbe; // игрок не встаёт после смерти в озере или реке (17.11)
         PlayerDeath.FallbackPoint = TryGetRiseFallback;
+        BuildBeacon(); // после ExitProvider: маяк стоит над той же дверью, из которой выходит босс
+    }
+
+    LabBeacon beacon;
+    /// <summary>Маяк лаборатории этого мира (и при снятой галке — погашенный); null — лаборатории нет.</summary>
+    public LabBeacon Beacon => beacon;
+
+    public LabBeacon.Settings BeaconSettings => new LabBeacon.Settings
+    {
+        height = beaconHeight > 0f ? beaconHeight : DefaultBeaconHeight,
+        color = beaconColor.a > 0f ? beaconColor : DefaultBeaconColor,
+        intensity = beaconIntensity > 0f ? beaconIntensity : DefaultBeaconIntensity,
+        lampSize = beaconLampSize > 0f ? beaconLampSize : DefaultBeaconLampSize,
+        minAngleDeg = beaconMinAngle > 0f ? beaconMinAngle : DefaultBeaconMinAngle,
+        glowRange = beaconGlowRange >= 0f ? beaconGlowRange : DefaultBeaconGlowRange,
+    };
+
+    /// <summary>
+    /// Маяк над дверью лаборатории (решение геймдизайнера 17.11, проба). Ставится всегда, когда есть лаборатория;
+    /// галка `buildBeacon` его гасит и зажигает — в Play тоже, без пересборки мира.
+    /// </summary>
+    void BuildBeacon()
+    {
+        beacon = null;
+        if (BuiltRoot == null || !TryGetExit(out Vector3 door, out Quaternion facing)) return;
+        Vector3 at = door - facing * Vector3.forward * BeaconInset;
+        at.y = door.y;
+        beacon = LabBeacon.Build(BuiltRoot.transform, at, BeaconSettings);
+        beacon.gameObject.SetActive(buildBeacon);
+    }
+
+    void OnValidate() => ApplyBeacon();
+
+    /// <summary>Галка и числа маяка из инспектора — на уже стоящий маяк (правка в Play видна сразу).</summary>
+    public void ApplyBeacon()
+    {
+        if (beacon == null) return;
+        beacon.gameObject.SetActive(buildBeacon);
+        beacon.Apply(BeaconSettings);
     }
 
     bool TryGetRiseFallback(out Vector3 p)
@@ -816,6 +873,7 @@ public class ForestBuilder : MonoBehaviour, IBossExit
     public void Clear()
     {
         Fingerprint = 0UL;
+        beacon = null; // маяк — ребёнок корня мира, его снесёт world.Clear
         if (ReferenceEquals(BossChimeraSpawner.ExitProvider, this)) BossChimeraSpawner.ExitProvider = null;
         if (waterProbe != null && PlayerDeath.IsWaterAt == waterProbe) PlayerDeath.IsWaterAt = null;
         if (waterProbe != null) PlayerDeath.FallbackPoint = null;
