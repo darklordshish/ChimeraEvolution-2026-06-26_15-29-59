@@ -19,8 +19,14 @@ unity status                     # порт/PID, если редактор уж�
 Пусто — редактор закрыт. Поднять headless (**без `-quit`**, иначе он выйдет сразу):
 
 ```bash
-"/c/Program Files/Unity/Hub/Editor/6000.4.7f1/Editor/Unity.exe" -batchmode -projectPath . -logFile <лог> &
+"/c/Program Files/Unity/Hub/Editor/6000.4.7f1/Editor/Unity.exe" -batchmode -projectPath . -logFile Logs/headless.log &
 ```
+
+**Лог — только в `Logs/` своей папки проекта, не в `%TEMP%` и не в scratchpad; читать хвостом** (`tail -n 200`), а не
+копировать целиком. Лог больше ~200 МБ — признак ошибки в цикле: остановить редактор и разобрать причину. 17.11 из
+`C:\Temp` вычищено ~63 ГБ, из них 18,5 ГБ — пять логов Unity от 19–23.09 и их копии в `Unity\Editor\Crashes`.
+**Копии проекта в scratchpad не делать** — для пробы `git worktree` или ветка; если копия неизбежна — без `Library/`,
+`Temp/`, `Logs/`, `obj/`, и удалить её в конце задачи (одна сессия модельной линии оставила 7,8 ГБ копий).
 
 Готовность — `unity status` (строка `ready`) или любая команда. Дальше **всегда**:
 

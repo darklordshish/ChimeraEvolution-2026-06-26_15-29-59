@@ -48,6 +48,25 @@ public class DebugHud : MonoBehaviour
             showLegend = !showLegend;
     }
 
+    /// <summary>«лаборатория: N м, СВ» от точки игрока к адресу выхода босса; null — адреса или игрока нет.</summary>
+    public static string LabCompass(Vector3? from)
+    {
+        var exit = BossChimeraSpawner.ExitProvider;
+        if (from == null || exit == null || !exit.TryGetExit(out Vector3 pos, out _)) return null;
+        return CompassText(from.Value, pos);
+    }
+
+    static readonly string[] Rose = { "С", "СВ", "В", "ЮВ", "Ю", "ЮЗ", "З", "СЗ" };
+
+    /// <summary>Расстояние по земле и румб (+Z — север, +X — восток).</summary>
+    public static string CompassText(Vector3 from, Vector3 to)
+    {
+        Vector3 d = to - from; d.y = 0f;
+        float ang = Mathf.Atan2(d.x, d.z) * Mathf.Rad2Deg; // 0 = +Z, по часовой
+        int i = Mathf.RoundToInt(((ang % 360f) + 360f) % 360f / 45f) % 8;
+        return $"лаборатория: {d.magnitude:0} м, {Rose[i]}";
+    }
+
     void OnGUI()
     {
         style ??= new GUIStyle(GUI.skin.label) { fontSize = 18, normal = { textColor = Color.white } };
@@ -78,6 +97,10 @@ public class DebugHud : MonoBehaviour
         var clk = WorldClock.Instance;
         string clockText = clk != null ? $"день {clk.Day}, {clk.HourOfDay:0}:00{(clk.IsNight ? " (ночь)" : "")}{(clk.IsSleeping ? " · СОН ×" + clk.SleepSpeedup : "")}   ·   " : "";
         GUI.Label(new Rect(14, 60, 900, 22), $"{clockText}Химер среди NPC: {census}", smallStyle);
+
+        // ── КОМПАС (дев): куда лаборатория — адрес выхода босса; нет адреса — строки нет ──
+        string lab = LabCompass(player != null ? player.transform.position : (Vector3?)null);
+        if (lab != null) GUI.Label(new Rect(14, 84, 900, 22), lab, smallStyle);
 
         // ── дев-режимы: молчат, пока выключены; включённый режим обязан быть виден ──
         var modes = new List<string>();

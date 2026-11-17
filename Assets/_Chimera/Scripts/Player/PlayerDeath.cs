@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.AI;
 
 /// <summary>
 /// Смерть игрока БЕЗ перезагрузки сцены (спека вечной эволюции 2026-11-12, §5 п.1.2–1.4): Жив → Лежит → Встаёт → Жив.
@@ -111,7 +112,8 @@ public class PlayerDeath : MonoBehaviour
         State = Phase.Rising;
         // перенос на точку смерти: CharacterController перебивает позицию, поэтому гасим его на время
         if (cc != null) cc.enabled = false;
-        transform.SetPositionAndRotation(deathPos, deathRot);
+        float feet = cc != null ? transform.position.y - cc.bounds.min.y : 0f; // от корня до подошв (корень у видов разный)
+        transform.SetPositionAndRotation(RisePoint(deathPos, feet), deathRot);
         if (cc != null) cc.enabled = true;
 
         ClearDamageOverTime();
@@ -133,6 +135,24 @@ public class PlayerDeath : MonoBehaviour
         SetControl(true);
         Perception.PlayerHidden = false;
         State = Phase.Alive;
+    }
+
+    /// <summary>Поставщик «здесь вода» (лес подставляет свою; null — воды не знаем, решает только навмеш).</summary>
+    public static System.Func<Vector3, bool> IsWaterAt;
+    public const float RiseSearchRadius = 30f;
+
+    /// <summary>Куда встать после смерти: точка смерти, если она на проходимом навмеше и не под водой; иначе ближайшая
+    /// проходимая точка в <see cref="RiseSearchRadius"/> м; навмеша нет совсем — точка смерти как есть.</summary>
+    public static Vector3 RisePoint(Vector3 death, float feetOffset = 0f)
+    {
+        bool water = IsWaterAt != null && IsWaterAt(death);
+        if (!water && NavMesh.SamplePosition(death, out var near, 1f + feetOffset, NavMesh.AllAreas)
+            && Mathf.Abs(near.position.x - death.x) < 0.5f && Mathf.Abs(near.position.z - death.z) < 0.5f)
+            return death;
+        for (float r = 5f; r <= RiseSearchRadius + 0.01f; r += 5f)
+            if (NavMesh.SamplePosition(death, out var hit, r, NavMesh.AllAreas) && (IsWaterAt == null || !IsWaterAt(hit.position)))
+                return hit.position + Vector3.up * feetOffset;
+        return death;
     }
 
     // яд и кровь тикали бы дальше и убили бы встающего повторно

@@ -121,16 +121,8 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
     public bool returnHomeEnabled;
     public bool Homing { get; private set; }
     public Vector3 homeTarget { get; private set; }
-    bool homeReserved;
-    LairSite homeDen;
-
-    void ReleaseHome()
-    {
-        if (homeReserved && homeDen != null) homeDen.Release(GetInstanceID());
-        homeReserved = false;
-        homeDen = null;
-        Homing = false;
-    }
+    // ДОМ — закон жильца (HomeLaw/LairSite.Claim): жильцом тело делает дом, а не психика; крыши (TryReserve) волк не держит.
+    void ReleaseHome() { Homing = false; }
 
     // услышал чужой вой: поднимаю личную тревогу и запоминаю точку сбора
     public void Hear(Vector3 playerPos) { alertUntil = Time.time + alertMemory; alertPos = playerPos; }
@@ -484,12 +476,10 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
                         return;
                     }
                     Homing = false;
-                    if (!homeReserved) homeReserved = den.TryReserve(GetInstanceID());
-                    if (homeReserved) homeDen = den;
                     Settle(Vector3.zero); // дома: отдыхаем
                     return;
                 }
-                if (Homing || homeReserved) ReleaseHome();
+                if (Homing) ReleaseHome();
                 Vector3 wd = nav.DirTo(nav.Wander(wanderRadius));
                 if (wd.sqrMagnitude > 0.001f)
                     transform.rotation = Quaternion.RotateTowards(transform.rotation, Quaternion.LookRotation(wd), rotationSpeed * Time.deltaTime);

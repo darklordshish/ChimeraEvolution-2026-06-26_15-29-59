@@ -28,6 +28,7 @@ public static class PsycheDispatch
             : "диспатч: истинная химера (кин ни к кому) → химера-альфа");
 
         body.gameObject.AddComponent(psyche);
+        HomeLaw.Rehome(body); // дом выбирает психика: логово вида-доминанты (Metamorph зовёт Attach — дом пересматривается)
         body.Refeed(); // психика навешена ПОСЛЕ Recompute — пере-раздать урон/скорость (иначе OnBodyStats её не застал)
     }
 }
