@@ -682,15 +682,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Chimera.Runtime::EvolutionConfig
   allSpecies:
-  - {fileID: 11400000, guid: 0b9f3325f2a7256489e3375ccca88401, type: 2}
   - {fileID: 11400000, guid: 0c6b11574869a6b44a321162414452d6, type: 2}
   - {fileID: 11400000, guid: dab52963bf459da4b934b85751aeac96, type: 2}
   - {fileID: 11400000, guid: 7da515edc0cffd54d8872e9a26ca33e1, type: 2}
-  - {fileID: 11400000, guid: f8bb6d7567aed7e4f878f0b59a0ea030, type: 2}
+  - {fileID: 11400000, guid: 0b9f3325f2a7256489e3375ccca88401, type: 2}
   evolveNpc: 1
-  startAffinity: 1
+  startAffinity: 100
   chimerizeMultiplier: 1
-  verboseLog: 1
+  verboseLog: 0
 --- !u!4 &1270918353
 Transform:
   m_ObjectHideFlags: 0

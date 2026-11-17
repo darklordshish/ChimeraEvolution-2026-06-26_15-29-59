@@ -509,6 +509,22 @@ public class ForestBuilder : MonoBehaviour, IBossExit
                   $"оврагов {world.Ravines.Count}, стволов {world.FallenTrees}, визуальных гнёзд {world.VisualNests}, " +
                   $"вход {world.Entry}");
         BossChimeraSpawner.ExitProvider = this; // босс выходит из лаборатории этого мира (П-3, 13.11)
+        waterProbe = IsWater;
+        PlayerDeath.IsWaterAt = waterProbe; // игрок не встаёт после смерти в озере или реке (17.11)
+    }
+
+    // Подставленный в PlayerDeath запрос воды — держим ссылку, чтобы снять ровно свой.
+    System.Func<Vector3, bool> waterProbe;
+
+    /// <summary>
+    /// «Здесь вода» для подъёма после смерти: точка над чашей озера или в ленте реки этого мира. Дёшево — круг и
+    /// перебор точек реки, зовётся несколько раз на смерть, не каждый кадр.
+    /// </summary>
+    public bool IsWater(Vector3 worldPos)
+    {
+        if (world == null || world.Root == null || world.Hydro == null) return false;
+        Vector3 f = world.Root.transform.InverseTransformPoint(worldPos);
+        return DomeAnimalLairs.WaterDistance(world.Hydro, new Vector2(f.x, f.z)) < 0f;
     }
 
     /// <summary>
@@ -794,6 +810,8 @@ public class ForestBuilder : MonoBehaviour, IBossExit
     {
         Fingerprint = 0UL;
         if (ReferenceEquals(BossChimeraSpawner.ExitProvider, this)) BossChimeraSpawner.ExitProvider = null;
+        if (waterProbe != null && PlayerDeath.IsWaterAt == waterProbe) PlayerDeath.IsWaterAt = null;
+        waterProbe = null;
         // Порядок важен: тик → живые → адреса → мир.
         // 1) autoTick off: следующий Update не должен Tick-нуть по снесённым сайтам.
         // 2) ClearSpawned: рождённые звери НЕ дети корня мира (префаб/фабрика кладут их

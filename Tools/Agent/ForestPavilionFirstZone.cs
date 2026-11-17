@@ -86,6 +86,15 @@ public static class ForestPavilionFirstZone
             copy.transform.position = Vector3.zero;
             sb.AppendLine($"  {goName}: перенесён ({string.Join(",", copy.GetComponents<Component>().Skip(1).Select(c => c.GetType().Name))})");
         }
+        // Эволюция NPC — настройки арены: в павильоне EvolutionConfig лежал из ветки (startAffinity 1, человек в донорах,
+        // подробный лог) — за час игры ни одной химеры (замер на выносливость 14.11). Берём то, что сторожит вечный цикл.
+        var evoSrc = sample.GetRootGameObjects().Select(g => g.GetComponentInChildren<EvolutionConfig>(true)).FirstOrDefault(c => c != null);
+        var evoDst = scene.GetRootGameObjects().Select(g => g.GetComponentInChildren<EvolutionConfig>(true)).FirstOrDefault(c => c != null);
+        if (evoSrc != null && evoDst != null)
+        {
+            EditorUtility.CopySerialized(evoSrc, evoDst);
+            sb.AppendLine("  EvolutionConfig: настройки арены");
+        }
         EditorSceneManager.CloseScene(sample, true);
 
         // ---- кусты под павильон ----

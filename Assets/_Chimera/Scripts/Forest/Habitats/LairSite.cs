@@ -52,23 +52,8 @@ public class LairSite : MonoBehaviour
     [NonSerialized] public float fear;
     [NonSerialized] public float timer;
 
-    // КРЫШИ s6: место под ВЕРНУВШИХСЯ (не выводок) — отдельный счётчик, иначе врёт учёт.
-    // Крыша: population + reserved + queue <= capacity.
-    readonly HashSet<int> reservedHolders = new HashSet<int>();
-
-    public int ReservedCount => reservedHolders.Count;
-
-    /// <summary>Держать крышу за вернувшегося. Идемпотентен (повтор того же — no-op).</summary>
-    public bool TryReserve(int ownerId)
-    {
-        if (IsFull) return false;
-        return reservedHolders.Add(ownerId);
-    }
-
-    public void Release(int ownerId)
-    {
-        reservedHolders.Remove(ownerId);
-    }
+    // Крыша вернувшегося (s6, TryReserve/Release) снята 17.11: вернувшийся — это жилец, он уже в занятости
+    // (закон жильца), а дом выбирает психика через Claim/Leave (HomeLaw механик). Отдельный счёт давал двойной учёт.
 
     public event Action Exhausted;
     public event Action Recovered;
@@ -91,7 +76,7 @@ public class LairSite : MonoBehaviour
         if (body == null) return false;
         Prune();
         if (residents.Contains(body)) { body.home = this; return true; }
-        if (residents.Count + reservedHolders.Count >= capacity) return false;
+        if (residents.Count >= capacity) return false;
         if (body.home != null && body.home != this) body.home.Leave(body);
         residents.Add(body);
         body.home = this;
@@ -147,7 +132,7 @@ public class LairSite : MonoBehaviour
         if (!was && IsExhausted) Exhausted?.Invoke();
     }
 
-    public bool IsFull => population + pendingSpawns + reservedHolders.Count >= capacity;
+    public bool IsFull => population + pendingSpawns >= capacity;
     public bool IsExhausted => LairRules.IsExhausted(fear, exhaustFear);
 
     public bool IsNearHome(Vector3 pos)
@@ -164,13 +149,13 @@ public class LairSite : MonoBehaviour
 
     /// <summary>
     /// Хук спавнера забирает готовый слот очереди. Блокируется только занятыми телами
-    /// (жильцы + резерв): полная ОЧЕРЕДЬ — снимаема, иначе хук встанет. Жильцом рождённого
+    /// (жильцы): полная ОЧЕРЕДЬ — снимаема, иначе хук встанет. Жильцом рождённого
     /// делает `Claim` — занятость считает дом, а не этот слот.
     /// </summary>
     public int ConsumeSpawn()
     {
         if (pendingSpawns <= 0) return 0;
-        if (population + reservedHolders.Count >= capacity) return 0;
+        if (population >= capacity) return 0;
         pendingSpawns--;
         return 1;
     }
