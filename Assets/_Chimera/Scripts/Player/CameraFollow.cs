@@ -17,6 +17,16 @@ public class CameraFollow : MonoBehaviour
     [SerializeField] bool rigidYaw = true;       // БЕЗЫНЕРЦИОННО: жёстко за телом, без запаздывания (удобно тестить/целиться)
     [SerializeField] float yawFollowSpeed = 240f; // град/с доворота при ВЫКЛЮЧЕННОМ rigidYaw (мягкое запаздывание)
 
+    [Header("Стены (3-е лицо)")]
+    [SerializeField] float wallRadius = 0.2f;     // радиус шара-пробы между головой и камерой
+    [SerializeField] float wallRecover = 6f;      // м/с: как быстро камера выезжает обратно после преграды
+    [SerializeField] float wallPad = 0.05f;       // зазор перед преградой
+    /// <summary>Новое поле у камеры, уже лежащей в сцене, приходит нулём: ноль читаем как «дефолт».</summary>
+    float WallRadius => wallRadius > 0f ? wallRadius : 0.2f;
+    float WallRecover => wallRecover > 0f ? wallRecover : 6f;
+    float clip = 1f;      // доля пути от головы до желаемой позиции, до которой камера пускает преграда
+    static readonly RaycastHit[] wallHits = new RaycastHit[16];
+
     [Header("Первое лицо")]
     [SerializeField] float headHeight = 1.4f;
     [SerializeField] float headForward = 0.25f;
@@ -91,8 +101,45 @@ public class CameraFollow : MonoBehaviour
 
         followPos = Vector3.Lerp(followPos, target.position, followLerp * Time.deltaTime);
         float k = size != null ? size.Scale : 1f;   // камера за плечом отходит вместе с ростом
-        transform.position = followPos + Quaternion.Euler(0f, yaw, 0f) * CurrentOffset * k + shake;
-        transform.LookAt(target.position + Vector3.up * (size != null ? size.FromGround(lookHeight) : lookHeight));
+        Vector3 look = target.position + Vector3.up * (size != null ? size.FromGround(lookHeight) : lookHeight);
+        Vector3 want = followPos + Quaternion.Euler(0f, yaw, 0f) * CurrentOffset * k;
+        transform.position = ClipToWalls(look, want) + shake;
+        transform.LookAt(look);
+    }
+
+    /// <summary>Камера не лезет в стволы: шар от точки взгляда к желаемой позиции; преграда — окружение (не тело
+    /// игрока, не NPC, не триггер). Втянулась мгновенно, выезжает плавно.</summary>
+    Vector3 ClipToWalls(Vector3 look, Vector3 want)
+    {
+        Vector3 d = want - look;
+        float dist = d.magnitude;
+        if (dist < 0.01f) return want;
+        float wanted = 1f;
+        int n = Physics.SphereCastNonAlloc(look, WallRadius, d / dist, wallHits, dist, ~0, QueryTriggerInteraction.Ignore);
+        float best = dist;
+        for (int i = 0; i < n; i++)
+        {
+            var h = wallHits[i];
+            if (h.distance <= 0f || h.distance >= best) continue; // 0 — шар стартует внутри коллайдера: его не обходим
+            if (!IsEnvironment(h.collider)) continue;
+            best = h.distance;
+        }
+        if (best < dist) wanted = Mathf.Max(0f, (best - wallPad) / dist);
+        clip = StepClip(clip, wanted, Time.unscaledDeltaTime, WallRecover / dist);
+        return look + d * clip;
+    }
+
+    /// <summary>Доля пути: уменьшается сразу, растёт со скоростью <paramref name="recoverPerSec"/> (доля/с).</summary>
+    public static float StepClip(float current, float wanted, float dt, float recoverPerSec)
+        => wanted < current ? wanted : Mathf.MoveTowards(current, wanted, recoverPerSec * dt);
+
+    bool IsEnvironment(Collider c)
+    {
+        if (c.isTrigger) return false;
+        if (target != null && c.transform.IsChildOf(target)) return false;
+        if (c.GetComponentInParent<CreatureBody>() != null) return false;
+        if (c.GetComponentInParent<Health>() != null) return false;
+        return true;
     }
 
     Vector3 ShakeOffset()
