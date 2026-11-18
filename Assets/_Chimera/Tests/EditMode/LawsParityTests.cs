@@ -646,13 +646,100 @@ namespace Chimera.Tests.EditMode
                 Assert.AreEqual(b * rage * var, MoveLaw.Speed(b, rage, var));
                 // лось, ёж: отдышка
                 Assert.AreEqual(b * rage * var * breath, MoveLaw.Speed(b, rage, var, breath));
-                // змея и альфа: ярость в скорость НЕ входит (прежнее поведение, паритет)
-                Assert.AreEqual(b * var, MoveLaw.Speed(b, rage, var, rageApplies: false));
+                // змея и альфа: с 18.11 ярость входит и у них (решение §0 п.10 спеки симулятора; раньше `rageApplies: false` давал b * var)
+                Assert.AreEqual(b * rage * var, MoveLaw.Speed(b, rage, var), "ярость ускоряет всех, змею и альфу тоже");
                 n++;
             }
             Assert.Greater(n, 20);
             float bs = 5f, rg = 1.15f, vr = 1f, sl = 0.7f, vg = 0.65f; // переменные, а не константы: иначе компилятор свернёт произведение в другой точности
             Assert.AreEqual(bs * rg * vr * sl * vg, MoveLaw.Speed(bs, rg, vr, sl, vg));
+        }
+
+        // ---- рацион (С8): прежние предикаты «кто кого» — по типу психики цели; психика = доминанта, поэтому по имени доминанты ----
+        static readonly string[] DietSpecies = { "Человек", "Волк", "Змея", "Лось", "Ёж" };
+
+        /// <summary>Эталон: что до С8 делала каждая психика с целью, у которой психика вида `target` (null — истинная химера, психики вида нет).</summary>
+        static bool OldWantsPrey(string predator, string target, bool hungry) => predator switch
+        {
+            "Волк" => target == "Змея" || (target == "Ёж" && hungry),   // WolfPsyche.RetargetPrey: змея всегда, ёж только голодным
+            "Ёж" => target == "Змея",                                   // HedgehogPsyche.Retarget
+            "Лось" => target == "Волк",                                 // MoosePsyche.PickThreat
+            _ => false,
+        };
+        static bool OldWantsShadow(string predator, string target) => predator == "Волк" && target == "Лось";   // WolfPsyche.TryMooseHunt
+        static bool OldFlees(string predator, string target) => predator == "Змея" && target == "Ёж";           // SnakePsyche.CheckFlee
+
+        static SpeciesSO LoadSpecies(string n) => UnityEditor.AssetDatabase.LoadAssetAtPath<SpeciesSO>($"Assets/_Chimera/Data/{n}.asset");
+
+        [Test]
+        public void Diet_MatchesOldPredicates_OnPredatorTargetHungerTable()
+        {
+            int n = 0;
+            var targets = DietSpecies.Concat(new string[] { null });
+            foreach (var p in DietSpecies)
+            {
+                var so = LoadSpecies(p);
+                Assert.IsNotNull(so, "нет ассета " + p);
+                foreach (var t in targets) foreach (bool hungry in new[] { false, true })
+                {
+                    Assert.AreEqual(OldWantsPrey(p, t, hungry), DietLaw.Wants(so.diet, t, hungry, DietMode.Prey) > 0f, $"{p} → {t ?? "химера"} голод {hungry}: добыча");
+                    Assert.AreEqual(OldWantsShadow(p, t), DietLaw.Wants(so.diet, t, hungry, DietMode.Shadow) > 0f, $"{p} → {t ?? "химера"} голод {hungry}: тень-загон");
+                    Assert.AreEqual(OldFlees(p, t), DietLaw.Flees(so.fleesFrom, t), $"{p} → {t ?? "химера"}: бегство");
+                    n++;
+                }
+            }
+            Assert.AreEqual(5 * 6 * 2, n);
+        }
+
+        [Test]
+        public void Diet_ThroughBodies_MatchesOldPredicates()
+        {
+            // то же через тела: рацион читается по ДОМИНАНТЕ (`MostKin`), а не по шасси или типу психики
+            var made = new List<GameObject>();
+            try
+            {
+                var bodies = new Dictionary<string, CreatureBody>();
+                foreach (var name in DietSpecies.Where(s => s != "Человек"))
+                {
+                    var go = new GameObject("~рацион " + name); made.Add(go);
+                    var b = go.AddComponent<CreatureBody>();
+                    b.Configure(LoadSpecies(name), new SpeciesSO[0]);
+                    bodies[name] = b;
+                }
+                foreach (var p in bodies.Keys) foreach (var t in bodies.Keys) foreach (bool hungry in new[] { false, true })
+                {
+                    Assert.AreEqual(OldWantsPrey(p, t, hungry), bodies[p].Appetite(bodies[t], hungry, DietMode.Prey) > 0f, $"{p} → {t} голод {hungry}");
+                    Assert.AreEqual(OldWantsShadow(p, t), bodies[p].Appetite(bodies[t], hungry, DietMode.Shadow) > 0f, $"{p} → {t} тень");
+                    Assert.AreEqual(OldFlees(p, t), bodies[p].Fears(bodies[t]), $"{p} → {t} бегство");
+                }
+                Assert.AreEqual(0f, bodies["Волк"].Appetite(bodies["Волк"], true, DietMode.Prey), "себя не ест");
+                Assert.AreEqual(0f, bodies["Волк"].Appetite(null, true, DietMode.Prey));
+            }
+            finally { foreach (var go in made) Object.DestroyImmediate(go); }
+        }
+
+        [Test]
+        public void DietLaw_Synthetic_PicksBestMatchingEntry()
+        {
+            var diet = new[]
+            {
+                new DietEntry("А", DietCondition.Always, DietMode.Prey, 1f),
+                new DietEntry("Б", DietCondition.WhenHungry, DietMode.Prey, 2f),
+                new DietEntry("Б", DietCondition.Always, DietMode.Shadow, 0.5f),
+                new DietEntry("В", DietCondition.Always, DietMode.Prey, 0f),
+            };
+            Assert.AreEqual(1f, DietLaw.Wants(diet, "А", false, DietMode.Prey));
+            Assert.AreEqual(0f, DietLaw.Wants(diet, "Б", false, DietMode.Prey), "голодному — а он сыт");
+            Assert.AreEqual(2f, DietLaw.Wants(diet, "Б", true, DietMode.Prey));
+            Assert.AreEqual(0.5f, DietLaw.Wants(diet, "Б", false, DietMode.Shadow));
+            Assert.AreEqual(0.5f, DietLaw.Wants(diet, "Б", false), "без режима: наибольший из подходящих");
+            Assert.AreEqual(2f, DietLaw.Wants(diet, "Б", true));
+            Assert.AreEqual(0f, DietLaw.Wants(diet, "В", true, DietMode.Prey), "вес ноль — не хочет");
+            Assert.AreEqual(0f, DietLaw.Wants(diet, null, true, DietMode.Prey), "истинная химера — ничья добыча");
+            Assert.AreEqual(0f, DietLaw.Wants(null, "А", true, DietMode.Prey), "рациона нет");
+            Assert.IsTrue(DietLaw.Flees(new[] { "Ёж" }, "Ёж"));
+            Assert.IsFalse(DietLaw.Flees(new[] { "Ёж" }, null));
+            Assert.IsFalse(DietLaw.Flees(null, "Ёж"));
         }
 
         [Test]

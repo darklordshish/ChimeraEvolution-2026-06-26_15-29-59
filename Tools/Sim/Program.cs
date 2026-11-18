@@ -47,6 +47,8 @@ namespace ChimeraSim
             Console.WriteLine();
             Summary.PrintSpecies(data, Console.Out);
             Console.WriteLine();
+            Summary.PrintDiet(data, Console.Out);
+            Console.WriteLine();
             Summary.PrintLairs(data, Console.Out);
             return actual == data.fingerprint ? 0 : 2;
         }

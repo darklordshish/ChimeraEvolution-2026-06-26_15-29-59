@@ -426,8 +426,8 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
         if (!sated)
         foreach (var col in Physics.OverlapSphere(transform.position, preyRange, ~0, QueryTriggerInteraction.Ignore))
         {
-            var snake = col.GetComponentInParent<SnakePsyche>();
-            if (snake == null) continue;
+            var snake = col.GetComponentInParent<CreatureBody>();
+            if (snake == null || ownBody == null || ownBody.Appetite(snake, false, DietMode.Prey) <= 0f) continue; // добыча — по рациону (С8), не по типу психики
             // КАМУФЛЯЖ ЗМЕИ ЕЖУ НЕ ПОМЕХА (в отличие от волка, что охотится глазами): ёж — ночной охотник
             // по НЮХУ, он чует затаившуюся змею и в манке. Именно это делает его её хищником: спрятаться
             // от глаз можно, от носа — нет. Но нос — канал профиля: дальность запаха, дождь его гасит (26.10)

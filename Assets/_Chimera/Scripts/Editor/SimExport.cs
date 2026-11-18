@@ -93,6 +93,8 @@ public static class SimExport
             baseHp = so.baseHp > 0 ? so.baseHp : 75f,
             baseStamina = so.baseStamina > 0 ? so.baseStamina : 100f,
             baseStaminaRegen = so.baseStaminaRegen > 0f ? so.baseStaminaRegen : 12f,
+            diet = so.diet != null ? (DietEntry[])so.diet.Clone() : new DietEntry[0],
+            fleesFrom = so.fleesFrom != null ? (string[])so.fleesFrom.Clone() : new string[0],
         };
         var organs = new List<SimOrgan>();
         if (so.organs != null) foreach (var o in so.organs) organs.Add(OrganOf(o));

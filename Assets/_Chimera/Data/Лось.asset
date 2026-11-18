@@ -136,7 +136,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4362434709904424963
+    - rid: 4362434854427820088
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -206,7 +206,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4362434709904424964
+    - rid: 4362434854427820089
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -286,7 +286,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4362434709904424965
+    - rid: 4362434854427820090
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -509,7 +509,7 @@ MonoBehaviour:
     digestion: 0
     nativeChassis: 
     abilities:
-    - rid: 4362434709904424966
+    - rid: 4362434854427820091
     visualScale: {x: 1, y: 1, z: 1}
     visualOffset: {x: 0, y: 0, z: 0}
     visualEuler: {x: 0, y: 0, z: 0}
@@ -621,6 +621,12 @@ MonoBehaviour:
   bodyMesh: {fileID: 919132149155446097, guid: baebd8ae060342e78b257a934a23e228, type: 3}
   eatsMeat: 0
   massive: 1
+  diet:
+  - prey: "\u0412\u043E\u043B\u043A"
+    condition: 0
+    mode: 0
+    weight: 1
+  fleesFrom: []
   formScale: 1
   dorsalAxis: {x: 0, y: 0, z: 0}
   spineAxis: {x: 0, y: 0, z: 0}
@@ -1952,7 +1958,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds:
-    - rid: 4362434709904424963
+    - rid: 4362434854427820088
       type: {class: LimbStrikeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
@@ -1962,7 +1968,7 @@ MonoBehaviour:
         halfAngle: 60
         windupTime: 0.45
         cooldown: 1.1
-    - rid: 4362434709904424964
+    - rid: 4362434854427820089
       type: {class: ChargeData, ns: , asm: Chimera.Runtime}
       data:
         damage: 22
@@ -1982,7 +1988,7 @@ MonoBehaviour:
         stompForce: 13
         plowForce: 6
         plowRadius: 1.6
-    - rid: 4362434709904424965
+    - rid: 4362434854427820090
       type: {class: BellowData, ns: , asm: Chimera.Runtime}
       data:
         fearRadius: 10
@@ -1990,7 +1996,7 @@ MonoBehaviour:
         fearMoraleHit: 2
         cooldown: 10
         cueTime: 1.2
-    - rid: 4362434709904424966
+    - rid: 4362434854427820091
       type: {class: AntlerData, ns: , asm: Chimera.Runtime}
       data:
         damage: 12

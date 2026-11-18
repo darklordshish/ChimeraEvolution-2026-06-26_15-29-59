@@ -1,6 +1,6 @@
 {
-    "schema": 1,
-    "fingerprint": "34b136dc8853882a",
+    "schema": 2,
+    "fingerprint": "1c239b144dc7f190",
     "world": {
         "scene": "ForestPavilion",
         "mapDiameter": 2000.0,
@@ -829,7 +829,16 @@
                 "affinityPerOrgan": 0.550000011920929,
                 "psyche": "HedgehogPsyche",
                 "psycheRhythm": 1.100000023841858
-            }
+            },
+            "diet": [
+                {
+                    "prey": "Змея",
+                    "condition": 0,
+                    "mode": 0,
+                    "weight": 1.0
+                }
+            ],
+            "fleesFrom": []
         },
         {
             "name": "Волк",
@@ -1559,7 +1568,28 @@
                 "affinityPerOrgan": 0.550000011920929,
                 "psyche": "WolfPsyche",
                 "psycheRhythm": 1.399999976158142
-            }
+            },
+            "diet": [
+                {
+                    "prey": "Змея",
+                    "condition": 0,
+                    "mode": 0,
+                    "weight": 1.0
+                },
+                {
+                    "prey": "Ёж",
+                    "condition": 1,
+                    "mode": 0,
+                    "weight": 1.0
+                },
+                {
+                    "prey": "Лось",
+                    "condition": 0,
+                    "mode": 1,
+                    "weight": 1.0
+                }
+            ],
+            "fleesFrom": []
         },
         {
             "name": "Змея",
@@ -2186,7 +2216,11 @@
                 "affinityPerOrgan": 0.550000011920929,
                 "psyche": "SnakePsyche",
                 "psycheRhythm": 1.600000023841858
-            }
+            },
+            "diet": [],
+            "fleesFrom": [
+                "Ёж"
+            ]
         },
         {
             "name": "Лось",
@@ -2770,7 +2804,16 @@
                 "affinityPerOrgan": 0.550000011920929,
                 "psyche": "MoosePsyche",
                 "psycheRhythm": 2.5
-            }
+            },
+            "diet": [
+                {
+                    "prey": "Волк",
+                    "condition": 0,
+                    "mode": 0,
+                    "weight": 1.0
+                }
+            ],
+            "fleesFrom": []
         },
         {
             "name": "Человек",
@@ -3166,7 +3209,9 @@
                 "affinityPerOrgan": 0.550000011920929,
                 "psyche": "",
                 "psycheRhythm": 0.0
-            }
+            },
+            "diet": [],
+            "fleesFrom": []
         }
     ],
     "lairs": [

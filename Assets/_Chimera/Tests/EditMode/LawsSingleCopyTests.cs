@@ -19,6 +19,9 @@ namespace Chimera.Tests.EditMode
         // формула входящего урона: (1f - броня)
         static readonly Regex IncomingFormula = new(@"1f\s*-\s*[A-Za-z_.]*[Rr]eduction\b", RegexOptions.Compiled);
 
+        // поиск психики другого вида по ТИПУ компонента: `GetComponentInParent<SnakePsyche>()` и родня — так добычу опознавали до С8
+        static readonly Regex PsycheLookup = new(@"(?:GetComponent(?:InParent|InChildren)?|TryGetComponent)<(\w+Psyche)>", RegexOptions.Compiled);
+
         static string ScriptsRoot => Path.Combine(Application.dataPath, "_Chimera", "Scripts");
 
         static string[] Hits(Regex rx) =>
@@ -43,6 +46,44 @@ namespace Chimera.Tests.EditMode
         {
             var hits = Hits(SpeedProduct);
             Assert.IsEmpty(hits, "произведение скорости хода вне `Laws/MoveLaw` — звать MoveLaw.Speed:\n" + string.Join("\n", hits));
+        }
+
+        [Test]
+        public void Detector_SeesPsycheTypeLookup()
+        {
+            Assert.AreEqual("SnakePsyche", PsycheLookup.Match("var snake = col.GetComponentInParent<SnakePsyche>();").Groups[1].Value);
+            Assert.AreEqual("HedgehogPsyche", PsycheLookup.Match("if (hp.GetComponent<HedgehogPsyche>() != null)").Groups[1].Value);
+            Assert.AreEqual("WolfPsyche", PsycheLookup.Match("if (target.TryGetComponent<WolfPsyche>(out var wolf))").Groups[1].Value);
+        }
+
+        /// <summary>Добыча и угроза — по рациону вида и доминанте цели (`DietLaw`, `CreatureBody.Appetite/Fears`, С8), а не по типу
+        /// психики, которую на цели случайно нашли. Допустим только свой тип в своём файле — вызов метода собственной психики
+        /// (цепь рёва лосей: `MoosePsyche.cs` зовёт `Provoke` у соседа-лося) — это не выбор добычи. Нужен иной поиск по типу
+        /// психики — добавлять сюда исключение с причиной, а не ослаблять регулярку.</summary>
+        [Test]
+        public void PreyAndThreat_NotByPsycheType()
+        {
+            var enemies = Path.Combine(ScriptsRoot, "Enemies");
+            Assert.IsTrue(Directory.Exists(enemies));
+            var hits = Directory.GetFiles(enemies, "*.cs", SearchOption.AllDirectories)
+                .SelectMany(f => File.ReadAllLines(f).Select((line, i) => (f, i, line)))
+                .Where(t => !t.line.TrimStart().StartsWith("//"))
+                .Select(t => (t, m: PsycheLookup.Match(t.line)))
+                .Where(x => x.m.Success && x.m.Groups[1].Value != Path.GetFileNameWithoutExtension(x.t.f))
+                .Select(x => $"{Path.GetFileName(x.t.f)}:{x.t.i + 1}  {x.t.line.Trim()}")
+                .ToArray();
+            Assert.IsEmpty(hits, "добыча/угроза по типу психики цели — звать `CreatureBody.Appetite`/`Fears` (рацион по доминанте):\n" + string.Join("\n", hits));
+        }
+
+        /// <summary>Ярость ускоряет всех (решение 18.11): психика не вправе подать в `MoveLaw.Speed` литерал вместо множителя ярости,
+        /// как это делали змея и альфа (`MoveLaw.Speed(moveSpeed, 1f, ...)`).</summary>
+        [Test]
+        public void RageSpeed_NoPsycheOptsOut()
+        {
+            var optOut = new Regex(@"MoveLaw\.Speed\(\s*\w+\s*,\s*1f\s*,", RegexOptions.Compiled);
+            Assert.IsTrue(optOut.IsMatch("float Speed => MoveLaw.Speed(moveSpeed, 1f, variance != null ? 1f : 1f);"));
+            var hits = Hits(optOut);
+            Assert.IsEmpty(hits, "психика выключила ярость из скорости литералом 1f — подавать rage.SpeedMult:" + "\n" + string.Join("\n", hits));
         }
 
         [Test]

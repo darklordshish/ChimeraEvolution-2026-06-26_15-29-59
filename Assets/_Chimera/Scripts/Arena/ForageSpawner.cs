@@ -22,8 +22,12 @@ public class ForageSpawner : MonoBehaviour
     {
         // Лес (карта как источник, шаг 7): кусты — слой карты по сиду; облик куста — тоже по сиду. Арена без карты —
         // прежняя раскладка по навмешу ниже.
-        var forest = FindAnyObjectByType<ForestBuilder>();
-        if (forest != null && forest.Map != null && forest.Map.forage != null && forest.Map.forage.Count > 0)
+        // Билдер берём тот, у которого есть карта с кормом: в сцене может жить и посторонний ForestBuilder без карты
+        // (зонд комплекса, тестовый стенд) — FindAnyObjectByType отдавал его в случайном порядке, и кусты уходили на арену.
+        ForestBuilder forest = null;
+        foreach (var b in FindObjectsByType<ForestBuilder>())
+            if (b.Map != null && b.Map.forage != null && b.Map.forage.Count > 0) { forest = b; break; }
+        if (forest != null)
         {
             // Один генератор на проект — XorShiftRandom из Laws (его последовательность закреплена тестом).
             var rng = new Chimera.Laws.XorShiftRandom(unchecked((uint)forest.Map.seed ^ 0x2F0A9Eu));

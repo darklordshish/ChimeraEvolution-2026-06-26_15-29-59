@@ -1,3 +1,4 @@
+using Chimera.Laws;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -23,6 +24,8 @@ public static class SpeciesBootstrap
         human.speciesName = "Человек";
         human.mass = 80f;   // масса — для роста химеры (спека `2026-10-20-shkala-morfov.md`)
         human.formScale = 1f;
+        human.diet = new DietEntry[0];   // РАЦИОН (С8, `DietLaw`): Человек: по именам никого (NPC-психики нет)
+        human.fleesFrom = new string[0];
         human.spineAxis = Vector3.up;                  // хребет прямоходящего идёт вверх
         human.dorsalAxis = new Vector3(0f, 0f, -1f);   // спина прямоходящего — назад в системе тела (кожа органа: узор цепью по хребту)
         human.tint = new Color(0.9f, 0.72f, 0.62f); // телесный — база палитры (все органы человечьи → этот цвет)
@@ -155,6 +158,8 @@ public static class SpeciesBootstrap
         wolf.speciesName = "Волк";
         wolf.mass = 90f;   // масса — для роста химеры (спека `2026-10-20-shkala-morfov.md`)
         wolf.formScale = 1f;
+        wolf.diet = new[] { new DietEntry("Змея"), new DietEntry("Ёж", DietCondition.WhenHungry), new DietEntry("Лось", DietCondition.Always, DietMode.Shadow) };   // РАЦИОН (С8, `DietLaw`): змею стая берёт всегда (раскрытую), ежа — только голодной (IsHungry), лося — тенью-загоном
+        wolf.fleesFrom = new string[0];
         wolf.tint = new Color(0.5f, 0.5f, 0.52f);   // серый — по-волчьи и отличимо от бурого лося
         wolf.mutagenPool = 16;
         wolf.baseHp = 38;   // тело волка вдвое легче человеческого (~40 кг против ~75) — зато сердце зверское
@@ -324,6 +329,8 @@ public static class SpeciesBootstrap
         snake.speciesName = "Змея";
         snake.mass = 66f;   // масса — для роста химеры (спека `2026-10-20-shkala-morfov.md`)
         snake.formScale = 1f;
+        snake.diet = new DietEntry[0];   // РАЦИОН (С8, `DietLaw`): добыча — тёплый одиночка по свойству тела (Perception.IsWarm), по именам никого; от ежа уходит всегда
+        snake.fleesFrom = new[] { "Ёж" };
         snake.tint = new Color(0.35f, 0.5f, 0.3f);
         snake.mutagenPool = 20;
         snake.baseHp = 60;  // длинное тело, но лёгкое
@@ -456,6 +463,8 @@ public static class SpeciesBootstrap
         moose.speciesName = "Лось";
         moose.mass = 440f;   // масса — для роста химеры (спека `2026-10-20-shkala-morfov.md`)
         moose.formScale = 1f;
+        moose.diet = new[] { new DietEntry("Волк") };   // РАЦИОН (С8, `DietLaw`): травоядный: волк — не еда, а противник, на которого бросается
+        moose.fleesFrom = new string[0];
         moose.tint = new Color(0.42f, 0.32f, 0.22f); // тёмно-бурый
         moose.mutagenPool = 24;
         moose.eatsMeat = false; // ТРАВОЯДНЫЙ: волков не ест, добычей не восстанавливается (его еда — кормёжка по карте, будущий слайс)
@@ -579,6 +588,8 @@ public static class SpeciesBootstrap
         hog.speciesName = "Ёж";
         hog.mass = 12f;   // масса — для роста химеры (спека `2026-10-20-shkala-morfov.md`)
         hog.formScale = 0.55f;   // маленький мутант ≈0.7 м по верху игл (спека `2026-10-20-razmer-hedzhhalka.md`): тело целиком, поставка как есть
+        hog.diet = new[] { new DietEntry("Змея") };   // РАЦИОН (С8, `DietLaw`): змею берёт всегда, пока не сыт (гейт сытости — в психике)
+        hog.fleesFrom = new string[0];
         hog.tint = new Color(0.58f, 0.33f, 0.28f);  // ржаво-кирпичный: тёмный и красный, не спутать с телесным
                                                     // человеком (был песочный — сливались) и бурым лосём
         hog.mutagenPool = 18;
