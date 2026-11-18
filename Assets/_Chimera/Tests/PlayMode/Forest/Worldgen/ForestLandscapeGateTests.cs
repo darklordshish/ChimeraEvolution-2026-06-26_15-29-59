@@ -37,7 +37,7 @@ namespace Chimera.Tests.PlayMode
         {
             host = new GameObject("~LandscapeGateWorld");
             host.SetActive(false);
-            builder = ForestProfiles.PavilionV2(host, 1337L, erosion: false);
+            builder = ForestProfiles.PavilionV2Zone(host, 1337L); // 18.11: павильон v2 без замороженных каньона и акведука
             builder.buildThermalErosion = true; // гидро — отдельным Hydro_Gate
             host.SetActive(true);
             var sw = Stopwatch.StartNew();
@@ -109,7 +109,7 @@ namespace Chimera.Tests.PlayMode
         // P0 G7 шаг 6: каньон на реальном v2 и дорога по финальному полу
         // ------------------------------------------------------------------
 
-        [UnityTest]
+        [UnityTest, Ignore("каньон заморожен 12.11, ассеты в теге archive/les-zamorozka-2026-11-12; профиль ворот с 18.11 — павильон v2 без каньона")]
         public IEnumerator Canyon_Gate_RealV2_IsWetOrDry_NotAbsent()
         {
             Assert.IsTrue(builder.Canyon.valid, "каньон v2 не собран");
@@ -397,7 +397,7 @@ namespace Chimera.Tests.PlayMode
         {
             var h = new GameObject("~HydroGate");
             h.SetActive(false);
-            var b = ForestProfiles.PavilionV2(h, 1337L, erosion: true);
+            var b = ForestProfiles.PavilionV2Zone(h, 1337L); b.buildHydraulicErosion = true; // 18.11: без каньона и акведука
             // Уникальная версия и чистый каталог: M16 — это ПЕРВОЕ запекание,
             // а не «кеш с прошлого прогона». Второй вызов читает тот же ключ.
             string dir = Path.Combine(Application.temporaryCachePath, "ErosionGate");
