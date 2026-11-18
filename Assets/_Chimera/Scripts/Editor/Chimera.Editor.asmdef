@@ -3,6 +3,7 @@
     "rootNamespace": "Chimera.Editor",
     "references": [
         "Chimera.Runtime",
+        "Chimera.Laws",
         "Unity.Pipeline"
     ],
     "includePlatforms": [
