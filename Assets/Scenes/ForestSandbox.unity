@@ -360,9 +360,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2518f7a3646f61e44b32984eb2d8fce2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ChimeraBody
-  discountPerAffinity: 0.01
+  discountPerAffinity: 0.008
   maxDiscount: 0.8
-  bonusStartAffinity: 80
+  bonusStartAffinity: 0
   bonusFullAffinity: 100
   maxBonusMult: 2
   affinityPerOrgan: 0.55
@@ -410,7 +410,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e20907ebcc7708b4992107f281c3d2b5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerDeath
-  restartDelay: 1.5
+  risingSeconds: 1.5
+  fallbackLieSeconds: 3
+  summarySeconds: 10
 --- !u!114 &1024955163
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -429,6 +431,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   onDeath:
+    m_PersistentCalls:
+      m_Calls: []
+  onRevived:
     m_PersistentCalls:
       m_Calls: []
 --- !u!114 &1024955164
@@ -531,16 +536,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CameraFollow
   target: {fileID: 1024955155}
   offset: {x: 0, y: 4, z: -5}
+  nearOffset: {x: 0, y: 2.2, z: -3.2}
   followLerp: 10
   lookHeight: 1.2
   rotateBehind: 1
   rigidYaw: 1
   yawFollowSpeed: 70
-  wallProbeRadius: 0
-  wallProbePadding: 0
-  wallProbeMask:
-    serializedVersion: 2
-    m_Bits: 0
+  wallRadius: 0.2
+  wallRecover: 6
+  wallPad: 0.05
   headHeight: 1.7
   headForward: 0.25
   pitchSensitivity: 0.1
@@ -699,8 +703,25 @@ MonoBehaviour:
   mapDiameter: 2000
   treeCount: 0
   patchyFlora: 0
+  undergrowthScale: 0
+  forestFraction: 0
+  forestThreshold: -999
+  treeDensityTarget: 0
+  treeMinCount: 0
+  treeMaxCount: 0
+  buildRelief: 0
+  buildThermalErosion: 0
+  buildHydraulicErosion: 0
+  erosionVersion: 1
+  erosionCacheDir: 
+  erosionResolution: 0
+  erosionDrops: 0
+  erosionSteps: 0
   chunkSize: 250
   terrainQuads: 16
+  fingerprintVersion: 0
+  worldVersion: 0
+  treeVersion: 0
   buildOnAwake: 1
   config: {fileID: 0}
   playerSpawn: {fileID: 0}
@@ -709,6 +730,7 @@ MonoBehaviour:
   buildRavines: 0
   buildTerrace: 0
   buildCanyon: 0
+  buildAqueduct: 0
   buildStationLoop: 0
   buildStationHill: 0
   buildLabComplex: 0
@@ -726,13 +748,23 @@ MonoBehaviour:
   minLabDistance: 150
   speciesPool:
   - {fileID: 11400000, guid: dab52963bf459da4b934b85751aeac96, type: 2}
-  snakePrefab: {fileID: 6641276580433421429, guid: 8bd5a3162d1968f4d8f4fc47643aea72, type: 3}
   snakeCapacity: 3
   snakeTier: 2
   snakeHomeRadius: 12
   snakeSpawnRadius: 3
   snakeFearRadius: 18
   snakeRespawnSeconds: 30
+  buildAnimalLairs: 0
+  wolfLairCapacity: 4
+  mooseLairCapacity: 2
+  hedgehogLairCapacity: 2
+  buildBeacon: 0
+  beaconHeight: 50
+  beaconColor: {r: 1, g: 0.55, b: 0.15, a: 1}
+  beaconIntensity: 1
+  beaconLampSize: 1.6
+  beaconMinAngle: 1.2
+  beaconGlowRange: 30
 --- !u!114 &1532378594
 MonoBehaviour:
   m_ObjectHideFlags: 0
