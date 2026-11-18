@@ -21,6 +21,7 @@ public enum ForestPoiKind
 /// Адрес мира: v0 для дорог (S4) и B1. Хранит позицию и габарит-радиус, чтобы
 /// потребитель проверял пересечение, а не расстояние до центра.
 /// </summary>
+[System.Serializable]
 public struct ForestPoi
 {
     public ForestPoiKind kind;

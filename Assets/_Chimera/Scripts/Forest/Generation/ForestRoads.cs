@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>Дорога P6: лента по земле между адресами POI; поле не меняет (S4).</summary>
+[System.Serializable]
 public struct ForestRoad
 {
     public List<Vector2> points;

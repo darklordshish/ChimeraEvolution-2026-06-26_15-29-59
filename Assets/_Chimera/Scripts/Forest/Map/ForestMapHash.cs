@@ -46,6 +46,30 @@ public static class ForestMapHash
                 Mix(ref h, (int)t.kind); Mix(ref h, (int)t.state); Mix(ref h, t.solid ? 1 : 0);
             }
 
+        // Шаг 5а: разметка, пути, ориентиры.
+        Zones(ref h, m.zones); Zones(ref h, m.commons); Zones(ref h, m.waterholes);
+        Mix(ref h, m.links != null ? m.links.Count : -1);
+        if (m.links != null) foreach (var k in m.links) { Q(ref h, k.a.x); Q(ref h, k.a.y); Q(ref h, k.b.x); Q(ref h, k.b.y); Q(ref h, k.width); }
+        Mix(ref h, m.coverPods != null ? m.coverPods.Count : -1);
+        if (m.coverPods != null) foreach (var c in m.coverPods) { Q(ref h, c.center.x); Q(ref h, c.center.y); Q(ref h, c.radius); Q(ref h, c.groundY); }
+        Mix(ref h, m.pois != null ? m.pois.Count : -1);
+        if (m.pois != null)
+            foreach (var p in m.pois)
+            {
+                Mix(ref h, (int)p.kind); S(ref h, p.name); Q(ref h, p.pos.x); Q(ref h, p.pos.y);
+                Q(ref h, p.radius); Q(ref h, p.yawDeg); Q(ref h, p.groundY); Mix(ref h, p.index);
+            }
+        Mix(ref h, m.roads != null ? m.roads.Count : -1);
+        if (m.roads != null)
+            foreach (var rd in m.roads)
+            {
+                Q(ref h, rd.width); Mix(ref h, rd.primary ? 1 : 0); Mix(ref h, rd.ford ? 1 : 0);
+                Mix(ref h, rd.points != null ? rd.points.Count : -1);
+                if (rd.points != null) foreach (var pt in rd.points) { Q(ref h, pt.x); Q(ref h, pt.y); }
+            }
+        if (m.ash != null) { Mix(ref h, m.ash.has ? 1 : 0); Q(ref h, m.ash.pos.x); Q(ref h, m.ash.pos.y); Q(ref h, m.ash.groundY); }
+        if (m.beacon != null) { Mix(ref h, m.beacon.has ? 1 : 0); Mix(ref h, m.beacon.on ? 1 : 0); V3(ref h, m.beacon.basePos); Q(ref h, m.beacon.height); }
+
         // Логова: адрес и все числа (в игровых часах).
         Mix(ref h, m.lairs != null ? m.lairs.Count : -1);
         if (m.lairs != null)
@@ -89,6 +113,13 @@ public static class ForestMapHash
             Q(ref h, r.labCenter.x); Q(ref h, r.labCenter.y); Q(ref h, r.padYaw); Q(ref h, r.platformY); Mix(ref h, (int)r.entrance);
         }
         return h;
+    }
+
+    static void Zones(ref ulong h, System.Collections.Generic.List<ForestSpace.Zone> zs)
+    {
+        Mix(ref h, zs != null ? zs.Count : -1);
+        if (zs == null) return;
+        foreach (var z in zs) { Q(ref h, z.center.x); Q(ref h, z.center.y); Q(ref h, z.radius); Q(ref h, z.yawDeg); }
     }
 
     static void S(ref ulong h, string s)

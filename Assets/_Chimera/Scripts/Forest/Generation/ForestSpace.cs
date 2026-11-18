@@ -33,6 +33,7 @@ public static class ForestSpace
 
     public const int TargetVersion = 2;
 
+    [System.Serializable]
     public struct Zone
     {
         public Vector2 center;
@@ -41,6 +42,7 @@ public static class ForestSpace
         public float yawDeg;
     }
 
+    [System.Serializable]
     public struct Link
     {
         public Vector2 a;
@@ -48,6 +50,7 @@ public static class ForestSpace
         public float width;
     }
 
+    [System.Serializable]
     public struct CoverPod
     {
         public Vector2 center;

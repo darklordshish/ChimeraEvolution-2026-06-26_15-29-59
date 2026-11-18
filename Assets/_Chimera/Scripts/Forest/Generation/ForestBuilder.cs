@@ -539,7 +539,8 @@ public class ForestBuilder : MonoBehaviour, IBossExit
         // Карта как источник (спека 18.11): только v2 — на v1 карту не делаем (решение геймдизайнера 18.11).
         // Мир с неподдержанным слоем (каньон, овраги) карты не получает: рельеф не снят (DomeWorld.MapRelief == null).
         Map = WorldVersion >= 2 && world.MapRelief != null
-            ? ForestMap.FromWorld(world, chosen, WorldVersion, SpawnPoint, MapLairs) : null;
+            ? ForestMap.FromWorld(world, chosen, WorldVersion, SpawnPoint, MapLairs,
+                new ForestMap.Beacon { has = beacon != null, on = buildBeacon, basePos = beaconBase, height = BeaconSettings.height }) : null;
     }
 
     /// <summary>Карта мира v2 — факты в метрах на плоскости купола; null на v1 и до сборки.</summary>
@@ -574,7 +575,11 @@ public class ForestBuilder : MonoBehaviour, IBossExit
         at.y = door.y;
         beacon = LabBeacon.Build(BuiltRoot.transform, at, BeaconSettings);
         beacon.gameObject.SetActive(buildBeacon);
+        beaconBase = BuiltRoot.transform.InverseTransformPoint(at);
     }
+
+    /// <summary>Основание маяка на плоскости купола (для карты, шаг 5); default — маяка нет.</summary>
+    Vector3 beaconBase;
 
     void OnValidate() => ApplyBeacon();
 
@@ -953,6 +958,7 @@ public class ForestBuilder : MonoBehaviour, IBossExit
     {
         Fingerprint = 0UL;
         beacon = null; // маяк — ребёнок корня мира, его снесёт world.Clear
+        beaconBase = default;
         Map = null;
         if (ReferenceEquals(BossChimeraSpawner.ExitProvider, this)) BossChimeraSpawner.ExitProvider = null;
         if (waterProbe != null && PlayerDeath.IsWaterAt == waterProbe) PlayerDeath.IsWaterAt = null;
