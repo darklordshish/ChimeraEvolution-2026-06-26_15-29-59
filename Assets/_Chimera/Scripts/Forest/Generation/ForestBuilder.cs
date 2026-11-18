@@ -543,6 +543,9 @@ public class ForestBuilder : MonoBehaviour, IBossExit
     /// <summary>Карта мира v2 — факты в метрах на плоскости купола; null на v1 и до сборки.</summary>
     public ForestMap Map { get; private set; }
 
+    /// <summary>Мир, собранный этим билдером (диагностика и сторожа карты); null до сборки.</summary>
+    public DomeWorld World => world;
+
     LabBeacon beacon;
     /// <summary>Маяк лаборатории этого мира (и при снятой галке — погашенный); null — лаборатории нет.</summary>
     public LabBeacon Beacon => beacon;

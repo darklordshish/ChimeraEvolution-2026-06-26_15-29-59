@@ -61,6 +61,7 @@ public sealed class DomeTerrain
     /// S2 §1.1 fallback: локальная насыпь/выемка коридора, когда валидного места нет.
     /// Это НЕ второй пол: полоса лежит в ShapeGround, её видят чанки/NavMesh/флора.
     /// </summary>
+    [System.Serializable]
     public struct CorridorPad
     {
         public Vector2 a;

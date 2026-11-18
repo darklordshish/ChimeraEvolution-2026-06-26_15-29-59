@@ -11,6 +11,7 @@ using UnityEngine;
 /// </summary>
 public static class DomeHydro
 {
+    [System.Serializable]
     public class State
     {
         public List<Vector2> riverPts = new List<Vector2>();
@@ -21,7 +22,7 @@ public static class DomeHydro
         public float riverHalfWidth = 2.5f;
         public float riverDepth = 0.9f;
         public float lakeDepth = 2.5f;
-        public RiverIndex riverIndex;
+        [System.NonSerialized] public RiverIndex riverIndex;
     }
 
     /// <summary>Пространственный индекс русла: ближайшая точка за O(1) в среднем.</summary>

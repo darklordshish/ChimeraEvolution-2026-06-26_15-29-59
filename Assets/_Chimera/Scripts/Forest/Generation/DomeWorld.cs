@@ -48,6 +48,8 @@ public class DomeWorld
     /// Наружу торчат только эти функции, а не <c>BaseGround</c>/<c>TerrainGround</c>.
     /// </summary>
     public DomeTerrain Terrain { get; private set; }
+    /// <summary>Рельеф карты (шаг 2): снят перед чанками v2, чанки строятся по его высоте. null на v1.</summary>
+    public ForestMapRelief MapRelief { get; private set; }
     /// <summary>S3: маски габаритов (null у v1 — там центровые проверки).</summary>
     public DomeMasks Masks => masks;
     public DomeAshSite.AshSpot Ash { get; private set; }

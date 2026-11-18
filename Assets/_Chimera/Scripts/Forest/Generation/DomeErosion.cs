@@ -18,6 +18,7 @@ using UnityEngine;
 /// </summary>
 public static class DomeErosion
 {
+    [Serializable]
     public sealed class State
     {
         public int resolution;
