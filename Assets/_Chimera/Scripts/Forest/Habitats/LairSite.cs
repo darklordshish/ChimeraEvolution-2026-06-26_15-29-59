@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Chimera.Laws;
 using UnityEngine;
 
 /// <summary>
@@ -47,6 +48,15 @@ public class LairSite : MonoBehaviour
     public float fearPerKill = 0.34f;
     public float fearDecayPerSecond = 0.02f;
     public float exhaustFear = 0.7f;
+
+    /// <summary>Игровых часов в реальной секунде: часы сцены, без них — темп по умолчанию (как у `WorldClock.Now`).</summary>
+    static float HoursPerSecond => WorldClock.Instance != null ? WorldClock.Instance.HoursPerSecond : WorldClock.HoursPerRealSecond(WorldClock.DefaultDayMinutes);
+
+    /// <summary>Период рождения в ИГРОВЫХ ЧАСАХ (закон `LairLaw`): так логово читает симулятор. Игра по-прежнему тикает секундами.</summary>
+    public float RespawnGameHours => LairLaw.RespawnHours(respawnSeconds, HoursPerSecond);
+
+    /// <summary>Спад страха за игровой час (закон `LairLaw`).</summary>
+    public float FearDecayPerGameHour => LairLaw.FearDecayPerHour(fearDecayPerSecond, HoursPerSecond);
 
     [NonSerialized] public int pendingSpawns;
     [NonSerialized] public float fear;
