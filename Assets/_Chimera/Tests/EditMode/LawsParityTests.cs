@@ -701,6 +701,82 @@ namespace Chimera.Tests.EditMode
             Assert.IsNotNull(hp);
         }
 
+        // ---- С7: темп приёма и логово в игровых часах ----
+
+        [Test]
+        public void Tempo_Period_AndTimers_MatchOldInlineFormulas()
+        {
+            int n = 0;
+            foreach (float windup in new[] { 0.2f, 0.45f, 0.8f, 1.2f })
+            foreach (float cooldown in new[] { 0.7f, 1.4f, 2.5f, 4f })
+            foreach (float rhythm in new[] { 0f, 1.1f, 2.2f, 3.5f, 5f })
+            {
+                // прежнее: перезарядка идёт с запуска, ритм психики — отдельный таймер; период = больший из двух + замах
+                float old = Mathf.Max(cooldown, rhythm) + windup;
+                Assert.AreEqual(R(old), R(TempoLaw.Period(new TempoRecord { windup = windup, cooldown = cooldown }, rhythm)), 0f);
+                foreach (float now in new[] { 0f, 3.7f, 120.25f })
+                {
+                    Assert.AreEqual(R(now + cooldown), R(TempoLaw.ReadyAt(now, cooldown)), 0f);
+                    Assert.AreEqual(R(now + windup), R(TempoLaw.WindupEnd(now, windup)), 0f);
+                    float readyAt = now + cooldown;
+                    foreach (float shift in new[] { -1f, 0f, 0.1f, 5f })
+                        Assert.AreEqual(R(Mathf.Min(R(readyAt + shift), R(now + cooldown * 0.25f))),
+                            R(TempoLaw.ReadyAfterCancel(R(readyAt + shift), now, cooldown, TempoLaw.CancelledCooldownShare)), 0f);
+                }
+                n++;
+            }
+            Assert.Greater(n, 70);
+            Assert.AreEqual(0.25f, TempoLaw.CancelledCooldownShare);
+        }
+
+        [Test]
+        public void Lair_GameHours_ConversionKeepsTheRuntimeTempo()
+        {
+            var go = new GameObject("~логово"); made.Add(go);
+            var site = go.AddComponent<LairSite>();
+            site.respawnSeconds = 30f; site.fearDecayPerSecond = 0.02f;
+            float hps = WorldClock.HoursPerRealSecond(WorldClock.DefaultDayMinutes);   // сутки 12 мин → 1/30 ч в секунду
+            Assert.AreEqual(R(30f * hps), site.RespawnGameHours, 0f);
+            Assert.AreEqual(1f, site.RespawnGameHours, 1e-5f, "30 с мира при сутках 12 мин — ровно игровой час");
+            Assert.AreEqual(R(0.02f / hps), site.FearDecayPerGameHour, 0f);
+            // обратный перевод возвращает секунды: единица другая, темп тот же
+            Assert.AreEqual(30f, LairLaw.RespawnSeconds(site.RespawnGameHours, hps), 1e-4f);
+            Assert.AreEqual(0.02f, site.FearDecayPerGameHour * hps, 1e-6f);
+            // сутки другой длины: в часах число меняется, в секундах — нет
+            Assert.AreEqual(30f * (24f / (6f * 60f)), LairLaw.RespawnHours(30f, WorldClock.HoursPerRealSecond(6f)), 1e-5f);
+            Assert.AreEqual(0f, LairLaw.FearDecayPerHour(0.02f, 0f));
+        }
+
+        [Test]
+        public void AbilityResolve_UsesBodyLawExpression_OnEveryRecord()
+        {
+            int n = 0;
+            foreach (var sp in LoadSpecies())
+                foreach (var organ in sp.organs)
+                    if (organ.abilities != null)
+                        foreach (var rec in organ.abilities)
+                            foreach (float power in new[] { 0.45f, 0.5f, 1f, 1.37f, 2f })
+                                foreach (bool native in new[] { true, false })
+                                {
+                                    var resolved = rec.Resolve(null, native, power);
+                                    foreach (var f in rec.GetType().GetFields(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public))
+                                    {
+                                        if (!f.IsDefined(typeof(ExpressedAttribute), false)) continue;
+                                        if (f.FieldType == typeof(int))
+                                            Assert.AreEqual(BodyLaw.ExpressInt((int)f.GetValue(rec), 0f, native, power), (int)f.GetValue(resolved), $"{sp.speciesName} {rec.GetType().Name}.{f.Name}");
+                                        else
+                                            Assert.AreEqual(R(BodyLaw.ExpressNumber((float)f.GetValue(rec), 0f, native, power)), (float)f.GetValue(resolved), 0f, $"{sp.speciesName} {rec.GetType().Name}.{f.Name}");
+                                        n++;
+                                    }
+                                }
+            Assert.Greater(n, 100);
+            // прежняя арифметика дословно
+            float own = 10f, from = 4f, pw = 0.45f;
+            Assert.AreEqual(R(own * pw), R(BodyLaw.ExpressNumber(own, from, true, pw)), 0f);
+            Assert.AreEqual(R(from + (own - from) * pw), R(BodyLaw.ExpressNumber(own, from, false, pw)), 0f);
+            Assert.AreEqual(Mathf.RoundToInt(own * pw), BodyLaw.ExpressInt(own, from, true, pw));
+        }
+
         // ---- живой Health ----
         readonly List<GameObject> made = new();
         [TearDown]

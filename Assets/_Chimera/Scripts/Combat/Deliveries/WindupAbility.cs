@@ -86,7 +86,7 @@ public abstract class WindupAbility : MonoBehaviour, IAbility, IAbilityCarrier
     protected virtual float StaminaCost => 0f;
     protected virtual float Cooldown => 0f;
     [SerializeField, NotOrganData("правило боя: сорванный замах стоит долю перезарядки — пауза видна, беспомощности нет")]
-    float cancelledCooldownShare = 0.25f;
+    float cancelledCooldownShare = Chimera.Laws.TempoLaw.CancelledCooldownShare;
     float readyAt;
     Stamina breath;
     Stamina Breath { get { if (breath == null) TryGetComponent(out breath); return breath; } } // бак тело до-создаёт в Recompute
@@ -95,7 +95,7 @@ public abstract class WindupAbility : MonoBehaviour, IAbility, IAbilityCarrier
     /// Психика спрашивает это, а не держит свой таймер и не считает цену.</summary>
     public bool CanUse => Ready && Time.time >= readyAt && (StaminaCost <= 0f || Breath == null || Breath.Has(StaminaCost));
 
-    void RefundCooldown() => readyAt = Mathf.Min(readyAt, Time.time + Cooldown * cancelledCooldownShare);
+    void RefundCooldown() => readyAt = Chimera.Laws.TempoLaw.ReadyAfterCancel(readyAt, Time.time, Cooldown, cancelledCooldownShare); // закон темпа — Laws/TempoLaw
 
     /// <summary>ОКНО СРАБАТЫВАНИЯ по дистанции до цели — из записи органа: ближний приём бьёт от 0 до досягаемости,
     /// разбег, наскок и залп — с минимальной дистанции. Нет записи — окно пустое (0). Читает арбитр арсенала
@@ -109,8 +109,8 @@ public abstract class WindupAbility : MonoBehaviour, IAbility, IAbilityCarrier
         if (Busy || target == null || !CanUse) return false;
         if (StaminaCost > 0f && Breath != null && !Breath.TrySpend(StaminaCost)) return false; // цену платит сам носитель
         Busy = true;
-        readyAt = Time.time + Cooldown; // перезарядка идёт с запуска
-        windupEnd = Time.time + WindupTime;
+        readyAt = Chimera.Laws.TempoLaw.ReadyAt(Time.time, Cooldown); // перезарядка идёт с запуска
+        windupEnd = Chimera.Laws.TempoLaw.WindupEnd(Time.time, WindupTime);
         telegraph.Set(true, TelegraphColor, intent: true); // ЗАМАХ = намерение: цвет приёма читает лишь Чутьё
         OnBegin();
         return true;

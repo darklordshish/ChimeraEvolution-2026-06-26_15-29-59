@@ -62,6 +62,7 @@ unity command chimera-diagrams    # схемы планов тела по вид
 unity command chimera-reports     # и карту, и схемы разом — обычный порядок сверки
 unity command chimera-matrix      # МАТРИЦА ХИМЕР: каждое шасси с каждым донором, целиком и по аугменту → Docs/Диаграммы/ХИМЕРЫ.md
 unity command chimera-silhouette  # СВЕРКА СИЛУЭТОВ: тело билдером против маски листа (IoU) → Docs/Диаграммы/СИЛУЭТЫ.md + маски тел
+unity command chimera-sim-export # ВХОДЫ ЗАКОНОВ для симулятора вне Unity → Docs/Диаграммы/Эволюция/данные.json (виды, органы, приёмы, конфиги, логова павильона); читает `dotnet run --project Tools/Sim`, сторож — `SimExportFreshTests`
 ```
 
 ## 3. Тесты

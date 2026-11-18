@@ -4,6 +4,7 @@ using System.Collections.Generic;
 namespace Chimera.Laws
 {
     /// <summary>Числа одного органа, какими их читает закон тела: поля `Organ` без типов Unity.</summary>
+    [Serializable]
     public struct OrganValues
     {
         public float hpBonus, staminaBonus, staminaRegenBonus;
@@ -65,6 +66,15 @@ namespace Chimera.Laws
 
         /// <summary>Человеч.значение + (звериное − человеч.) × множитель.</summary>
         public static float Blend(float human, float beast, float mult) => human + (beast - human) * mult;
+
+        /// <summary>Раскрытие одного числа записи приёма (`AbilityData.Resolve`, поле с `[Expressed]`): родной орган — значение ×
+        /// мощь, донорский — бленд от записи вытесненного органа (нет её — от нуля).</summary>
+        public static float ExpressNumber(float own, float displaced, bool native, float power)
+            => native ? own * power : displaced + (own - displaced) * power;
+
+        /// <summary>То же для целого поля записи: округление к чётному, как `Mathf.RoundToInt`.</summary>
+        public static int ExpressInt(float own, float displaced, bool native, float power)
+            => (int)MathF.Round(ExpressNumber(own, displaced, native, power));
 
         /// <summary>Единое правило экспрессии органа. `held` — что орган вытеснил (пустой орган для родного и химерного слота),
         /// `worn` — надетый, `own` — родной орган шасси, `m` — мощь (множитель родства или фикс-экспрессия).</summary>
