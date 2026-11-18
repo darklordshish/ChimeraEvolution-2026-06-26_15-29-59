@@ -12,7 +12,7 @@ namespace Chimera.Laws
     [Serializable]
     public class SimData
     {
-        public const int Schema = 1;
+        public const int Schema = 2;   // 2 — рацион видов (`SimSpecies.diet`, `fleesFrom`), С8
 
         public int schema = Schema;
         public string fingerprint = "";
@@ -134,6 +134,8 @@ namespace Chimera.Laws
         public float baseHp, baseStamina, baseStaminaRegen;   // как их читает тело: ноль в ассете уже заменён дефолтом
         public SimOrgan[] organs = new SimOrgan[0];
         public SimPrefab prefab = new SimPrefab();
+        public DietEntry[] diet = new DietEntry[0];            // рацион: кого берёт целью по доминанте (`DietLaw`); пусто — по именам никого
+        public string[] fleesFrom = new string[0];             // от кого уходит (змея — от ежа)
     }
 
     /// <summary>Логово павильона (`LairSite`): вид, ёмкость, темп в реальных секундах и в игровых часах, страх.</summary>

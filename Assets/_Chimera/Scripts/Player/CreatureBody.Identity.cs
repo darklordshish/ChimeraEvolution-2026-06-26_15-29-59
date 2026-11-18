@@ -142,6 +142,29 @@ public partial class CreatureBody
         return tier == KinTier.None ? null : best;
     }
 
+    /// <summary>РАЦИОН (С8, `DietLaw`): вес встречи, с которым ЭТО тело берёт `prey` целью, — по ДОМИНАНТЕ обоих (`MostKin`, то же, по
+    /// чему `PsycheDispatch` вешает психику): моя доминанта даёт рацион (`SpeciesSO.diet`), доминанта цели — кто она. 0 — не хочет.
+    /// Истинная химера (доминанты нет) ничья добыча и сама по рациону никого не ищет. Игрок по рациону не добыча: раньше добычу
+    /// опознавали по психике, а у игрока её нет — граница сохранена. Голод — снаружи (сытость живёт у психики, не у тела).</summary>
+    public float Appetite(CreatureBody prey, bool hungry, Chimera.Laws.DietMode mode)
+    {
+        if (prey == null || prey == this || prey == PlayerBody) return 0f;
+        var mine = MostKin(out _);
+        if (mine == null) return 0f;
+        var theirs = prey.MostKin(out _);
+        return Chimera.Laws.DietLaw.Wants(mine.diet, theirs != null ? theirs.speciesName : null, hungry, mode);
+    }
+
+    /// <summary>РАЦИОН (С8): уходит ли ЭТО тело от `other` (`SpeciesSO.fleesFrom` по доминанте цели). Змея — от ежа.</summary>
+    public bool Fears(CreatureBody other)
+    {
+        if (other == null || other == this || other == PlayerBody) return false;
+        var mine = MostKin(out _);
+        if (mine == null) return false;
+        var theirs = other.MostKin(out _);
+        return Chimera.Laws.DietLaw.Flees(mine.fleesFrom, theirs != null ? theirs.speciesName : null);
+    }
+
     /// <summary>Дебаг-строка идентичностей по известным видам (HUD): «Волк 62% · Человек 28% (кин: —)».</summary>
     public string IdentityInfo
     {

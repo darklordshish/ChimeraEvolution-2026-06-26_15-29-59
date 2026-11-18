@@ -271,8 +271,8 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
         float sight = senses.Range(SenseKind.Sight);
         foreach (var col in Physics.OverlapSphere(transform.position, sight, ~0, QueryTriggerInteraction.Ignore))
         {
-            var w = col.GetComponentInParent<WolfPsyche>();
-            if (w == null || !w.TryGetComponent<Health>(out var hp)) continue;
+            var w = col.GetComponentInParent<CreatureBody>();
+            if (w == null || body == null || body.Appetite(w, false, DietMode.Prey) <= 0f || !w.TryGetComponent<Health>(out var hp)) continue; // противник — по рациону (С8)
             float d = (w.transform.position - transform.position).sqrMagnitude;
             if (d < bestD) { bestD = d; best = hp; }
         }

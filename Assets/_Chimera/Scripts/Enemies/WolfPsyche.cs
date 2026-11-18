@@ -142,7 +142,8 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         // «странные» звуки: гремок змеи (ловушка!) и ТОПОТ ТУШИ (интерес к добыче — через сенсорику,
         // не магией: лось шумный bulk×2.5, его шаг слышен издалека). Свои и игрок — не новость (пока)
         if (src == null) return;
-        bool strange = src.GetComponentInParent<SnakePsyche>() != null || src.GetComponentInParent<MoosePsyche>() != null;
+        var srcBody = src.GetComponentInParent<CreatureBody>();
+        bool strange = srcBody != null && body != null && body.Appetite(srcBody, false, DietMode.Prey) + body.Appetite(srcBody, false, DietMode.Shadow) > 0f; // по рациону: змея и туша лося (ёж — голодному, не «странный»)
         if (!strange) return;
         if (Time.time < curiosityUntil && strength < curiosityStrength) return;     // уже идём на более сильный зов
         curiosityPos = pos;
@@ -278,27 +279,22 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
 
         // КОЛЮЧАЯ ДИЧЬ (ёж): на иглы стая идёт только РЕАЛЬНО ГОЛОДНОЙ (IsHungry ≤0.25), а не просто «не наелась» —
         // иначе волк «решает не затягивать и убивается об ежа» без причины. Голод оправдывает риск (спека §9.1).
-        // Змею берём всегда (раскрытую), ежа — только на голодный желудок
+        // Кто добыча — рацион вида (`SpeciesSO.diet` по доминанте цели, С8): змея всегда, ёж только голодному.
+        // Здесь остаётся «где и видно ли»: камуфляж и насест
         bool hungry = Belly != null && Belly.IsHungry;
         Health prey = null; float best = preyRange * preyRange;
         foreach (var col in Physics.OverlapSphere(transform.position, preyRange, ~0, QueryTriggerInteraction.Ignore))
         {
-            var snake = col.GetComponentInParent<SnakePsyche>();
-            if (snake != null)
+            var cb = col.GetComponentInParent<CreatureBody>();
+            if (cb == null || body == null || body.Appetite(cb, hungry, DietMode.Prey) <= 0f) continue;
+            // засадчик (камуфляж — свойство тела, сегодня только змеиное): затаившегося глазами не видим, со стены-насеста не достать
+            if (cb.TryGetComponent<Camouflage>(out var camo))
             {
-                if (snake.TryGetComponent<Camouflage>(out var camo) && camo.Hidden) continue; // затаилась — не видим
-                if (snake.transform.position.y > transform.position.y + 2f) continue;          // на стене-насесте — не достать
-                float ds = (snake.transform.position - transform.position).sqrMagnitude;
-                if (ds < best) { best = ds; prey = snake.GetComponent<Health>(); }
-                continue;
+                if (camo.Hidden) continue;                                                  // затаилась — не видим
+                if (cb.transform.position.y > transform.position.y + 2f) continue;          // на стене-насесте — не достать
             }
-            if (hungry)
-            {
-                var hog = col.GetComponentInParent<HedgehogPsyche>();
-                if (hog == null) continue;
-                float dh = (hog.transform.position - transform.position).sqrMagnitude;
-                if (dh < best) { best = dh; prey = hog.GetComponent<Health>(); }
-            }
+            float d = (cb.transform.position - transform.position).sqrMagnitude;
+            if (d < best && cb.TryGetComponent<Health>(out var hp)) { best = d; prey = hp; }
         }
 
         Transform newTarget = prey != null ? prey.transform : (playerCtl != null ? playerCtl.transform : null);
@@ -611,8 +607,8 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
             float best = mooseSpotRange * mooseSpotRange;
             foreach (var col in Physics.OverlapSphere(transform.position, mooseSpotRange, ~0, QueryTriggerInteraction.Ignore))
             {
-                var m = col.GetComponentInParent<MoosePsyche>();
-                if (m == null || !m.TryGetComponent<Health>(out var hp)) continue;
+                var m = col.GetComponentInParent<CreatureBody>();
+                if (m == null || body == null || body.Appetite(m, false, DietMode.Shadow) <= 0f || !m.TryGetComponent<Health>(out var hp)) continue; // туша по рациону
                 if (!Perception.Notices(transform, m.transform, senses, proximityRadius)) continue; // тушу видно или чуять — не «знаем, что она где-то в 22 м»
                 float d = (m.transform.position - transform.position).sqrMagnitude;
                 if (d < best) { best = d; mooseTarget = hp; }

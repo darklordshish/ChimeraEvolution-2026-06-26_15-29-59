@@ -70,6 +70,21 @@ namespace ChimeraSim
             w.WriteLine("Э — экспрессия префаба (0 — игрок: мощь по родству 0 → ×1); период = max(перезарядка записи, ритм психики) + замах");
         }
 
+        /// <summary>Рацион по виду: кого берёт целью (по доминанте цели), при каком условии, каким режимом и с каким весом.</summary>
+        public static void PrintDiet(SimData data, TextWriter w)
+        {
+            var ci = CultureInfo.InvariantCulture;
+            w.WriteLine("РАЦИОН (кого вид берёт целью по доминанте цели; `DietLaw`)");
+            foreach (var sp in data.species)
+            {
+                string diet = sp.diet.Length == 0 ? "по именам никого"
+                    : string.Join(", ", sp.diet.Select(e => string.Format(ci, "{0}{1}{2} ×{3:0.##}", e.prey,
+                        e.condition == DietCondition.WhenHungry ? " (голодному)" : "", e.mode == DietMode.Shadow ? " [тень-загон]" : "", e.weight)));
+                string flee = sp.fleesFrom.Length == 0 ? "" : "; бежит от: " + string.Join(", ", sp.fleesFrom);
+                w.WriteLine(string.Format(ci, "{0,-9} {1}{2}", sp.name, diet, flee));
+            }
+        }
+
         public static void PrintLairs(SimData data, TextWriter w)
         {
             var ci = CultureInfo.InvariantCulture;
