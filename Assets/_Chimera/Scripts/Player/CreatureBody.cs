@@ -238,33 +238,33 @@ public partial class CreatureBody : MonoBehaviour
         // остаётся сразу добычей). Только ХИЩНИКУ (лось-травоядное добычей не восстанавливается). Змея
         // ГЛОТАЕТ ЦЕЛИКОМ → полная трапеза (сильнее); убийце полный бонус, стае рядом (делили тушу) —
         // половина. Поведение сытого (змея прячется на насест) — на психике, читает Satiety.IsSated
-        if (killer.chassis != null && killer.chassis.eatsMeat)
+        var meal = KillLaw.Meal(killer.chassis != null && killer.chassis.eatsMeat, killer.DigestsWhole, GetComponent<Massive>() != null, KillMeal);
+        if (meal.Fed)
         {
-            Feed(killer, killer.DigestsWhole ? 1f : KillMeal); // глотающий целиком (змея) наедается на всю шкалу
+            Feed(killer, meal.Killer); // глотающий целиком (змея) наедается на всю шкалу
 
             // МАССИВНАЯ добыча (лось) велика — кормит и СТАЮ: кины, участвовавшие в бою (рядом
             // с тушей), получают половину. Мелкую жертву делить нечего — ест только убийца
-            if (GetComponent<Massive>() != null)
+            if (meal.Pack > 0f)
                 foreach (var col in Physics.OverlapSphere(killer.transform.position, assistFeedRadius, ~0, QueryTriggerInteraction.Ignore))
                 {
                     var ally = col.GetComponentInParent<CreatureBody>();
                     if (ally == null || ally == killer || ally == this) continue;
                     if (ally.chassis != killer.chassis || !ally.chassis.eatsMeat) continue;
-                    Feed(ally, KillMeal * 0.5f); // стая делит тушу — половина трапезы
+                    Feed(ally, meal.Pack); // стая делит тушу — половина трапезы
                 }
         }
 
         // РОДСТВО — УБИЙЦЕ по СОСТАВУ трупа: +1 за шасси и КАЖДЫЙ орган (по виду органа) × AffinityPerOrgan.
         // Композиционно: «более волчья» тварь → больше волчьего родства; химера-NPC естественно раздаёт по видам.
         // Было: +1 за уникальный вид (пёстрый пёс = +1) → грайнд 100 killов; теперь ~25 (тюнинг AffinityPerOrgan)
-        var tally = new Dictionary<string, int>();
-        if (chassis != null) tally[chassis.speciesName] = 1;                    // шасси
+        var organSpecies = new List<string>();
         if (slots != null)
             foreach (var sl in slots)
                 if (!sl.Empty && sl.Pick != null && sl.Pick.species != null)    // каждый надетый орган — по СВОЕМУ виду
-                    tally[sl.Pick.species] = (tally.TryGetValue(sl.Pick.species, out var c) ? c : 0) + 1;
-        foreach (var kv in tally)
-            killer.AddAffinity(kv.Key, Mathf.Max(1, Mathf.RoundToInt(kv.Value * AffinityPerOrgan))); // ≥1: любой след вида регистрируется
+                    organSpecies.Add(sl.Pick.species);
+        foreach (var kv in KillLaw.Tally(chassis != null ? chassis.speciesName : null, organSpecies, AffinityPerOrgan))
+            killer.AddAffinity(kv.Key, kv.Value); // ≥1: любой след вида регистрируется (закон)
 
         TryChimerize(killer); // ЭВОЛЮЦИЯ: шанс надеть убийце орган из нашего состава (родство = шанс)
     }

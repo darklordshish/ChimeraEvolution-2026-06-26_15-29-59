@@ -464,9 +464,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2518f7a3646f61e44b32984eb2d8fce2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ChimeraBody
-  discountPerAffinity: 0.01
+  discountPerAffinity: 0.008
   maxDiscount: 0.8
-  bonusStartAffinity: 80
+  bonusStartAffinity: 0
   bonusFullAffinity: 100
   maxBonusMult: 2
   affinityPerOrgan: 0.55
@@ -687,7 +687,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 7da515edc0cffd54d8872e9a26ca33e1, type: 2}
   - {fileID: 11400000, guid: 0b9f3325f2a7256489e3375ccca88401, type: 2}
   evolveNpc: 1
-  startAffinity: 100
+  startAffinity: 0
   chimerizeMultiplier: 1
   verboseLog: 0
 --- !u!4 &1270918353

@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b43f8f4a9e846c4499b52312cad3d64d, type: 3}
+  m_Name: LawsConfig
+  m_EditorClassIdentifier: Chimera.Runtime::LawsConfig
+  venom:
+    MaxStacks: 3
+    StackDuration: 4
+    VulnerabilityMult: 1.4
+    DotDamage: 3
+    DotInterval: 0.6
+  bleed:
+    Threshold: 5
+    MaxStacks: 8
+    StackDuration: 3
+    PctPerTick: 0.04
+    TickInterval: 0.6
+  rage:
+    DamageMult: 1.25
+    SpeedMult: 1.15
+    IncomingMult: 1.5
+    StaminaRegenMult: 1.5
+  slow:
+    PerStack: 0.14
+    MaxSlow: 0.7
+    MaxStacks: 6
+    StackDuration: 2.5
+  thorns:
+    ReturnShare: 0.55
+    Reach: 2.5
+    BleedStacks: 1
+    MinReturn: 1
+  hunger:
+    HpRegen: 4
+    StaminaRegen: 14
+    PureMinutes: 3
+    MediumMinutes: 2
+    WeakMinutes: 1.5
+    ChimeraMinutes: 0.5
+    StartFullness: 0.4
+    SatedThreshold: 0.5
+    HungryThreshold: 0.25
+    StarveThreshold: 0.08
+    StarveVigor: 0.65

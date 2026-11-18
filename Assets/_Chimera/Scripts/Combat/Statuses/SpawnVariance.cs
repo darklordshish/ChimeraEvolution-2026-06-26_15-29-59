@@ -1,3 +1,4 @@
+using Chimera.Laws;
 using UnityEngine;
 
 /// <summary>
@@ -20,9 +21,10 @@ public class SpawnVariance : MonoBehaviour
     {
         // ИНДИВИДУАЛЬНОСТЬ ВЫКЛЮЧЕНА (рубильник `IndividualityConfig`) — особь средняя: множители остаются 1
         if (!IndividualityConfig.On) return;
-        DamageMult = Roll(damageSpread);
-        SpeedMult = Roll(speedSpread);
-        HpMult = Roll(hpSpread);
+        var v = VarianceLaw.Roll(hpSpread, damageSpread, speedSpread, UnityLawRandom.Instance); // закон — Laws/VarianceLaw, порядок бросков прежний
+        DamageMult = v.Damage;
+        SpeedMult = v.Speed;
+        HpMult = v.Hp;
     }
 
     // HP: с телом-на-шасси (CreatureBody) разброс учитывает само тело при раздаче витальности
@@ -36,6 +38,4 @@ public class SpawnVariance : MonoBehaviour
     /// <summary>ШТУЧНАЯ ОСОБЬ — разброс снят. Нужна боссу: тело вешает разброс каждому NPC, а босс, как и игрок, —
     /// детерминированная база. Зовёт `Bossness`; HP после этого пересчитывает тело.</summary>
     public void MakeUnique() { DamageMult = 1f; SpeedMult = 1f; HpMult = 1f; }
-
-    static float Roll(float spread) => 1f + Random.Range(-spread, spread);
 }

@@ -251,7 +251,7 @@ public partial class CreatureBody
     // влезает ли вариант в пул: снимаем текущий орган слота (вернуть его цену), ставим вариант idx
     bool CanInstall(Slot sl, int idx)
     {
-        return PoolUsed - SlotCost(sl) + CostOf(sl, sl.variants[idx]) <= Pool;
+        return ChimerizeLaw.Fits(PoolUsed, SlotCost(sl), CostOf(sl, sl.variants[idx]), Pool, false);
     }
 
     /// <summary>ОДИН ЭКЗЕМПЛЯР ОРГАНА НА ТЕЛО: тот же орган того же вида уже надет в другом слоте.

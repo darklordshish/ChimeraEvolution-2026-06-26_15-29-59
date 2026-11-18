@@ -1,3 +1,4 @@
+using Chimera.Laws;
 using UnityEngine;
 
 /// <summary>
@@ -14,22 +15,17 @@ using UnityEngine;
 /// </summary>
 public class Slow : MonoBehaviour
 {
-    [SerializeField, Range(0f, 0.5f)] float perStack = 0.14f; // сколько скорости снимает ОДИН стак
-    [SerializeField, Range(0f, 0.95f)] float maxSlow = 0.7f;  // потолок: даже полный залп не роняет в ноль
-    [SerializeField] int maxStacks = 6;
-    [SerializeField] float stackDuration = 2.5f;              // сколько живёт стак без подпитки
 
-    int stacks;
-    float expireAt;
+    StackState state; // числа — `LawsConfig.slow`, шаги — `StatusLaw`
 
-    public int Stacks => Time.time < expireAt ? stacks : 0;
+    public int Stacks => StatusLaw.Stacks(state, Time.time);
 
     /// <summary>Множитель скорости: 1 — свободен, меньше — увяз. Читают локомоции.</summary>
-    public float MoveMult => 1f - Mathf.Min(maxSlow, Stacks * perStack);
+    public float MoveMult => StatusLaw.SlowMult(Stacks, LawsConfig.Current.slow);
 
     public void AddStack()
     {
-        stacks = Mathf.Min(maxStacks, Stacks + 1);
-        expireAt = Time.time + stackDuration;
+        var p = LawsConfig.Current.slow;
+        StatusLaw.AddStack(ref state, Time.time, p.MaxStacks, p.StackDuration, 1f);
     }
 }

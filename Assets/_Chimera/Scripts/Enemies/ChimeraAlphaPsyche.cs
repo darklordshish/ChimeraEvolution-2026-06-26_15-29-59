@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Chimera.Laws;
 using UnityEngine;
 
 /// <summary>ХИМЕРА-АЛЬФА (#4b-2): универсальная психика-фолбэк для существ без доминантного вида
@@ -34,7 +35,7 @@ public class ChimeraAlphaPsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
 
     float moveSpeed = 4f;
     SpawnVariance variance; // разброс особи (вешает тело): у альфы тоже своя скорость у каждой особи
-    float Speed => moveSpeed * (variance != null ? variance.SpeedMult : 1f);
+    float Speed => MoveLaw.Speed(moveSpeed, 1f, variance != null ? variance.SpeedMult : 1f, rageApplies: false); // ярость в скорость альфы НЕ входит (паритет С5; у волка, лося и ежа входит)
     CreatureBody body;
     Health ownHealth;
     NavLocomotion nav;

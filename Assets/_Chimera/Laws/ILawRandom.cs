@@ -8,5 +8,8 @@ namespace Chimera.Laws
 
         /// <summary>Целое в [min, max) — как UnityEngine.Random.Range(int, int).</summary>
         int Range(int min, int max);
+
+        /// <summary>Вещественное в [min, max] — как UnityEngine.Random.Range(float, float).</summary>
+        float Range(float min, float max);
     }
 }

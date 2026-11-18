@@ -1,3 +1,4 @@
+using Chimera.Laws;
 using UnityEngine;
 
 /// <summary>
@@ -223,7 +224,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         if (FindRefugeWall(out wallPoint, out wallNormal)) { climb = ClimbPhase.Approach; BeginWary(); }
     }
 
-    float Speed => moveSpeed * (variance != null ? variance.SpeedMult : 1f);
+    float Speed => MoveLaw.Speed(moveSpeed, 1f, variance != null ? variance.SpeedMult : 1f, rageApplies: false); // ярость в скорость змеи НЕ входит (паритет С5; у волка, лося и ежа входит)
 
     // тело кормит скоростью хода; числа укуса, наскока и обхвата — записи органов (доставки и машина захвата читают их сами)
     public void OnBodyStats(float bodyMoveSpeed)

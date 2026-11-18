@@ -1,3 +1,4 @@
+using Chimera.Laws;
 using UnityEngine;
 
 /// <summary>
@@ -17,19 +18,10 @@ using UnityEngine;
 [RequireComponent(typeof(Health))]
 public class Satiety : MonoBehaviour
 {
-    [SerializeField] float hpRegen = 4f;       // HP/с пока сыт
-    [SerializeField] float staminaRegen = 14f; // стамины/с пока сыт
-    // ЖИЗНЬ ШКАЛЫ по ТИРАМ ОДНОРОДНОСТИ (жёсткие рамки, решение пользователя; сглаживание — потом):
-    // полная идентичность — 3 мин, средняя — 2, слабая — 1.5, химера — 30 с. Полная→пустая за это время.
-    [SerializeField] float pureMinutes = 3f;
-    [SerializeField] float mediumMinutes = 2f;
-    [SerializeField] float weakMinutes = 1.5f;
-    [SerializeField] float chimeraMinutes = 0.5f;
-    [SerializeField, Range(0f, 1f)] float startFullness = 0.4f;
-    [SerializeField, Range(0f, 1f)] float satedThreshold = 0.5f;    // выше — СЫТ (реген, спокоен)
-    [SerializeField, Range(0f, 1f)] float hungryThreshold = 0.25f;  // ниже — ГОЛОДЕН (M3: агрессия/поиск еды)
-    [SerializeField, Range(0f, 1f)] float starveThreshold = 0.08f;  // ниже — ИСТОЩЁН (слабеет ВЕЗДЕ)
-    [SerializeField, Range(0.3f, 1f)] float starveVigor = 0.65f;    // общий множитель истощённого: ход И урон
+    // ЧИСЛА — `LawsConfig.hunger`: реген HP и стамины пока сыт; ЖИЗНЬ ШКАЛЫ по ТИРАМ ОДНОРОДНОСТИ (жёсткие рамки, решение
+    // пользователя; сглаживание — потом): полная идентичность — 3 мин, средняя — 2, слабая — 1.5, химера — 30 с;
+    // пороги СЫТ 0.5 / ГОЛОДЕН 0.25 / ИСТОЩЁН 0.08; вигор истощённого 0.65 (ход И урон). Шаги — `HungerLaw`.
+    static HungerParams P => LawsConfig.Current.hunger;
 
     float fullness;
     float decayPerSec; // /с — задаёт тело по однородности (SetMetabolism); дефолт — как у чистого
@@ -38,49 +30,43 @@ public class Satiety : MonoBehaviour
     float hpAcc;
 
     public float Fullness => fullness;
-    public float SatedAt => satedThreshold;    // пороги наружу — HUD ставит по ним засечки стадий
-    public float HungryAt => hungryThreshold;
-    public float StarveAt => starveThreshold;
-    public bool IsSated => fullness >= satedThreshold;
-    public bool IsHungry => fullness <= hungryThreshold; // M3: голоден — смелее, ищет еду
-    public bool IsStarving => fullness <= starveThreshold;
-    public float Vigor => IsStarving ? starveVigor : 1f; // ИСТОЩЕНИЕ слабит ВСЁ: ход (локомоции) и урон (DamageMult)
+    public float SatedAt => P.SatedThreshold;    // пороги наружу — HUD ставит по ним засечки стадий
+    public float HungryAt => P.HungryThreshold;
+    public float StarveAt => P.StarveThreshold;
+    public bool IsSated => HungerLaw.IsSated(fullness, P);
+    public bool IsHungry => HungerLaw.IsHungry(fullness, P); // M3: голоден — смелее, ищет еду
+    public bool IsStarving => HungerLaw.IsStarving(fullness, P);
+    public float Vigor => HungerLaw.Vigor(fullness, P); // ИСТОЩЕНИЕ слабит ВСЁ: ход (локомоции) и урон (DamageMult)
 
     void Awake()
     {
         health = GetComponent<Health>();
         TryGetComponent(out stamina);
-        fullness = startFullness;
-        decayPerSec = 1f / (pureMinutes * 60f); // до сборки — как у чистого (NPC однородны и так)
+        fullness = P.StartFullness;
+        decayPerSec = HungerLaw.DefaultDecayPerSec(P); // до сборки — как у чистого (NPC однородны и так)
     }
 
     /// <summary>Метаболизм по ОДНОРОДНОСТИ тела (макс. идентичность 0..1): ступенчато по тирам — чистый
     /// держит сытость дольше, химера сгорает. Тело зовёт из Recompute (меняется со сборкой/родством).</summary>
-    public void SetMetabolism(float homogeneity)
-    {
-        float min = homogeneity >= 0.85f ? pureMinutes    // моно-сет / чистый вид
-                  : homogeneity >= 0.70f ? mediumMinutes  // средняя примесь
-                  : homogeneity >= 0.55f ? weakMinutes     // слабая идентичность
-                  : chimeraMinutes;                        // мешанина — химера
-        decayPerSec = 1f / (Mathf.Max(0.1f, min) * 60f);
-    }
+    public void SetMetabolism(float homogeneity) => decayPerSec = HungerLaw.DecayPerSec(homogeneity, P);
 
     /// <summary>Поел (доля насыщения 0..1): убийство/обгладывание наполняет шкалу.</summary>
-    public void Feed(float amount) => fullness = Mathf.Clamp01(fullness + Mathf.Max(0f, amount));
+    public void Feed(float amount) => fullness = HungerLaw.Feed(fullness, amount);
 
     void Update()
     {
-        fullness = Mathf.Max(0f, fullness - decayPerSec * Time.deltaTime); // голод растёт (у химеры быстрее — см. тиры)
+        fullness = HungerLaw.Decay(fullness, decayPerSec, Time.deltaTime); // голод растёт (у химеры быстрее — см. тиры)
         if (!IsSated) { hpAcc = 0f; return; }
 
         // пока СЫТ — доливаем HP и стамину (уроном не сбивается: восстановление, не трапеза; HP — сквозь подавление регена)
         if (stamina == null) TryGetComponent(out stamina);
-        stamina?.Recover(staminaRegen * Time.deltaTime);
+        stamina?.Recover(P.StaminaRegen * Time.deltaTime);
 
         if (health != null && health.Current < health.Max)
         {
-            hpAcc += hpRegen * health.RegenFactor * Time.deltaTime;   // яд и укус Пасти глушат и еду (`Health.RegenFactor`)
-            if (hpAcc >= 1f) { int h = (int)hpAcc; hpAcc -= h; health.Heal(h); }
+            // яд и укус Пасти глушат и еду (`Health.RegenFactor`)
+            int h = HungerLaw.RegenTick(ref hpAcc, P.HpRegen * health.RegenFactor, Time.deltaTime);
+            if (h > 0) health.Heal(h);
         }
     }
 }

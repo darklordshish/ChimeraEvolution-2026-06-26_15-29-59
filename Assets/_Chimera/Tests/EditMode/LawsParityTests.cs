@@ -348,6 +348,359 @@ namespace Chimera.Tests.EditMode
             Assert.AreEqual(25, AffinityLaw.Pool(20, 5));
         }
 
+
+        // ---- С4: убийство и химеризация ----
+        // эталон родства: прежний код CreditKiller (словарь, Mathf)
+        static Dictionary<string, int> OldTally(string chassis, string[] organs, float per)
+        {
+            var tally = new Dictionary<string, int>();
+            if (chassis != null) tally[chassis] = 1;
+            foreach (var sp in organs) tally[sp] = (tally.TryGetValue(sp, out var c) ? c : 0) + 1;
+            var gains = new Dictionary<string, int>();
+            foreach (var kv in tally) gains[kv.Key] = Mathf.Max(1, Mathf.RoundToInt(kv.Value * per));
+            return gains;
+        }
+
+        [Test]
+        public void Tally_MatchesOldFormula()
+        {
+            var comps = new[]
+            {
+                new string[0], new[] { "Волк" }, new[] { "Волк", "Волк", "Волк" }, new[] { "Змея", "Волк", "Лось", "Змея" },
+                new[] { "Человек", "Человек", "Человек", "Человек", "Человек", "Волк", "Ёж" },
+                new[] { "Лось", "Лось", "Лось", "Лось", "Лось", "Лось", "Лось", "Лось", "Лось", "Лось", "Лось", "Лось" },
+            };
+            int n = 0;
+            foreach (var organs in comps) foreach (string chassis in new[] { null, "Волк", "Человек" })
+            foreach (float per in new[] { 0.1f, 0.25f, 0.5f, 0.55f, 1f, 1.5f, 2.5f })
+            {
+                var old = OldTally(chassis, organs, per);
+                var gains = KillLaw.Tally(chassis, organs, per);
+                Assert.AreEqual(old.Count, gains.Count, $"{chassis} {string.Join(",", organs)} {per}");
+                foreach (var kv in gains) Assert.AreEqual(old[kv.Key], kv.Value, $"{kv.Key} · {chassis} {string.Join(",", organs)} {per}");
+                n++;
+            }
+            Assert.Greater(n, 100);
+        }
+
+        [Test]
+        public void Tally_Examples()
+        {
+            var g = KillLaw.Tally("Волк", new[] { "Волк", "Змея" }, 0.55f); // Волк: 2 × 0.55 = 1.1 → 1; Змея: 0.55 → 1 (минимум 1)
+            Assert.AreEqual(2, g.Count);
+            Assert.AreEqual("Волк", g[0].Key); Assert.AreEqual(1, g[0].Value);
+            Assert.AreEqual("Змея", g[1].Key); Assert.AreEqual(1, g[1].Value);
+            Assert.AreEqual(2, KillLaw.Tally("Лось", new[] { "Лось", "Лось", "Лось" }, 0.5f)[0].Value); // 4 × 0.5 = 2
+            Assert.AreEqual(2, KillLaw.Tally("Лось", new[] { "Лось", "Лось" }, 0.5f)[0].Value);          // 3 × 0.5 = 1.5 → 2 (к чётному)
+            Assert.AreEqual(0, KillLaw.Tally(null, new string[0], 1f).Count);
+        }
+
+        [Test]
+        public void Meal_MatchesOldFormula()
+        {
+            foreach (bool eats in new[] { false, true }) foreach (bool whole in new[] { false, true })
+            foreach (bool massive in new[] { false, true }) foreach (float meal in new[] { 0.3f, 0.7f, 1f })
+            {
+                // прежнее: хищнику Feed(whole ? 1 : meal); массивная туша — стае meal * 0.5
+                var m = KillLaw.Meal(eats, whole, massive, meal);
+                Assert.AreEqual(eats, m.Fed);
+                Assert.AreEqual(eats ? (whole ? 1f : meal) : 0f, m.Killer, 0f);
+                Assert.AreEqual(eats && massive ? meal * 0.5f : 0f, eats ? m.Pack : 0f, 0f);
+            }
+            Assert.AreEqual(0f, KillLaw.Meal(false, false, true, 0.7f).Pack, "не хищник — стаю не кормят");
+        }
+
+        // эталон химеризации: прежний TryChimerize на тех же вызовах случайности
+        static int OldRoll(List<(string species, int aff)> loot, float mult, XorShiftRandom r)
+        {
+            if (loot.Count == 0) return -1;
+            int pick = r.Range(0, loot.Count);
+            float chance = (loot[pick].aff / 100f) * mult;
+            if (r.Next01() > chance) return -1;
+            return pick;
+        }
+
+        [Test]
+        public void Roll_MatchesOldLogic_OnFixedSeeds()
+        {
+            var cases = new List<List<(string, int)>>
+            {
+                new(),                                                           // пустой лут
+                new() { ("Волк", 0) },                                           // шанс 0
+                new() { ("Волк", 100) },                                         // шанс 1
+                new() { ("Волк", 50), ("Змея", 25), ("Лось", 100) },             // середина
+                new() { ("Ёж", 1), ("Ёж", 100), ("Волк", 100), ("Змея", 0), ("Лось", 37) },
+            };
+            int hits = 0, misses = 0;
+            foreach (uint seed in new uint[] { 1, 7, 42, 1234, 99999 })
+            foreach (float mult in new[] { 0.5f, 1f, 2f })
+            foreach (var c in cases)
+            {
+                var entries = c.ConvertAll(x => new LootEntry(x.Item1, "орган", x.Item2));
+                var rOld = new XorShiftRandom(seed); var rNew = new XorShiftRandom(seed);
+                for (int i = 0; i < 40; i++) // подряд на одном потоке: расход случайности тоже должен совпасть
+                {
+                    int old = OldRoll(c.ConvertAll(x => (x.Item1, x.Item2)), mult, rOld);
+                    int now = ChimerizeLaw.Roll(entries, mult, rNew);
+                    Assert.AreEqual(old, now, $"сид {seed} мульт {mult} лут {c.Count} шаг {i}");
+                    if (now >= 0) hits++; else misses++;
+                }
+                Assert.AreEqual(rOld.NextUInt(), rNew.NextUInt(), "потоки разошлись — разный расход случайности");
+            }
+            Assert.Greater(hits, 100); Assert.Greater(misses, 100);
+        }
+
+        sealed class ScriptedRandom : ILawRandom
+        {
+            readonly float v; readonly int idx; public readonly List<string> Calls = new();
+            public ScriptedRandom(int idx, float v) { this.idx = idx; this.v = v; }
+            public float Next01() { Calls.Add("value"); return v; }
+            public int Range(int min, int max) { Calls.Add($"range {min} {max}"); return idx; }
+            public float Range(float min, float max) { Calls.Add($"frange {min} {max}"); return min; }
+        }
+
+        [Test]
+        public void Roll_CallOrder_RangeThenValue_AndEdges()
+        {
+            var loot = new[] { new LootEntry("Волк", "Пасть", 50), new LootEntry("Змея", "Яд", 100) };
+            var r = new ScriptedRandom(1, 0.99f);
+            Assert.AreEqual(1, ChimerizeLaw.Roll(loot, 1f, r));                       // шанс 1: 0.99 ≤ 1 → надел
+            CollectionAssert.AreEqual(new[] { "range 0 2", "value" }, r.Calls);
+
+            Assert.AreEqual(-1, ChimerizeLaw.Roll(loot, 1f, new ScriptedRandom(0, 0.51f)));  // шанс 0.5 < 0.51
+            Assert.AreEqual(0, ChimerizeLaw.Roll(loot, 1f, new ScriptedRandom(0, 0.5f)));    // ровно шанс — проходит (прежнее `>`)
+            Assert.AreEqual(-1, ChimerizeLaw.Roll(new[] { new LootEntry("Волк", "Пасть", 0) }, 1f, new ScriptedRandom(0, 0.0001f)));
+            Assert.AreEqual(0, ChimerizeLaw.Roll(new[] { new LootEntry("Волк", "Пасть", 0) }, 1f, new ScriptedRandom(0, 0f))); // 0 > 0 нет
+
+            var empty = new ScriptedRandom(0, 0f);
+            Assert.AreEqual(-1, ChimerizeLaw.Roll(new LootEntry[0], 1f, empty));
+            Assert.IsEmpty(empty.Calls, "пустой лут случайность не тратит");
+        }
+
+        [Test]
+        public void Fits_MatchesOldPoolCheck()
+        {
+            int n = 0;
+            for (int used = 0; used <= 12; used++) for (int slot = 0; slot <= 4; slot++)
+            for (int variant = 0; variant <= 6; variant++) foreach (int pool in new[] { 0, 3, 8, 10, 12 })
+            foreach (bool worn in new[] { false, true })
+            {
+                bool old = used - slot + variant <= pool && !worn; // CanInstall && !WornElsewhere
+                Assert.AreEqual(old, ChimerizeLaw.Fits(used, slot, variant, pool, worn));
+                n++;
+            }
+            Assert.Greater(n, 1000);
+        }
+        // ---- С5: статусы, сытость, реген, скорость, разброс. Эталоны — прежний код компонентов дословно (на Mathf) ----
+        // Яд: Venom.cs до выноса. Часы — абсолютные, как Time.time.
+        sealed class OldVenom
+        {
+            int stacks; float expireAt, nextDot;
+            public int Stacks(float now) => now < expireAt ? stacks : 0;
+            public float Incoming(float now) => Stacks(now) >= 2 ? 1.4f : 1f;
+            public void Add(float now, float durMult) { stacks = Mathf.Min(3, Stacks(now) + 1); expireAt = now + 4f * durMult; }
+            public int Tick(float now)
+            {
+                int s = Stacks(now);
+                if (s <= 0) return 0;
+                if (s >= 3 && now >= nextDot) { nextDot = now + 0.6f; return 3; }
+                return 0;
+            }
+        }
+
+        // Кровь: Bleed.cs до выноса.
+        sealed class OldBleed
+        {
+            int stacks; float expireAt, nextTick;
+            public int Stacks(float now) => now < expireAt ? stacks : 0;
+            public void Add(float now, float durMult) { stacks = Mathf.Min(8, Stacks(now) + 1); expireAt = now + 3f * durMult; }
+            public int Tick(float now, int max)
+            {
+                if (Stacks(now) < 5) return 0;
+                if (now >= nextTick) { nextTick = now + 0.6f; return Mathf.Max(1, Mathf.RoundToInt(max * 0.04f)); }
+                return 0;
+            }
+        }
+
+        [Test]
+        public void Venom_StepsMatchOldComponent()
+        {
+            foreach (float durMult in new[] { 1f, 0.15f })
+            foreach (int pattern in new[] { 1, 2, 3, 5 })
+            {
+                var old = new OldVenom(); var s = new StackState(); var p = VenomParams.Default;
+                int dmgOld = 0, dmgNew = 0;
+                for (int i = 0; i < 600; i++)
+                {
+                    float now = i * 0.05f;
+                    if (i % (pattern * 7 + 1) == 0) { old.Add(now, durMult); StatusLaw.AddStack(ref s, now, p.MaxStacks, p.StackDuration, durMult); }
+                    Assert.AreEqual(old.Stacks(now), StatusLaw.Stacks(s, now), $"стаки t={now}");
+                    Assert.AreEqual(old.Incoming(now), StatusLaw.VenomIncoming(StatusLaw.Stacks(s, now), p), $"уязвимость t={now}");
+                    int a = old.Tick(now), b = StatusLaw.VenomStep(ref s, now, p);
+                    Assert.AreEqual(a, b, $"тик t={now}");
+                    dmgOld += a; dmgNew += b;
+                }
+                Assert.AreEqual(dmgOld, dmgNew);
+                if (durMult == 1f && pattern == 1) Assert.Greater(dmgNew, 0, "тиков не было — проверять нечего");
+            }
+        }
+
+        [Test]
+        public void Bleed_StepsMatchOldComponent()
+        {
+            foreach (float durMult in new[] { 1f, 0.2f })
+            foreach (int max in new[] { 30, 100, 333 })
+            foreach (int pattern in new[] { 1, 2, 4 })
+            {
+                var old = new OldBleed(); var s = new StackState(); var p = BleedParams.Default;
+                int total = 0;
+                for (int i = 0; i < 600; i++)
+                {
+                    float now = i * 0.05f;
+                    if (i % (pattern * 3 + 1) == 0) { old.Add(now, durMult); StatusLaw.AddStack(ref s, now, p.MaxStacks, p.StackDuration, durMult); }
+                    Assert.AreEqual(old.Stacks(now), StatusLaw.Stacks(s, now));
+                    int a = old.Tick(now, max), b = StatusLaw.BleedStep(ref s, now, p, max);
+                    Assert.AreEqual(a, b, $"тик t={now} max {max}");
+                    total += b;
+                }
+                if (durMult == 1f && pattern == 1) Assert.Greater(total, 0);
+            }
+        }
+
+        [Test]
+        public void SlowThornsRage_MatchOldFormulas()
+        {
+            var sp = SlowParams.Default;
+            for (int st = 0; st <= 6; st++)
+                Assert.AreEqual(1f - Mathf.Min(0.7f, st * 0.14f), StatusLaw.SlowMult(st, sp), $"стаков {st}");
+            foreach (int raw in Ints) foreach (float share in new[] { 0.35f, 0.55f, 1f })
+                Assert.AreEqual(Mathf.Max(1, Mathf.RoundToInt(raw * share)), StatusLaw.ThornsReturn(raw, share, 1), $"raw {raw} доля {share}");
+            var rp = RageParams.Default;
+            foreach (bool on in new[] { false, true }) foreach (float boost in new[] { 1f, 1.7f })
+            {
+                Assert.AreEqual(on ? 1.25f * boost : 1f, StatusLaw.RageDamage(rp, on, boost));
+                Assert.AreEqual(on ? 1.15f : 1f, StatusLaw.RageSpeed(rp, on));
+                Assert.AreEqual(on ? 1.5f : 1f, StatusLaw.RageIncoming(rp, on));
+                Assert.AreEqual(on ? 1.5f : 1f, StatusLaw.RageStamina(rp, on));
+            }
+        }
+
+        [Test]
+        public void Hunger_MatchesOldSatiety()
+        {
+            var p = HungerParams.Default;
+            Assert.AreEqual(1f / (3f * 60f), HungerLaw.DefaultDecayPerSec(p));
+            foreach (float h in new[] { 0f, 0.3f, 0.54f, 0.55f, 0.6f, 0.69f, 0.7f, 0.8f, 0.84f, 0.85f, 1f })
+            {
+                float min = h >= 0.85f ? 3f : h >= 0.70f ? 2f : h >= 0.55f ? 1.5f : 0.5f;
+                Assert.AreEqual(1f / (Mathf.Max(0.1f, min) * 60f), HungerLaw.DecayPerSec(h, p), $"однородность {h}");
+            }
+            foreach (float f in new[] { 0f, 0.07f, 0.08f, 0.09f, 0.25f, 0.26f, 0.49f, 0.5f, 0.9f, 1f })
+            {
+                Assert.AreEqual(f >= 0.5f, HungerLaw.IsSated(f, p));
+                Assert.AreEqual(f <= 0.25f, HungerLaw.IsHungry(f, p));
+                Assert.AreEqual(f <= 0.08f, HungerLaw.IsStarving(f, p));
+                Assert.AreEqual(f <= 0.08f ? 0.65f : 1f, HungerLaw.Vigor(f, p));
+                Assert.AreEqual(Mathf.Clamp01(f + Mathf.Max(0f, 0.3f)), HungerLaw.Feed(f, 0.3f));
+                Assert.AreEqual(Mathf.Clamp01(f + Mathf.Max(0f, -1f)), HungerLaw.Feed(f, -1f));
+                Assert.AreEqual(Mathf.Max(0f, f - 0.004f * 0.02f), HungerLaw.Decay(f, 0.004f, 0.02f));
+            }
+        }
+
+        [Test]
+        public void RegenTick_MatchesOldAccumulation()
+        {
+            // прежнее накопление Health.Update (Floor) и Satiety.Update ((int)) на одном потоке dt и скоростей
+            foreach (float rate in new[] { -1f, 0f, 0.3f, 4f, 4.7f, 9f, 14f })
+            {
+                float oldAcc = 0f, newAcc = 0f; int oldSum = 0, newSum = 0;
+                for (int i = 0; i < 500; i++)
+                {
+                    float dt = 0.01f + (i % 5) * 0.004f;
+                    if (rate > 0f)
+                    {
+                        oldAcc += rate * dt;
+                        if (oldAcc >= 1f) { int w = Mathf.FloorToInt(oldAcc); oldAcc -= w; oldSum += w; }
+                    }
+                    newSum += HungerLaw.RegenTick(ref newAcc, rate, dt);
+                    Assert.AreEqual(oldAcc, newAcc, $"остаток, скорость {rate}, шаг {i}");
+                }
+                Assert.AreEqual(oldSum, newSum, $"скорость {rate}");
+            }
+            foreach (bool combat in new[] { false, true }) foreach (float factor in new[] { 0f, 0.5f, 1f })
+            {
+                float old = 3f; if (!combat) old += 2f; old *= factor;
+                Assert.AreEqual(old, HungerLaw.RegenRate(3f, 2f, combat, factor));
+            }
+        }
+
+        [Test]
+        public void MoveSpeed_MatchesOldFiveCopies()
+        {
+            int n = 0;
+            foreach (float b in new[] { 3f, 4f, 5.5f, 7.2f })
+            foreach (float rage in new[] { 1f, 1.15f }) foreach (float var in new[] { 0.9f, 1f, 1.1f })
+            foreach (float breath in new[] { 1f, 0.4f })
+            {
+                // волк
+                Assert.AreEqual(b * rage * var, MoveLaw.Speed(b, rage, var));
+                // лось, ёж: отдышка
+                Assert.AreEqual(b * rage * var * breath, MoveLaw.Speed(b, rage, var, breath));
+                // змея и альфа: ярость в скорость НЕ входит (прежнее поведение, паритет)
+                Assert.AreEqual(b * var, MoveLaw.Speed(b, rage, var, rageApplies: false));
+                n++;
+            }
+            Assert.Greater(n, 20);
+            float bs = 5f, rg = 1.15f, vr = 1f, sl = 0.7f, vg = 0.65f; // переменные, а не константы: иначе компилятор свернёт произведение в другой точности
+            Assert.AreEqual(bs * rg * vr * sl * vg, MoveLaw.Speed(bs, rg, vr, sl, vg));
+        }
+
+        [Test]
+        public void VarianceRoll_MatchesOldSpawnVariance_OnUnityStream()
+        {
+            for (int seed = 1; seed <= 25; seed++)
+            {
+                Random.InitState(seed);
+                float d = 1f + Random.Range(-0.15f, 0.15f);   // прежний порядок: урон, скорость, HP
+                float s = 1f + Random.Range(-0.1f, 0.1f);
+                float h = 1f + Random.Range(-0.15f, 0.15f);
+                float nextOld = Random.value;
+                Random.InitState(seed);
+                var v = VarianceLaw.Roll(0.15f, 0.15f, 0.1f, UnityLawRandom.Instance);
+                Assert.AreEqual(d, v.Damage); Assert.AreEqual(s, v.Speed); Assert.AreEqual(h, v.Hp);
+                Assert.AreEqual(nextOld, Random.value, "расход случайности разошёлся");
+            }
+            Random.InitState(System.Environment.TickCount); // не оставлять соседние тесты на детерминированном потоке
+            // нулевой разброс — средняя особь
+            var avg = VarianceLaw.Roll(0f, 0f, 0f, new XorShiftRandom(7));
+            Assert.AreEqual(1f, avg.Hp); Assert.AreEqual(1f, avg.Damage); Assert.AreEqual(1f, avg.Speed);
+        }
+
+        [Test]
+        public void LiveComponents_ReadLawsConfig_AndMatchOldNumbers()
+        {
+            var go = new GameObject("~статусы"); made.Add(go);
+            var hp = go.AddComponent<Health>();
+            var slow = go.AddComponent<Slow>();
+            Assert.AreEqual(1f, slow.MoveMult);
+            slow.AddStack(); slow.AddStack();
+            Assert.AreEqual(1f - 2 * 0.14f, slow.MoveMult, 1e-6f);
+            var rage = go.AddComponent<Rage>();
+            rage.Enrage(5f);
+            Assert.AreEqual(1.15f, rage.SpeedMult); Assert.AreEqual(1.25f, rage.DamageMult); Assert.AreEqual(1.5f, rage.IncomingMult);
+            var sat = go.AddComponent<Satiety>();
+            Assert.AreEqual(0.5f, sat.SatedAt); Assert.AreEqual(0.25f, sat.HungryAt); Assert.AreEqual(0.08f, sat.StarveAt);
+
+            // подмена конфига доходит до компонентов; возврат — в TearDown (статика переживает тест)
+            var cfg = ScriptableObject.CreateInstance<LawsConfig>(); madeSo.Add(cfg);
+            cfg.rage.SpeedMult = 2f;
+            LawsConfig.Override(cfg);
+            Assert.AreEqual(2f, rage.SpeedMult);
+            LawsConfig.ResetCurrent();
+            Assert.AreEqual(1.15f, rage.SpeedMult);
+            Assert.IsNotNull(hp);
+        }
+
         // ---- живой Health ----
         readonly List<GameObject> made = new();
         [TearDown]
@@ -357,6 +710,7 @@ namespace Chimera.Tests.EditMode
             made.Clear();
             foreach (var o in madeSo) if (o != null) Object.DestroyImmediate(o);
             madeSo.Clear();
+            LawsConfig.ResetCurrent(); // статика конфига переживает тест — вернуть ленивую загрузку
         }
 
         [Test]

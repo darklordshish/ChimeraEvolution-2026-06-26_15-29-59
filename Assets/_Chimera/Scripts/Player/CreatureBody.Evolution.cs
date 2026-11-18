@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Chimera.Laws;
 using UnityEngine;
 
 // ЭВОЛЮЦИЯ (стохастическая химеризация): убийца с шансом = родство надевает орган жертвы. Родство — единая
@@ -45,24 +46,24 @@ public partial class CreatureBody
         // ВСЕ надетые органы жертвы (вид+орган): и РОДНЫЕ (native — волчий Коготь у чистого волка), и химерные.
         // Только Installed нельзя — чистая жертва (одни родные органы) дала бы пустой loot, и эволюция не стартовала.
         // chassisOnly (ходовая часть) исключаем — её аугументом не крадут (нет в вариантах убийцы).
-        var loot = new List<(string species, string organ)>();
+        var loot = new List<LootEntry>();
         foreach (var sl in slots)
             if (!sl.Empty && sl.Pick != null && sl.Pick.species != null && sl.Worn != null && !sl.Worn.chassisOnly && !sl.Worn.nativeOnly)
-                loot.Add((sl.Pick.species, sl.Worn.organName));
-        if (loot.Count == 0) return;
+                loot.Add(new LootEntry(sl.Pick.species, sl.Worn.organName, killer.GetAffinity(sl.Pick.species)));
 
-        var pick = loot[Random.Range(0, loot.Count)];
-        float chance = (killer.GetAffinity(pick.species) / 100f) * cfg.ChimerizeMultiplier; // РОДСТВО-ПРОЦЕНТ (0..100 → 0..1) × множитель конфига
-        if (Random.value > chance) return; // не выпало
+        // выбор трофея и шанс (родство-процент × множитель конфига) — закон; случайность — Unity, порядок вызовов прежний
+        int picked = ChimerizeLaw.Roll(loot, cfg.ChimerizeMultiplier, UnityLawRandom.Instance);
+        if (picked < 0) return; // лут пуст или не выпало
+        var pick = loot[picked];
 
         // найти у убийцы слот+вариант этого органа (donors=все → вариант присутствует) и надеть
         for (int s = 0; s < killer.SlotCount; s++)
         {
             var vars = killer.GetVariants(s);
             for (int v = 0; v < vars.Count; v++)
-                if (vars[v].species == pick.species && vars[v].organName == pick.organ)
+                if (vars[v].species == pick.Species && vars[v].organName == pick.Organ)
                 {
-                    if (killer.Install(s, v) && EvolutionConfig.Verbose) Debug.Log($"химеризация: {killer.name} надел {pick.organ} ({pick.species})");
+                    if (killer.Install(s, v) && EvolutionConfig.Verbose) Debug.Log($"химеризация: {killer.name} надел {pick.Organ} ({pick.Species})");
                     return; // один орган за убийство
                 }
         }
