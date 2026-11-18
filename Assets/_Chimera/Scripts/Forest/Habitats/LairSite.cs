@@ -45,18 +45,22 @@ public class LairSite : MonoBehaviour
     public float respawnSeconds = 30f;
 
     [Header("Страх места (0..1)")]
-    public float fearPerKill = 0.34f;
-    public float fearDecayPerSecond = 0.02f;
-    public float exhaustFear = 0.7f;
+    public float fearPerKill = DefaultFearPerKill;
+    public float fearDecayPerSecond = DefaultFearDecayPerSecond;
+    public float exhaustFear = DefaultExhaustFear;
+    // Числа страха по умолчанию — одним местом: их читает и компонент, и план логова карты (шаг 4).
+    public const float DefaultFearPerKill = 0.34f;
+    public const float DefaultFearDecayPerSecond = 0.02f;
+    public const float DefaultExhaustFear = 0.7f;
 
     /// <summary>Игровых часов в реальной секунде: часы сцены, без них — темп по умолчанию (как у `WorldClock.Now`).</summary>
-    static float HoursPerSecond => WorldClock.Instance != null ? WorldClock.Instance.HoursPerSecond : WorldClock.HoursPerRealSecond(WorldClock.DefaultDayMinutes);
+    public static float GameHoursPerSecond => WorldClock.Instance != null ? WorldClock.Instance.HoursPerSecond : WorldClock.HoursPerRealSecond(WorldClock.DefaultDayMinutes);
 
     /// <summary>Период рождения в ИГРОВЫХ ЧАСАХ (закон `LairLaw`): так логово читает симулятор. Игра по-прежнему тикает секундами.</summary>
-    public float RespawnGameHours => LairLaw.RespawnHours(respawnSeconds, HoursPerSecond);
+    public float RespawnGameHours => LairLaw.RespawnHours(respawnSeconds, GameHoursPerSecond);
 
     /// <summary>Спад страха за игровой час (закон `LairLaw`).</summary>
-    public float FearDecayPerGameHour => LairLaw.FearDecayPerHour(fearDecayPerSecond, HoursPerSecond);
+    public float FearDecayPerGameHour => LairLaw.FearDecayPerHour(fearDecayPerSecond, GameHoursPerSecond);
 
     [NonSerialized] public int pendingSpawns;
     [NonSerialized] public float fear;

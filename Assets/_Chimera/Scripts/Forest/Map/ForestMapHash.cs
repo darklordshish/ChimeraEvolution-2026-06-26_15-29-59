@@ -46,6 +46,19 @@ public static class ForestMapHash
                 Mix(ref h, (int)t.kind); Mix(ref h, (int)t.state); Mix(ref h, t.solid ? 1 : 0);
             }
 
+        // Логова: адрес и все числа (в игровых часах).
+        Mix(ref h, m.lairs != null ? m.lairs.Count : -1);
+        if (m.lairs != null)
+            foreach (var lr in m.lairs)
+            {
+                S(ref h, lr.name); S(ref h, lr.species); Mix(ref h, (int)lr.type); V3(ref h, lr.pos);
+                Mix(ref h, lr.entrances != null ? lr.entrances.Count : -1);
+                if (lr.entrances != null) foreach (var e in lr.entrances) V3(ref h, e);
+                Mix(ref h, lr.capacity); Mix(ref h, lr.tier); Mix(ref h, lr.spawnEnabled ? 1 : 0);
+                Q(ref h, lr.respawnHours); Q(ref h, lr.homeRadius); Q(ref h, lr.spawnRadius); Q(ref h, lr.fearRadius);
+                Q(ref h, lr.fearPerKill); Q(ref h, lr.fearDecayPerHour); Q(ref h, lr.exhaustFear);
+            }
+
         // Рельеф: рецепт и ключ эрозии. Сетка эрозии (`relief.erosion.delta`) в хеш НЕ входит — ГеймБосс 18.11.
         var r = m.relief;
         Mix(ref h, r != null ? 1 : 0);

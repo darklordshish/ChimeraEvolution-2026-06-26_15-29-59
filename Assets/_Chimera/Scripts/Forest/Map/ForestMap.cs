@@ -31,6 +31,49 @@ public sealed class ForestMap
     public ForestMapRelief relief;
     /// <summary>Деревья (шаг 3): точка, порода, масштаб, лежит/стоит, твёрдый ствол. Подлесок — вне карты.</summary>
     public List<DomeFlora.TreeRec> trees = new List<DomeFlora.TreeRec>();
+    /// <summary>Логова (шаг 4): адрес, вид, тип, ёмкость, радиусы; темп и спад страха — в игровых часах.</summary>
+    public List<Lair> lairs = new List<Lair>();
+
+    /// <summary>
+    /// Логово карты. Темп и спад страха — в ИГРОВЫХ ЧАСАХ (так читает симулятор); перевод из секунд рантайма — закон
+    /// `LairLaw`, темп часов — `LairSite.GameHoursPerSecond` (одно место того и другого).
+    /// </summary>
+    [Serializable]
+    public sealed class Lair
+    {
+        public string name;
+        public string species;
+        public LairSite.LairAreaType type;
+        public Vector3 pos;
+        public List<Vector3> entrances = new List<Vector3>();
+        public int capacity;
+        public int tier;
+        public bool spawnEnabled;
+        public float respawnHours;
+        public float homeRadius;
+        public float spawnRadius;
+        public float fearRadius;
+        public float fearPerKill;
+        public float fearDecayPerHour;
+        public float exhaustFear;
+    }
+
+    /// <summary>Запись логова карты из чисел рантайма (секунды → игровые часы законом `LairLaw`).</summary>
+    public static Lair LairOf(string name, string species, LairSite.LairAreaType type, Vector3 pos, List<Vector3> entrances,
+        int capacity, int tier, bool spawnEnabled, float respawnSeconds, float homeRadius, float spawnRadius,
+        float fearRadius, float fearPerKill, float fearDecayPerSecond, float exhaustFear)
+    {
+        float hps = LairSite.GameHoursPerSecond;
+        return new Lair
+        {
+            name = name, species = species, type = type, pos = pos, entrances = entrances ?? new List<Vector3>(),
+            capacity = capacity, tier = tier, spawnEnabled = spawnEnabled,
+            respawnHours = Chimera.Laws.LairLaw.RespawnHours(respawnSeconds, hps),
+            homeRadius = homeRadius, spawnRadius = spawnRadius, fearRadius = fearRadius, fearPerKill = fearPerKill,
+            fearDecayPerHour = Chimera.Laws.LairLaw.FearDecayPerHour(fearDecayPerSecond, hps),
+            exhaustFear = exhaustFear,
+        };
+    }
 
     [Serializable]
     public sealed class Water
@@ -85,7 +128,9 @@ public sealed class ForestMap
 
     /// <summary>Снимок фактов собранного мира. Ни одного нового вычисления, кроме площади суши.</summary>
     /// <param name="spawn">точка появления игрока — её решает `ForestBuilder` (6 м от входа в чашу), а не `DomeWorld.SpawnPoint` (зал лаборатории)</param>
-    public static ForestMap FromWorld(DomeWorld world, long seed, int worldVersion, Vector3 spawn)
+    /// <param name="lairs">слой логов — план логов `ForestBuilder` (шаг 4); null — слой пуст</param>
+    public static ForestMap FromWorld(DomeWorld world, long seed, int worldVersion, Vector3 spawn,
+        List<Lair> lairs = null)
     {
         if (world == null) throw new ArgumentNullException(nameof(world));
         var m = new ForestMap { seed = seed, worldVersion = worldVersion, diameter = world.MapDiameter };
@@ -125,6 +170,7 @@ public sealed class ForestMap
 
         m.areas = AreasOf(m.ring.inner, h);
         if (world.MapTrees != null) m.trees = world.MapTrees; // план леса (шаг 3)
+        if (lairs != null) m.lairs = lairs; // план логов (шаг 4)
         m.relief = world.MapRelief; // снят перед чанками; у мира с неподдержанным слоем карты нет вовсе (ForestBuilder)
         m.hash = ComputeHash(m);
         return m;
