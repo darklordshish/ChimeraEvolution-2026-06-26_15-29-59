@@ -1,3 +1,4 @@
+using Chimera.Laws;
 using UnityEngine;
 
 /// <summary>
@@ -9,10 +10,7 @@ using UnityEngine;
 /// </summary>
 public class Rage : MonoBehaviour
 {
-    [SerializeField] float damageMult = 1.25f;     // исходящий урон
-    [SerializeField] float speedMult = 1.15f;      // скорость движения
-    [SerializeField] float incomingMult = 1.5f;    // входящий урон — плата за ярость
-    [SerializeField] float staminaRegenMult = 1.5f; // ВТОРОЕ ДЫХАНИЕ: разъярённый восстанавливается быстрее
+    static RageParams P => LawsConfig.Current.rage; // числа — `LawsConfig.rage`, не поля компонента
 
     float until;
     // УСИЛЕНИЕ ИЗВНЕ: ярость бывает разной злости. Человечий клич качает её по своей крови (чем больше
@@ -21,12 +19,12 @@ public class Rage : MonoBehaviour
     float boost = 1f;
 
     public bool IsEnraged => Time.time < until;
-    public float DamageMult => IsEnraged ? damageMult * boost : 1f;
-    public float SpeedMult => IsEnraged ? speedMult : 1f;
-    public float IncomingMult => IsEnraged ? incomingMult : 1f;
+    public float DamageMult => StatusLaw.RageDamage(P, IsEnraged, boost);
+    public float SpeedMult => StatusLaw.RageSpeed(P, IsEnraged);
+    public float IncomingMult => StatusLaw.RageIncoming(P, IsEnraged);
     // дыхалка на ярости (спека витальности): «загнан → ярость → дольше держишься». У ежа это станет
     // прямой связкой с его ПРЕДЕЛОМ — берсерк на грани и есть то, чем он оплачивает клубок и катание
-    public float StaminaRegenMult => IsEnraged ? staminaRegenMult : 1f;
+    public float StaminaRegenMult => StatusLaw.RageStamina(P, IsEnraged);
 
     /// <summary>Взбесить на duration. Не укорачивает уже идущую. Холоднокровный ИММУНЕН к ярости
     /// (эмоционально неподвижен — рациональный расчёт).</summary>

@@ -20,5 +20,7 @@ namespace Chimera.Laws
         public float Next01() => (NextUInt() >> 8) * (1f / 16777216f);
 
         public int Range(int min, int max) => max <= min ? min : min + (int)(NextUInt() % (uint)(max - min));
+
+        public float Range(float min, float max) => min + Next01() * (max - min);
     }
 }

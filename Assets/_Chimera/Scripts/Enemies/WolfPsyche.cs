@@ -1,3 +1,4 @@
+using Chimera.Laws;
 using UnityEngine;
 
 /// <summary>
@@ -189,8 +190,7 @@ public class WolfPsyche : MonoBehaviour, IGrabber, IBodyStatConsumer, ICarried
         || Time.time < rescueUntil
         || (!playerIsKin && ScentField.Instance != null && ScentField.Instance.TryFollow(transform.position, senses.Range(SenseKind.Scent), out _)); // след кина — не зацепка
 
-    float Speed => moveSpeed * (rage != null ? rage.SpeedMult : 1f)
-                             * (variance != null ? variance.SpeedMult : 1f); // ярость ускоряет; разброс делает особей разными
+    float Speed => MoveLaw.Speed(moveSpeed, rage != null ? rage.SpeedMult : 1f, variance != null ? variance.SpeedMult : 1f); // ярость ускоряет; разброс делает особей разными
 
     // тело-на-шасси (CreatureBody: органы Волка × экспрессия ~0.45) кормит деривированное.
     // Ритм атак — фирменная тактика психики; числа прыжка — в записи органа ног (LeapData).

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Chimera.Laws;
 using UnityEngine;
 
 /// <summary>
@@ -119,9 +120,8 @@ public class HedgehogPsyche : MonoBehaviour, IBodyStatConsumer
         }
     }
 
-    float Speed => moveSpeed * (rage != null ? rage.SpeedMult : 1f)
-                             * (variance != null ? variance.SpeedMult : 1f)
-                             * (Breath != null ? Breath.MoveMult : 1f);
+    float Speed => MoveLaw.Speed(moveSpeed, rage != null ? rage.SpeedMult : 1f, variance != null ? variance.SpeedMult : 1f,
+                                  Breath != null ? Breath.MoveMult : 1f);
 
     public void OnBodyStats(float bodyMoveSpeed)
     {

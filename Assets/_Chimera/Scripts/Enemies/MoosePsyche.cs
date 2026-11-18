@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Chimera.Laws;
 using UnityEngine;
 
 /// <summary>
@@ -87,8 +88,8 @@ public class MoosePsyche : MonoBehaviour, IBodyStatConsumer
     float noiseUntil;
 
     // ОТДЫШКА режет ход и лосю: выдохшийся зверь не только не таранит, но и бредёт (Stamina.MoveMult)
-    float Speed => moveSpeed * (rage != null ? rage.SpeedMult : 1f) * (variance != null ? variance.SpeedMult : 1f)
-                             * (Breath != null ? Breath.MoveMult : 1f);
+    float Speed => MoveLaw.Speed(moveSpeed, rage != null ? rage.SpeedMult : 1f, variance != null ? variance.SpeedMult : 1f,
+                                  Breath != null ? Breath.MoveMult : 1f);
 
     // ДЫХАЛКА ЛОСЯ: бак огромный, реген худший в лесу (данные вида) — поэтому «загнанный зверь» становится
     // буквальным: четыре тарана подряд, и дальше он может только переть шагом, пока не отдышится

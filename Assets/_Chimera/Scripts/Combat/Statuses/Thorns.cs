@@ -1,3 +1,4 @@
+using Chimera.Laws;
 using UnityEngine;
 
 /// <summary>
@@ -14,13 +15,8 @@ using UnityEngine;
 [RequireComponent(typeof(Health))]
 public class Thorns : MonoBehaviour
 {
-    [SerializeField, Range(0f, 1f)] float returnShare = 0.55f; // доля СЫРОГО урона обратно. 0.35 не тянуло матч
-                                                               // против змеи (укус 24 > ежиный 14): теперь её
-                                                               // же крупный укус возвращается ~13 — большой удар
-                                                               // об иглы наказывается сильнее, ёж выигрывает размен
-    [SerializeField] float reach = 2.5f;                       // «в упор»: дальше иглы не достают
-    [SerializeField] int bleedStacks = 1;                      // протыкание — стаки кровотечения атакующему
-    [SerializeField] int minReturn = 1;                        // даже слабый тычок должен колоть
+    // числа (доля ответа 0.55, «в упор» 2.5 м, стаки крови, минимум) — `LawsConfig.thorns`
+    static ThornsParams P => LawsConfig.Current.thorns;
 
     Health health;
     bool reflecting; // ГВАРД ПЕТЛИ: два колючих зверя иначе закололи бы друг друга насмерть рекурсией
@@ -42,15 +38,15 @@ public class Thorns : MonoBehaviour
 
         var attacker = health.LastAttacker;
         if (attacker == null || ReferenceEquals(attacker, health)) return;
-        if ((attacker.transform.position - transform.position).sqrMagnitude > reach * reach) return;
+        if ((attacker.transform.position - transform.position).sqrMagnitude > P.Reach * P.Reach) return;
 
         // считаем от СЫРОГО урона: моя броня не должна влиять на то, насколько больно об меня уколоться
-        int back = Mathf.Max(minReturn, Mathf.RoundToInt(health.LastRawDamage * returnShare));
+        int back = StatusLaw.ThornsReturn(health.LastRawDamage, P.ReturnShare, P.MinReturn);
 
         reflecting = true;
         var hit = new Hit(health, transform.position);
         hit.Apply(attacker, HitEffect.Damage(back));
-        for (int i = 0; i < bleedStacks; i++) hit.Apply(attacker, HitEffect.Bleed());
+        for (int i = 0; i < P.BleedStacks; i++) hit.Apply(attacker, HitEffect.Bleed());
         reflecting = false;
     }
 }

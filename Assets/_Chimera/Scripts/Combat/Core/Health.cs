@@ -52,20 +52,12 @@ public class Health : MonoBehaviour
 
     void Update()
     {
-        // тихая регенерация (без лога): постоянная + добавочная вне боя; копим дробные HP, не выше максимума
         if (dead || Current >= maxHealth) return;
-        float rate = RegenPerSecond;
-        if (!InCombat) rate += OutOfCombatRegen;
-        rate *= RegenFactor; // сбит укусом Пасти или ядом
-        if (rate <= 0f) return;
-
-        regenAccum += rate * Time.deltaTime;
-        if (regenAccum >= 1f)
-        {
-            int whole = Mathf.FloorToInt(regenAccum);
-            regenAccum -= whole;
-            Current = Mathf.Min(maxHealth, Current + whole);
-        }
+        // тихая регенерация (без лога): постоянная + добавочная вне боя; копим дробные HP, не выше максимума
+        // сбит укусом Пасти или ядом — фактор подавления; скорость и накопление — закон (`HungerLaw`), время — игра
+        float rate = HungerLaw.RegenRate(RegenPerSecond, OutOfCombatRegen, InCombat, RegenFactor);
+        int whole = HungerLaw.RegenTick(ref regenAccum, rate, Time.deltaTime);
+        if (whole > 0) Current = Mathf.Min(maxHealth, Current + whole);
     }
 
     // конструктор меняет макс. HP при смене органа в слоте «Сердце» (разницу даём/забираем у текущего)
