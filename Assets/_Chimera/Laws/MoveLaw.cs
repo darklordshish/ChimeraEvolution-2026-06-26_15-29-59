@@ -6,10 +6,10 @@ namespace Chimera.Laws
     /// </summary>
     public static class MoveLaw
     {
-        /// <summary>`rageApplies = false` — ярость в скорость не входит. Так сегодня у змеи и химеры-альфы: паритет держим как
-        /// есть, расхождение с волком, лосем и ежом записано в отчёте С5 (решение о выравнивании — за геймдизайнером).
-        /// `slow` — любой множитель торможения (иглы, отдышка); `vigor` — истощение. Отсутствующий множитель — единица.</summary>
-        public static float Speed(float baseSpeed, float rage, float variance, float slow = 1f, float vigor = 1f, bool rageApplies = true)
-            => baseSpeed * (rageApplies ? rage : 1f) * variance * slow * vigor;
+        /// <summary>Ярость ускоряет ВСЕХ (решение 18.11, спека симулятора §0 п.10: `Rage` = «+урон +скорость, −защита»; у змеи и
+        /// химеры-альфы она раньше не входила — расхождение копий, не замысел). `slow` — любой множитель торможения (иглы,
+        /// отдышка); `vigor` — истощение. Отсутствующий множитель — единица.</summary>
+        public static float Speed(float baseSpeed, float rage, float variance, float slow = 1f, float vigor = 1f)
+            => baseSpeed * rage * variance * slow * vigor;
     }
 }

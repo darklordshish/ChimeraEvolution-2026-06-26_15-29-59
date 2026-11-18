@@ -75,6 +75,17 @@ namespace Chimera.Tests.EditMode
             Assert.IsEmpty(hits, "добыча/угроза по типу психики цели — звать `CreatureBody.Appetite`/`Fears` (рацион по доминанте):\n" + string.Join("\n", hits));
         }
 
+        /// <summary>Ярость ускоряет всех (решение 18.11): психика не вправе подать в `MoveLaw.Speed` литерал вместо множителя ярости,
+        /// как это делали змея и альфа (`MoveLaw.Speed(moveSpeed, 1f, ...)`).</summary>
+        [Test]
+        public void RageSpeed_NoPsycheOptsOut()
+        {
+            var optOut = new Regex(@"MoveLaw\.Speed\(\s*\w+\s*,\s*1f\s*,", RegexOptions.Compiled);
+            Assert.IsTrue(optOut.IsMatch("float Speed => MoveLaw.Speed(moveSpeed, 1f, variance != null ? 1f : 1f);"));
+            var hits = Hits(optOut);
+            Assert.IsEmpty(hits, "психика выключила ярость из скорости литералом 1f — подавать rage.SpeedMult:" + "\n" + string.Join("\n", hits));
+        }
+
         [Test]
         public void IncomingDamageFormula_OnlyThroughLaw()
         {

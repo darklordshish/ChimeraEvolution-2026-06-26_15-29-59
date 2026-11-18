@@ -35,7 +35,8 @@ public class ChimeraAlphaPsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
 
     float moveSpeed = 4f;
     SpawnVariance variance; // разброс особи (вешает тело): у альфы тоже своя скорость у каждой особи
-    float Speed => MoveLaw.Speed(moveSpeed, 1f, variance != null ? variance.SpeedMult : 1f, rageApplies: false); // ярость в скорость альфы НЕ входит (паритет С5; у волка, лося и ежа входит)
+    Rage rage;              // ярость ускоряет всех (решение 18.11, спека симулятора §0 п.10); до-создаётся в Awake, как у волка, лося и ежа
+    float Speed => MoveLaw.Speed(moveSpeed, rage != null ? rage.SpeedMult : 1f, variance != null ? variance.SpeedMult : 1f);
     CreatureBody body;
     Health ownHealth;
     NavLocomotion nav;
@@ -70,6 +71,7 @@ public class ChimeraAlphaPsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         nav = GetComponent<NavLocomotion>();
         TryGetComponent(out body);
         TryGetComponent(out variance);
+        if (!TryGetComponent(out rage)) rage = gameObject.AddComponent<Rage>(); // ярость входит в скорость (решение 18.11)
         TryGetComponent(out stagger);
         TryGetComponent(out knockback);
     }

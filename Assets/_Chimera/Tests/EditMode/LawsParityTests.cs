@@ -646,8 +646,8 @@ namespace Chimera.Tests.EditMode
                 Assert.AreEqual(b * rage * var, MoveLaw.Speed(b, rage, var));
                 // лось, ёж: отдышка
                 Assert.AreEqual(b * rage * var * breath, MoveLaw.Speed(b, rage, var, breath));
-                // змея и альфа: ярость в скорость НЕ входит (прежнее поведение, паритет)
-                Assert.AreEqual(b * var, MoveLaw.Speed(b, rage, var, rageApplies: false));
+                // змея и альфа: с 18.11 ярость входит и у них (решение §0 п.10 спеки симулятора; раньше `rageApplies: false` давал b * var)
+                Assert.AreEqual(b * rage * var, MoveLaw.Speed(b, rage, var), "ярость ускоряет всех, змею и альфу тоже");
                 n++;
             }
             Assert.Greater(n, 20);

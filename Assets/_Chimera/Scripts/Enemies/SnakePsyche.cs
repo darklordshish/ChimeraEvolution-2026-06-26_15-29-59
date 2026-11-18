@@ -176,6 +176,7 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
         if (!TryGetComponent(out constrictM)) constrictM = gameObject.AddComponent<Constrict>(); // единая машина хвата; все числа — запись ConstrictData Хвоста (её кормит тело); нет записи — Begin откажет
         TryGetComponent(out variance); // разброс особи вешает тело (CreatureBody.Awake) — психика только читает
         TryGetComponent(out ownBody);  // своё тело: рацион бегства (`Fears`, С8)
+        if (!TryGetComponent(out rage)) rage = gameObject.AddComponent<Rage>(); // ярость входит в скорость (решение 18.11)
         if (!TryGetComponent(out alert)) alert = gameObject.AddComponent<AlertState>(); // общая машина восприятия (S1)
         if (!TryGetComponent(out senses)) senses = gameObject.AddComponent<Senses>(); // сенсорный профиль (S1)
         senses.Seed(SenseKind.Thermal, thermalRange); // сид базовой термо-дальности (если профиль не задан на префабе)
@@ -226,7 +227,8 @@ public class SnakePsyche : MonoBehaviour, IBodyStatConsumer, IGrabber
     }
 
     CreatureBody ownBody;   // рацион (С8): от кого бежать — по доминанте цели
-    float Speed => MoveLaw.Speed(moveSpeed, 1f, variance != null ? variance.SpeedMult : 1f, rageApplies: false); // ярость в скорость змеи НЕ входит (паритет С5; у волка, лося и ежа входит)
+    Rage rage;              // ярость ускоряет всех (решение 18.11, спека симулятора §0 п.10); до-создаётся в Awake, как у волка, лося и ежа
+    float Speed => MoveLaw.Speed(moveSpeed, rage != null ? rage.SpeedMult : 1f, variance != null ? variance.SpeedMult : 1f);
 
     // тело кормит скоростью хода; числа укуса, наскока и обхвата — записи органов (доставки и машина захвата читают их сами)
     public void OnBodyStats(float bodyMoveSpeed)
