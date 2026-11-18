@@ -539,7 +539,7 @@ public class ForestBuilder : MonoBehaviour, IBossExit
         // Карта как источник (спека 18.11): только v2 — на v1 карту не делаем (решение геймдизайнера 18.11).
         // Мир с неподдержанным слоем (каньон, овраги) карты не получает: рельеф не снят (DomeWorld.MapRelief == null).
         Map = WorldVersion >= 2 && world.MapRelief != null
-            ? ForestMap.FromWorld(world, chosen, WorldVersion, SpawnPoint) : null;
+            ? ForestMap.FromWorld(world, chosen, WorldVersion, SpawnPoint, MapLairs) : null;
     }
 
     /// <summary>Карта мира v2 — факты в метрах на плоскости купола; null на v1 и до сборки.</summary>
@@ -700,6 +700,7 @@ public class ForestBuilder : MonoBehaviour, IBossExit
 
         lairRegistry = GetComponent<LairRegistry>();
         if (lairRegistry == null) lairRegistry = gameObject.AddComponent<LairRegistry>();
+        lairPlan.Clear();
 
         int mouths = 0;
         foreach (var m in world.Mouths)
@@ -712,10 +713,11 @@ public class ForestBuilder : MonoBehaviour, IBossExit
             Vector2 pad = BowlPad(m.pos + down * 5f);
             float y = Mathf.Max(world.RingGround(pad.x, pad.y),
                                 world.SampleGround(pad.x, pad.y));
-            var site = MakeSnakeLair($"Логово_устье_{mouths}", FieldToWorld(pad.x, y, pad.y),
-                LairSite.LairAreaType.Den);
+            var rec = SnakeRec($"Логово_устье_{mouths}", new Vector3(pad.x, y, pad.y), LairSite.LairAreaType.Den);
             float yMouth = world.RingGround(m.pos.x, m.pos.y);
-            site.entrances.Add(FieldToWorld(m.pos.x, yMouth, m.pos.y));
+            rec.hasEntrance = true;
+            rec.entrance = new Vector3(m.pos.x, yMouth, m.pos.y);
+            lairPlan.Add(rec);
             mouths++;
         }
 
@@ -727,12 +729,14 @@ public class ForestBuilder : MonoBehaviour, IBossExit
             Vector2 pad = BowlPad(n.pos);
             float y = Mathf.Max(world.RingGround(pad.x, pad.y),
                                 world.SampleGround(pad.x, pad.y));
-            MakeSnakeLair($"Логово_гнездо_{nests}", FieldToWorld(pad.x, y, pad.y),
-                LairSite.LairAreaType.Nest);
+            lairPlan.Add(SnakeRec($"Логово_гнездо_{nests}", new Vector3(pad.x, y, pad.y), LairSite.LairAreaType.Nest));
             nests++;
         }
 
-        int animal = buildAnimalLairs ? BuildAnimalLairs() : 0;
+        int animal = buildAnimalLairs ? PlanAnimalLairs() : 0;
+
+        // Карта как источник, шаг 4: логова ставятся ПО ПЛАНУ, тем же порядком (устья, гнёзда, звери; сова — ниже).
+        foreach (var rec in lairPlan) MakeSite(rec);
 
         if (world.NestSite != null)
         {
@@ -742,6 +746,7 @@ public class ForestBuilder : MonoBehaviour, IBossExit
             lairRegistry.Register(world.NestSite);
             lairs.Add(world.NestSite); // Lairs и Registry держат ОДНО и то же множество
         }
+        MapLairs = BuildMapLairs();
 
         spawner = GetComponent<ForestSpawner>();
         if (spawner == null) spawner = gameObject.AddComponent<ForestSpawner>();
@@ -762,14 +767,10 @@ public class ForestBuilder : MonoBehaviour, IBossExit
     /// Логова волка, лося и ежа: адреса — чистая функция мира (`DomeAnimalLairs`), по сиду, из воды, прогалин и
     /// деревьев; чужие адреса (змеиные логова, гнездо совы) обходятся. Возвращает, сколько поставлено.
     /// </summary>
-    int BuildAnimalLairs()
+    int PlanAnimalLairs()
     {
         var avoid = new List<Vector2>();
-        foreach (var l in lairs)
-        {
-            Vector3 f = world.Root.transform.InverseTransformPoint(l.transform.position);
-            avoid.Add(new Vector2(f.x, f.z));
-        }
+        foreach (var l in lairPlan) avoid.Add(new Vector2(l.pos.x, l.pos.z)); // змеиные адреса плана
         if (world.HasAsh) avoid.Add(world.Ash.pos);
         var spots = DomeAnimalLairs.Find(new DomeAnimalLairs.World
         {
@@ -787,20 +788,20 @@ public class ForestBuilder : MonoBehaviour, IBossExit
         foreach (var s in spots)
         {
             float y = world.SampleGround(s.pos.x, s.pos.y);
-            Vector3 pos = FieldToWorld(s.pos.x, y, s.pos.y);
+            Vector3 pos = new Vector3(s.pos.x, y, s.pos.y);
             switch (s.kind)
             {
                 case DomeAnimalLairs.Kind.Wolf:
-                    MakeLair($"Логово_волк_{n}", pos, "Волк", LairSite.LairAreaType.Den,
-                        wolfLairCapacity > 0 ? wolfLairCapacity : DefaultWolfCapacity);
+                    lairPlan.Add(Rec($"Логово_волк_{n}", pos, "Волк", LairSite.LairAreaType.Den,
+                        wolfLairCapacity > 0 ? wolfLairCapacity : DefaultWolfCapacity));
                     break;
                 case DomeAnimalLairs.Kind.Moose:
-                    MakeLair($"Лёжка_лось_{n}", pos, "Лось", LairSite.LairAreaType.Rest,
-                        mooseLairCapacity > 0 ? mooseLairCapacity : DefaultMooseCapacity);
+                    lairPlan.Add(Rec($"Лёжка_лось_{n}", pos, "Лось", LairSite.LairAreaType.Rest,
+                        mooseLairCapacity > 0 ? mooseLairCapacity : DefaultMooseCapacity));
                     break;
                 case DomeAnimalLairs.Kind.Hedgehog:
-                    MakeLair($"Нора_ёж_{n}", pos, "Ёж", LairSite.LairAreaType.Burrow,
-                        hedgehogLairCapacity > 0 ? hedgehogLairCapacity : DefaultHedgehogCapacity);
+                    lairPlan.Add(Rec($"Нора_ёж_{n}", pos, "Ёж", LairSite.LairAreaType.Burrow,
+                        hedgehogLairCapacity > 0 ? hedgehogLairCapacity : DefaultHedgehogCapacity));
                     break;
             }
             n++;
@@ -808,28 +809,91 @@ public class ForestBuilder : MonoBehaviour, IBossExit
         return n;
     }
 
-    LairSite MakeSnakeLair(string name, Vector3 worldPos, LairSite.LairAreaType areaType) =>
-        MakeLair(name, worldPos, "Змея", areaType, snakeCapacity > 0 ? snakeCapacity : DefaultSnakeCapacity);
+    /// <summary>
+    /// Запись плана логова (шаг 4 карты): адрес на плоскости купола и все числа логова. `LairSite` ставится по ней
+    /// (<see cref="MakeSite"/>), карта пишет её в игровых часах (<see cref="BuildMapLairs"/>).
+    /// </summary>
+    struct LairRec
+    {
+        public string name;
+        public Vector3 pos;          // плоскость купола (локально корню мира)
+        public bool hasEntrance;
+        public Vector3 entrance;     // плоскость купола
+        public string species;
+        public LairSite.LairAreaType type;
+        public int capacity;
+        public int tier;
+        public float homeRadius, spawnRadius, fearRadius, respawnSeconds;
+    }
+
+    readonly List<LairRec> lairPlan = new List<LairRec>();
+
+    /// <summary>Слой логов карты (шаг 4): план и совиное гнездо, в игровых часах; null до сборки.</summary>
+    public List<ForestMap.Lair> MapLairs { get; private set; }
+
+    LairRec SnakeRec(string name, Vector3 pos, LairSite.LairAreaType areaType) =>
+        Rec(name, pos, "Змея", areaType, snakeCapacity > 0 ? snakeCapacity : DefaultSnakeCapacity);
 
     /// <summary>Логово любого вида. Радиусы, страх и темп — общие числа среза C (тюнинг на builder'е).</summary>
-    LairSite MakeLair(string name, Vector3 worldPos, string species, LairSite.LairAreaType areaType, int capacity)
+    LairRec Rec(string name, Vector3 pos, string species, LairSite.LairAreaType areaType, int capacity) => new LairRec
     {
-        var go = new GameObject(name);
-        go.transform.SetParent(world.Root.transform, false);
-        go.transform.position = worldPos; // FieldToWorld уже перевёл в мировые
-        var site = go.AddComponent<LairSite>();
-        site.speciesName = species;
-        site.areaType = areaType;
+        name = name,
+        pos = pos,
+        species = species,
+        type = areaType,
         // Ноль = «не настроено» (новое поле у компонента из сцены приходит нулём).
-        site.capacity = capacity;
-        site.tier = snakeTier > 0 ? snakeTier : DefaultSnakeTier;
-        site.homeRadius = snakeHomeRadius > 0f ? snakeHomeRadius : DefaultSnakeHomeRadius;
-        site.spawnRadius = snakeSpawnRadius > 0f ? snakeSpawnRadius : DefaultSnakeSpawnRadius;
-        site.fearRadius = snakeFearRadius > 0f ? snakeFearRadius : DefaultSnakeFearRadius;
-        site.respawnSeconds = snakeRespawnSeconds > 0f ? snakeRespawnSeconds : DefaultSnakeRespawn;
+        capacity = capacity,
+        tier = snakeTier > 0 ? snakeTier : DefaultSnakeTier,
+        homeRadius = snakeHomeRadius > 0f ? snakeHomeRadius : DefaultSnakeHomeRadius,
+        spawnRadius = snakeSpawnRadius > 0f ? snakeSpawnRadius : DefaultSnakeSpawnRadius,
+        fearRadius = snakeFearRadius > 0f ? snakeFearRadius : DefaultSnakeFearRadius,
+        respawnSeconds = snakeRespawnSeconds > 0f ? snakeRespawnSeconds : DefaultSnakeRespawn,
+    };
+
+    /// <summary>Поставить `LairSite` по записи плана.</summary>
+    LairSite MakeSite(LairRec r)
+    {
+        var go = new GameObject(r.name);
+        go.transform.SetParent(world.Root.transform, false);
+        go.transform.position = FieldToWorld(r.pos.x, r.pos.y, r.pos.z);
+        var site = go.AddComponent<LairSite>();
+        site.speciesName = r.species;
+        site.areaType = r.type;
+        site.capacity = r.capacity;
+        site.tier = r.tier;
+        site.homeRadius = r.homeRadius;
+        site.spawnRadius = r.spawnRadius;
+        site.fearRadius = r.fearRadius;
+        site.respawnSeconds = r.respawnSeconds;
+        if (r.hasEntrance) site.entrances.Add(FieldToWorld(r.entrance.x, r.entrance.y, r.entrance.z));
         lairRegistry.Register(site);
         lairs.Add(site);
         return site;
+    }
+
+    /// <summary>
+    /// Слой логов карты: записи плана тем же порядком, плюс совиное гнездо. Сову ставит `DomeWorld` в кроне ясеня, её
+    /// адрес снимается с объекта — единственная запись слоя, взятая из 3D (без спавна; перенос — с ясенем, шаг 5).
+    /// </summary>
+    List<ForestMap.Lair> BuildMapLairs()
+    {
+        var list = new List<ForestMap.Lair>(lairPlan.Count + 1);
+        foreach (var r in lairPlan)
+            list.Add(ForestMap.LairOf(r.name, r.species, r.type, r.pos,
+                r.hasEntrance ? new List<Vector3> { r.entrance } : new List<Vector3>(), r.capacity, r.tier, true,
+                r.respawnSeconds, r.homeRadius, r.spawnRadius, r.fearRadius,
+                LairSite.DefaultFearPerKill, LairSite.DefaultFearDecayPerSecond, LairSite.DefaultExhaustFear));
+        var owl = world.NestSite;
+        if (owl != null)
+        {
+            var root = world.Root.transform;
+            var entr = new List<Vector3>();
+            foreach (var e in owl.entrances) entr.Add(root.InverseTransformPoint(e));
+            list.Add(ForestMap.LairOf(owl.name, owl.speciesName, owl.areaType, root.InverseTransformPoint(owl.transform.position),
+                entr, owl.capacity, owl.tier, owl.spawnEnabled, owl.respawnSeconds, owl.homeRadius, owl.spawnRadius,
+                owl.fearRadius, owl.fearPerKill, owl.fearDecayPerSecond, owl.exhaustFear));
+        }
+        return list;
     }
 
     /// <summary>
@@ -909,6 +973,8 @@ public class ForestBuilder : MonoBehaviour, IBossExit
         }
         if (lairRegistry != null) lairRegistry.Clear();
         lairs.Clear();
+        lairPlan.Clear();
+        MapLairs = null;
 
         if (climate != null)
         {
