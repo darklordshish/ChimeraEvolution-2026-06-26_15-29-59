@@ -17,6 +17,7 @@ public static class DomeTerrace
     /// (так же ведёт себя пустой список оврагов). height — прибавка в метрах,
     /// radius — ровная часть, blend — плавный борт шириной в метрах.
     /// </summary>
+    [System.Serializable]
     public struct State
     {
         public Vector2 center;

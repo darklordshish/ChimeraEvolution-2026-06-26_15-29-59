@@ -12,6 +12,7 @@ using UnityEngine;
 /// </summary>
 public static class DomeHill
 {
+    [System.Serializable]
     public struct State
     {
         public Vector2 center;
@@ -25,7 +26,7 @@ public static class DomeHill
         /// под плитой намеренно НЕ режет холм — плато поднимает и пятно, а площадка
         /// последним blend'ом выравнивает плиту. Режутся только проходы.
         /// </summary>
-        public System.Func<float, float, bool> hole;
+        [System.NonSerialized] public System.Func<float, float, bool> hole;
         public bool valid;
     }
 

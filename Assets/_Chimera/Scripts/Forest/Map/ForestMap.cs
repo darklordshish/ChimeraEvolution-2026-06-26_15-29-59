@@ -27,6 +27,8 @@ public sealed class ForestMap
     public Points points = new Points();
     public Lab lab = new Lab();
     public Areas areas = new Areas();
+    /// <summary>Рельеф v2: рецепт поля и высота по нему (шаг 2). После `FromJson` — <see cref="Restore"/>.</summary>
+    public ForestMapRelief relief;
 
     [Serializable]
     public sealed class Water
@@ -120,6 +122,9 @@ public sealed class ForestMap
         }
 
         m.areas = AreasOf(m.ring.inner, h);
+        // Рельеф: тот, по которому мир строил чанки (шаг 2б), иначе — снять с террейна.
+        m.relief = world.MapRelief ?? (world.Terrain != null && world.Terrain.TargetOrder
+            ? ForestMapRelief.From(world.Terrain, seed) : null);
         m.hash = ComputeHash(m);
         return m;
     }
@@ -142,6 +147,9 @@ public sealed class ForestMap
     }
 
     public string ToJson() => JsonUtility.ToJson(this, true);
+
+    /// <summary>Восстановить несериализуемое после `FromJson`: копию террейна рельефа.</summary>
+    public void Restore() => relief?.Restore();
 
     public static ForestMap FromJson(string json) =>
         string.IsNullOrEmpty(json) ? null : JsonUtility.FromJson<ForestMap>(json);
