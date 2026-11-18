@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Chimera.Laws;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -294,41 +295,31 @@ public partial class CreatureBody : MonoBehaviour
         if (slots == null || slots.Length == 0) return; // нет данных — не трогаем статы компонентов
 
         // Вклады группируются по РОДНОМУ ТИПУ СЛОТА органа: дубли (второе Сердце в химерном слоте)
-        // схлопываются супремумом, группы суммируются. Без дублей == прежняя сумма по слотам.
-        var groups = new Dictionary<string, Contribution>();
-        int beast = 0;
-
+        // схлопываются супремумом, группы суммируются — всё это закон тела (`BodyLaw.Compute`). Здесь только вход:
+        // раскрытие каждого слота (`Express`) и множители особи. Без дублей == прежняя сумма по слотам.
+        var worn = new List<SlotContribution>(slots.Length);
         foreach (var sl in slots)
         {
             if (sl.Empty) continue;      // пустой химерный слот — вклада нет
-            var c = Express(sl);         // ОДНО правило раскрытия на все случаи (см. Express)
-            if (sl.Installed) beast++;   // шкалу мозга двигает только ЗВЕРИНЫЙ орган: родной — не химеризация
-            string key = sl.Worn.slot;   // дубль типа (второе Сердце) идёт в ту же группу — супремум
-            groups[key] = groups.TryGetValue(key, out var prev) ? Contribution.Sup(prev, c) : c;
+            worn.Add(new SlotContribution
+            {
+                slotType = sl.Worn.slot,                // дубль типа (второе Сердце) идёт в ту же группу — супремум
+                installed = sl.Installed,               // шкалу мозга двигает только ЗВЕРИНЫЙ орган: родной — не химеризация
+                contribution = Express(sl).ToLaw(),     // ОДНО правило раскрытия на все случаи (см. Express)
+            });
         }
-
-        // суммирование групп; урон группы «Пасть» принадлежит УКУСУ, не мечу
-        float hpBonusF = 0f, stamF = 0f, stamRegF = 0f;
-        float atkCd = 0f, mv = 0f, dash = 0f, dashDur = 0f, dashCd = 0f, reduce = 0f, regen = 0f, regenOOC = 0f, thermal = 0f;
-        bool scentOn = false, coldOn = false, camoOn = false,
-             thermalOn = false, digestOn = false,
-             insightOn = false, keenEarOn = false,
-             thornsOn = false, venomResistOn = false, bleedResistOn = false;
-        float earMult = 0f;
-        foreach (var kv in groups)
+        var st = BodyLaw.Compute(new BodyInput
         {
-            var c = kv.Value;
-            hpBonusF += c.hpBonus; stamF += c.stam; stamRegF += c.stamRegen;
-            atkCd += c.atkCd; mv += c.mv; dash += c.dash; dashDur += c.dashDur; dashCd += c.dashCd;
-            reduce += c.reduce; regen += c.regen; regenOOC += c.regenOOC; thermal += c.thermal;
-            scentOn |= c.scent;
-            coldOn |= c.cold; camoOn |= c.camo; thermalOn |= c.thermalOn;
-            digestOn |= c.digest;
-            insightOn |= c.insight;
-            keenEarOn |= c.keenEar; earMult = Mathf.Max(earMult, c.earMult);
-            thornsOn |= c.thorns; venomResistOn |= c.venomResist;
-            bleedResistOn |= c.bleedResist;
-        }
+            slots = worn,
+            baseHp = BaseHp, baseStamina = BaseStamina, baseStaminaRegen = BaseStaminaRegen,
+            varianceHp = variance != null ? variance.HpMult : 1f,
+            bossHp = bossness != null ? bossness.HpMult : 1f,
+            maxDamageReduction = maxDamageReduction, minAtkCooldown = minAtkCooldown,
+        });
+        float mv = st.moveSpeed, thermal = st.thermalRange, earMult = st.earMult;
+        bool scentOn = st.scent, coldOn = st.coldBlooded, camoOn = st.camo, thermalOn = st.thermal, digestOn = st.digest,
+             insightOn = st.insight, keenEarOn = st.keenEar,
+             thornsOn = st.thorns, venomResistOn = st.venomResist, bleedResistOn = st.bleedResist;
 
         // ПРИЁМЫ ИЗ ЗАПИСЕЙ ОРГАНОВ (спека 12.09): раскрыть, свести дубли, накормить носителей — один путь игроку и NPC.
         // Все удары, голос и захват (у NPC носитель — машина Constrict, у игрока — драйвер PlayerConstrict над ней)
@@ -362,11 +353,11 @@ public partial class CreatureBody : MonoBehaviour
         }
         // ТЕМП АТАК от Сердца — свойство тела, модификатор к удару конечностью (числа удара — в записи органа «Руки»).
         // Пол глушит овершут скорострельности
-        if (attack != null) attack.SetTempo(Mathf.Max(minAtkCooldown, atkCd));
+        if (attack != null) attack.SetTempo(st.attackTempo); // пол скорострельности — в законе
         if (move != null)
         {
-            move.SetLegs(mv, dash, dashDur);
-            move.SetDashCooldown(Mathf.Max(0.05f, dashCd));
+            move.SetLegs(mv, st.dash, st.dashDuration);
+            move.SetDashCooldown(st.dashCooldown);
         }
         if (health != null && applyVitals)
         {
@@ -376,12 +367,10 @@ public partial class CreatureBody : MonoBehaviour
             // а числа органов подбирались, лишь бы это скомпенсировать. Теперь Э честно раскрывает БОНУС
             // × БОССОВОСТЬ: модуль опрашивается при КАЖДОМ пересчёте, а не вписывается в HP разово — иначе первая
             // же прививка или выданный химерный слот стирали бы бонус молча
-            int hp = Mathf.RoundToInt(BaseHp * (1f + hpBonusF) * (variance != null ? variance.HpMult : 1f)
-                                      * (bossness != null ? bossness.HpMult : 1f));
-            health.SetMaxHealth(Mathf.Max(1, hp));
-            health.DamageReduction = Mathf.Min(maxDamageReduction, Mathf.Clamp01(reduce)); // потолок — глушим овершут брони
-            health.RegenPerSecond = regen;
-            health.OutOfCombatRegen = regenOOC;
+            health.SetMaxHealth(st.hp);
+            health.DamageReduction = st.damageReduction; // потолок брони — глушим овершут (в законе)
+            health.RegenPerSecond = st.regen;
+            health.OutOfCombatRegen = st.regenOutOfCombat;
         }
 
         // СТАМИНА — по той же формуле и у ВСЕХ тел (кор-механика, не фича вида). Компонент до-создаём сами:
@@ -390,8 +379,8 @@ public partial class CreatureBody : MonoBehaviour
         if (stamina == null && !TryGetComponent(out stamina)) stamina = gameObject.AddComponent<Stamina>();
         if (applyVitals)
         {
-            stamina.SetMax(BaseStamina * (1f + stamF));
-            stamina.RegenPerSecond = BaseStaminaRegen * (1f + stamRegF);
+            stamina.SetMax(st.staminaMax);
+            stamina.RegenPerSecond = st.staminaRegen;
         }
 
         // НПС-потребители (психика): тело отдаёт деривированное — скорость хода

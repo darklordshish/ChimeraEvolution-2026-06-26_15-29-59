@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Chimera.Laws;
 using UnityEngine;
 
 // PARTIAL-SPLIT #2 (рефактор ядра): РОДСТВО (аффинити) вынесено сюда из CreatureBody.cs — тот же класс,
@@ -34,7 +35,7 @@ public partial class CreatureBody
     /// <summary>МОЩЬ носителя — ось экспрессии как ЧИСЛО: у игрока множитель родства (1..2), у NPC —
     /// фикс. экспрессия вида (волк 0.45, босс 2). Общая ручка: на неё вешаются и масштабы (радиус
     /// голоса), и ПОРОГИ-ФИЧИ («что вообще открывается»). Переиспользуемо химерами и новыми видами.</summary>
-    public float Power => move != null ? BonusMult : expression;
+    public float Power => AffinityLaw.Power(move != null, BonusMult, expression);
 
     public int GetAffinity(string species) { affinity.TryGetValue(species, out int v); return v; }
     public void AddAffinity(string species, int n) => affinity[species] = Mathf.Clamp(GetAffinity(species) + n, 0, AffinityCap);
@@ -58,10 +59,8 @@ public partial class CreatureBody
     // на всём диапазоне (мутаген раскрывает гены с каждым убийством). У NPC — фиксированная (поле expression).
     float BonusMultiplier(string species)
     {
-        if (expression > 0f) return expression;
-        float span = Mathf.Max(1f, bonusFullAffinity - bonusStartAffinity);
-        float t = Mathf.Clamp01((GetAffinity(species) - bonusStartAffinity) / span);
-        return Mathf.Lerp(1f, maxBonusMult, t);
+        // кривая — закон родства; числа кривой (поля тела на префабе/сцене) и фикс-экспрессия NPC подаются параметрами
+        return AffinityLaw.Multiplier(expression, GetAffinity(species), bonusStartAffinity, bonusFullAffinity, maxBonusMult);
     }
 
     // сумма родства по донорам — сторож пересчёта (Update): родство выросло → Recompute

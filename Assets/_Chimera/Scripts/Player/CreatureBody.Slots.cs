@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Chimera.Laws;
 using UnityEngine;
 
 // PARTIAL-SPLIT #5 (рефактор ядра): СЛОТЫ/КОНСТРУКТОР вынесены сюда из CreatureBody.cs — тот же класс,
@@ -37,7 +38,7 @@ public partial class CreatureBody
 
     int poolBonus; // расширение пула наградами (SuperBossReward) — рантайм-бонус, ассет шасси не трогаем
 
-    public int Pool => (chassis != null ? chassis.mutagenPool : 0) + poolBonus;
+    public int Pool => AffinityLaw.Pool(chassis != null ? chassis.mutagenPool : 0, poolBonus);
 
     /// <summary>Расширить пул мутагена (награда суперхимеры). Живо в рантайме.</summary>
     public void ExpandPool(int n) { poolBonus += n; Recompute(); }
@@ -45,7 +46,7 @@ public partial class CreatureBody
     // каждый слот занимает пул; РОДНОЙ орган — тоже со скидкой родства с шасси (честно: человек — вид,
     // просто ты на нём на 100 родства → −80%). Пустой химерный = 0. Одна ветка: родной орган — обычный вариант
     int SlotCost(Slot sl) => sl.Empty ? 0 : CostOf(sl, sl.variants[sl.current]);
-    int CostOf(Slot sl, Variant v) => Mathf.CeilToInt(EffectiveCost(v.organ, v.species) * (sl.chimera ? chimeraSlotMult : 1f)); // химерный слот — дорогой «графт»
+    int CostOf(Slot sl, Variant v) => AffinityLaw.SlotCost(EffectiveCost(v.organ, v.species), sl.chimera, chimeraSlotMult); // химерный слот — дорогой «графт»
     public int MaxSlots => slots != null ? slots.Length : 0;
     public int BeastSlots { get { int n = 0; if (slots != null) foreach (var sl in slots) if (sl.Installed) n++; return n; } }
 
@@ -278,8 +279,8 @@ public partial class CreatureBody
     int EffectiveCost(Organ organ, string species)
     {
         if (organ == null) return 0;
-        float discount = Mathf.Clamp(GetAffinity(species) * discountPerAffinity, 0f, maxDiscount);
-        return Mathf.Max(1, Mathf.CeilToInt(organ.cost * (1f - discount)));
+        float discount = AffinityLaw.Discount(GetAffinity(species), discountPerAffinity, maxDiscount);
+        return AffinityLaw.EffectiveCost(organ.cost, discount);
     }
 
     // следующий достижимый шаг цикла: по вариантам по кругу (родной орган — такой же шаг, как донорские).

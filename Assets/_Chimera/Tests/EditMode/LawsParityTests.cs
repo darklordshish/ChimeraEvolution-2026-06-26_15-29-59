@@ -1,0 +1,391 @@
+using System.Collections.Generic;
+using System.Linq;
+using Chimera.Laws;
+using NUnit.Framework;
+using UnityEngine;
+
+namespace Chimera.Tests.EditMode
+{
+    /// <summary>ПАРИТЕТ ЗАКОНОВ С ПРЕЖНИМИ ФОРМУЛАМИ ИГРЫ (план Ф0, допуск — ноль). Эталоны ниже — копии формул, какими они
+    /// стояли в игре ДО выноса в `Assets/_Chimera/Laws/` (на `Mathf`); закон на `MathF` обязан давать те же целые на
+    /// всей таблице входов. Эталоны не правятся: расхождение — значит, закон изменил поведение игры.</summary>
+    public class LawsParityTests
+    {
+        // ---- эталоны: прежние формулы дословно ----
+        static int OldIncoming(int amount, float reduction, float incoming)
+            => Mathf.Max(1, Mathf.RoundToInt(amount * (1f - reduction) * incoming));
+
+        static float OldOutgoingMult(float rage, float variance, float morale, float vigor, float boss)
+        {
+            float m = 1f;
+            m *= rage; m *= variance; m *= morale; m *= vigor; m *= boss;
+            return m;
+        }
+
+        static int OldOutgoing(int damage, float mult) => damage <= 0 ? damage : Mathf.Max(1, Mathf.RoundToInt(damage * mult));
+        static int OldBlow(int damage, float mult) => Mathf.RoundToInt(damage * mult);
+        static int OldCharge(int damage, float perMeter, float run, float mult) => Mathf.RoundToInt((damage + perMeter * run) * mult);
+
+        static readonly int[] Ints = { -3, 0, 1, 2, 3, 5, 7, 8, 10, 13, 17, 22, 25, 30, 41, 64, 100, 250 };
+        static readonly float[] Reductions = { 0f, 0.05f, 0.1f, 0.2f, 0.35f, 0.5f, 0.75f, 0.99f, 1f };
+        static readonly float[] Mults = { 0.5f, 0.8f, 0.9f, 1f, 1.1f, 1.25f, 1.3333f, 1.5f, 2f, 2.5f, 3f };
+        static readonly float[] Runs = { 0f, 0.7f, 2.5f, 6f, 11.37f };
+
+        [Test]
+        public void Incoming_MatchesOldFormula()
+        {
+            int n = 0;
+            foreach (int raw in Ints) foreach (float red in Reductions) foreach (float m in Mults)
+            {
+                Assert.AreEqual(OldIncoming(raw, red, m), DamageLaw.Incoming(raw, red, m), $"raw {raw} red {red} mult {m}");
+                n++;
+            }
+            Assert.Greater(n, 1000);
+        }
+
+        [Test]
+        public void Incoming_HalfwayCases_RoundToEven()
+        {
+            // .5 ровно: 5 * 0.5 = 2.5 -> 2, 7 * 0.5 = 3.5 -> 4 (к чётному — как Mathf.RoundToInt)
+            Assert.AreEqual(2, DamageLaw.Incoming(5, 0.5f, 1f));
+            Assert.AreEqual(4, DamageLaw.Incoming(7, 0.5f, 1f));
+            Assert.AreEqual(OldIncoming(5, 0.5f, 1f), DamageLaw.Incoming(5, 0.5f, 1f));
+        }
+
+        [Test]
+        public void OutgoingMult_AndOutgoing_MatchOldFormula()
+        {
+            foreach (float rage in new[] { 1f, 1.3f }) foreach (float variance in new[] { 0.85f, 1f, 1.17f })
+            foreach (float morale in new[] { 1f, 1.2f }) foreach (float vigor in new[] { 0.6f, 1f })
+            foreach (float boss in new[] { 1f, 1.5f, 2.25f })
+            {
+                float old = OldOutgoingMult(rage, variance, morale, vigor, boss);
+                float mult = DamageLaw.OutgoingMult(rage, variance, morale, vigor, boss);
+                Assert.AreEqual(old, mult, 0f, "множитель");
+                foreach (int d in Ints) Assert.AreEqual(OldOutgoing(d, old), DamageLaw.Outgoing(d, mult), $"урон {d} мульт {old}");
+            }
+        }
+
+        [Test]
+        public void Blow_MatchesOldFormula()
+        {
+            foreach (int d in Ints) foreach (float m in Mults)
+                Assert.AreEqual(OldBlow(d, m), DamageLaw.Blow(d, m), $"урон {d} мульт {m}");
+        }
+
+        [Test]
+        public void ChargeBlow_MatchesOldFormula()
+        {
+            foreach (int d in new[] { 10, 22, 30, 45 }) foreach (float per in new[] { 0f, 1f, 1.5f, 2.2f })
+            foreach (float run in Runs) foreach (float m in Mults)
+                Assert.AreEqual(OldCharge(d, per, run, m), DamageLaw.Blow(d, per, run, m), $"урон {d} на м {per} разбег {run} мульт {m}");
+        }
+
+        // =====================================================================================
+        // ЗАКОН ТЕЛА И РОДСТВА (С3): то, что тело выставило компонентам, против (а) прежних формул дословно (на Mathf)
+        // и (б) независимого вызова закона. Допуск — ноль.
+        // =====================================================================================
+
+        static readonly string[] SpeciesNames = { "Человек", "Волк", "Лось", "Ёж", "Змея" };
+
+        // виды без мест: морфологию тело не строит (на статы она не влияет), прогон остаётся лёгким. Остальное — ассеты как есть
+        List<SpeciesSO> LoadSpecies()
+        {
+            var res = new List<SpeciesSO>();
+            foreach (var n in SpeciesNames)
+            {
+                var so = UnityEditor.AssetDatabase.LoadAssetAtPath<SpeciesSO>("Assets/_Chimera/Data/" + n + ".asset");
+                Assert.IsNotNull(so, "нет ассета вида " + n);
+                var copy = Object.Instantiate(so);
+                copy.name = n;
+                copy.sockets = new BodySocket[0];
+                madeSo.Add(copy);
+                res.Add(copy);
+            }
+            return res;
+        }
+
+        readonly List<Object> madeSo = new();
+
+        sealed class SpeedSink : MonoBehaviour, IBodyStatConsumer
+        {
+            public float speed = -1f;
+            public void OnBodyStats(float moveSpeed) => speed = moveSpeed;
+        }
+
+        // прежняя арифметика Recompute/Express дословно, на Mathf
+        struct OldC
+        {
+            public float hpBonus, stam, stamRegen, atkCd, mv, dash, dashDur, dashCd, reduce, regen, regenOOC, thermal, earMult;
+            public static OldC Sup(OldC a, OldC b) => new()
+            {
+                hpBonus = Mathf.Max(a.hpBonus, b.hpBonus),
+                stam = Mathf.Max(a.stam, b.stam), stamRegen = Mathf.Max(a.stamRegen, b.stamRegen),
+                atkCd = Mathf.Min(a.atkCd, b.atkCd),
+                mv = Mathf.Max(a.mv, b.mv), dash = Mathf.Max(a.dash, b.dash), dashDur = Mathf.Max(a.dashDur, b.dashDur), dashCd = Mathf.Min(a.dashCd, b.dashCd),
+                reduce = Mathf.Max(a.reduce, b.reduce), regen = Mathf.Max(a.regen, b.regen),
+                regenOOC = Mathf.Max(a.regenOOC, b.regenOOC), thermal = Mathf.Max(a.thermal, b.thermal),
+                earMult = Mathf.Max(a.earMult, b.earMult),
+            };
+        }
+
+        static float OldBlend(float human, float beast, float mult) => human + (beast - human) * mult;
+
+        static OldC OldExpress(Organ h, Organ w, bool own, float m)
+        {
+            float Scaled(float hv, float wv) => own ? wv * m : OldBlend(hv, wv, m);
+            float Timed(float hv, float wv) => own ? wv : OldBlend(hv, wv, m);
+            return new OldC
+            {
+                hpBonus = Scaled(h.hpBonus, w.hpBonus), stam = Scaled(h.staminaBonus, w.staminaBonus),
+                stamRegen = Scaled(h.staminaRegenBonus, w.staminaRegenBonus), atkCd = Timed(h.atkCooldown, w.atkCooldown),
+                mv = Scaled(h.moveSpeed, w.moveSpeed), dash = Scaled(h.dashSpeed, w.dashSpeed), dashCd = Timed(h.dashCooldown, w.dashCooldown),
+                reduce = Scaled(h.damageReduction, w.damageReduction), regen = Scaled(h.regen, w.regen),
+                regenOOC = own ? w.regenOOC * m : w.regenOOC, dashDur = w.dashDuration, thermal = w.thermalRange, earMult = w.hearingMult,
+            };
+        }
+
+        static float OldMultiplier(float expression, int affinity, float start, float full, float maxMult)
+        {
+            if (expression > 0f) return expression;
+            float span = Mathf.Max(1f, full - start);
+            float t = Mathf.Clamp01((affinity - start) / span);
+            return Mathf.Lerp(1f, maxMult, t);
+        }
+
+        int checkedBodies;
+
+        // сверка одного собранного тела: компоненты против прежней арифметики и против независимого вызова закона
+        void CheckBody(CreatureBody body, GameObject go, SpeciesSO chassis, Dictionary<string, SpeciesSO> bySpecies,
+                       float expression, int affinityToDonors, string label)
+        {
+            var health = go.GetComponent<Health>();
+            var stamina = go.GetComponent<Stamina>();
+            var sink = go.GetComponent<SpeedSink>();
+            var groups = new Dictionary<string, OldC>();
+            var lawSlots = new List<SlotContribution>();
+            for (int i = 0; i < body.SlotCount; i++)
+            {
+                var sv = body.GetSlot(i);
+                var vv = body.GetVariants(i).FirstOrDefault(x => x.worn);
+                if (vv.organName == null) continue; // пустой химерный слот
+                var w = bySpecies[vv.species].organs.First(o => o.organName == vv.organName && o.slot == vv.slotType);
+                Organ h = vv.native || sv.chimera ? new Organ() : chassis.organs.FirstOrDefault(o => o.slot == sv.slot) ?? new Organ();
+                int aff = vv.native ? body.GetAffinity(chassis.speciesName) : affinityToDonors;
+                float m = OldMultiplier(expression, aff, 0f, 100f, 2f);
+                Assert.AreEqual(m, AffinityLaw.Multiplier(expression, aff, 0f, 100f, 2f), 0f, label + " мощь");
+                var c = OldExpress(h, w, vv.native, m);
+                groups[w.slot] = groups.TryGetValue(w.slot, out var prev) ? OldC.Sup(prev, c) : c;
+                lawSlots.Add(new SlotContribution
+                {
+                    slotType = w.slot, installed = !vv.native,
+                    contribution = BodyLaw.Express(Wrap(h), Wrap(w), vv.native, m),
+                });
+            }
+            float hpB = 0f, stamF = 0f, stamR = 0f, atk = 0f, mv = 0f, red = 0f, reg = 0f, ooc = 0f;
+            foreach (var c in groups.Values)
+            {
+                hpB += c.hpBonus; stamF += c.stam; stamR += c.stamRegen; atk += c.atkCd; mv += c.mv;
+                red += c.reduce; reg += c.regen; ooc += c.regenOOC;
+            }
+            float baseHp = chassis.baseHp > 0 ? chassis.baseHp : 75f;
+            float baseSt = chassis.baseStamina > 0 ? chassis.baseStamina : 100f;
+            float baseStR = chassis.baseStaminaRegen > 0f ? chassis.baseStaminaRegen : 12f;
+            int oldHp = Mathf.Max(1, Mathf.RoundToInt(baseHp * (1f + hpB) * 1f * 1f));
+            var st = BodyLaw.Compute(new BodyInput
+            {
+                slots = lawSlots, baseHp = baseHp, baseStamina = baseSt, baseStaminaRegen = baseStR,
+                varianceHp = 1f, bossHp = 1f, maxDamageReduction = 0.6f, minAtkCooldown = 0.2f,
+            });
+            Assert.AreEqual(oldHp, health.Max, label + " HP тела против прежней формулы");
+            Assert.AreEqual(st.hp, health.Max, label + " HP тела против закона");
+            Assert.AreEqual(Mathf.Min(0.6f, Mathf.Clamp01(red)), health.DamageReduction, 0f, label + " броня (прежняя)");
+            Assert.AreEqual(st.damageReduction, health.DamageReduction, 0f, label + " броня (закон)");
+            Assert.AreEqual(reg, health.RegenPerSecond, 0f, label + " реген (прежний)");
+            Assert.AreEqual(st.regen, health.RegenPerSecond, 0f, label + " реген (закон)");
+            Assert.AreEqual(ooc, health.OutOfCombatRegen, 0f, label + " реген вне боя");
+            Assert.AreEqual(st.regenOutOfCombat, health.OutOfCombatRegen, 0f, label + " реген вне боя (закон)");
+            Assert.AreEqual(mv, sink.speed, 0f, label + " скорость (прежняя)");
+            Assert.AreEqual(st.moveSpeed, sink.speed, 0f, label + " скорость (закон)");
+            float oldSt = Mathf.Max(1f, R(baseSt * (1f + stamF)));
+            Assert.AreEqual(oldSt, stamina.Max, 0f, label + " бак (прежний)");
+            Assert.AreEqual(Mathf.Max(1f, st.staminaMax), stamina.Max, 0f, label + " бак (закон)");
+            float oldStR = R(baseStR * (1f + stamR));
+            Assert.AreEqual(oldStR, stamina.RegenPerSecond, 0f, label + " реген стамины (прежний)");
+            Assert.AreEqual(st.staminaRegen, stamina.RegenPerSecond, 0f, label + " реген стамины (закон)");
+            Assert.AreEqual(Mathf.Max(0.2f, atk), st.attackTempo, 0f, label + " темп (прежний)");
+            checkedBodies++;
+        }
+
+        // Mono держит float-локаль в регистре как double и не округляет её, пока выражение не ушло в поле/массив; игра же
+        // всегда кладёт результат в поле (`RegenPerSecond = …`, `SetMax(…)`). Эталон округляем так же: через массив.
+        static float R(float x) { var a = new float[1]; a[0] = x; return a[0]; }
+
+        static OrganValues Wrap(Organ o) => new()
+        {
+            hpBonus = o.hpBonus, staminaBonus = o.staminaBonus, staminaRegenBonus = o.staminaRegenBonus,
+            atkCooldown = o.atkCooldown, moveSpeed = o.moveSpeed, dashSpeed = o.dashSpeed, dashCooldown = o.dashCooldown,
+            damageReduction = o.damageReduction, regen = o.regen, regenOOC = o.regenOOC,
+            dashDuration = o.dashDuration, thermalRange = o.thermalRange, hearingMult = o.hearingMult,
+            enablesScent = o.enablesScent, coldBlooded = o.coldBlooded, camo = o.camo, enablesThermal = o.enablesThermal,
+            thorns = o.thorns, venomResist = o.venomResist, bleedResist = o.bleedResist,
+            keenHearing = o.keenHearing, insight = o.insight, digestion = o.digestion,
+        };
+
+        CreatureBody NewBody(SpeciesSO chassis, SpeciesSO[] donors, out GameObject go)
+        {
+            go = new GameObject("~паритет " + chassis.speciesName); made.Add(go);
+            go.AddComponent<Health>();
+            go.AddComponent<SpeedSink>();
+            var body = go.AddComponent<CreatureBody>();
+            body.Configure(chassis, donors);
+            body.ExpandPool(1000);   // цена не должна отказывать в прививке: проверяется арифметика, не экономика
+            return body;
+        }
+
+        // условия, в которых сверяем каждое собранное тело: авто-кривая родства (0, 50, 100) и фикс-экспрессия NPC (0.45, 2)
+        static readonly (float expression, int affinity)[] Conditions = { (0f, 0), (0f, 50), (0f, 100), (0.45f, 0), (2f, 100) };
+
+        void CheckAllConditions(CreatureBody body, GameObject go, SpeciesSO chassis, Dictionary<string, SpeciesSO> by,
+                                IEnumerable<SpeciesSO> donors, string label)
+        {
+            foreach (var (expr, aff) in Conditions)
+            {
+                body.SetExpression(expr);
+                foreach (var d in donors) body.SetAffinity(d.speciesName, aff);
+                body.SetAffinity(chassis.speciesName, aff);
+                body.Refeed();
+                CheckBody(body, go, chassis, by, expr, aff, $"{label} Э{expr} род{aff}");
+            }
+        }
+
+        [Test]
+        public void Body_EverySpecies_NativeAndSingleGrafts_MatchOldFormulaAndLaw()
+        {
+            var all = LoadSpecies();
+            var by = all.ToDictionary(s => s.speciesName);
+            checkedBodies = 0;
+            foreach (var c in all)
+            {
+                var pure = NewBody(c, new SpeciesSO[0], out var goP);
+                CheckAllConditions(pure, goP, c, by, new SpeciesSO[0], c.speciesName + " родной");
+                foreach (var d in all)
+                {
+                    if (d == c) continue;
+                    var body = NewBody(c, new[] { d }, out var go);
+                    for (int i = 0; i < body.SlotCount; i++)
+                    {
+                        var vars = body.GetVariants(i);
+                        for (int v = 0; v < vars.Count; v++)
+                        {
+                            if (vars[v].native) continue;
+                            Assert.IsTrue(body.Install(i, v), $"{c.speciesName}+{d.speciesName} слот {i} вариант {v} не встал");
+                            CheckAllConditions(body, go, c, by, new[] { d }, $"{c.speciesName}+{d.speciesName} {vars[v].organName}");
+                            body.Install(i, vars.FindIndex(x => x.native)); // вернуть родной
+                        }
+                    }
+                }
+            }
+            Assert.Greater(checkedBodies, 500);
+        }
+
+        [Test]
+        public void Body_ThreeFullChimeras_MatchOldFormulaAndLaw()
+        {
+            var all = LoadSpecies();
+            var by = all.ToDictionary(s => s.speciesName);
+            checkedBodies = 0;
+            foreach (var name in new[] { "Человек", "Волк", "Лось" })
+            {
+                var c = by[name];
+                var donors = all.Where(s => s != c).ToArray();
+                var body = NewBody(c, donors, out var go);
+                // каждый слот — на последний звериный вариант; две пары химерных слотов с сердцами (дубль типа → супремум)
+                for (int i = 0; i < body.SlotCount; i++)
+                {
+                    var vars = body.GetVariants(i);
+                    int last = vars.FindLastIndex(x => !x.native);
+                    if (last >= 0) body.Install(i, last);
+                }
+                body.GrantChimeraSlot(); body.GrantChimeraSlot();
+                for (int i = 0; i < body.SlotCount; i++)
+                {
+                    if (!body.GetSlot(i).chimera) continue;
+                    var vars = body.GetVariants(i);
+                    int idx = vars.FindIndex(x => x.affordable && x.slotType == BodySlots.Heart);
+                    if (idx >= 0) body.Install(i, idx);
+                }
+                Assert.Greater(body.BeastSlots, 2, name + ": химера не собралась");
+                CheckAllConditions(body, go, c, by, donors, name + " полная химера");
+            }
+            Assert.AreEqual(15, checkedBodies);
+        }
+
+        // ---- кривые родства: прежние формулы против закона по сетке ----
+        [Test]
+        public void AffinityLaw_MatchesOldCurves()
+        {
+            foreach (float expr in new[] { 0f, 0.45f, 0.5f, 2f })
+            foreach (float start in new[] { 0f, 80f })
+            foreach (float max in new[] { 2f, 3f })
+                for (int aff = 0; aff <= 100; aff++)
+                    Assert.AreEqual(OldMultiplier(expr, aff, start, 100f, max), AffinityLaw.Multiplier(expr, aff, start, 100f, max), 0f, $"э{expr} с{start} м{max} р{aff}");
+
+            foreach (float per in new[] { 0.008f, 0.01f })
+            foreach (int cost in new[] { 1, 2, 3, 4, 5, 6, 8, 10 })
+            foreach (float chimMult in new[] { 1f, 2f })
+                for (int aff = 0; aff <= 100; aff++)
+                {
+                    float disc = Mathf.Clamp(aff * per, 0f, 0.8f);
+                    Assert.AreEqual(disc, AffinityLaw.Discount(aff, per, 0.8f), 0f);
+                    int eff = Mathf.Max(1, Mathf.CeilToInt(cost * (1f - disc)));
+                    Assert.AreEqual(eff, AffinityLaw.EffectiveCost(cost, disc));
+                    Assert.AreEqual(Mathf.CeilToInt(eff * chimMult), AffinityLaw.SlotCost(eff, chimMult > 1f, chimMult));
+                    Assert.AreEqual(eff, AffinityLaw.SlotCost(eff, false, chimMult));
+                }
+            Assert.AreEqual(7, AffinityLaw.Power(true, 7f, 3f));
+            Assert.AreEqual(3, AffinityLaw.Power(false, 7f, 3f));
+            Assert.AreEqual(25, AffinityLaw.Pool(20, 5));
+        }
+
+        // ---- живой Health ----
+        readonly List<GameObject> made = new();
+        [TearDown]
+        public void TearDown()
+        {
+            foreach (var g in made) if (g != null) Object.DestroyImmediate(g);
+            made.Clear();
+            foreach (var o in madeSo) if (o != null) Object.DestroyImmediate(o);
+            madeSo.Clear();
+        }
+
+        [Test]
+        public void LiveHealth_TakeDamage_MatchesOldFormula()
+        {
+            foreach (float reduction in new[] { 0f, 0.2f, 0.35f })
+            foreach (int raw in new[] { 1, 3, 5, 7, 10, 13, 17 })
+            {
+                var go = new GameObject("~здоровье"); made.Add(go);
+                var hp = go.AddComponent<Health>();
+                hp.DamageReduction = reduction;
+                int before = hp.Current == 0 ? hp.Max : hp.Current;
+                hp.TakeDamage(raw);
+                Assert.AreEqual(before - OldIncoming(raw, reduction, 1f), hp.Current, $"броня {reduction} удар {raw}");
+            }
+        }
+
+        [Test]
+        public void LiveHealth_WithRage_MatchesOldFormula()
+        {
+            var go = new GameObject("~здоровье"); made.Add(go);
+            var hp = go.AddComponent<Health>();
+            var rage = go.AddComponent<Rage>();
+            rage.Enrage(5f);
+            Assert.Greater(rage.IncomingMult, 1f, "ярость не включилась — проверять нечего");
+            hp.DamageReduction = 0.2f;
+            int before = hp.Current == 0 ? hp.Max : hp.Current;
+            hp.TakeDamage(9);
+            Assert.AreEqual(before - OldIncoming(9, 0.2f, rage.IncomingMult), hp.Current);
+        }
+    }
+}

@@ -144,3 +144,7 @@ Tools/Blender/*.fbx
 # префабов. Правило, которое можно нарушить случайно, должно быть механическим.
 Assets/_Recovery/
 Assets/_Recovery.meta
+
+# Симулятор вне Unity
+/Tools/Sim/bin/
+/Tools/Sim/obj/

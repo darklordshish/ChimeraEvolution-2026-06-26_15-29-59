@@ -1,3 +1,4 @@
+using Chimera.Laws;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -124,7 +125,7 @@ public class Health : MonoBehaviour
         if (rage == null) TryGetComponent(out rage);
         if (venom == null) TryGetComponent(out venom);
         float incoming = (rage != null ? rage.IncomingMult : 1f) * (venom != null ? venom.IncomingMult : 1f); // ярость + яд роняют защиту
-        amount = Mathf.Max(1, Mathf.RoundToInt(amount * (1f - DamageReduction) * incoming)); // броня (слот «Кожа»)
+        amount = DamageLaw.Incoming(amount, DamageReduction, incoming); // броня (слот «Кожа»), закон — Laws/DamageLaw
         // РЕЖИМ БОГА: урон ПРИМЕНЯЕТСЯ (виден — тестить яд/кровь/эффекты), но не убивает — пол в 1 HP
         Current = Mathf.Max(GodMode ? 1 : 0, Current - amount);
         onDamaged?.Invoke();

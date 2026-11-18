@@ -1,7 +1,7 @@
 ﻿{
     "name": "Chimera.Runtime",
     "rootNamespace": "Chimera",
-    "references": ["Unity.InputSystem", "Unity.AI.Navigation"],
+    "references": ["Chimera.Laws", "Unity.InputSystem", "Unity.AI.Navigation"],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

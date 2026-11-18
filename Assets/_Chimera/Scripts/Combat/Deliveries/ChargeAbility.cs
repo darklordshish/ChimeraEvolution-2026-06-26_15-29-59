@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Chimera.Laws;
 using UnityEngine;
 
 /// <summary>
@@ -67,7 +68,7 @@ public class ChargeAbility : WindupAbility, IOrganAbility
                 if (!kin) // не-кин: урон разгона (формула главного удара), БЕЗ стаггера — это снос, не стан
                 {
                     float run = (transform.position - chargeStart).magnitude;
-                    int dmg = Mathf.RoundToInt((data.damage + data.damagePerMeter * run) * DamageMult);
+                    int dmg = DamageLaw.Blow(data.damage, data.damagePerMeter, run, DamageMult);
                     new MeleeBlow { Damage = dmg }.Deliver(new Hit(ownHealth, transform.position), hp);
                 }
                 Vector3 away = hp.transform.position - transform.position; away.y = 0f;
@@ -83,7 +84,7 @@ public class ChargeAbility : WindupAbility, IOrganAbility
             float run = (transform.position - chargeStart).magnitude; // метры разбега = импульс туши
             // единый паёк (см. MeleeBlow): урон-с-разгоном (мощь уже учтена) + сбив. Откидывание ОСТАЁТСЯ
             // направленным (импульс ВДОЛЬ линии тарана, не от центра) — фирменный снос, числа не трогаем
-            int dmg = Mathf.RoundToInt((data.damage + data.damagePerMeter * run) * DamageMult);
+            int dmg = DamageLaw.Blow(data.damage, data.damagePerMeter, run, DamageMult);
             var blow = new MeleeBlow { Damage = dmg, StaggerTime = data.staggerTime };
             blow.Deliver(new Hit(ownHealth, transform.position), targetHealth);
             // ТАРАН-ПО-МАССЕ (§5 спеки #2A): массивная туша (лось) сносит в полную силу, лёгкое тело

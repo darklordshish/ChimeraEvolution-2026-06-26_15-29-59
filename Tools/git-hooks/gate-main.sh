@@ -81,6 +81,16 @@ fi
 # Поставки `Docs/models/handoff/` — тоже Unity: их читают `SpeciesHandoff` и тесты (`PlanTemplateTests`,
 # `PartsImportTests`), сломанная поставка роняет EditMode (предложение модельной линии 07.10)
 base=$(git merge-base "$sha" "refs/remotes/$remote/main" 2>/dev/null || true)
+# 1г. симулятор вне Unity (план Ф0): законы `Assets/_Chimera/Laws/` и консоль `Tools/Sim/` собирает dotnet.
+# Решает так же, как Unity-шаг ниже: задеты ли пути; нет базы сравнения или режим always — собираем безусловно.
+if [ "${CHIMERA_GATE_TESTS:-}" = "always" ] || [ -z "$base" ] ||
+   git -c core.quotePath=false diff --name-only "$base" "$sha" | grep -qE '^(Assets/_Chimera/Laws|Tools/Sim)/'; then
+  command -v dotnet >/dev/null 2>&1 || fail "не нашёл dotnet для сборки Tools/Sim"
+  out=$(dotnet build Tools/Sim -nologo -v q 2>&1) || fail "dotnet build Tools/Sim красный:
+$out"
+  say "симулятор собирается (dotnet build Tools/Sim)"
+fi
+
 if [ "${CHIMERA_GATE_TESTS:-}" != "always" ] && [ -n "$base" ] &&
    ! git -c core.quotePath=false diff --name-only "$base" "$sha" | grep -qE '^(Assets|Packages|ProjectSettings|Tools/Agent|Docs/models/handoff)/'; then
   say "Unity не задет — тесты не нужны"
