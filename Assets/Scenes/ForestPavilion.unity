@@ -904,27 +904,27 @@ MonoBehaviour:
   seed: 1337
   randomSeed: 0
   mapDiameter: 2000
-  treeCount: 1500
+  treeCount: 2000
   patchyFlora: 1
-  undergrowthScale: 0
+  undergrowthScale: 0.01
   forestFraction: 0
-  forestThreshold: -999
-  treeDensityTarget: 0
-  treeMinCount: 0
+  forestThreshold: 0.2
+  treeDensityTarget: 3120
+  treeMinCount: 1500
   treeMaxCount: 0
-  buildRelief: 0
-  buildThermalErosion: 0
+  buildRelief: 1
+  buildThermalErosion: 1
   buildHydraulicErosion: 0
-  erosionVersion: 1
+  erosionVersion: 3
   erosionCacheDir: 
-  erosionResolution: 0
-  erosionDrops: 0
-  erosionSteps: 0
+  erosionResolution: 128
+  erosionDrops: 96000
+  erosionSteps: 40
   chunkSize: 250
   terrainQuads: 48
   fingerprintVersion: 0
-  worldVersion: 0
-  treeVersion: 0
+  worldVersion: 2
+  treeVersion: 2
   buildOnAwake: 1
   config: {fileID: 0}
   playerSpawn: {fileID: 0}
@@ -935,7 +935,7 @@ MonoBehaviour:
   buildCanyon: 0
   buildAqueduct: 0
   buildStationLoop: 1
-  buildStationHill: 1
+  buildStationHill: 0
   buildLabComplex: 1
   buildLabPlan: 1
   labPlanVersion: 1
@@ -946,8 +946,8 @@ MonoBehaviour:
   climateAutoWeather: 0
   climateChangeMinutes: 8
   climateBlendSeconds: 20
-  labStyle: 0
-  labEntrance: 0
+  labStyle: 2
+  labEntrance: 2
   minLabDistance: 150
   speciesPool:
   - {fileID: 11400000, guid: 0c6b11574869a6b44a321162414452d6, type: 2}
@@ -971,6 +971,9 @@ MonoBehaviour:
   beaconLampSize: 1.6
   beaconMinAngle: 1.2
   beaconGlowRange: 30
+  forageCount: 160
+  forageHalfExtent: 850
+  forageSpacing: 8
 --- !u!114 &1532378594
 MonoBehaviour:
   m_ObjectHideFlags: 0

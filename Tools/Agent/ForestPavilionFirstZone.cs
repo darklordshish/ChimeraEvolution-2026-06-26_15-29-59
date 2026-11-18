@@ -52,18 +52,27 @@ public static class ForestPavilionFirstZone
         if (fb == null) return "FAILED: в павильоне нет ForestBuilder";
 
         // ---- профиль ----
+        // С шага 8 карты (геймдизайнер 18.11 — карта на v2) числа первой зоны живут в ОДНОМ месте —
+        // ForestProfiles.PavilionFirstZone (v2 без замороженных каньона и акведука, логова зверей, маяк, корм в карте).
+        // Здесь они копируются на билдер сцены целиком; своё у сцены — только пул видов (ниже).
         var so = new SerializedObject(fb);
-        SetBool(so, "buildCanyon", false);
-        SetBool(so, "buildAqueduct", false);
-        SetBool(so, "buildAnimalLairs", true); // логова волка, лося, ежа (спека «логово по законам» §4.4)
-        // Маяк над лабораторией (решение геймдизайнера 17.11, проба): галка и числа явно — новое поле в сцене пришло нулём.
-        SetBool(so, "buildBeacon", true);
-        SetFloat(so, "beaconHeight", 50f);
-        so.FindProperty("beaconColor").colorValue = new Color(1f, 0.55f, 0.15f);
-        SetFloat(so, "beaconIntensity", 1f);
-        SetFloat(so, "beaconLampSize", 1.6f);
-        SetFloat(so, "beaconMinAngle", 1.2f);
-        SetFloat(so, "beaconGlowRange", 30f);
+        var tmp = new GameObject("~ProfileFirstZone");
+        try
+        {
+            var profile = new SerializedObject(ForestProfiles.PavilionFirstZone(tmp));
+            var it = profile.GetIterator();
+            bool enter = true;
+            int copied = 0;
+            while (it.NextVisible(enter))
+            {
+                enter = false;
+                if (it.depth != 0 || it.name == "m_Script" || it.name == "speciesPool") continue;
+                so.CopyFromSerializedProperty(it);
+                copied++;
+            }
+            sb.AppendLine($"  профиль PavilionFirstZone: полей {copied}");
+        }
+        finally { Object.DestroyImmediate(tmp); }
         var pool = so.FindProperty("speciesPool");
         if (pool == null) return "FAILED: нет поля speciesPool";
         pool.arraySize = Pool.Length;
@@ -74,7 +83,7 @@ public static class ForestPavilionFirstZone
             pool.GetArrayElementAtIndex(i).objectReferenceValue = sp;
         }
         so.ApplyModifiedPropertiesWithoutUndo();
-        sb.AppendLine("профиль: buildCanyon=false buildAqueduct=false buildAnimalLairs=true пул=[" + string.Join(",", Pool) + "]");
+        sb.AppendLine("профиль: v2 (PavilionFirstZone), пул=[" + string.Join(",", Pool) + "]");
 
         // ---- объекты вечного цикла из SampleScene ----
         var sample = EditorSceneManager.OpenScene(SamplePath, OpenSceneMode.Additive);

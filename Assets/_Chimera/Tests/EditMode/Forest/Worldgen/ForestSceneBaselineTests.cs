@@ -19,6 +19,7 @@ namespace Chimera.Tests.EditMode
     {
         const string CapturedAt = "2026-11-01 @ 961f854d";
         const string FirstZoneAt = "2026-11-13 (П-3: павильон — первая зона)";
+        const string V2ZoneAt = "2026-11-18 (шаг 8 карты: павильон на v2, решение геймдизайнера 18.11)";
         const string Sandbox = "Assets/Scenes/ForestSandbox.unity";
         const string Fragment = "Assets/Scenes/ForestFragment.unity";
         const string Pavilion = "Assets/Scenes/ForestPavilion.unity";
@@ -95,13 +96,15 @@ namespace Chimera.Tests.EditMode
         {
             ReadProfile(Pavilion, b =>
             {
-                // B-lite: Ø2000, сид 1337, quads 48, пятна, 1500 деревьев.
+                // B-lite: Ø2000, сид 1337, quads 48, пятна. С шага 8 карты — v2 (профиль ForestProfiles.PavilionFirstZone;
+                // полную сверку всех полей держит ForestSceneParityTests, здесь — опорные факты с датами).
                 Assert.AreEqual(1337L, b.seed, $"{CapturedAt}: {Pavilion} seed");
                 Assert.IsFalse(b.randomSeed, $"{CapturedAt}: {Pavilion} randomSeed");
                 Assert.AreEqual(2000f, b.mapDiameter, 1e-4f, $"{CapturedAt}: {Pavilion} mapDiameter");
                 Assert.AreEqual(250f, b.chunkSize, 1e-4f, $"{CapturedAt}: {Pavilion} chunkSize");
                 Assert.AreEqual(48, b.terrainQuads, $"{CapturedAt}: {Pavilion} terrainQuads");
-                Assert.AreEqual(1500, b.treeCount, $"{CapturedAt}: {Pavilion} treeCount");
+                Assert.AreEqual(2000, b.treeCount, $"{V2ZoneAt}: {Pavilion} treeCount (v2: плотность пятнами, 1500 — минимум)");
+                Assert.AreEqual(1500, b.treeMinCount, $"{V2ZoneAt}: {Pavilion} treeMinCount");
                 Assert.IsTrue(b.patchyFlora, $"{CapturedAt}: {Pavilion} patchyFlora");
                 Assert.IsTrue(b.buildOnAwake, $"{CapturedAt}: {Pavilion} buildOnAwake");
                 Assert.IsNull(b.config, $"{CapturedAt}: {Pavilion} назначенный config — это новый базлайн");
@@ -112,16 +115,24 @@ namespace Chimera.Tests.EditMode
                 // 13.11, П-3: павильон — первая зона вечного цикла; каньон заморожен (тег-архив), пул — четыре зверя.
                 Assert.IsFalse(b.buildCanyon, $"{FirstZoneAt}: {Pavilion} buildCanyon");
                 Assert.IsTrue(b.buildStationLoop, $"{CapturedAt}: {Pavilion} buildStationLoop");
-                Assert.IsTrue(b.buildStationHill, $"{CapturedAt}: {Pavilion} buildStationHill");
+                Assert.IsFalse(b.buildStationHill, $"{V2ZoneAt}: {Pavilion} buildStationHill (v2: станция на резерве, без холма)");
                 Assert.IsTrue(b.buildLabComplex, $"{CapturedAt}: {Pavilion} buildLabComplex");
                 Assert.IsTrue(b.buildLabPlan, $"{CapturedAt}: {Pavilion} buildLabPlan");
                 Assert.AreEqual(1, b.labPlanVersion, $"{CapturedAt}: {Pavilion} labPlanVersion");
                 Assert.IsTrue(b.buildClimate, $"{CapturedAt}: {Pavilion} buildClimate");
-                Assert.AreEqual(LabStyle.Bastion, b.labStyle, $"{CapturedAt}: {Pavilion} labStyle");
-                Assert.AreEqual(LabEntrance.Rock, b.labEntrance, $"{CapturedAt}: {Pavilion} labEntrance");
+                Assert.AreEqual(LabStyle.Auto, b.labStyle, $"{V2ZoneAt}: {Pavilion} labStyle");
+                Assert.AreEqual(LabEntrance.Auto, b.labEntrance, $"{V2ZoneAt}: {Pavilion} labEntrance");
                 Assert.AreEqual(150f, b.minLabDistance, 1e-4f, $"{CapturedAt}: {Pavilion} minLabDistance");
                 Assert.AreEqual(4, b.speciesPool.Count, $"{FirstZoneAt}: {Pavilion} speciesPool");
-                AssertDefaults(b);
+                Assert.AreEqual(2, b.worldVersion, $"{V2ZoneAt}: {Pavilion} worldVersion");
+                Assert.AreEqual(2, b.treeVersion, $"{V2ZoneAt}: {Pavilion} treeVersion");
+                Assert.IsTrue(b.buildRelief, $"{V2ZoneAt}: {Pavilion} buildRelief");
+                Assert.IsTrue(b.buildThermalErosion, $"{V2ZoneAt}: {Pavilion} buildThermalErosion");
+                Assert.IsFalse(b.buildHydraulicErosion, $"{V2ZoneAt}: {Pavilion} buildHydraulicErosion");
+                Assert.IsFalse(b.buildAqueduct, $"{V2ZoneAt}: {Pavilion} buildAqueduct (заморожен)");
+                Assert.IsTrue(b.buildAnimalLairs, $"{V2ZoneAt}: {Pavilion} buildAnimalLairs");
+                Assert.IsTrue(b.buildBeacon, $"{V2ZoneAt}: {Pavilion} buildBeacon");
+                Assert.AreEqual(0, b.fingerprintVersion, $"{Pavilion}: fingerprintVersion (0 = «не настроено» → v1 формулы)");
             });
         }
 
