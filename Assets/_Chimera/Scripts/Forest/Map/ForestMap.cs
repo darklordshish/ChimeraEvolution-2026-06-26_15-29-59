@@ -123,8 +123,7 @@ public sealed class ForestMap
 
         m.areas = AreasOf(m.ring.inner, h);
         // Рельеф: тот, по которому мир строил чанки (шаг 2б), иначе — снять с террейна.
-        m.relief = world.MapRelief ?? (world.Terrain != null && world.Terrain.TargetOrder
-            ? ForestMapRelief.From(world.Terrain, seed) : null);
+        m.relief = world.MapRelief; // снят перед чанками; у мира с неподдержанным слоем карты нет вовсе (ForestBuilder)
         m.hash = ComputeHash(m);
         return m;
     }
