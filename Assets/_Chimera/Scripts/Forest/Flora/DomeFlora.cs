@@ -36,6 +36,8 @@ public static class DomeFlora
         public float crownCover;
         /// <summary>Площадь пятен fBm (клетки 25 м) — база адаптивного target v2.</summary>
         public float forestAreaKm2;
+        /// <summary>План леса, по которому сажали (шаг 3 карты).</summary>
+        public TreePlan plan;
     }
 
     /// <summary>
@@ -294,6 +296,150 @@ public static class DomeFlora
         cap.height = 14f;
         cap.radius = radius;
     }
+    /// <summary>Лежит ли дерево, стоит или сломано (сухостой: до 26 лежащих, остальные — сломанные).</summary>
+    public enum TreeState : byte { Standing, Fallen, Snag }
+
+    /// <summary>Дерево плана: точка (с масштабом и поворотом после `TreeScale`), порода, состояние, твёрдый ствол.</summary>
+    [Serializable]
+    public struct TreeRec
+    {
+        public Vector3 pos;
+        public float scale;
+        public float rotY;
+        public FloraKind kind;
+        public TreeState state;
+        /// <summary>Ствол с коллайдером: стоящее дерево или сломанный сухостой при пятнистой флоре.</summary>
+        public bool solid;
+    }
+
+    /// <summary>План леса — 2D-часть флоры (шаг 3 карты): что и где растёт, без единого объекта сцены.</summary>
+    public sealed class TreePlan
+    {
+        public List<TreeRec> trees = new List<TreeRec>();
+        public float forestAreaKm2;
+        public float crownArea;
+        public int deadLogs;
+        public int colliders;
+
+        public List<Vector3> SolidPositions()
+        {
+            var list = new List<Vector3>(colliders);
+            foreach (var t in trees) if (t.solid) list.Add(t.pos);
+            return list;
+        }
+    }
+
+    /// <summary>Полы посадки: сырой (вода, крутизна, озеро) и деревьев (вырубка, пятна леса, кромки).</summary>
+    static (Func<float, float, float> baseGround, Func<float, float, (float, bool)> groundRaw,
+        Func<float, float, (float, bool)> ground) Grounds(DomeGenConfigSO cfg, DomeHydro.State hydro, long seed,
+        Func<float, float, float> groundOverride, Func<float, float, bool> exclude, Func<float, float, bool> edgeNear)
+    {
+        float lakeY = hydro.lakeLevel;
+        Func<float, float, float> baseGround = groundOverride
+            ?? ((x, z) => DomeHydro.SampleHydro(cfg, hydro, x, z));
+
+        // Гейты без вырубки: вода, крутизна, озеро. Подлесок живёт и в вырубке.
+        Func<float, float, (float, bool)> groundRaw = (x, z) =>
+        {
+            float h = baseGround(x, z);
+            if (h < lakeY) return (h, false);
+            if (DomeSlope.SlopeAtS(cfg, x, z, baseGround) > cfg.maxSlopeDegrees) return (h, false);
+            float dx = x - hydro.lakeCenter.x, dz = z - hydro.lakeCenter.y;
+            if (dx * dx + dz * dz < hydro.lakeRadius * hydro.lakeRadius) return (h, false);
+            return (h, true);
+        };
+        // Деревья и скалы — с вырубкой.
+        Func<float, float, (float, bool)> ground = (x, z) =>
+        {
+            if (exclude != null && exclude(x, z)) return (baseGround(x, z), false);
+            return groundRaw(x, z);
+        };
+
+        // Пятна леса/поляны: низкочастотный fBm поверх общего пола.
+        if (cfg.patchyFlora)
+        {
+            var patchBase = ground;
+            float threshold = cfg.forestThreshold > -900f
+                ? cfg.forestThreshold
+                : Mathf.Lerp(-0.35f, 0.15f, cfg.forestFraction);
+            ground = (x, z) =>
+            {
+                // Сначала дешёвая маска пятна: 93 % попыток отсекаются здесь, и только
+                // прошедшие платят за SampleGround + уклон + исключения. Точки те же,
+                // что при обратном порядке (высота отброшенной точки не используется).
+                float n = ValueNoise2D.Fbm(seed + 9111L, x * 0.0025f, z * 0.0025f, 3);
+                if (n <= threshold) return (0f, false);
+                return patchBase(x, z);
+            };
+        }
+
+        if (edgeNear != null)
+        {
+            var baseTreeGround = ground;
+            ground = (x, z) =>
+            {
+                var g = baseTreeGround(x, z);
+                if (!g.Item2 || edgeNear(x, z)) return g;
+                float r = SeededHash.ToFloat01(
+                    SeededHash.Hash(seed, 9801 + (int)(x * 7f), (int)(z * 7f)));
+                return (g.Item1, r < 0.34f);
+            };
+        }
+        return (baseGround, groundRaw, ground);
+    }
+
+    /// <summary>
+    /// ПЛАН ЛЕСА (шаг 3 карты): точки деревьев (соль 111), порода, масштаб, лежит/стоит, твёрдый ствол — тем же
+    /// порядком и теми же хешами по индексу, что и постановка. Объектов сцены не создаёт.
+    /// </summary>
+    public static TreePlan PlanTrees(DomeGenConfigSO cfg, DomeHydro.State hydro, long seed,
+        Func<float, float, float> groundOverride, Func<float, float, bool> exclude, Func<float, float, bool> edgeNear)
+    {
+        if (cfg == null) throw new ArgumentNullException(nameof(cfg));
+        if (hydro == null) throw new ArgumentNullException(nameof(hydro));
+        var (_, _, ground) = Grounds(cfg, hydro, seed, groundOverride, exclude, edgeNear);
+        float d = cfg.mapDiameter;
+        float lakeY = hydro.lakeLevel;
+        int treeTarget = cfg.treeCount > 0 ? cfg.treeCount : 700;
+        var plan = new TreePlan();
+        float forestAreaKm2 = 0f;
+        var trees = cfg.forestThreshold > -900f
+            ? ScatterForest(seed, 111, treeTarget, d, 10f, ground, cfg.forestThreshold,
+                cfg.treeDensityTarget, cfg.treeMinCount, cfg.treeMaxCount, out forestAreaKm2)
+            : Scatter(seed, 111, treeTarget, d, 10f, ground);
+        plan.forestAreaKm2 = forestAreaKm2;
+        var kinds = new FloraKind[trees.Count];
+        for (int i = 0; i < trees.Count; i++)
+            kinds[i] = KindFor(seed, i, trees[i].pos.y - lakeY);
+        int deadIndex = 0;
+        for (int k = 0; k < trees.Count; k++)
+        {
+            var p = TreeScale(trees[k]);
+            var kind = kinds[k];
+            float crown = CrownRadius(kind) * p.scale;
+            plan.crownArea += Mathf.PI * crown * crown;
+            var rec = new TreeRec { pos = p.pos, scale = p.scale, rotY = p.rotY, kind = kind, state = TreeState.Standing };
+            if (kind == FloraKind.DeadHook)
+            {
+                Quaternion logRot = Quaternion.Euler(0f, p.rotY, 0f) * Quaternion.Euler(90f, 0f, 0f);
+                Vector3 dir = logRot * Vector3.up;
+                float len = 10f * p.scale;
+                // Лежащий ствол не должен влезать в вырубку/пятно комплекса концом:
+                // точка дерева уже снаружи, но 10-метровый ствол может дотянуться.
+                bool logClear = exclude == null
+                    || (!exclude(p.pos.x + dir.x * len * 0.5f, p.pos.z + dir.z * len * 0.5f)
+                        && !exclude(p.pos.x - dir.x * len * 0.5f, p.pos.z - dir.z * len * 0.5f));
+                if (deadIndex < 26 && logClear) { rec.state = TreeState.Fallen; plan.deadLogs++; }
+                else { rec.state = TreeState.Snag; rec.solid = cfg.patchyFlora; }
+                deadIndex++;
+            }
+            else rec.solid = cfg.patchyFlora;
+            if (rec.solid) plan.colliders++;
+            plan.trees.Add(rec);
+        }
+        return plan;
+    }
+
     static Pt TreeScale(Pt p)
     {
         p.scale = Mathf.Lerp(0.90f, 1.12f, Mathf.InverseLerp(0.8f, 1.3f, p.scale));
@@ -460,7 +606,7 @@ public static class DomeFlora
         Func<float, float, bool> undergrowthExclude, out BuildCounts counts,
         Func<float, float, bool> colliderNear = null,
         IReadOnlyList<ForestSpace.CoverPod> coverPods = null,
-        Func<float, float, bool> edgeNear = null)
+        Func<float, float, bool> edgeNear = null, TreePlan treePlan = null)
     {
         if (root == null) throw new ArgumentNullException(nameof(root));
         if (cfg == null) throw new ArgumentNullException(nameof(cfg));
@@ -473,25 +619,7 @@ public static class DomeFlora
         int U(int n) => Mathf.Max(1, Mathf.RoundToInt(n * us));
         // Батчинг подлеска — только v2; v1 оставляет по GameObject'у на куст/траву.
         bool batchUnder = cfg.WorldVersion >= 2;
-        Func<float, float, float> baseGround = groundOverride
-            ?? ((x, z) => DomeHydro.SampleHydro(cfg, hydro, x, z));
-
-        // Гейты без вырубки: вода, крутизна, озеро. Подлесок живёт и в вырубке.
-        Func<float, float, (float, bool)> groundRaw = (x, z) =>
-        {
-            float h = baseGround(x, z);
-            if (h < lakeY) return (h, false);
-            if (DomeSlope.SlopeAtS(cfg, x, z, baseGround) > cfg.maxSlopeDegrees) return (h, false);
-            float dx = x - hydro.lakeCenter.x, dz = z - hydro.lakeCenter.y;
-            if (dx * dx + dz * dz < hydro.lakeRadius * hydro.lakeRadius) return (h, false);
-            return (h, true);
-        };
-        // Деревья и скалы — с вырубкой.
-        Func<float, float, (float, bool)> ground = (x, z) =>
-        {
-            if (exclude != null && exclude(x, z)) return (baseGround(x, z), false);
-            return groundRaw(x, z);
-        };
+        var (baseGround, groundRaw, ground) = Grounds(cfg, hydro, seed, groundOverride, exclude, edgeNear);
 
         // 6 общих материалов деревьев (3 коры + 3 кроны) + трава/скала. Не по экземпляру.
         var leafMid = Flat(DomePalette.Crown, false);                    // 0.24/0.38/0.20
@@ -506,60 +634,22 @@ public static class DomeFlora
         // Деревья: точки те же (соль 111, 700 запрос), меняются порода/посадка/цвет.
         int treeTarget = cfg.treeCount > 0 ? cfg.treeCount : 700;
 
-        // Пятна леса/поляны: низкочастотный fBm поверх общего пола.
-        if (cfg.patchyFlora)
+        // План леса (2D, шаг 3 карты): точки, порода, масштаб, лежит/стоит, твёрдый ствол. Постановка ниже — только по нему.
+        var plan = treePlan ?? PlanTrees(cfg, hydro, seed, groundOverride, exclude, edgeNear);
+        counts.forestAreaKm2 = plan.forestAreaKm2;
+        // Точки деревьев для соседства подлеска (папоротник у ствола): только позиция, она та же, что в плане.
+        var trees = new List<Pt>(plan.trees.Count);
+        foreach (var r in plan.trees) trees.Add(new Pt { pos = r.pos, scale = r.scale, rotY = r.rotY });
+        int k = 0;
+        foreach (var rec in plan.trees)
         {
-            var patchBase = ground;
-            float threshold = cfg.forestThreshold > -900f
-                ? cfg.forestThreshold
-                : Mathf.Lerp(-0.35f, 0.15f, cfg.forestFraction);
-            ground = (x, z) =>
-            {
-                // Сначала дешёвая маска пятна: 93 % попыток отсекаются здесь, и только
-                // прошедшие платят за SampleGround + уклон + исключения. Точки те же,
-                // что при обратном порядке (высота отброшенной точки не используется).
-                float n = ValueNoise2D.Fbm(seed + 9111L, x * 0.0025f, z * 0.0025f, 3);
-                if (n <= threshold) return (0f, false);
-                return patchBase(x, z);
-            };
-        }
-
-        if (edgeNear != null)
-        {
-            var baseTreeGround = ground;
-            ground = (x, z) =>
-            {
-                var g = baseTreeGround(x, z);
-                if (!g.Item2 || edgeNear(x, z)) return g;
-                float r = SeededHash.ToFloat01(
-                    SeededHash.Hash(seed, 9801 + (int)(x * 7f), (int)(z * 7f)));
-                return (g.Item1, r < 0.34f);
-            };
-        }
-        float forestAreaKm2 = 0f;
-        var trees = cfg.forestThreshold > -900f
-            ? ScatterForest(seed, 111, treeTarget, d, 10f, ground, cfg.forestThreshold,
-                cfg.treeDensityTarget, cfg.treeMinCount, cfg.treeMaxCount, out forestAreaKm2)
-            : Scatter(seed, 111, treeTarget, d, 10f, ground);
-        counts.forestAreaKm2 = forestAreaKm2;
-        // Порода считается один раз: и посадке, и выбору твёрдых стволов нужен один k.
-        var kinds = new FloraKind[trees.Count];
-        for (int i = 0; i < trees.Count; i++)
-            kinds[i] = KindFor(seed, i, trees[i].pos.y - lakeY);
-        // Бюджет тот же (500 сверху, 300 снизу — сторож), меняется только выбор:
-        // приоритет у кромок арен/коридоров, остаток — равномерно, не «первые по обходу».
-        int k = 0, deadIndex = 0, colliderCount = 0;
-        foreach (var p0 in trees)
-        {
-            var p = TreeScale(p0);
-            var kind = kinds[k];
-            float crown = CrownRadius(kind) * p.scale;
-            counts.crownArea += Mathf.PI * crown * crown;
+            var p = new Pt { pos = rec.pos, scale = rec.scale, rotY = rec.rotY };
+            var kind = rec.kind;
             var rot = TreeRotation(seed, k, p.rotY);
             var trunkMat = BarkFor(seed, k, kind, barkBrown, barkGrey, barkBirch);
             var leafMat = LeafFor(seed, k, kind, leafMid, leafDark, leafCold);
-            bool fallen = false;
-            bool wantCollider = cfg.patchyFlora;
+            bool fallen = rec.state == TreeState.Fallen;
+            bool wantCollider = rec.solid;
             if (kind == FloraKind.PikeTree)
             {
                 // Широколист: ствол 15.5 м, крона шире и ниже (r 4.0, lift 8.6).
@@ -613,15 +703,8 @@ public static class DomeFlora
                 Quaternion logRot = Quaternion.Euler(0f, p.rotY, 0f) * Quaternion.Euler(90f, 0f, 0f);
                 Vector3 dir = logRot * Vector3.up;
                 float len = 10f * p.scale;
-                // Лежащий ствол не должен влезать в вырубку/пятно комплекса концом:
-                // точка дерева уже снаружи, но 10-метровый ствол может дотянуться.
-                bool logClear = exclude == null
-                    || (!exclude(p.pos.x + dir.x * len * 0.5f, p.pos.z + dir.z * len * 0.5f)
-                        && !exclude(p.pos.x - dir.x * len * 0.5f, p.pos.z - dir.z * len * 0.5f));
-                if (deadIndex < 26 && logClear)
+                if (fallen)
                 {
-                    fallen = true;
-                    counts.deadLogs++;
                     Vector3 center = p.pos - dir * (len * 0.5f);
                     center.y = p.pos.y + 0.35f * p.scale - 0.2f; // утоплен на 0.2 м, без коллайдера
                     Part(root.transform,
@@ -633,14 +716,8 @@ public static class DomeFlora
                     var snag = Part(root.transform,
                         Kit("dsnag0.40/0.10/14.5/2.6", () => FloraMeshKit.Snag(0.40f, 0.10f, 14.5f, 2.6f)),
                         barkGrey, p.pos - rot * Vector3.up * 0.3f, rot, p.scale);
-                    if (cfg.patchyFlora)
-                    {
-                        AddTrunkCollider(snag, 0.40f);
-                        colliderCount++;
-                        counts.treeColliderPositions.Add(p.pos);
-                    }
+                    if (rec.solid) AddTrunkCollider(snag, 0.40f);
                 }
-                deadIndex++;
             }
 
             // Корневые заломы у 30–40 % стоящих деревьев: 5–6 рёбер, 1.5–2.5 м.
@@ -652,15 +729,14 @@ public static class DomeFlora
                     Kit($"droot{spread}/{ribs}", () => FloraMeshKit.AshRoots(spread, ribs)),
                     trunkMat, p.pos - Vector3.up * 0.08f, Quaternion.Euler(0f, p.rotY, 0f), p.scale);
             }
-            if (wantCollider && kind != FloraKind.DeadHook)
-            {
-                colliderCount++;
-                counts.treeColliderPositions.Add(p.pos);
-            }
             k++;
         }
-        counts.treeColliders = colliderCount;
-        counts.trees = trees.Count;
+        counts.crownArea = plan.crownArea;
+        counts.deadLogs = plan.deadLogs;
+        counts.treeColliders = plan.colliders;
+        counts.treeColliderPositions = plan.SolidPositions();
+        counts.trees = plan.trees.Count;
+        counts.plan = plan;
         counts.crownCover = d > 0f
             ? counts.crownArea / (Mathf.PI * (d * 0.5f) * (d * 0.5f))
             : 0f;

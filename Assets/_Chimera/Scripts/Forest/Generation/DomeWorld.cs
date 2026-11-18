@@ -50,6 +50,10 @@ public class DomeWorld
     public DomeTerrain Terrain { get; private set; }
     /// <summary>Рельеф карты (шаг 2): снят перед чанками v2, чанки строятся по его высоте. null на v1.</summary>
     public ForestMapRelief MapRelief { get; private set; }
+    /// <summary>План леса (шаг 3): посчитан до посадки, по нему сажают и ищут логова зверей.</summary>
+    public DomeFlora.TreePlan MapTreePlan { get; private set; }
+    /// <summary>Деревья плана — слой `trees` карты.</summary>
+    public List<DomeFlora.TreeRec> MapTrees => MapTreePlan?.trees;
     /// <summary>S3: маски габаритов (null у v1 — там центровые проверки).</summary>
     public DomeMasks Masks => masks;
     public DomeAshSite.AshSpot Ash { get; private set; }
@@ -868,9 +872,12 @@ public class DomeWorld
         // Вырубка гасит деревья; подлесок живёт в R12/R14 и пятнах, но не под плитой
         // комплекса (12 см плиты — трава торчала бы в зале).
         Func<float, float, bool> undergrowthExclude = (x, z) => labPad(x, z) || InsideRamp(x, z);
+        // Карта как источник, шаг 3: план леса (2D) — до посадки; по нему сажают и по нему ищут логова зверей.
+        Func<float, float, bool> treeEdge = (x, z) => ForestSpace.Near(Zones, Links, x, z, 20f);
+        MapTreePlan = DomeFlora.PlanTrees(cfg, Hydro, seed, SampleGround, clearing, treeEdge);
+        Trace.Add("t.map.trees", MapTreePlan.trees.Count, MapTreePlan.colliders, "план леса в карте");
         Trees = DomeFlora.Build(Root, cfg, Hydro, seed, SampleGround, clearing, undergrowthExclude, out var flora,
-            (x, z) => ForestSpace.Near(Zones, Links, x, z, 12f), CoverPods,
-            (x, z) => ForestSpace.Near(Zones, Links, x, z, 20f));
+            (x, z) => ForestSpace.Near(Zones, Links, x, z, 12f), CoverPods, treeEdge, MapTreePlan);
         Trace.Add("t.flora", Trees, Trees);
         TreeColliders = flora.treeColliders;
         ForestAreaKm2 = flora.forestAreaKm2;
@@ -1347,6 +1354,7 @@ public class DomeWorld
         Erosion = null;
         TreeColliderPositions = new List<Vector3>();
         MapRelief = null;
+        MapTreePlan = null;
         CrownCover = 0f;
         Zones = new List<ForestSpace.Zone>();
         Links = new List<ForestSpace.Link>();
