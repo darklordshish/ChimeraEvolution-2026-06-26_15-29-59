@@ -25,13 +25,14 @@ public class ForageSpawner : MonoBehaviour
         var forest = FindAnyObjectByType<ForestBuilder>();
         if (forest != null && forest.Map != null && forest.Map.forage != null && forest.Map.forage.Count > 0)
         {
-            var rng = new System.Random(unchecked((int)forest.Map.seed) ^ 0x2F0A9E);
+            // Один генератор на проект — XorShiftRandom из Laws (его последовательность закреплена тестом).
+            var rng = new Chimera.Laws.XorShiftRandom(unchecked((uint)forest.Map.seed ^ 0x2F0A9Eu));
             var root = forest.BuiltRoot.transform;
             foreach (var f in forest.Map.forage)
             {
                 var p = root.TransformPoint(new Vector3(f.pos.x, f.y, f.pos.y));
                 placed.Add(p);
-                MakeBush(p, () => (float)rng.NextDouble());
+                MakeBush(p, rng.Next01);
             }
             return;
         }

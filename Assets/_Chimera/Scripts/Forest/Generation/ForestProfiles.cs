@@ -100,6 +100,18 @@ public static class ForestProfiles
         return b;
     }
 
+    /// <summary>
+    /// ПРОФИЛЬ СЦЕНЫ `ForestPavilion` с шага 8 карты (решение геймдизайнера 18.11 — карта на v2): <see cref="PavilionV2Zone"/>,
+    /// собирающийся при загрузке сцены. Единственный носитель чисел первой зоны: постановщик `ForestPavilionFirstZone`
+    /// копирует его поля на билдер сцены, сторож `ForestSceneParityTests` сверяет сцену с ним.
+    /// </summary>
+    public static ForestBuilder PavilionFirstZone(GameObject host)
+    {
+        var b = PavilionV2Zone(host, 1337);
+        b.buildOnAwake = true;
+        return b;
+    }
+
     sealed class Profile
     {
         public long seed;

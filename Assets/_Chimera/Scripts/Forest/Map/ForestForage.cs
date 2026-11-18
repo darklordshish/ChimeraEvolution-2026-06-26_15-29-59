@@ -35,14 +35,15 @@ public static class ForestForage
         if (m == null) throw new ArgumentNullException(nameof(m));
         var list = new List<Item>(count);
         if (m.relief == null || count <= 0) return list;
-        var rng = new System.Random(unchecked((int)(seed * 2654435761L) ^ 0x5F0A6E));
+        // Один генератор на проект — XorShiftRandom из Laws (последовательность закреплена тестом).
+        var rng = new Chimera.Laws.XorShiftRandom(unchecked((uint)(seed * 2654435761L) ^ 0x5F0A6Eu));
         float walk = m.relief.Config.WalkMaxDegrees;
         float inner2 = m.ring.inner * m.ring.inner;
         float sp2 = spacing * spacing;
         for (int i = 0; i < count; i++)
             for (int attempt = 0; attempt < Attempts; attempt++)
             {
-                var p = new Vector2((float)(rng.NextDouble() * 2.0 - 1.0) * halfExtent, (float)(rng.NextDouble() * 2.0 - 1.0) * halfExtent);
+                var p = new Vector2(rng.Range(-halfExtent, halfExtent), rng.Range(-halfExtent, halfExtent));
                 if (p.sqrMagnitude > inner2) continue;
                 if (ForestMapRaster.WaterDistance(m.water, p) < 0f) continue;
                 if (SlopeAt(m, p) > walk) continue;

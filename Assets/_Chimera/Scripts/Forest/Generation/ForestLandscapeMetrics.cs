@@ -562,7 +562,9 @@ public static class ForestLandscapeMetrics
         {
             Vector3 p = lairs[i];
             float h = ground(p.x, p.z);
-            if (h > hydro.lakeLevel + 0.5f) r.dry++;
+            // «Сухое» — тот же признак, что игра (`ForestBuilder.IsWater`): точка не в озере и не в реке. Прежний признак
+            // «выше уровня озера +0,5 м» на рельефе v2 врал: котловины вдали от воды лежат ниже уровня (шаг 8 карты, 18.11).
+            if (DomeAnimalLairs.WaterDistance(hydro, new Vector2(p.x, p.z)) >= 0f) r.dry++;
             if (new Vector2(p.x, p.z).magnitude < rin) r.outsideRing++;
             float d = DistanceToWater(hydro, new Vector2(p.x, p.z));
             distances.Add(d);

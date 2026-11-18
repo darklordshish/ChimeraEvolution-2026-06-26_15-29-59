@@ -66,9 +66,9 @@ namespace Chimera.Tests.EditMode
             ReadScene(Pavilion, scene =>
             {
                 expectedHost = new GameObject("~ExpectedPavilion");
-                expected = ForestProfiles.PavilionV1(expectedHost);
+                expected = ForestProfiles.PavilionFirstZone(expectedHost); // с шага 8 карты — v2 (геймдизайнер 18.11)
                 AddPopulation(expected, "Волк", "Змея", "Лось", "Ёж"); // первая зона, 13.11
-                AssertNoDiff(scene, expected, "Pavilion v1");
+                AssertNoDiff(scene, expected, "Pavilion первая зона (v2)");
             });
         }
 
