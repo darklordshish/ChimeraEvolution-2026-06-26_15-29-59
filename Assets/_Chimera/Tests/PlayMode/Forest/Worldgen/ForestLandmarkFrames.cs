@@ -184,6 +184,92 @@ namespace Chimera.Tests.PlayMode
             Debug.Log("[Forest] ряд высот маяка:\n" + sb);
         }
 
+        /// <summary>
+        /// ФОНАРЬ У ДВЕРИ (геймдизайнер 18.11: маяк 5 м, реального размера). Проверка смысла: ночь 21 ч, ясно; камера на высоте
+        /// глаз в 50, 100 и 200 м от двери вдоль двух направлений — «по дороге» (больше всего клеток дороги и тропы растра
+        /// карты в 200 м) и «сквозь лес» (больше всего клеток леса) — смотрит на фонарь. Пиксели фонаря — как в ряду высот.
+        /// Отчёт — `Docs/Диаграммы/Лес/МАЯК-ДВЕРЬ.md`, кадры — `18-ориентиры/дверь/`.
+        /// </summary>
+        [UnityTest, Explicit("съёмка — вручную"), Timeout(600000)]
+        public IEnumerator Shoot_DoorLamp_Night()
+        {
+            yield return SceneManager.LoadSceneAsync("ForestPavilion", LoadSceneMode.Single);
+            yield return null;
+            var b = Object.FindAnyObjectByType<ForestBuilder>();
+            var clock = Object.FindAnyObjectByType<WorldClock>();
+            var climate = Object.FindAnyObjectByType<ForestClimate>();
+            Assert.IsNotNull(b.Beacon, "фонарь поставлен");
+            Assert.IsNotNull(b.Map, "у павильона v2 есть карта");
+            foreach (var s in Object.FindObjectsByType<ForestSpawner>()) s.autoTick = false;
+            climate.autoWeather = false;
+            climate.SetWeatherImmediate(WeatherKind.Clear);
+            b.beaconHeight = 5f; b.beaconMinAngle = 0f; b.ApplyBeacon(); // роль фонаря у двери независимо от сцены
+
+            var raster = ForestMapRaster.Build(b.Map);
+            var root = b.BuiltRoot.transform;
+            Vector3 lampLocal = root.InverseTransformPoint(b.Beacon.Lamp.position);
+            var door = new Vector2(lampLocal.x, lampLocal.z);
+            Vector2 Dir(int k) => new Vector2(Mathf.Cos(k * Mathf.PI / 8f), Mathf.Sin(k * Mathf.PI / 8f));
+            int Score(int k, System.Func<ForestMapRaster.Surface, bool> want)
+            {
+                int n = 0;
+                for (float d = 10f; d <= 200f; d += 4f)
+                {
+                    if (!raster.Cell(door + Dir(k) * d, out int ix, out int iz)) continue;
+                    int i = raster.Index(ix, iz);
+                    if (!raster.Passable(i) || raster.cls[i] == ForestMapRaster.Cls.Water) return -1; // упирается в стену или воду
+                    if (want(raster.surface[i])) n++;
+                }
+                return n;
+            }
+            int road = 0, forest = 0;
+            for (int k = 1; k < 16; k++)
+            {
+                if (Score(k, s => s == ForestMapRaster.Surface.Road || s == ForestMapRaster.Surface.Trail) >
+                    Score(road, s => s == ForestMapRaster.Surface.Road || s == ForestMapRaster.Surface.Trail)) road = k;
+                if (Score(k, s => s == ForestMapRaster.Surface.Forest) > Score(forest, s => s == ForestMapRaster.Surface.Forest)) forest = k;
+            }
+
+            string docs = Path.Combine(Path.GetDirectoryName(Application.dataPath), "Docs", "Диаграммы", "Лес");
+            string dir = Path.Combine(docs, "Кадры", "18-ориентиры", "дверь");
+            Directory.CreateDirectory(dir);
+            var go = new GameObject("~DoorLampCam");
+            var cam = go.AddComponent<Camera>();
+            cam.fieldOfView = 60f; cam.nearClipPlane = 0.2f; cam.farClipPlane = 6000f;
+            cam.enabled = false;
+            yield return SetHour(clock, 21f);
+
+            var sb = new System.Text.StringBuilder();
+            sb.AppendLine("# Лес: фонарь у двери лаборатории — видно ли ночью");
+            sb.AppendLine();
+            sb.AppendLine("**Генерируемый отчёт** — `ForestLandmarkFrames.Shoot_DoorLamp_Night` ([Explicit]); руками не правится.");
+            sb.AppendLine($"Павильон v2, ночь 21 ч, ясно. Фонарь {b.BeaconSettings.height:0} м, {b.BeaconSettings.lampSize:0.0} м реального размера, свет {b.BeaconSettings.glowRange:0} м.");
+            sb.AppendLine("Камера на высоте глаз смотрит на фонарь; «пикселей» — точки цвета фонаря в окне 120×120 у центра кадра 1280×720.");
+            sb.AppendLine($"Направления по растру карты: «по дороге» — {road * 22.5f:0}°, «сквозь лес» — {forest * 22.5f:0}° (от востока против часовой).");
+            sb.AppendLine();
+            sb.AppendLine("| откуда | 50 м | 100 м | 200 м |");
+            sb.AppendLine("|---|---|---|---|");
+            foreach (var (what, k) in new[] { ("по дороге", road), ("сквозь лес", forest) })
+            {
+                var row = new System.Text.StringBuilder($"| {what} |");
+                foreach (float d in new[] { 50f, 100f, 200f })
+                {
+                    var p = door + Dir(k) * d;
+                    Vector3 eye = root.TransformPoint(new Vector3(p.x, b.Map.relief.Height(p.x, p.y) + Eye, p.y));
+                    go.transform.SetPositionAndRotation(eye, Quaternion.LookRotation(b.Beacon.Lamp.position - eye));
+                    var tex = Render(cam);
+                    int px = LampPixels(tex);
+                    File.WriteAllBytes(Path.Combine(dir, $"фонарь-{(what == "по дороге" ? "дорога" : "лес")}-{d:0}м-ночь.png"), tex.EncodeToPNG());
+                    Object.Destroy(tex);
+                    row.Append($" {px} |");
+                }
+                sb.AppendLine(row.ToString());
+            }
+            Object.Destroy(go);
+            File.WriteAllText(Path.Combine(docs, "МАЯК-ДВЕРЬ.md"), sb.ToString(), new System.Text.UTF8Encoding(false));
+            Debug.Log("[Forest] фонарь у двери: " + sb);
+        }
+
         /// <summary>Точки цвета фонаря (тёплый: красный ярок, синий слаб) в окне 120×120 у центра кадра.</summary>
         static int LampPixels(Texture2D tex)
         {

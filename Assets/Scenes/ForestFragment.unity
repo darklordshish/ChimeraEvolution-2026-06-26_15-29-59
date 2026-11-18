@@ -804,12 +804,15 @@ MonoBehaviour:
   mooseLairCapacity: 2
   hedgehogLairCapacity: 2
   buildBeacon: 0
-  beaconHeight: 50
+  beaconHeight: 5
   beaconColor: {r: 1, g: 0.55, b: 0.15, a: 1}
   beaconIntensity: 1
   beaconLampSize: 1.6
-  beaconMinAngle: 1.2
+  beaconMinAngle: 0
   beaconGlowRange: 30
+  forageCount: 160
+  forageHalfExtent: 850
+  forageSpacing: 8
 --- !u!114 &1532378594
 MonoBehaviour:
   m_ObjectHideFlags: 0

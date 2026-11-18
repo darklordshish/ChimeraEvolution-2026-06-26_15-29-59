@@ -49,35 +49,30 @@ namespace Chimera.Tests.PlayMode
             Assert.IsTrue(b.TryGetExit(out Vector3 door, out _), "у мира есть дверь лаборатории");
             Vector3 mast = b.Beacon.transform.position;
             float off = Vector2.Distance(new Vector2(mast.x, mast.z), new Vector2(door.x, door.z));
-            Assert.LessOrEqual(off, 3f, $"мачта над дверью выхода босса: в {off:0.0} м от неё");
+            Assert.LessOrEqual(off, 8f, $"фонарь у двери выхода босса (на площадке перед скальным входом): в {off:0.0} м от неё");
             Assert.AreEqual(door.y, mast.y, 0.01f, "основание мачты — на земле у двери");
             Assert.AreEqual(b.BeaconSettings.height, b.Beacon.LampHeightAboveGround, 0.01f, "фонарь на высоте из поля");
             yield break;
         }
 
+        /// <summary>
+        /// Фонарь у двери (геймдизайнер 18.11: «максимум 5»): высота — из поля (5 м), размер — реальный с любого расстояния
+        /// (подстройка угла выключена). Прежние сторожа «выше крон» и «угол на 900/1900 м» сняты вместе с ролью ориентира.
+        /// </summary>
         [UnityTest]
-        public IEnumerator Lamp_IsAboveEveryCrown()
+        public IEnumerator Lamp_AtDoor_HeightFromField_RealSize()
         {
             Assert.IsNotNull(b.Beacon);
-            var root = b.BuiltRoot.transform;
-            Vector3 ash = b.HasAsh ? root.TransformPoint(new Vector3(b.Ash.pos.x, b.Ash.groundY, b.Ash.pos.y)) : Vector3.zero;
-            float tallest = 0f; int trees = 0;
-            foreach (var r in root.GetComponentsInChildren<MeshRenderer>())
+            Assert.AreEqual(5f, b.BeaconSettings.height, 1e-5f, "фонарь у двери — 5 м");
+            Assert.AreEqual(b.BeaconSettings.height, b.Beacon.LampHeightAboveGround, 0.01f, "высота из поля");
+            Assert.AreEqual(0f, b.BeaconSettings.minAngleDeg, 1e-6f, "подстройка угла выключена");
+            var lamp = b.Beacon.Lamp;
+            foreach (float d in new[] { 5f, 200f, 1900f })
             {
-                if (r.gameObject.name != "DomeFlora") continue; // деревья — по одному объекту, подлесок — пачками DomeFlora_*
-                Vector3 c = r.bounds.center;
-                // Ясень — нарочно выше всех (85 м): ориентир сам по себе, с маяком не соревнуется.
-                if (b.HasAsh && Vector2.Distance(new Vector2(c.x, c.z), new Vector2(ash.x, ash.z)) < 100f) continue;
-                Vector3 local = root.InverseTransformPoint(c);
-                float ground = root.TransformPoint(new Vector3(local.x, b.SampleGround(local.x, local.z), local.z)).y;
-                float h = r.bounds.max.y - ground;
-                if (h > tallest) tallest = h;
-                trees++;
+                b.Beacon.FitFor(lamp.position + Vector3.right * d);
+                Assert.AreEqual(b.BeaconSettings.lampSize, lamp.lossyScale.x, 0.01f, $"с {d:0} м фонарь своего размера");
             }
-            Assert.Greater(trees, 500, "деревья леса найдены");
-            float lamp = b.Beacon.LampHeightAboveGround;
-            Debug.Log($"[Forest] маяк: фонарь {lamp:0.0} м, самая высокая крона {tallest:0.0} м (деревьев {trees})");
-            Assert.Greater(lamp, tallest + 3f, $"фонарь ({lamp:0.0} м) выше самой высокой кроны ({tallest:0.0} м) с запасом 3 м");
+            Assert.IsTrue(b.Beacon.Glow.enabled, "свет у фонаря есть");
             yield break;
         }
 
@@ -107,24 +102,6 @@ namespace Chimera.Tests.PlayMode
             b.ApplyBeacon();
             Assert.IsTrue(b.Beacon.gameObject.activeInHierarchy, "галка стоит — маяк горит");
             Assert.AreEqual(30f, b.Beacon.LampHeightAboveGround, 0.01f, "высота из инспектора доходит до мачты без пересборки");
-            yield break;
-        }
-
-        [UnityTest]
-        public IEnumerator Lamp_KeepsMinimumAngle_FromFarCorner()
-        {
-            Assert.IsNotNull(b.Beacon);
-            var lamp = b.Beacon.Lamp;
-            float minAngle = b.BeaconSettings.minAngleDeg;
-            foreach (float d in new[] { 50f, 900f, 1900f })
-            {
-                Vector3 eye = lamp.position + new Vector3(d, 0f, 0f);
-                b.Beacon.FitFor(eye);
-                float angle = 2f * Mathf.Atan(lamp.lossyScale.x * 0.5f / d) * Mathf.Rad2Deg;
-                Assert.GreaterOrEqual(angle, minAngle - 1e-3f, $"с {d:0} м фонарь не меньше {minAngle}°");
-            }
-            b.Beacon.FitFor(lamp.position + Vector3.right * 5f);
-            Assert.AreEqual(b.BeaconSettings.lampSize, lamp.lossyScale.x, 0.01f, "вблизи фонарь своего размера");
             yield break;
         }
     }
