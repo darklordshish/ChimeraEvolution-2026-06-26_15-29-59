@@ -67,6 +67,8 @@ public static class ForestMapHash
                 Mix(ref h, rd.points != null ? rd.points.Count : -1);
                 if (rd.points != null) foreach (var pt in rd.points) { Q(ref h, pt.x); Q(ref h, pt.y); }
             }
+        Mix(ref h, m.forage != null ? m.forage.Count : -1);
+        if (m.forage != null) foreach (var f in m.forage) { Q(ref h, f.pos.x); Q(ref h, f.pos.y); Q(ref h, f.y); S(ref h, f.kind); Mix(ref h, f.zone); }
         if (m.ash != null) { Mix(ref h, m.ash.has ? 1 : 0); Q(ref h, m.ash.pos.x); Q(ref h, m.ash.pos.y); Q(ref h, m.ash.groundY); }
         if (m.beacon != null) { Mix(ref h, m.beacon.has ? 1 : 0); Mix(ref h, m.beacon.on ? 1 : 0); V3(ref h, m.beacon.basePos); Q(ref h, m.beacon.height); }
 

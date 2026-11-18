@@ -50,6 +50,12 @@ public sealed class ForestMapGraph
     public string rasterKey;
     public List<Vertex> vertices = new List<Vertex>();
     public List<Edge> edges = new List<Edge>();
+    /// <summary>
+    /// Ход ребра по растру (прореженный, каждые <see cref="PathEvery"/> клеток) — параллельно `edges`, для картинки:
+    /// ребро рисуется ломаной по фактическому пути, а не прямой (ГеймБосс 18.11). Не сериализуется — в схему не входит.
+    /// </summary>
+    [NonSerialized] public List<List<Vector2>> paths = new List<List<Vector2>>();
+    public const int PathEvery = 4;
 
     public static ForestMapGraph Build(ForestMap map, ForestMapRaster r)
     {
@@ -64,6 +70,8 @@ public sealed class ForestMapGraph
         for (int i = 0; i < map.waterholes.Count; i++)
             g.Add(map, $"water:{i}", map.waterholes[i].center, VertexKind.Waterhole);
         if (map.lab.has) g.Add(map, "lab", new Vector2(map.lab.door.x, map.lab.door.z), VertexKind.Lab);
+        if (map.forage != null)
+            for (int i = 0; i < map.forage.Count; i++) g.Add(map, $"forage:{i}", map.forage[i].pos, VertexKind.Forage);
 
         // Пары: каждая вершина — с Neighbours ближайшими по прямой; пары без повторов, в порядке вершин.
         var pairs = new SortedSet<long>();
@@ -89,6 +97,7 @@ public sealed class ForestMapGraph
             e.a = g.vertices[a].id;
             e.b = g.vertices[b].id;
             g.edges.Add(e);
+            g.paths.Add(paths.LastPath);
         }
 
         // Мосты между кучками: соседство по прямой даёт кучки (логова у кольца связаны только друг с другом), а связность —
@@ -117,6 +126,7 @@ public sealed class ForestMapGraph
             e.a = g.vertices[a].id;
             e.b = g.vertices[b].id;
             g.edges.Add(e);
+            g.paths.Add(paths.LastPath);
             parent[ra] = rb;
         }
         return g;
@@ -274,9 +284,19 @@ public sealed class ForestMapGraph
             return Mathf.Sqrt(dx * dx + dz * dz);
         }
 
+        /// <summary>Прореженный ход последнего найденного пути (от s к t).</summary>
+        public List<Vector2> LastPath { get; private set; }
+
         Edge Facts(int s, int t)
         {
             var e = new Edge();
+            var cells = new List<int>();
+            for (int c = t; c >= 0; c = c == s ? -1 : from[c]) cells.Add(c);
+            cells.Reverse();
+            var path = new List<Vector2>();
+            for (int k = 0; k < cells.Count; k++)
+                if (k % PathEvery == 0 || k == cells.Count - 1) path.Add(r.Center(cells[k] % r.n, cells[k] / r.n));
+            LastPath = path;
             var bySurface = new float[Enum.GetValues(typeof(ForestMapRaster.Surface)).Length];
             int n = r.n;
             for (int c = t; c != s && c >= 0; c = from[c])
