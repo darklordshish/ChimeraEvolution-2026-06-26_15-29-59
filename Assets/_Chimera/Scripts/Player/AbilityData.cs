@@ -1,4 +1,5 @@
 using System;
+using Chimera.Laws;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
@@ -51,7 +52,7 @@ public abstract class AbilityData
             if (!f.IsDefined(typeof(ExpressedAttribute))) continue;
             float own = Read(f, this);
             float from = displaced != null ? Read(f, displaced) : 0f;
-            Write(f, copy, native ? own * power : from + (own - from) * power);
+            Write(f, copy, BodyLaw.ExpressNumber(own, from, native, power)); // закон — Laws/BodyLaw
         }
         copy.power = power;
         return copy;

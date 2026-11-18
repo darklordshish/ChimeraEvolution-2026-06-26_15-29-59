@@ -747,6 +747,36 @@ namespace Chimera.Tests.EditMode
             Assert.AreEqual(0f, LairLaw.FearDecayPerHour(0.02f, 0f));
         }
 
+        [Test]
+        public void AbilityResolve_UsesBodyLawExpression_OnEveryRecord()
+        {
+            int n = 0;
+            foreach (var sp in LoadSpecies())
+                foreach (var organ in sp.organs)
+                    if (organ.abilities != null)
+                        foreach (var rec in organ.abilities)
+                            foreach (float power in new[] { 0.45f, 0.5f, 1f, 1.37f, 2f })
+                                foreach (bool native in new[] { true, false })
+                                {
+                                    var resolved = rec.Resolve(null, native, power);
+                                    foreach (var f in rec.GetType().GetFields(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Public))
+                                    {
+                                        if (!f.IsDefined(typeof(ExpressedAttribute), false)) continue;
+                                        if (f.FieldType == typeof(int))
+                                            Assert.AreEqual(BodyLaw.ExpressInt((int)f.GetValue(rec), 0f, native, power), (int)f.GetValue(resolved), $"{sp.speciesName} {rec.GetType().Name}.{f.Name}");
+                                        else
+                                            Assert.AreEqual(R(BodyLaw.ExpressNumber((float)f.GetValue(rec), 0f, native, power)), (float)f.GetValue(resolved), 0f, $"{sp.speciesName} {rec.GetType().Name}.{f.Name}");
+                                        n++;
+                                    }
+                                }
+            Assert.Greater(n, 100);
+            // прежняя арифметика дословно
+            float own = 10f, from = 4f, pw = 0.45f;
+            Assert.AreEqual(R(own * pw), R(BodyLaw.ExpressNumber(own, from, true, pw)), 0f);
+            Assert.AreEqual(R(from + (own - from) * pw), R(BodyLaw.ExpressNumber(own, from, false, pw)), 0f);
+            Assert.AreEqual(Mathf.RoundToInt(own * pw), BodyLaw.ExpressInt(own, from, true, pw));
+        }
+
         // ---- живой Health ----
         readonly List<GameObject> made = new();
         [TearDown]

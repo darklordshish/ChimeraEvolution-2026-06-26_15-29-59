@@ -50,6 +50,13 @@ public static class ChimeraCliCommands
         return "Docs/Диаграммы/ХИМЕРЫ.md обновлена";
     }
 
+    [CliCommand("chimera-sim-export", "Выгрузить ВХОДЫ ЗАКОНОВ для симулятора: виды, органы, приёмы, конфиги, логова павильона → Docs/Диаграммы/Эволюция/данные.json")]
+    public static string SimExportData()
+    {
+        SimExport.Generate();
+        return "Docs/Диаграммы/Эволюция/данные.json обновлён (открытая сцена возвращена)";
+    }
+
     /// <summary>Пересобрать оба отчёта разом: после правки данных сверять надо и план, и замер.</summary>
     [CliCommand("chimera-silhouette", "Выгрузить СВЕРКУ СИЛУЭТОВ — детектор читаемости: тело билдером против маски листа (IoU)")]
     public static string Silhouette() => SilhouetteDetector.Generate();

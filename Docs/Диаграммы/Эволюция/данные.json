@@ -1,0 +1,3516 @@
+{
+    "schema": 1,
+    "fingerprint": "34b136dc8853882a",
+    "world": {
+        "scene": "ForestPavilion",
+        "mapDiameter": 2000.0,
+        "domeArea": 3141592.75,
+        "dayMinutes": 12.0,
+        "hoursPerSecond": 0.03333333507180214
+    },
+    "laws": {
+        "venom": {
+            "MaxStacks": 3,
+            "StackDuration": 4.0,
+            "VulnerabilityMult": 1.399999976158142,
+            "DotDamage": 3,
+            "DotInterval": 0.6000000238418579
+        },
+        "bleed": {
+            "Threshold": 5,
+            "MaxStacks": 8,
+            "StackDuration": 3.0,
+            "PctPerTick": 0.03999999910593033,
+            "TickInterval": 0.6000000238418579
+        },
+        "rage": {
+            "DamageMult": 1.25,
+            "SpeedMult": 1.149999976158142,
+            "IncomingMult": 1.5,
+            "StaminaRegenMult": 1.5
+        },
+        "slow": {
+            "PerStack": 0.14000000059604646,
+            "MaxSlow": 0.699999988079071,
+            "MaxStacks": 6,
+            "StackDuration": 2.5
+        },
+        "thorns": {
+            "ReturnShare": 0.550000011920929,
+            "Reach": 2.5,
+            "BleedStacks": 1,
+            "MinReturn": 1
+        },
+        "hunger": {
+            "HpRegen": 4.0,
+            "StaminaRegen": 14.0,
+            "PureMinutes": 3.0,
+            "MediumMinutes": 2.0,
+            "WeakMinutes": 1.5,
+            "ChimeraMinutes": 0.5,
+            "StartFullness": 0.4000000059604645,
+            "SatedThreshold": 0.5,
+            "HungryThreshold": 0.25,
+            "StarveThreshold": 0.07999999821186066,
+            "StarveVigor": 0.6499999761581421
+        }
+    },
+    "evolution": {
+        "evolveNpc": true,
+        "startAffinity": 0,
+        "chimerizeMultiplier": 1.0,
+        "allSpecies": [
+            "Волк",
+            "Змея",
+            "Лось",
+            "Ёж"
+        ]
+    },
+    "species": [
+        {
+            "name": "Ёж",
+            "mutagenPool": 18,
+            "eatsMeat": true,
+            "massive": false,
+            "formScale": 0.550000011920929,
+            "mass": 12.0,
+            "baseHp": 52.0,
+            "baseStamina": 60.0,
+            "baseStaminaRegen": 8.0,
+            "organs": [
+                {
+                    "name": "Хребет",
+                    "slot": "хребет",
+                    "cost": 0,
+                    "chassisOnly": true,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.0,
+                        "damageReduction": 0.0,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": []
+                },
+                {
+                    "name": "Игломёт",
+                    "slot": "Игломёт",
+                    "cost": 4,
+                    "chassisOnly": false,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.0,
+                        "damageReduction": 0.0,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": [
+                        {
+                            "type": "VolleyData",
+                            "nativeOnly": false,
+                            "numbers": [
+                                {
+                                    "name": "damagePerQuill",
+                                    "value": 4.0,
+                                    "isInt": true,
+                                    "expressed": true,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "bleedPerQuill",
+                                    "value": 1.0,
+                                    "isInt": true,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "slowPerQuill",
+                                    "value": 1.0,
+                                    "isInt": true,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "quills",
+                                    "value": 6.0,
+                                    "isInt": true,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "spreadAngle",
+                                    "value": 9.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "speed",
+                                    "value": 22.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "hitRadius",
+                                    "value": 0.3499999940395355,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "minRange",
+                                    "value": 6.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "maxRange",
+                                    "value": 15.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "windupTime",
+                                    "value": 0.5,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "cooldown",
+                                    "value": 2.5,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "blindAimError",
+                                    "value": 1.600000023841858,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "Иглы",
+                    "slot": "Шкура",
+                    "cost": 5,
+                    "chassisOnly": false,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.0,
+                        "damageReduction": 0.20000000298023225,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": true,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": []
+                },
+                {
+                    "name": "Ежиные лапы",
+                    "slot": "Руки",
+                    "cost": 2,
+                    "chassisOnly": false,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.0,
+                        "damageReduction": 0.0,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": []
+                },
+                {
+                    "name": "Ежиные ноги",
+                    "slot": "Ноги",
+                    "cost": 4,
+                    "chassisOnly": false,
+                    "nativeOnly": false,
+                    "nativeChassis": "Ёж",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 6.0,
+                        "dashSpeed": 18.0,
+                        "dashCooldown": 0.3499999940395355,
+                        "damageReduction": 0.0,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.14000000059604646,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": [
+                        {
+                            "type": "RollData",
+                            "nativeOnly": false,
+                            "numbers": [
+                                {
+                                    "name": "damage",
+                                    "value": 10.0,
+                                    "isInt": true,
+                                    "expressed": true,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "bleedStacks",
+                                    "value": 1.0,
+                                    "isInt": true,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "knockForce",
+                                    "value": 8.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "radius",
+                                    "value": 1.2000000476837159,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                }
+                            ]
+                        },
+                        {
+                            "type": "CurlData",
+                            "nativeOnly": true,
+                            "numbers": [
+                                {
+                                    "name": "curlArmor",
+                                    "value": 0.6000000238418579,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "staminaDrain",
+                                    "value": 30.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "rollSpeed",
+                                    "value": 9.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "rollDrain",
+                                    "value": 40.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "rollTurnSpeed",
+                                    "value": 90.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "rollGravity",
+                                    "value": 20.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "Цепкая пасть",
+                    "slot": "Пасть",
+                    "cost": 4,
+                    "chassisOnly": false,
+                    "nativeOnly": false,
+                    "nativeChassis": "Ёж",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.0,
+                        "damageReduction": 0.0,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": [
+                        {
+                            "type": "BiteData",
+                            "nativeOnly": false,
+                            "numbers": [
+                                {
+                                    "name": "damage",
+                                    "value": 22.0,
+                                    "isInt": true,
+                                    "expressed": true,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "bleedStacks",
+                                    "value": 0.0,
+                                    "isInt": true,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "venomStacks",
+                                    "value": 0.0,
+                                    "isInt": true,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "regenDebuff",
+                                    "value": 0.5,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "regenDebuffTime",
+                                    "value": 3.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "range",
+                                    "value": 1.7000000476837159,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "halfAngle",
+                                    "value": 60.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "windupTime",
+                                    "value": 0.4000000059604645,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "cooldown",
+                                    "value": 0.699999988079071,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                }
+                            ]
+                        },
+                        {
+                            "type": "ConstrictData",
+                            "nativeOnly": false,
+                            "numbers": [
+                                {
+                                    "name": "maxStage",
+                                    "value": 1.0,
+                                    "isInt": true,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "foreignMaxStage",
+                                    "value": 2.0,
+                                    "isInt": true,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "tightenRate",
+                                    "value": 1.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "stage2At",
+                                    "value": 1.5,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "stage3At",
+                                    "value": 3.5,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "loosenPerDamage",
+                                    "value": 0.11999999731779099,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "chokeDamage",
+                                    "value": 4.0,
+                                    "isInt": true,
+                                    "expressed": true,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "chokeInterval",
+                                    "value": 0.5,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "grabSlow1",
+                                    "value": 0.3499999940395355,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "grabSlow2",
+                                    "value": 0.15000000596046449,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "grabSlow3",
+                                    "value": 0.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "npcLoosenPerDamage",
+                                    "value": 0.03999999910593033,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "npcChokeDamage",
+                                    "value": 6.0,
+                                    "isInt": true,
+                                    "expressed": true,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "npcChokeInterval",
+                                    "value": 0.6000000238418579,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "escapeMin",
+                                    "value": 3.5,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "escapeMax",
+                                    "value": 5.5,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "breakRawThreshold",
+                                    "value": 7.0,
+                                    "isInt": true,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "grabBleedStacks",
+                                    "value": 0.0,
+                                    "isInt": true,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "holdDrain",
+                                    "value": 3.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "wearInterval",
+                                    "value": 1.5,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "grabRange",
+                                    "value": 2.200000047683716,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "holdRange",
+                                    "value": 3.200000047683716,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "cooldown",
+                                    "value": 3.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "windupTime",
+                                    "value": 0.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "ripSelfKnock",
+                                    "value": 5.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "biteInterval",
+                                    "value": 1.2000000476837159,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "selfSlow1",
+                                    "value": 0.800000011920929,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "selfSlow2",
+                                    "value": 0.6000000238418579,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "escapeKnock",
+                                    "value": 6.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "dragOffset",
+                                    "value": 1.100000023841858,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "Ядоупорное сердце",
+                    "slot": "Сердце",
+                    "cost": 6,
+                    "chassisOnly": false,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 1.2000000476837159,
+                        "staminaBonus": 0.4000000059604645,
+                        "staminaRegenBonus": 0.30000001192092898,
+                        "atkCooldown": 0.5,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.0,
+                        "damageReduction": 0.0,
+                        "regen": 0.5,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": true,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": []
+                },
+                {
+                    "name": "Пятак",
+                    "slot": "Чутьё",
+                    "cost": 3,
+                    "chassisOnly": false,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.5,
+                        "damageReduction": 0.0,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 1.600000023841858,
+                        "enablesScent": true,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": true,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": []
+                }
+            ],
+            "prefab": {
+                "hasPrefab": true,
+                "prefab": "Hedgehog",
+                "expression": 0.5,
+                "applyVitals": true,
+                "hpSpread": 0.15000000596046449,
+                "damageSpread": 0.15000000596046449,
+                "speedSpread": 0.10000000149011612,
+                "maxDamageReduction": 0.6000000238418579,
+                "minAtkCooldown": 0.20000000298023225,
+                "discountPerAffinity": 0.00800000037997961,
+                "maxDiscount": 0.800000011920929,
+                "bonusStartAffinity": 0.0,
+                "bonusFullAffinity": 100.0,
+                "maxBonusMult": 2.0,
+                "affinityPerOrgan": 0.550000011920929,
+                "psyche": "HedgehogPsyche",
+                "psycheRhythm": 1.100000023841858
+            }
+        },
+        {
+            "name": "Волк",
+            "mutagenPool": 16,
+            "eatsMeat": true,
+            "massive": false,
+            "formScale": 1.0,
+            "mass": 90.0,
+            "baseHp": 38.0,
+            "baseStamina": 70.0,
+            "baseStaminaRegen": 9.0,
+            "organs": [
+                {
+                    "name": "Хребет",
+                    "slot": "хребет",
+                    "cost": 0,
+                    "chassisOnly": true,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.0,
+                        "damageReduction": 0.0,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": []
+                },
+                {
+                    "name": "Коготь",
+                    "slot": "Руки",
+                    "cost": 4,
+                    "chassisOnly": false,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.0,
+                        "damageReduction": 0.0,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": [
+                        {
+                            "type": "LimbStrikeData",
+                            "nativeOnly": false,
+                            "numbers": [
+                                {
+                                    "name": "damage",
+                                    "value": 18.0,
+                                    "isInt": true,
+                                    "expressed": true,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "knockForce",
+                                    "value": 0.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "bleedStacks",
+                                    "value": 0.0,
+                                    "isInt": true,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "range",
+                                    "value": 1.5,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "halfAngle",
+                                    "value": 60.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "windupTime",
+                                    "value": 0.44999998807907107,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "cooldown",
+                                    "value": 1.100000023841858,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "Волчьи ноги",
+                    "slot": "Ноги",
+                    "cost": 4,
+                    "chassisOnly": false,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 9.0,
+                        "dashSpeed": 30.0,
+                        "dashCooldown": 0.0,
+                        "damageReduction": 0.0,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": [
+                        {
+                            "type": "LeapData",
+                            "nativeOnly": false,
+                            "numbers": [
+                                {
+                                    "name": "damage",
+                                    "value": 12.0,
+                                    "isInt": true,
+                                    "expressed": true,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "minRange",
+                                    "value": 5.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "maxRange",
+                                    "value": 6.5,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "speed",
+                                    "value": 13.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "up",
+                                    "value": 5.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "duration",
+                                    "value": 0.5,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "hitRadius",
+                                    "value": 1.2999999523162842,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "windupTime",
+                                    "value": 0.5,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "staminaCost",
+                                    "value": 30.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "Волчье сердце",
+                    "slot": "Сердце",
+                    "cost": 6,
+                    "chassisOnly": false,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 1.75,
+                        "staminaBonus": 0.5,
+                        "staminaRegenBonus": 0.25,
+                        "atkCooldown": 0.30000001192092898,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.0,
+                        "damageReduction": 0.0,
+                        "regen": 3.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": []
+                },
+                {
+                    "name": "Нюх",
+                    "slot": "Чутьё",
+                    "cost": 3,
+                    "chassisOnly": false,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.44999998807907107,
+                        "damageReduction": 0.0,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": true,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": []
+                },
+                {
+                    "name": "Пасть",
+                    "slot": "Пасть",
+                    "cost": 5,
+                    "chassisOnly": false,
+                    "nativeOnly": false,
+                    "nativeChassis": "Волк",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.0,
+                        "damageReduction": 0.0,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": [
+                        {
+                            "type": "BiteData",
+                            "nativeOnly": false,
+                            "numbers": [
+                                {
+                                    "name": "damage",
+                                    "value": 14.0,
+                                    "isInt": true,
+                                    "expressed": true,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "bleedStacks",
+                                    "value": 2.0,
+                                    "isInt": true,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "venomStacks",
+                                    "value": 0.0,
+                                    "isInt": true,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "regenDebuff",
+                                    "value": 0.5,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "regenDebuffTime",
+                                    "value": 3.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "range",
+                                    "value": 2.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "halfAngle",
+                                    "value": 55.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "windupTime",
+                                    "value": 0.44999998807907107,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "cooldown",
+                                    "value": 0.699999988079071,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                }
+                            ]
+                        },
+                        {
+                            "type": "HowlData",
+                            "nativeOnly": false,
+                            "numbers": [
+                                {
+                                    "name": "radius",
+                                    "value": 14.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "stunAt",
+                                    "value": 2.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "stunDuration",
+                                    "value": 1.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "fearMoraleHit",
+                                    "value": 2.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "cooldown",
+                                    "value": 10.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "cueTime",
+                                    "value": 0.4000000059604645,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                }
+                            ]
+                        },
+                        {
+                            "type": "ConstrictData",
+                            "nativeOnly": false,
+                            "numbers": [
+                                {
+                                    "name": "maxStage",
+                                    "value": 1.0,
+                                    "isInt": true,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "foreignMaxStage",
+                                    "value": 2.0,
+                                    "isInt": true,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "tightenRate",
+                                    "value": 1.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "stage2At",
+                                    "value": 1.5,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "stage3At",
+                                    "value": 3.5,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "loosenPerDamage",
+                                    "value": 0.11999999731779099,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "chokeDamage",
+                                    "value": 4.0,
+                                    "isInt": true,
+                                    "expressed": true,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "chokeInterval",
+                                    "value": 0.5,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "grabSlow1",
+                                    "value": 0.3499999940395355,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "grabSlow2",
+                                    "value": 0.15000000596046449,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "grabSlow3",
+                                    "value": 0.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "npcLoosenPerDamage",
+                                    "value": 0.03999999910593033,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "npcChokeDamage",
+                                    "value": 6.0,
+                                    "isInt": true,
+                                    "expressed": true,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "npcChokeInterval",
+                                    "value": 0.6000000238418579,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "escapeMin",
+                                    "value": 2.5999999046325685,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "escapeMax",
+                                    "value": 4.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "breakRawThreshold",
+                                    "value": 10.0,
+                                    "isInt": true,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "grabBleedStacks",
+                                    "value": 1.0,
+                                    "isInt": true,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "holdDrain",
+                                    "value": 3.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "wearInterval",
+                                    "value": 1.5,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "grabRange",
+                                    "value": 2.200000047683716,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "holdRange",
+                                    "value": 3.200000047683716,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "cooldown",
+                                    "value": 2.5,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "windupTime",
+                                    "value": 0.3499999940395355,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "ripSelfKnock",
+                                    "value": 6.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "biteInterval",
+                                    "value": 1.2000000476837159,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "selfSlow1",
+                                    "value": 0.800000011920929,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "selfSlow2",
+                                    "value": 0.6000000238418579,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "escapeKnock",
+                                    "value": 6.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "dragOffset",
+                                    "value": 1.100000023841858,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "Шкура",
+                    "slot": "Шкура",
+                    "cost": 4,
+                    "chassisOnly": false,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.0,
+                        "damageReduction": 0.30000001192092898,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": []
+                }
+            ],
+            "prefab": {
+                "hasPrefab": true,
+                "prefab": "Wolf",
+                "expression": 0.44999998807907107,
+                "applyVitals": true,
+                "hpSpread": 0.15000000596046449,
+                "damageSpread": 0.15000000596046449,
+                "speedSpread": 0.10000000149011612,
+                "maxDamageReduction": 0.6000000238418579,
+                "minAtkCooldown": 0.20000000298023225,
+                "discountPerAffinity": 0.00800000037997961,
+                "maxDiscount": 0.800000011920929,
+                "bonusStartAffinity": 0.0,
+                "bonusFullAffinity": 100.0,
+                "maxBonusMult": 2.0,
+                "affinityPerOrgan": 0.550000011920929,
+                "psyche": "WolfPsyche",
+                "psycheRhythm": 1.399999976158142
+            }
+        },
+        {
+            "name": "Змея",
+            "mutagenPool": 20,
+            "eatsMeat": true,
+            "massive": false,
+            "formScale": 1.0,
+            "mass": 66.0,
+            "baseHp": 60.0,
+            "baseStamina": 55.0,
+            "baseStaminaRegen": 7.0,
+            "organs": [
+                {
+                    "name": "Ядовитые клыки",
+                    "slot": "Пасть",
+                    "cost": 5,
+                    "chassisOnly": false,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.0,
+                        "damageReduction": 0.0,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": [
+                        {
+                            "type": "BiteData",
+                            "nativeOnly": false,
+                            "numbers": [
+                                {
+                                    "name": "damage",
+                                    "value": 24.0,
+                                    "isInt": true,
+                                    "expressed": true,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "bleedStacks",
+                                    "value": 0.0,
+                                    "isInt": true,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "venomStacks",
+                                    "value": 1.0,
+                                    "isInt": true,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "regenDebuff",
+                                    "value": 0.5,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "regenDebuffTime",
+                                    "value": 3.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "range",
+                                    "value": 2.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "halfAngle",
+                                    "value": 55.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "windupTime",
+                                    "value": 0.4000000059604645,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "cooldown",
+                                    "value": 0.699999988079071,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "Хладнокровное сердце",
+                    "slot": "Сердце",
+                    "cost": 5,
+                    "chassisOnly": false,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 1.350000023841858,
+                        "staminaBonus": 0.30000001192092898,
+                        "staminaRegenBonus": 0.20000000298023225,
+                        "atkCooldown": 0.5,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.0,
+                        "damageReduction": 0.0,
+                        "regen": 0.0,
+                        "regenOOC": 2.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": true,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": []
+                },
+                {
+                    "name": "Тело-хвост",
+                    "slot": "Ноги",
+                    "cost": 5,
+                    "chassisOnly": true,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 10.0,
+                        "dashSpeed": 20.0,
+                        "dashCooldown": 0.0,
+                        "damageReduction": 0.0,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": true
+                    },
+                    "abilities": [
+                        {
+                            "type": "LeapData",
+                            "nativeOnly": false,
+                            "numbers": [
+                                {
+                                    "name": "damage",
+                                    "value": 8.0,
+                                    "isInt": true,
+                                    "expressed": true,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "minRange",
+                                    "value": 4.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "maxRange",
+                                    "value": 9.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "speed",
+                                    "value": 20.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "up",
+                                    "value": 2.5,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "duration",
+                                    "value": 0.3499999940395355,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "hitRadius",
+                                    "value": 1.5,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "windupTime",
+                                    "value": 0.3499999940395355,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "staminaCost",
+                                    "value": 20.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "Чешуя",
+                    "slot": "Шкура",
+                    "cost": 4,
+                    "chassisOnly": false,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.0,
+                        "damageReduction": 0.25,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": true,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": []
+                },
+                {
+                    "name": "Пит-орган",
+                    "slot": "Чутьё",
+                    "cost": 3,
+                    "chassisOnly": false,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.699999988079071,
+                        "damageReduction": 0.0,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 14.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": true,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": []
+                },
+                {
+                    "name": "Погремушка",
+                    "slot": "Наконечник",
+                    "cost": 2,
+                    "chassisOnly": true,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.0,
+                        "damageReduction": 0.0,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": []
+                },
+                {
+                    "name": "Хвост",
+                    "slot": "Хвост",
+                    "cost": 5,
+                    "chassisOnly": false,
+                    "nativeOnly": false,
+                    "nativeChassis": "Змея",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.0,
+                        "damageReduction": 0.0,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": [
+                        {
+                            "type": "ConstrictData",
+                            "nativeOnly": false,
+                            "numbers": [
+                                {
+                                    "name": "maxStage",
+                                    "value": 3.0,
+                                    "isInt": true,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "foreignMaxStage",
+                                    "value": 2.0,
+                                    "isInt": true,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "tightenRate",
+                                    "value": 1.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "stage2At",
+                                    "value": 1.5,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "stage3At",
+                                    "value": 3.5,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "loosenPerDamage",
+                                    "value": 0.11999999731779099,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "chokeDamage",
+                                    "value": 4.0,
+                                    "isInt": true,
+                                    "expressed": true,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "chokeInterval",
+                                    "value": 0.5,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "grabSlow1",
+                                    "value": 0.3499999940395355,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "grabSlow2",
+                                    "value": 0.15000000596046449,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "grabSlow3",
+                                    "value": 0.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "npcLoosenPerDamage",
+                                    "value": 0.03999999910593033,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "npcChokeDamage",
+                                    "value": 6.0,
+                                    "isInt": true,
+                                    "expressed": true,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "npcChokeInterval",
+                                    "value": 0.6000000238418579,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "escapeMin",
+                                    "value": 2.5999999046325685,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "escapeMax",
+                                    "value": 4.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "breakRawThreshold",
+                                    "value": 5.0,
+                                    "isInt": true,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "grabBleedStacks",
+                                    "value": 0.0,
+                                    "isInt": true,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "holdDrain",
+                                    "value": 3.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "wearInterval",
+                                    "value": 1.5,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "grabRange",
+                                    "value": 2.200000047683716,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "holdRange",
+                                    "value": 3.200000047683716,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "cooldown",
+                                    "value": 2.5,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "windupTime",
+                                    "value": 0.3499999940395355,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "ripSelfKnock",
+                                    "value": 5.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "biteInterval",
+                                    "value": 1.2000000476837159,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "selfSlow1",
+                                    "value": 0.800000011920929,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "selfSlow2",
+                                    "value": 0.6000000238418579,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "escapeKnock",
+                                    "value": 6.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "dragOffset",
+                                    "value": 1.100000023841858,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "prefab": {
+                "hasPrefab": true,
+                "prefab": "Snake",
+                "expression": 0.5,
+                "applyVitals": true,
+                "hpSpread": 0.0,
+                "damageSpread": 0.0,
+                "speedSpread": 0.0,
+                "maxDamageReduction": 0.6000000238418579,
+                "minAtkCooldown": 0.20000000298023225,
+                "discountPerAffinity": 0.00800000037997961,
+                "maxDiscount": 0.800000011920929,
+                "bonusStartAffinity": 0.0,
+                "bonusFullAffinity": 100.0,
+                "maxBonusMult": 2.0,
+                "affinityPerOrgan": 0.550000011920929,
+                "psyche": "SnakePsyche",
+                "psycheRhythm": 1.600000023841858
+            }
+        },
+        {
+            "name": "Лось",
+            "mutagenPool": 24,
+            "eatsMeat": false,
+            "massive": true,
+            "formScale": 1.0,
+            "mass": 440.0,
+            "baseHp": 70.0,
+            "baseStamina": 140.0,
+            "baseStaminaRegen": 5.0,
+            "organs": [
+                {
+                    "name": "Хребет",
+                    "slot": "хребет",
+                    "cost": 0,
+                    "chassisOnly": true,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.0,
+                        "damageReduction": 0.0,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": []
+                },
+                {
+                    "name": "Копыто",
+                    "slot": "Руки",
+                    "cost": 5,
+                    "chassisOnly": false,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.0,
+                        "damageReduction": 0.0,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": [
+                        {
+                            "type": "LimbStrikeData",
+                            "nativeOnly": false,
+                            "numbers": [
+                                {
+                                    "name": "damage",
+                                    "value": 22.0,
+                                    "isInt": true,
+                                    "expressed": true,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "knockForce",
+                                    "value": 4.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "bleedStacks",
+                                    "value": 0.0,
+                                    "isInt": true,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "range",
+                                    "value": 1.7999999523162842,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "halfAngle",
+                                    "value": 60.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "windupTime",
+                                    "value": 0.44999998807907107,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "cooldown",
+                                    "value": 1.100000023841858,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "Лосиные ноги",
+                    "slot": "Ноги",
+                    "cost": 5,
+                    "chassisOnly": false,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 5.0,
+                        "dashSpeed": 35.0,
+                        "dashCooldown": 0.0,
+                        "damageReduction": 0.0,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.3799999952316284,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": [
+                        {
+                            "type": "ChargeData",
+                            "nativeOnly": false,
+                            "numbers": [
+                                {
+                                    "name": "damage",
+                                    "value": 22.0,
+                                    "isInt": true,
+                                    "expressed": true,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "damagePerMeter",
+                                    "value": 1.0,
+                                    "isInt": false,
+                                    "expressed": true,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "knockForce",
+                                    "value": 12.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "lightChargeMult",
+                                    "value": 0.25,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "staggerTime",
+                                    "value": 0.5,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "hitRadius",
+                                    "value": 1.7999999523162842,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "minRange",
+                                    "value": 4.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "maxRange",
+                                    "value": 18.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "chargeSpeed",
+                                    "value": 35.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "duration",
+                                    "value": 0.7300000190734863,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "windupTime",
+                                    "value": 0.5,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "staminaCost",
+                                    "value": 70.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "stompRadius",
+                                    "value": 4.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "stompStagger",
+                                    "value": 0.4000000059604645,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "stompForce",
+                                    "value": 13.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "plowForce",
+                                    "value": 6.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "plowRadius",
+                                    "value": 1.600000023841858,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "Глотка",
+                    "slot": "Пасть",
+                    "cost": 4,
+                    "chassisOnly": false,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.0,
+                        "damageReduction": 0.0,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": [
+                        {
+                            "type": "BellowData",
+                            "nativeOnly": false,
+                            "numbers": [
+                                {
+                                    "name": "fearRadius",
+                                    "value": 10.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "rallyRadius",
+                                    "value": 40.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "fearMoraleHit",
+                                    "value": 2.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "cooldown",
+                                    "value": 10.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "cueTime",
+                                    "value": 1.2000000476837159,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "Слух",
+                    "slot": "Чутьё",
+                    "cost": 3,
+                    "chassisOnly": false,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.699999988079071,
+                        "damageReduction": 0.0,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 2.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": true,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": []
+                },
+                {
+                    "name": "Лосиное сердце",
+                    "slot": "Сердце",
+                    "cost": 6,
+                    "chassisOnly": false,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 2.0,
+                        "staminaBonus": 0.6000000238418579,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.5,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.0,
+                        "damageReduction": 0.0,
+                        "regen": 1.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": true,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": []
+                },
+                {
+                    "name": "Толстая шкура",
+                    "slot": "Шкура",
+                    "cost": 5,
+                    "chassisOnly": false,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.0,
+                        "damageReduction": 0.3499999940395355,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": []
+                },
+                {
+                    "name": "Рога",
+                    "slot": "Рога",
+                    "cost": 5,
+                    "chassisOnly": false,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.0,
+                        "damageReduction": 0.0,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": [
+                        {
+                            "type": "AntlerData",
+                            "nativeOnly": false,
+                            "numbers": [
+                                {
+                                    "name": "damage",
+                                    "value": 12.0,
+                                    "isInt": true,
+                                    "expressed": true,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "knockForce",
+                                    "value": 9.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "bleedStacks",
+                                    "value": 2.0,
+                                    "isInt": true,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "range",
+                                    "value": 2.5,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "halfAngle",
+                                    "value": 50.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "windupTime",
+                                    "value": 0.3499999940395355,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "cooldown",
+                                    "value": 2.5,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ],
+            "prefab": {
+                "hasPrefab": true,
+                "prefab": "Moose",
+                "expression": 0.5,
+                "applyVitals": true,
+                "hpSpread": 0.0,
+                "damageSpread": 0.0,
+                "speedSpread": 0.0,
+                "maxDamageReduction": 0.6000000238418579,
+                "minAtkCooldown": 0.20000000298023225,
+                "discountPerAffinity": 0.00800000037997961,
+                "maxDiscount": 0.800000011920929,
+                "bonusStartAffinity": 0.0,
+                "bonusFullAffinity": 100.0,
+                "maxBonusMult": 2.0,
+                "affinityPerOrgan": 0.550000011920929,
+                "psyche": "MoosePsyche",
+                "psycheRhythm": 2.5
+            }
+        },
+        {
+            "name": "Человек",
+            "mutagenPool": 16,
+            "eatsMeat": true,
+            "massive": false,
+            "formScale": 1.0,
+            "mass": 80.0,
+            "baseHp": 75.0,
+            "baseStamina": 100.0,
+            "baseStaminaRegen": 14.0,
+            "organs": [
+                {
+                    "name": "Хребет",
+                    "slot": "хребет",
+                    "cost": 0,
+                    "chassisOnly": true,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.0,
+                        "damageReduction": 0.0,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": []
+                },
+                {
+                    "name": "Кисть",
+                    "slot": "Руки",
+                    "cost": 3,
+                    "chassisOnly": false,
+                    "nativeOnly": true,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.0,
+                        "damageReduction": 0.0,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": [
+                        {
+                            "type": "LimbStrikeData",
+                            "nativeOnly": false,
+                            "numbers": [
+                                {
+                                    "name": "damage",
+                                    "value": 8.0,
+                                    "isInt": true,
+                                    "expressed": true,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "knockForce",
+                                    "value": 0.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "bleedStacks",
+                                    "value": 0.0,
+                                    "isInt": true,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "range",
+                                    "value": 1.600000023841858,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "halfAngle",
+                                    "value": 60.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "windupTime",
+                                    "value": 0.44999998807907107,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "cooldown",
+                                    "value": 1.100000023841858,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "Ноги",
+                    "slot": "Ноги",
+                    "cost": 3,
+                    "chassisOnly": false,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 4.5,
+                        "dashSpeed": 15.0,
+                        "dashCooldown": 0.0,
+                        "damageReduction": 0.0,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": [
+                        {
+                            "type": "KickData",
+                            "nativeOnly": false,
+                            "numbers": [
+                                {
+                                    "name": "damage",
+                                    "value": 4.0,
+                                    "isInt": true,
+                                    "expressed": true,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "knockForce",
+                                    "value": 12.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "reach",
+                                    "value": 1.7999999523162842,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "radius",
+                                    "value": 1.600000023841858,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "cooldown",
+                                    "value": 1.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "Сердце",
+                    "slot": "Сердце",
+                    "cost": 6,
+                    "chassisOnly": false,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 0.5,
+                        "staminaBonus": 0.5,
+                        "staminaRegenBonus": 0.5,
+                        "atkCooldown": 0.44999998807907107,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.0,
+                        "damageReduction": 0.0,
+                        "regen": 0.0,
+                        "regenOOC": 0.75,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": []
+                },
+                {
+                    "name": "Чутьё",
+                    "slot": "Чутьё",
+                    "cost": 3,
+                    "chassisOnly": false,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.699999988079071,
+                        "damageReduction": 0.0,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": true,
+                        "digestion": false
+                    },
+                    "abilities": []
+                },
+                {
+                    "name": "Рот",
+                    "slot": "Пасть",
+                    "cost": 3,
+                    "chassisOnly": false,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.0,
+                        "damageReduction": 0.0,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": [
+                        {
+                            "type": "ScreamData",
+                            "nativeOnly": false,
+                            "numbers": [
+                                {
+                                    "name": "cooldown",
+                                    "value": 12.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": true
+                                },
+                                {
+                                    "name": "boostPerStack",
+                                    "value": 0.11999999731779099,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                },
+                                {
+                                    "name": "maxBoost",
+                                    "value": 2.0,
+                                    "isInt": false,
+                                    "expressed": false,
+                                    "lowerIsBetter": false
+                                }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "Кожа",
+                    "slot": "Шкура",
+                    "cost": 3,
+                    "chassisOnly": false,
+                    "nativeOnly": false,
+                    "nativeChassis": "",
+                    "values": {
+                        "hpBonus": 0.0,
+                        "staminaBonus": 0.0,
+                        "staminaRegenBonus": 0.0,
+                        "atkCooldown": 0.0,
+                        "moveSpeed": 0.0,
+                        "dashSpeed": 0.0,
+                        "dashCooldown": 0.0,
+                        "damageReduction": 0.0,
+                        "regen": 0.0,
+                        "regenOOC": 0.0,
+                        "dashDuration": 0.0,
+                        "thermalRange": 0.0,
+                        "hearingMult": 0.0,
+                        "enablesScent": false,
+                        "coldBlooded": false,
+                        "camo": false,
+                        "enablesThermal": false,
+                        "thorns": false,
+                        "venomResist": false,
+                        "bleedResist": false,
+                        "keenHearing": false,
+                        "insight": false,
+                        "digestion": false
+                    },
+                    "abilities": []
+                }
+            ],
+            "prefab": {
+                "hasPrefab": false,
+                "prefab": "",
+                "expression": 0.0,
+                "applyVitals": true,
+                "hpSpread": 0.0,
+                "damageSpread": 0.0,
+                "speedSpread": 0.0,
+                "maxDamageReduction": 0.6000000238418579,
+                "minAtkCooldown": 0.20000000298023225,
+                "discountPerAffinity": 0.00800000037997961,
+                "maxDiscount": 0.800000011920929,
+                "bonusStartAffinity": 0.0,
+                "bonusFullAffinity": 100.0,
+                "maxBonusMult": 2.0,
+                "affinityPerOrgan": 0.550000011920929,
+                "psyche": "",
+                "psycheRhythm": 0.0
+            }
+        }
+    ],
+    "lairs": [
+        {
+            "name": "AshNest",
+            "species": "Сова",
+            "areaType": "Nest",
+            "capacity": 2,
+            "tier": 2,
+            "homeRadius": 30.0,
+            "spawnRadius": 4.0,
+            "fearRadius": 25.0,
+            "respawnSeconds": 30.0,
+            "respawnGameHours": 1.0,
+            "fearDecayPerSecond": 0.019999999552965165,
+            "fearDecayPerGameHour": 0.5999999642372131,
+            "fearPerKill": 0.3400000035762787,
+            "exhaustFear": 0.699999988079071,
+            "spawnEnabled": false,
+            "x": 22.420000076293947,
+            "z": -364.5799865722656
+        },
+        {
+            "name": "Логово_волк_0",
+            "species": "Волк",
+            "areaType": "Den",
+            "capacity": 4,
+            "tier": 2,
+            "homeRadius": 12.0,
+            "spawnRadius": 3.0,
+            "fearRadius": 18.0,
+            "respawnSeconds": 30.0,
+            "respawnGameHours": 1.0,
+            "fearDecayPerSecond": 0.019999999552965165,
+            "fearDecayPerGameHour": 0.5999999642372131,
+            "fearPerKill": 0.3400000035762787,
+            "exhaustFear": 0.699999988079071,
+            "spawnEnabled": true,
+            "x": 508.3299865722656,
+            "z": 8.329999923706055
+        },
+        {
+            "name": "Логово_волк_1",
+            "species": "Волк",
+            "areaType": "Den",
+            "capacity": 4,
+            "tier": 2,
+            "homeRadius": 12.0,
+            "spawnRadius": 3.0,
+            "fearRadius": 18.0,
+            "respawnSeconds": 30.0,
+            "respawnGameHours": 1.0,
+            "fearDecayPerSecond": 0.019999999552965165,
+            "fearDecayPerGameHour": 0.5999999642372131,
+            "fearPerKill": 0.3400000035762787,
+            "exhaustFear": 0.699999988079071,
+            "spawnEnabled": true,
+            "x": -658.3300170898438,
+            "z": 25.0
+        },
+        {
+            "name": "Логово_волк_2",
+            "species": "Волк",
+            "areaType": "Den",
+            "capacity": 4,
+            "tier": 2,
+            "homeRadius": 12.0,
+            "spawnRadius": 3.0,
+            "fearRadius": 18.0,
+            "respawnSeconds": 30.0,
+            "respawnGameHours": 1.0,
+            "fearDecayPerSecond": 0.019999999552965165,
+            "fearDecayPerGameHour": 0.5999999642372131,
+            "fearPerKill": 0.3400000035762787,
+            "exhaustFear": 0.699999988079071,
+            "spawnEnabled": true,
+            "x": -58.33000183105469,
+            "z": -858.3300170898438
+        },
+        {
+            "name": "Логово_гнездо_0",
+            "species": "Змея",
+            "areaType": "Nest",
+            "capacity": 3,
+            "tier": 2,
+            "homeRadius": 12.0,
+            "spawnRadius": 3.0,
+            "fearRadius": 18.0,
+            "respawnSeconds": 30.0,
+            "respawnGameHours": 1.0,
+            "fearDecayPerSecond": 0.019999999552965165,
+            "fearDecayPerGameHour": 0.5999999642372131,
+            "fearPerKill": 0.3400000035762787,
+            "exhaustFear": 0.699999988079071,
+            "spawnEnabled": true,
+            "x": -680.219970703125,
+            "z": 569.2100219726563
+        },
+        {
+            "name": "Логово_гнездо_1",
+            "species": "Змея",
+            "areaType": "Nest",
+            "capacity": 3,
+            "tier": 2,
+            "homeRadius": 12.0,
+            "spawnRadius": 3.0,
+            "fearRadius": 18.0,
+            "respawnSeconds": 30.0,
+            "respawnGameHours": 1.0,
+            "fearDecayPerSecond": 0.019999999552965165,
+            "fearDecayPerGameHour": 0.5999999642372131,
+            "fearPerKill": 0.3400000035762787,
+            "exhaustFear": 0.699999988079071,
+            "spawnEnabled": true,
+            "x": -718.260009765625,
+            "z": 559.8499755859375
+        },
+        {
+            "name": "Логово_гнездо_2",
+            "species": "Змея",
+            "areaType": "Nest",
+            "capacity": 3,
+            "tier": 2,
+            "homeRadius": 12.0,
+            "spawnRadius": 3.0,
+            "fearRadius": 18.0,
+            "respawnSeconds": 30.0,
+            "respawnGameHours": 1.0,
+            "fearDecayPerSecond": 0.019999999552965165,
+            "fearDecayPerGameHour": 0.5999999642372131,
+            "fearPerKill": 0.3400000035762787,
+            "exhaustFear": 0.699999988079071,
+            "spawnEnabled": true,
+            "x": -566.4299926757813,
+            "z": 719.9600219726563
+        },
+        {
+            "name": "Логово_гнездо_3",
+            "species": "Змея",
+            "areaType": "Nest",
+            "capacity": 3,
+            "tier": 2,
+            "homeRadius": 12.0,
+            "spawnRadius": 3.0,
+            "fearRadius": 18.0,
+            "respawnSeconds": 30.0,
+            "respawnGameHours": 1.0,
+            "fearDecayPerSecond": 0.019999999552965165,
+            "fearDecayPerGameHour": 0.5999999642372131,
+            "fearPerKill": 0.3400000035762787,
+            "exhaustFear": 0.699999988079071,
+            "spawnEnabled": true,
+            "x": -566.3499755859375,
+            "z": 716.3300170898438
+        },
+        {
+            "name": "Логово_гнездо_4",
+            "species": "Змея",
+            "areaType": "Nest",
+            "capacity": 3,
+            "tier": 2,
+            "homeRadius": 12.0,
+            "spawnRadius": 3.0,
+            "fearRadius": 18.0,
+            "respawnSeconds": 30.0,
+            "respawnGameHours": 1.0,
+            "fearDecayPerSecond": 0.019999999552965165,
+            "fearDecayPerGameHour": 0.5999999642372131,
+            "fearPerKill": 0.3400000035762787,
+            "exhaustFear": 0.699999988079071,
+            "spawnEnabled": true,
+            "x": -444.95001220703127,
+            "z": -807.9299926757813
+        },
+        {
+            "name": "Логово_гнездо_5",
+            "species": "Змея",
+            "areaType": "Nest",
+            "capacity": 3,
+            "tier": 2,
+            "homeRadius": 12.0,
+            "spawnRadius": 3.0,
+            "fearRadius": 18.0,
+            "respawnSeconds": 30.0,
+            "respawnGameHours": 1.0,
+            "fearDecayPerSecond": 0.019999999552965165,
+            "fearDecayPerGameHour": 0.5999999642372131,
+            "fearPerKill": 0.3400000035762787,
+            "exhaustFear": 0.699999988079071,
+            "spawnEnabled": true,
+            "x": -428.0299987792969,
+            "z": -820.3099975585938
+        },
+        {
+            "name": "Логово_устье_0",
+            "species": "Змея",
+            "areaType": "Den",
+            "capacity": 3,
+            "tier": 2,
+            "homeRadius": 12.0,
+            "spawnRadius": 3.0,
+            "fearRadius": 18.0,
+            "respawnSeconds": 30.0,
+            "respawnGameHours": 1.0,
+            "fearDecayPerSecond": 0.019999999552965165,
+            "fearDecayPerGameHour": 0.5999999642372131,
+            "fearPerKill": 0.3400000035762787,
+            "exhaustFear": 0.699999988079071,
+            "spawnEnabled": true,
+            "x": -694.8300170898438,
+            "z": 548.1500244140625
+        },
+        {
+            "name": "Логово_устье_1",
+            "species": "Змея",
+            "areaType": "Den",
+            "capacity": 3,
+            "tier": 2,
+            "homeRadius": 12.0,
+            "spawnRadius": 3.0,
+            "fearRadius": 18.0,
+            "respawnSeconds": 30.0,
+            "respawnGameHours": 1.0,
+            "fearDecayPerSecond": 0.019999999552965165,
+            "fearDecayPerGameHour": 0.5999999642372131,
+            "fearPerKill": 0.3400000035762787,
+            "exhaustFear": 0.699999988079071,
+            "spawnEnabled": true,
+            "x": -548.5999755859375,
+            "z": 694.3300170898438
+        },
+        {
+            "name": "Логово_устье_2",
+            "species": "Змея",
+            "areaType": "Den",
+            "capacity": 3,
+            "tier": 2,
+            "homeRadius": 12.0,
+            "spawnRadius": 3.0,
+            "fearRadius": 18.0,
+            "respawnSeconds": 30.0,
+            "respawnGameHours": 1.0,
+            "fearDecayPerSecond": 0.019999999552965165,
+            "fearDecayPerGameHour": 0.5999999642372131,
+            "fearPerKill": 0.3400000035762787,
+            "exhaustFear": 0.699999988079071,
+            "spawnEnabled": true,
+            "x": -423.54998779296877,
+            "z": -777.719970703125
+        },
+        {
+            "name": "Лёжка_лось_3",
+            "species": "Лось",
+            "areaType": "Rest",
+            "capacity": 2,
+            "tier": 2,
+            "homeRadius": 12.0,
+            "spawnRadius": 3.0,
+            "fearRadius": 18.0,
+            "respawnSeconds": 30.0,
+            "respawnGameHours": 1.0,
+            "fearDecayPerSecond": 0.019999999552965165,
+            "fearDecayPerGameHour": 0.5999999642372131,
+            "fearPerKill": 0.3400000035762787,
+            "exhaustFear": 0.699999988079071,
+            "spawnEnabled": true,
+            "x": 175.0,
+            "z": 858.3300170898438
+        },
+        {
+            "name": "Лёжка_лось_4",
+            "species": "Лось",
+            "areaType": "Rest",
+            "capacity": 2,
+            "tier": 2,
+            "homeRadius": 12.0,
+            "spawnRadius": 3.0,
+            "fearRadius": 18.0,
+            "respawnSeconds": 30.0,
+            "respawnGameHours": 1.0,
+            "fearDecayPerSecond": 0.019999999552965165,
+            "fearDecayPerGameHour": 0.5999999642372131,
+            "fearPerKill": 0.3400000035762787,
+            "exhaustFear": 0.699999988079071,
+            "spawnEnabled": true,
+            "x": -108.33000183105469,
+            "z": 725.0
+        },
+        {
+            "name": "Нора_ёж_5",
+            "species": "Ёж",
+            "areaType": "Burrow",
+            "capacity": 2,
+            "tier": 2,
+            "homeRadius": 12.0,
+            "spawnRadius": 3.0,
+            "fearRadius": 18.0,
+            "respawnSeconds": 30.0,
+            "respawnGameHours": 1.0,
+            "fearDecayPerSecond": 0.019999999552965165,
+            "fearDecayPerGameHour": 0.5999999642372131,
+            "fearPerKill": 0.3400000035762787,
+            "exhaustFear": 0.699999988079071,
+            "spawnEnabled": true,
+            "x": 325.0,
+            "z": 391.6700134277344
+        },
+        {
+            "name": "Нора_ёж_6",
+            "species": "Ёж",
+            "areaType": "Burrow",
+            "capacity": 2,
+            "tier": 2,
+            "homeRadius": 12.0,
+            "spawnRadius": 3.0,
+            "fearRadius": 18.0,
+            "respawnSeconds": 30.0,
+            "respawnGameHours": 1.0,
+            "fearDecayPerSecond": 0.019999999552965165,
+            "fearDecayPerGameHour": 0.5999999642372131,
+            "fearPerKill": 0.3400000035762787,
+            "exhaustFear": 0.699999988079071,
+            "spawnEnabled": true,
+            "x": -391.6700134277344,
+            "z": 758.3300170898438
+        },
+        {
+            "name": "Нора_ёж_7",
+            "species": "Ёж",
+            "areaType": "Burrow",
+            "capacity": 2,
+            "tier": 2,
+            "homeRadius": 12.0,
+            "spawnRadius": 3.0,
+            "fearRadius": 18.0,
+            "respawnSeconds": 30.0,
+            "respawnGameHours": 1.0,
+            "fearDecayPerSecond": 0.019999999552965165,
+            "fearDecayPerGameHour": 0.5999999642372131,
+            "fearPerKill": 0.3400000035762787,
+            "exhaustFear": 0.699999988079071,
+            "spawnEnabled": true,
+            "x": 308.3299865722656,
+            "z": 725.0
+        }
+    ]
+}
