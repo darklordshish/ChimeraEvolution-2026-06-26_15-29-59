@@ -1,8 +1,9 @@
+using Chimera.Laws;
 using UnityEngine;
 
 // PARTIAL-SPLIT #3 (рефактор ядра): ДВИЖОК ЭКСПРЕССИИ вынесен сюда из CreatureBody.cs — тот же класс,
 // НОЛЬ изменений поведения. Концерн: «как ОДИН надетый орган раскрывается в статы» (правило бленда/мощи).
-// Contribution = вклад органа; Express = единое правило раскрытия; Blend/ChassisOrgan/EmptyOrgan — его матчасть.
+// Contribution = вклад органа; Express = единое правило раскрытия; ChassisOrgan/EmptyOrgan — его матчасть; арифметика — в `Chimera.Laws.BodyLaw`.
 // АГРЕГАЦИЯ вкладов и РАЗДАЧА по компонентам (Recompute) — отдельный концерн, остались в CreatureBody.cs
 // (зовут Express/Contribution.Sup через partial). Потребитель мощи BonusMultiplier — в CreatureBody.Affinity.cs.
 public partial class CreatureBody
@@ -18,26 +19,42 @@ public partial class CreatureBody
         public bool keenEar;  // ОСТРЫЙ СЛУХ: различение вида источника + волны звука на экране
         public float earMult; // множитель дальности слуха (супремум дублей)
 
-        // СУПРЕМУМ дублей одного типа слота: скаляры — max (кулдауны — min: меньше = лучше), флаги — OR.
+        // СУПРЕМУМ дублей одного типа слота — закон тела (`BodyLaw.Sup`): скаляры max (кулдауны min), флаги OR.
         // Дубль оси силу НЕ растит (второе сердце ≠ ×2 регена) — окупается только НОВЫМ направлением.
-        public static Contribution Sup(Contribution a, Contribution b) => new()
+        public static Contribution Sup(Contribution a, Contribution b) => FromLaw(BodyLaw.Sup(a.ToLaw(), b.ToLaw()));
+
+        // Поля тут те же, что в `OrganContribution` закона: тип остался вложенным ради сторожей и порядка кода тела,
+        // вся арифметика — в `Chimera.Laws`
+        internal OrganContribution ToLaw() => new()
         {
-            hpBonus = Mathf.Max(a.hpBonus, b.hpBonus),
-            stam = Mathf.Max(a.stam, b.stam), stamRegen = Mathf.Max(a.stamRegen, b.stamRegen),
-            atkCd = Mathf.Min(a.atkCd, b.atkCd),
-            mv = Mathf.Max(a.mv, b.mv), dash = Mathf.Max(a.dash, b.dash), dashDur = Mathf.Max(a.dashDur, b.dashDur), dashCd = Mathf.Min(a.dashCd, b.dashCd),
-            reduce = Mathf.Max(a.reduce, b.reduce), regen = Mathf.Max(a.regen, b.regen),
-            regenOOC = Mathf.Max(a.regenOOC, b.regenOOC), thermal = Mathf.Max(a.thermal, b.thermal),
-            scent = a.scent || b.scent,
-            cold = a.cold || b.cold, camo = a.camo || b.camo,
-            thermalOn = a.thermalOn || b.thermalOn,
-            digest = a.digest || b.digest,
-            insight = a.insight || b.insight,
-            keenEar = a.keenEar || b.keenEar, earMult = Mathf.Max(a.earMult, b.earMult),
-            thorns = a.thorns || b.thorns, venomResist = a.venomResist || b.venomResist,
-            bleedResist = a.bleedResist || b.bleedResist,
+            hpBonus = hpBonus, stam = stam, stamRegen = stamRegen, atkCd = atkCd, mv = mv, dash = dash, dashDur = dashDur,
+            dashCd = dashCd, reduce = reduce, regen = regen, regenOOC = regenOOC, thermal = thermal,
+            scent = scent, cold = cold, camo = camo, thermalOn = thermalOn, digest = digest,
+            thorns = thorns, venomResist = venomResist, bleedResist = bleedResist, insight = insight, keenEar = keenEar,
+            earMult = earMult,
+        };
+
+        internal static Contribution FromLaw(in OrganContribution c) => new()
+        {
+            hpBonus = c.hpBonus, stam = c.stam, stamRegen = c.stamRegen, atkCd = c.atkCd, mv = c.mv, dash = c.dash, dashDur = c.dashDur,
+            dashCd = c.dashCd, reduce = c.reduce, regen = c.regen, regenOOC = c.regenOOC, thermal = c.thermal,
+            scent = c.scent, cold = c.cold, camo = c.camo, thermalOn = c.thermalOn, digest = c.digest,
+            thorns = c.thorns, venomResist = c.venomResist, bleedResist = c.bleedResist, insight = c.insight, keenEar = c.keenEar,
+            earMult = c.earMult,
         };
     }
+
+    /// <summary>Адаптер ассета органа во вход закона (числа органа без типов Unity).</summary>
+    internal static OrganValues ToLaw(Organ o) => new()
+    {
+        hpBonus = o.hpBonus, staminaBonus = o.staminaBonus, staminaRegenBonus = o.staminaRegenBonus,
+        atkCooldown = o.atkCooldown, moveSpeed = o.moveSpeed, dashSpeed = o.dashSpeed, dashCooldown = o.dashCooldown,
+        damageReduction = o.damageReduction, regen = o.regen, regenOOC = o.regenOOC,
+        dashDuration = o.dashDuration, thermalRange = o.thermalRange, hearingMult = o.hearingMult,
+        enablesScent = o.enablesScent, coldBlooded = o.coldBlooded, camo = o.camo, enablesThermal = o.enablesThermal,
+        thorns = o.thorns, venomResist = o.venomResist, bleedResist = o.bleedResist,
+        keenHearing = o.keenHearing, insight = o.insight, digestion = o.digestion,
+    };
 
     static readonly Organ EmptyOrgan = new(); // «нет базы»: бленд от нуля = чистый орган × мощь
 
@@ -65,35 +82,7 @@ public partial class CreatureBody
         Organ h = own || sl.chimera ? EmptyOrgan : ChassisOrgan(sl.name) ?? EmptyOrgan;
         float m = BonusMultiplier(pick.species); // у родного варианта species = вид шасси → та же ручка
 
-        float Scaled(float hv, float wv) => own ? wv * m : Blend(hv, wv, m);
-        float Timed(float hv, float wv) => own ? wv : Blend(hv, wv, m); // СВОЁ время не растягиваем: ×2 на кулдаун = наказание за свой вид
-
-        return new Contribution
-        {
-            hpBonus = Scaled(h.hpBonus, w.hpBonus), // ДОЛЯ базы шасси — экспрессия раскрывает бонус, не тело
-            stam = Scaled(h.staminaBonus, w.staminaBonus),
-            stamRegen = Scaled(h.staminaRegenBonus, w.staminaRegenBonus),
-            atkCd = Timed(h.atkCooldown, w.atkCooldown),
-            mv = Scaled(h.moveSpeed, w.moveSpeed),
-            dash = Scaled(h.dashSpeed, w.dashSpeed),
-            dashCd = Timed(h.dashCooldown, w.dashCooldown),
-            reduce = Scaled(h.damageReduction, w.damageReduction),
-            regen = Scaled(h.regen, w.regen),
-            // вне-боя реген: у ДОНОРСКОГО как есть (бленд на мощи 2 уводит в минус), у РОДНОГО раскрываем —
-            // иначе человеческое сердце единственное не растёт с родством к своему виду
-            regenOOC = own ? w.regenOOC * m : w.regenOOC,
-            // ДИСКРЕТНОЕ — всегда у надетого как есть: фичи не «раскрываются», они либо есть, либо нет
-            dashDur = w.dashDuration, thermal = w.thermalRange,
-            scent = w.enablesScent,
-            cold = w.coldBlooded, camo = w.camo, thermalOn = w.enablesThermal,
-            digest = w.digestion,
-            insight = w.insight,
-            keenEar = w.keenHearing, earMult = w.hearingMult,
-            thorns = w.thorns, venomResist = w.venomResist,
-            bleedResist = w.bleedResist,
-        };
+        return Contribution.FromLaw(BodyLaw.Express(ToLaw(h), ToLaw(w), own, m)); // арифметика — закон тела
     }
 
-    // человеч.значение + (звериное − человеч.) × множитель: на ×1 = звериное, на ×2 = вдвое дальше от человека
-    static float Blend(float human, float beast, float mult) => human + (beast - human) * mult;
 }
