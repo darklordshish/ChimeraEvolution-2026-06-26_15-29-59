@@ -964,7 +964,7 @@ MonoBehaviour:
   wolfLairCapacity: 4
   mooseLairCapacity: 2
   hedgehogLairCapacity: 2
-  buildBeacon: 1
+  buildBeacon: 0
   beaconHeight: 5
   beaconColor: {r: 1, g: 0.55, b: 0.15, a: 1}
   beaconIntensity: 1

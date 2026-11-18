@@ -78,6 +78,7 @@ namespace Chimera.Tests.PlayMode
             var climate = Object.FindAnyObjectByType<ForestClimate>();
             Assert.IsNotNull(b); Assert.IsNotNull(pc); Assert.IsNotNull(clock); Assert.IsNotNull(climate);
             Assert.IsNotNull(b.Beacon, "маяк поставлен");
+            b.buildBeacon = true; b.ApplyBeacon(); // в сцене выключен с 18.11 — съёмка включает галкой
             foreach (var s in Object.FindObjectsByType<ForestSpawner>()) s.autoTick = false;
             climate.autoWeather = false;
 
@@ -129,6 +130,7 @@ namespace Chimera.Tests.PlayMode
             var clock = Object.FindAnyObjectByType<WorldClock>();
             var climate = Object.FindAnyObjectByType<ForestClimate>();
             Assert.IsNotNull(b.Beacon, "маяк поставлен");
+            b.buildBeacon = true; b.ApplyBeacon(); // в сцене выключен с 18.11 — съёмка включает галкой
             foreach (var s in Object.FindObjectsByType<ForestSpawner>()) s.autoTick = false;
             climate.autoWeather = false;
             climate.SetWeatherImmediate(WeatherKind.Clear);
@@ -203,7 +205,7 @@ namespace Chimera.Tests.PlayMode
             foreach (var s in Object.FindObjectsByType<ForestSpawner>()) s.autoTick = false;
             climate.autoWeather = false;
             climate.SetWeatherImmediate(WeatherKind.Clear);
-            b.beaconHeight = 5f; b.beaconMinAngle = 0f; b.ApplyBeacon(); // роль фонаря у двери независимо от сцены
+            b.buildBeacon = true; b.beaconHeight = 5f; b.beaconMinAngle = 0f; b.ApplyBeacon(); // фонарь у двери — галкой, в сцене он выключен
 
             var raster = ForestMapRaster.Build(b.Map);
             var root = b.BuiltRoot.transform;

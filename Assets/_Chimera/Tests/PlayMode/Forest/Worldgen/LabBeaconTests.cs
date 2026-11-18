@@ -17,6 +17,7 @@ namespace Chimera.Tests.PlayMode
     {
         const string SceneName = "ForestPavilion";
         ForestBuilder b;
+        bool sceneBeaconOn;
 
         [UnitySetUp]
         public IEnumerator Load()
@@ -27,6 +28,10 @@ namespace Chimera.Tests.PlayMode
             b = Object.FindAnyObjectByType<ForestBuilder>();
             Assert.IsNotNull(b, "в павильоне нет ForestBuilder");
             foreach (var s in Object.FindObjectsByType<ForestSpawner>()) s.autoTick = false;
+            // В сцене фонарь выключен (18.11); сторожа устройства включают его галкой — так, как его включит человек.
+            sceneBeaconOn = b.buildBeacon;
+            b.buildBeacon = true;
+            b.ApplyBeacon();
         }
 
         [UnityTearDown]
@@ -43,7 +48,7 @@ namespace Chimera.Tests.PlayMode
         [UnityTest]
         public IEnumerator Beacon_StandsOverLabDoor_AndIsLit()
         {
-            Assert.IsTrue(b.buildBeacon, "в павильоне маяк включён (постановщик ForestPavilionFirstZone)");
+            Assert.IsFalse(sceneBeaconOn, "в сцене павильона фонарь выключен по умолчанию (проверка смысла 18.11 не пройдена)");
             Assert.IsNotNull(b.Beacon, "маяк поставлен");
             Assert.IsTrue(b.Beacon.gameObject.activeInHierarchy, "маяк горит");
             Assert.IsTrue(b.TryGetExit(out Vector3 door, out _), "у мира есть дверь лаборатории");
