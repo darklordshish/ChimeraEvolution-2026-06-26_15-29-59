@@ -84,6 +84,22 @@ public static class ForestProfiles
         return b;
     }
 
+    /// <summary>
+    /// Павильон первой зоны на v2 (карта как источник, решение геймдизайнера 18.11): профиль ворот без замороженных
+    /// каньона и акведука (ассеты в теге-архиве), с логовами зверей и маяком, тепловая эрозия как у ворот. Ровно профиль
+    /// замера «v2 + тепловая» в `СБОРКА.md`; отпечаток держит `ForestMapV2BaselineTests`.
+    /// </summary>
+    public static ForestBuilder PavilionV2Zone(GameObject host, long seed = 1337)
+    {
+        var b = PavilionV2(host, seed, erosion: false);
+        b.buildThermalErosion = true;
+        b.buildCanyon = false;
+        b.buildAqueduct = false;
+        b.buildAnimalLairs = true;
+        b.buildBeacon = true;
+        return b;
+    }
+
     sealed class Profile
     {
         public long seed;

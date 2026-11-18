@@ -138,7 +138,7 @@ namespace Chimera.Tests.PlayMode
         /// step = meshStep, начало = −mapDiameter/2, узлов = round(D/step)+1.
         /// НЕ путать с H0 v1 (`DomeHeightField.SampleGridHash`, шаг 1 м) — там сырое поле.
         /// </summary>
-        static ulong GroundHash(ForestBuilder b)
+        internal static ulong GroundHash(ForestBuilder b)
         {
             var c = b.Contract;
             float step = c.meshStep;
@@ -153,7 +153,7 @@ namespace Chimera.Tests.PlayMode
         }
 
         /// <summary>Адреса и производные (вход, спавн, станция, вода, ясень).</summary>
-        static ulong AddressHash(ForestBuilder b)
+        internal static ulong AddressHash(ForestBuilder b)
         {
             ulong h = 14695981039346656037UL;
             MixQ(ref h, b.Entry.x); MixQ(ref h, b.Entry.y); MixQ(ref h, b.Entry.z);
@@ -172,7 +172,7 @@ namespace Chimera.Tests.PlayMode
         }
 
         /// <summary>Координаты логовищ (не только Count) + тип + вид.</summary>
-        static ulong LairHash(ForestBuilder b)
+        internal static ulong LairHash(ForestBuilder b)
         {
             ulong h = 14695981039346656037UL;
             foreach (var l in b.Lairs)
@@ -187,7 +187,7 @@ namespace Chimera.Tests.PlayMode
         }
 
         /// <summary>Поляны/коридоры/поды: координаты, а не только число.</summary>
-        static ulong SpaceHash(ForestBuilder b)
+        internal static ulong SpaceHash(ForestBuilder b)
         {
             ulong h = 14695981039346656037UL;
             foreach (var c in b.Zones)
@@ -228,9 +228,9 @@ namespace Chimera.Tests.PlayMode
             return max;
         }
 
-        static void MixQ(ref ulong h, float v) => Mix(ref h, Mathf.RoundToInt(v * 1000f));
+        internal static void MixQ(ref ulong h, float v) => Mix(ref h, Mathf.RoundToInt(v * 1000f));
 
-        static void Mix(ref ulong h, int v)
+        internal static void Mix(ref ulong h, int v)
         {
             h ^= (uint)v;
             h *= 1099511628211UL;
