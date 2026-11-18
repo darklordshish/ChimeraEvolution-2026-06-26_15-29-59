@@ -161,25 +161,30 @@ public class ForestBuilder : MonoBehaviour, IBossExit
 
     [Header("Маяк над лабораторией (проба 17.11): мачта выше крон, фонарь без тумана; снять — галка")]
     public bool buildBeacon = false;
-    [Tooltip("от земли у двери до фонаря, м; кроны леса — до 18 м")] public float beaconHeight = DefaultBeaconHeight;
+    [Tooltip("от земли у двери до фонаря, м (фонарь у двери, геймдизайнер 18.11 — до 5 м)")] public float beaconHeight = DefaultBeaconHeight;
     public Color beaconColor = DefaultBeaconColor;
     [Tooltip("множитель цвета; больше 1 — пересвет")] public float beaconIntensity = DefaultBeaconIntensity;
     [Tooltip("диаметр фонаря вблизи, м")] public float beaconLampSize = DefaultBeaconLampSize;
-    [Tooltip("фонарь не меньше этого угла с любого расстояния, град")] public float beaconMinAngle = DefaultBeaconMinAngle;
+    [Tooltip("фонарь не меньше этого угла с любого расстояния, град; 0 — выкл: фонарь реального размера")] public float beaconMinAngle = DefaultBeaconMinAngle;
     [Tooltip("радиус точечного света у фонаря, м; 0 — без света")] public float beaconGlowRange = DefaultBeaconGlowRange;
     // Ноль в поле — «не настроено» (новое поле у компонента из сцены приходит нулём): берём дефолт.
-    const float DefaultBeaconHeight = 50f; // 25 м (заказ 17.11) от входа закрыто ближними кронами — ряд высот `МАЯК.md`
+    // 18.11 геймдизайнер: «опустить, какие 50?? максимум 5». Роль — фонарь у двери, не дальний ориентир (при 5 м кроны
+    // до 17,8 м его закрывают — ряд высот `МАЯК.md`). Было 50 м (17.11), до того 25.
+    const float DefaultBeaconHeight = 5f;
     static readonly Color DefaultBeaconColor = new Color(1f, 0.55f, 0.15f);
     const float DefaultBeaconIntensity = 1f; // выше 1 без bloom только выжигает оранжевый в белый — фонарь путается со звездой
     const float DefaultBeaconLampSize = 1.6f;
-    const float DefaultBeaconMinAngle = 1.2f; // ~14 пикселей на 720p при поле зрения 60°
+    const float DefaultBeaconMinAngle = 0f; // 18.11: подстройка угла выключена — фонарь реального размера, не значок
     const float DefaultBeaconGlowRange = 30f;
     [Header("Корм в карте (шаг 7 карты, только v2): кусты по сиду; 0 — по умолчанию (160, ±850 м, 8 м — числа павильона)")]
     public int forageCount = ForestForage.DefaultCount;
     public float forageHalfExtent = ForestForage.DefaultHalfExtent;
     public float forageSpacing = ForestForage.DefaultSpacing;
     /// <summary>Мачта стоит на столько метров вглубь от двери — над входом, а не перед ним.</summary>
-    const float BeaconInset = 2f;
+    // Фонарь у двери (18.11): мачта ПЕРЕД дверью и вбок от проёма. При 50 м она стояла в 2 м вглубь и торчала над
+    // крышей; при 5 м так она оказалась бы внутри скалы входа v2 (кадр `18-ориентиры/дверь/`).
+    const float BeaconOut = 6f;   // скальный вход v2: валуны выступают перед дверью на ~5 м
+    const float BeaconSide = 3f;  // вбок — не загораживать проём
 
     // Дефолты среза C — ОДНИМ местом: поля в сцене уже лежат, а новое сериализованное
     // поле у такого компонента приходит НУЛЁМ (гоча проекта). Ноль читаем как
@@ -572,7 +577,7 @@ public class ForestBuilder : MonoBehaviour, IBossExit
         color = beaconColor.a > 0f ? beaconColor : DefaultBeaconColor,
         intensity = beaconIntensity > 0f ? beaconIntensity : DefaultBeaconIntensity,
         lampSize = beaconLampSize > 0f ? beaconLampSize : DefaultBeaconLampSize,
-        minAngleDeg = beaconMinAngle > 0f ? beaconMinAngle : DefaultBeaconMinAngle,
+        minAngleDeg = beaconMinAngle > 0f ? beaconMinAngle : DefaultBeaconMinAngle, // 0 — выкл
         glowRange = beaconGlowRange >= 0f ? beaconGlowRange : DefaultBeaconGlowRange,
     };
 
@@ -584,7 +589,7 @@ public class ForestBuilder : MonoBehaviour, IBossExit
     {
         beacon = null;
         if (BuiltRoot == null || !TryGetExit(out Vector3 door, out Quaternion facing)) return;
-        Vector3 at = door - facing * Vector3.forward * BeaconInset;
+        Vector3 at = door + facing * (Vector3.forward * BeaconOut + Vector3.right * BeaconSide);
         at.y = door.y;
         beacon = LabBeacon.Build(BuiltRoot.transform, at, BeaconSettings);
         beacon.gameObject.SetActive(buildBeacon);
