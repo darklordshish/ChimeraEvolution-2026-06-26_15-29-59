@@ -777,7 +777,7 @@ public class ForestBuilder : MonoBehaviour, IBossExit
             seed = ResolvedSeed,
             ground = world.SampleGround,
             hydro = world.Hydro,
-            trees = world.TreeColliderPositions,
+            trees = world.MapTreePlan != null ? world.MapTreePlan.SolidPositions() : world.TreeColliderPositions, // стволы — из плана леса карты (шаг 3)
             zones = world.Zones,
             lab = world.LabCenter,
             entry = new Vector2(world.Entry.x, world.Entry.z),

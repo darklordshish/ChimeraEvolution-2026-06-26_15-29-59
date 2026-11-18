@@ -29,6 +29,8 @@ public sealed class ForestMap
     public Areas areas = new Areas();
     /// <summary>Рельеф v2: рецепт поля и высота по нему (шаг 2). После `FromJson` — <see cref="Restore"/>.</summary>
     public ForestMapRelief relief;
+    /// <summary>Деревья (шаг 3): точка, порода, масштаб, лежит/стоит, твёрдый ствол. Подлесок — вне карты.</summary>
+    public List<DomeFlora.TreeRec> trees = new List<DomeFlora.TreeRec>();
 
     [Serializable]
     public sealed class Water
@@ -122,7 +124,7 @@ public sealed class ForestMap
         }
 
         m.areas = AreasOf(m.ring.inner, h);
-        // Рельеф: тот, по которому мир строил чанки (шаг 2б), иначе — снять с террейна.
+        if (world.MapTrees != null) m.trees = world.MapTrees; // план леса (шаг 3)
         m.relief = world.MapRelief; // снят перед чанками; у мира с неподдержанным слоем карты нет вовсе (ForestBuilder)
         m.hash = ComputeHash(m);
         return m;

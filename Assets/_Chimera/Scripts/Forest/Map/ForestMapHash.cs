@@ -37,6 +37,15 @@ public static class ForestMapHash
 
         Q(ref h, m.areas.totalKm2); Q(ref h, m.areas.landKm2);
 
+        // Деревья: всё, что знает план (точка, масштаб, поворот, порода, состояние, твёрдость).
+        Mix(ref h, m.trees != null ? m.trees.Count : -1);
+        if (m.trees != null)
+            foreach (var t in m.trees)
+            {
+                V3(ref h, t.pos); Q(ref h, t.scale); Q(ref h, t.rotY);
+                Mix(ref h, (int)t.kind); Mix(ref h, (int)t.state); Mix(ref h, t.solid ? 1 : 0);
+            }
+
         // Рельеф: рецепт и ключ эрозии. Сетка эрозии (`relief.erosion.delta`) в хеш НЕ входит — ГеймБосс 18.11.
         var r = m.relief;
         Mix(ref h, r != null ? 1 : 0);
