@@ -536,7 +536,12 @@ public class ForestBuilder : MonoBehaviour, IBossExit
         PlayerDeath.IsWaterAt = waterProbe; // игрок не встаёт после смерти в озере или реке (17.11)
         PlayerDeath.FallbackPoint = TryGetRiseFallback;
         BuildBeacon(); // после ExitProvider: маяк стоит над той же дверью, из которой выходит босс
+        // Карта как источник (спека 18.11): только v2 — на v1 карту не делаем (решение геймдизайнера 18.11).
+        Map = WorldVersion >= 2 ? ForestMap.FromWorld(world, chosen, WorldVersion, SpawnPoint) : null;
     }
+
+    /// <summary>Карта мира v2 — факты в метрах на плоскости купола; null на v1 и до сборки.</summary>
+    public ForestMap Map { get; private set; }
 
     LabBeacon beacon;
     /// <summary>Маяк лаборатории этого мира (и при снятой галке — погашенный); null — лаборатории нет.</summary>
@@ -879,6 +884,7 @@ public class ForestBuilder : MonoBehaviour, IBossExit
     {
         Fingerprint = 0UL;
         beacon = null; // маяк — ребёнок корня мира, его снесёт world.Clear
+        Map = null;
         if (ReferenceEquals(BossChimeraSpawner.ExitProvider, this)) BossChimeraSpawner.ExitProvider = null;
         if (waterProbe != null && PlayerDeath.IsWaterAt == waterProbe) PlayerDeath.IsWaterAt = null;
         if (waterProbe != null) PlayerDeath.FallbackPoint = null;
