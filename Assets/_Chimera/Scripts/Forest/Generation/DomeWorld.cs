@@ -660,6 +660,13 @@ public class DomeWorld
         void EnsureChunks()
         {
             if (Chunks != 0) return;
+            // Карта как источник, шаг 2б: v2 снимает рельеф карты здесь — поле уже окончательное (площадка, пады
+            // коридоров) — и строит чанки по высоте КАРТЫ. v1 читает SampleGround, как раньше.
+            if (Terrain.TargetOrder)
+            {
+                MapRelief = ForestMapRelief.From(Terrain, seed);
+                Trace.Add("t.map.relief", 1, 1, $"рецепт рельефа в карте; эрозия {MapRelief.erosionKey}");
+            }
             BuildChunks(terrainQuads);
             Trace.Add("chunks", Chunks, Chunks);
         }
@@ -1328,6 +1335,7 @@ public class DomeWorld
         Plan = null;
         Erosion = null;
         TreeColliderPositions = new List<Vector3>();
+        MapRelief = null;
         CrownCover = 0f;
         Zones = new List<ForestSpace.Zone>();
         Links = new List<ForestSpace.Link>();
@@ -1443,6 +1451,8 @@ public class DomeWorld
         int n = DomeGenRules.ChunkCount(cfg);
         float half = cfg.mapDiameter * 0.5f;
         int built = 0;
+        // Высота чанков — из карты (v2, шаг 2б), иначе — пол мира (v1).
+        Func<float, float, float> height = MapRelief != null ? MapRelief.Height : SampleGround;
         for (int cz = 0; cz < n; cz++)
             for (int cx = 0; cx < n; cx++)
             {
@@ -1459,7 +1469,7 @@ public class DomeWorld
                         x0 + cfg.chunkSize, z0 + cfg.chunkSize)
                     ? (x, z) => DomeCanyonHandoff.Inside(x, z) : null;
                 var mesh = DomeChunkMesh.BuildChunkMesh(cfg, cx, cz, QuadsForChunk(cx, cz),
-                    SampleGround, Terrain.TargetOrder, cfg.seed, skipAt);
+                    height, Terrain.TargetOrder, cfg.seed, skipAt);
                 Track(mesh);
                 var go = Part($"Chunk_{cx}_{cz}", mesh, mat);
                 if (slopeMats != null)
