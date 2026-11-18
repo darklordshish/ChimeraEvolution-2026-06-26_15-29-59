@@ -28,7 +28,7 @@ description: Использовать ПЕРЕД тем как самому пи
 
 ## 2. Как задавать
 
-- **Субагент:** `Agent({ subagent_type, model: "haiku" | "sonnet" | "opus" | "fable", prompt })`. `effort` — только если
+- **Субагент:** `Agent({ subagent_type, model: "haiku" | "sonnet" | "opus", prompt })`. **Fable не брать** (18.11: промо кончилось, нужны кредиты — геймдизайнер вычеркнул). `effort` — только если
   геймдизайнер или этот навык прямо велят. Форк (`subagent_type: "fork"`) всегда на модели сессии — для дешёвой работы не
   годится.
 - **Отдельная сессия:** `start_session({ ..., model: "<id Sonnet/Haiku>", effort })` — только той же семьи или дешевле.
