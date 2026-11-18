@@ -612,8 +612,10 @@ public class DomeWorld
         // а не «плита в центре». v1 сохраняет исторический двор/плиту бит-в-бит.
         Terrain.padEnabled = !Terrain.TargetOrder || HasStation;
         if (!Terrain.TargetOrder) EnsureChunks();
+        Trace.Add("t.relief", 0, 0, "замер: рельеф и план до кольца");
         BuildRockRing();
         BuildWater();
+        Trace.Add("t.ring+water", 0, 0);
         if (buildAqueduct) BuildAqueducts();
         BuildMouthsAndNests(seed);
         if (buildAsh) BuildAshAndNest(seed);
@@ -628,7 +630,9 @@ public class DomeWorld
             LabPlan = buildLabPlan
                 ? LabPlanGenerator.Generate(seed, labPlanVersion, ResolvedLabEntrance, ResolvedLabStyle)
                 : LabPlanFixed.Create();
+        Trace.Add("t.lairs+ash", 0, 0);
         BuildFacility(seed, buildLabComplex, buildStationLoop);
+        Trace.Add("t.facility", 0, 0);
         if (buildStationHill && !Terrain.TargetOrder) BuildStationHill();
 
         // SpawnPoint — двор старого лабиринта или закрытый зал комплекса. У комплекса
@@ -845,6 +849,7 @@ public class DomeWorld
         Trees = DomeFlora.Build(Root, cfg, Hydro, seed, SampleGround, clearing, undergrowthExclude, out var flora,
             (x, z) => ForestSpace.Near(Zones, Links, x, z, 12f), CoverPods,
             (x, z) => ForestSpace.Near(Zones, Links, x, z, 20f));
+        Trace.Add("t.flora", Trees, Trees);
         TreeColliders = flora.treeColliders;
         ForestAreaKm2 = flora.forestAreaKm2;
         DeadLogs = flora.deadLogs;
@@ -869,7 +874,9 @@ public class DomeWorld
             VisualNests = DomeRavines.BuildNests(Root, Ravines, seed, SampleGround,
                 Flat(DomePalette.ConcreteDark), Flat(DomePalette.Olive), meshes);
         }
+        Trace.Add("t.paths+edges", 0, 0);
         BuildSky(seed);
+        Trace.Add("t.sky", 0, 0);
     }
 
     /// <summary>

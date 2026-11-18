@@ -495,12 +495,17 @@ public class ForestBuilder : MonoBehaviour, IBossExit
 
         var surface = GetComponent<NavMeshSurface>();
         world.BuildNavMesh(surface);
+        world.Trace?.Add("t.navmesh", 0, 0);
 
         SpawnPlayer();
 
+        world.Trace?.Add("t.player", 0, 0);
         BuildLairs();
+        world.Trace?.Add("t.lairs", 0, 0);
         Fingerprint = WorldFingerprint.Compute(this);
+        world.Trace?.Add("t.fingerprint", 0, 0);
         SetupClimate();
+        world.Trace?.Add("t.climate", 0, 0);
 
         int parts = world.Facility != null ? world.Facility.parts.Count
             : world.LabComplex != null ? world.LabComplex.parts : 0;
