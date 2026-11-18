@@ -537,7 +537,9 @@ public class ForestBuilder : MonoBehaviour, IBossExit
         PlayerDeath.FallbackPoint = TryGetRiseFallback;
         BuildBeacon(); // после ExitProvider: маяк стоит над той же дверью, из которой выходит босс
         // Карта как источник (спека 18.11): только v2 — на v1 карту не делаем (решение геймдизайнера 18.11).
-        Map = WorldVersion >= 2 ? ForestMap.FromWorld(world, chosen, WorldVersion, SpawnPoint) : null;
+        // Мир с неподдержанным слоем (каньон, овраги) карты не получает: рельеф не снят (DomeWorld.MapRelief == null).
+        Map = WorldVersion >= 2 && world.MapRelief != null
+            ? ForestMap.FromWorld(world, chosen, WorldVersion, SpawnPoint) : null;
     }
 
     /// <summary>Карта мира v2 — факты в метрах на плоскости купола; null на v1 и до сборки.</summary>

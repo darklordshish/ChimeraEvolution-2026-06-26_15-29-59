@@ -105,6 +105,33 @@ namespace Chimera.Tests.PlayMode
             yield break;
         }
 
+        /// <summary>
+        /// Мир с неподдержанным слоем (каньон, заморожен) собирается как раньше: без исключения, чанки по полу мира, карты
+        /// нет, причина — в трассе (найдено ГеймБоссом 18.11: шесть TerrainStationTests падали с NotSupportedException).
+        /// </summary>
+        [UnityTest]
+        public IEnumerator UnsupportedLayer_WorldBuilds_WithoutMap()
+        {
+            var h = new GameObject("~ForestMapCanyonProbe");
+            h.SetActive(false);
+            var b = ForestProfiles.PavilionV2Zone(h, 1337L);
+            b.buildOnAwake = false;
+            b.buildCanyon = true;
+            h.SetActive(true);
+            try
+            {
+                b.Build();
+                Assert.IsNotNull(b.BuiltRoot, "мир с каньоном собран");
+                Assume.That(b.World.Terrain.canyon.valid, "на этом сиде каньон не встал — сторож не о чём");
+                Assert.IsNull(b.World.MapRelief, "рельеф карты не снят");
+                Assert.IsNull(b.Map, "карты у мира с каньоном нет");
+                Assert.Greater(b.Chunks, 0, "чанки построены по полу мира");
+                StringAssert.Contains("карта не строится", b.Trace.Text, "причина — в трассе");
+            }
+            finally { b.Clear(); Object.Destroy(h); }
+            yield break;
+        }
+
         [UnityTest]
         public IEnumerator Chunks_ReadMapRelief()
         {

@@ -664,8 +664,19 @@ public class DomeWorld
             // коридоров) — и строит чанки по высоте КАРТЫ. v1 читает SampleGround, как раньше.
             if (Terrain.TargetOrder)
             {
-                MapRelief = ForestMapRelief.From(Terrain, seed);
-                Trace.Add("t.map.relief", 1, 1, $"рецепт рельефа в карте; эрозия {MapRelief.erosionKey}");
+                // Неподдержанный слой (каньон, овраги — заморожены) НЕ роняет мир: карты у такого мира нет, чанки идут
+                // по SampleGround, причина — в трассе и в логе. Отказ на самом From сторожит ForestMapReliefTests.
+                try
+                {
+                    MapRelief = ForestMapRelief.From(Terrain, seed);
+                    Trace.Add("t.map.relief", 1, 1, $"рецепт рельефа в карте; эрозия {MapRelief.erosionKey}");
+                }
+                catch (NotSupportedException e)
+                {
+                    MapRelief = null;
+                    Trace.Add("t.map.relief", 1, 0, "карта не строится: " + e.Message);
+                    Debug.Log("[Forest] карта мира не строится: " + e.Message + " — чанки по полу мира");
+                }
             }
             BuildChunks(terrainQuads);
             Trace.Add("chunks", Chunks, Chunks);
