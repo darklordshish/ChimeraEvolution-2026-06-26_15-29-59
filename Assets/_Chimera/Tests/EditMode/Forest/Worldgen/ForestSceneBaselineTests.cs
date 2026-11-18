@@ -131,7 +131,7 @@ namespace Chimera.Tests.EditMode
                 Assert.IsFalse(b.buildHydraulicErosion, $"{V2ZoneAt}: {Pavilion} buildHydraulicErosion");
                 Assert.IsFalse(b.buildAqueduct, $"{V2ZoneAt}: {Pavilion} buildAqueduct (заморожен)");
                 Assert.IsTrue(b.buildAnimalLairs, $"{V2ZoneAt}: {Pavilion} buildAnimalLairs");
-                Assert.IsTrue(b.buildBeacon, $"{V2ZoneAt}: {Pavilion} buildBeacon");
+                Assert.IsFalse(b.buildBeacon, $"2026-11-18 (фонарь у двери не прошёл проверку смысла): {Pavilion} buildBeacon");
                 Assert.AreEqual(0, b.fingerprintVersion, $"{Pavilion}: fingerprintVersion (0 = «не настроено» → v1 формулы)");
             });
         }

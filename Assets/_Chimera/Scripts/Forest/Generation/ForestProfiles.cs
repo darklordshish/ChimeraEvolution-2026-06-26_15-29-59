@@ -96,7 +96,9 @@ public static class ForestProfiles
         b.buildCanyon = false;
         b.buildAqueduct = false;
         b.buildAnimalLairs = true;
-        b.buildBeacon = true;
+        // Фонарь у двери не прошёл проверку смысла (ГеймБосс 18.11: виден лишь с 50 м по дороге — МАЯК-ДВЕРЬ.md):
+        // по умолчанию выключен; код, тесты и кадры остаются, включается галкой.
+        b.buildBeacon = false;
         return b;
     }
 
