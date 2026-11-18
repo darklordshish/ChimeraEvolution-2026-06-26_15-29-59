@@ -1,3 +1,4 @@
+using Chimera.Laws;
 using UnityEngine;
 
 /// <summary>
@@ -22,5 +23,5 @@ public static class OutgoingDamage
     }
 
     /// <summary>Целый урон с множителем делателя (для доставок, что бьют числом, а не пайком `MeleeBlow`).</summary>
-    public static int Apply(Component dealer, int damage) => damage <= 0 ? damage : Mathf.Max(1, Mathf.RoundToInt(damage * Mult(dealer)));
+    public static int Apply(Component dealer, int damage) => DamageLaw.Outgoing(damage, Mult(dealer));
 }
