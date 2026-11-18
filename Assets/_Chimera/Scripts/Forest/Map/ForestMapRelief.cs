@@ -43,6 +43,9 @@ public sealed class ForestMapRelief
     /// <summary>Пол формы без площадки (= `DomeTerrain.ShapeGround`): по нему выбираются зоны и связи.</summary>
     public float Shape(float x, float z) => Live.ShapeGround(x, z);
 
+    /// <summary>Конфиг рецепта (после `Restore`): пороги уклонов и прочие числа поля.</summary>
+    public DomeGenConfigSO Config { get { if (terrain == null) Restore(); return cfg; } }
+
     DomeTerrain Live
     {
         get
