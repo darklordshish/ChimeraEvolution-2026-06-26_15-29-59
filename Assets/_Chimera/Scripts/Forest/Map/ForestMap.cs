@@ -99,15 +99,11 @@ public sealed class ForestMap
             m.water.riverDepth = h.riverDepth;
         }
 
-        var masks = world.Masks;
-        if (masks != null && masks.HasRing)
+        // Кольцо скал — по его собственной формуле, а не по маске: маска кольца — полоса [rin−30, rout], запас для форм.
+        if (world.Config != null)
         {
-            m.ring.inner = masks.RingInner;
-            m.ring.outer = masks.RingOuter;
-        }
-        else
-        {
-            m.ring.inner = m.ring.outer = m.diameter * 0.5f;
+            m.ring.inner = DomeRockRing.InnerRadius(world.Config);
+            m.ring.outer = DomeRockRing.OuterRadius(world.Config);
         }
 
         m.points.entry = world.Entry;

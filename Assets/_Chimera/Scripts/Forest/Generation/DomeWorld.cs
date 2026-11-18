@@ -134,6 +134,8 @@ public class DomeWorld
     /// <summary>Поворот площадки станции (градусы); у старого лабиринта A/C — 0.</summary>
     public float PadYaw => padYaw;
     public float MapDiameter => cfg != null ? cfg.mapDiameter : 0f;
+    /// <summary>Конфиг, по которому собран мир (копия `ForestBuilder`); null до сборки.</summary>
+    public DomeGenConfigSO Config => cfg;
 
     DomeGenConfigSO cfg;
     /// <summary>S3: маски габаритов формы. null у v1 — там остаются центровые проверки.</summary>

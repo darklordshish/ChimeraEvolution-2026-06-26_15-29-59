@@ -68,7 +68,11 @@ namespace Chimera.Tests.PlayMode
             Assert.AreEqual(builder.Entry, m.points.entry, "вход");
             Assert.AreEqual(builder.Hydro.lakeRadius, m.water.lakeRadius, 1e-4f, "радиус озера");
             Assert.AreEqual(builder.Hydro.riverPts.Count, m.water.river.Count, "точки реки");
-            Assert.Greater(m.ring.inner, 0f, "кольцо");
+            var cfg = ScriptableObject.CreateInstance<DomeGenConfigSO>();
+            cfg.mapDiameter = builder.mapDiameter;
+            Assert.AreEqual(DomeRockRing.InnerRadius(cfg), m.ring.inner, 1e-3f, "кольцо карты — кольцо скал, а не полоса маски [rin−30]");
+            Assert.AreEqual(DomeRockRing.OuterRadius(cfg), m.ring.outer, 1e-3f, "внешний радиус кольца скал");
+            Object.Destroy(cfg);
             yield break;
         }
 
