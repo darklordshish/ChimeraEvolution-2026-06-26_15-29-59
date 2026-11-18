@@ -31,6 +31,36 @@ public sealed class ForestMap
     public ForestMapRelief relief;
     /// <summary>Деревья (шаг 3): точка, порода, масштаб, лежит/стоит, твёрдый ствол. Подлесок — вне карты.</summary>
     public List<DomeFlora.TreeRec> trees = new List<DomeFlora.TreeRec>();
+    // --- шаг 5а: разметка пространства, пути, ориентиры ---
+    public List<ForestSpace.Zone> zones = new List<ForestSpace.Zone>();
+    public List<ForestSpace.Link> links = new List<ForestSpace.Link>();
+    public List<ForestSpace.Zone> commons = new List<ForestSpace.Zone>();
+    public List<ForestSpace.Zone> waterholes = new List<ForestSpace.Zone>();
+    public List<ForestSpace.CoverPod> coverPods = new List<ForestSpace.CoverPod>();
+    public List<ForestPoi> pois = new List<ForestPoi>();
+    public List<ForestRoad> roads = new List<ForestRoad>();
+    public Ash ash = new Ash();
+    public Beacon beacon = new Beacon();
+
+    /// <summary>Ясень — главный ориентир: место и земля под ним.</summary>
+    [Serializable]
+    public sealed class Ash
+    {
+        public bool has;
+        public Vector2 pos;
+        public float groundY;
+    }
+
+    /// <summary>Маяк лаборатории (17.11): основание на плоскости, высота фонаря, галка.</summary>
+    [Serializable]
+    public sealed class Beacon
+    {
+        public bool has;
+        public bool on;
+        public Vector3 basePos;
+        public float height;
+    }
+
     /// <summary>Логова (шаг 4): адрес, вид, тип, ёмкость, радиусы; темп и спад страха — в игровых часах.</summary>
     public List<Lair> lairs = new List<Lair>();
 
@@ -130,7 +160,7 @@ public sealed class ForestMap
     /// <param name="spawn">точка появления игрока — её решает `ForestBuilder` (6 м от входа в чашу), а не `DomeWorld.SpawnPoint` (зал лаборатории)</param>
     /// <param name="lairs">слой логов — план логов `ForestBuilder` (шаг 4); null — слой пуст</param>
     public static ForestMap FromWorld(DomeWorld world, long seed, int worldVersion, Vector3 spawn,
-        List<Lair> lairs = null)
+        List<Lair> lairs = null, Beacon beacon = null)
     {
         if (world == null) throw new ArgumentNullException(nameof(world));
         var m = new ForestMap { seed = seed, worldVersion = worldVersion, diameter = world.MapDiameter };
@@ -171,6 +201,16 @@ public sealed class ForestMap
         m.areas = AreasOf(m.ring.inner, h);
         if (world.MapTrees != null) m.trees = world.MapTrees; // план леса (шаг 3)
         if (lairs != null) m.lairs = lairs; // план логов (шаг 4)
+        // Шаг 5а: разметка, пути, ориентиры — копиями списков мира.
+        m.zones = new List<ForestSpace.Zone>(world.Zones);
+        m.links = new List<ForestSpace.Link>(world.Links);
+        m.commons = new List<ForestSpace.Zone>(world.Commons);
+        m.waterholes = new List<ForestSpace.Zone>(world.Waterholes);
+        m.coverPods = new List<ForestSpace.CoverPod>(world.CoverPods);
+        m.pois = new List<ForestPoi>(world.Pois.All);
+        if (world.Roads != null) m.roads = new List<ForestRoad>(world.Roads.roads);
+        m.ash = new Ash { has = world.HasAsh, pos = world.Ash.pos, groundY = world.Ash.groundY };
+        if (beacon != null) m.beacon = beacon;
         m.relief = world.MapRelief; // снят перед чанками; у мира с неподдержанным слоем карты нет вовсе (ForestBuilder)
         m.hash = ComputeHash(m);
         return m;

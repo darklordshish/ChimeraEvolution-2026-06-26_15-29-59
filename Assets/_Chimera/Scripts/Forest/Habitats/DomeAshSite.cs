@@ -36,6 +36,7 @@ public static class DomeAshSite
         return s;
     }
 
+    [System.Serializable]
     public struct AshSpot
     {
         public Vector2 pos;
