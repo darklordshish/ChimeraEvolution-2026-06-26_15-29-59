@@ -58,10 +58,18 @@ public static class ForestMapPainter
         {
             var at = new System.Collections.Generic.Dictionary<string, Vector2>();
             foreach (var v in graph.vertices) at[v.id] = new Vector2(v.x, v.z);
-            foreach (var e in graph.edges)
-                if (at.TryGetValue(e.a, out var a) && at.TryGetValue(e.b, out var b)) Line(px, r, a, b, Edge);
+            for (int k = 0; k < graph.edges.Count; k++)
+            {
+                var e = graph.edges[k];
+                // Ломаной по фактическому ходу ребра; прямой — только если хода нет (граф из JSON).
+                var path = graph.paths != null && k < graph.paths.Count ? graph.paths[k] : null;
+                if (path != null && path.Count >= 2)
+                    for (int i = 0; i + 1 < path.Count; i++) Line(px, r, path[i], path[i + 1], Edge);
+                else if (at.TryGetValue(e.a, out var a) && at.TryGetValue(e.b, out var b)) Line(px, r, a, b, Edge);
+            }
         }
 
+        if (map.forage != null) foreach (var f in map.forage) Dot(px, r, f.pos, 1, new Color(0.55f, 0.95f, 0.35f));
         foreach (var l in map.lairs) Dot(px, r, new Vector2(l.pos.x, l.pos.z), 3, SpeciesColor(l.species));
         if (map.ash != null && map.ash.has) Dot(px, r, map.ash.pos, 5, new Color(0.12f, 0.30f, 0.10f));
         Dot(px, r, new Vector2(map.points.entry.x, map.points.entry.z), 4, Color.white);

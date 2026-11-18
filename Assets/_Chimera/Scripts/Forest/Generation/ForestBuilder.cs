@@ -174,6 +174,10 @@ public class ForestBuilder : MonoBehaviour, IBossExit
     const float DefaultBeaconLampSize = 1.6f;
     const float DefaultBeaconMinAngle = 1.2f; // ~14 пикселей на 720p при поле зрения 60°
     const float DefaultBeaconGlowRange = 30f;
+    [Header("Корм в карте (шаг 7 карты, только v2): кусты по сиду; 0 — по умолчанию (160, ±850 м, 8 м — числа павильона)")]
+    public int forageCount = ForestForage.DefaultCount;
+    public float forageHalfExtent = ForestForage.DefaultHalfExtent;
+    public float forageSpacing = ForestForage.DefaultSpacing;
     /// <summary>Мачта стоит на столько метров вглубь от двери — над входом, а не перед ним.</summary>
     const float BeaconInset = 2f;
 
@@ -541,6 +545,15 @@ public class ForestBuilder : MonoBehaviour, IBossExit
         Map = WorldVersion >= 2 && world.MapRelief != null
             ? ForestMap.FromWorld(world, chosen, WorldVersion, SpawnPoint, MapLairs,
                 new ForestMap.Beacon { has = beacon != null, on = buildBeacon, basePos = beaconBase, height = BeaconSettings.height }) : null;
+        if (Map != null)
+        {
+            // Корм (шаг 7): кусты по сиду из слоёв карты; хеш — заново, корм в него входит.
+            Map.forage = ForestForage.Plan(Map, chosen,
+                forageCount > 0 ? forageCount : ForestForage.DefaultCount,
+                forageHalfExtent > 0f ? forageHalfExtent : ForestForage.DefaultHalfExtent,
+                forageSpacing > 0f ? forageSpacing : ForestForage.DefaultSpacing);
+            Map.hash = ForestMap.ComputeHash(Map);
+        }
     }
 
     /// <summary>Карта мира v2 — факты в метрах на плоскости купола; null на v1 и до сборки.</summary>

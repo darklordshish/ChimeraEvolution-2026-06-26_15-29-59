@@ -42,6 +42,8 @@ public sealed class ForestMap
     public List<ForestPoi> pois = new List<ForestPoi>();
     public List<ForestRoad> roads = new List<ForestRoad>();
     public Ash ash = new Ash();
+    /// <summary>Корм (шаг 7): кусты по сиду, на проходимой суше; отрастание и съеденность — рантайм.</summary>
+    public List<ForestForage.Item> forage = new List<ForestForage.Item>();
     public Beacon beacon = new Beacon();
 
     /// <summary>Ясень — главный ориентир: место и земля под ним.</summary>

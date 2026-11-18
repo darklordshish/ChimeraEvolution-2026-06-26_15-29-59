@@ -57,6 +57,13 @@ public static class ChimeraCliCommands
         return "Docs/Диаграммы/Эволюция/данные.json обновлён (открытая сцена возвращена)";
     }
 
+    [CliCommand("chimera-map-export", "Выгрузить КАРТУ ЛЕСА для симулятора: площади, старт, лаборатория, логова, граф путей, корм → Docs/Диаграммы/Эволюция/карта.json")]
+    public static string MapExportData()
+    {
+        MapExport.Generate();
+        return MapExport.OutPath + " обновлён (мир собран на временном объекте и снесён)";
+    }
+
     /// <summary>Пересобрать оба отчёта разом: после правки данных сверять надо и план, и замер.</summary>
     [CliCommand("chimera-silhouette", "Выгрузить СВЕРКУ СИЛУЭТОВ — детектор читаемости: тело билдером против маски листа (IoU)")]
     public static string Silhouette() => SilhouetteDetector.Generate();

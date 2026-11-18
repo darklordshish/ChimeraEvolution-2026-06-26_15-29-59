@@ -78,8 +78,9 @@ namespace Chimera.Tests.PlayMode
         public IEnumerator Graph_VerticesFromMapLayers()
         {
             var m = jsonMap;
-            int expected = m.zones.Count + 1 + m.lairs.Count + m.waterholes.Count + (m.lab.has ? 1 : 0);
-            Assert.AreEqual(expected, graph.vertices.Count, "вершины: зоны, вход, логова, водопои, лаборатория");
+            int expected = m.zones.Count + 1 + m.lairs.Count + m.waterholes.Count + (m.lab.has ? 1 : 0) + m.forage.Count;
+            Assert.AreEqual(expected, graph.vertices.Count, "вершины: зоны, вход, логова, водопои, лаборатория, корм (шаг 7)");
+            Assert.AreEqual(m.forage.Count, graph.vertices.Count(v => v.kind == ForestMapGraph.VertexKind.Forage));
             Assert.AreEqual(m.zones.Count, graph.vertices.Count(v => v.kind == ForestMapGraph.VertexKind.Zone));
             Assert.AreEqual(m.lairs.Count, graph.vertices.Count(v => v.kind == ForestMapGraph.VertexKind.Lair));
             Assert.IsTrue(graph.vertices.All(v => v.kind != ForestMapGraph.VertexKind.Zone || v.zone >= 0), "вершина зоны — в своей зоне");
