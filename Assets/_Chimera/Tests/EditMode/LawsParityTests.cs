@@ -348,6 +348,148 @@ namespace Chimera.Tests.EditMode
             Assert.AreEqual(25, AffinityLaw.Pool(20, 5));
         }
 
+
+        // ---- С4: убийство и химеризация ----
+        // эталон родства: прежний код CreditKiller (словарь, Mathf)
+        static Dictionary<string, int> OldTally(string chassis, string[] organs, float per)
+        {
+            var tally = new Dictionary<string, int>();
+            if (chassis != null) tally[chassis] = 1;
+            foreach (var sp in organs) tally[sp] = (tally.TryGetValue(sp, out var c) ? c : 0) + 1;
+            var gains = new Dictionary<string, int>();
+            foreach (var kv in tally) gains[kv.Key] = Mathf.Max(1, Mathf.RoundToInt(kv.Value * per));
+            return gains;
+        }
+
+        [Test]
+        public void Tally_MatchesOldFormula()
+        {
+            var comps = new[]
+            {
+                new string[0], new[] { "Волк" }, new[] { "Волк", "Волк", "Волк" }, new[] { "Змея", "Волк", "Лось", "Змея" },
+                new[] { "Человек", "Человек", "Человек", "Человек", "Человек", "Волк", "Ёж" },
+                new[] { "Лось", "Лось", "Лось", "Лось", "Лось", "Лось", "Лось", "Лось", "Лось", "Лось", "Лось", "Лось" },
+            };
+            int n = 0;
+            foreach (var organs in comps) foreach (string chassis in new[] { null, "Волк", "Человек" })
+            foreach (float per in new[] { 0.1f, 0.25f, 0.5f, 0.55f, 1f, 1.5f, 2.5f })
+            {
+                var old = OldTally(chassis, organs, per);
+                var gains = KillLaw.Tally(chassis, organs, per);
+                Assert.AreEqual(old.Count, gains.Count, $"{chassis} {string.Join(",", organs)} {per}");
+                foreach (var kv in gains) Assert.AreEqual(old[kv.Key], kv.Value, $"{kv.Key} · {chassis} {string.Join(",", organs)} {per}");
+                n++;
+            }
+            Assert.Greater(n, 100);
+        }
+
+        [Test]
+        public void Tally_Examples()
+        {
+            var g = KillLaw.Tally("Волк", new[] { "Волк", "Змея" }, 0.55f); // Волк: 2 × 0.55 = 1.1 → 1; Змея: 0.55 → 1 (минимум 1)
+            Assert.AreEqual(2, g.Count);
+            Assert.AreEqual("Волк", g[0].Key); Assert.AreEqual(1, g[0].Value);
+            Assert.AreEqual("Змея", g[1].Key); Assert.AreEqual(1, g[1].Value);
+            Assert.AreEqual(2, KillLaw.Tally("Лось", new[] { "Лось", "Лось", "Лось" }, 0.5f)[0].Value); // 4 × 0.5 = 2
+            Assert.AreEqual(2, KillLaw.Tally("Лось", new[] { "Лось", "Лось" }, 0.5f)[0].Value);          // 3 × 0.5 = 1.5 → 2 (к чётному)
+            Assert.AreEqual(0, KillLaw.Tally(null, new string[0], 1f).Count);
+        }
+
+        [Test]
+        public void Meal_MatchesOldFormula()
+        {
+            foreach (bool eats in new[] { false, true }) foreach (bool whole in new[] { false, true })
+            foreach (bool massive in new[] { false, true }) foreach (float meal in new[] { 0.3f, 0.7f, 1f })
+            {
+                // прежнее: хищнику Feed(whole ? 1 : meal); массивная туша — стае meal * 0.5
+                var m = KillLaw.Meal(eats, whole, massive, meal);
+                Assert.AreEqual(eats, m.Fed);
+                Assert.AreEqual(eats ? (whole ? 1f : meal) : 0f, m.Killer, 0f);
+                Assert.AreEqual(eats && massive ? meal * 0.5f : 0f, eats ? m.Pack : 0f, 0f);
+            }
+            Assert.AreEqual(0f, KillLaw.Meal(false, false, true, 0.7f).Pack, "не хищник — стаю не кормят");
+        }
+
+        // эталон химеризации: прежний TryChimerize на тех же вызовах случайности
+        static int OldRoll(List<(string species, int aff)> loot, float mult, XorShiftRandom r)
+        {
+            if (loot.Count == 0) return -1;
+            int pick = r.Range(0, loot.Count);
+            float chance = (loot[pick].aff / 100f) * mult;
+            if (r.Next01() > chance) return -1;
+            return pick;
+        }
+
+        [Test]
+        public void Roll_MatchesOldLogic_OnFixedSeeds()
+        {
+            var cases = new List<List<(string, int)>>
+            {
+                new(),                                                           // пустой лут
+                new() { ("Волк", 0) },                                           // шанс 0
+                new() { ("Волк", 100) },                                         // шанс 1
+                new() { ("Волк", 50), ("Змея", 25), ("Лось", 100) },             // середина
+                new() { ("Ёж", 1), ("Ёж", 100), ("Волк", 100), ("Змея", 0), ("Лось", 37) },
+            };
+            int hits = 0, misses = 0;
+            foreach (uint seed in new uint[] { 1, 7, 42, 1234, 99999 })
+            foreach (float mult in new[] { 0.5f, 1f, 2f })
+            foreach (var c in cases)
+            {
+                var entries = c.ConvertAll(x => new LootEntry(x.Item1, "орган", x.Item2));
+                var rOld = new XorShiftRandom(seed); var rNew = new XorShiftRandom(seed);
+                for (int i = 0; i < 40; i++) // подряд на одном потоке: расход случайности тоже должен совпасть
+                {
+                    int old = OldRoll(c.ConvertAll(x => (x.Item1, x.Item2)), mult, rOld);
+                    int now = ChimerizeLaw.Roll(entries, mult, rNew);
+                    Assert.AreEqual(old, now, $"сид {seed} мульт {mult} лут {c.Count} шаг {i}");
+                    if (now >= 0) hits++; else misses++;
+                }
+                Assert.AreEqual(rOld.NextUInt(), rNew.NextUInt(), "потоки разошлись — разный расход случайности");
+            }
+            Assert.Greater(hits, 100); Assert.Greater(misses, 100);
+        }
+
+        sealed class ScriptedRandom : ILawRandom
+        {
+            readonly float v; readonly int idx; public readonly List<string> Calls = new();
+            public ScriptedRandom(int idx, float v) { this.idx = idx; this.v = v; }
+            public float Next01() { Calls.Add("value"); return v; }
+            public int Range(int min, int max) { Calls.Add($"range {min} {max}"); return idx; }
+        }
+
+        [Test]
+        public void Roll_CallOrder_RangeThenValue_AndEdges()
+        {
+            var loot = new[] { new LootEntry("Волк", "Пасть", 50), new LootEntry("Змея", "Яд", 100) };
+            var r = new ScriptedRandom(1, 0.99f);
+            Assert.AreEqual(1, ChimerizeLaw.Roll(loot, 1f, r));                       // шанс 1: 0.99 ≤ 1 → надел
+            CollectionAssert.AreEqual(new[] { "range 0 2", "value" }, r.Calls);
+
+            Assert.AreEqual(-1, ChimerizeLaw.Roll(loot, 1f, new ScriptedRandom(0, 0.51f)));  // шанс 0.5 < 0.51
+            Assert.AreEqual(0, ChimerizeLaw.Roll(loot, 1f, new ScriptedRandom(0, 0.5f)));    // ровно шанс — проходит (прежнее `>`)
+            Assert.AreEqual(-1, ChimerizeLaw.Roll(new[] { new LootEntry("Волк", "Пасть", 0) }, 1f, new ScriptedRandom(0, 0.0001f)));
+            Assert.AreEqual(0, ChimerizeLaw.Roll(new[] { new LootEntry("Волк", "Пасть", 0) }, 1f, new ScriptedRandom(0, 0f))); // 0 > 0 нет
+
+            var empty = new ScriptedRandom(0, 0f);
+            Assert.AreEqual(-1, ChimerizeLaw.Roll(new LootEntry[0], 1f, empty));
+            Assert.IsEmpty(empty.Calls, "пустой лут случайность не тратит");
+        }
+
+        [Test]
+        public void Fits_MatchesOldPoolCheck()
+        {
+            int n = 0;
+            for (int used = 0; used <= 12; used++) for (int slot = 0; slot <= 4; slot++)
+            for (int variant = 0; variant <= 6; variant++) foreach (int pool in new[] { 0, 3, 8, 10, 12 })
+            foreach (bool worn in new[] { false, true })
+            {
+                bool old = used - slot + variant <= pool && !worn; // CanInstall && !WornElsewhere
+                Assert.AreEqual(old, ChimerizeLaw.Fits(used, slot, variant, pool, worn));
+                n++;
+            }
+            Assert.Greater(n, 1000);
+        }
         // ---- живой Health ----
         readonly List<GameObject> made = new();
         [TearDown]
