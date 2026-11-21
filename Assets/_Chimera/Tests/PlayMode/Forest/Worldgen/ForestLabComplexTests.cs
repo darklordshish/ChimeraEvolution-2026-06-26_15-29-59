@@ -18,11 +18,25 @@ namespace Chimera.Tests.PlayMode
         GameObject host;
         ForestBuilder builder;
 
-        [TearDown]
-        public void TearDown()
+        const string ProbeName = "~ForestLabComplexProbe";
+
+        /// <summary>
+        /// Уборка — с кадром ожидания: `Object.Destroy` отложен до конца кадра. Затем сторож течи: зонда в сцене быть не
+        /// должно. Течь была (найдена 19.11): тест, пересобиравший мир вторым `BuildLab`, оставлял первый хост живым, и
+        /// `ForageSpawner` в следующих тестах брал протёкший билдер без карты (18 кустов вместо 160).
+        /// </summary>
+        [UnityTearDown]
+        public IEnumerator TearDown()
+        {
+            DropProbe();
+            ForestClimate.ResetStatic();
+            yield return null;
+            Assert.IsNull(GameObject.Find(ProbeName), "зонд комплекса лаборатории протёк за пределы теста");
+        }
+
+        void DropProbe()
         {
             if (builder != null) builder.Clear();
-            ForestClimate.ResetStatic();
             if (host != null) Object.Destroy(host);
             builder = null;
             host = null;
@@ -34,7 +48,8 @@ namespace Chimera.Tests.PlayMode
             WeatherKind weather = WeatherKind.Clear, float timeMinutes = 10f,
             bool stationLoop = false)
         {
-            host = new GameObject("~ForestLabComplexProbe");
+            DropProbe(); // повторная сборка в одном тесте не оставляет прежний хост живым
+            host = new GameObject(ProbeName);
             host.SetActive(false);
             builder = host.AddComponent<ForestBuilder>();
             builder.buildOnAwake = false;
