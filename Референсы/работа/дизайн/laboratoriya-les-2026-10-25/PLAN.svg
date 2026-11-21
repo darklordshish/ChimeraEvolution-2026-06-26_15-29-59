@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="780" viewBox="0 0 1100 780">
+<rect width="1100" height="780" fill="#182025"/>
+<g font-family="Arial,sans-serif" fill="#edf0e9"><text x="48" y="44" font-size="27">CHIMERA · закрытый бункер · схема связей</text><text x="48" y="73" font-size="16">Вариант А · пятно 46 × 36 м · расположение условное, не обмерный чертёж</text></g>
+<g stroke="#a2aaa7" stroke-width="3">
+<rect x="90" y="110" width="700" height="540" fill="#303c42"/>
+<rect x="105" y="125" width="670" height="108" fill="#46535a"/>
+<rect x="105" y="248" width="185" height="255" fill="#3c5358"/>
+<rect x="590" y="248" width="185" height="255" fill="#5e4d43"/>
+<rect x="305" y="248" width="270" height="255" fill="#323e43"/>
+<rect x="335" y="280" width="210" height="190" fill="#4d5b60" stroke-dasharray="7 6"/>
+<rect x="105" y="518" width="285" height="117" fill="#625844"/>
+<rect x="405" y="518" width="370" height="117" fill="#38474d"/>
+</g>
+<g stroke="#a5d9d3" stroke-width="9" fill="none"><path d="M440 685V485M440 265V215M320 380H273M560 380H607M425 570H375"/></g>
+<g font-family="Arial,sans-serif" text-anchor="middle" fill="#f3f1e7" font-size="21">
+<text x="440" y="174">АРЕНА</text><text x="440" y="201" font-size="16">свободный пол</text>
+<text x="197" y="344">ХИРУРГИЯ</text><text x="197" y="370" font-size="15">стол · стекло · шкафы</text>
+<text x="683" y="327">СОДЕРЖАНИЕ</text><text x="683" y="353" font-size="15">отсеки + проход</text>
+<text x="440" y="353">ЗАКРЫТЫЙ</text><text x="440" y="381">ОБЩИЙ ЗАЛ</text><text x="440" y="412" font-size="15">свободный центр</text>
+<text x="440" y="494" font-size="14">обход по периметру</text>
+<text x="247" y="563">ОТДЫХ</text><text x="247" y="591" font-size="15">ниши вне транзита</text>
+<text x="591" y="563">ВХОДНОЙ ПРОХОД</text><text x="591" y="591" font-size="15">без препятствий</text>
+<text x="440" y="711">LabDoor · вход из леса</text>
+</g>
+<path d="M690 414 L613 414 L560 440 L320 440 L230 412" fill="none" stroke="#e19b65" stroke-width="4" stroke-dasharray="9 6"/>
+<circle cx="690" cy="414" r="8" fill="#e19b65"/>
+<g font-family="Arial,sans-serif" fill="#e6e9e5" font-size="16">
+<text x="825" y="143">Легенда</text><path d="M825 168H860" stroke="#a5d9d3" stroke-width="8"/><text x="825" y="196">обязательная связь</text>
+<path d="M825 228H875" stroke="#e19b65" stroke-width="4" stroke-dasharray="8 5"/><text x="825" y="256">пример маршрута</text><text x="825" y="279">прошлого прорыва</text>
+<text x="825" y="340">Вариант Б:</text><text x="825" y="367">хирургия и клетки</text><text x="825" y="390">меняются сторонами.</text>
+<text x="825" y="449">Пол один уровень.</text><text x="825" y="475">Потолок закрыт.</text><text x="825" y="501">Свет искусственный.</text>
+<text x="48" y="755" font-size="15">25.10.2026 · предложение дизайн-линии · повреждения не разрывают обязательные связи</text>
+</g></svg>
