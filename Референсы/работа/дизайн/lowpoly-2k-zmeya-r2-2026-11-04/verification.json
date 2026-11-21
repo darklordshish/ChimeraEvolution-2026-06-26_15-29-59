@@ -1,0 +1,81 @@
+{
+  "size": [
+    1774,
+    887
+  ],
+  "edge_pixels": 41282,
+  "unchanged_outside_edges": true,
+  "silhouettes": {
+    "PROFILE": {
+      "iou": 0.731,
+      "reference_crop_size": [
+        1059,
+        222
+      ],
+      "candidate_crop_size": [
+        1629,
+        314
+      ],
+      "normalization": "equal full profile length"
+    },
+    "FRONT": {
+      "iou": 0.3022,
+      "reference_crop_size": [
+        222,
+        312
+      ],
+      "candidate_crop_size": [
+        351,
+        368
+      ],
+      "normalization": "equal silhouette height"
+    },
+    "FRONT 3/4": {
+      "iou": 0.3129,
+      "reference_crop_size": [
+        471,
+        306
+      ],
+      "candidate_crop_size": [
+        456,
+        336
+      ],
+      "normalization": "equal silhouette height"
+    },
+    "REAR": {
+      "iou": 0.2863,
+      "reference_crop_size": [
+        177,
+        331
+      ],
+      "candidate_crop_size": [
+        370,
+        364
+      ],
+      "normalization": "equal silhouette height"
+    }
+  },
+  "thickness": {
+    "vitrina": {
+      "midbody_px": 92.0,
+      "nose_to_rattle_px": 1034.0,
+      "ratio": 0.08897485493230174
+    },
+    "candidate": {
+      "midbody_px": 113.0,
+      "nose_to_rattle_px": 1577.0,
+      "ratio": 0.07165504121750159
+    },
+    "relative_change_percent": -19.46596454467756
+  },
+  "method": "Sobel NMS hysteresis; silhouette threshold largest component, uniform scale, aligned bbox center and base. Different S poses: nonprofile IoU measures layout as well as shape. Thickness median across 49-51% nose-to-rattle, gray<190.",
+  "sha256": {
+    "01-flat-sheet.png": "e6bed75205b25c76487210d42e272abc9a898b68d6ac109899d9304eb57d432f",
+    "02-edges-sheet.png": "3520b128f485d2ea0b4504cb2e08d7154cb49914b25792410708956f728e8bf9",
+    "03-compare-vitrina.png": "10b263cce530bab91969be5f637d791cacb7eca71bf9b423f35d147731254658",
+    "04-silhouette-overlays.png": "93d45c51540d8a22eadf8b2e9ffa6a9ae6f792e61adccee5cec9b1b54a097081",
+    "edges-mask.png": "4a732fd14b75e62ab31cb4b1c4609c7fed7f11b345dc0a332a23ee29e17d46b6",
+    "profile-body.png": "4fbeb3479b52343f8392f0ce4375a8c855e5a6a287cc1d9a0615878fcc007a89",
+    "profile-head.png": "7cd04ffa6908717d4cb70e2a91d79f0779b02e985ae3e0f10fc15c5f1d664d2d"
+  }
+}

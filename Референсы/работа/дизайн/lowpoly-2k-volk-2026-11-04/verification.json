@@ -1,0 +1,47 @@
+{
+  "size": [
+    2172,
+    724
+  ],
+  "edge_pixels": 64888,
+  "unchanged_outside_edges": true,
+  "silhouette_metrics": {
+    "front": {
+      "iou": 0.8787,
+      "width_ratio_at_equal_height": 1.1515
+    },
+    "profile": {
+      "iou": 0.709,
+      "width_ratio_at_equal_height": 0.8995
+    },
+    "front34": {
+      "iou": 0.5381,
+      "width_ratio_at_equal_height": 0.7342
+    },
+    "back": {
+      "iou": 0.9024,
+      "width_ratio_at_equal_height": 1.061
+    }
+  },
+  "registration": "uniform scale to mask height 450; bbox centers aligned; no nonuniform warp",
+  "thresholds": {
+    "new": 235,
+    "vitrina": 210
+  },
+  "limitation": "image threshold masks approximate, not mesh measurements; front34 cameras differ",
+  "sha256": {
+    "00-first-pass.png": "073e45f7bf05e52f3e6cc6b56c33caaa0d1c40298a72db9bbeba579c6add803b",
+    "01-flat-sheet.png": "e8ad13f1c745ed3aa8e5728c68ab0c96de23c1239310d697381e27fab87abc99",
+    "02-edges-sheet.png": "919a0f2f0ed8ed60781c277c0ae31a1fcb8afb126e1b13c4048e7b764c7140f3",
+    "03-compare-vitrina.png": "5fdaa7988d807b148ff4d7567ef199bda41ec2c980faed4446ecaa83be748387",
+    "04-silhouette-overlays.png": "a435a670625ba63bcd0e7f3e73d4fa7cfc6d36ade2881c9a42eb213fb51206ba",
+    "05-compare-rear34.png": "43ea76f28a830d07de5bfc912bce33b2e5590b0a61dba612a4bfed9f3c8fd734",
+    "back-overlay.png": "5a8b6f734b5397bd26b9ecc4c6e1fabf727a988bfccb4d0ff2c848f167140efa",
+    "edges-mask.png": "00bcf697052de2bab4388113117f2b63080e4ddeac81f5ab07d88d7257b36f95",
+    "front-head.png": "29841bead8bd5c89cef943161fabaa77dac9360ed219cb604d2ed9c69ba5bdc6",
+    "front-overlay.png": "9b63819f21f91b0927d1173958ba8286085342d27227a92e89b722568a01f47e",
+    "front34-overlay.png": "2b16841580aed103ab477b315c310640b37f6c6ebe01b9b8d943fe52064dcd84",
+    "profile-overlay.png": "37e2c7fc2e91bc61063c97f816a7e8203cbd279af2018f64baf4dfd1fae840b8",
+    "profile-torso.png": "2315cd6e519019b7f22b30b68d9739ed73bd05ac2a40060d9e034b9d8fbe8243"
+  }
+}

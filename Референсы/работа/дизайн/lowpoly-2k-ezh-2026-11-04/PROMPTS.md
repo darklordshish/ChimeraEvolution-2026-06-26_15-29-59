@@ -1,0 +1,11 @@
+# Ёж — точные запросы, 04.11.2026
+
+Встроенный image_gen. Первый вход — актуальный `../ChimeraEvolution/Референсы/витрина/ёж/вид.png` (идентичность и пропорции); второй — `../ChimeraEvolution/Референсы/работа/дизайн/lowpoly-2k-chelovek-2026-11-04/01-flat-sheet.png` (только стиль огранки). Одна корректировка; её вход — первый сгенерированный лист. Рёбра и сравнения собраны Anaconda/Pillow/SciPy без новой генерации.
+
+## Первый запрос
+
+Use case: stylized-concept. Production low polygon character reference sheet for CHIMERA HEDGEHULK. Reference image 1 defines the exact creature identity and proportions; reference image 2 defines ONLY coarse planar gray rendering style. Create a very wide white sheet with five complete views in one horizontal row: FRONT, PROFILE facing left, FRONT THREE QUARTER facing left, BACK, BACK THREE QUARTER. A single identical low broad muscular quadrupedal laboratory hedgehog monster in a calm weight-bearing four-legged stance. Match the reference's low domed elongated body, broad shoulders, short powerful legs, large clawed feet, low aggressive pointed muzzle and small round ears. Maintain its reference body mass and leg length. Its protective coat is simplified into a few dozen broad backward-pointing wedge GROUPS, each group a large clean sculptural form with two or three broad flat faces. Between the shoulders behind the head stands a separate launcher organ: a compact group of straight faceted HOLLOW tubes with small dark visible bore openings, leaning upward and FORWARD toward the muzzle. Match reference side view tube direction. Plain monochrome gray clay, broad deliberate constant-tone flat polygons, approximately 30-50 visible broad planes on the core torso from a side, body visually plausible at approximately 2000 triangles with organs separately simplified. Short limbs with clear shoulder elbow wrist hip knee hock landmarks built from simple large planes. Coherent continuous anatomy. Orthographic cameras at equal scale, entire feet and launcher tips in frame, generous spacing, one thin common ground line, small view labels below. Soft neutral studio illumination. White background. Five views of the SAME creature. Large planar simplicity of reference 2 applied to the quadruped of reference 1.
+
+## Единственная корректировка
+
+undefined

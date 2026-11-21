@@ -1,0 +1,100 @@
+"""Щитки как вырезанные участки поверхности кожи с приподнятым краем.
+Каждая исходная грань клиппируется контуром щитка в проекции сзади;
+новые точки и ключи интерполируются внутри этой же исходной грани.
+"""
+import bpy,json,math
+from pathlib import Path
+from mathutils import Vector,Matrix
+from mathutils.bvhtree import BVHTree
+from mathutils.geometry import barycentric_transform
+P=Path(__file__).parent
+bpy.ops.wm.open_mainfile(filepath=str(P.parent/'shkura-ton-2026-11-06/source.blend'))
+arm=next(o for o in bpy.data.objects if o.type=='ARMATURE');bones={b.name for b in arm.data.bones}
+srcs=[o for o in bpy.data.objects if o.type=='MESH' and '@' not in o.name and o.name!='Cube']
+names=list(dict.fromkeys(k.name for o in srcs if o.data.shape_keys for k in o.data.shape_keys.key_blocks))
+V=[];F=[];W=[];K={n:[] for n in names}
+for o in srcs:
+    off=len(V);me=o.data;me.calc_loop_triangles();gn={g.index:g.name for g in o.vertex_groups}
+    kb=me.shape_keys.key_blocks if me.shape_keys else None
+    for i,v in enumerate(me.vertices):
+        V.append(o.matrix_world@(kb[0].data[i].co if kb else v.co));W.append({gn[g.group]:g.weight for g in v.groups})
+        for n in names:
+            key=kb.get(n) if kb else None
+            K[n].append(o.matrix_world@(key.data[i].co if key else (kb[0].data[i].co if kb else v.co)))
+    for t in me.loop_triangles:F.append(tuple(off+i for i in t.vertices))
+tree=BVHTree.FromPolygons(V,F,all_triangles=True)
+def side(a,b,p):return (b.x-a.x)*(p.z-a.z)-(b.z-a.z)*(p.x-a.x)
+def clip(poly,ring):
+    for i,a in enumerate(ring):
+        b=ring[(i+1)%len(ring)];out=[]
+        if not poly:break
+        prev=poly[-1];sp=side(a,b,prev)
+        for cur in poly:
+            ss=side(a,b,cur)
+            if (sp<=0)!=(ss<=0):out.append(prev+(cur-prev)*(sp/(sp-ss)))
+            if ss<=0:out.append(cur)
+            prev=cur;sp=ss
+        poly=out
+    return poly
+
+verts=[];faces=[];weights=[];keys={n:[] for n in names};materials=[];records=[];lifts=[]
+def add(p,fi,lift):
+    ids=F[fi];abc=[V[i] for i in ids]
+    bary=barycentric_transform(p,*abc,Vector((1,0,0)),Vector((0,1,0)),Vector((0,0,1)))
+    w={}
+    for i,s in zip(ids,bary):
+        for bn,value in W[i].items():w[bn]=w.get(bn,0)+s*value
+    w=dict(sorted(((n,max(0,v)) for n,v in w.items() if n in bones and v>1e-7),key=lambda q:-q[1])[:4]);tot=sum(w.values());w={n:v/tot for n,v in w.items()}
+    j=len(verts);verts.append(p+Vector((0,lift,0)));weights.append(w);lifts.append(lift)
+    for kn in names:keys[kn].append(sum((K[kn][i]*s for i,s in zip(ids,bary)),Vector())+Vector((0,lift,0)))
+    return j
+outline=[(-.35,.47),(.35,.47),(.50,.18),(.44,-.28),(0,-.49),(-.44,-.28),(-.50,.18)]
+for row in range(9):
+    for col in ([-2,-1,0,1,2] if row<3 else [-1,0,1]):
+        x=col*.062;z=1.57-row*.057-abs(col)*.034
+        width=(.080 if row<6 else [.073,.065,.057][row-6]) if abs(col)<2 else [.062,.056,.045][row]
+        height=.084 if abs(col)<2 else .075
+        ring=[Vector((x+u*width,0,z+v*height)) for u,v in outline]
+        pieces=[];edgeuses={};edgeinfo={};first=len(faces)
+        for fi,ids in enumerate(F):
+            abc=[V[i] for i in ids];normal=(abc[1]-abc[0]).cross(abc[2]-abc[0]).normalized()
+            if normal.y<.12:continue
+            if max(a.x for a in abc)<x-width*.5 or min(a.x for a in abc)>x+width*.5 or max(a.z for a in abc)<z-height*.6 or min(a.z for a in abc)>z+height*.5:continue
+            poly=clip(abc,ring)
+            if len(poly)<3:continue
+            center=sum(poly,Vector())/len(poly);area=sum((poly[j]-poly[0]).cross(poly[j+1]-poly[0]).length*.5 for j in range(1,len(poly)-1))
+            if area<1e-10:continue
+            hit=tree.ray_cast(Vector((center.x,.9,center.z)),Vector((0,-1,0)))
+            if hit[0] is None or abs(hit[0].y-center.y)>.0001:continue
+            idx=[]
+            for p in poly:
+                lift=.0012+.0038*max(0.,min(1.,(.47-(p.z-z)/height)/1.02))
+                idx.append(add(p,fi,lift))
+            # Исходная нормаль остаётся нормалью основного участка щитка.
+            for j in range(1,len(idx)-1):faces.append((idx[0],idx[j],idx[j+1]));materials.append(row%3==1)
+            for j,p in enumerate(poly):
+                q=poly[(j+1)%len(poly)];key=tuple(sorted([tuple(round(c,6) for c in p),tuple(round(c,6) for c in q)]))
+                edgeuses[key]=edgeuses.get(key,0)+1;edgeinfo[key]=(p,q,fi,idx[j],idx[(j+1)%len(idx)])
+        for key,count in edgeuses.items():
+            if count!=1:continue
+            p,q,fi,a,b=edgeinfo[key];aa=add(p,fi,.0005);bb=add(q,fi,.0005)
+            faces.extend([(a,aa,bb),(a,bb,b)]);materials.extend([2,2])
+        if len(faces)>first:records.append(dict(row=row,column=col,x=x,z=z,triangles=len(faces)-first))
+me=bpy.data.meshes.new('щитки-проба');me.from_pydata(verts,[],faces);me.update()
+ob=bpy.data.objects.new('Шкура.щитки-проба@Змея',me);bpy.context.scene.collection.objects.link(ob);ob.parent=arm;ob.matrix_world=Matrix.Identity(4)
+mod=ob.modifiers.new('Armature','ARMATURE');mod.object=arm
+for i,w in enumerate(weights):
+    for n,value in w.items():(ob.vertex_groups.get(n) or ob.vertex_groups.new(name=n)).add([i],value,'REPLACE')
+for kn in names:
+    key=ob.shape_key_add(name=kn)
+    for i,co in enumerate(keys[kn]):key.data[i].co=co
+for i,t in enumerate([.87,.91,.74]):
+    mat=bpy.data.materials.new('Щитки-тон-%d'%i);mat.diffuse_color=(t,t,t,1);me.materials.append(mat)
+for i,f in enumerate(me.polygons):f.material_index=int(materials[i]);f.use_smooth=False
+me.calc_loop_triangles()
+report=dict(plates=len(records),vertices=len(verts),triangles=len(me.loop_triangles),max_lift_y_m=max(lifts),min_lift_y_m=min(lifts),max_bone_influences=max(map(len,weights)),zero_area=sum(p.area<1e-12 for p in me.polygons),keys=names,records=records)
+assert report['zero_area']==0 and report['max_bone_influences']<=4
+(P/'geometry.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8')
+for o in bpy.data.objects:
+    if o.type=='MESH':o.hide_render=('@' in o.name and o!=ob)
+bpy.ops.wm.save_as_mainfile(filepath=str(P/'candidate.blend'));print({k:v for k,v in report.items() if k!='records'})

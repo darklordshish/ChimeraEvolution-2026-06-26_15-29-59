@@ -1,0 +1,202 @@
+{
+  "волк-cvet.png": {
+    "size": [
+      1024,
+      1024
+    ],
+    "mean": 180.45,
+    "min_max": [
+      136,
+      226
+    ],
+    "max_rgb_channel_difference": 4,
+    "edge_x_mean_max": [
+      13.82,
+      35.0
+    ],
+    "edge_y_mean_max": [
+      7.41,
+      40.33
+    ],
+    "interior_x_y_mean": [
+      0.51,
+      0.65
+    ],
+    "repeat_is_exact_3x3": true
+  },
+  "волк-rel.png": {
+    "size": [
+      1024,
+      1024
+    ],
+    "mean": 143.08,
+    "min_max": [
+      50,
+      255
+    ],
+    "max_rgb_channel_difference": 5,
+    "edge_x_mean_max": [
+      16.4,
+      102.67
+    ],
+    "edge_y_mean_max": [
+      14.11,
+      94.67
+    ],
+    "interior_x_y_mean": [
+      1.11,
+      1.34
+    ],
+    "repeat_is_exact_3x3": true
+  },
+  "лось-cvet.png": {
+    "size": [
+      1024,
+      1024
+    ],
+    "mean": 170.69,
+    "min_max": [
+      95,
+      216
+    ],
+    "max_rgb_channel_difference": 5,
+    "edge_x_mean_max": [
+      9.76,
+      71.67
+    ],
+    "edge_y_mean_max": [
+      21.32,
+      68.0
+    ],
+    "interior_x_y_mean": [
+      0.99,
+      0.56
+    ],
+    "repeat_is_exact_3x3": true
+  },
+  "лось-rel.png": {
+    "size": [
+      1024,
+      1024
+    ],
+    "mean": 176.78,
+    "min_max": [
+      81,
+      255
+    ],
+    "max_rgb_channel_difference": 5,
+    "edge_x_mean_max": [
+      31.04,
+      53.33
+    ],
+    "edge_y_mean_max": [
+      18.74,
+      74.67
+    ],
+    "interior_x_y_mean": [
+      1.37,
+      0.68
+    ],
+    "repeat_is_exact_3x3": true
+  },
+  "ёж-cvet.png": {
+    "size": [
+      1024,
+      1024
+    ],
+    "mean": 167.23,
+    "min_max": [
+      135,
+      206
+    ],
+    "max_rgb_channel_difference": 4,
+    "edge_x_mean_max": [
+      9.02,
+      28.0
+    ],
+    "edge_y_mean_max": [
+      9.6,
+      29.0
+    ],
+    "interior_x_y_mean": [
+      0.46,
+      0.63
+    ],
+    "repeat_is_exact_3x3": true
+  },
+  "ёж-rel.png": {
+    "size": [
+      1024,
+      1024
+    ],
+    "mean": 164.77,
+    "min_max": [
+      100,
+      255
+    ],
+    "max_rgb_channel_difference": 5,
+    "edge_x_mean_max": [
+      18.95,
+      68.67
+    ],
+    "edge_y_mean_max": [
+      11.48,
+      34.33
+    ],
+    "interior_x_y_mean": [
+      0.81,
+      1.12
+    ],
+    "repeat_is_exact_3x3": true
+  },
+  "змея-cvet.png": {
+    "size": [
+      1024,
+      1024
+    ],
+    "mean": 187.99,
+    "min_max": [
+      122,
+      247
+    ],
+    "max_rgb_channel_difference": 4,
+    "edge_x_mean_max": [
+      9.92,
+      30.0
+    ],
+    "edge_y_mean_max": [
+      11.53,
+      49.33
+    ],
+    "interior_x_y_mean": [
+      1.23,
+      0.91
+    ],
+    "repeat_is_exact_3x3": true
+  },
+  "змея-rel.png": {
+    "size": [
+      1024,
+      1024
+    ],
+    "mean": 165.19,
+    "min_max": [
+      44,
+      255
+    ],
+    "max_rgb_channel_difference": 6,
+    "edge_x_mean_max": [
+      9.09,
+      51.67
+    ],
+    "edge_y_mean_max": [
+      24.66,
+      88.0
+    ],
+    "interior_x_y_mean": [
+      2.53,
+      1.67
+    ],
+    "repeat_is_exact_3x3": true
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "probe": [
+    {
+      "stage": 1,
+      "pelvis": [
+        520,
+        535
+      ],
+      "withers": [
+        416,
+        184
+      ],
+      "knee": [
+        465,
+        690
+      ],
+      "hand": [
+        352,
+        718
+      ],
+      "ground": 966,
+      "support": [
+        335,
+        540
+      ],
+      "angle_deg": 16.5,
+      "hand_height_px": 248,
+      "hand_below_knee_px": 28,
+      "pelvis_in_support": true,
+      "mid_thigh_y": 612.5,
+      "hand_below_mid_thigh_px": 105.5
+    },
+    {
+      "stage": 2,
+      "pelvis": [
+        1260,
+        540
+      ],
+      "withers": [
+        1143,
+        185
+      ],
+      "knee": [
+        1215,
+        690
+      ],
+      "hand": [
+        1080,
+        727
+      ],
+      "ground": 966,
+      "support": [
+        1047,
+        1305
+      ],
+      "angle_deg": 18.24,
+      "hand_height_px": 239,
+      "hand_below_knee_px": 37,
+      "pelvis_in_support": true,
+      "mid_thigh_y": 615.0,
+      "hand_below_mid_thigh_px": 112.0
+    }
+  ],
+  "correction": [
+    {
+      "stage": 1,
+      "pelvis": [
+        530,
+        575
+      ],
+      "withers": [
+        415,
+        208
+      ],
+      "knee": [
+        490,
+        735
+      ],
+      "hand": [
+        420,
+        754
+      ],
+      "ground": 1007,
+      "support": [
+        354,
+        568
+      ],
+      "angle_deg": 17.4,
+      "hand_height_px": 253,
+      "hand_below_knee_px": 19,
+      "pelvis_in_support": true,
+      "mid_thigh_y": 655.0,
+      "hand_below_mid_thigh_px": 99.0
+    },
+    {
+      "stage": 2,
+      "pelvis": [
+        1255,
+        580
+      ],
+      "withers": [
+        1110,
+        225
+      ],
+      "knee": [
+        1215,
+        735
+      ],
+      "hand": [
+        1100,
+        787
+      ],
+      "ground": 1007,
+      "support": [
+        1077,
+        1300
+      ],
+      "angle_deg": 22.22,
+      "hand_height_px": 220,
+      "hand_below_knee_px": 52,
+      "pelvis_in_support": true,
+      "mid_thigh_y": 657.5,
+      "hand_below_mid_thigh_px": 129.5
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "source.blend": {
+    "base_area": 1.0187032449520468,
+    "skin_area": 0.3973992686168804,
+    "max_centroid_distance": 1.3883892791000108e-07,
+    "max_vertex_distance": 1.23567943433045e-07,
+    "zero_area": 0
+  },
+  "snake-coarse.blend": {
+    "base_area": 1.0187032449520468,
+    "skin_area": 1.0187032559856113,
+    "max_centroid_distance": 7.978496796567924e-07,
+    "max_vertex_distance": 2.543953883105132e-07,
+    "zero_area": 0
+  },
+  "candidate.blend": {
+    "base_area": 1.0187032449520468,
+    "skin_area": 1.0187032559856133,
+    "max_centroid_distance": 7.978496796567924e-07,
+    "max_vertex_distance": 2.543953883105132e-07,
+    "zero_area": 0
+  }
+}

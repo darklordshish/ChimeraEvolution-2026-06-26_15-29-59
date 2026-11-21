@@ -1,0 +1,254 @@
+{
+  "plates": 33,
+  "vertices": 4049,
+  "triangles": 2839,
+  "max_lift_y_m": 0.004776473161553135,
+  "min_lift_y_m": 0.0007999999999999999,
+  "max_bone_influences": 4,
+  "zero_area": 0,
+  "keys": [
+    "Basis",
+    "Волк",
+    "Лось",
+    "Волк1",
+    "Волк·Сердце",
+    "Волк·Шкура",
+    "Лось·Сердце",
+    "Лось·Шкура",
+    "Волк·Руки",
+    "Лось·Руки"
+  ],
+  "records": [
+    {
+      "row": 0,
+      "column": -2,
+      "x": -0.124,
+      "z": 1.502,
+      "triangles": 109
+    },
+    {
+      "row": 0,
+      "column": -1,
+      "x": -0.062,
+      "z": 1.536,
+      "triangles": 79
+    },
+    {
+      "row": 0,
+      "column": 0,
+      "x": 0.0,
+      "z": 1.57,
+      "triangles": 75
+    },
+    {
+      "row": 0,
+      "column": 1,
+      "x": 0.062,
+      "z": 1.536,
+      "triangles": 87
+    },
+    {
+      "row": 0,
+      "column": 2,
+      "x": 0.124,
+      "z": 1.502,
+      "triangles": 114
+    },
+    {
+      "row": 1,
+      "column": -2,
+      "x": -0.124,
+      "z": 1.445,
+      "triangles": 65
+    },
+    {
+      "row": 1,
+      "column": -1,
+      "x": -0.062,
+      "z": 1.479,
+      "triangles": 74
+    },
+    {
+      "row": 1,
+      "column": 0,
+      "x": 0.0,
+      "z": 1.5130000000000001,
+      "triangles": 76
+    },
+    {
+      "row": 1,
+      "column": 1,
+      "x": 0.062,
+      "z": 1.479,
+      "triangles": 74
+    },
+    {
+      "row": 1,
+      "column": 2,
+      "x": 0.124,
+      "z": 1.445,
+      "triangles": 56
+    },
+    {
+      "row": 2,
+      "column": -2,
+      "x": -0.124,
+      "z": 1.388,
+      "triangles": 67
+    },
+    {
+      "row": 2,
+      "column": -1,
+      "x": -0.062,
+      "z": 1.422,
+      "triangles": 86
+    },
+    {
+      "row": 2,
+      "column": 0,
+      "x": 0.0,
+      "z": 1.456,
+      "triangles": 94
+    },
+    {
+      "row": 2,
+      "column": 1,
+      "x": 0.062,
+      "z": 1.422,
+      "triangles": 99
+    },
+    {
+      "row": 2,
+      "column": 2,
+      "x": 0.124,
+      "z": 1.388,
+      "triangles": 67
+    },
+    {
+      "row": 3,
+      "column": -1,
+      "x": -0.062,
+      "z": 1.365,
+      "triangles": 126
+    },
+    {
+      "row": 3,
+      "column": 0,
+      "x": 0.0,
+      "z": 1.399,
+      "triangles": 105
+    },
+    {
+      "row": 3,
+      "column": 1,
+      "x": 0.062,
+      "z": 1.365,
+      "triangles": 107
+    },
+    {
+      "row": 4,
+      "column": -1,
+      "x": -0.062,
+      "z": 1.308,
+      "triangles": 96
+    },
+    {
+      "row": 4,
+      "column": 0,
+      "x": 0.0,
+      "z": 1.342,
+      "triangles": 83
+    },
+    {
+      "row": 4,
+      "column": 1,
+      "x": 0.062,
+      "z": 1.308,
+      "triangles": 90
+    },
+    {
+      "row": 5,
+      "column": -1,
+      "x": -0.062,
+      "z": 1.2510000000000001,
+      "triangles": 93
+    },
+    {
+      "row": 5,
+      "column": 0,
+      "x": 0.0,
+      "z": 1.2850000000000001,
+      "triangles": 85
+    },
+    {
+      "row": 5,
+      "column": 1,
+      "x": 0.062,
+      "z": 1.2510000000000001,
+      "triangles": 80
+    },
+    {
+      "row": 6,
+      "column": -1,
+      "x": -0.062,
+      "z": 1.194,
+      "triangles": 123
+    },
+    {
+      "row": 6,
+      "column": 0,
+      "x": 0.0,
+      "z": 1.228,
+      "triangles": 63
+    },
+    {
+      "row": 6,
+      "column": 1,
+      "x": 0.062,
+      "z": 1.194,
+      "triangles": 114
+    },
+    {
+      "row": 7,
+      "column": -1,
+      "x": -0.062,
+      "z": 1.137,
+      "triangles": 59
+    },
+    {
+      "row": 7,
+      "column": 0,
+      "x": 0.0,
+      "z": 1.171,
+      "triangles": 109
+    },
+    {
+      "row": 7,
+      "column": 1,
+      "x": 0.062,
+      "z": 1.137,
+      "triangles": 62
+    },
+    {
+      "row": 8,
+      "column": -1,
+      "x": -0.062,
+      "z": 1.08,
+      "triangles": 79
+    },
+    {
+      "row": 8,
+      "column": 0,
+      "x": 0.0,
+      "z": 1.114,
+      "triangles": 59
+    },
+    {
+      "row": 8,
+      "column": 1,
+      "x": 0.062,
+      "z": 1.08,
+      "triangles": 84
+    }
+  ]
+}

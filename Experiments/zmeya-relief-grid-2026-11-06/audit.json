@@ -1,0 +1,263 @@
+{
+  "frames": 49,
+  "vertices_before": 22593,
+  "vertices_after": 5015,
+  "triangles": 8848,
+  "removed_degenerate_faces": 0,
+  "removed_rest_area_m2": 0,
+  "max_sampled_position_error_mm": 0.0009991559156322606,
+  "nearby_candidate_checks": 19746,
+  "max_nearby_trajectory_separation_mm": 17.862763668226627,
+  "contacts": [
+    {
+      "frame": 0,
+      "below_local_surface_vertices": 0,
+      "max_depth_mm": 0.0
+    },
+    {
+      "frame": 1,
+      "below_local_surface_vertices": 0,
+      "max_depth_mm": 0.0
+    },
+    {
+      "frame": 2,
+      "below_local_surface_vertices": 0,
+      "max_depth_mm": 0.0
+    },
+    {
+      "frame": 3,
+      "below_local_surface_vertices": 0,
+      "max_depth_mm": 0.0
+    },
+    {
+      "frame": 4,
+      "below_local_surface_vertices": 0,
+      "max_depth_mm": 0.0
+    },
+    {
+      "frame": 5,
+      "below_local_surface_vertices": 0,
+      "max_depth_mm": 0.0
+    },
+    {
+      "frame": 6,
+      "below_local_surface_vertices": 0,
+      "max_depth_mm": 0.0
+    },
+    {
+      "frame": 7,
+      "below_local_surface_vertices": 0,
+      "max_depth_mm": 0.0
+    },
+    {
+      "frame": 8,
+      "below_local_surface_vertices": 0,
+      "max_depth_mm": 0.0
+    },
+    {
+      "frame": 9,
+      "below_local_surface_vertices": 0,
+      "max_depth_mm": 0.0
+    },
+    {
+      "frame": 10,
+      "below_local_surface_vertices": 0,
+      "max_depth_mm": 0.0
+    },
+    {
+      "frame": 11,
+      "below_local_surface_vertices": 0,
+      "max_depth_mm": 0.0
+    },
+    {
+      "frame": 12,
+      "below_local_surface_vertices": 0,
+      "max_depth_mm": 0.0
+    },
+    {
+      "frame": 13,
+      "below_local_surface_vertices": 0,
+      "max_depth_mm": 0.0
+    },
+    {
+      "frame": 14,
+      "below_local_surface_vertices": 0,
+      "max_depth_mm": 0.0
+    },
+    {
+      "frame": 15,
+      "below_local_surface_vertices": 0,
+      "max_depth_mm": 0.0
+    },
+    {
+      "frame": 16,
+      "below_local_surface_vertices": 2,
+      "max_depth_mm": 0.5634009976347443
+    },
+    {
+      "frame": 17,
+      "below_local_surface_vertices": 0,
+      "max_depth_mm": 0.0
+    },
+    {
+      "frame": 18,
+      "below_local_surface_vertices": 0,
+      "max_depth_mm": 0.0
+    },
+    {
+      "frame": 19,
+      "below_local_surface_vertices": 0,
+      "max_depth_mm": 0.0
+    },
+    {
+      "frame": 20,
+      "below_local_surface_vertices": 0,
+      "max_depth_mm": 0.0
+    },
+    {
+      "frame": 21,
+      "below_local_surface_vertices": 0,
+      "max_depth_mm": 0.0
+    },
+    {
+      "frame": 22,
+      "below_local_surface_vertices": 0,
+      "max_depth_mm": 0.0
+    },
+    {
+      "frame": 23,
+      "below_local_surface_vertices": 0,
+      "max_depth_mm": 0.0
+    },
+    {
+      "frame": 24,
+      "below_local_surface_vertices": 0,
+      "max_depth_mm": 0.0
+    },
+    {
+      "frame": 25,
+      "below_local_surface_vertices": 0,
+      "max_depth_mm": 0.0
+    },
+    {
+      "frame": 26,
+      "below_local_surface_vertices": 2,
+      "max_depth_mm": 0.7587685595353832
+    },
+    {
+      "frame": 27,
+      "below_local_surface_vertices": 10,
+      "max_depth_mm": 1.2027911434415728
+    },
+    {
+      "frame": 28,
+      "below_local_surface_vertices": 10,
+      "max_depth_mm": 2.2105183452367783
+    },
+    {
+      "frame": 29,
+      "below_local_surface_vertices": 11,
+      "max_depth_mm": 3.707975847646594
+    },
+    {
+      "frame": 30,
+      "below_local_surface_vertices": 34,
+      "max_depth_mm": 4.075828939676285
+    },
+    {
+      "frame": 31,
+      "below_local_surface_vertices": 14,
+      "max_depth_mm": 3.7399816792458296
+    },
+    {
+      "frame": 32,
+      "below_local_surface_vertices": 17,
+      "max_depth_mm": 2.2720308043062687
+    },
+    {
+      "frame": 33,
+      "below_local_surface_vertices": 9,
+      "max_depth_mm": 3.303103963844478
+    },
+    {
+      "frame": 34,
+      "below_local_surface_vertices": 0,
+      "max_depth_mm": 0.0
+    },
+    {
+      "frame": 35,
+      "below_local_surface_vertices": 38,
+      "max_depth_mm": 5.026549071772024
+    },
+    {
+      "frame": 36,
+      "below_local_surface_vertices": 83,
+      "max_depth_mm": 8.328095311298966
+    },
+    {
+      "frame": 37,
+      "below_local_surface_vertices": 72,
+      "max_depth_mm": 8.3408213686198
+    },
+    {
+      "frame": 38,
+      "below_local_surface_vertices": 42,
+      "max_depth_mm": 8.253248175606132
+    },
+    {
+      "frame": 39,
+      "below_local_surface_vertices": 29,
+      "max_depth_mm": 7.378593320026994
+    },
+    {
+      "frame": 40,
+      "below_local_surface_vertices": 37,
+      "max_depth_mm": 6.850528763607144
+    },
+    {
+      "frame": 41,
+      "below_local_surface_vertices": 57,
+      "max_depth_mm": 6.405017571523786
+    },
+    {
+      "frame": 42,
+      "below_local_surface_vertices": 55,
+      "max_depth_mm": 6.634626799495891
+    },
+    {
+      "frame": 43,
+      "below_local_surface_vertices": 46,
+      "max_depth_mm": 6.767485057935119
+    },
+    {
+      "frame": 44,
+      "below_local_surface_vertices": 7,
+      "max_depth_mm": 0.7172486220952123
+    },
+    {
+      "frame": 45,
+      "below_local_surface_vertices": 0,
+      "max_depth_mm": 0.0
+    },
+    {
+      "frame": 46,
+      "below_local_surface_vertices": 0,
+      "max_depth_mm": 0.0
+    },
+    {
+      "frame": 47,
+      "below_local_surface_vertices": 0,
+      "max_depth_mm": 0.0
+    },
+    {
+      "frame": 48,
+      "below_local_surface_vertices": 0,
+      "max_depth_mm": 0.0
+    }
+  ],
+  "limitations": [
+    "Nearest oriented surface is a local penetration diagnostic, not a full self-intersection test.",
+    "Weld equivalence is checked at 49 sampled poses only.",
+    "Only collapsed microscopic triangles removed; no runtime or FBX integration."
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "bone_count": 53,
+  "same_objects": true,
+  "same_bones": true,
+  "max_bone_matrix_error": 5.379319190979004e-06,
+  "max_position_error_m": 3.4819009897546493e-07,
+  "max_key_error_m": 3.271733879868292e-07,
+  "max_weight_error": 0.0,
+  "max_tone_error": 0.0,
+  "triangles_unchanged": true,
+  "keys_unchanged": true
+}

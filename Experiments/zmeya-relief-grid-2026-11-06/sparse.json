@@ -1,0 +1,65 @@
+{
+  "native_body_triangles": 2020,
+  "keels": 12,
+  "added_triangles": 48,
+  "total_triangles": 2068,
+  "grid_step": 0.065,
+  "grid_angle": 0.62,
+  "cells": [
+    [
+      17,
+      17
+    ],
+    [
+      14,
+      14
+    ],
+    [
+      16,
+      19
+    ],
+    [
+      19,
+      16
+    ],
+    [
+      19,
+      19
+    ],
+    [
+      15,
+      16
+    ],
+    [
+      17,
+      15
+    ],
+    [
+      15,
+      18
+    ],
+    [
+      18,
+      18
+    ],
+    [
+      18,
+      17
+    ],
+    [
+      17,
+      18
+    ],
+    [
+      16,
+      15
+    ]
+  ],
+  "peak_offset_mm": 12,
+  "limitations": [
+    "Static shape probe, unrigged additions.",
+    "Native body is unchanged; full painted lattice is not reproduced in this preview.",
+    "Four-face caps approximate surface; contact and movement not accepted.",
+    "2068 exceeds strict 2000; native source itself is 2020."
+  ]
+}

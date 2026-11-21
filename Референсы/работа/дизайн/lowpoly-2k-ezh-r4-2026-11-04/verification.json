@@ -1,0 +1,215 @@
+{
+  "reference_sha256": "d3866567da61d06c636b31465a669f8d2ec54259ee3dba7187c9b9060df9db8c",
+  "method": "Largest connected L<225 component in manual crop, tight bounding box, uniform scaling to total height 360 including tubes, horizontal centering and ground alignment. No anisotropic stretching. Approximate masks include residual contact shadows. Threshold sensitivity 205/215/225.",
+  "reference_crops": [
+    [
+      804,
+      77,
+      1169,
+      502
+    ],
+    [
+      39,
+      76,
+      751,
+      504
+    ],
+    [
+      22,
+      565,
+      497,
+      888
+    ],
+    [
+      1260,
+      73,
+      1635,
+      505
+    ]
+  ],
+  "candidate_crops": [
+    [
+      30,
+      25,
+      398,
+      480
+    ],
+    [
+      402,
+      30,
+      1026,
+      480
+    ],
+    [
+      1027,
+      30,
+      1535,
+      480
+    ],
+    [
+      30,
+      510,
+      414,
+      980
+    ],
+    [
+      450,
+      510,
+      1000,
+      980
+    ]
+  ],
+  "variants": {
+    "A": {
+      "size": [
+        1536,
+        1024
+      ],
+      "edges_pixels": 88905,
+      "unchanged_outside_edges": true,
+      "comparisons": [
+        {
+          "view": "front",
+          "iou": 0.7601,
+          "width_ratio_equal_total_height": 0.8854,
+          "width_difference_percent": -11.46,
+          "sensitivity": {
+            "205": 0.7587,
+            "215": 0.7594,
+            "225": 0.7601
+          }
+        },
+        {
+          "view": "profile",
+          "iou": 0.7602,
+          "width_ratio_equal_total_height": 0.9183,
+          "width_difference_percent": -8.17,
+          "sensitivity": {
+            "205": 0.7686,
+            "215": 0.7694,
+            "225": 0.7602
+          }
+        },
+        {
+          "view": "front34",
+          "iou": 0.6049,
+          "width_ratio_equal_total_height": 0.7994,
+          "width_difference_percent": -20.06,
+          "sensitivity": {
+            "205": 0.5852,
+            "215": 0.5924,
+            "225": 0.6049
+          }
+        },
+        {
+          "view": "rear",
+          "iou": 0.7885,
+          "width_ratio_equal_total_height": 0.9343,
+          "width_difference_percent": -6.57,
+          "sensitivity": {
+            "205": 0.8311,
+            "215": 0.8268,
+            "225": 0.7885
+          }
+        }
+      ],
+      "rear34_iou": null
+    },
+    "B": {
+      "size": [
+        1536,
+        1024
+      ],
+      "edges_pixels": 99596,
+      "unchanged_outside_edges": true,
+      "comparisons": [
+        {
+          "view": "front",
+          "iou": 0.7258,
+          "width_ratio_equal_total_height": 0.938,
+          "width_difference_percent": -6.2,
+          "sensitivity": {
+            "205": 0.7178,
+            "215": 0.7206,
+            "225": 0.7258
+          }
+        },
+        {
+          "view": "profile",
+          "iou": 0.6496,
+          "width_ratio_equal_total_height": 0.8326,
+          "width_difference_percent": -16.74,
+          "sensitivity": {
+            "205": 0.6481,
+            "215": 0.6569,
+            "225": 0.6496
+          }
+        },
+        {
+          "view": "front34",
+          "iou": 0.6392,
+          "width_ratio_equal_total_height": 0.8503,
+          "width_difference_percent": -14.97,
+          "sensitivity": {
+            "205": 0.6196,
+            "215": 0.631,
+            "225": 0.6392
+          }
+        },
+        {
+          "view": "rear",
+          "iou": 0.7423,
+          "width_ratio_equal_total_height": 0.9504,
+          "width_difference_percent": -4.96,
+          "sensitivity": {
+            "205": 0.7471,
+            "215": 0.7554,
+            "225": 0.7423
+          }
+        }
+      ],
+      "rear34_iou": null
+    }
+  },
+  "png_sha256": {
+    "00-a-vs-b.png": "8d13a96aefbf92fa11b703458aee87c3896027b763455ade0f4caac83e1777e0",
+    "A\\00-first-pass.png": "ec4e0beedb63a1c530e3788ffbfd8cc5ddf432bee42ac50f99543f2a711bed4c",
+    "A\\01-flat-sheet.png": "dd871880c271ed7abcbc8cd896ae109428b3f46563a6180b4d5373274ff7bd87",
+    "A\\02-edges-sheet.png": "0870e8f817477b24950ac08e42d7ac919157cdf2a32d6dfbcf0149741a8d5a54",
+    "A\\03-compare-vitrina.png": "ddd930400319ff70bca68ffeb933f0ec99c248382a1a6abe1fa4011089e7e21a",
+    "A\\04-silhouette-overlay.png": "68512a45cd39d08e24ced5dbd7cfcb79d3f7c21110abb9c64d779f926f8907c4",
+    "A\\detail-flank.png": "829f7dc865f102b135cfbc5874a50004acc6ddbf8bf65c72f34c8140fc34d9af",
+    "A\\detail-foreleg.png": "b7d7278a53abdbf1e9b8b7b19caeafac94e363ee2e3285f58eb846bae64f9a6d",
+    "A\\detail-head.png": "823924ef6d1afa2d66beebc13ea2f039614566b835ac8d769dea69d25c9b5ca1",
+    "A\\detail-quills.png": "00d2f298bf4c5c1b52c21e60a7fb1e5f60541fd65899c9b3e2d035e7d3401cb9",
+    "A\\detail-rear-coat.png": "4a27cfd686856f2571e283dbce0ed17d835f7e6be1c05c335420d49308f664c5",
+    "A\\edges-mask.png": "4b60126d60663b330107a211f03f2e590284510ca0be3b8c96d53bc824f6eda9",
+    "A\\mask-A-front.png": "5dca9ef2410cc685dd33e80b51a11666040c47ce90dc30c4fa5315dd3a0f41d9",
+    "A\\mask-A-front34.png": "6cc867de763613a262182779b75f194bac3d25b529c4f2906a92cc7aeb701854",
+    "A\\mask-A-profile.png": "1187d1845136bc6090f6e0a469c5c5fc9d934631f11cd884b9bf8569d7533034",
+    "A\\mask-A-rear.png": "a8c15af90706fa30f2f6fab1ea8abfad4339219629007f27fc07d26d46c8ad03",
+    "A\\mask-vitrina-front.png": "39cdf7bc72b8da74b9399658a04653984a1d761d1bbce862a97e852c4dab8e2e",
+    "A\\mask-vitrina-front34.png": "2dcd723ac5eed27dee766798dfd8be85360100e9d069dcd8b6cdcaf1fa35a7ee",
+    "A\\mask-vitrina-profile.png": "639228a4683bc93a5d41997c8077fa705aa5f1bd6e71fdd7592e67c47a10b9cf",
+    "A\\mask-vitrina-rear.png": "4e35419d1a1fe0ea0704661f493f398d7dfa289ef03ce0de31790df13df26fca",
+    "B\\00-first-pass.png": "1e77578d58bd525f419a9289035e90f3a85279dc29f5d49e0b46885b7f5421d6",
+    "B\\01-flat-sheet.png": "b873102465f2c618d9921effb79d6bc1235959a7811c09bd356fbda11c952e6a",
+    "B\\02-edges-sheet.png": "52bf6fe25026660acd9b5edeed65c96c9b995ebd156a92b78ceb850d4083c62e",
+    "B\\03-compare-vitrina.png": "5469ac3af71c594b74df1d5ef81c6e52a42f955e6e9f88f5c357b7632a4078ff",
+    "B\\04-silhouette-overlay.png": "70460151b67e29ac6230d2b582233feee94c1d7321d6fa645fb453e46cbcc554",
+    "B\\detail-flank.png": "e97f8619188fb1d70dfb658a81a07ff5c781045753a3f199822444e0e53ebc67",
+    "B\\detail-foreleg.png": "a8c1c872ccdea97a5c476da75a5e2f87d5a7530e15adfa96ca733eda1d7a4ce3",
+    "B\\detail-head.png": "38bcc2127ccf2ad051ddc33b326192bdb0b92d8c8840516023c3f3aae08ce29b",
+    "B\\detail-quills.png": "e0b26f859ca7ea45f26b40759488bc0e3b3238fa665703c2bfb1d1f9e820f98e",
+    "B\\detail-rear-coat.png": "919ec17eee3806f89a2458dd17329b6a5988a2e024f88b707ad75d595ddcd61e",
+    "B\\edges-mask.png": "a718f2a4e10caa208a49e5d63e94010b7387f2be5e5128a3c85a75d2b75ff7bb",
+    "B\\mask-B-front.png": "7095da6048e8f46fed97cef8b9811b5a9e663714bff012b6ec21e33066624c1d",
+    "B\\mask-B-front34.png": "6f3e1fd4329bad6590c41d2aee928cbfd0842f8610f85125fe722fb41b4b118d",
+    "B\\mask-B-profile.png": "413236d077d46f5af92f772d0de05e3dec92c139096a827707611a249eef57de",
+    "B\\mask-B-rear.png": "19ba2d85a2733af44b9eca602d6fb21f3ed0e09529e77e395893840c47e0ee46",
+    "B\\mask-vitrina-front.png": "39cdf7bc72b8da74b9399658a04653984a1d761d1bbce862a97e852c4dab8e2e",
+    "B\\mask-vitrina-front34.png": "2dcd723ac5eed27dee766798dfd8be85360100e9d069dcd8b6cdcaf1fa35a7ee",
+    "B\\mask-vitrina-profile.png": "639228a4683bc93a5d41997c8077fa705aa5f1bd6e71fdd7592e67c47a10b9cf",
+    "B\\mask-vitrina-rear.png": "4e35419d1a1fe0ea0704661f493f398d7dfa289ef03ce0de31790df13df26fca"
+  }
+}

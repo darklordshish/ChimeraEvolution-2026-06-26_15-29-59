@@ -1,0 +1,66 @@
+[
+  {
+    "pose": "rest",
+    "max_distance_to_visible_skin_mm": 4.407112952321768,
+    "max_below_visible_skin_mm": 0,
+    "top_samples_below_0_5mm": 0,
+    "top_top_crossing_pairs": 0,
+    "all_crossing_pairs": 64
+  },
+  {
+    "pose": "flex30",
+    "max_distance_to_visible_skin_mm": 16.01552776992321,
+    "max_below_visible_skin_mm": 0,
+    "top_samples_below_0_5mm": 0,
+    "top_top_crossing_pairs": 18,
+    "all_crossing_pairs": 64
+  },
+  {
+    "pose": "extend20",
+    "max_distance_to_visible_skin_mm": 9.366657584905624,
+    "max_below_visible_skin_mm": 9.36665735207498,
+    "top_samples_below_0_5mm": 23,
+    "top_top_crossing_pairs": 14,
+    "all_crossing_pairs": 64
+  },
+  {
+    "pose": "twist40",
+    "max_distance_to_visible_skin_mm": 5.419265478849411,
+    "max_below_visible_skin_mm": 2.861379836758715,
+    "top_samples_below_0_5mm": 5,
+    "top_top_crossing_pairs": 6,
+    "all_crossing_pairs": 64
+  },
+  {
+    "pose": "side20",
+    "max_distance_to_visible_skin_mm": 4.641416482627392,
+    "max_below_visible_skin_mm": 0,
+    "top_samples_below_0_5mm": 0,
+    "top_top_crossing_pairs": 0,
+    "all_crossing_pairs": 64
+  },
+  {
+    "pose": "arms90",
+    "max_distance_to_visible_skin_mm": 5.694388411939144,
+    "max_below_visible_skin_mm": 1.183009130187429,
+    "top_samples_below_0_5mm": 3,
+    "top_top_crossing_pairs": 2,
+    "all_crossing_pairs": 64
+  },
+  {
+    "pose": "reach70",
+    "max_distance_to_visible_skin_mm": 9.607885032892227,
+    "max_below_visible_skin_mm": 3.132291720248759,
+    "top_samples_below_0_5mm": 14,
+    "top_top_crossing_pairs": 15,
+    "all_crossing_pairs": 64
+  },
+  {
+    "pose": "combined",
+    "max_distance_to_visible_skin_mm": 13.92873004078865,
+    "max_below_visible_skin_mm": 2.5594399703550152,
+    "top_samples_below_0_5mm": 11,
+    "top_top_crossing_pairs": 23,
+    "all_crossing_pairs": 64
+  }
+]

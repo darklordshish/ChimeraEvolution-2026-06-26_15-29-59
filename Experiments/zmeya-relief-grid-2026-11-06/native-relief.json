@@ -1,0 +1,11 @@
+{
+  "total_body_triangles": 2020,
+  "added_triangles": 0,
+  "changed_vertices": 200,
+  "max_height_mm": 11.299356733721755,
+  "limitations": [
+    "Static artistic probe; no movement acceptance.",
+    "Native topology cannot represent each rhombus keel accurately.",
+    "Colors sampled per existing face; pattern detail is lost."
+  ]
+}

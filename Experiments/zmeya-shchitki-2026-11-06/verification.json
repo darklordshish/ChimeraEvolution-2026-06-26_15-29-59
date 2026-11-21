@@ -1,0 +1,11 @@
+{
+  "body_geometry_keys_weights_unchanged": true,
+  "bones_unchanged": true,
+  "bone_count": 53,
+  "triangle_centers_below_skin": 0,
+  "ray_misses": 0,
+  "boundary_rays_with_2um_offset": 1,
+  "min_clearance_y_m": 0.0007331967353820801,
+  "max_clearance_y_m": 0.004700090736150742,
+  "scope": "Покой, ключи 0; не проверка анимации и контактов щитков друг с другом"
+}

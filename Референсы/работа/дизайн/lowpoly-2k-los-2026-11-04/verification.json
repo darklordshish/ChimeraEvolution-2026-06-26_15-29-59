@@ -1,0 +1,18 @@
+{
+  "size": [
+    2172,
+    724
+  ],
+  "edge_pixels": 66311,
+  "unchanged_outside_edges": true,
+  "method": "Sobel + nonmaximum suppression + hysteresis; visible tone boundaries only",
+  "thresholds": {
+    "weak": 2.1,
+    "strong": 4.5,
+    "sigma": 0.65
+  },
+  "sha256": {
+    "01-flat-sheet.png": "674962e535c98f08f3265d9d8e3324929fb88cf4c613dc266d80b5539d14ba66",
+    "02-edges-sheet.png": "51baaf3f3ba3a1eaababb8da05131aa8119d286386a3cf54c6b70cdb8951f22f"
+  }
+}

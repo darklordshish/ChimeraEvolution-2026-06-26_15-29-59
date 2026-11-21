@@ -1,0 +1,17 @@
+{
+  "cells": 16,
+  "vertices": 57,
+  "triangles": 96,
+  "height_mm": 2.5,
+  "grid_step_m": 0.065,
+  "angle_rad": 0.62,
+  "boundary_edges": 16,
+  "internal_edges": 136,
+  "nonmanifold_edges": 0,
+  "standalone_sample": true,
+  "limitations": [
+    "Not attached to body or rig.",
+    "96 triangles are this patch only, not the whole body budget.",
+    "No overlap lips or ground truth biological measurements."
+  ]
+}

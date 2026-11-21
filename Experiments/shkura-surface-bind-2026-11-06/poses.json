@@ -1,0 +1,1103 @@
+[
+  {
+    "label": "rest",
+    "angles": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "top_triangles": 1049,
+    "below_skin_over_0_5mm": 0,
+    "max_below_skin_mm": 0,
+    "max_nearest_skin_mm": 4.693632945418358,
+    "max_nearest_raw_hidden_body_mm": 4.693822469562292,
+    "top_faces_area_below_25pct": 0,
+    "below_plate_ids": [],
+    "noncoplanar_crossing_plate_pairs": [],
+    "top_top_crossing_plate_pairs": [],
+    "crossing_pairs_with_rim": [],
+    "variant": "lbs"
+  },
+  {
+    "label": "flex30",
+    "angles": [
+      30,
+      0,
+      0,
+      0,
+      0
+    ],
+    "top_triangles": 1049,
+    "below_skin_over_0_5mm": 2,
+    "max_below_skin_mm": 0.6966773071326315,
+    "max_nearest_skin_mm": 16.912836581468582,
+    "max_nearest_raw_hidden_body_mm": 28.383465483784676,
+    "top_faces_area_below_25pct": 0,
+    "below_plate_ids": [
+      13,
+      20
+    ],
+    "noncoplanar_crossing_plate_pairs": [
+      [
+        11,
+        15
+      ],
+      [
+        13,
+        17
+      ],
+      [
+        15,
+        18
+      ],
+      [
+        15,
+        19
+      ],
+      [
+        17,
+        19
+      ],
+      [
+        17,
+        20
+      ],
+      [
+        18,
+        21
+      ],
+      [
+        20,
+        22
+      ],
+      [
+        20,
+        23
+      ],
+      [
+        21,
+        25
+      ],
+      [
+        23,
+        25
+      ]
+    ],
+    "top_top_crossing_plate_pairs": [
+      [
+        11,
+        15
+      ],
+      [
+        13,
+        17
+      ],
+      [
+        15,
+        18
+      ],
+      [
+        15,
+        19
+      ],
+      [
+        17,
+        19
+      ],
+      [
+        17,
+        20
+      ],
+      [
+        18,
+        21
+      ],
+      [
+        20,
+        22
+      ],
+      [
+        20,
+        23
+      ],
+      [
+        21,
+        25
+      ],
+      [
+        23,
+        25
+      ]
+    ],
+    "crossing_pairs_with_rim": [
+      [
+        11,
+        15
+      ],
+      [
+        13,
+        17
+      ],
+      [
+        15,
+        18
+      ],
+      [
+        15,
+        19
+      ],
+      [
+        17,
+        19
+      ],
+      [
+        17,
+        20
+      ],
+      [
+        18,
+        21
+      ],
+      [
+        20,
+        22
+      ],
+      [
+        20,
+        23
+      ],
+      [
+        21,
+        25
+      ],
+      [
+        23,
+        25
+      ]
+    ],
+    "variant": "lbs"
+  },
+  {
+    "label": "extend20",
+    "angles": [
+      -20,
+      0,
+      0,
+      0,
+      0
+    ],
+    "top_triangles": 1049,
+    "below_skin_over_0_5mm": 70,
+    "max_below_skin_mm": 10.110976407304406,
+    "max_nearest_skin_mm": 10.110976174473763,
+    "max_nearest_raw_hidden_body_mm": 16.862910240888596,
+    "top_faces_area_below_25pct": 0,
+    "below_plate_ids": [
+      12,
+      16,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      25,
+      28
+    ],
+    "noncoplanar_crossing_plate_pairs": [
+      [
+        11,
+        16
+      ],
+      [
+        13,
+        16
+      ],
+      [
+        13,
+        17
+      ],
+      [
+        15,
+        18
+      ],
+      [
+        15,
+        19
+      ],
+      [
+        16,
+        17
+      ],
+      [
+        17,
+        20
+      ],
+      [
+        18,
+        22
+      ],
+      [
+        19,
+        20
+      ],
+      [
+        20,
+        22
+      ],
+      [
+        20,
+        23
+      ],
+      [
+        21,
+        22
+      ],
+      [
+        22,
+        23
+      ]
+    ],
+    "top_top_crossing_plate_pairs": [
+      [
+        15,
+        18
+      ],
+      [
+        15,
+        19
+      ],
+      [
+        16,
+        17
+      ],
+      [
+        17,
+        20
+      ],
+      [
+        18,
+        22
+      ],
+      [
+        20,
+        22
+      ],
+      [
+        20,
+        23
+      ]
+    ],
+    "crossing_pairs_with_rim": [
+      [
+        11,
+        16
+      ],
+      [
+        13,
+        16
+      ],
+      [
+        13,
+        17
+      ],
+      [
+        15,
+        18
+      ],
+      [
+        15,
+        19
+      ],
+      [
+        16,
+        17
+      ],
+      [
+        17,
+        20
+      ],
+      [
+        18,
+        22
+      ],
+      [
+        19,
+        20
+      ],
+      [
+        20,
+        22
+      ],
+      [
+        20,
+        23
+      ],
+      [
+        21,
+        22
+      ],
+      [
+        22,
+        23
+      ]
+    ],
+    "variant": "lbs"
+  },
+  {
+    "label": "twist40",
+    "angles": [
+      0,
+      40,
+      0,
+      0,
+      0
+    ],
+    "top_triangles": 1049,
+    "below_skin_over_0_5mm": 13,
+    "max_below_skin_mm": 3.683122229631408,
+    "max_nearest_skin_mm": 5.351048894226551,
+    "max_nearest_raw_hidden_body_mm": 10.847934521734715,
+    "top_faces_area_below_25pct": 0,
+    "below_plate_ids": [
+      17,
+      20,
+      23
+    ],
+    "noncoplanar_crossing_plate_pairs": [
+      [
+        8,
+        13
+      ],
+      [
+        11,
+        16
+      ],
+      [
+        13,
+        17
+      ],
+      [
+        17,
+        20
+      ],
+      [
+        20,
+        22
+      ],
+      [
+        20,
+        23
+      ]
+    ],
+    "top_top_crossing_plate_pairs": [
+      [
+        8,
+        13
+      ],
+      [
+        13,
+        17
+      ],
+      [
+        17,
+        20
+      ],
+      [
+        20,
+        23
+      ]
+    ],
+    "crossing_pairs_with_rim": [
+      [
+        8,
+        13
+      ],
+      [
+        11,
+        16
+      ],
+      [
+        13,
+        17
+      ],
+      [
+        17,
+        20
+      ],
+      [
+        20,
+        22
+      ],
+      [
+        20,
+        23
+      ]
+    ],
+    "variant": "lbs"
+  },
+  {
+    "label": "side20",
+    "angles": [
+      0,
+      0,
+      20,
+      0,
+      0
+    ],
+    "top_triangles": 1049,
+    "below_skin_over_0_5mm": 0,
+    "max_below_skin_mm": 0,
+    "max_nearest_skin_mm": 4.756187088787556,
+    "max_nearest_raw_hidden_body_mm": 8.435042575001717,
+    "top_faces_area_below_25pct": 9,
+    "below_plate_ids": [],
+    "noncoplanar_crossing_plate_pairs": [],
+    "top_top_crossing_plate_pairs": [],
+    "crossing_pairs_with_rim": [],
+    "variant": "lbs"
+  },
+  {
+    "label": "arms90",
+    "angles": [
+      0,
+      0,
+      0,
+      90,
+      0
+    ],
+    "top_triangles": 1049,
+    "below_skin_over_0_5mm": 9,
+    "max_below_skin_mm": 1.8169705048194373,
+    "max_nearest_skin_mm": 5.383777432143688,
+    "max_nearest_raw_hidden_body_mm": 6.773627363145351,
+    "top_faces_area_below_25pct": 1,
+    "below_plate_ids": [
+      0,
+      1,
+      3,
+      4,
+      7
+    ],
+    "noncoplanar_crossing_plate_pairs": [],
+    "top_top_crossing_plate_pairs": [],
+    "crossing_pairs_with_rim": [],
+    "variant": "lbs"
+  },
+  {
+    "label": "reach70",
+    "angles": [
+      0,
+      0,
+      0,
+      0,
+      70
+    ],
+    "top_triangles": 1049,
+    "below_skin_over_0_5mm": 3,
+    "max_below_skin_mm": 1.7849881114671007,
+    "max_nearest_skin_mm": 8.818966336548328,
+    "max_nearest_raw_hidden_body_mm": 15.731634572148323,
+    "top_faces_area_below_25pct": 0,
+    "below_plate_ids": [
+      21,
+      23
+    ],
+    "noncoplanar_crossing_plate_pairs": [
+      [
+        0,
+        6
+      ],
+      [
+        4,
+        8
+      ],
+      [
+        5,
+        10
+      ],
+      [
+        15,
+        18
+      ],
+      [
+        17,
+        20
+      ],
+      [
+        21,
+        24
+      ],
+      [
+        23,
+        26
+      ],
+      [
+        24,
+        28
+      ],
+      [
+        26,
+        28
+      ]
+    ],
+    "top_top_crossing_plate_pairs": [
+      [
+        5,
+        10
+      ],
+      [
+        15,
+        18
+      ],
+      [
+        17,
+        20
+      ],
+      [
+        21,
+        24
+      ],
+      [
+        23,
+        26
+      ],
+      [
+        24,
+        28
+      ],
+      [
+        26,
+        28
+      ]
+    ],
+    "crossing_pairs_with_rim": [
+      [
+        0,
+        6
+      ],
+      [
+        4,
+        8
+      ],
+      [
+        5,
+        10
+      ],
+      [
+        15,
+        18
+      ],
+      [
+        17,
+        20
+      ],
+      [
+        21,
+        24
+      ],
+      [
+        23,
+        26
+      ],
+      [
+        24,
+        28
+      ],
+      [
+        26,
+        28
+      ]
+    ],
+    "variant": "lbs"
+  },
+  {
+    "label": "combined",
+    "angles": [
+      25,
+      25,
+      0,
+      0,
+      60
+    ],
+    "top_triangles": 1049,
+    "below_skin_over_0_5mm": 3,
+    "max_below_skin_mm": 2.50118799158372,
+    "max_nearest_skin_mm": 14.939581975340843,
+    "max_nearest_raw_hidden_body_mm": 29.738228768110275,
+    "top_faces_area_below_25pct": 0,
+    "below_plate_ids": [
+      13,
+      17,
+      20
+    ],
+    "noncoplanar_crossing_plate_pairs": [
+      [
+        0,
+        6
+      ],
+      [
+        4,
+        8
+      ],
+      [
+        13,
+        17
+      ],
+      [
+        15,
+        18
+      ],
+      [
+        17,
+        20
+      ],
+      [
+        20,
+        22
+      ],
+      [
+        20,
+        23
+      ],
+      [
+        21,
+        24
+      ],
+      [
+        21,
+        25
+      ],
+      [
+        23,
+        26
+      ],
+      [
+        24,
+        28
+      ],
+      [
+        26,
+        28
+      ],
+      [
+        29,
+        32
+      ]
+    ],
+    "top_top_crossing_plate_pairs": [
+      [
+        13,
+        17
+      ],
+      [
+        15,
+        18
+      ],
+      [
+        17,
+        20
+      ],
+      [
+        20,
+        22
+      ],
+      [
+        20,
+        23
+      ],
+      [
+        21,
+        24
+      ],
+      [
+        21,
+        25
+      ],
+      [
+        23,
+        26
+      ],
+      [
+        24,
+        28
+      ],
+      [
+        26,
+        28
+      ]
+    ],
+    "crossing_pairs_with_rim": [
+      [
+        0,
+        6
+      ],
+      [
+        4,
+        8
+      ],
+      [
+        13,
+        17
+      ],
+      [
+        15,
+        18
+      ],
+      [
+        17,
+        20
+      ],
+      [
+        20,
+        22
+      ],
+      [
+        20,
+        23
+      ],
+      [
+        21,
+        24
+      ],
+      [
+        21,
+        25
+      ],
+      [
+        23,
+        26
+      ],
+      [
+        24,
+        28
+      ],
+      [
+        26,
+        28
+      ],
+      [
+        29,
+        32
+      ]
+    ],
+    "variant": "lbs"
+  },
+  {
+    "label": "rest",
+    "angles": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "top_triangles": 1049,
+    "below_skin_over_0_5mm": 0,
+    "max_below_skin_mm": 0,
+    "max_nearest_skin_mm": 4.697086289525032,
+    "max_nearest_raw_hidden_body_mm": 4.6972595155239105,
+    "top_faces_area_below_25pct": 0,
+    "below_plate_ids": [],
+    "noncoplanar_crossing_plate_pairs": [],
+    "top_top_crossing_plate_pairs": [],
+    "crossing_pairs_with_rim": [],
+    "variant": "surface"
+  },
+  {
+    "label": "flex30",
+    "angles": [
+      30,
+      0,
+      0,
+      0,
+      0
+    ],
+    "top_triangles": 1049,
+    "below_skin_over_0_5mm": 1,
+    "max_below_skin_mm": 0.5602516284852754,
+    "max_nearest_skin_mm": 4.695156589150429,
+    "max_nearest_raw_hidden_body_mm": 23.85571040213108,
+    "top_faces_area_below_25pct": 4,
+    "below_plate_ids": [
+      20
+    ],
+    "noncoplanar_crossing_plate_pairs": [
+      [
+        12,
+        16
+      ],
+      [
+        16,
+        19
+      ],
+      [
+        19,
+        22
+      ]
+    ],
+    "top_top_crossing_plate_pairs": [
+      [
+        12,
+        16
+      ],
+      [
+        16,
+        19
+      ]
+    ],
+    "crossing_pairs_with_rim": [
+      [
+        12,
+        16
+      ],
+      [
+        16,
+        19
+      ],
+      [
+        19,
+        22
+      ]
+    ],
+    "variant": "surface"
+  },
+  {
+    "label": "extend20",
+    "angles": [
+      -20,
+      0,
+      0,
+      0,
+      0
+    ],
+    "top_triangles": 1049,
+    "below_skin_over_0_5mm": 0,
+    "max_below_skin_mm": 0,
+    "max_nearest_skin_mm": 4.699734039604664,
+    "max_nearest_raw_hidden_body_mm": 13.140002265572548,
+    "top_faces_area_below_25pct": 1,
+    "below_plate_ids": [],
+    "noncoplanar_crossing_plate_pairs": [],
+    "top_top_crossing_plate_pairs": [],
+    "crossing_pairs_with_rim": [],
+    "variant": "surface"
+  },
+  {
+    "label": "twist40",
+    "angles": [
+      0,
+      40,
+      0,
+      0,
+      0
+    ],
+    "top_triangles": 1049,
+    "below_skin_over_0_5mm": 0,
+    "max_below_skin_mm": 0,
+    "max_nearest_skin_mm": 4.7000702470541,
+    "max_nearest_raw_hidden_body_mm": 9.639454074203968,
+    "top_faces_area_below_25pct": 3,
+    "below_plate_ids": [],
+    "noncoplanar_crossing_plate_pairs": [
+      [
+        17,
+        20
+      ]
+    ],
+    "top_top_crossing_plate_pairs": [
+      [
+        17,
+        20
+      ]
+    ],
+    "crossing_pairs_with_rim": [
+      [
+        17,
+        20
+      ]
+    ],
+    "variant": "surface"
+  },
+  {
+    "label": "side20",
+    "angles": [
+      0,
+      0,
+      20,
+      0,
+      0
+    ],
+    "top_triangles": 1049,
+    "below_skin_over_0_5mm": 0,
+    "max_below_skin_mm": 0,
+    "max_nearest_skin_mm": 4.696798976510763,
+    "max_nearest_raw_hidden_body_mm": 8.23922362178564,
+    "top_faces_area_below_25pct": 10,
+    "below_plate_ids": [],
+    "noncoplanar_crossing_plate_pairs": [
+      [
+        12,
+        16
+      ]
+    ],
+    "top_top_crossing_plate_pairs": [
+      [
+        12,
+        16
+      ]
+    ],
+    "crossing_pairs_with_rim": [
+      [
+        12,
+        16
+      ]
+    ],
+    "variant": "surface"
+  },
+  {
+    "label": "arms90",
+    "angles": [
+      0,
+      0,
+      0,
+      90,
+      0
+    ],
+    "top_triangles": 1049,
+    "below_skin_over_0_5mm": 2,
+    "max_below_skin_mm": 0.7508853395847837,
+    "max_nearest_skin_mm": 4.697086289525032,
+    "max_nearest_raw_hidden_body_mm": 6.9397082552313805,
+    "top_faces_area_below_25pct": 0,
+    "below_plate_ids": [
+      1,
+      3
+    ],
+    "noncoplanar_crossing_plate_pairs": [
+      [
+        11,
+        15
+      ],
+      [
+        13,
+        17
+      ]
+    ],
+    "top_top_crossing_plate_pairs": [
+      [
+        11,
+        15
+      ]
+    ],
+    "crossing_pairs_with_rim": [
+      [
+        11,
+        15
+      ],
+      [
+        13,
+        17
+      ]
+    ],
+    "variant": "surface"
+  },
+  {
+    "label": "reach70",
+    "angles": [
+      0,
+      0,
+      0,
+      0,
+      70
+    ],
+    "top_triangles": 1049,
+    "below_skin_over_0_5mm": 0,
+    "max_below_skin_mm": 0,
+    "max_nearest_skin_mm": 4.697086289525032,
+    "max_nearest_raw_hidden_body_mm": 15.920093283057213,
+    "top_faces_area_below_25pct": 1,
+    "below_plate_ids": [],
+    "noncoplanar_crossing_plate_pairs": [
+      [
+        11,
+        15
+      ]
+    ],
+    "top_top_crossing_plate_pairs": [
+      [
+        11,
+        15
+      ]
+    ],
+    "crossing_pairs_with_rim": [
+      [
+        11,
+        15
+      ]
+    ],
+    "variant": "surface"
+  },
+  {
+    "label": "combined",
+    "angles": [
+      25,
+      25,
+      0,
+      0,
+      60
+    ],
+    "top_triangles": 1049,
+    "below_skin_over_0_5mm": 0,
+    "max_below_skin_mm": 0,
+    "max_nearest_skin_mm": 4.6967933885753155,
+    "max_nearest_raw_hidden_body_mm": 25.06463974714279,
+    "top_faces_area_below_25pct": 2,
+    "below_plate_ids": [],
+    "noncoplanar_crossing_plate_pairs": [
+      [
+        11,
+        15
+      ],
+      [
+        12,
+        16
+      ],
+      [
+        16,
+        19
+      ]
+    ],
+    "top_top_crossing_plate_pairs": [
+      [
+        11,
+        15
+      ],
+      [
+        12,
+        16
+      ],
+      [
+        16,
+        19
+      ]
+    ],
+    "crossing_pairs_with_rim": [
+      [
+        11,
+        15
+      ],
+      [
+        12,
+        16
+      ],
+      [
+        16,
+        19
+      ]
+    ],
+    "variant": "surface"
+  }
+]

@@ -1,0 +1,42 @@
+{
+  "source.blend": [
+    {
+      "name": "Шкура.тон1@Змея",
+      "tris": 215,
+      "zero_area": 0,
+      "repeated_indices": 0
+    },
+    {
+      "name": "Шкура.тон2@Змея",
+      "tris": 124,
+      "zero_area": 0,
+      "repeated_indices": 0
+    },
+    {
+      "name": "Шкура.тон3@Змея",
+      "tris": 157,
+      "zero_area": 0,
+      "repeated_indices": 0
+    }
+  ],
+  "snake-expanded.blend": [
+    {
+      "name": "Шкура.тон1@Змея",
+      "tris": 873,
+      "zero_area": 0,
+      "repeated_indices": 0
+    },
+    {
+      "name": "Шкура.тон2@Змея",
+      "tris": 509,
+      "zero_area": 0,
+      "repeated_indices": 0
+    },
+    {
+      "name": "Шкура.тон3@Змея",
+      "tris": 843,
+      "zero_area": 0,
+      "repeated_indices": 0
+    }
+  ]
+}
